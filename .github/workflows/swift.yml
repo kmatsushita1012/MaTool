@@ -12,9 +12,9 @@ jobs:
     runs-on: macos-latest
 
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
 
-      - uses: actions/setup-node@v1
+      - uses: actions/setup-node@v3
         with:
           node-version: "18.x"
 
@@ -29,7 +29,7 @@ jobs:
       - name: ProvisioningProfile
         run: |
           echo "${{ secrets.PROVISIONING_BASE64 }}" > adhoc.mobileprovision.txt
-          base64 --decode -i enterprise.mobileprovision.txt -o adhoc.mobileprovision
+          base64 --decode -i adhoc.mobileprovision.txt -o adhoc.mobileprovision
 
       - uses: actions/cache@v2
         with:
@@ -39,7 +39,6 @@ jobs:
             ${{ runner.os }}-pods-
 
       - name: Install CocoaPods frameworks and build with custom scripts
-        if: steps.cache-cocoapods.outputs.cache-hit != 'true'
         run: pod install
 
       - name: list files
