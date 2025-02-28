@@ -1,0 +1,45 @@
+
+ENV["FASTLANE_XCODEBUILD_SETTINGS_TIMEOUT"] = "1800" //タイムアウトして失敗を防ぐため
+ENV['XCODE_VERSION'] = "14.3.1" 最新のXcodeを指定
+default_platform(:ios)
+
+platform :ios do
+    desc "Import Certificates and Provisioning Profile"
+    private_lane :import_certificates_and_provisioning_profile do
+        create_keychain(
+            name: "ios_app_keychain",
+            password: ENV["KEYCHAIN_PASSWORD"],
+            timeout: 1800
+        )
+        import_certificate(
+            certificate_path: "ios_distribution.p12",
+            certificate_password: ENV["CERT_PASSWORD"],
+            keychain_name: "ios_app_keychain",
+            keychain_password: ENV["KEYCHAIN_PASSWORD"]
+        )
+
+        install_provisioning_profile(path: "adhoc.mobileprovision")
+    end
+
+    desc "Archive STG and send to Firebase"
+    lane :archive_stg_app_distribution do
+        import_certificates_and_provisioning_profile
+        build_app(workspace: " FesTracking2.xcworkspace",
+        scheme: " FesTracking2_STG", //ビルドしたいスキーム
+        configuration: "STG", 
+        clean: true,
+        export_options: {
+        method: "ad-hoc", #AdhocやEnterpriseなど
+        provisioningProfiles: {
+          "StudioMK.FesTracking" => "jp.co.hoge.FesTracking2" #左バンドルID　右provisioning名
+        }
+    })
+
+        firebase_app_distribution(
+            app: ENV["FIREBASE_APP_ID"], #firebaseのAppID
+            groups: "testers", #テスターのgroup名
+            release_notes: "STG環境 テスト配信",
+            firebase_cli_path: `which firebase`.strip()
+        )
+    end
+end

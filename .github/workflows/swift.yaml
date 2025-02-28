@@ -1,0 +1,57 @@
+# This is a basic workflow to help you get started with Actions
+
+name: Adhoc Distribution
+
+on:
+  push:
+    tags:
+      - "[0-9].[0-9].[0-9]" #バージョンタグをプッシュがトリガー
+
+jobs:
+  build:
+    runs-on: macos-latest
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - uses: actions/setup-node@v1
+        with:
+          node-version: "18.x"
+
+      - name: Bundle Install
+        run: bundle install
+
+      - name: Keychain.p12
+        run: |
+          echo "${{ secrets.P12_BASE64 }}" > ios_distribution.p12.txt
+          base64 --decode -i ios_distribution.p12.txt -o ios_distribution.p12
+
+      - name: ProvisioningProfile
+        run: |
+          echo "${{ secrets.PROVISIONING_BASE64 }}" > adhoc.mobileprovision.txt
+          base64 --decode -i enterprise.mobileprovision.txt -o adhoc.mobileprovision
+
+      - uses: actions/cache@v2
+        with:
+          path: Pods
+          key: ${{ runner.os }}-pods-${{ hashFiles('**/Podfile.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-pods-
+
+      - name: Install CocoaPods frameworks and build with custom scripts
+        if: steps.cache-cocoapods.outputs.cache-hit != 'true'
+        run: pod install
+
+      - name: list files
+        run: ls -l
+
+      - name: Enterprise Build and App Distribution
+        env:
+          KEYCHAIN_PASSWORD: ${{ secrets.KEYCHAIN_PASSWORD }}
+          CERT_PASSWORD: ${{ secrets.CERT_PASSWORD }}
+          FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
+          FIREBASE_APP_ID: ${{ secrets.FIREBASE_APP_ID }}
+          DISABLE_SWIFTLINT: true #SWIFTLINT fastlaneが引っかかるため
+        run: |
+          npm install -g firebase-tools
+          bundle exec fastlane archive_stg_app_distribution
