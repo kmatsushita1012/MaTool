@@ -12,7 +12,8 @@ import DependenciesMacros
 
 @Reducer
 struct RouteReducer{
-    @Dependency(\.remoteClient) var remoteClient
+//    @Dependency(\.remoteClient)var remoteClient
+    var remoteClient: RemoteClient
     
     struct State: Equatable {
         var route: Route
@@ -35,10 +36,9 @@ struct RouteReducer{
             case let .fetchRoute(id):
                 state.isLoading = true
                 return .run {[] send in
-                    let response = try await self.remoteClient.getRouteDetail(UUID())
-                    await send(.numberFactResponse(response))
-                  }
-                
+                    let result = await self.remoteClient.getRoute(id)
+                    await send(.fetchRouteResponse(result))
+                }
             case let .fetchRouteResponse(.success(route)):
                 state.isLoading = false
                 state.route = route

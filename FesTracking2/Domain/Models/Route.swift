@@ -8,9 +8,9 @@ import Foundation
 
 struct RouteSummary: Codable,Equatable{
     let id: UUID
-    let date:Date
+    let date:SimpleDate
     let title: String
-    init(id: UUID, date: Date, title: String) {
+    init(id: UUID, date: SimpleDate, title: String) {
         self.id = id
         self.date = date
         self.title = title
@@ -26,10 +26,10 @@ struct Route: Codable,Equatable{
     let points: [Point]
     let segments: [Segment]
     let current: Point?
-    let date:Date
+    let date:SimpleDate
     let title: String
     let description: String?
-    init(id: UUID, points: [Point], segments: [Segment], current: Point?=nil, date: Date, title: String, description: String?=nil) {
+    init(id: UUID, points: [Point], segments: [Segment], current: Point?=nil, date: SimpleDate, title: String, description: String?=nil) {
         self.id = id
         self.points = points
         self.segments = segments

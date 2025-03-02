@@ -16,7 +16,7 @@ class Coordinate: Codable{
     }
 }
     
-class Date: Codable{
+class SimpleDate: Codable{
     let year: Int
     let month: Int
     let day: Int

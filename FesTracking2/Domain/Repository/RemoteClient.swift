@@ -15,7 +15,7 @@ struct RemoteClient {
     var getRegions: () async throws -> [Region]
     var getDistricts: (_ regionId: UUID) async throws -> [District]
     var getRouteList: (_ districtId: UUID) async throws -> [RouteSummary]
-    var getRouteDetail: (_ routeId: UUID) async throws ->Route
+    var getRoute: (_ routeId: UUID) async -> Result<Route,RemoteError>
 }
 
 
