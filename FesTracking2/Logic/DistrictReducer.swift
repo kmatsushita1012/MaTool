@@ -1,5 +1,5 @@
 //
-//  RouteLogic.swift
+//  RouteSummariesReducer.swift
 //  FesTracking2
 //
 //  Created by 松下和也 on 2025/03/02.
@@ -11,19 +11,19 @@ import Dependencies
 import DependenciesMacros
 
 @Reducer
-struct RouteReducer{
+struct RouteSummariesReducer{
     @Dependency(\.remoteClient) var remoteClient
 //    var remoteClient: RemoteClient
     
     struct State: Equatable {
-        var route: Route
+        var summaries: [RouteSummary]
         var isLoading: Bool = false
         var errorMessage: String?
     }
 
     enum Action: Equatable {
-        case fetchRoute(UUID)
-        case fetchRouteResponse(Result<Route, RemoteError>)
+        case fetchSummaries(UUID)
+        case fetchSummmariesResponse(Result<[RouteSummary], RemoteError>)
     }
 
     struct Environment {
@@ -33,18 +33,19 @@ struct RouteReducer{
     
     func reduce(into state: inout State, action: Action, environment: Environment) -> Effect<Action> {
             switch action {
-            case let .fetchRoute(id):
+            case let .fetchSummaries(districtId):
                 state.isLoading = true
+                state.errorMessage = nil
                 return .run {[] send in
-                    let result = await self.remoteClient.getRoute(id)
-                    await send(.fetchRouteResponse(result))
+                    let result = await self.remoteClient.getRouteSummaries(districtId)
+                    await send(.fetchSummmariesResponse(result))
                 }
-            case let .fetchRouteResponse(.success(route)):
+            case let .fetchSummmariesResponse(.success(summaries)):
                 state.isLoading = false
-                state.route = route
+                state.summaries = summaries
                 return .none
                 
-            case let .fetchRouteResponse(.failure(error)):
+            case let .fetchSummmariesResponse(.failure(error)):
                 state.isLoading = false
                 state.errorMessage = error.localizedDescription
                 return .none
@@ -52,3 +53,4 @@ struct RouteReducer{
         }
     
 }
+

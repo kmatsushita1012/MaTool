@@ -21,7 +21,7 @@ struct RemoteClient {
 
 
 extension DependencyValues {
-  var numberFact: RemoteClient {
+  var  remoteClient: RemoteClient {
     get { self[RemoteClient.self] }
     set { self[RemoteClient.self] = newValue }
   }
