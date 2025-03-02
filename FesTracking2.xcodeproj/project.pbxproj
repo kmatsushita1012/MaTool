@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		29384E7F2D71F8DB004D153D /* FirebaseAnalytics in Frameworks */ = {isa = PBXBuildFile; productRef = 29384E7E2D71F8DB004D153D /* FirebaseAnalytics */; };
+		29384E842D72005F004D153D /* ComposableArchitecture in Frameworks */ = {isa = PBXBuildFile; productRef = 29384E832D72005F004D153D /* ComposableArchitecture */; };
 		298BD79E2D71E46600CB63F1 /* FesTracking2App.swift in Sources */ = {isa = PBXBuildFile; fileRef = 298BD79D2D71E46600CB63F1 /* FesTracking2App.swift */; };
 		298BD7A02D71E46600CB63F1 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 298BD79F2D71E46600CB63F1 /* ContentView.swift */; };
 		298BD7A22D71E46600CB63F1 /* Item.swift in Sources */ = {isa = PBXBuildFile; fileRef = 298BD7A12D71E46600CB63F1 /* Item.swift */; };
@@ -54,6 +55,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				29384E842D72005F004D153D /* ComposableArchitecture in Frameworks */,
 				29384E7F2D71F8DB004D153D /* FirebaseAnalytics in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -150,6 +152,7 @@
 			name = FesTracking2;
 			packageProductDependencies = (
 				29384E7E2D71F8DB004D153D /* FirebaseAnalytics */,
+				29384E832D72005F004D153D /* ComposableArchitecture */,
 			);
 			productName = FesTracking2;
 			productReference = 298BD79A2D71E46600CB63F1 /* FesTracking2.app */;
@@ -225,6 +228,7 @@
 			mainGroup = 298BD7912D71E46600CB63F1;
 			packageReferences = (
 				29384E7D2D71F8DB004D153D /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */,
+				29384E822D72005F004D153D /* XCRemoteSwiftPackageReference "swift-composable-architecture" */,
 			);
 			productRefGroup = 298BD79B2D71E46600CB63F1 /* Products */;
 			projectDirPath = "";
@@ -610,6 +614,14 @@
 				minimumVersion = 11.9.0;
 			};
 		};
+		29384E822D72005F004D153D /* XCRemoteSwiftPackageReference "swift-composable-architecture" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/pointfreeco/swift-composable-architecture";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 1.17.1;
+			};
+		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
@@ -617,6 +629,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 29384E7D2D71F8DB004D153D /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
 			productName = FirebaseAnalytics;
+		};
+		29384E832D72005F004D153D /* ComposableArchitecture */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 29384E822D72005F004D153D /* XCRemoteSwiftPackageReference "swift-composable-architecture" */;
+			productName = ComposableArchitecture;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};
