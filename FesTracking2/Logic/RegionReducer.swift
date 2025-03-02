@@ -8,7 +8,6 @@
 import Foundation
 import ComposableArchitecture
 import Dependencies
-import DependenciesMacros
 
 protocol RegionFeature: Reducer<RegionState,RegionAction>{}
 
