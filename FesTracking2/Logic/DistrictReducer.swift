@@ -11,18 +11,19 @@ import Dependencies
 import DependenciesMacros
 
 @Reducer
-struct RouteSummariesReducer{
+struct DistrictReducer{
     @Dependency(\.remoteClient) var remoteClient
 //    var remoteClient: RemoteClient
     
     struct State: Equatable {
+        var district: District
         var summaries: [RouteSummary]
         var isLoading: Bool = false
         var errorMessage: String?
     }
 
     enum Action: Equatable {
-        case fetchSummaries(UUID)
+        case setDistrict(District)
         case fetchSummmariesResponse(Result<[RouteSummary], RemoteError>)
     }
 
@@ -33,11 +34,12 @@ struct RouteSummariesReducer{
     
     func reduce(into state: inout State, action: Action, environment: Environment) -> Effect<Action> {
             switch action {
-            case let .fetchSummaries(districtId):
+            case let .setDistrict(district):
+                state.district = district
                 state.isLoading = true
                 state.errorMessage = nil
-                return .run {[] send in
-                    let result = await self.remoteClient.getRouteSummaries(districtId)
+                return .run {[state = state] send in
+                    let result = await self.remoteClient.getRouteSummaries(state.district.id)
                     await send(.fetchSummmariesResponse(result))
                 }
             case let .fetchSummmariesResponse(.success(summaries)):

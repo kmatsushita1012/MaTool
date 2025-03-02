@@ -16,13 +16,13 @@ extension RemoteClient: TestDependencyKey {
 
 let normal = RemoteClient(
     getRegions:{
-        return [Region(id: UUID(), name: "掛川祭", description: "省略", imagePath: nil)]
+        return Result.success([Region(id: UUID(), name: "掛川祭", description: "省略", imagePath: nil)])
     },
     getDistricts: {_ in
-        return [District(id: UUID(), name: "城北町", description: "省略", imagePath: nil)]
+        return Result.success([District(id: UUID(), name: "城北町", description: "省略", imagePath: nil)])
     },
-    getRouteList: {_ in
-        return [RouteSummary(id: UUID(), date: SimpleDate(year: 2025, month: 10, day: 12), title: "午前")]
+    getRouteSummaries: {_ in
+        return Result.success([RouteSummary(id: UUID(), date: SimpleDate(year: 2025, month: 10, day: 12), title: "午前")])
         
     },
     getRoute: {_ in
@@ -46,8 +46,6 @@ let normal = RemoteClient(
                 date: SimpleDate(year: 2025, month: 10, day: 12),
                 title: "午後",
                 description: "省略"
-            
+            )
         )
-    )
-        
     })
