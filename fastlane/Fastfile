@@ -24,7 +24,7 @@ platform :ios do
     desc "Archive STG and send to Firebase"
     lane :archive_stg_app_distribution do
         import_certificates_and_provisioning_profile
-        build_app(workspace: " FesTracking2.xcworkspace",
+        build_app(workspace: "FesTracking2.xcworkspace",
         scheme: " FesTracking2_STG", #ビルドしたいスキーム
         configuration: "STG", 
         clean: true,
