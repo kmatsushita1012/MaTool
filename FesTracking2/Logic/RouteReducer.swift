@@ -10,28 +10,25 @@ import Foundation
 import Dependencies
 import DependenciesMacros
 
-@Reducer
-struct RouteReducer{
+protocol RouteFeature:Reducer<RouteState,RouteAction> {}
+
+struct RouteState: Equatable {
+    var route: Route
+    var isLoading: Bool = false
+    var errorMessage: String?
+}
+
+enum RouteAction: Equatable {
+    case fetchRoute(UUID)
+    case fetchRouteResponse(Result<Route, RemoteError>)
+}
+
+struct RouteReducer:RouteFeature{
+    
     @Dependency(\.remoteClient) var remoteClient
-//    var remoteClient: RemoteClient
     
-    struct State: Equatable {
-        var route: Route
-        var isLoading: Bool = false
-        var errorMessage: String?
-    }
-
-    enum Action: Equatable {
-        case fetchRoute(UUID)
-        case fetchRouteResponse(Result<Route, RemoteError>)
-    }
-
-    struct Environment {
-        var mainQueue: AnySchedulerOf<DispatchQueue>
-        var remoteClient: RemoteClient
-    }
-    
-    func reduce(into state: inout State, action: Action, environment: Environment) -> Effect<Action> {
+    var body: some Reducer<RouteState, RouteAction> {
+        Reduce { state, action in
             switch action {
             case let .fetchRoute(id):
                 state.isLoading = true
@@ -51,5 +48,5 @@ struct RouteReducer{
                 return .none
             }
         }
-    
+    }
 }

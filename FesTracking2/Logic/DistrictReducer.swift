@@ -10,29 +10,26 @@ import Foundation
 import Dependencies
 import DependenciesMacros
 
-@Reducer
-struct DistrictReducer{
+protocol DistrictFeature: Reducer<DistrictState, DistrictAction>{}
+
+struct DistrictState: Equatable {
+    var district: District
+    var summaries: [RouteSummary]
+    var isLoading: Bool = false
+    var errorMessage: String?
+}
+
+enum DistrictAction: Equatable {
+    case setDistrict(District)
+    case fetchSummmariesResponse(Result<[RouteSummary], RemoteError>)
+}
+
+struct DistrictReducer: DistrictFeature{
+    
     @Dependency(\.remoteClient) var remoteClient
-//    var remoteClient: RemoteClient
     
-    struct State: Equatable {
-        var district: District
-        var summaries: [RouteSummary]
-        var isLoading: Bool = false
-        var errorMessage: String?
-    }
-
-    enum Action: Equatable {
-        case setDistrict(District)
-        case fetchSummmariesResponse(Result<[RouteSummary], RemoteError>)
-    }
-
-    struct Environment {
-        var mainQueue: AnySchedulerOf<DispatchQueue>
-        var remoteClient: RemoteClient
-    }
-    
-    func reduce(into state: inout State, action: Action, environment: Environment) -> Effect<Action> {
+    var body: some Reducer<DistrictState, DistrictAction> {
+        Reduce{state, action in
             switch action {
             case let .setDistrict(district):
                 state.district = district
@@ -53,6 +50,7 @@ struct DistrictReducer{
                 return .none
             }
         }
-    
+    }
 }
+
 

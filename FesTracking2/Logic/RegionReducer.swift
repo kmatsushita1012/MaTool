@@ -10,29 +10,26 @@ import ComposableArchitecture
 import Dependencies
 import DependenciesMacros
 
-@Reducer
-struct RegionReducer{
+protocol RegionFeature: Reducer<RegionState,RegionAction>{}
+
+struct RegionState: Equatable {
+    var region: Region
+    var districts: [District]
+    var isLoading: Bool = false
+    var errorMessage: String?
+}
+
+enum RegionAction: Equatable {
+    case setRegion(Region)
+    case fetchDistrictsResponse(Result<[District], RemoteError>)
+}
+
+struct RegionReducer: RegionFeature{
+    
     @Dependency(\.remoteClient) var remoteClient
-//    var remoteClient: RemoteClient
     
-    struct State: Equatable {
-        var region: Region
-        var districts: [District]
-        var isLoading: Bool = false
-        var errorMessage: String?
-    }
-
-    enum Action: Equatable {
-        case setRegion(Region)
-        case fetchDistrictsResponse(Result<[District], RemoteError>)
-    }
-
-    struct Environment {
-        var mainQueue: AnySchedulerOf<DispatchQueue>
-        var remoteClient: RemoteClient
-    }
-    
-    func reduce(into state: inout State, action: Action, environment: Environment) -> Effect<Action> {
+    var body: some Reducer<RegionState, RegionAction> {
+        Reduce{state, action in
             switch action {
             case let .setRegion(region):
                 state.region = region
@@ -53,6 +50,6 @@ struct RegionReducer{
                 return .none
             }
         }
-    
+    }
 }
 
