@@ -9,6 +9,15 @@
 /* Begin PBXBuildFile section */
 		29384E7F2D71F8DB004D153D /* FirebaseAnalytics in Frameworks */ = {isa = PBXBuildFile; productRef = 29384E7E2D71F8DB004D153D /* FirebaseAnalytics */; };
 		29384E842D72005F004D153D /* ComposableArchitecture in Frameworks */ = {isa = PBXBuildFile; productRef = 29384E832D72005F004D153D /* ComposableArchitecture */; };
+		2983AB7A2D741674002F6CB5 /* Share.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2983AB782D7415B2002F6CB5 /* Share.swift */; };
+		2983AB7D2D74168F002F6CB5 /* Route.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2983AB7C2D74168F002F6CB5 /* Route.swift */; };
+		2983AB7F2D7419AB002F6CB5 /* Information.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2983AB7E2D7419AB002F6CB5 /* Information.swift */; };
+		2983AB852D741C19002F6CB5 /* README.md in Resources */ = {isa = PBXBuildFile; fileRef = 2983AB802D741C18002F6CB5 /* README.md */; };
+		2983AB862D741C19002F6CB5 /* Gemfile in Resources */ = {isa = PBXBuildFile; fileRef = 2983AB812D741C18002F6CB5 /* Gemfile */; };
+		2983AB872D741C19002F6CB5 /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = 2983AB822D741C19002F6CB5 /* GoogleService-Info.plist */; };
+		2983AB882D741C19002F6CB5 /* Gemfile.lock in Resources */ = {isa = PBXBuildFile; fileRef = 2983AB832D741C19002F6CB5 /* Gemfile.lock */; };
+		2983AB892D741C19002F6CB5 /* Podfile in Resources */ = {isa = PBXBuildFile; fileRef = 2983AB842D741C19002F6CB5 /* Podfile */; };
+		2983AB8B2D741C55002F6CB5 /* .swiftlint.yml in Resources */ = {isa = PBXBuildFile; fileRef = 2983AB8A2D741C55002F6CB5 /* .swiftlint.yml */; };
 		298BD79E2D71E46600CB63F1 /* FesTracking2App.swift in Sources */ = {isa = PBXBuildFile; fileRef = 298BD79D2D71E46600CB63F1 /* FesTracking2App.swift */; };
 		298BD7A02D71E46600CB63F1 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 298BD79F2D71E46600CB63F1 /* ContentView.swift */; };
 		298BD7A22D71E46600CB63F1 /* Item.swift in Sources */ = {isa = PBXBuildFile; fileRef = 298BD7A12D71E46600CB63F1 /* Item.swift */; };
@@ -37,6 +46,15 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		2983AB782D7415B2002F6CB5 /* Share.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Share.swift; sourceTree = "<group>"; };
+		2983AB7C2D74168F002F6CB5 /* Route.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Route.swift; sourceTree = "<group>"; };
+		2983AB7E2D7419AB002F6CB5 /* Information.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Information.swift; sourceTree = "<group>"; };
+		2983AB802D741C18002F6CB5 /* README.md */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
+		2983AB812D741C18002F6CB5 /* Gemfile */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = Gemfile; sourceTree = "<group>"; };
+		2983AB822D741C19002F6CB5 /* GoogleService-Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = "GoogleService-Info.plist"; sourceTree = "<group>"; };
+		2983AB832D741C19002F6CB5 /* Gemfile.lock */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = Gemfile.lock; sourceTree = "<group>"; };
+		2983AB842D741C19002F6CB5 /* Podfile */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = Podfile; sourceTree = "<group>"; };
+		2983AB8A2D741C55002F6CB5 /* .swiftlint.yml */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.yaml; path = .swiftlint.yml; sourceTree = "<group>"; };
 		298BD79A2D71E46600CB63F1 /* FesTracking2.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = FesTracking2.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		298BD79D2D71E46600CB63F1 /* FesTracking2App.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FesTracking2App.swift; sourceTree = "<group>"; };
 		298BD79F2D71E46600CB63F1 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
@@ -77,9 +95,32 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		2983AB722D74152C002F6CB5 /* Domain */ = {
+			isa = PBXGroup;
+			children = (
+				2983AB782D7415B2002F6CB5 /* Share.swift */,
+				2983AB7C2D74168F002F6CB5 /* Route.swift */,
+				2983AB7E2D7419AB002F6CB5 /* Information.swift */,
+			);
+			path = Domain;
+			sourceTree = "<group>";
+		};
+		2983AB772D741534002F6CB5 /* View */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			path = View;
+			sourceTree = "<group>";
+		};
 		298BD7912D71E46600CB63F1 = {
 			isa = PBXGroup;
 			children = (
+				2983AB812D741C18002F6CB5 /* Gemfile */,
+				2983AB832D741C19002F6CB5 /* Gemfile.lock */,
+				2983AB822D741C19002F6CB5 /* GoogleService-Info.plist */,
+				2983AB8A2D741C55002F6CB5 /* .swiftlint.yml */,
+				2983AB842D741C19002F6CB5 /* Podfile */,
+				2983AB802D741C18002F6CB5 /* README.md */,
 				298BD79C2D71E46600CB63F1 /* FesTracking2 */,
 				298BD7AF2D71E46900CB63F1 /* FesTracking2Tests */,
 				298BD7B92D71E46900CB63F1 /* FesTracking2UITests */,
@@ -100,6 +141,8 @@
 		298BD79C2D71E46600CB63F1 /* FesTracking2 */ = {
 			isa = PBXGroup;
 			children = (
+				2983AB772D741534002F6CB5 /* View */,
+				2983AB722D74152C002F6CB5 /* Domain */,
 				298BD79D2D71E46600CB63F1 /* FesTracking2App.swift */,
 				298BD79F2D71E46600CB63F1 /* ContentView.swift */,
 				298BD7A12D71E46600CB63F1 /* Item.swift */,
@@ -246,7 +289,13 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				2983AB8B2D741C55002F6CB5 /* .swiftlint.yml in Resources */,
+				2983AB882D741C19002F6CB5 /* Gemfile.lock in Resources */,
+				2983AB862D741C19002F6CB5 /* Gemfile in Resources */,
+				2983AB852D741C19002F6CB5 /* README.md in Resources */,
+				2983AB872D741C19002F6CB5 /* GoogleService-Info.plist in Resources */,
 				298BD7A72D71E46800CB63F1 /* Preview Assets.xcassets in Resources */,
+				2983AB892D741C19002F6CB5 /* Podfile in Resources */,
 				298BD7A42D71E46800CB63F1 /* Assets.xcassets in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -272,8 +321,11 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				2983AB7A2D741674002F6CB5 /* Share.swift in Sources */,
 				298BD7A02D71E46600CB63F1 /* ContentView.swift in Sources */,
 				298BD7A22D71E46600CB63F1 /* Item.swift in Sources */,
+				2983AB7F2D7419AB002F6CB5 /* Information.swift in Sources */,
+				2983AB7D2D74168F002F6CB5 /* Route.swift in Sources */,
 				298BD79E2D71E46600CB63F1 /* FesTracking2App.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
