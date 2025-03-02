@@ -5,3 +5,12 @@
 ## Actions
 
 [GitHubActions×Fastlane×Firebase で iOS アプリを配布する CI/CD を構築](https://note.com/resan0725/n/nc84186fa841c)
+
+
+## ドメイン
+- ルート
+- ポイント
+    - 座標
+    - ステータス
+    - 時刻
+    - 
