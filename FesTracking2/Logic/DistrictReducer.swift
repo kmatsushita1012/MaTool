@@ -8,7 +8,6 @@
 import ComposableArchitecture
 import Foundation
 import Dependencies
-import DependenciesMacros
 
 protocol DistrictFeature: Reducer<DistrictState, DistrictAction>{}
 

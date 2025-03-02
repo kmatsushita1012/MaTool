@@ -26,7 +26,7 @@ jobs:
           echo "${{ secrets.PROVISIONING_BASE64 }}" > adhoc.mobileprovision.txt
           base64 --decode -i adhoc.mobileprovision.txt -o adhoc.mobileprovision
 
-      - uses: actions/cache@v2
+      - uses: actions/cache@v4
         with:
           path: Pods
           key: ${{ runner.os }}-pods-${{ hashFiles('**/Podfile.lock') }}
