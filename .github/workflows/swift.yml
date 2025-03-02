@@ -49,3 +49,5 @@ jobs:
         run: |
           npm install -g firebase-tools
           bundle exec fastlane archive_stg_app_distribution
+      - name: Show Log
+        run: echo /Users/runner/Library/Logs/gym/FesTracking2-FesTracking2_AppDistribution.log
