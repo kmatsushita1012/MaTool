@@ -1,6 +1,6 @@
 
-ENV["FASTLANE_XCODEBUILD_SETTINGS_TIMEOUT"] = "1800" //タイムアウトして失敗を防ぐため
-ENV['XCODE_VERSION'] = "14.3.1" 最新のXcodeを指定
+ENV["FASTLANE_XCODEBUILD_SETTINGS_TIMEOUT"] = "1800" #タイムアウトして失敗を防ぐため
+ENV['XCODE_VERSION'] = "14.3.1" #最新のXcodeを指定
 default_platform(:ios)
 
 platform :ios do
@@ -38,7 +38,7 @@ platform :ios do
         firebase_app_distribution(
             app: ENV["FIREBASE_APP_ID"], #firebaseのAppID
             groups: "testers", #テスターのgroup名
-            release_notes: "STG環境 テスト配信",
+            release_notes: "test",
             firebase_cli_path: `which firebase`.strip()
         )
     end
