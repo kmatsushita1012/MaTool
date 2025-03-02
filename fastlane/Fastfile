@@ -26,7 +26,7 @@ platform :ios do
         import_certificates_and_provisioning_profile
         build_app(
             workspace: "FesTracking2.xcworkspace",
-            scheme: "FesTracking2", #ビルドしたいスキーム
+            scheme: "FesTracking2_AppDistribution", #ビルドしたいスキーム
             configuration: "Release", 
             clean: true,
             export_options: {
