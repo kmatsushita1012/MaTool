@@ -6,3 +6,8 @@
 //
 
 import Foundation
+import Dependencies
+
+extension RemoteClient: DependencyKey {
+  static let liveValue = normal
+}
