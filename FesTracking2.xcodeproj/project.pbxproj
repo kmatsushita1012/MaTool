@@ -561,6 +561,7 @@
 /* Begin XCBuildConfiguration section */
 		298BD7BE2D71E46900CB63F1 /* Debug */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = 2ED28BC68D7C76B5AD0147C2 /* Pods-FesTracking2.debug.xcconfig */;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
@@ -624,6 +625,7 @@
 		};
 		298BD7BF2D71E46900CB63F1 /* Release */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = C2452BC5E866C14D5C7C3887 /* Pods-FesTracking2.release.xcconfig */;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
