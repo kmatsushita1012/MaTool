@@ -27,7 +27,7 @@ platform :ios do
         build_app(
             workspace: "FesTracking2.xcworkspace",
             scheme: "FesTracking2", #ビルドしたいスキーム
-            configuration: "STG", 
+            configuration: "Release", 
             clean: true,
             export_options: {
                 method: "ad-hoc", #AdhocやEnterpriseなど
