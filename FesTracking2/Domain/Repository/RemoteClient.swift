@@ -6,8 +6,41 @@
 //
 
 import Foundation
-@DependencyClient
-public struct RemoteClient: Sendable {
-    public var searchRepos: @Sendable (_ query: String, _ page: Int) async throws -> SearchReposResponse
-    public var getRepoDetail: @Sendable (_ owner: String, _ repo: String) async throws -> RepoDetailResponse
+import DependenciesMacros
+import Dependencies
+import Combine
+import ComposableArchitecture
+
+struct RemoteClient {
+    var getRegions: () async throws -> [Region]
+    var getDistricts: (_ regionId: UUID) async throws -> [District]
+    var getRouteList: (_ districtId: UUID) async throws -> [RouteSummary]
+    var getRouteDetail: (_ routeId: UUID) async throws ->Route
+}
+
+
+
+extension DependencyValues {
+  var numberFact: RemoteClient {
+    get { self[RemoteClient.self] }
+    set { self[RemoteClient.self] = newValue }
+  }
+}
+
+
+enum RemoteError: Error, Equatable {
+    case networkError(String)
+    case decodingError(String)
+    case unknownError(String)
+    
+    var localizedDescription: String {
+        switch self {
+        case .networkError(let message):
+            return "Network Error: \(message)"
+        case .decodingError(let message):
+            return "Decoding Error: \(message)"
+        case .unknownError(let message):
+            return "Unknown Error: \(message)"
+        }
+    }
 }
