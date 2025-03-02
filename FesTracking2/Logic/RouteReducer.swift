@@ -35,6 +35,7 @@ struct RouteReducer{
             switch action {
             case let .fetchRoute(id):
                 state.isLoading = true
+                state.errorMessage = nil
                 return .run {[] send in
                     let result = await self.remoteClient.getRoute(id)
                     await send(.fetchRouteResponse(result))

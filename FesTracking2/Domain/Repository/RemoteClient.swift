@@ -12,10 +12,10 @@ import Combine
 import ComposableArchitecture
 
 struct RemoteClient {
-    var getRegions: () async throws -> [Region]
-    var getDistricts: (_ regionId: UUID) async throws -> [District]
-    var getRouteList: (_ districtId: UUID) async throws -> [RouteSummary]
-    var getRoute: (_ routeId: UUID) async -> Result<Route,RemoteError>
+    var getRegions: () async  -> Result<[Region], RemoteError>
+    var getDistricts: (_ regionId: UUID) async -> Result<[District], RemoteError>
+    var getRouteSummaries: (_ districtId: UUID) async -> Result<[RouteSummary], RemoteError>
+    var getRoute: (_ routeId: UUID) async -> Result<Route, RemoteError>
 }
 
 

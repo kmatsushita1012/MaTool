@@ -27,7 +27,8 @@
 		298BD7B12D71E46900CB63F1 /* FesTracking2Tests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 298BD7B02D71E46900CB63F1 /* FesTracking2Tests.swift */; };
 		298BD7BB2D71E46900CB63F1 /* FesTracking2UITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 298BD7BA2D71E46900CB63F1 /* FesTracking2UITests.swift */; };
 		298BD7BD2D71E46900CB63F1 /* FesTracking2UITestsLaunchTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 298BD7BC2D71E46900CB63F1 /* FesTracking2UITestsLaunchTests.swift */; };
-		299755F32D748768006CA04D /* RouteSummariesReducer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 299755F22D748768006CA04D /* RouteSummariesReducer.swift */; };
+		299755F32D748768006CA04D /* DistrictReducer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 299755F22D748768006CA04D /* DistrictReducer.swift */; };
+		299755F52D748C4F006CA04D /* RegionReducer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 299755F42D748C4F006CA04D /* RegionReducer.swift */; };
 		29CF49082D7425F600036D28 /* NetworkManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29CF49072D7425F600036D28 /* NetworkManager.swift */; };
 		29CF490A2D74262300036D28 /* RemoteLiveClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29CF49092D74262300036D28 /* RemoteLiveClient.swift */; };
 		29CF490C2D74263400036D28 /* RemoteMockClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29CF490B2D74263400036D28 /* RemoteMockClient.swift */; };
@@ -80,7 +81,8 @@
 		298BD7B62D71E46900CB63F1 /* FesTracking2UITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = FesTracking2UITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		298BD7BA2D71E46900CB63F1 /* FesTracking2UITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FesTracking2UITests.swift; sourceTree = "<group>"; };
 		298BD7BC2D71E46900CB63F1 /* FesTracking2UITestsLaunchTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FesTracking2UITestsLaunchTests.swift; sourceTree = "<group>"; };
-		299755F22D748768006CA04D /* RouteSummariesReducer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RouteSummariesReducer.swift; sourceTree = "<group>"; };
+		299755F22D748768006CA04D /* DistrictReducer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DistrictReducer.swift; sourceTree = "<group>"; };
+		299755F42D748C4F006CA04D /* RegionReducer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RegionReducer.swift; sourceTree = "<group>"; };
 		29CF49072D7425F600036D28 /* NetworkManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NetworkManager.swift; sourceTree = "<group>"; };
 		29CF49092D74262300036D28 /* RemoteLiveClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RemoteLiveClient.swift; sourceTree = "<group>"; };
 		29CF490B2D74263400036D28 /* RemoteMockClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RemoteMockClient.swift; sourceTree = "<group>"; };
@@ -281,8 +283,9 @@
 		29CF49152D74315300036D28 /* Logic */ = {
 			isa = PBXGroup;
 			children = (
+				299755F42D748C4F006CA04D /* RegionReducer.swift */,
+				299755F22D748768006CA04D /* DistrictReducer.swift */,
 				29CF49162D74317400036D28 /* RouteReducer.swift */,
-				299755F22D748768006CA04D /* RouteSummariesReducer.swift */,
 			);
 			path = Logic;
 			sourceTree = "<group>";
@@ -514,7 +517,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				2983AB7A2D741674002F6CB5 /* Share.swift in Sources */,
-				299755F32D748768006CA04D /* RouteSummariesReducer.swift in Sources */,
+				299755F32D748768006CA04D /* DistrictReducer.swift in Sources */,
 				298BD7A02D71E46600CB63F1 /* ContentView.swift in Sources */,
 				29CF49132D7426A400036D28 /* LocalClient.swift in Sources */,
 				298BD7A22D71E46600CB63F1 /* Item.swift in Sources */,
@@ -526,6 +529,7 @@
 				29CF49192D7440EB00036D28 /* Extension.swift in Sources */,
 				29CF49112D74269A00036D28 /* RemoteClient.swift in Sources */,
 				29CF490C2D74263400036D28 /* RemoteMockClient.swift in Sources */,
+				299755F52D748C4F006CA04D /* RegionReducer.swift in Sources */,
 				29CF490A2D74262300036D28 /* RemoteLiveClient.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
