@@ -1,6 +1,6 @@
 
 ENV["FASTLANE_XCODEBUILD_SETTINGS_TIMEOUT"] = "1800" #タイムアウトして失敗を防ぐため
-ENV['XCODE_VERSION'] = "14.3.1" #最新のXcodeを指定
+ENV['XCODE_VERSION'] = "15.4" #最新のXcodeを指定
 default_platform(:ios)
 
 platform :ios do
