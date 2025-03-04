@@ -34,7 +34,7 @@ platform :ios do
                 provisioningProfiles: {
                     "StudioMK.FesTracking" => "FesTracking2" #左バンドルID　右provisioning名
                 }
-            }
+            },
             xcodebuild_settings: {
                 "OTHER_SWIFT_FLAGS" => "-skipMacroValidation" # xcodebuildオプションを追加
             }
