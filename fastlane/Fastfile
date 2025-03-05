@@ -1,6 +1,6 @@
 
-ENV["FASTLANE_XCODEBUILD_SETTINGS_TIMEOUT"] = "1800" #タイムアウトして失敗を防ぐため
-ENV['XCODE_VERSION'] = "15.4" #最新のXcodeを指定
+ENV["FASTLANE_XCODEBUILD_SETTINGS_TIMEOUT"] = "1800"
+ENV['XCODE_VERSION'] = "16.2"
 default_platform(:ios)
 
 platform :ios do
@@ -26,20 +26,20 @@ platform :ios do
         import_certificates_and_provisioning_profile
         build_app(
             workspace: "FesTracking2.xcworkspace",
-            scheme: "FesTracking2_AppDistribution", #ビルドしたいスキーム
+            scheme: "FesTracking2_AppDistribution",
             configuration: "Release", 
             clean: true,
             export_options: {
-                method: "ad-hoc", #AdhocやEnterpriseなど
+                method: "ad-hoc",
                 provisioningProfiles: {
-                    "StudioMK.FesTracking" => "FesTracking2" #左バンドルID　右provisioning名
+                    "StudioMK.FesTracking" => "FesTracking2" 
                 }
             },
         )
 
         firebase_app_distribution(
-            app: ENV["FIREBASE_APP_ID"], #firebaseのAppID
-            groups: "testers", #テスターのgroup名
+            app: ENV["FIREBASE_APP_ID"],
+            groups: "testers",
             release_notes: "test",
             firebase_cli_path: `which firebase`.strip()
         )

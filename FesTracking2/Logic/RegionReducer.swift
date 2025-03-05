@@ -21,7 +21,7 @@ enum RegionAction: Equatable {
     case fetchDistrictsResponse(Result<[District], RemoteError>)
 }
 
-struct RegionReducer: Reducer<RegionState,RegionAction>{
+struct RegionReducer: Reducer{
     
     @Dependency(\.remoteClient) var remoteClient
     

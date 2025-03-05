@@ -30,22 +30,30 @@ let normal = RemoteClient(
             Route(
                 id: UUID(),
                 points: [
-                    Point(coordinate: Coordinate(latitude: 34.777681, longitude: 138.007029), title: "出発", time: Time(hour: 9, minute: 0)),
-                    Point(coordinate: Coordinate(latitude: 34.778314, longitude: 138.008176), title: "到着", description: "お疲れ様です", time: Time(hour: 12, minute: 0))
+                    Point(coordinate: Coordinate(latitude: 34.777681, longitude: 138.007029), title: "出発", time: Time(hour: 9, minute: 0),isPassed: true),
+                    Point(coordinate: Coordinate(latitude: 34.778314, longitude: 138.008176), title: "到着", description: "お疲れ様です", time: Time(hour: 12, minute: 0),isPassed: true)
                 ],
                 segments: [
                     Segment(
-                        points:[
+                        [
                             Coordinate(latitude: 34.777681, longitude: 138.007029),
                             Coordinate(latitude: 34.777730, longitude: 138.008174),
                             Coordinate(latitude: 34.778314, longitude: 138.008176),
                         ]
                     )
                 ],
-                current: Point(coordinate: Coordinate(latitude: 34.777681, longitude: 138.007029), title: "屋台", time: Time(hour: 9, minute: 1)),
+                current: Location(coordinate: Coordinate(latitude: 34.777681, longitude: 138.007029),time: Time(hour: 9, minute: 1)),
                 date: SimpleDate(year: 2025, month: 10, day: 12),
                 title: "午後",
-                description: "省略"
+                description: "省略",
+                start: Time(
+                    hour:9,
+                    minute:00
+                ),
+                goal: Time(
+                    hour:12,
+                    minute: 00
+                )
             )
         )
     })

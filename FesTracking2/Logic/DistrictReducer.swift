@@ -22,7 +22,7 @@ enum DistrictAction: Equatable {
     case fetchSummmariesResponse(Result<[RouteSummary], RemoteError>)
 }
 
-struct DistrictReducer: Reducer<DistrictState, DistrictAction>{
+struct DistrictReducer: Reducer{
     
     @Dependency(\.remoteClient) var remoteClient
     
