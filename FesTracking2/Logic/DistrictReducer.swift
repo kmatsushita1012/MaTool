@@ -9,7 +9,6 @@ import ComposableArchitecture
 import Foundation
 import Dependencies
 
-protocol DistrictFeature: Reducer<DistrictState, DistrictAction>{}
 
 struct DistrictState: Equatable {
     var district: District
@@ -23,7 +22,7 @@ enum DistrictAction: Equatable {
     case fetchSummmariesResponse(Result<[RouteSummary], RemoteError>)
 }
 
-struct DistrictReducer: DistrictFeature{
+struct DistrictReducer: Reducer<DistrictState, DistrictAction>{
     
     @Dependency(\.remoteClient) var remoteClient
     

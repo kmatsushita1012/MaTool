@@ -8,16 +8,3 @@
 ## TCA
 [TCAでGithubリポジトリ検索アプリを作ってみよう①](https://qiita.com/takehilo/items/814319d4666fef402a41)
 [Refreshable API を TCA で使う](https://www.docswell.com/s/kalupas226/KEER8K-2021-11-13-123255#p30)
-## ドメイン
-- Route
-    - 日付
-    - 名称
-    - 出発時刻
-    - 到着時刻
-    - Segment
-        - List[座標]
-    - Point
-        - 座標
-        - title
-        - discription
-        - 時刻
