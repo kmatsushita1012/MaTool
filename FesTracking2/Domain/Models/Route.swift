@@ -23,13 +23,15 @@ struct RouteSummary: Codable,Equatable{
 
 struct Route: Codable,Equatable{
     let id: UUID
-    let points: [Point]
-    let segments: [Segment]
-    let current: Point?
     let date:SimpleDate
     let title: String
     let description: String?
-    init(id: UUID, points: [Point], segments: [Segment], current: Point?=nil, date: SimpleDate, title: String, description: String?=nil) {
+    let points: [Point]
+    let segments: [Segment]
+    let current: Point?
+    let start: Time
+    let goal: Time
+    init(id: UUID, points: [Point], segments: [Segment], current: Point?=nil, date: SimpleDate, title: String, description: String?=nil,start: Time, goal: Time) {
         self.id = id
         self.points = points
         self.segments = segments
@@ -37,6 +39,8 @@ struct Route: Codable,Equatable{
         self.date = date
         self.title = title
         self.description = description
+        self.start = start
+        self.goal = goal
     }
     
     static func == (lhs: Route, rhs: Route) -> Bool {
@@ -49,17 +53,29 @@ struct Point: Codable{
     let title: String?
     let description: String?
     let time: Time?
-    init(coordinate: Coordinate, title: String?=nil, description: String?=nil, time: Time?=nil) {
+    let isPassed: Bool
+    init(coordinate: Coordinate, title: String?=nil, description: String?=nil, time: Time?=nil, isPassed: Bool) {
         self.coordinate = coordinate
         self.title = title
         self.description = description
         self.time = time
+        self.isPassed = isPassed
     }
 }
 
 struct Segment: Codable{
-    let points: [Coordinate]
-    init(points: [Coordinate]) {
-        self.points = points
+    let coordinates: [Coordinate]
+    
+    init(coordinates: [Coordinate]) {
+        self.coordinates = coordinates
+    }
+}
+
+struct Location: Codable{
+    let coordinate: Coordinate
+    let time: Time
+    init(coordinate: Coordinate, time: Time) {
+        self.coordinate = coordinate
+        self.time = time
     }
 }

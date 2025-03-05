@@ -9,8 +9,6 @@ import Foundation
 import ComposableArchitecture
 import Dependencies
 
-protocol RegionFeature: Reducer<RegionState,RegionAction>{}
-
 struct RegionState: Equatable {
     var region: Region
     var districts: [District]
@@ -23,7 +21,7 @@ enum RegionAction: Equatable {
     case fetchDistrictsResponse(Result<[District], RemoteError>)
 }
 
-struct RegionReducer: RegionFeature{
+struct RegionReducer: Reducer<RegionState,RegionAction>{
     
     @Dependency(\.remoteClient) var remoteClient
     

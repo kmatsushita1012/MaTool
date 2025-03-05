@@ -10,7 +10,6 @@ import Foundation
 import Dependencies
 import DependenciesMacros
 
-protocol RouteFeature:Reducer<RouteState,RouteAction> {}
 
 struct RouteState: Equatable {
     var route: Route
@@ -23,11 +22,12 @@ enum RouteAction: Equatable {
     case fetchRouteResponse(Result<Route, RemoteError>)
 }
 
-struct RouteReducer:RouteFeature{
+struct RouteReducer:Reducer<RouteState,RouteAction>{
     
     @Dependency(\.remoteClient) var remoteClient
     
     var body: some Reducer<RouteState, RouteAction> {
+//        Store(initialState: RouteState(route: Route(from: "")), reducer: RouteReducer())
         Reduce { state, action in
             switch action {
             case let .fetchRoute(id):
