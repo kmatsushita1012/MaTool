@@ -28,10 +28,10 @@ struct Route: Codable,Equatable{
     let description: String?
     let points: [Point]
     let segments: [Segment]
-    let current: Point?
+    let current: Location?
     let start: Time
     let goal: Time
-    init(id: UUID, points: [Point], segments: [Segment], current: Point?=nil, date: SimpleDate, title: String, description: String?=nil,start: Time, goal: Time) {
+    init(id: UUID, points: [Point], segments: [Segment], current: Location?=nil, date: SimpleDate, title: String, description: String?=nil,start: Time, goal: Time) {
         self.id = id
         self.points = points
         self.segments = segments
@@ -66,7 +66,7 @@ struct Point: Codable{
 struct Segment: Codable{
     let coordinates: [Coordinate]
     
-    init(coordinates: [Coordinate]) {
+    init(_ coordinates: [Coordinate]) {
         self.coordinates = coordinates
     }
 }
