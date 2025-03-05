@@ -39,6 +39,9 @@ jobs:
       - name: list files
         run: ls -l
 
+      - name: Set Skipping Macro
+        run: defaults write com.apple.dt.Xcode IDESkipMacroFingerprintValidation -bool YES
+
       - name: Enterprise Build and App Distribution
         env:
           KEYCHAIN_PASSWORD: ${{ secrets.KEYCHAIN_PASSWORD }}
