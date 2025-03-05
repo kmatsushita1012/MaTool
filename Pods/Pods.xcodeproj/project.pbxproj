@@ -31,20 +31,20 @@
 /* Begin PBXFileReference section */
 		1EBBE230B3E87CC80D8C61E79A1D18C0 /* Pods-FesTracking2Tests-acknowledgements.plist */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.plist.xml; path = "Pods-FesTracking2Tests-acknowledgements.plist"; sourceTree = "<group>"; };
 		2327741AB5CC7D561980A8F56F26082A /* Pods-FesTracking2-FesTracking2UITests.modulemap */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.module; path = "Pods-FesTracking2-FesTracking2UITests.modulemap"; sourceTree = "<group>"; };
-		2D8319879817CFBEA6A0127A2104D38C /* Pods-FesTracking2-FesTracking2UITests */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; name = "Pods-FesTracking2-FesTracking2UITests"; path = Pods_FesTracking2_FesTracking2UITests.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		2D8319879817CFBEA6A0127A2104D38C /* Pods_FesTracking2_FesTracking2UITests.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_FesTracking2_FesTracking2UITests.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		37928D477CDEC0158818443D76F8BD92 /* Pods-FesTracking2-FesTracking2UITests-dummy.m */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.c.objc; path = "Pods-FesTracking2-FesTracking2UITests-dummy.m"; sourceTree = "<group>"; };
 		384DDA2CB25005BD6479B5987C619DD4 /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS18.0.sdk/System/Library/Frameworks/Foundation.framework; sourceTree = DEVELOPER_DIR; };
 		3F3D06291C1C18B237A73B80F8176905 /* Pods-FesTracking2Tests.modulemap */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.module; path = "Pods-FesTracking2Tests.modulemap"; sourceTree = "<group>"; };
 		4559DEDE17D89CF4FEA6DDA4746D6467 /* Pods-FesTracking2-FesTracking2UITests-Info.plist */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.plist.xml; path = "Pods-FesTracking2-FesTracking2UITests-Info.plist"; sourceTree = "<group>"; };
 		46E62923D25059A0D7717019F5B8F35C /* Pods-FesTracking2.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; path = "Pods-FesTracking2.release.xcconfig"; sourceTree = "<group>"; };
 		52130F39839514A6CEF3AADB4A758A00 /* Pods-FesTracking2Tests-Info.plist */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.plist.xml; path = "Pods-FesTracking2Tests-Info.plist"; sourceTree = "<group>"; };
-		58DE68432B5D87ED4D375E6C9A2BEAE0 /* Pods-FesTracking2Tests */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; name = "Pods-FesTracking2Tests"; path = Pods_FesTracking2Tests.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		58DE68432B5D87ED4D375E6C9A2BEAE0 /* Pods_FesTracking2Tests.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_FesTracking2Tests.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		77CEB6C7272CB3A6F3F526F7D428CBAF /* Pods-FesTracking2.modulemap */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.module; path = "Pods-FesTracking2.modulemap"; sourceTree = "<group>"; };
 		7EEF24FE38AB6FF32EFC9DA3ED7E752D /* Pods-FesTracking2-umbrella.h */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.c.h; path = "Pods-FesTracking2-umbrella.h"; sourceTree = "<group>"; };
 		921FDBF190E67EE8A9955F78776FC7E6 /* Pods-FesTracking2Tests.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; path = "Pods-FesTracking2Tests.release.xcconfig"; sourceTree = "<group>"; };
 		94DB4F30074F9FE8FE6CAC54D8F2188F /* Pods-FesTracking2-FesTracking2UITests-acknowledgements.plist */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.plist.xml; path = "Pods-FesTracking2-FesTracking2UITests-acknowledgements.plist"; sourceTree = "<group>"; };
 		9CC59CABB3426B83EF5D55B48734DE22 /* Pods-FesTracking2-acknowledgements.plist */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.plist.xml; path = "Pods-FesTracking2-acknowledgements.plist"; sourceTree = "<group>"; };
-		9D940727FF8FB9C785EB98E56350EF41 /* Podfile */ = {isa = PBXFileReference; explicitFileType = text.script.ruby; includeInIndex = 1; indentWidth = 2; lastKnownFileType = text; name = Podfile; path = ../Podfile; sourceTree = SOURCE_ROOT; tabWidth = 2; xcLanguageSpecificationIdentifier = xcode.lang.ruby; };
+		9D940727FF8FB9C785EB98E56350EF41 /* Podfile */ = {isa = PBXFileReference; explicitFileType = text.script.ruby; includeInIndex = 1; indentWidth = 2; name = Podfile; path = ../Podfile; sourceTree = SOURCE_ROOT; tabWidth = 2; };
 		A91BD8279F9E5D3E7283293406B10D54 /* Pods-FesTracking2Tests-acknowledgements.markdown */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text; path = "Pods-FesTracking2Tests-acknowledgements.markdown"; sourceTree = "<group>"; };
 		AA0B734ADF34D653F61EAE3FA0EA453B /* Pods-FesTracking2-Info.plist */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.plist.xml; path = "Pods-FesTracking2-Info.plist"; sourceTree = "<group>"; };
 		B4B5F53AC5B29110FCB85AE488B6CC2A /* Pods-FesTracking2-FesTracking2UITests.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; path = "Pods-FesTracking2-FesTracking2UITests.debug.xcconfig"; sourceTree = "<group>"; };
@@ -53,7 +53,7 @@
 		CFE122A76BE08A40402EB675BC70ADDF /* Pods-FesTracking2Tests-umbrella.h */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.c.h; path = "Pods-FesTracking2Tests-umbrella.h"; sourceTree = "<group>"; };
 		D440BF980EF9677FA28FB49E9F84C4D8 /* Pods-FesTracking2Tests-dummy.m */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.c.objc; path = "Pods-FesTracking2Tests-dummy.m"; sourceTree = "<group>"; };
 		E0F0FA02941E1C47642DE2B0A867D124 /* Pods-FesTracking2-FesTracking2UITests-acknowledgements.markdown */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text; path = "Pods-FesTracking2-FesTracking2UITests-acknowledgements.markdown"; sourceTree = "<group>"; };
-		E4B3D37C5E8038042306F42F6DCD639D /* Pods-FesTracking2 */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; name = "Pods-FesTracking2"; path = Pods_FesTracking2.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		E4B3D37C5E8038042306F42F6DCD639D /* Pods_FesTracking2.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_FesTracking2.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		E9C3713A0069E9D2440D7B6C33843227 /* Pods-FesTracking2-FesTracking2UITests-umbrella.h */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.c.h; path = "Pods-FesTracking2-FesTracking2UITests-umbrella.h"; sourceTree = "<group>"; };
 		F04EAA68A0F24B4863DF3D251C5D8C0E /* Pods-FesTracking2-FesTracking2UITests.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; path = "Pods-FesTracking2-FesTracking2UITests.release.xcconfig"; sourceTree = "<group>"; };
 		F96326043DC9E4BC4C0DB4E09A0CB0AA /* Pods-FesTracking2-dummy.m */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.c.objc; path = "Pods-FesTracking2-dummy.m"; sourceTree = "<group>"; };
@@ -117,9 +117,9 @@
 		5A91AEB69428A46E020990C5E40BC8B0 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				E4B3D37C5E8038042306F42F6DCD639D /* Pods-FesTracking2 */,
-				2D8319879817CFBEA6A0127A2104D38C /* Pods-FesTracking2-FesTracking2UITests */,
-				58DE68432B5D87ED4D375E6C9A2BEAE0 /* Pods-FesTracking2Tests */,
+				E4B3D37C5E8038042306F42F6DCD639D /* Pods_FesTracking2.framework */,
+				2D8319879817CFBEA6A0127A2104D38C /* Pods_FesTracking2_FesTracking2UITests.framework */,
+				58DE68432B5D87ED4D375E6C9A2BEAE0 /* Pods_FesTracking2Tests.framework */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -227,7 +227,7 @@
 			);
 			name = "Pods-FesTracking2";
 			productName = Pods_FesTracking2;
-			productReference = E4B3D37C5E8038042306F42F6DCD639D /* Pods-FesTracking2 */;
+			productReference = E4B3D37C5E8038042306F42F6DCD639D /* Pods_FesTracking2.framework */;
 			productType = "com.apple.product-type.framework";
 		};
 		929BB69BF62941207A266854504D6E27 /* Pods-FesTracking2-FesTracking2UITests */ = {
@@ -245,7 +245,7 @@
 			);
 			name = "Pods-FesTracking2-FesTracking2UITests";
 			productName = Pods_FesTracking2_FesTracking2UITests;
-			productReference = 2D8319879817CFBEA6A0127A2104D38C /* Pods-FesTracking2-FesTracking2UITests */;
+			productReference = 2D8319879817CFBEA6A0127A2104D38C /* Pods_FesTracking2_FesTracking2UITests.framework */;
 			productType = "com.apple.product-type.framework";
 		};
 		CD5BE6BF6E8E1DD85B7E7CD2D835C575 /* Pods-FesTracking2Tests */ = {
@@ -264,7 +264,7 @@
 			);
 			name = "Pods-FesTracking2Tests";
 			productName = Pods_FesTracking2Tests;
-			productReference = 58DE68432B5D87ED4D375E6C9A2BEAE0 /* Pods-FesTracking2Tests */;
+			productReference = 58DE68432B5D87ED4D375E6C9A2BEAE0 /* Pods_FesTracking2Tests.framework */;
 			productType = "com.apple.product-type.framework";
 		};
 /* End PBXNativeTarget section */
@@ -285,8 +285,6 @@
 				en,
 			);
 			mainGroup = CF1408CF629C7361332E53B88F7BD30C;
-			minimizedProjectReferenceProxies = 0;
-			preferredProjectObjectVersion = 77;
 			productRefGroup = 5A91AEB69428A46E020990C5E40BC8B0 /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
