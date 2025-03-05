@@ -13,10 +13,11 @@ jobs:
         with:
           node-version: "18.x"
 
-      - uses: actions/cache@v4
+      - uses: actions/cache@v3
+        name: "Cache: SPM"
         with:
-          path: .build
-          key: ${{ runner.os }}-spm-${{ hashFiles('**/Package.resolved') }}
+          path: ~/Library/Developer/Xcode/DerivedData/AppName*/SourcePackages/
+          key: ${{ runner.os }}-spm-${{ hashFiles('FesTracking.xcworkspace/xcshareddata/swiftpm/Package.resolved') }}
           restore-keys: |
             ${{ runner.os }}-spm-
 
