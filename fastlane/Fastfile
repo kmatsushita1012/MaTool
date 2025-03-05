@@ -30,7 +30,7 @@ platform :ios do
             configuration: "Release", 
             clean: true,
             export_options: {
-                method: "ad-hoc",
+                method: "release-testing",
                 provisioningProfiles: {
                     "StudioMK.FesTracking" => "FesTracking2" 
                 }
