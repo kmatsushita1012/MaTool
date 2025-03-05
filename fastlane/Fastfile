@@ -30,7 +30,7 @@ platform :ios do
             configuration: "Release", 
             clean: true,
             export_options: {
-                method: "release-testing",
+                method: "app-store",
                 provisioningProfiles: {
                     "StudioMK.FesTracking" => "FesTracking2" 
                 }
