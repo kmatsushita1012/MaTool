@@ -9,7 +9,6 @@
 /* Begin PBXBuildFile section */
 		255E9767B36B35B5699F4165 /* Pods_FesTracking2Tests.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 17A70AED86F1CA931E10BF8A /* Pods_FesTracking2Tests.framework */; };
 		29384E7F2D71F8DB004D153D /* FirebaseAnalytics in Frameworks */ = {isa = PBXBuildFile; productRef = 29384E7E2D71F8DB004D153D /* FirebaseAnalytics */; };
-		29384E842D72005F004D153D /* ComposableArchitecture in Frameworks */ = {isa = PBXBuildFile; productRef = 29384E832D72005F004D153D /* ComposableArchitecture */; };
 		2983AB7A2D741674002F6CB5 /* Share.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2983AB782D7415B2002F6CB5 /* Share.swift */; };
 		2983AB7D2D74168F002F6CB5 /* Route.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2983AB7C2D74168F002F6CB5 /* Route.swift */; };
 		2983AB7F2D7419AB002F6CB5 /* Information.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2983AB7E2D7419AB002F6CB5 /* Information.swift */; };
@@ -18,7 +17,6 @@
 		2983AB872D741C19002F6CB5 /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = 2983AB822D741C19002F6CB5 /* GoogleService-Info.plist */; };
 		2983AB882D741C19002F6CB5 /* Gemfile.lock in Resources */ = {isa = PBXBuildFile; fileRef = 2983AB832D741C19002F6CB5 /* Gemfile.lock */; };
 		2983AB892D741C19002F6CB5 /* Podfile in Resources */ = {isa = PBXBuildFile; fileRef = 2983AB842D741C19002F6CB5 /* Podfile */; };
-		2983AB8B2D741C55002F6CB5 /* .swiftlint.yml in Resources */ = {isa = PBXBuildFile; fileRef = 2983AB8A2D741C55002F6CB5 /* .swiftlint.yml */; };
 		298BD79E2D71E46600CB63F1 /* FesTracking2App.swift in Sources */ = {isa = PBXBuildFile; fileRef = 298BD79D2D71E46600CB63F1 /* FesTracking2App.swift */; };
 		298BD7A02D71E46600CB63F1 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 298BD79F2D71E46600CB63F1 /* ContentView.swift */; };
 		298BD7A22D71E46600CB63F1 /* Item.swift in Sources */ = {isa = PBXBuildFile; fileRef = 298BD7A12D71E46600CB63F1 /* Item.swift */; };
@@ -36,6 +34,7 @@
 		29CF49132D7426A400036D28 /* LocalClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29CF49122D7426A400036D28 /* LocalClient.swift */; };
 		29CF49172D74317400036D28 /* RouteReducer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29CF49162D74317400036D28 /* RouteReducer.swift */; };
 		29CF49192D7440EB00036D28 /* Extension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29CF49182D7440EB00036D28 /* Extension.swift */; };
+		29DFC69C2D788EBC00AE4CEA /* ComposableArchitecture in Frameworks */ = {isa = PBXBuildFile; productRef = 29DFC69B2D788EBC00AE4CEA /* ComposableArchitecture */; };
 		59414DD9ADD88C0A71E94FE3 /* Pods_FesTracking2_FesTracking2UITests.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A8F61DA4134BD89A5D2377A2 /* Pods_FesTracking2_FesTracking2UITests.framework */; };
 		D78195157F20422B3B5A8EA3 /* Pods_FesTracking2.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = EF51269A5D5AB06C2B7C01CD /* Pods_FesTracking2.framework */; };
 /* End PBXBuildFile section */
@@ -69,7 +68,6 @@
 		2983AB822D741C19002F6CB5 /* GoogleService-Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = "GoogleService-Info.plist"; sourceTree = "<group>"; };
 		2983AB832D741C19002F6CB5 /* Gemfile.lock */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = Gemfile.lock; sourceTree = "<group>"; };
 		2983AB842D741C19002F6CB5 /* Podfile */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = Podfile; sourceTree = "<group>"; };
-		2983AB8A2D741C55002F6CB5 /* .swiftlint.yml */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.yaml; path = .swiftlint.yml; sourceTree = "<group>"; };
 		298BD79A2D71E46600CB63F1 /* FesTracking2.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = FesTracking2.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		298BD79D2D71E46600CB63F1 /* FesTracking2App.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FesTracking2App.swift; sourceTree = "<group>"; };
 		298BD79F2D71E46600CB63F1 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
@@ -103,9 +101,9 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				29384E842D72005F004D153D /* ComposableArchitecture in Frameworks */,
 				29384E7F2D71F8DB004D153D /* FirebaseAnalytics in Frameworks */,
 				D78195157F20422B3B5A8EA3 /* Pods_FesTracking2.framework in Frameworks */,
+				29DFC69C2D788EBC00AE4CEA /* ComposableArchitecture in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -163,7 +161,6 @@
 				2983AB812D741C18002F6CB5 /* Gemfile */,
 				2983AB832D741C19002F6CB5 /* Gemfile.lock */,
 				2983AB822D741C19002F6CB5 /* GoogleService-Info.plist */,
-				2983AB8A2D741C55002F6CB5 /* .swiftlint.yml */,
 				2983AB842D741C19002F6CB5 /* Podfile */,
 				2983AB802D741C18002F6CB5 /* README.md */,
 				298BD79C2D71E46600CB63F1 /* FesTracking2 */,
@@ -319,7 +316,7 @@
 			name = FesTracking2;
 			packageProductDependencies = (
 				29384E7E2D71F8DB004D153D /* FirebaseAnalytics */,
-				29384E832D72005F004D153D /* ComposableArchitecture */,
+				29DFC69B2D788EBC00AE4CEA /* ComposableArchitecture */,
 			);
 			productName = FesTracking2;
 			productReference = 298BD79A2D71E46600CB63F1 /* FesTracking2.app */;
@@ -397,7 +394,7 @@
 			mainGroup = 298BD7912D71E46600CB63F1;
 			packageReferences = (
 				29384E7D2D71F8DB004D153D /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */,
-				29384E822D72005F004D153D /* XCRemoteSwiftPackageReference "swift-composable-architecture" */,
+				29DFC69A2D788EBC00AE4CEA /* XCRemoteSwiftPackageReference "swift-composable-architecture" */,
 			);
 			productRefGroup = 298BD79B2D71E46600CB63F1 /* Products */;
 			projectDirPath = "";
@@ -415,7 +412,6 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				2983AB8B2D741C55002F6CB5 /* .swiftlint.yml in Resources */,
 				2983AB882D741C19002F6CB5 /* Gemfile.lock in Resources */,
 				2983AB862D741C19002F6CB5 /* Gemfile in Resources */,
 				2983AB852D741C19002F6CB5 /* README.md in Resources */,
@@ -884,12 +880,12 @@
 				minimumVersion = 11.9.0;
 			};
 		};
-		29384E822D72005F004D153D /* XCRemoteSwiftPackageReference "swift-composable-architecture" */ = {
+		29DFC69A2D788EBC00AE4CEA /* XCRemoteSwiftPackageReference "swift-composable-architecture" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/pointfreeco/swift-composable-architecture";
 			requirement = {
 				kind = upToNextMajorVersion;
-				minimumVersion = 1.17.1;
+				minimumVersion = 1.18.0;
 			};
 		};
 /* End XCRemoteSwiftPackageReference section */
@@ -900,9 +896,9 @@
 			package = 29384E7D2D71F8DB004D153D /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
 			productName = FirebaseAnalytics;
 		};
-		29384E832D72005F004D153D /* ComposableArchitecture */ = {
+		29DFC69B2D788EBC00AE4CEA /* ComposableArchitecture */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = 29384E822D72005F004D153D /* XCRemoteSwiftPackageReference "swift-composable-architecture" */;
+			package = 29DFC69A2D788EBC00AE4CEA /* XCRemoteSwiftPackageReference "swift-composable-architecture" */;
 			productName = ComposableArchitecture;
 		};
 /* End XCSwiftPackageProductDependency section */
