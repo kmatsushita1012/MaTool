@@ -16,7 +16,7 @@ struct RouteDomainAdminState:Equatable{
 }
 
 extension RouteDomainAdminState{
-    mutating func setRoute(_ route: Route) -> Effect<RouteDomainAdminReducer.Action> {
+    mutating func setRoute(_ route: Route) -> Effect<RouteDomainAdminAction> {
         self.route = route
         isLoading = false
         errorMessage = nil
@@ -28,8 +28,8 @@ extension RouteDomainAdminState{
         }
         return .none
     }
-    mutating func addPoint(_ latitude: Double,_ longitude: Double) -> Effect<RouteDomainAdminAction> {
-        let next = Point(id: UUID(), coordinate: Coordinate(latitude: latitude, longitude: longitude), title: nil, description: nil, time: nil, isPassed: false)
+    mutating func addPoint(_ coordinate: Coordinate) -> Effect<RouteDomainAdminAction> {
+        let next = Point(id: UUID(), coordinate: coordinate, title: nil, description: nil, time: nil, isPassed: false)
         if let last = route.points.last{
             let segment = Segment(id: UUID(), start: last.coordinate, end: next.coordinate)
             route.segments.append(segment)
@@ -82,8 +82,8 @@ enum RouteDomainAdminAction:Equatable{
 }
 
 
-
-struct RouteDomainAdminReducer: Reducer{
+@Reducer
+struct RouteDomainAdminFeature{
     var body: some Reducer<RouteDomainAdminState, RouteDomainAdminAction> {
         Reduce{ state, action in
             switch action {

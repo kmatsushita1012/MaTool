@@ -11,23 +11,23 @@ import Dependencies
 import DependenciesMacros
 
 
-struct RouteState: Equatable {
+struct RouteViewerState: Equatable {
     var route: Route
     var isLoading: Bool = false
     var errorMessage: String?
 }
 
-enum RouteAction: Equatable {
+enum RouteViewerAction: Equatable {
     case fetchRoute(UUID)
     case fetchRouteResponse(Result<Route, RemoteError>)
 }
 
 @Reducer
-struct RouteFeature{
+struct RouteViewerFeature{
     
     @Dependency(\.remoteClient) var remoteClient
     
-    var body: some Reducer<RouteState, RouteAction> {
+    var body: some Reducer<RouteViewerState, RouteViewerAction> {
 //        Store(initialState: RouteState(route: Route(from: "")), reducer: RouteReducer())
         Reduce { state, action in
             switch action {

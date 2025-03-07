@@ -17,7 +17,7 @@ enum SegmentAdminAction: Equatable{
     case receivedCoordinates(Result<[Coordinate],RemoteError>)
 }
 
-struct SegmentAdminReducer:Reducer{
+struct SegmentAdminFeature:Reducer{
     @Dependency(\.remoteClient) var remoteClient
     
     var body:some Reducer<SegmentAdminState,SegmentAdminAction>{

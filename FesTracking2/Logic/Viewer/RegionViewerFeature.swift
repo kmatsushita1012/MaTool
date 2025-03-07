@@ -9,23 +9,24 @@ import Foundation
 import ComposableArchitecture
 import Dependencies
 
-struct RegionState: Equatable {
+struct RegionViewerState: Equatable {
     var region: Region
     var districts: [District]
     var isLoading: Bool = false
     var errorMessage: String?
 }
 
-enum RegionAction: Equatable {
+enum RegionViewerAction: Equatable {
     case setRegion(Region)
     case fetchDistrictsResponse(Result<[District], RemoteError>)
 }
 
-struct RegionReducer: Reducer{
+@Reducer
+struct RegionViewerFeature{
     
     @Dependency(\.remoteClient) var remoteClient
     
-    var body: some Reducer<RegionState, RegionAction> {
+    var body: some Reducer<RegionViewerState, RegionViewerAction> {
         Reduce{state, action in
             switch action {
             case let .setRegion(region):

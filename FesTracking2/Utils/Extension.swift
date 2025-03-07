@@ -8,6 +8,7 @@
 import Foundation
 import Combine
 import ComposableArchitecture
+import MapKit
 
 struct Stack<Element: Equatable>: Equatable{
     private var elements: [Element] = []
@@ -38,5 +39,27 @@ struct Stack<Element: Equatable>: Equatable{
     
     static func == (lhs: Stack<Element>, rhs: Stack<Element>) -> Bool {
         return lhs.elements == rhs.elements
+    }
+}
+
+
+class PointAnnotation: MKPointAnnotation{
+    var id: UUID?
+    static func factory(id: UUID, coordinate: CLLocationCoordinate2D, title: String? = nil, subtitle: String? = nil) -> PointAnnotation{
+        let annotation = PointAnnotation()
+        annotation.id = id
+        annotation.coordinate = coordinate
+        annotation.title = title
+        annotation.subtitle = subtitle
+        return annotation
+    }
+}
+
+class SegmentPolyline:MKPolyline {
+    var id: UUID?
+    static func factory(id: UUID, coordinates: [CLLocationCoordinate2D]) -> SegmentPolyline{
+        let polyline = SegmentPolyline(coordinates: coordinates, count: coordinates.count)
+        polyline.id = id
+        return polyline
     }
 }
