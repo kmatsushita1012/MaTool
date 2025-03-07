@@ -6,6 +6,9 @@ target 'FesTracking2' do
   use_frameworks!
 
   # Pods for FesTracking2
+  pod 'AWSCore'
+  pod 'AWSAuthCore'
+  pod 'AWSMobileClient'
 
   target 'FesTracking2Tests' do
     inherit! :search_paths

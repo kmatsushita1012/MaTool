@@ -6,3 +6,8 @@
 //
 
 import Foundation
+
+struct LocalClient{
+    var set: (_ key: String, _ value: String) -> Void
+    var string:(_ key: String)->String?
+}

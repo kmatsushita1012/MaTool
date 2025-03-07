@@ -27,6 +27,11 @@
 		298BD7BD2D71E46900CB63F1 /* FesTracking2UITestsLaunchTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 298BD7BC2D71E46900CB63F1 /* FesTracking2UITestsLaunchTests.swift */; };
 		299755F32D748768006CA04D /* DistrictReducer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 299755F22D748768006CA04D /* DistrictReducer.swift */; };
 		299755F52D748C4F006CA04D /* RegionReducer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 299755F42D748C4F006CA04D /* RegionReducer.swift */; };
+		2997C2ED2D79CA4B0032566B /* DistrictAdminReducer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2997C2EC2D79CA3E0032566B /* DistrictAdminReducer.swift */; };
+		2997C2EF2D79CB670032566B /* RouteDomainAdminReducer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2997C2EE2D79CB600032566B /* RouteDomainAdminReducer.swift */; };
+		2997C2F12D79D8870032566B /* PointAdminReducer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2997C2F02D79D8820032566B /* PointAdminReducer.swift */; };
+		2997C2F32D79E1130032566B /* SegmentAdminReducer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2997C2F22D79E10B0032566B /* SegmentAdminReducer.swift */; };
+		299DA37D2D7AA0BE005D7A61 /* RouteViewAdminReducer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 299DA37C2D7AA0B6005D7A61 /* RouteViewAdminReducer.swift */; };
 		29CF49082D7425F600036D28 /* NetworkManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29CF49072D7425F600036D28 /* NetworkManager.swift */; };
 		29CF490A2D74262300036D28 /* RemoteLiveClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29CF49092D74262300036D28 /* RemoteLiveClient.swift */; };
 		29CF490C2D74263400036D28 /* RemoteMockClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29CF490B2D74263400036D28 /* RemoteMockClient.swift */; };
@@ -81,6 +86,11 @@
 		298BD7BC2D71E46900CB63F1 /* FesTracking2UITestsLaunchTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FesTracking2UITestsLaunchTests.swift; sourceTree = "<group>"; };
 		299755F22D748768006CA04D /* DistrictReducer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DistrictReducer.swift; sourceTree = "<group>"; };
 		299755F42D748C4F006CA04D /* RegionReducer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RegionReducer.swift; sourceTree = "<group>"; };
+		2997C2EC2D79CA3E0032566B /* DistrictAdminReducer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DistrictAdminReducer.swift; sourceTree = "<group>"; };
+		2997C2EE2D79CB600032566B /* RouteDomainAdminReducer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RouteDomainAdminReducer.swift; sourceTree = "<group>"; };
+		2997C2F02D79D8820032566B /* PointAdminReducer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PointAdminReducer.swift; sourceTree = "<group>"; };
+		2997C2F22D79E10B0032566B /* SegmentAdminReducer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SegmentAdminReducer.swift; sourceTree = "<group>"; };
+		299DA37C2D7AA0B6005D7A61 /* RouteViewAdminReducer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RouteViewAdminReducer.swift; sourceTree = "<group>"; };
 		29CF49072D7425F600036D28 /* NetworkManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NetworkManager.swift; sourceTree = "<group>"; };
 		29CF49092D74262300036D28 /* RemoteLiveClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RemoteLiveClient.swift; sourceTree = "<group>"; };
 		29CF490B2D74263400036D28 /* RemoteMockClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RemoteMockClient.swift; sourceTree = "<group>"; };
@@ -185,11 +195,11 @@
 		298BD79C2D71E46600CB63F1 /* FesTracking2 */ = {
 			isa = PBXGroup;
 			children = (
+				2983AB722D74152C002F6CB5 /* Domain */,
 				29CF49152D74315300036D28 /* Logic */,
 				29CF49062D7425D600036D28 /* Utils */,
 				29CF49032D74244500036D28 /* Infrastructure */,
 				2983AB772D741534002F6CB5 /* Presentation */,
-				2983AB722D74152C002F6CB5 /* Domain */,
 				298BD79D2D71E46600CB63F1 /* FesTracking2App.swift */,
 				298BD79F2D71E46600CB63F1 /* ContentView.swift */,
 				298BD7A12D71E46600CB63F1 /* Item.swift */,
@@ -222,6 +232,28 @@
 				298BD7BC2D71E46900CB63F1 /* FesTracking2UITestsLaunchTests.swift */,
 			);
 			path = FesTracking2UITests;
+			sourceTree = "<group>";
+		};
+		2997C2EA2D79C9940032566B /* Viewer */ = {
+			isa = PBXGroup;
+			children = (
+				299755F42D748C4F006CA04D /* RegionReducer.swift */,
+				299755F22D748768006CA04D /* DistrictReducer.swift */,
+				29CF49162D74317400036D28 /* RouteReducer.swift */,
+			);
+			path = Viewer;
+			sourceTree = "<group>";
+		};
+		2997C2EB2D79C9CE0032566B /* Admin */ = {
+			isa = PBXGroup;
+			children = (
+				2997C2EC2D79CA3E0032566B /* DistrictAdminReducer.swift */,
+				2997C2EE2D79CB600032566B /* RouteDomainAdminReducer.swift */,
+				299DA37C2D7AA0B6005D7A61 /* RouteViewAdminReducer.swift */,
+				2997C2F02D79D8820032566B /* PointAdminReducer.swift */,
+				2997C2F22D79E10B0032566B /* SegmentAdminReducer.swift */,
+			);
+			path = Admin;
 			sourceTree = "<group>";
 		};
 		29CF49032D74244500036D28 /* Infrastructure */ = {
@@ -280,9 +312,8 @@
 		29CF49152D74315300036D28 /* Logic */ = {
 			isa = PBXGroup;
 			children = (
-				299755F42D748C4F006CA04D /* RegionReducer.swift */,
-				299755F22D748768006CA04D /* DistrictReducer.swift */,
-				29CF49162D74317400036D28 /* RouteReducer.swift */,
+				2997C2EB2D79C9CE0032566B /* Admin */,
+				2997C2EA2D79C9940032566B /* Viewer */,
 			);
 			path = Logic;
 			sourceTree = "<group>";
@@ -308,6 +339,7 @@
 				298BD7962D71E46600CB63F1 /* Sources */,
 				298BD7972D71E46600CB63F1 /* Frameworks */,
 				298BD7982D71E46600CB63F1 /* Resources */,
+				1D04B61A2EE0F032841C4904 /* [CP] Embed Pods Frameworks */,
 			);
 			buildRules = (
 			);
@@ -349,6 +381,7 @@
 				298BD7B22D71E46900CB63F1 /* Sources */,
 				298BD7B32D71E46900CB63F1 /* Frameworks */,
 				298BD7B42D71E46900CB63F1 /* Resources */,
+				BDBAC005F7E4CD9B7E491206 /* [CP] Embed Pods Frameworks */,
 			);
 			buildRules = (
 			);
@@ -461,6 +494,23 @@
 			shellScript = "diff \"${PODS_PODFILE_DIR_PATH}/Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [ $? != 0 ] ; then\n    # print error to STDERR\n    echo \"error: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\" >&2\n    exit 1\nfi\n# This output is used by Xcode 'outputs' to avoid re-running this script phase.\necho \"SUCCESS\" > \"${SCRIPT_OUTPUT_FILE_0}\"\n";
 			showEnvVarsInLog = 0;
 		};
+		1D04B61A2EE0F032841C4904 /* [CP] Embed Pods Frameworks */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+				"${PODS_ROOT}/Target Support Files/Pods-FesTracking2/Pods-FesTracking2-frameworks-${CONFIGURATION}-input-files.xcfilelist",
+			);
+			name = "[CP] Embed Pods Frameworks";
+			outputFileListPaths = (
+				"${PODS_ROOT}/Target Support Files/Pods-FesTracking2/Pods-FesTracking2-frameworks-${CONFIGURATION}-output-files.xcfilelist",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-FesTracking2/Pods-FesTracking2-frameworks.sh\"\n";
+			showEnvVarsInLog = 0;
+		};
 		28CE1DC2E45394D5841A774B /* [CP] Check Pods Manifest.lock */ = {
 			isa = PBXShellScriptBuildPhase;
 			buildActionMask = 2147483647;
@@ -505,6 +555,23 @@
 			shellScript = "diff \"${PODS_PODFILE_DIR_PATH}/Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [ $? != 0 ] ; then\n    # print error to STDERR\n    echo \"error: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\" >&2\n    exit 1\nfi\n# This output is used by Xcode 'outputs' to avoid re-running this script phase.\necho \"SUCCESS\" > \"${SCRIPT_OUTPUT_FILE_0}\"\n";
 			showEnvVarsInLog = 0;
 		};
+		BDBAC005F7E4CD9B7E491206 /* [CP] Embed Pods Frameworks */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+				"${PODS_ROOT}/Target Support Files/Pods-FesTracking2-FesTracking2UITests/Pods-FesTracking2-FesTracking2UITests-frameworks-${CONFIGURATION}-input-files.xcfilelist",
+			);
+			name = "[CP] Embed Pods Frameworks";
+			outputFileListPaths = (
+				"${PODS_ROOT}/Target Support Files/Pods-FesTracking2-FesTracking2UITests/Pods-FesTracking2-FesTracking2UITests-frameworks-${CONFIGURATION}-output-files.xcfilelist",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-FesTracking2-FesTracking2UITests/Pods-FesTracking2-FesTracking2UITests-frameworks.sh\"\n";
+			showEnvVarsInLog = 0;
+		};
 /* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
@@ -514,14 +581,19 @@
 			files = (
 				2983AB7A2D741674002F6CB5 /* Share.swift in Sources */,
 				299755F32D748768006CA04D /* DistrictReducer.swift in Sources */,
+				2997C2F12D79D8870032566B /* PointAdminReducer.swift in Sources */,
+				299DA37D2D7AA0BE005D7A61 /* RouteViewAdminReducer.swift in Sources */,
+				2997C2EF2D79CB670032566B /* RouteDomainAdminReducer.swift in Sources */,
 				298BD7A02D71E46600CB63F1 /* ContentView.swift in Sources */,
 				29CF49132D7426A400036D28 /* LocalClient.swift in Sources */,
 				298BD7A22D71E46600CB63F1 /* Item.swift in Sources */,
 				29CF49172D74317400036D28 /* RouteReducer.swift in Sources */,
 				29CF49082D7425F600036D28 /* NetworkManager.swift in Sources */,
+				2997C2ED2D79CA4B0032566B /* DistrictAdminReducer.swift in Sources */,
 				2983AB7F2D7419AB002F6CB5 /* Information.swift in Sources */,
 				2983AB7D2D74168F002F6CB5 /* Route.swift in Sources */,
 				298BD79E2D71E46600CB63F1 /* FesTracking2App.swift in Sources */,
+				2997C2F32D79E1130032566B /* SegmentAdminReducer.swift in Sources */,
 				29CF49192D7440EB00036D28 /* Extension.swift in Sources */,
 				29CF49112D74269A00036D28 /* RemoteClient.swift in Sources */,
 				29CF490C2D74263400036D28 /* RemoteMockClient.swift in Sources */,
@@ -600,7 +672,7 @@
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_TESTABILITY = YES;
-				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				GCC_C_LANGUAGE_STANDARD = gnu17;
 				GCC_DYNAMIC_NO_PIC = NO;
 				GCC_NO_COMMON_BLOCKS = YES;
@@ -663,7 +735,7 @@
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				ENABLE_NS_ASSERTIONS = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
-				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				GCC_C_LANGUAGE_STANDARD = gnu17;
 				GCC_NO_COMMON_BLOCKS = YES;
 				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;

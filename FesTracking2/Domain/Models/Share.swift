@@ -7,12 +7,15 @@
 
 import Foundation
 
-class Coordinate: Codable{
+class Coordinate: Codable, Equatable{
     let latitude: Double
     let longitude: Double
     init(latitude: Double, longitude: Double) {
         self.latitude = latitude
         self.longitude = longitude
+    }
+    static func == (lhs: Coordinate, rhs: Coordinate) -> Bool {
+        return lhs.latitude == rhs.latitude && lhs.longitude == rhs.longitude
     }
 }
     
@@ -35,3 +38,4 @@ class Time: Codable{
         self.minute = minute
     }
 }
+

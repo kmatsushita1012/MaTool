@@ -28,7 +28,7 @@ class Region: Codable,Equatable{
 class District: Codable,Equatable{
     let id: UUID
     let name: String
-    let description: String?
+    var description: String?
     let imagePath:String?
     
     init(id: UUID, name: String, description: String?=nil, imagePath: String?=nil) {
