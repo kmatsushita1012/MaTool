@@ -24,16 +24,16 @@ struct PointAdminFeature: Reducer{
     var body: some Reducer<PointAdminState, PointAdminAction> {
         Reduce { state, action in
             switch action{
-            case let .setPoint(point):
+            case .setPoint(let point):
                 state.point = point
                 return .none
-            case let .setTitle(title):
+            case .setTitle(let title):
                 state.point.title = title
                 return .none
-            case let .setDescription(description):
+            case .setDescription(let description):
                 state.point.description = description
                 return .none
-            case let .setTime(time):
+            case .setTime(let time):
                 state.point.time = time
                 return .none
             case .eraseTime:

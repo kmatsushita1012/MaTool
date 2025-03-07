@@ -41,12 +41,11 @@ struct RouteViewAdminFeature{
         }
         Reduce{ state, action in
             switch action {
-            case let .setRoute(route):
+            case .setRoute(let route):
                 return state.domain.setRoute(route).map( {Action.domain($0)})
-            case let .editPoint(point):
-                
+            case .editPoint(let point):
                 return state.domain.editPoint(point).map( {Action.domain($0)})
-            case let .mapLongPressed(coordinate2D):
+            case .mapLongPressed(let coordinate2D):
                 let coordinate = Coordinate(latitude: coordinate2D.latitude, longitude: coordinate2D.longitude)
                 return state.domain.addPoint(coordinate).map( {Action.domain($0)})
             case .undoButtonTapped:

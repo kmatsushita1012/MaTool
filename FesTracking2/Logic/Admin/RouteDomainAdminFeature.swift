@@ -90,7 +90,7 @@ struct RouteDomainAdminFeature{
             case .receivedResponse(.success(_)):
                 state.isLoading = false
                 return .none
-            case let .receivedResponse(.failure(error)):
+            case .receivedResponse(.failure(let error)):
                 state.isLoading = false
                 state.errorMessage = error.localizedDescription
                 return .none
