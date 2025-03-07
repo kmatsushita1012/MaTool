@@ -29,22 +29,20 @@ let normal = RemoteClient(
         return Result.success(
             Route(
                 id: UUID(),
+                date: SimpleDate(year: 2025, month: 10, day: 12),
+                title: "午後",
                 points: [
-                    Point(coordinate: Coordinate(latitude: 34.777681, longitude: 138.007029), title: "出発", time: Time(hour: 9, minute: 0),isPassed: true),
-                    Point(coordinate: Coordinate(latitude: 34.778314, longitude: 138.008176), title: "到着", description: "お疲れ様です", time: Time(hour: 12, minute: 0),isPassed: true)
+                    Point(id: UUID(),coordinate: Coordinate(latitude: 34.777681, longitude: 138.007029), title: "出発", description: nil, time: Time(hour: 9, minute: 0),isPassed: true),
+                    Point(id: UUID(),coordinate: Coordinate(latitude: 34.778314, longitude: 138.008176), title: "到着", description: "お疲れ様です", time: Time(hour: 12, minute: 0),isPassed: true)
                 ],
                 segments: [
                     Segment(
-                        [
-                            Coordinate(latitude: 34.777681, longitude: 138.007029),
-                            Coordinate(latitude: 34.777730, longitude: 138.008174),
-                            Coordinate(latitude: 34.778314, longitude: 138.008176),
-                        ]
+                        id: UUID(),
+                        start: Coordinate(latitude: 34.777681, longitude: 138.007029),
+                        end: Coordinate(latitude: 34.778314, longitude: 138.008176)
                     )
                 ],
                 current: Location(coordinate: Coordinate(latitude: 34.777681, longitude: 138.007029),time: Time(hour: 9, minute: 1)),
-                date: SimpleDate(year: 2025, month: 10, day: 12),
-                title: "午後",
                 description: "省略",
                 start: Time(
                     hour:9,
@@ -56,4 +54,16 @@ let normal = RemoteClient(
                 )
             )
         )
-    })
+    },
+    postRoute: {_ in
+        return Result.success("Success")
+    },
+    deleteRoute: {_ in
+        return Result.success("Success")
+    },
+    getSegmentCoordinate: { start, end in
+        let mid = Coordinate(latitude: (start.latitude + end.latitude)/2, longitude: (start.latitude + end.latitude)/2)
+        return Result.success([start, mid, end])
+        
+    }
+)

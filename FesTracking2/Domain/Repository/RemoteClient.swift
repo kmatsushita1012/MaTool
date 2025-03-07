@@ -16,6 +16,9 @@ struct RemoteClient {
     var getDistricts: (_ regionId: UUID) async -> Result<[District], RemoteError>
     var getRouteSummaries: (_ districtId: UUID) async -> Result<[RouteSummary], RemoteError>
     var getRoute: (_ routeId: UUID) async -> Result<Route, RemoteError>
+    var postRoute: (_ route: Route) async -> Result<String, RemoteError>
+    var deleteRoute: (_ routeId: UUID) async -> Result<String, RemoteError>
+    var getSegmentCoordinate: (_ start: Coordinate, _ end: Coordinate) async -> Result<[Coordinate],RemoteError>
 }
 
 

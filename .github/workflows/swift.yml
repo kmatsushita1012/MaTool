@@ -16,8 +16,10 @@ jobs:
       - uses: actions/cache@v3
         name: "Cache: SPM"
         with:
-          path: ~/Library/Developer/Xcode/DerivedData/AppName*/SourcePackages/
-          key: ${{ runner.os }}-spm-${{ hashFiles('FesTracking.xcworkspace/xcshareddata/swiftpm/Package.resolved') }}
+          path: |
+            ~/Library/Developer/Xcode/DerivedData/AppName*/SourcePackages/
+          #  ~/.swiftpm/
+          key: ${{ runner.os }}-spm-${{ hashFiles('FesTracking2.xcworkspace/xcshareddata/swiftpm/Package.resolved') }}
           restore-keys: |
             ${{ runner.os }}-spm-
 
