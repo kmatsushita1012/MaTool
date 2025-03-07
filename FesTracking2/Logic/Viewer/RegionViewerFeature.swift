@@ -29,7 +29,7 @@ struct RegionViewerFeature{
     var body: some Reducer<RegionViewerState, RegionViewerAction> {
         Reduce{state, action in
             switch action {
-            case let .setRegion(region):
+            case .setRegion(let region):
                 state.region = region
                 state.isLoading = true
                 state.errorMessage = nil
@@ -37,12 +37,12 @@ struct RegionViewerFeature{
                     let result = await self.remoteClient.getDistricts(state.region.id)
                     await send(.fetchDistrictsResponse(result))
                 }
-            case let .fetchDistrictsResponse(.success(districts)):
+            case .fetchDistrictsResponse(.success(let districts)):
                 state.isLoading = false
                 state.districts = districts
                 return .none
                 
-            case let .fetchDistrictsResponse(.failure(error)):
+            case .fetchDistrictsResponse(.failure(let error)):
                 state.isLoading = false
                 state.errorMessage = error.localizedDescription
                 return .none

@@ -31,19 +31,19 @@ struct RouteViewerFeature{
 //        Store(initialState: RouteState(route: Route(from: "")), reducer: RouteReducer())
         Reduce { state, action in
             switch action {
-            case let .fetchRoute(id):
+            case .fetchRoute(let id):
                 state.isLoading = true
                 state.errorMessage = nil
                 return .run {[] send in
                     let result = await self.remoteClient.getRoute(id)
                     await send(.fetchRouteResponse(result))
                 }
-            case let .fetchRouteResponse(.success(route)):
+            case .fetchRouteResponse(.success(let route)):
                 state.isLoading = false
                 state.route = route
                 return .none
                 
-            case let .fetchRouteResponse(.failure(error)):
+            case .fetchRouteResponse(.failure(let error)):
                 state.isLoading = false
                 state.errorMessage = error.localizedDescription
                 return .none

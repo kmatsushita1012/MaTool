@@ -30,7 +30,7 @@ struct DistrictViewerFeature{
     var body: some Reducer<DistrictViewerState, DistrictViewerAction> {
         Reduce{state, action in
             switch action {
-            case let .setDistrict(district):
+            case .setDistrict(let district):
                 state.district = district
                 state.isLoading = true
                 state.errorMessage = nil
@@ -38,12 +38,12 @@ struct DistrictViewerFeature{
                     let result = await self.remoteClient.getRouteSummaries(state.district.id)
                     await send(.fetchSummmariesResponse(result))
                 }
-            case let .fetchSummmariesResponse(.success(summaries)):
+            case .fetchSummmariesResponse(.success(let summaries)):
                 state.isLoading = false
                 state.summaries = summaries
                 return .none
                 
-            case let .fetchSummmariesResponse(.failure(error)):
+            case .fetchSummmariesResponse(.failure(let error)):
                 state.isLoading = false
                 state.errorMessage = error.localizedDescription
                 return .none

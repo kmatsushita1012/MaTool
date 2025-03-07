@@ -70,7 +70,7 @@ extension RemoteClient: DependencyKey {
     )
     static private func decodeResponse<T:Codable>(_ type:T.Type, from responce: Result<Data,Error>)->Result<T,RemoteError>{
         switch responce {
-        case let .success(data):
+        case .success(let data):
             do{
                 let decodedObject = try JSONDecoder().decode(type, from: data)
                 return Result.success(decodedObject)
@@ -78,14 +78,13 @@ extension RemoteClient: DependencyKey {
                 //TODO
                 return Result.failure(RemoteError.decodingError("レスポンスの解析に失敗しました"))
             }
-        case let .failure(error):
+        case .failure(let error):
             return Result.failure(RemoteError.networkError(error.localizedDescription))
         }
     }
     static private func encodeRequest<T: Encodable>(_ object: T) -> Result<Data, Error> {
         let encoder = JSONEncoder()
         encoder.outputFormatting = .prettyPrinted // オプション: JSONを見やすくする
-        
         do {
             let data = try encoder.encode(object)
             return .success(data)

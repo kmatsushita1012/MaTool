@@ -23,7 +23,7 @@ struct SegmentAdminFeature:Reducer{
     var body:some Reducer<SegmentAdminState,SegmentAdminAction>{
         Reduce{ state, action in
             switch action{
-            case let .switchCurve(value):
+            case .switchCurve(let value):
                 let start = state.segment.start
                 let end = state.segment.end
                 if(value){
@@ -37,11 +37,11 @@ struct SegmentAdminFeature:Reducer{
                     state.segment.coordinates = [start, end]
                     return .none
                 }
-            case let .receivedCoordinates(.success(coordinates)):
+            case .receivedCoordinates(.success(let coordinates)):
                 state.isLoading = false
                 state.segment.coordinates = coordinates
                 return .none
-            case let .receivedCoordinates(.failure(error)):
+            case .receivedCoordinates(.failure(let error)):
                 state.isLoading = false
                 state.errorMessage = error.localizedDescription
                 return .none
