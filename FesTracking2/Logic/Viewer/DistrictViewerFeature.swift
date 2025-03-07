@@ -10,24 +10,24 @@ import Foundation
 import Dependencies
 
 
-struct DistrictState: Equatable {
+struct DistrictViewerState: Equatable {
     var district: District
     var summaries: [RouteSummary]
     var isLoading: Bool = false
     var errorMessage: String?
 }
 
-enum DistrictAction: Equatable {
+enum DistrictViewerAction: Equatable {
     case setDistrict(District)
     case fetchSummmariesResponse(Result<[RouteSummary], RemoteError>)
 }
 
 @Reducer
-struct DistrictFeature{
+struct DistrictViewerFeature{
     
     @Dependency(\.remoteClient) var remoteClient
     
-    var body: some Reducer<DistrictState, DistrictAction> {
+    var body: some Reducer<DistrictViewerState, DistrictViewerAction> {
         Reduce{state, action in
             switch action {
             case let .setDistrict(district):

@@ -20,7 +20,7 @@ enum PointAdminAction{
     case save
 }
 
-struct PointAdminReducer: Reducer{
+struct PointAdminFeature: Reducer{
     var body: some Reducer<PointAdminState, PointAdminAction> {
         Reduce { state, action in
             switch action{

@@ -25,19 +25,21 @@
 		298BD7B12D71E46900CB63F1 /* FesTracking2Tests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 298BD7B02D71E46900CB63F1 /* FesTracking2Tests.swift */; };
 		298BD7BB2D71E46900CB63F1 /* FesTracking2UITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 298BD7BA2D71E46900CB63F1 /* FesTracking2UITests.swift */; };
 		298BD7BD2D71E46900CB63F1 /* FesTracking2UITestsLaunchTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 298BD7BC2D71E46900CB63F1 /* FesTracking2UITestsLaunchTests.swift */; };
-		299755F32D748768006CA04D /* DistrictReducer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 299755F22D748768006CA04D /* DistrictReducer.swift */; };
-		299755F52D748C4F006CA04D /* RegionReducer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 299755F42D748C4F006CA04D /* RegionReducer.swift */; };
+		299755F32D748768006CA04D /* DistrictViewerFeature.swift in Sources */ = {isa = PBXBuildFile; fileRef = 299755F22D748768006CA04D /* DistrictViewerFeature.swift */; };
+		299755F52D748C4F006CA04D /* RegionViewerFeature.swift in Sources */ = {isa = PBXBuildFile; fileRef = 299755F42D748C4F006CA04D /* RegionViewerFeature.swift */; };
 		2997C2ED2D79CA4B0032566B /* DistrictAdminReducer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2997C2EC2D79CA3E0032566B /* DistrictAdminReducer.swift */; };
-		2997C2EF2D79CB670032566B /* RouteDomainAdminReducer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2997C2EE2D79CB600032566B /* RouteDomainAdminReducer.swift */; };
-		2997C2F12D79D8870032566B /* PointAdminReducer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2997C2F02D79D8820032566B /* PointAdminReducer.swift */; };
-		2997C2F32D79E1130032566B /* SegmentAdminReducer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2997C2F22D79E10B0032566B /* SegmentAdminReducer.swift */; };
-		299DA37D2D7AA0BE005D7A61 /* RouteViewAdminReducer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 299DA37C2D7AA0B6005D7A61 /* RouteViewAdminReducer.swift */; };
+		2997C2EF2D79CB670032566B /* RouteDomainAdminFeature.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2997C2EE2D79CB600032566B /* RouteDomainAdminFeature.swift */; };
+		2997C2F12D79D8870032566B /* PointAdminFeature.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2997C2F02D79D8820032566B /* PointAdminFeature.swift */; };
+		2997C2F32D79E1130032566B /* SegmentAdminFeature.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2997C2F22D79E10B0032566B /* SegmentAdminFeature.swift */; };
+		299936AB2D7AD499009D651E /* UserDefaultsLiveClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 299936AA2D7AD492009D651E /* UserDefaultsLiveClient.swift */; };
+		299936AE2D7AD5BF009D651E /* UserDefaultsMockClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 299936AD2D7AD5B8009D651E /* UserDefaultsMockClient.swift */; };
+		299DA37D2D7AA0BE005D7A61 /* RouteViewAdminFeature.swift in Sources */ = {isa = PBXBuildFile; fileRef = 299DA37C2D7AA0B6005D7A61 /* RouteViewAdminFeature.swift */; };
 		29CF49082D7425F600036D28 /* NetworkManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29CF49072D7425F600036D28 /* NetworkManager.swift */; };
 		29CF490A2D74262300036D28 /* RemoteLiveClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29CF49092D74262300036D28 /* RemoteLiveClient.swift */; };
 		29CF490C2D74263400036D28 /* RemoteMockClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29CF490B2D74263400036D28 /* RemoteMockClient.swift */; };
 		29CF49112D74269A00036D28 /* RemoteClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29CF49102D74269A00036D28 /* RemoteClient.swift */; };
-		29CF49132D7426A400036D28 /* LocalClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29CF49122D7426A400036D28 /* LocalClient.swift */; };
-		29CF49172D74317400036D28 /* RouteReducer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29CF49162D74317400036D28 /* RouteReducer.swift */; };
+		29CF49132D7426A400036D28 /* UserDefaultsClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29CF49122D7426A400036D28 /* UserDefaultsClient.swift */; };
+		29CF49172D74317400036D28 /* RouteViewerFeature.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29CF49162D74317400036D28 /* RouteViewerFeature.swift */; };
 		29CF49192D7440EB00036D28 /* Extension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29CF49182D7440EB00036D28 /* Extension.swift */; };
 		29DFC69C2D788EBC00AE4CEA /* ComposableArchitecture in Frameworks */ = {isa = PBXBuildFile; productRef = 29DFC69B2D788EBC00AE4CEA /* ComposableArchitecture */; };
 		59414DD9ADD88C0A71E94FE3 /* Pods_FesTracking2_FesTracking2UITests.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A8F61DA4134BD89A5D2377A2 /* Pods_FesTracking2_FesTracking2UITests.framework */; };
@@ -84,19 +86,21 @@
 		298BD7B62D71E46900CB63F1 /* FesTracking2UITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = FesTracking2UITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		298BD7BA2D71E46900CB63F1 /* FesTracking2UITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FesTracking2UITests.swift; sourceTree = "<group>"; };
 		298BD7BC2D71E46900CB63F1 /* FesTracking2UITestsLaunchTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FesTracking2UITestsLaunchTests.swift; sourceTree = "<group>"; };
-		299755F22D748768006CA04D /* DistrictReducer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DistrictReducer.swift; sourceTree = "<group>"; };
-		299755F42D748C4F006CA04D /* RegionReducer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RegionReducer.swift; sourceTree = "<group>"; };
+		299755F22D748768006CA04D /* DistrictViewerFeature.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DistrictViewerFeature.swift; sourceTree = "<group>"; };
+		299755F42D748C4F006CA04D /* RegionViewerFeature.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RegionViewerFeature.swift; sourceTree = "<group>"; };
 		2997C2EC2D79CA3E0032566B /* DistrictAdminReducer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DistrictAdminReducer.swift; sourceTree = "<group>"; };
-		2997C2EE2D79CB600032566B /* RouteDomainAdminReducer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RouteDomainAdminReducer.swift; sourceTree = "<group>"; };
-		2997C2F02D79D8820032566B /* PointAdminReducer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PointAdminReducer.swift; sourceTree = "<group>"; };
-		2997C2F22D79E10B0032566B /* SegmentAdminReducer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SegmentAdminReducer.swift; sourceTree = "<group>"; };
-		299DA37C2D7AA0B6005D7A61 /* RouteViewAdminReducer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RouteViewAdminReducer.swift; sourceTree = "<group>"; };
+		2997C2EE2D79CB600032566B /* RouteDomainAdminFeature.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RouteDomainAdminFeature.swift; sourceTree = "<group>"; };
+		2997C2F02D79D8820032566B /* PointAdminFeature.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PointAdminFeature.swift; sourceTree = "<group>"; };
+		2997C2F22D79E10B0032566B /* SegmentAdminFeature.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SegmentAdminFeature.swift; sourceTree = "<group>"; };
+		299936AA2D7AD492009D651E /* UserDefaultsLiveClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserDefaultsLiveClient.swift; sourceTree = "<group>"; };
+		299936AD2D7AD5B8009D651E /* UserDefaultsMockClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserDefaultsMockClient.swift; sourceTree = "<group>"; };
+		299DA37C2D7AA0B6005D7A61 /* RouteViewAdminFeature.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RouteViewAdminFeature.swift; sourceTree = "<group>"; };
 		29CF49072D7425F600036D28 /* NetworkManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NetworkManager.swift; sourceTree = "<group>"; };
 		29CF49092D74262300036D28 /* RemoteLiveClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RemoteLiveClient.swift; sourceTree = "<group>"; };
 		29CF490B2D74263400036D28 /* RemoteMockClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RemoteMockClient.swift; sourceTree = "<group>"; };
 		29CF49102D74269A00036D28 /* RemoteClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RemoteClient.swift; sourceTree = "<group>"; };
-		29CF49122D7426A400036D28 /* LocalClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalClient.swift; sourceTree = "<group>"; };
-		29CF49162D74317400036D28 /* RouteReducer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RouteReducer.swift; sourceTree = "<group>"; };
+		29CF49122D7426A400036D28 /* UserDefaultsClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserDefaultsClient.swift; sourceTree = "<group>"; };
+		29CF49162D74317400036D28 /* RouteViewerFeature.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RouteViewerFeature.swift; sourceTree = "<group>"; };
 		29CF49182D7440EB00036D28 /* Extension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Extension.swift; sourceTree = "<group>"; };
 		2ED28BC68D7C76B5AD0147C2 /* Pods-FesTracking2.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-FesTracking2.debug.xcconfig"; path = "Target Support Files/Pods-FesTracking2/Pods-FesTracking2.debug.xcconfig"; sourceTree = "<group>"; };
 		853A27735A6145CF5C6B1C0B /* Pods-FesTracking2-FesTracking2UITests.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-FesTracking2-FesTracking2UITests.debug.xcconfig"; path = "Target Support Files/Pods-FesTracking2-FesTracking2UITests/Pods-FesTracking2-FesTracking2UITests.debug.xcconfig"; sourceTree = "<group>"; };
@@ -237,9 +241,9 @@
 		2997C2EA2D79C9940032566B /* Viewer */ = {
 			isa = PBXGroup;
 			children = (
-				299755F42D748C4F006CA04D /* RegionReducer.swift */,
-				299755F22D748768006CA04D /* DistrictReducer.swift */,
-				29CF49162D74317400036D28 /* RouteReducer.swift */,
+				299755F42D748C4F006CA04D /* RegionViewerFeature.swift */,
+				299755F22D748768006CA04D /* DistrictViewerFeature.swift */,
+				29CF49162D74317400036D28 /* RouteViewerFeature.swift */,
 			);
 			path = Viewer;
 			sourceTree = "<group>";
@@ -248,10 +252,10 @@
 			isa = PBXGroup;
 			children = (
 				2997C2EC2D79CA3E0032566B /* DistrictAdminReducer.swift */,
-				2997C2EE2D79CB600032566B /* RouteDomainAdminReducer.swift */,
-				299DA37C2D7AA0B6005D7A61 /* RouteViewAdminReducer.swift */,
-				2997C2F02D79D8820032566B /* PointAdminReducer.swift */,
-				2997C2F22D79E10B0032566B /* SegmentAdminReducer.swift */,
+				299DA37C2D7AA0B6005D7A61 /* RouteViewAdminFeature.swift */,
+				2997C2F02D79D8820032566B /* PointAdminFeature.swift */,
+				2997C2EE2D79CB600032566B /* RouteDomainAdminFeature.swift */,
+				2997C2F22D79E10B0032566B /* SegmentAdminFeature.swift */,
 			);
 			path = Admin;
 			sourceTree = "<group>";
@@ -260,16 +264,18 @@
 			isa = PBXGroup;
 			children = (
 				29CF49052D74248B00036D28 /* Remote */,
-				29CF49042D74248300036D28 /* Local */,
+				29CF49042D74248300036D28 /* UserDefaults */,
 			);
 			path = Infrastructure;
 			sourceTree = "<group>";
 		};
-		29CF49042D74248300036D28 /* Local */ = {
+		29CF49042D74248300036D28 /* UserDefaults */ = {
 			isa = PBXGroup;
 			children = (
+				299936AA2D7AD492009D651E /* UserDefaultsLiveClient.swift */,
+				299936AD2D7AD5B8009D651E /* UserDefaultsMockClient.swift */,
 			);
-			path = Local;
+			path = UserDefaults;
 			sourceTree = "<group>";
 		};
 		29CF49052D74248B00036D28 /* Remote */ = {
@@ -304,7 +310,7 @@
 			isa = PBXGroup;
 			children = (
 				29CF49102D74269A00036D28 /* RemoteClient.swift */,
-				29CF49122D7426A400036D28 /* LocalClient.swift */,
+				29CF49122D7426A400036D28 /* UserDefaultsClient.swift */,
 			);
 			path = Repository;
 			sourceTree = "<group>";
@@ -580,24 +586,26 @@
 			buildActionMask = 2147483647;
 			files = (
 				2983AB7A2D741674002F6CB5 /* Share.swift in Sources */,
-				299755F32D748768006CA04D /* DistrictReducer.swift in Sources */,
-				2997C2F12D79D8870032566B /* PointAdminReducer.swift in Sources */,
-				299DA37D2D7AA0BE005D7A61 /* RouteViewAdminReducer.swift in Sources */,
-				2997C2EF2D79CB670032566B /* RouteDomainAdminReducer.swift in Sources */,
+				299755F32D748768006CA04D /* DistrictViewerFeature.swift in Sources */,
+				2997C2F12D79D8870032566B /* PointAdminFeature.swift in Sources */,
+				299DA37D2D7AA0BE005D7A61 /* RouteViewAdminFeature.swift in Sources */,
+				2997C2EF2D79CB670032566B /* RouteDomainAdminFeature.swift in Sources */,
 				298BD7A02D71E46600CB63F1 /* ContentView.swift in Sources */,
-				29CF49132D7426A400036D28 /* LocalClient.swift in Sources */,
+				29CF49132D7426A400036D28 /* UserDefaultsClient.swift in Sources */,
 				298BD7A22D71E46600CB63F1 /* Item.swift in Sources */,
-				29CF49172D74317400036D28 /* RouteReducer.swift in Sources */,
+				29CF49172D74317400036D28 /* RouteViewerFeature.swift in Sources */,
 				29CF49082D7425F600036D28 /* NetworkManager.swift in Sources */,
 				2997C2ED2D79CA4B0032566B /* DistrictAdminReducer.swift in Sources */,
 				2983AB7F2D7419AB002F6CB5 /* Information.swift in Sources */,
 				2983AB7D2D74168F002F6CB5 /* Route.swift in Sources */,
 				298BD79E2D71E46600CB63F1 /* FesTracking2App.swift in Sources */,
-				2997C2F32D79E1130032566B /* SegmentAdminReducer.swift in Sources */,
+				299936AB2D7AD499009D651E /* UserDefaultsLiveClient.swift in Sources */,
+				2997C2F32D79E1130032566B /* SegmentAdminFeature.swift in Sources */,
+				299936AE2D7AD5BF009D651E /* UserDefaultsMockClient.swift in Sources */,
 				29CF49192D7440EB00036D28 /* Extension.swift in Sources */,
 				29CF49112D74269A00036D28 /* RemoteClient.swift in Sources */,
 				29CF490C2D74263400036D28 /* RemoteMockClient.swift in Sources */,
-				299755F52D748C4F006CA04D /* RegionReducer.swift in Sources */,
+				299755F52D748C4F006CA04D /* RegionViewerFeature.swift in Sources */,
 				29CF490A2D74262300036D28 /* RemoteLiveClient.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -695,6 +703,7 @@
 				SDKROOT = iphoneos;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = "";
 			};
 			name = Debug;
 		};
@@ -750,6 +759,7 @@
 				MTL_FAST_MATH = YES;
 				SDKROOT = iphoneos;
 				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_VERSION = "";
 				VALIDATE_PRODUCT = YES;
 			};
 			name = Release;
