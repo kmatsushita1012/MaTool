@@ -11,7 +11,7 @@ import Dependencies
 import Combine
 import ComposableArchitecture
 
-struct RemoteClient {
+struct AWSClient {
     var getRegions: () async  -> Result<[Region], RemoteError>
     var getDistricts: (_ regionId: UUID) async -> Result<[District], RemoteError>
     var getRouteSummaries: (_ districtId: UUID) async -> Result<[RouteSummary], RemoteError>
@@ -23,9 +23,9 @@ struct RemoteClient {
 
 
 extension DependencyValues {
-  var  remoteClient: RemoteClient {
-    get { self[RemoteClient.self] }
-    set { self[RemoteClient.self] = newValue }
+  var awsClient: AWSClient {
+    get { self[AWSClient.self] }
+    set { self[AWSClient.self] = newValue }
   }
 }
 

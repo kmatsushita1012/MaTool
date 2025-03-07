@@ -22,7 +22,8 @@ enum RouteAction: Equatable {
     case fetchRouteResponse(Result<Route, RemoteError>)
 }
 
-struct RouteReducer:Reducer{
+@Reducer
+struct RouteFeature{
     
     @Dependency(\.remoteClient) var remoteClient
     
