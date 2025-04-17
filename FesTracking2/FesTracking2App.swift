@@ -8,30 +8,30 @@
 import SwiftUI
 import SwiftData
 import FirebaseCore
+import ComposableArchitecture
+import AWSMobileClient
 
 @main
 struct FesTracking2App: App {
 //    @UIApplicationDelegateAdaptor(AppDelegate.self) var delegate
     init(){
+        print("App")
         FirebaseApp.configure()
+//        initializeAWSMobileClient()
     }
-    var sharedModelContainer: ModelContainer = {
-        let schema = Schema([
-            Item.self,
-        ])
-        let modelConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
-
-        do {
-            return try ModelContainer(for: schema, configurations: [modelConfiguration])
-        } catch {
-            fatalError("Could not create ModelContainer: \(error)")
-        }
-    }()
-
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            ContentView(store: Store(initialState:AuthFeature.State(isSignIn: false)){ AuthFeature()._printChanges()})
         }
-        .modelContainer(sharedModelContainer)
     }
+    
+//    func initializeAWSMobileClient() {
+//        AWSMobileClient.default().initialize { (userState, error) in
+//            if let error = error {
+//                print("AWSMobileClient initialization failed: \(error.localizedDescription)")
+//            } else {
+//                print("AWSMobileClient initialized with state: \(String(describing: userState))")
+//            }
+//        }
+//    }
 }
