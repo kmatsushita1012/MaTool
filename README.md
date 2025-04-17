@@ -14,7 +14,8 @@ https://zenn.dev/oka_yuuji/articles/38afe965565002
 
 [TCA で Github リポジトリ検索アプリを作ってみよう ①](https://qiita.com/takehilo/items/814319d4666fef402a41)
 [Refreshable API を TCA で使う](https://www.docswell.com/s/kalupas226/KEER8K-2021-11-13-123255#p30)
-[SwiftUI の TCA と NavigationStack を使って画面遷移をする](https://qiita.com/YOSUKE8080/items/356386878f67b7ac3b73)
+
+[Documents](https://pointfreeco.github.io/swift-composable-architecture/main/documentation/composablearchitecture/treebasednavigation/#Enum-state)
 
 ## yml
 
