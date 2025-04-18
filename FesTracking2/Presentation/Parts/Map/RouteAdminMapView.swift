@@ -8,7 +8,7 @@ import UIKit
 import MapKit
 import SwiftUI
 
-struct RouteMapView: UIViewRepresentable {
+struct RouteAdminMapView: UIViewRepresentable {
     var annotations: [Point]
     var segments: [Segment]
 
@@ -58,10 +58,10 @@ struct RouteMapView: UIViewRepresentable {
     }
 
     class Coordinator: NSObject, MKMapViewDelegate {
-        var parent: RouteMapView
+        var parent: RouteAdminMapView
         var hasSetRegion = false
 
-        init(_ parent: RouteMapView) {
+        init(_ parent: RouteAdminMapView) {
             self.parent = parent
         }
 

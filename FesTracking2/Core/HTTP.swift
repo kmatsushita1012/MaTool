@@ -116,7 +116,7 @@ func performDeleteRequest(path: String, query: [String: Any] = [:], accessToken:
 }
 
 //TODO
-extension RemoteError {
+extension ApiError {
     static func factory(_ error: Error)->Self{
         return Self.unknown(error.localizedDescription)
     }

@@ -9,7 +9,7 @@ import ComposableArchitecture
 @Reducer
 struct RouteDetailFeature{
     
-    @Dependency(\.remoteClient) var remoteClient
+    @Dependency(\.apiClient) var apiClient
     
     @ObservableState
     struct State: Equatable{
@@ -27,7 +27,7 @@ struct RouteDetailFeature{
     
     enum Action: Equatable{
         case loaded(String)
-        case received(Result<Route,RemoteError>)
+        case received(Result<Route,ApiError>)
     }
     
     var body: some ReducerOf<RouteDetailFeature> {
@@ -36,7 +36,7 @@ struct RouteDetailFeature{
             case .loaded(let id):
                 state.item = AsyncValue.loading
                 return .run{ send in
-                    let item = await self.remoteClient.getRouteDetail(id,nil,nil)
+                    let item = await self.apiClient.getRouteDetail(id,nil,nil)
                     await send(.received(item))
                 }
             case .received(.success(let value)):

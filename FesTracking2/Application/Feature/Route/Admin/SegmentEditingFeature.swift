@@ -9,7 +9,7 @@ import ComposableArchitecture
 
 @Reducer
 struct SegmentAdminFeature{
-    @Dependency(\.remoteClient) var remoteClient
+    @Dependency(\.apiClient) var apiClient
     @ObservableState
     struct State: Equatable{
         var item: Segment
@@ -19,7 +19,7 @@ struct SegmentAdminFeature{
 
     enum Action: Equatable{
         case switchCurve(Bool)
-        case received(Result<[Coordinate],RemoteError>)
+        case received(Result<[Coordinate],ApiError>)
         case saveButtonTapped
         case cancelButtonTapped
     }
@@ -34,7 +34,7 @@ struct SegmentAdminFeature{
                     state.errorMessage = nil
                     state.isLoading = true
                     return .run {[] send in
-                        let result = await self.remoteClient.getSegmentCoordinate(start, end)
+                        let result = await self.apiClient.getSegmentCoordinate(start, end)
                         await send(.received(result))
                     }
                 }else{

@@ -19,7 +19,7 @@ struct PointAdminFeature{
 
     enum Action: BindableAction {
         case binding(BindingAction<State>)
-        case saveButtonTapped
+        case doneButtonTapped
         case cancelButtonTapped
         case titleFieldFocused
         case titleOptionSelected(String)
@@ -31,7 +31,7 @@ struct PointAdminFeature{
             switch action{
             case .binding:
                 return .none
-            case .saveButtonTapped:
+            case .doneButtonTapped:
                 return .none
             case .cancelButtonTapped:
                 return .none

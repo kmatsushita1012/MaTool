@@ -18,7 +18,7 @@ extension Coordinate {
 }
 
 extension SimpleTime {
-    func toDate() -> Date {
+    var toDate: Date {
         var calendar = Calendar.current
         calendar.timeZone = .current
         let now = Date()

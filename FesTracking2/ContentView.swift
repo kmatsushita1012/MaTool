@@ -18,11 +18,11 @@ struct ContentView: View {
     }
 
     var body: some View {
-        DistrictAdminView(store:
+        LocationAdminView(store:
             Store(initialState:
-                    DistrictAdminFeature.State(item:District.sample),
+                    LocationAdminFeature.State(id: "johoku"),
               reducer:
-                    { DistrictAdminFeature() }
+                    { LocationAdminFeature() }
              )
         )
 

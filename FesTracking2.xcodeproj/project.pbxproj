@@ -20,7 +20,7 @@
 		292D0B8D2DB0CB2700176E51 /* PerformanceAdminFeature.swift in Sources */ = {isa = PBXBuildFile; fileRef = 292D0B8C2DB0CB1E00176E51 /* PerformanceAdminFeature.swift */; };
 		292D0B8F2DB0D44100176E51 /* EditableListItemView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 292D0B8E2DB0D43700176E51 /* EditableListItemView.swift */; };
 		292D0BA12DB0E0DC00176E51 /* RegionAdminFeature.swift in Sources */ = {isa = PBXBuildFile; fileRef = 292D0BA02DB0E0D600176E51 /* RegionAdminFeature.swift */; };
-		292D0BA82DB0E25300176E51 /* RegionAdminView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 292D0BA72DB0E24F00176E51 /* RegionAdminView.swift */; };
+		292D0BAA2DB0E31300176E51 /* RegionInfoAdminView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 292D0BA92DB0E30C00176E51 /* RegionInfoAdminView.swift */; };
 		29460A0B2D8C28AC0097CAA1 /* LoginFeature.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29460A0A2D8C28A40097CAA1 /* LoginFeature.swift */; };
 		29460A0D2D8C29030097CAA1 /* LoginView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29460A0C2D8C28FC0097CAA1 /* LoginView.swift */; };
 		29460A1A2D8C32490097CAA1 /* awsconfiguration.json in Resources */ = {isa = PBXBuildFile; fileRef = 29460A162D8C314F0097CAA1 /* awsconfiguration.json */; };
@@ -28,7 +28,7 @@
 		296795CB2DA4F3D9008D3CE1 /* RouteMapAdminView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 296795CA2DA4F3CD008D3CE1 /* RouteMapAdminView.swift */; };
 		296795CD2DA4F712008D3CE1 /* DateAndTime.swift in Sources */ = {isa = PBXBuildFile; fileRef = 296795CC2DA4F70D008D3CE1 /* DateAndTime.swift */; };
 		296795CF2DA4F7B1008D3CE1 /* Span.swift in Sources */ = {isa = PBXBuildFile; fileRef = 296795CE2DA4F7AF008D3CE1 /* Span.swift */; };
-		296795D12DA4F902008D3CE1 /* RouteMapView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 296795D02DA4F8FB008D3CE1 /* RouteMapView.swift */; };
+		296795D12DA4F902008D3CE1 /* RouteAdminMapView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 296795D02DA4F8FB008D3CE1 /* RouteAdminMapView.swift */; };
 		296795D42DA4FF01008D3CE1 /* Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 296795D32DA4FEFD008D3CE1 /* Extensions.swift */; };
 		2972017B2D9CFA50003424EF /* async.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2972017A2D9CFA41003424EF /* async.swift */; };
 		297201822D9CFC35003424EF /* DistrictDetail.swift in Sources */ = {isa = PBXBuildFile; fileRef = 297201812D9CFC2B003424EF /* DistrictDetail.swift */; };
@@ -55,12 +55,14 @@
 		298CAF792D9D6ADF00C57C26 /* DistrictListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 298CAF782D9D6ADF00C57C26 /* DistrictListView.swift */; };
 		299770202DA527FB00EEB5F4 /* RouteButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2997701F2DA527F800EEB5F4 /* RouteButton.swift */; };
 		299770222DA564A300EEB5F4 /* PointAdminView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 299770212DA5649E00EEB5F4 /* PointAdminView.swift */; };
-		2997C2ED2D79CA4B0032566B /* DistrictAdminFeature.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2997C2EC2D79CA3E0032566B /* DistrictAdminFeature.swift */; };
+		2997C2ED2D79CA4B0032566B /* DistrictInfoAdminFeature.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2997C2EC2D79CA3E0032566B /* DistrictInfoAdminFeature.swift */; };
 		2997C2F12D79D8870032566B /* PointAdminFeature.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2997C2F02D79D8820032566B /* PointAdminFeature.swift */; };
 		2997C2F32D79E1130032566B /* SegmentEditingFeature.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2997C2F22D79E10B0032566B /* SegmentEditingFeature.swift */; };
 		299936AB2D7AD499009D651E /* UserDefaultsLiveClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 299936AA2D7AD492009D651E /* UserDefaultsLiveClient.swift */; };
 		299936AE2D7AD5BF009D651E /* UserDefaultsMockClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 299936AD2D7AD5B8009D651E /* UserDefaultsMockClient.swift */; };
-		29998EA12DA3EC0600CBC1DC /* RoutePublicPage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29998EA02DA3EBFD00CBC1DC /* RoutePublicPage.swift */; };
+		299A06A82DB13B3E00E76898 /* DistrictAdminView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 299A06A72DB13B2C00E76898 /* DistrictAdminView.swift */; };
+		299A06AA2DB13BAC00E76898 /* DistrictAdminFeature.swift in Sources */ = {isa = PBXBuildFile; fileRef = 299A06A92DB13BA300E76898 /* DistrictAdminFeature.swift */; };
+		299A06AD2DB142A200E76898 /* LocationAdminView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 299A06AC2DB1429E00E76898 /* LocationAdminView.swift */; };
 		299A51622DA942CF00B24828 /* RouteInfoAdminView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 299A51612DA942C100B24828 /* RouteInfoAdminView.swift */; };
 		299A51642DA944DB00B24828 /* RouteInfoAdminFeature.swift in Sources */ = {isa = PBXBuildFile; fileRef = 299A51632DA944D400B24828 /* RouteInfoAdminFeature.swift */; };
 		29A043442D7DC25800E77C91 /* RouteSummary.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29A043432D7DC24700E77C91 /* RouteSummary.swift */; };
@@ -73,22 +75,28 @@
 		29A043532D7DC83B00E77C91 /* SimpleTime.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29A043522D7DC83800E77C91 /* SimpleTime.swift */; };
 		29A043572D7DCE0C00E77C91 /* Region.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29A043562D7DCE0900E77C91 /* Region.swift */; };
 		29A043592D7DCFD200E77C91 /* District.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29A043582D7DCFCF00E77C91 /* District.swift */; };
+		29AD86492DB2032300C3E8B2 /* LocationClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29AD86482DB2032000C3E8B2 /* LocationClient.swift */; };
+		29AD864B2DB2040E00C3E8B2 /* LocationLiveClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29AD864A2DB2040A00C3E8B2 /* LocationLiveClient.swift */; };
+		29AD86502DB210F500C3E8B2 /* LocationAdminMapView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29AD864F2DB210F000C3E8B2 /* LocationAdminMapView.swift */; };
+		29AD86532DB2422200C3E8B2 /* Fragments.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29AD86522DB2421E00C3E8B2 /* Fragments.swift */; };
 		29B5FD612D80870A008838BB /* RegionSummary.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29B5FD602D808703008838BB /* RegionSummary.swift */; };
 		29B5FD632D80877D008838BB /* DistrictSummary.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29B5FD622D808776008838BB /* DistrictSummary.swift */; };
-		29CB07752DAF7D1E0009A47D /* DistrictAdminView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29CB07742DAF7D150009A47D /* DistrictAdminView.swift */; };
+		29B638A72DB0E7E400DF8419 /* SpanAdminFeature.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29B638A62DB0E7DF00DF8419 /* SpanAdminFeature.swift */; };
+		29B638A92DB0E89600DF8419 /* SpanAdminView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29B638A82DB0E89000DF8419 /* SpanAdminView.swift */; };
+		29CB07752DAF7D1E0009A47D /* DistrictInfoAdminView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29CB07742DAF7D150009A47D /* DistrictInfoAdminView.swift */; };
 		29CB07792DAF80850009A47D /* AreaAdminFeature.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29CB07782DAF807F0009A47D /* AreaAdminFeature.swift */; };
 		29CB077B2DAF86610009A47D /* BaseAdminFeature.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29CB077A2DAF865C0009A47D /* BaseAdminFeature.swift */; };
 		29CB077D2DAF8B970009A47D /* BaseAdminView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29CB077C2DAF8B940009A47D /* BaseAdminView.swift */; };
-		29CB077F2DAF8C510009A47D /* BaseMapView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29CB077E2DAF8C500009A47D /* BaseMapView.swift */; };
+		29CB077F2DAF8C510009A47D /* DistrictAdminMapView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29CB077E2DAF8C500009A47D /* DistrictAdminMapView.swift */; };
 		29CB07812DAF933A0009A47D /* AreaAdminView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29CB07802DAF93350009A47D /* AreaAdminView.swift */; };
 		29CF49082D7425F600036D28 /* HTTP.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29CF49072D7425F600036D28 /* HTTP.swift */; };
-		29CF490A2D74262300036D28 /* RemoteLiveClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29CF49092D74262300036D28 /* RemoteLiveClient.swift */; };
-		29CF490C2D74263400036D28 /* RemoteMockClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29CF490B2D74263400036D28 /* RemoteMockClient.swift */; };
-		29CF49112D74269A00036D28 /* RemoteClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29CF49102D74269A00036D28 /* RemoteClient.swift */; };
+		29CF490A2D74262300036D28 /* ApiLiveClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29CF49092D74262300036D28 /* ApiLiveClient.swift */; };
+		29CF490C2D74263400036D28 /* ApiMockClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29CF490B2D74263400036D28 /* ApiMockClient.swift */; };
+		29CF49112D74269A00036D28 /* ApiClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29CF49102D74269A00036D28 /* ApiClient.swift */; };
 		29CF49132D7426A400036D28 /* UserDefaultsClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29CF49122D7426A400036D28 /* UserDefaultsClient.swift */; };
 		29CF49192D7440EB00036D28 /* Extension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29CF49182D7440EB00036D28 /* Extension.swift */; };
 		29DAB0612DA15CD1005E94BA /* RouteMapAdminFeature.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29DAB0602DA15CCF005E94BA /* RouteMapAdminFeature.swift */; };
-		29DAB0642DA15CFC005E94BA /* LocationFeature.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29DAB0632DA15CF0005E94BA /* LocationFeature.swift */; };
+		29DAB0642DA15CFC005E94BA /* LocationAdminFeature.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29DAB0632DA15CF0005E94BA /* LocationAdminFeature.swift */; };
 		29DAB06B2DA15FAA005E94BA /* RoutePublicPageFeature.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29DAB06A2DA15FA5005E94BA /* RoutePublicPageFeature.swift */; };
 		29DAB06D2DA1608E005E94BA /* AWSCognitoClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29DAB06C2DA16084005E94BA /* AWSCognitoClient.swift */; };
 		29DAB0702DA1623C005E94BA /* AWSCognitoLiveClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29DAB06F2DA16235005E94BA /* AWSCognitoLiveClient.swift */; };
@@ -133,7 +141,7 @@
 		292D0B8C2DB0CB1E00176E51 /* PerformanceAdminFeature.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PerformanceAdminFeature.swift; sourceTree = "<group>"; };
 		292D0B8E2DB0D43700176E51 /* EditableListItemView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditableListItemView.swift; sourceTree = "<group>"; };
 		292D0BA02DB0E0D600176E51 /* RegionAdminFeature.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RegionAdminFeature.swift; sourceTree = "<group>"; };
-		292D0BA72DB0E24F00176E51 /* RegionAdminView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RegionAdminView.swift; sourceTree = "<group>"; };
+		292D0BA92DB0E30C00176E51 /* RegionInfoAdminView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RegionInfoAdminView.swift; sourceTree = "<group>"; };
 		29460A0A2D8C28A40097CAA1 /* LoginFeature.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoginFeature.swift; sourceTree = "<group>"; };
 		29460A0C2D8C28FC0097CAA1 /* LoginView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoginView.swift; sourceTree = "<group>"; };
 		29460A162D8C314F0097CAA1 /* awsconfiguration.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = awsconfiguration.json; sourceTree = "<group>"; };
@@ -141,7 +149,7 @@
 		296795CA2DA4F3CD008D3CE1 /* RouteMapAdminView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RouteMapAdminView.swift; sourceTree = "<group>"; };
 		296795CC2DA4F70D008D3CE1 /* DateAndTime.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DateAndTime.swift; sourceTree = "<group>"; };
 		296795CE2DA4F7AF008D3CE1 /* Span.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Span.swift; sourceTree = "<group>"; };
-		296795D02DA4F8FB008D3CE1 /* RouteMapView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RouteMapView.swift; sourceTree = "<group>"; };
+		296795D02DA4F8FB008D3CE1 /* RouteAdminMapView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RouteAdminMapView.swift; sourceTree = "<group>"; };
 		296795D32DA4FEFD008D3CE1 /* Extensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Extensions.swift; sourceTree = "<group>"; };
 		2972017A2D9CFA41003424EF /* async.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = async.swift; sourceTree = "<group>"; };
 		297201812D9CFC2B003424EF /* DistrictDetail.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DistrictDetail.swift; sourceTree = "<group>"; };
@@ -171,12 +179,14 @@
 		298CAF782D9D6ADF00C57C26 /* DistrictListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DistrictListView.swift; sourceTree = "<group>"; };
 		2997701F2DA527F800EEB5F4 /* RouteButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RouteButton.swift; sourceTree = "<group>"; };
 		299770212DA5649E00EEB5F4 /* PointAdminView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PointAdminView.swift; sourceTree = "<group>"; };
-		2997C2EC2D79CA3E0032566B /* DistrictAdminFeature.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DistrictAdminFeature.swift; sourceTree = "<group>"; };
+		2997C2EC2D79CA3E0032566B /* DistrictInfoAdminFeature.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DistrictInfoAdminFeature.swift; sourceTree = "<group>"; };
 		2997C2F02D79D8820032566B /* PointAdminFeature.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PointAdminFeature.swift; sourceTree = "<group>"; };
 		2997C2F22D79E10B0032566B /* SegmentEditingFeature.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SegmentEditingFeature.swift; sourceTree = "<group>"; };
 		299936AA2D7AD492009D651E /* UserDefaultsLiveClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserDefaultsLiveClient.swift; sourceTree = "<group>"; };
 		299936AD2D7AD5B8009D651E /* UserDefaultsMockClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserDefaultsMockClient.swift; sourceTree = "<group>"; };
-		29998EA02DA3EBFD00CBC1DC /* RoutePublicPage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RoutePublicPage.swift; sourceTree = "<group>"; };
+		299A06A72DB13B2C00E76898 /* DistrictAdminView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DistrictAdminView.swift; sourceTree = "<group>"; };
+		299A06A92DB13BA300E76898 /* DistrictAdminFeature.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DistrictAdminFeature.swift; sourceTree = "<group>"; };
+		299A06AC2DB1429E00E76898 /* LocationAdminView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocationAdminView.swift; sourceTree = "<group>"; };
 		299A51612DA942C100B24828 /* RouteInfoAdminView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RouteInfoAdminView.swift; sourceTree = "<group>"; };
 		299A51632DA944D400B24828 /* RouteInfoAdminFeature.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RouteInfoAdminFeature.swift; sourceTree = "<group>"; };
 		29A043432D7DC24700E77C91 /* RouteSummary.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RouteSummary.swift; sourceTree = "<group>"; };
@@ -189,22 +199,29 @@
 		29A043522D7DC83800E77C91 /* SimpleTime.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SimpleTime.swift; sourceTree = "<group>"; };
 		29A043562D7DCE0900E77C91 /* Region.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Region.swift; sourceTree = "<group>"; };
 		29A043582D7DCFCF00E77C91 /* District.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = District.swift; sourceTree = "<group>"; };
+		29AD86482DB2032000C3E8B2 /* LocationClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocationClient.swift; sourceTree = "<group>"; };
+		29AD864A2DB2040A00C3E8B2 /* LocationLiveClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocationLiveClient.swift; sourceTree = "<group>"; };
+		29AD864F2DB210F000C3E8B2 /* LocationAdminMapView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocationAdminMapView.swift; sourceTree = "<group>"; };
+		29AD86512DB212DB00C3E8B2 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		29AD86522DB2421E00C3E8B2 /* Fragments.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Fragments.swift; sourceTree = "<group>"; };
 		29B5FD602D808703008838BB /* RegionSummary.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RegionSummary.swift; sourceTree = "<group>"; };
 		29B5FD622D808776008838BB /* DistrictSummary.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DistrictSummary.swift; sourceTree = "<group>"; };
-		29CB07742DAF7D150009A47D /* DistrictAdminView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DistrictAdminView.swift; sourceTree = "<group>"; };
+		29B638A62DB0E7DF00DF8419 /* SpanAdminFeature.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpanAdminFeature.swift; sourceTree = "<group>"; };
+		29B638A82DB0E89000DF8419 /* SpanAdminView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpanAdminView.swift; sourceTree = "<group>"; };
+		29CB07742DAF7D150009A47D /* DistrictInfoAdminView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DistrictInfoAdminView.swift; sourceTree = "<group>"; };
 		29CB07782DAF807F0009A47D /* AreaAdminFeature.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AreaAdminFeature.swift; sourceTree = "<group>"; };
 		29CB077A2DAF865C0009A47D /* BaseAdminFeature.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BaseAdminFeature.swift; sourceTree = "<group>"; };
 		29CB077C2DAF8B940009A47D /* BaseAdminView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BaseAdminView.swift; sourceTree = "<group>"; };
-		29CB077E2DAF8C500009A47D /* BaseMapView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BaseMapView.swift; sourceTree = "<group>"; };
+		29CB077E2DAF8C500009A47D /* DistrictAdminMapView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DistrictAdminMapView.swift; sourceTree = "<group>"; };
 		29CB07802DAF93350009A47D /* AreaAdminView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AreaAdminView.swift; sourceTree = "<group>"; };
 		29CF49072D7425F600036D28 /* HTTP.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HTTP.swift; sourceTree = "<group>"; };
-		29CF49092D74262300036D28 /* RemoteLiveClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RemoteLiveClient.swift; sourceTree = "<group>"; };
-		29CF490B2D74263400036D28 /* RemoteMockClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RemoteMockClient.swift; sourceTree = "<group>"; };
-		29CF49102D74269A00036D28 /* RemoteClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RemoteClient.swift; sourceTree = "<group>"; };
+		29CF49092D74262300036D28 /* ApiLiveClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ApiLiveClient.swift; sourceTree = "<group>"; };
+		29CF490B2D74263400036D28 /* ApiMockClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ApiMockClient.swift; sourceTree = "<group>"; };
+		29CF49102D74269A00036D28 /* ApiClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ApiClient.swift; sourceTree = "<group>"; };
 		29CF49122D7426A400036D28 /* UserDefaultsClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserDefaultsClient.swift; sourceTree = "<group>"; };
 		29CF49182D7440EB00036D28 /* Extension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Extension.swift; sourceTree = "<group>"; };
 		29DAB0602DA15CCF005E94BA /* RouteMapAdminFeature.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RouteMapAdminFeature.swift; sourceTree = "<group>"; };
-		29DAB0632DA15CF0005E94BA /* LocationFeature.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocationFeature.swift; sourceTree = "<group>"; };
+		29DAB0632DA15CF0005E94BA /* LocationAdminFeature.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocationAdminFeature.swift; sourceTree = "<group>"; };
 		29DAB06A2DA15FA5005E94BA /* RoutePublicPageFeature.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RoutePublicPageFeature.swift; sourceTree = "<group>"; };
 		29DAB06C2DA16084005E94BA /* AWSCognitoClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AWSCognitoClient.swift; sourceTree = "<group>"; };
 		29DAB06F2DA16235005E94BA /* AWSCognitoLiveClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AWSCognitoLiveClient.swift; sourceTree = "<group>"; };
@@ -284,6 +301,7 @@
 			isa = PBXGroup;
 			children = (
 				292D0BA02DB0E0D600176E51 /* RegionAdminFeature.swift */,
+				29B638A62DB0E7DF00DF8419 /* SpanAdminFeature.swift */,
 			);
 			path = Admin;
 			sourceTree = "<group>";
@@ -291,7 +309,8 @@
 		292D0BA62DB0E24800176E51 /* Admin */ = {
 			isa = PBXGroup;
 			children = (
-				292D0BA72DB0E24F00176E51 /* RegionAdminView.swift */,
+				292D0BA92DB0E30C00176E51 /* RegionInfoAdminView.swift */,
+				29B638A82DB0E89000DF8419 /* SpanAdminView.swift */,
 			);
 			path = Admin;
 			sourceTree = "<group>";
@@ -299,7 +318,6 @@
 		29486DCC2D8B031F00C50C0D /* Public */ = {
 			isa = PBXGroup;
 			children = (
-				29998EA02DA3EBFD00CBC1DC /* RoutePublicPage.swift */,
 			);
 			path = Public;
 			sourceTree = "<group>";
@@ -324,6 +342,7 @@
 		29486DD12D8B094F00C50C0D /* Compound */ = {
 			isa = PBXGroup;
 			children = (
+				299A06AB2DB1429600E76898 /* Location */,
 				298CAF712D9D6A6E00C57C26 /* District */,
 				298CAF722D9D6A7500C57C26 /* Route */,
 				298CAF702D9D6A6800C57C26 /* Region */,
@@ -334,7 +353,8 @@
 		29486DD22D8B095D00C50C0D /* Parts */ = {
 			isa = PBXGroup;
 			children = (
-				292D0B8E2DB0D43700176E51 /* EditableListItemView.swift */,
+				29AD864E2DB20EC200C3E8B2 /* Others */,
+				29AD864D2DB20EB500C3E8B2 /* Map */,
 				2997701E2DA527ED00EEB5F4 /* Button */,
 			);
 			path = Parts;
@@ -344,8 +364,6 @@
 			isa = PBXGroup;
 			children = (
 				296795D32DA4FEFD008D3CE1 /* Extensions.swift */,
-				296795D02DA4F8FB008D3CE1 /* RouteMapView.swift */,
-				29CB077E2DAF8C500009A47D /* BaseMapView.swift */,
 			);
 			path = Core;
 			sourceTree = "<group>";
@@ -460,9 +478,10 @@
 		298BD79C2D71E46600CB63F1 /* FesTracking2 */ = {
 			isa = PBXGroup;
 			children = (
+				29AD86512DB212DB00C3E8B2 /* Info.plist */,
 				2983AB722D74152C002F6CB5 /* Domain */,
 				29CF49152D74315300036D28 /* Application */,
-				29CF49062D7425D600036D28 /* Utils */,
+				29CF49062D7425D600036D28 /* Core */,
 				29CF49032D74244500036D28 /* Infrastructure */,
 				2983AB772D741534002F6CB5 /* Presentation */,
 				298BD79D2D71E46600CB63F1 /* FesTracking2App.swift */,
@@ -543,6 +562,14 @@
 			path = District;
 			sourceTree = "<group>";
 		};
+		299A06AB2DB1429600E76898 /* Location */ = {
+			isa = PBXGroup;
+			children = (
+				299A06AC2DB1429E00E76898 /* LocationAdminView.swift */,
+			);
+			path = Location;
+			sourceTree = "<group>";
+		};
 		299A51692DA9547A00B24828 /* Admin */ = {
 			isa = PBXGroup;
 			children = (
@@ -597,6 +624,32 @@
 			path = Region;
 			sourceTree = "<group>";
 		};
+		29AD864C2DB2041200C3E8B2 /* Location */ = {
+			isa = PBXGroup;
+			children = (
+				29AD864A2DB2040A00C3E8B2 /* LocationLiveClient.swift */,
+			);
+			path = Location;
+			sourceTree = "<group>";
+		};
+		29AD864D2DB20EB500C3E8B2 /* Map */ = {
+			isa = PBXGroup;
+			children = (
+				296795D02DA4F8FB008D3CE1 /* RouteAdminMapView.swift */,
+				29CB077E2DAF8C500009A47D /* DistrictAdminMapView.swift */,
+				29AD864F2DB210F000C3E8B2 /* LocationAdminMapView.swift */,
+			);
+			path = Map;
+			sourceTree = "<group>";
+		};
+		29AD864E2DB20EC200C3E8B2 /* Others */ = {
+			isa = PBXGroup;
+			children = (
+				292D0B8E2DB0D43700176E51 /* EditableListItemView.swift */,
+			);
+			path = Others;
+			sourceTree = "<group>";
+		};
 		29CB07722DAF7CF30009A47D /* Public */ = {
 			isa = PBXGroup;
 			children = (
@@ -610,7 +663,8 @@
 		29CB07732DAF7CFE0009A47D /* Admin */ = {
 			isa = PBXGroup;
 			children = (
-				29CB07742DAF7D150009A47D /* DistrictAdminView.swift */,
+				29CB07742DAF7D150009A47D /* DistrictInfoAdminView.swift */,
+				299A06A72DB13B2C00E76898 /* DistrictAdminView.swift */,
 				29CB077C2DAF8B940009A47D /* BaseAdminView.swift */,
 				29CB07802DAF93350009A47D /* AreaAdminView.swift */,
 				292D0B8A2DB0CAD700176E51 /* PerformanceAdminView.swift */,
@@ -621,7 +675,8 @@
 		29CB07762DAF7E5F0009A47D /* Admin */ = {
 			isa = PBXGroup;
 			children = (
-				2997C2EC2D79CA3E0032566B /* DistrictAdminFeature.swift */,
+				2997C2EC2D79CA3E0032566B /* DistrictInfoAdminFeature.swift */,
+				299A06A92DB13BA300E76898 /* DistrictAdminFeature.swift */,
 				29CB07782DAF807F0009A47D /* AreaAdminFeature.swift */,
 				29CB077A2DAF865C0009A47D /* BaseAdminFeature.swift */,
 				292D0B8C2DB0CB1E00176E51 /* PerformanceAdminFeature.swift */,
@@ -641,8 +696,9 @@
 		29CF49032D74244500036D28 /* Infrastructure */ = {
 			isa = PBXGroup;
 			children = (
+				29AD864C2DB2041200C3E8B2 /* Location */,
 				29DAB06E2DA16220005E94BA /* AWSCognito */,
-				29CF49052D74248B00036D28 /* Remote */,
+				29CF49052D74248B00036D28 /* Api */,
 				29CF49042D74248300036D28 /* UserDefaults */,
 			);
 			path = Infrastructure;
@@ -657,23 +713,24 @@
 			path = UserDefaults;
 			sourceTree = "<group>";
 		};
-		29CF49052D74248B00036D28 /* Remote */ = {
+		29CF49052D74248B00036D28 /* Api */ = {
 			isa = PBXGroup;
 			children = (
-				29CF49092D74262300036D28 /* RemoteLiveClient.swift */,
-				29CF490B2D74263400036D28 /* RemoteMockClient.swift */,
+				29CF49092D74262300036D28 /* ApiLiveClient.swift */,
+				29CF490B2D74263400036D28 /* ApiMockClient.swift */,
 			);
-			path = Remote;
+			path = Api;
 			sourceTree = "<group>";
 		};
-		29CF49062D7425D600036D28 /* Utils */ = {
+		29CF49062D7425D600036D28 /* Core */ = {
 			isa = PBXGroup;
 			children = (
 				29CF49072D7425F600036D28 /* HTTP.swift */,
 				2972017A2D9CFA41003424EF /* async.swift */,
 				29CF49182D7440EB00036D28 /* Extension.swift */,
+				29AD86522DB2421E00C3E8B2 /* Fragments.swift */,
 			);
-			path = Utils;
+			path = Core;
 			sourceTree = "<group>";
 		};
 		29CF490D2D74266500036D28 /* Models */ = {
@@ -687,14 +744,15 @@
 			path = Models;
 			sourceTree = "<group>";
 		};
-		29CF490E2D74266F00036D28 /* Repository */ = {
+		29CF490E2D74266F00036D28 /* Client */ = {
 			isa = PBXGroup;
 			children = (
-				29CF49102D74269A00036D28 /* RemoteClient.swift */,
+				29CF49102D74269A00036D28 /* ApiClient.swift */,
+				29AD86482DB2032000C3E8B2 /* LocationClient.swift */,
 				29DAB06C2DA16084005E94BA /* AWSCognitoClient.swift */,
 				29CF49122D7426A400036D28 /* UserDefaultsClient.swift */,
 			);
-			path = Repository;
+			path = Client;
 			sourceTree = "<group>";
 		};
 		29CF49152D74315300036D28 /* Application */ = {
@@ -708,7 +766,7 @@
 		29DAB05F2D9FC546005E94BA /* Interfaces */ = {
 			isa = PBXGroup;
 			children = (
-				29CF490E2D74266F00036D28 /* Repository */,
+				29CF490E2D74266F00036D28 /* Client */,
 			);
 			path = Interfaces;
 			sourceTree = "<group>";
@@ -716,7 +774,7 @@
 		29DAB0622DA15CE6005E94BA /* Location */ = {
 			isa = PBXGroup;
 			children = (
-				29DAB0632DA15CF0005E94BA /* LocationFeature.swift */,
+				29DAB0632DA15CF0005E94BA /* LocationAdminFeature.swift */,
 			);
 			path = Location;
 			sourceTree = "<group>";
@@ -1022,8 +1080,7 @@
 			files = (
 				297201872D9D00B2003424EF /* RegionDetail.swift in Sources */,
 				298CAF792D9D6ADF00C57C26 /* DistrictListView.swift in Sources */,
-				29998EA12DA3EC0600CBC1DC /* RoutePublicPage.swift in Sources */,
-				292D0BA82DB0E25300176E51 /* RegionAdminView.swift in Sources */,
+				29AD86532DB2422200C3E8B2 /* Fragments.swift in Sources */,
 				297201882D9D00B2003424EF /* RegionSummaries.swift in Sources */,
 				2914184A2DA2B8B8003D7C72 /* DistrictDetailView.swift in Sources */,
 				299770202DA527FB00EEB5F4 /* RouteButton.swift in Sources */,
@@ -1032,6 +1089,7 @@
 				29F403062DAA95DF003527D1 /* EditableRoute.swift in Sources */,
 				296795D42DA4FF01008D3CE1 /* Extensions.swift in Sources */,
 				29A043592D7DCFD200E77C91 /* District.swift in Sources */,
+				299A06A82DB13B3E00E76898 /* DistrictAdminView.swift in Sources */,
 				29A043512D7DC67500E77C91 /* Coordinate.swift in Sources */,
 				29DAB06D2DA1608E005E94BA /* AWSCognitoClient.swift in Sources */,
 				29486DD42D8B0CD000C50C0D /* DistrictItemView.swift in Sources */,
@@ -1049,17 +1107,22 @@
 				29CF49132D7426A400036D28 /* UserDefaultsClient.swift in Sources */,
 				297201932D9D077C003424EF /* AuthFeature.swift in Sources */,
 				291418462DA2B82B003D7C72 /* RouteListView.swift in Sources */,
+				292D0BAA2DB0E31300176E51 /* RegionInfoAdminView.swift in Sources */,
 				299770222DA564A300EEB5F4 /* PointAdminView.swift in Sources */,
 				29DAB0722DA163E4005E94BA /* AWSCognitoMockClient.swift in Sources */,
 				29460A0D2D8C29030097CAA1 /* LoginView.swift in Sources */,
+				29B638A72DB0E7E400DF8419 /* SpanAdminFeature.swift in Sources */,
+				29AD86492DB2032300C3E8B2 /* LocationClient.swift in Sources */,
 				29A043532D7DC83B00E77C91 /* SimpleTime.swift in Sources */,
 				29CF49082D7425F600036D28 /* HTTP.swift in Sources */,
 				292D0B8D2DB0CB2700176E51 /* PerformanceAdminFeature.swift in Sources */,
+				299A06AA2DB13BAC00E76898 /* DistrictAdminFeature.swift in Sources */,
 				29DAB0702DA1623C005E94BA /* AWSCognitoLiveClient.swift in Sources */,
-				2997C2ED2D79CA4B0032566B /* DistrictAdminFeature.swift in Sources */,
-				29DAB0642DA15CFC005E94BA /* LocationFeature.swift in Sources */,
+				2997C2ED2D79CA4B0032566B /* DistrictInfoAdminFeature.swift in Sources */,
+				29DAB0642DA15CFC005E94BA /* LocationAdminFeature.swift in Sources */,
+				299A06AD2DB142A200E76898 /* LocationAdminView.swift in Sources */,
 				29A0434C2D7DC54B00E77C91 /* Location.swift in Sources */,
-				29CB077F2DAF8C510009A47D /* BaseMapView.swift in Sources */,
+				29CB077F2DAF8C510009A47D /* DistrictAdminMapView.swift in Sources */,
 				298BD79E2D71E46600CB63F1 /* FesTracking2App.swift in Sources */,
 				299936AB2D7AD499009D651E /* UserDefaultsLiveClient.swift in Sources */,
 				2997C2F32D79E1130032566B /* SegmentEditingFeature.swift in Sources */,
@@ -1067,6 +1130,7 @@
 				29460A0B2D8C28AC0097CAA1 /* LoginFeature.swift in Sources */,
 				291418502DA2B981003D7C72 /* RegionDetailView.swift in Sources */,
 				29CB077D2DAF8B970009A47D /* BaseAdminView.swift in Sources */,
+				29AD86502DB210F500C3E8B2 /* LocationAdminMapView.swift in Sources */,
 				291418512DA2B981003D7C72 /* RegionItemView.swift in Sources */,
 				291418522DA2B981003D7C72 /* RegionListView.swift in Sources */,
 				29CB07792DAF80850009A47D /* AreaAdminFeature.swift in Sources */,
@@ -1075,26 +1139,28 @@
 				29CF49192D7440EB00036D28 /* Extension.swift in Sources */,
 				299A51622DA942CF00B24828 /* RouteInfoAdminView.swift in Sources */,
 				291418482DA2B871003D7C72 /* RouteItemView.swift in Sources */,
-				296795D12DA4F902008D3CE1 /* RouteMapView.swift in Sources */,
+				296795D12DA4F902008D3CE1 /* RouteAdminMapView.swift in Sources */,
 				296795CF2DA4F7B1008D3CE1 /* Span.swift in Sources */,
 				297201842D9CFFC3003424EF /* DistrictSummaries.swift in Sources */,
 				2972018B2D9D00FF003424EF /* RouteDetailFeature.swift in Sources */,
 				296795CB2DA4F3D9008D3CE1 /* RouteMapAdminView.swift in Sources */,
 				2972018C2D9D00FF003424EF /* RouteSummariesFeature.swift in Sources */,
 				29DAB0612DA15CD1005E94BA /* RouteMapAdminFeature.swift in Sources */,
-				29CF49112D74269A00036D28 /* RemoteClient.swift in Sources */,
+				29CF49112D74269A00036D28 /* ApiClient.swift in Sources */,
 				296795CD2DA4F712008D3CE1 /* DateAndTime.swift in Sources */,
-				29CF490C2D74263400036D28 /* RemoteMockClient.swift in Sources */,
+				29CF490C2D74263400036D28 /* ApiMockClient.swift in Sources */,
 				29B5FD612D80870A008838BB /* RegionSummary.swift in Sources */,
 				29DAB06B2DA15FAA005E94BA /* RoutePublicPageFeature.swift in Sources */,
 				292D0B8B2DB0CADD00176E51 /* PerformanceAdminView.swift in Sources */,
 				297201912D9D0693003424EF /* RegionPage.swift in Sources */,
 				29B5FD632D80877D008838BB /* DistrictSummary.swift in Sources */,
 				29A043572D7DCE0C00E77C91 /* Region.swift in Sources */,
-				29CB07752DAF7D1E0009A47D /* DistrictAdminView.swift in Sources */,
+				29CB07752DAF7D1E0009A47D /* DistrictInfoAdminView.swift in Sources */,
+				29B638A92DB0E89600DF8419 /* SpanAdminView.swift in Sources */,
+				29AD864B2DB2040E00C3E8B2 /* LocationLiveClient.swift in Sources */,
 				29A043482D7DC36400E77C91 /* Point.swift in Sources */,
 				29A043462D7DC2B200E77C91 /* Route.swift in Sources */,
-				29CF490A2D74262300036D28 /* RemoteLiveClient.swift in Sources */,
+				29CF490A2D74262300036D28 /* ApiLiveClient.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1268,6 +1334,7 @@
 				"DEVELOPMENT_TEAM[sdk=iphoneos*]" = SN9A65C32S;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = FesTracking2/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "MaTool -祭典-";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
@@ -1303,6 +1370,7 @@
 				"DEVELOPMENT_TEAM[sdk=iphoneos*]" = SN9A65C32S;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = FesTracking2/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "MaTool -祭典-";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;

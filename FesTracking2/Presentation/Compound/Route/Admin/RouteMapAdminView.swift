@@ -16,7 +16,7 @@ struct RouteMapAdminView: View{
     var body: some View{
             // 背景のMap
         ZStack {
-            RouteMapView(
+            RouteAdminMapView(
                 annotations: store.route.points,
                 segments: store.route.segments,
                 onMapLongPress: { coordinate in store.send(.mapLongPressed(coordinate))},

@@ -51,7 +51,7 @@ struct PointAdminView: View {
                         DatePicker(
                             "時刻を選択",
                             selection: Binding(
-                                get: { store.item.time?.toDate() ?? Date() },
+                                get: { store.item.time?.toDate ?? Date() },
                                 set: { date in
                                     store.send(.binding(.set(\.item.time, SimpleTime.fromDate(date))))
                                 }
@@ -63,21 +63,30 @@ struct PointAdminView: View {
                 }
             }
             .toolbar {
-                ToolbarItem(placement: .navigationBarLeading) {
-                    Button("キャンセル") {
+                ToolbarItem(placement: .topBarLeading) {
+                    Button{
                         store.send(.cancelButtonTapped)
+                    } label: {
+                        Text("キャンセル")
                     }
+                    .padding(.horizontal, 8)
                 }
                 ToolbarItem(placement: .principal) {
                     Text("地点編集")
-                        .font(.headline)
+                        .bold()
                 }
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button("保存") {
-                        store.send(.saveButtonTapped)
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button{
+                        store.send(.doneButtonTapped)
+                    } label: {
+                        Text("完了")
+                            .bold()
                     }
+                    .padding(.horizontal, 8)
                 }
             }
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbarBackground(.visible, for: .navigationBar)
         }
     }
 }

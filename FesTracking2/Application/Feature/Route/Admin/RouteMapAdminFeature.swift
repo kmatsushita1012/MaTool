@@ -85,7 +85,7 @@ struct RouteMapAdminFeature{
                 return .none
             case .doneButtonTapped:
                 return .none
-            case .pointAdmin(.presented(.saveButtonTapped)):
+            case .pointAdmin(.presented(.doneButtonTapped)):
                 if let pointAdmin = state.pointAdmin,
                    let index = state.route.points.firstIndex(where: { $0.id == pointAdmin.item.id }) {
                     state.route.points[index] = pointAdmin.item

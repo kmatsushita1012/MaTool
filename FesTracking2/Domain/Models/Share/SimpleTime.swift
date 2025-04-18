@@ -8,16 +8,27 @@
 struct SimpleTime: Codable{
     let hour: Int
     let minute: Int
-    init(hour: Int, minute: Int) {
-        self.hour = hour
-        self.minute = minute
+}
+
+extension SimpleTime: Equatable{}
+
+extension SimpleTime: Comparable {
+    static func < (lhs: SimpleTime, rhs: SimpleTime) -> Bool {
+        if(lhs.hour != rhs.hour){
+           return lhs.hour < rhs.hour
+       }else{
+           return lhs.minute < rhs.minute
+       }
     }
 }
 
-extension SimpleTime: Equatable{
-    
+extension SimpleTime {
+    var text: String {
+        return String(format: "%02d:%02d", hour, minute)
+    }
 }
 
 extension SimpleTime {
     static let sample = Self(hour: 9 ,minute: 0)
 }
+

@@ -11,13 +11,18 @@ import ComposableArchitecture
 struct RegionAdminFeature {
     @ObservableState
     struct State: Equatable {
-        var item: District
+        var item: Region
+        @Presents var span: SpanAdminFeature.State?
     }
     @CasePathable
     enum Action: BindableAction {
         case binding(BindingAction<State>)
         case saveButtonTapped
         case cancelButtonTapped
+        case onSpanEdit(Span)
+        case onSpanDelete(Span)
+        case onSpanAdd
+        case span(PresentationAction<SpanAdminFeature.Action>)
     }
     var body: some ReducerOf<RegionAdminFeature> {
         BindingReducer()
@@ -29,7 +34,32 @@ struct RegionAdminFeature {
                 return .none
             case .cancelButtonTapped:
                 return .none
+            case .onSpanEdit(let item):
+                state.span = SpanAdminFeature.State(item)
+                return .none
+            case .onSpanDelete(let item):
+                state.item.spans.removeAll(where: {$0.id == item.id})
+                return .none
+            case .onSpanAdd:
+                state.span = SpanAdminFeature.State()
+                return .none
+            case .span(.presented(.doneButtonTapped)):
+                if let span = state.span?.span {
+                    state.item.spans.upsert(span)
+                    state.item.spans.sort()
+                }
+                state.span = nil
+                return .none
+            case .span(.presented(.cancelButtonTapped)):
+                print(state.item.spans)
+                state.span = nil
+                return .none
+            case .span(_):
+                return .none
             }
+        }
+        .ifLet(\.$span, action: \.span){
+            SpanAdminFeature()
         }
     }
 }

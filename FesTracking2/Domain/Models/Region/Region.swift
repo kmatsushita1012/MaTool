@@ -7,22 +7,12 @@
 
 struct Region: Codable{
     let id: String
-    let name: String
-    let description: String?
-    let prefecture: String
-    let city: String
-    let dates: [SimpleDate]
-    let imagePath:String?
-    
-    init(id: String, name: String, description: String?=nil, prefecture: String, city: String, dates: [SimpleDate], imagePath: String?=nil) {
-        self.id = id
-        self.name = name
-        self.description = description
-        self.prefecture = prefecture
-        self.city = city
-        self.dates = dates
-        self.imagePath = imagePath
-    }
+    var name: String
+    var description: String?
+    var prefecture: String
+    var city: String
+    var spans: [Span] = []
+    var imagePath:String?
 }
 
 extension Region: Equatable {
@@ -34,6 +24,6 @@ extension Region: Equatable {
 
 
 extension Region {
-    static let sample = Self(id: "kakegawamaturi", name: "掛川祭",description: "省略", prefecture: "静岡県", city: "掛川市", dates: [SimpleDate.sample])
+    static let sample = Self(id: "kakegawamaturi", name: "掛川祭",description: "省略", prefecture: "静岡県", city: "掛川市", spans: [Span.sample])
 }
 

@@ -18,7 +18,7 @@ struct RouteInfoAdminView: View{
                     DatePicker(
                         "日付を選択",
                         selection: Binding(
-                            get: { store.route.date.toDate() },
+                            get: { store.route.date.toDate },
                             set: { date in
                                 store.send(.binding(.set(\.route.date, SimpleDate.fromDate(date))))
                             }
@@ -57,7 +57,7 @@ struct RouteInfoAdminView: View{
                         DatePicker(
                             "開始時刻",
                             selection: Binding(
-                                get: { store.route.start?.toDate() ?? Date() },
+                                get: { store.route.start?.toDate ?? Date() },
                                 set: { date in
                                     store.send(.binding(.set(\.route.start, SimpleTime.fromDate(date))))
                                 }
@@ -68,7 +68,7 @@ struct RouteInfoAdminView: View{
                         DatePicker(
                             "終了時刻",
                             selection: Binding(
-                                get: { store.route.goal?.toDate() ?? Date() },
+                                get: { store.route.goal?.toDate ?? Date() },
                                 set: { date in
                                     store.send(.binding(.set(\.route.goal, SimpleTime.fromDate(date))))
                                 }
@@ -81,22 +81,22 @@ struct RouteInfoAdminView: View{
                 }
             }
             .toolbar {
-                ToolbarItem(placement: .principal) {
-                    Text("ルート編集")
-                        .font(.headline)
-                }
-                ToolbarItemGroup(placement: .navigationBarTrailing) {
-                    Button(action: {
-                        store.send(.deleteButtonTapped)
-                    }) {
-                        Image(systemName: "trash")
-                            .foregroundColor(.red)
+                ToolbarItem(placement: .topBarLeading) {
+                    Button("キャンセル") {
+                        store.send(.cancelButtonTapped)
                     }
                     .padding(8)
-                    Button(action: {
+                }
+                ToolbarItem(placement: .principal) {
+                    Text("編集")
+                        .bold()
+                }
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button{
                         store.send(.saveButtonTapped)
-                    }) {
-                        Image(systemName: "checkmark")
+                    } label: {
+                        Text("保存")
+                            .bold()
                     }
                     .padding(8)
                 }

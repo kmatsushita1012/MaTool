@@ -9,7 +9,7 @@ import Foundation
 
 struct District: Codable{
     let id: String
-    let name: String
+    var name: String
     let regionId: String
     var description: String? = nil
     var base: Coordinate? = nil

@@ -10,7 +10,7 @@ import ComposableArchitecture
 @Reducer
 struct DistrictSummariesFeature{
     
-    @Dependency(\.remoteClient) var remoteClient
+    @Dependency(\.apiClient) var apiClient
     
     @ObservableState
     struct State: Equatable{
@@ -29,7 +29,7 @@ struct DistrictSummariesFeature{
     
     enum Action: Equatable{
         case loaded(String)
-        case received(Result<[DistrictSummary],RemoteError>)
+        case received(Result<[DistrictSummary],ApiError>)
         case selected(DistrictSummary)
     }
     
@@ -39,7 +39,7 @@ struct DistrictSummariesFeature{
             case .loaded(let id):
                 state.items = AsyncValue.loading
                 return .run{ send in
-                    let item = await self.remoteClient.getDistrictSummaries(id)
+                    let item = await self.apiClient.getDistrictSummaries(id)
                     await send(.received(item))
                 }
             case .received(.success(let value)):

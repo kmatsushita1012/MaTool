@@ -10,7 +10,7 @@ import ComposableArchitecture
 @Reducer
 struct RegionPageFeature{
     
-    @Dependency(\.remoteClient) var remoteClient
+    @Dependency(\.apiClient) var apiClient
     
     @ObservableState
     struct State: Equatable{
@@ -33,8 +33,8 @@ struct RegionPageFeature{
             switch action {
             case .loaded:
                 return .run { [id = state.id] send in
-                    let detailResult = await self.remoteClient.getRegionDetail(id)
-                    let districtResult = await self.remoteClient.getDistrictSummaries(id)
+                    let detailResult = await self.apiClient.getRegionDetail(id)
+                    let districtResult = await self.apiClient.getDistrictSummaries(id)
                     
                     await send(.detail(.received( detailResult)))
                     await send(.district(.received( districtResult)))

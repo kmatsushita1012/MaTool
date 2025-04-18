@@ -14,7 +14,7 @@ struct AreaAdminView:View {
     var body: some View {
         NavigationStack{
             ZStack {
-                BaseMapView(
+                DistrictAdminMapView(
                     coordinates: store.coordinates,
                     isShownPolygon: true,
                     onMapLongPress: { coordinate in store.send(.mapTapped(coordinate))},
