@@ -8,18 +8,17 @@
 struct Location: Codable{
     let districtId: String
     let coordinate: Coordinate
-    let date: SimpleDate
-    let time: SimpleTime
+    let time: DateTime
 }
 
 extension Location: Equatable {
     static func == (lhs: Location, rhs: Location) -> Bool {
-        return lhs.districtId == rhs.districtId && lhs.date == rhs.date && lhs.time == rhs.time
+        return lhs.districtId == rhs.districtId && lhs.time == rhs.time
     }
 }
 
 extension Location {
-    static let sample = Self(districtId: "johoku", coordinate: Coordinate.sample,date: SimpleDate.sample, time: SimpleTime.sample)
+    static let sample = Self(districtId: "johoku", coordinate: Coordinate.sample, time: DateTime.sample)
 }
 
 struct RouteLocationResponse: Codable{

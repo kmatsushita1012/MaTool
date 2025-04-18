@@ -15,23 +15,6 @@ struct AWSCognitoClient {
     var signOut: () async -> Result<Void,AWSCognitoError>
 }
 
-extension AWSCognitoClient {
-    static let noop = Self(
-        initialize: {
-            return .success(nil) // ユーザー未サインイン状態を想定
-        },
-        signIn: { username,password in
-            return .failure(.unknown("Mock")) // テスト用のサンプル
-        },
-        getTokens: {
-            return .failure(.unknown("Mock")) // テスト用のサンプル
-        },
-        signOut: {
-            return .success(())
-        }
-    )
-}
-
 
 enum AWSCognitoError: Error, Equatable {
     case network(String)

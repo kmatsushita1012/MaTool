@@ -8,7 +8,7 @@
 import Foundation
 import Dependencies
 
-extension RemoteClient: DependencyKey {
+extension ApiClient: DependencyKey {
     static let liveValue = Self.noop
     static let live = Self(
         getRegionSummaries: {
@@ -72,7 +72,7 @@ extension RemoteClient: DependencyKey {
                 path: "/location",
                 query: ["id" : districtId ]
             )
-            return decodeResponse(Location.self, from: response)
+            return decodeResponse(Location?.self, from: response)
         },
         postRegion: { region, accessToken in
             let body = encodeRequest(region)
@@ -82,7 +82,7 @@ extension RemoteClient: DependencyKey {
                 let response = await performPostRequest(path: "/region", body: body,accessToken: accessToken)
                 return decodeResponse(String.self, from: response)
             case .failure(let failure):
-                return Result.failure(RemoteError.encoding(failure.localizedDescription))
+                return Result.failure(ApiError.encoding(failure.localizedDescription))
             }
         },
         postDistrict: { district, accessToken in
@@ -92,7 +92,7 @@ extension RemoteClient: DependencyKey {
                 let response = await performPostRequest(path: "/district", body: body,accessToken: accessToken)
                 return decodeResponse(String.self, from: response)
             case .failure(let failure):
-                return Result.failure(RemoteError.encoding(failure.localizedDescription))
+                return Result.failure(ApiError.encoding(failure.localizedDescription))
             }
         },
         postRoute: { route, accessToken in
@@ -102,7 +102,7 @@ extension RemoteClient: DependencyKey {
                 let response = await performPostRequest(path: "/route", body: body,accessToken: accessToken)
                 return decodeResponse(String.self, from: response)
             case .failure(let failure):
-                return Result.failure(RemoteError.encoding(failure.localizedDescription))
+                return Result.failure(ApiError.encoding(failure.localizedDescription))
             }
         },
         deleteRoute: { districtId, date, title, accessToken in
@@ -126,7 +126,7 @@ extension RemoteClient: DependencyKey {
                 let response = await performPostRequest(path: "/location", body: body,accessToken: accessToken)
                 return decodeResponse(String.self, from: response)
             case .failure(let failure):
-                return Result.failure(RemoteError.encoding(failure.localizedDescription))
+                return Result.failure(ApiError.encoding(failure.localizedDescription))
             }
         },
         deleteLocation: { id, accessToken in
@@ -149,7 +149,7 @@ extension RemoteClient: DependencyKey {
             return decodeResponse([Coordinate].self, from: response)
         }
     )
-    static private func decodeResponse<T:Codable>(_ type:T.Type, from response: Result<Data,Error>)->Result<T,RemoteError>{
+    static private func decodeResponse<T:Codable>(_ type:T.Type, from response: Result<Data,Error>)->Result<T,ApiError>{
         switch response {
         case .success(let data):
             do{
@@ -157,10 +157,10 @@ extension RemoteClient: DependencyKey {
                 return Result.success(decodedObject)
             }catch{
                 //TODO
-                return Result.failure(RemoteError.decoding("レスポンスの解析に失敗しました"))
+                return Result.failure(ApiError.decoding("レスポンスの解析に失敗しました"))
             }
         case .failure(let error):
-            return Result.failure(RemoteError.network(error.localizedDescription))
+            return Result.failure(ApiError.network(error.localizedDescription))
         }
     }
     static private func encodeRequest<T: Encodable>(_ object: T) -> Result<Data, Error> {
