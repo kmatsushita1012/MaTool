@@ -33,22 +33,19 @@ struct RouteInfoAdminFeature {
         }
     }
     
-    
-    
     @CasePathable
     enum Action: BindableAction {
         case onAppear
-        case getReceived(Result<Route, RemoteError>)
+        case getReceived(Result<Route, ApiError>)
         case binding(BindingAction<State>)
         case mapButtonTapped
         case saveButtonTapped
-        case deleteButtonTapped
         case cancelButtonTapped
-        case postReceived(Result<String, RemoteError>)
+        case postReceived(Result<String, ApiError>)
         case map(PresentationAction<RouteMapAdminFeature.Action>)
     }
     
-    @Dependency(\.remoteClient) var remoteClient
+    @Dependency(\.apiClient) var apiClient
     @Dependency(\.userDefaultsClient) var userDefaultsClient
     
     var body: some ReducerOf<RouteInfoAdminFeature> {
@@ -56,13 +53,10 @@ struct RouteInfoAdminFeature {
         Reduce{ state, action in
             switch (action) {
             case .onAppear:
-                print("onAppear")
                 if case let .edit(id,date,title) = state.mode{
-                    print("onAppear edit")
-                    print(remoteClient)
                     state.isLoading = true
                     return .run { send in
-                        let result = await remoteClient.getRouteDetail(id,date,title)
+                        let result = await apiClient.getRouteDetail(id,date,title)
                         await send(.getReceived(result))
                     }
                 }
@@ -87,17 +81,7 @@ struct RouteInfoAdminFeature {
                     return .none
                 }
                 return .run { [route = state.route] send in
-                    let result = await remoteClient.postRoute(route.toRoute(), accessToken)
-                    await send(.postReceived(result))
-                }
-            case .deleteButtonTapped:
-                guard let accessToken = userDefaultsClient.stringForKey("AccessToken") else {
-                    state.errorMessage = "No access token found"
-                    return .none
-                }
-                let route = state.route
-                return .run { send in
-                    let result = await remoteClient.deleteRoute(route.districtId,route.date,route.title, accessToken)
+                    let result = await apiClient.postRoute(route.toRoute(), accessToken)
                     await send(.postReceived(result))
                 }
             case .cancelButtonTapped:
@@ -122,3 +106,14 @@ struct RouteInfoAdminFeature {
         }
     }
 }
+//
+//case .deleteButtonTapped:
+//    guard let accessToken = userDefaultsClient.stringForKey("AccessToken") else {
+//        state.errorMessage = "No access token found"
+//        return .none
+//    }
+//    let route = state.route
+//    return .run { send in
+//        let result = await apiClient.deleteRoute(route.districtId,route.date,route.title, accessToken)
+//        await send(.postReceived(result))
+//    }

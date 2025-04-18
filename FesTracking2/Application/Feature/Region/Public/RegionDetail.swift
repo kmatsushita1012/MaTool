@@ -9,7 +9,7 @@ import ComposableArchitecture
 @Reducer
 struct RegionDetailFeature{
     
-    @Dependency(\.remoteClient) var remoteClient
+    @Dependency(\.apiClient) var apiClient
     
     @ObservableState
     struct State: Equatable{
@@ -27,7 +27,7 @@ struct RegionDetailFeature{
     
     enum Action: Equatable{
         case loaded(String)
-        case received(Result<Region,RemoteError>)
+        case received(Result<Region,ApiError>)
     }
     
     var body: some ReducerOf<RegionDetailFeature> {
@@ -36,7 +36,7 @@ struct RegionDetailFeature{
             case .loaded(let id):
                 state.item = AsyncValue.loading
                 return .run{ send in
-                    let item = await self.remoteClient.getRegionDetail(id)
+                    let item = await self.apiClient.getRegionDetail(id)
                     await send(.received(item))
                 }
             case .received(.success(let value)):

@@ -8,7 +8,7 @@ import UIKit
 import MapKit
 import SwiftUI
 
-struct BaseMapView: UIViewRepresentable {
+struct DistrictAdminMapView: UIViewRepresentable {
     var coordinates: [Coordinate]?
     var isShownPolygon: Bool
 
@@ -56,10 +56,10 @@ struct BaseMapView: UIViewRepresentable {
     }
 
     class Coordinator: NSObject, MKMapViewDelegate {
-        var parent: BaseMapView
+        var parent: DistrictAdminMapView
         var hasSetRegion = false
 
-        init(_ parent: BaseMapView) {
+        init(_ parent: DistrictAdminMapView) {
             self.parent = parent
         }
 
@@ -81,8 +81,6 @@ struct BaseMapView: UIViewRepresentable {
             }
             return MKOverlayRenderer(overlay: overlay)
         }
-
-
     }
 }
 
