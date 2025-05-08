@@ -2,10 +2,6 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-	<key>NSLocationWhenInUseUsageDescription</key>
-	<string>このアプリは現在地を取得して地図上に表示します</string>
-	<key>NSLocationAlwaysUsageDescription</key>
-	<string>このアプリはバックグラウンドでも位置情報を使用します</string>
 	<key>UIBackgroundModes</key>
 	<array>
 		<string>location</string>

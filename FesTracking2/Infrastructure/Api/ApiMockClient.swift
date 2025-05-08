@@ -14,41 +14,51 @@ extension ApiClient: TestDependencyKey {
 
 extension ApiClient {
     public static let noop = Self(
-        getRegionSummaries: {
-            return Result.success([RegionSummary.sample])
+        getRegions: {
+            return Result.success([Region.sample])
         },
-        getRegionDetail:{ _ in
+        getRegion:{ _ in
             return Result.success(Region.sample)
         },
-        getDistrictSummaries: { _ in
-            return Result.success([DistrictSummary.sample])
-        },
-        getDistrictDetail: { _ in
-            return Result.success(District.sample)
-        },
-        getRouteSummaries: { _ in
-            return Result.success([RouteSummary.sample])
-        },
-        getRouteDetail: { _,_,_  in
-            print("remote mock")
-            return Result.success(Route.sample)
-        },
-        getLocation: { _ in
-            return Result.success(Location.sample)
-        },
-        postRegion: { _,_ in
+        putRegion: { _,_ in
             return Result.success("Success")
+        },
+        getDistricts: { _ in
+            return Result.success([PublicDistrict.sample])
+        },
+        getDistrict: { _ in
+            return Result.success(PublicDistrict.sample)
         },
         postDistrict: { _,_ in
             return Result.success("Success")
         },
+        putDistrict: { _,_ in
+            return Result.success("Success")
+        },
+        getRoutes: { _ in
+            return Result.success([RouteSummary.sample,route2])
+        },
+        getRoute: { _,_,_  in
+            return Result.success(PublicRoute.sample)
+        },
+        getCurrentRoute: { _ in
+            return Result.success(PublicRoute.sample)
+        },
+        getLocation: { _ in
+            return Result.success(PublicLocation.sample)
+        },
+        getLocations: { _ in
+            return Result.success([PublicLocation.sample])
+        },
         postRoute: { _,_ in
+            return Result.success("Success")
+        },
+        putRoute: { _,_ in
             return Result.success("Success")
         },
         deleteRoute: { _,_,_,_  in
             return Result.success("Success")
         },
-        
         postLocation: { _,_ in
             return Result.success("Success")
         },
@@ -61,3 +71,5 @@ extension ApiClient {
         }
     )
 }
+
+let route2 = RouteSummary(districtId: "johoku", districtName: "城北町", date: SimpleDate.sample, title: "午前", visibility: .all)

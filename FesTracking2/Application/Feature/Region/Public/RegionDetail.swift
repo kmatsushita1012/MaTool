@@ -36,7 +36,7 @@ struct RegionDetailFeature{
             case .loaded(let id):
                 state.item = AsyncValue.loading
                 return .run{ send in
-                    let item = await self.apiClient.getRegionDetail(id)
+                    let item = await self.apiClient.getRegion(id)
                     await send(.received(item))
                 }
             case .received(.success(let value)):

@@ -9,6 +9,7 @@ import Foundation
 import Combine
 import ComposableArchitecture
 import MapKit
+import SwiftUICore
 
 struct Stack<Element: Equatable>: Equatable{
     private var elements: [Element] = []
@@ -52,3 +53,7 @@ extension Array where Element: Identifiable & Equatable {
     }
 }
 
+
+extension Color {
+    static let customLightRed = Color(red: 255/255, green: 183/255, blue: 167/255)
+}

@@ -9,6 +9,9 @@ import ComposableArchitecture
 
 @Reducer
 struct RegionAdminFeature {
+    
+    @Dependency(\.apiClient) var apiClient
+    
     @ObservableState
     struct State: Equatable {
         var item: Region
@@ -19,6 +22,7 @@ struct RegionAdminFeature {
         case binding(BindingAction<State>)
         case saveButtonTapped
         case cancelButtonTapped
+        case received(Result<String,ApiError>)
         case onSpanEdit(Span)
         case onSpanDelete(Span)
         case onSpanAdd
@@ -31,8 +35,15 @@ struct RegionAdminFeature {
             case .binding:
                 return .none
             case .saveButtonTapped:
-                return .none
+                return .run { [region = state.item] send in
+                    let result = await apiClient.putRegion(region,"")
+                    await send(.received(result))
+                }
             case .cancelButtonTapped:
+                return .none
+            case .received(.success(_)):
+                return .none
+            case .received(.failure(_)):
                 return .none
             case .onSpanEdit(let item):
                 state.span = SpanAdminFeature.State(item)

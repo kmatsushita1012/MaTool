@@ -17,12 +17,7 @@ struct SpanAdminView:View{
                 Section(header: Text("日付")) {
                     DatePicker(
                         "日付",
-                        selection: Binding(
-                            get: { store.date.toDate },
-                            set: { date in
-                                store.send(.binding(.set(\.date, SimpleDate.fromDate(date))))
-                            }
-                        ),
+                        selection: $store.date,
                         displayedComponents: [.date]
                     )
                     .environment(\.locale, Locale(identifier: "ja_JP"))
@@ -30,22 +25,12 @@ struct SpanAdminView:View{
                 Section(header: Text("時刻")) {
                     DatePicker(
                         "開始時刻",
-                        selection: Binding(
-                            get: { store.start.toDate},
-                            set: { date in
-                                store.send(.binding(.set(\.start, SimpleTime.fromDate(date))))
-                            }
-                        ),
+                        selection: $store.start,
                         displayedComponents: [.hourAndMinute]
                     )
                     DatePicker(
                         "終了時刻",
-                        selection: Binding(
-                            get: { store.end.toDate },
-                            set: { date in
-                                store.send(.binding(.set(\.end, SimpleTime.fromDate(date))))
-                            }
-                        ),
+                        selection: $store.end,
                         displayedComponents: [.hourAndMinute]
                     )
                     .datePickerStyle(.compact)

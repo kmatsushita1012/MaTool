@@ -9,10 +9,10 @@ import Foundation
 import SwiftUI
 
 extension Coordinate {
-    func toCLLocationCoordinate2D()->CLLocationCoordinate2D{
+    func toCL()->CLLocationCoordinate2D{
         return CLLocationCoordinate2D(latitude: self.latitude, longitude: self.longitude)
     }
-    static func fromCLLocationCoordinate2D(_ coordinate: CLLocationCoordinate2D)->Coordinate{
+    static func fromCL(_ coordinate: CLLocationCoordinate2D)->Coordinate{
         return Coordinate(latitude: coordinate.latitude, longitude: coordinate.longitude)
     }
 }
