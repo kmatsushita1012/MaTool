@@ -8,14 +8,14 @@
 import ComposableArchitecture
 
 @Reducer
-struct BaseAdminFeature{
+struct BaseAdminFeature {
     
     @ObservableState
-    struct State:Equatable {
+    struct State: Equatable {
         var coordinate: Coordinate?
     }
     @CasePathable
-    enum Action{
+    enum Action: Equatable{
         case mapTapped(Coordinate)
         case cancelButtonTapped
         case doneButtonTapped

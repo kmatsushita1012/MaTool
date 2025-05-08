@@ -11,95 +11,114 @@ import Dependencies
 extension ApiClient: DependencyKey {
     static let liveValue = Self.noop
     static let live = Self(
-        getRegionSummaries: {
+        getRegions: {
             let response = await performGetRequest(
-                path: "/region/summaries"
+                path: "/regions"
             )
-            return decodeResponse([RegionSummary].self, from: response)
+            return decodeResponse([Region].self, from: response)
         },
-        getRegionDetail: { id in
+        getRegion: { id in
             let response = await performGetRequest(
-                path: "/region/detail",
-                query: ["id":id]
+                path: "/regions/\(id)"
             )
             return decodeResponse(Region.self, from: response)
         },
-        getDistrictSummaries: { regionId in
-            let response = await performGetRequest(
-                path: "/district/summaries",
-                query: ["regionId":regionId]
-            )
-            return decodeResponse([DistrictSummary].self, from: response)
-        },
-        getDistrictDetail: { id in
-            let response = await performGetRequest(
-                path: "/district/detail",
-                query: ["id":id]
-            )
-            return decodeResponse(District.self, from: response)
-        },
-        getRouteSummaries: { districtId in
-            let response = await performGetRequest(
-                path: "/route/summaries",
-                query: ["districtId":districtId]
-            )
-            return decodeResponse([RouteSummary].self, from: response)
-        },
-        getRouteDetail: { districtId, date, title in
-            var query:[String:Any];
-            if let date = date,
-               let title = title{
-                query = [
-                    "districtId":districtId,
-                    "year":date.year,
-                    "month":date.month,
-                    "day":date.day,
-                    "title":title
-                ]
-            }else{
-                query = [
-                    "districtId":districtId,
-                ]
-            }
-            let response = await performGetRequest(
-                path: "/route/detail",
-                query: query
-            )
-            return decodeResponse(Route.self, from: response)
-        },
-        getLocation: { districtId in
-            let response = await performGetRequest(
-                path: "/location",
-                query: ["id" : districtId ]
-            )
-            return decodeResponse(Location?.self, from: response)
-        },
-        postRegion: { region, accessToken in
+        putRegion: { region, accessToken in
             let body = encodeRequest(region)
             switch body {
             case .success(let body):
-                
-                let response = await performPostRequest(path: "/region", body: body,accessToken: accessToken)
+                let response = await performPutRequest(path: "/region/\(region.id)", body: body,accessToken: accessToken)
                 return decodeResponse(String.self, from: response)
             case .failure(let failure):
                 return Result.failure(ApiError.encoding(failure.localizedDescription))
             }
+        },
+        getDistricts: { regionId in
+            let response = await performGetRequest(
+                path: "/regions/\(regionId)/districts",
+            )
+            return decodeResponse([PublicDistrict].self, from: response)
+        },
+        getDistrict: { id in
+            let response = await performGetRequest(
+                path: "/districts/\(id)",
+                query: ["id":id]
+            )
+            return decodeResponse(PublicDistrict.self, from: response)
         },
         postDistrict: { district, accessToken in
             let body = encodeRequest(district)
             switch body {
             case .success(let body):
-                let response = await performPostRequest(path: "/district", body: body,accessToken: accessToken)
+                let response = await performPostRequest(path: "/districts", body: body,accessToken: accessToken)
                 return decodeResponse(String.self, from: response)
             case .failure(let failure):
                 return Result.failure(ApiError.encoding(failure.localizedDescription))
             }
+        },
+        putDistrict: { district, accessToken in
+            let body = encodeRequest(district)
+            switch body {
+            case .success(let body):
+                let response = await performPutRequest(path: "/districts/\(district.id)", body: body,accessToken: accessToken)
+                return decodeResponse(String.self, from: response)
+            case .failure(let failure):
+                return Result.failure(ApiError.encoding(failure.localizedDescription))
+            }
+        },
+        getRoutes: { districtId in
+            let response = await performGetRequest(
+                path: "/districts/\(districtId)/route",
+                query: ["districtId":districtId]
+            )
+            return decodeResponse([RouteSummary].self, from: response)
+        },
+        getRoute: { districtId, date, title in
+            var query:[String:Any] = [
+                "year":date.year,
+                "month":date.month,
+                "day":date.day,
+                "title":title
+            ]
+            let response = await performGetRequest(
+                path: "/districts/\(districtId)/routes",
+                query: query
+            )
+            return decodeResponse(PublicRoute.self, from: response)
+        },
+        getCurrentRoute: { districtId in
+            let response = await performGetRequest(
+                path: "/district/\(districtId)/routes",
+            )
+            return decodeResponse(PublicRoute.self, from: response)
+        },
+        getLocation: { districtId in
+            let response = await performGetRequest(
+                path: "/locations/\(districtId)",
+            )
+            return decodeResponse(PublicLocation?.self, from: response)
+        },
+        getLocations: { districtId in
+            let response = await performGetRequest(
+                path: "/locations"
+            )
+            return decodeResponse([PublicLocation].self, from: response)
         },
         postRoute: { route, accessToken in
             let body = encodeRequest(route)
             switch body {
             case .success(let body):
                 let response = await performPostRequest(path: "/route", body: body,accessToken: accessToken)
+                return decodeResponse(String.self, from: response)
+            case .failure(let failure):
+                return Result.failure(ApiError.encoding(failure.localizedDescription))
+            }
+        },
+        putRoute: { route, accessToken in
+            let body = encodeRequest(route)
+            switch body {
+            case .success(let body):
+                let response = await performPostRequest(path: "/route/\(route.districtId)/\(route.date.text())/\(route.title)", body: body,accessToken: accessToken)
                 return decodeResponse(String.self, from: response)
             case .failure(let failure):
                 return Result.failure(ApiError.encoding(failure.localizedDescription))
@@ -149,28 +168,29 @@ extension ApiClient: DependencyKey {
             return decodeResponse([Coordinate].self, from: response)
         }
     )
-    static private func decodeResponse<T:Codable>(_ type:T.Type, from response: Result<Data,Error>)->Result<T,ApiError>{
-        switch response {
-        case .success(let data):
-            do{
-                let decodedObject = try JSONDecoder().decode(type, from: data)
-                return Result.success(decodedObject)
-            }catch{
-                //TODO
-                return Result.failure(ApiError.decoding("レスポンスの解析に失敗しました"))
-            }
-        case .failure(let error):
-            return Result.failure(ApiError.network(error.localizedDescription))
+}
+
+private func decodeResponse<T:Codable>(_ type:T.Type, from response: Result<Data,Error>)->Result<T,ApiError>{
+    switch response {
+    case .success(let data):
+        do{
+            let decodedObject = try JSONDecoder().decode(type, from: data)
+            return Result.success(decodedObject)
+        }catch{
+            //TODO
+            return Result.failure(ApiError.decoding("レスポンスの解析に失敗しました"))
         }
+    case .failure(let error):
+        return Result.failure(ApiError.network(error.localizedDescription))
     }
-    static private func encodeRequest<T: Encodable>(_ object: T) -> Result<Data, Error> {
-        let encoder = JSONEncoder()
-        encoder.outputFormatting = .prettyPrinted // オプション: JSONを見やすくする
-        do {
-            let data = try encoder.encode(object)
-            return .success(data)
-        } catch {
-            return .failure(error)
-        }
+}
+private func encodeRequest<T: Encodable>(_ object: T) -> Result<Data, Error> {
+    let encoder = JSONEncoder()
+    encoder.outputFormatting = .prettyPrinted // オプション: JSONを見やすくする
+    do {
+        let data = try encoder.encode(object)
+        return .success(data)
+    } catch {
+        return .failure(error)
     }
 }

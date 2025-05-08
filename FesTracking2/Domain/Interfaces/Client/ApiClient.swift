@@ -8,16 +8,20 @@
 import Dependencies
 
 struct ApiClient {
-    var getRegionSummaries: () async  -> Result<[RegionSummary], ApiError>
-    var getRegionDetail: (_ regionId: String) async -> Result<Region, ApiError>
-    var getDistrictSummaries: (_ regionId: String) async -> Result<[DistrictSummary], ApiError>
-    var getDistrictDetail: (_ districtId: String) async -> Result<District, ApiError>
-    var getRouteSummaries: (_ districtId: String) async -> Result<[RouteSummary], ApiError>
-    var getRouteDetail: (_ districtId: String, _ date: SimpleDate?, _ title: String?) async -> Result<Route, ApiError>
-    var getLocation: (_ districtId: String) async -> Result<Location?, ApiError>
-    var postRegion: (_ region: Region, _ accessToken: String) async -> Result<String, ApiError>
+    var getRegions: () async  -> Result<[Region], ApiError>
+    var getRegion: (_ regionId: String) async -> Result<Region, ApiError>
+    var putRegion: (_ district: Region, _ accessToken: String) async -> Result<String, ApiError>
+    var getDistricts: (_ regionId: String) async -> Result<[PublicDistrict], ApiError>
+    var getDistrict: (_ districtId: String) async -> Result<PublicDistrict, ApiError>
     var postDistrict: (_ district: District, _ accessToken: String) async -> Result<String, ApiError>
+    var putDistrict: (_ district: District, _ accessToken: String) async -> Result<String, ApiError>
+    var getRoutes: (_ districtId: String) async -> Result<[RouteSummary], ApiError>
+    var getRoute: (_ districtId: String, _ date: SimpleDate, _ title: String) async -> Result<PublicRoute, ApiError>
+    var getCurrentRoute: (_ districtId: String) async -> Result<PublicRoute, ApiError>
+    var getLocation: (_ districtId: String) async -> Result<PublicLocation?, ApiError>
+    var getLocations: (_ regionId: String) async -> Result<[PublicLocation], ApiError>
     var postRoute: (_ route: Route,_ accessToken: String) async -> Result<String, ApiError>
+    var putRoute: (_ route: Route,_ accessToken: String) async -> Result<String, ApiError>
     var deleteRoute: (_ districtId: String,_ date:SimpleDate, _ title:String,_ accessToken: String) async -> Result<String, ApiError>
     var postLocation: (_ location: Location,_ accessToken: String) async -> Result<String, ApiError>
     var deleteLocation: (_ districtId: String,_ accessToken: String) async -> Result<String, ApiError>

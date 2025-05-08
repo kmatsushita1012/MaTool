@@ -23,7 +23,7 @@ public struct UserDefaultsClient {
 }
 
 extension UserDefaultsClient{
-    public static let noop = Self(
+    static let noop = Self(
         stringForKey: { _ in return "" },
         boolForKey: { _ in return true },
         dataForKey: { _ in return nil},
@@ -43,4 +43,8 @@ extension DependencyValues {
     get { self[UserDefaultsClient.self] }
     set { self[UserDefaultsClient.self] = newValue }
   }
+}
+
+struct UserDefaulsKey{
+    static let districtAdmin = "matool_district_admin"
 }

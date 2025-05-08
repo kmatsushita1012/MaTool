@@ -12,26 +12,45 @@ struct LocationAdminView: View {
     @Bindable var store: StoreOf<LocationAdminFeature>
     
     var body: some View {
-        VStack {
-            HStack {
-                Toggle("位置情報共有", isOn: $store.isTracking.sending(\.toggleChanged))
-                .padding()
+        NavigationStack{
+            VStack {
+                HStack {
+                    Toggle("配信", isOn: $store.isTracking.sending(\.toggleChanged))
+                        .padding()
+                }
+                LocationAdminMap(location: store.location)
+                Text("履歴")
+                    .font(.title3)
+                    .bold()
+                    .padding(.top)
+                List(store.history.map{ $0.text }.reversed(), id: \.self) { text in
+                    Text(text)
+                        .font(.body)
+                        .padding(.vertical, 2)
+                }
+                .listStyle(.plain)
             }
-            .padding()
-            LocationAdminMapView()
-            Text("\(store.location)")
-            Text("送信ログ")
-                .font(.headline)
-                .padding(.top)
-            List(store.logs.reversed(), id: \.self) { log in
-                Text(log)
-                    .font(.caption)
-                    .padding(.vertical, 2)
+            .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
+                    Button {
+                        store.send(.dismissButtonTapped)
+                    } label: {
+                        HStack {
+                            Image(systemName: "chevron.left")
+                            Text("戻る")
+                        }
+                        .padding(8)
+                    }
+                }
+                ToolbarItem(placement: .principal) {
+                    Text("位置情報配信")
+                        .bold()
+                }
             }
-            .listStyle(.plain)
-        }
-        .onAppear(){
-            store.send(.onAppear)
+            .navigationBarTitleDisplayMode(.inline)
+            .onAppear(){
+                store.send(.onAppear)
+            }
         }
     }
 }

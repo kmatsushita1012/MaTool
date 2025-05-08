@@ -9,8 +9,8 @@ import ComposableArchitecture
 import SwiftUI
 
 struct DistrictItemView: View {
-    let item: DistrictSummary
-    let onTap: (DistrictSummary) -> Void
+    let item: PublicDistrict
+    let onTap: (PublicDistrict) -> Void
     
     var body: some View {
         
@@ -22,5 +22,5 @@ struct DistrictItemView: View {
 }
 
 #Preview {
-    DistrictItemView(item: DistrictSummary.sample, onTap: { id in print("onTap ${id}")})
+    DistrictItemView(item: PublicDistrict.sample, onTap: { id in print("onTap ${id}")})
 }

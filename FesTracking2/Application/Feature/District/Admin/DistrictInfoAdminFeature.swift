@@ -28,12 +28,12 @@ struct DistrictInfoAdminFeature{
         var image: PhotosPickerItem?
         @Presents var destination: Destination.State?
     }
-
-    enum Action: BindableAction {
+    @CasePathable
+    enum Action: BindableAction, Equatable {
         case binding(BindingAction<State>)
         case cancelButtonTapped
         case saveButtonTapped
-        case received(Result<String,ApiError>)
+        case postReceived(Result<String,ApiError>)
         case baseButtonTapped
         case areaButtonTapped
         case performanceAddButtonTapped
@@ -52,11 +52,10 @@ struct DistrictInfoAdminFeature{
                 return .none
             case .saveButtonTapped:
                 return .run{ [item = state.item] send in
-                    let result = await apiClient.postDistrict(item, "")
-                    await send(.received(result))
+                    let result = await apiClient.putDistrict(item, "")
+                    await send(.postReceived(result))
                 }
-            case .received(_):
-
+            case .postReceived(_):
                 return .none
             case .baseButtonTapped:
                 state.destination = .base(BaseAdminFeature.State(coordinate: state.item.base))
@@ -103,6 +102,7 @@ struct DistrictInfoAdminFeature{
 }
 
 extension DistrictInfoAdminFeature.Destination.State: Equatable {}
+extension DistrictInfoAdminFeature.Destination.Action: Equatable {}
 
 //            case .binding(\.image):
 //                guard let item = state.selectedItem else { return .none }

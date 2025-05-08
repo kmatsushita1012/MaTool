@@ -1,0 +1,76 @@
+//
+//  Route.swift
+//  FesTracking2
+//
+//  Created by 松下和也 on 2025/03/09.
+//
+
+import Foundation
+
+struct PublicRoute: Codable,Equatable{
+    let districtId: String
+    let districtName: String
+    let date: SimpleDate
+    let title: String
+    let visibility: Visibility
+    let description: String?
+    let points: [Point]
+    let segments: [Segment]
+    let start: SimpleTime?
+    let goal: SimpleTime?
+}
+
+extension PublicRoute: Identifiable {
+    var id: String {
+        return "\(districtId)_\(date.year)-\(date.month)-\(date.day)_\(title)"
+    }
+}
+
+extension PublicRoute {
+    var text: String {
+        return "\(districtName) \(date.month)/\(date.day) \(title)"
+    }
+    
+    func toModel() -> Route {
+        return Route(
+            districtId: self.districtId,
+            date: self.date,
+            title: self.title,
+            visibility: self.visibility,
+            description: self.description,
+            points: self.points,
+            segments: self.segments,
+            start: self.start,
+            goal: self.goal
+        )
+    }
+}
+
+
+extension PublicRoute {
+    static let sample = Self(
+        districtId: "Johoku",
+        districtName: "城北町",
+        date: SimpleDate.sample,
+        title: "午後",
+        visibility: .all,
+        description: "省略",
+        points: [
+            Point(id: UUID().uuidString, coordinate: Coordinate(latitude: 34.777681, longitude: 138.007029), title: "出発", time: SimpleTime(hour: 9, minute: 0),isPassed: true),
+            Point(id: UUID().uuidString, coordinate: Coordinate(latitude: 34.778314, longitude: 138.008176), title: "到着", description: "お疲れ様です", time: SimpleTime(hour: 12, minute: 0),isPassed: true)
+        ],
+        segments: [
+            Segment(id: UUID().uuidString, start: Coordinate(latitude: 34.777681, longitude: 138.007029), end: Coordinate(latitude: 34.778314, longitude: 138.008176), coordinates: [
+                Coordinate(latitude: 34.777681, longitude: 138.007029),
+                Coordinate(latitude: 34.777707, longitude: 138.008183),
+                Coordinate(latitude: 34.778314, longitude: 138.008176)
+            ], isPassed: true)
+        ],
+        
+        start: SimpleTime.sample,
+        goal: SimpleTime(
+            hour:12,
+            minute: 00
+        )
+    )
+}

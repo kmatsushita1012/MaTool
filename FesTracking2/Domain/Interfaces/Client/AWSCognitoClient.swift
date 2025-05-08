@@ -9,10 +9,11 @@ import AWSMobileClient
 import Dependencies
 
 struct AWSCognitoClient {
-    var initialize: () async -> Result<UserState?,AWSCognitoError>
-    var signIn: (_ username: String, _ password: String) async -> Result<SignInResult,AWSCognitoError>
+    var initialize: () async -> Result<Bool,AWSCognitoError>
+    var signIn: (_ username: String, _ password: String) async -> Result<Bool,AWSCognitoError>
+    var getUserId: () async -> Result<String, AWSCognitoError>
     var getTokens: () async -> Result<Tokens,AWSCognitoError>
-    var signOut: () async -> Result<Void,AWSCognitoError>
+    var signOut: () async -> Result<Bool,AWSCognitoError>
 }
 
 
