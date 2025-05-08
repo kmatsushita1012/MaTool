@@ -15,7 +15,7 @@ struct AreaAdminFeature{
     }
     
     @CasePathable
-    enum Action{
+    enum Action: Equatable{
         case mapTapped(Coordinate)
         case undoButtonTapped
         case doneButtonTapped

@@ -10,19 +10,19 @@ import SwiftData
 import ComposableArchitecture
 
 struct ContentView: View {
-    let store: StoreOf<AuthFeature>
+    let store: StoreOf<AppFeature>
     
-    init(store: StoreOf<AuthFeature>) {
+    init(store: StoreOf<AppFeature>) {
         self.store = store
         print("ContentView")
     }
 
     var body: some View {
-        LocationAdminView(store:
+        AdminDistrictView(store:
             Store(initialState:
-                    LocationAdminFeature.State(id: "johoku"),
+                    AdminDistrictFeature.State(district: District.sample, routes: [RouteSummary.sample]),
               reducer:
-                    { LocationAdminFeature() }
+                    { AdminDistrictFeature() }
              )
         )
 

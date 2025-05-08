@@ -15,7 +15,7 @@ struct PerformanceAdminFeature{
         var item: Performance = Performance(id: UUID().uuidString)
     }
     
-    enum Action: BindableAction{
+    enum Action: BindableAction, Equatable{
         case binding(BindingAction<State>)
         case doneButtonTapped
         case cancelButtonTapped

@@ -15,78 +15,59 @@ struct LocationAdminFeature{
     struct State:Equatable{
         let id: String
         var location: Location?
-        var isTracking: Bool = false
+        var isTracking: Bool
         var isLoading: Bool = false
-        var logs: [String] = []
+        var history: [Status] = []
     }
     
-    enum Action: BindableAction{
+    @CasePathable
+    enum Action:BindableAction, Equatable{
         case onAppear
+        case onDisappear
         case binding(BindingAction<State>)
         case toggleChanged(Bool)
-        case updated(AsyncValue<CLLocation>)
-        case getReceived(Result<Location?,ApiError>)
-        case postReceived(Result<String,ApiError>)
-        
+        case historyUpdated([Status])
+        case dismissButtonTapped
     }
     
     @Dependency(\.apiClient) var apiClient
     @Dependency(\.locationClient) var locationClient
+    @Dependency(\.locationSharingUseCase) var usecase
     
     var body: some ReducerOf<LocationAdminFeature> {
         BindingReducer()
         Reduce{state, action in
             switch action{
             case .onAppear:
-                return .run{ [id = state.id] send in
-                    let item = await self.apiClient.getLocation(id)
-                    await send(.getReceived(item))
+                print("onAppear")
+                return .run { send in
+                    print("run")
+                    for await history in usecase.historyStream {
+                        print("reducer stream")
+                        await send(.historyUpdated(history))
+                    }
                 }
+                .cancellable(id: "HistoryStream", cancelInFlight: true)
+            case .onDisappear:
+                print("disappear")
+                return .cancel(id: "HistoryStream")
             case .binding:
                 return .none
             case .toggleChanged(let value):
                 state.isTracking = value
+                let interval = 1.0
                 if(value){
-                    print("true")
-                    return locationClient.startTracking()
+                    usecase.startTracking(id: "johoku",interval:interval)
                 }else{
-                    print("false")
-                    locationClient.stopTracking()
-                    return .none
+                    usecase.stopTracking(id: "johoku")
                 }
                 return .none
-            case .updated(.success(let cllocation)):
-                print("success \(cllocation)")
-                let coordinate = Coordinate(latitude: cllocation.coordinate.latitude, longitude: cllocation.coordinate.longitude)
-                let location = Location(districtId: state.id, coordinate: coordinate, time: DateTime.now)
-                return .run {  send in
-                    let result = await apiClient.postLocation(location, "")
-                    await send(.postReceived(result))
-                }
-            case .updated(.loading):
-                print("loading ")
+            case .historyUpdated(let history):
+                state.history = history
                 return .none
-            case .updated(.failure(let error)):
-                print("failure \(error)")
-                let date = DateTime.now.text()
-                state.logs.append("\(date) 取得失敗 ")
-                return .none
-            case .getReceived(.success(let value)):
-                print(value)
-                state.location = value
-                return .none
-            case .getReceived(.failure(_)):
-                return .none
-            case .postReceived(.success(let message)):
-                let date = DateTime.now.text()
-                state.logs.append("\(date) 送信成功")
-                return .none
-            case .postReceived(.failure(let error)):
-                let date = DateTime.now.text()
-                state.logs.append("\(date) 送信失敗 ")
-                return .none
+            case .dismissButtonTapped:
+                return .cancel(id: "HistoryStream")
             }
-            
         }
     }
     

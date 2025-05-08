@@ -20,7 +20,7 @@ struct FesTracking2App: App {
     }
     var body: some Scene {
         WindowGroup {
-            ContentView(store: Store(initialState:AuthFeature.State(isSignIn: false)){ AuthFeature()._printChanges()})
+            AppView(store: Store(initialState:AppFeature.State()){ AppFeature()} )
         }
     }
 }

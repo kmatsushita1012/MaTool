@@ -9,7 +9,7 @@ import ComposableArchitecture
 import SwiftUI
 
 struct DistrictListView: View {
-    let store: StoreOf<DistrictSummariesFeature>
+    let store: StoreOf<DistrictListFeature>
     
     var body: some View {
         VStack {

@@ -70,13 +70,28 @@ func performGetRequest(path: String, query: [String: Any] = [:]) async -> Result
     return await executeURLSession(request: request)
 }
 
-func performPostRequest(path: String, body: Data,accessToken: String? = nil ) async -> Result<Data, Error> {
+func performPostRequest(path: String, body: Data, accessToken: String? = nil ) async -> Result<Data, Error> {
     guard let url = URL(string: "https://example.com" + path) else {
         return .failure(NSError(domain: "Invalid URL", code: -1, userInfo: nil))
     }
     
     var request = URLRequest(url: url)
     request.httpMethod = "POST"
+    if let accessToken = accessToken{
+        request.setValue("Bearer \(accessToken)", forHTTPHeaderField: "Authorization")
+    }
+    request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+    request.httpBody = body
+    return await executeURLSession(request: request)
+}
+
+func performPutRequest(path: String, body: Data, accessToken: String? = nil ) async -> Result<Data, Error> {
+    guard let url = URL(string: "https://example.com" + path) else {
+        return .failure(NSError(domain: "Invalid URL", code: -1, userInfo: nil))
+    }
+    
+    var request = URLRequest(url: url)
+    request.httpMethod = "PUT"
     if let accessToken = accessToken{
         request.setValue("Bearer \(accessToken)", forHTTPHeaderField: "Authorization")
     }

@@ -13,8 +13,8 @@ struct DistrictDetailFeature{
     
     @ObservableState
     struct State: Equatable{
-        var item: AsyncValue<District> = .loading
-        var value:District? {
+        var item: AsyncValue<PublicDistrict> = .loading
+        var value:PublicDistrict? {
             return item.value
         }
         var error:Error? {
@@ -27,7 +27,7 @@ struct DistrictDetailFeature{
     
     enum Action: Equatable{
         case loaded(String)
-        case received(Result<District,ApiError>)
+        case received(Result<PublicDistrict,ApiError>)
     }
     
     var body: some Reducer<State,Action> {
@@ -36,14 +36,14 @@ struct DistrictDetailFeature{
             case .loaded(let id):
                 state.item = .loading
                 return .run{ send in
-                    let item = await self.apiClient.getDistrictDetail(id)
+                    let item = await self.apiClient.getDistrict(id)
                     await send(.received(item))
                 }
             case .received(.success(let value)):
                 state.item = .success(value)
                 return .none
             case .received(.failure(let error)):
-                state.item = AsyncValue<District>.failure(error)
+                state.item = .failure(error)
                 return .none
             }
         }

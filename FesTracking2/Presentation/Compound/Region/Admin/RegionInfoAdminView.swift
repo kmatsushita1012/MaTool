@@ -31,7 +31,7 @@ struct RegionInfoAdminView: View{
                 Section(header: Text("開催日程")) {
                     List(store.item.spans) { span in
                         EditableListItemView(
-                            text: span.text,
+                            text: span.text(year:false),
                             onEdit: {
                                 store.send(.onSpanEdit(span))
                             },

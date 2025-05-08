@@ -9,21 +9,28 @@ import Combine
 import ComposableArchitecture
 import CoreLocation
 
-struct LocationClient<Action> {
-    var startTracking: () -> Effect<Action>
+struct LocationClient {
+    var startTracking: () -> Void
+    var getLocation:() -> AsyncValue<CLLocation>
+    var isTracking:() ->Bool
     var stopTracking: () -> Void
 }
 
 
+
 extension DependencyValues {
-    var locationClient: LocationClient<LocationAdminFeature.Action> {
+    var locationClient: LocationClient {
         get { self[LocationClientKey.self] }
         set { self[LocationClientKey.self] = newValue }
     }
 
     private enum LocationClientKey: DependencyKey {
-        static var liveValue: LocationClient<LocationAdminFeature.Action> {
-            .live(action: LocationAdminFeature.Action.updated, interval: 1)
+        static var liveValue: LocationClient {
+            .live()
         }
     }
+}
+enum LocationError: Error {
+    case authorizationDenied
+    case servicesDisabled
 }
