@@ -81,10 +81,10 @@ struct AppView: View {
             .fullScreenCover(item: $store.scope(state: \.destination?.login, action: \.destination.login)) { store in
                 LoginView(store: store)
             }
-            .fullScreenCover(item: $store.scope(state: \.destination?.districtAdmin, action: \.destination.districtAdmin)) { store in
+            .fullScreenCover(item: $store.scope(state: \.destination?.adminDistrict, action: \.destination.adminDistrict)) { store in
                 AdminDistrictView(store: store)
             }
-            .fullScreenCover(item: $store.scope(state: \.destination?.regionAdmin, action: \.destination.regionAdmin)) { store in
+            .fullScreenCover(item: $store.scope(state: \.destination?.adminRegion, action: \.destination.adminRegion)) { store in
                 AdminRegionView(store: store)
             }
             .fullScreenCover(item: $store.scope(state: \.destination?.settings, action: \.destination.settings)) { store in

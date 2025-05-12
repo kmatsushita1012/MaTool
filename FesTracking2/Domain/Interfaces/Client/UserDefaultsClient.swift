@@ -46,5 +46,5 @@ extension DependencyValues {
 }
 
 struct UserDefaulsKey{
-    static let districtAdmin = "matool_district_admin"
+    static let adminDistrict = "matool_district_admin"
 }

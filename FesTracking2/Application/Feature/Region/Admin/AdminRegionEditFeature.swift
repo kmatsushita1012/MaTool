@@ -8,7 +8,7 @@
 import ComposableArchitecture
 
 @Reducer
-struct AdminRegionInfoFeature {
+struct AdminRegionEditFeature {
     
     @Dependency(\.apiClient) var apiClient
     
@@ -17,29 +17,31 @@ struct AdminRegionInfoFeature {
         var item: Region
         @Presents var span: AdminSpanFeature.State?
     }
+    
     @CasePathable
-    enum Action: BindableAction {
+    enum Action: Equatable, BindableAction {
         case binding(BindingAction<State>)
-        case saveButtonTapped
-        case cancelButtonTapped
-        case received(Result<String,ApiError>)
+        case saveTapped
+        case cancelTapped
+        case received(Result<String, ApiError>)
         case onSpanEdit(Span)
         case onSpanDelete(Span)
         case onSpanAdd
         case span(PresentationAction<AdminSpanFeature.Action>)
     }
-    var body: some ReducerOf<AdminRegionInfoFeature> {
+    
+    var body: some ReducerOf<AdminRegionEditFeature> {
         BindingReducer()
         Reduce{ state, action in
             switch action {
             case .binding:
                 return .none
-            case .saveButtonTapped:
+            case .saveTapped:
                 return .run { [region = state.item] send in
                     let result = await apiClient.putRegion(region,"")
                     await send(.received(result))
                 }
-            case .cancelButtonTapped:
+            case .cancelTapped:
                 return .none
             case .received(.success(_)):
                 return .none
