@@ -92,18 +92,6 @@ extension ApiClient: DependencyKey {
             )
             return decodeResponse(PublicRoute.self, from: response)
         },
-        getLocation: { districtId in
-            let response = await performGetRequest(
-                path: "/locations/\(districtId)",
-            )
-            return decodeResponse(PublicLocation?.self, from: response)
-        },
-        getLocations: { districtId in
-            let response = await performGetRequest(
-                path: "/locations"
-            )
-            return decodeResponse([PublicLocation].self, from: response)
-        },
         postRoute: { route, accessToken in
             let body = encodeRequest(route)
             switch body {
@@ -137,6 +125,18 @@ extension ApiClient: DependencyKey {
                 
             )
             return decodeResponse(String.self, from: response)
+        },
+        getLocation: { districtId in
+            let response = await performGetRequest(
+                path: "/locations/\(districtId)",
+            )
+            return decodeResponse(PublicLocation?.self, from: response)
+        },
+        getLocations: { districtId in
+            let response = await performGetRequest(
+                path: "/locations"
+            )
+            return decodeResponse([PublicLocation].self, from: response)
         },
         postLocation: { location,accessToken in
             let body = encodeRequest(location)

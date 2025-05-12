@@ -9,6 +9,13 @@ import ComposableArchitecture
 
 @Reducer
 struct AdminRouteInfoFeature {
+    
+    @Reducer
+    enum Destination {
+        case map(AdminRouteMapFeature)
+        case export(AdminRouteExportFeature)
+    }
+    
     @ObservableState
     struct State: Equatable{
         enum Mode:Equatable {
@@ -20,7 +27,8 @@ struct AdminRouteInfoFeature {
         var route: Route
         var isLoading: Bool = false
         var errorMessage: String? = nil
-        @Presents var map: AdminRouteMapFeature.State?
+        
+        @Presents var destination: Destination.State?
         
         init(mode: Mode){
             self.mode = mode
@@ -28,6 +36,8 @@ struct AdminRouteInfoFeature {
             case let .create(id):
                 self.route = .init(districtId: id)
             case let .edit(id,_,_):
+                //仮で初期化
+                self.isLoading = true
                 self.route = .init(districtId: id)
             }
         }
@@ -41,8 +51,11 @@ struct AdminRouteInfoFeature {
         case mapButtonTapped
         case saveButtonTapped
         case cancelButtonTapped
+        case exportTapped
+        case deleteTapped
         case postReceived(Result<String, ApiError>)
-        case map(PresentationAction<AdminRouteMapFeature.Action>)
+        case deleteReceived(Result<String, ApiError>)
+        case destination(PresentationAction<Destination.Action>)
     }
     
     @Dependency(\.apiClient) var apiClient
@@ -51,7 +64,6 @@ struct AdminRouteInfoFeature {
     var body: some ReducerOf<AdminRouteInfoFeature> {
         BindingReducer()
         Reduce{ state, action in
-            print("routeinfo \(state.map)")
             switch (action) {
             case .onAppear:
                 if case let .edit(id,date,title) = state.mode{
@@ -74,9 +86,13 @@ struct AdminRouteInfoFeature {
                 return .none
             case .mapButtonTapped:
                 //TODO
-                state.map = AdminRouteMapFeature.State(route: state.route)
+                state.destination = .map(AdminRouteMapFeature.State(route: state.route))
                 return .none
             case .saveButtonTapped:
+                if state.route.title.isEmpty {
+                    state.errorMessage = "タイトルには1文字以上を設定してください。"
+                    return .none
+                }
                 guard let accessToken = userDefaultsClient.stringForKey("AccessToken") else {
                     state.errorMessage = "No access token found"
                     return .none
@@ -85,7 +101,7 @@ struct AdminRouteInfoFeature {
                 case .create:
                     return .run { [route = state.route] send in
                         let result = await apiClient.postRoute(route, accessToken)
-                        await send(.postReceived(result))
+                        await send(.deleteReceived(result))
                     }
                 case .edit:
                     return .run { [route = state.route] send in
@@ -95,37 +111,57 @@ struct AdminRouteInfoFeature {
                 }
             case .cancelButtonTapped:
                 return .none
+            case .exportTapped:
+                state.destination = .export(AdminRouteExportFeature.State(route: state.route))
+                return .none
+            case .deleteTapped:
+                return .run { [route = state.route] send in
+                    //TODO
+                    let result = await apiClient.deleteRoute(route.districtId, route.date, route.title, "")
+                    await send(.postReceived(result))
+                }
             case .postReceived(.success(_)):
                 return .none
             case .postReceived(.failure(let error)):
                 state.errorMessage = error.localizedDescription
                 return .none
-            case .map(.presented(.doneButtonTapped)):
-                if let route = state.map?.route{
-                    state.route = route
+            case .deleteReceived(.success(_)):
+                return .none
+            case .deleteReceived(.failure(let error)):
+                state.errorMessage = error.localizedDescription
+                return .none
+            case .destination(.presented(let childAction)):
+                switch childAction {
+                case .map(.doneButtonTapped):
+                    if case let .map(mapState) = state.destination{
+                        state.route = mapState.route
+                    }
+                    state.destination = nil
+                    return .none
+                case .map(.cancelButtonTapped),
+                    .export(.dismissTapped):
+                    state.destination = nil
+                    return .none
+                case .map,.export:
+                    return .none
                 }
-                state.map = nil
-                return .none
-            case .map(.presented(.cancelButtonTapped)):
-                state.map = nil
-                return .none
-            case .map:
+            case .destination(.dismiss):
+                state.destination = nil
                 return .none
             }
         }
-        .ifLet(\.$map, action: \.map){
-            AdminRouteMapFeature()
-        }
+        .ifLet(\.$destination, action: \.destination)
     }
 }
-//
-//case .deleteButtonTapped:
-//    guard let accessToken = userDefaultsClient.stringForKey("AccessToken") else {
-//        state.errorMessage = "No access token found"
-//        return .none
-//    }
-//    let route = state.route
-//    return .run { send in
-//        let result = await apiClient.deleteRoute(route.districtId,route.date,route.title, accessToken)
-//        await send(.postReceived(result))
-//    }
+
+extension AdminRouteInfoFeature.Destination.State: Equatable {}
+extension AdminRouteInfoFeature.Destination.Action: Equatable {}
+extension AdminRouteInfoFeature.State.Mode {
+    var isCreate: Bool {
+        if case .create = self {
+            return true
+        }
+        return false
+    }
+}
+

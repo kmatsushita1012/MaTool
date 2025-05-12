@@ -8,9 +8,9 @@
 import SwiftUI
 import ComposableArchitecture
 
-struct RegionInfoAdminView: View{
+struct AdminRegionInfoView: View{
     
-    @Bindable var store: StoreOf<RegionAdminFeature>
+    @Bindable var store: StoreOf<AdminRegionInfoFeature>
     
     var body: some View{
         NavigationStack {
@@ -70,12 +70,10 @@ struct RegionInfoAdminView: View{
                 }
             }
             .navigationBarTitleDisplayMode(.inline)
-            .navigationDestination(
+            .fullScreenCover(
                 item: $store.scope(state: \.span, action: \.span)
             ) { store in
-                SpanAdminView(store: store)
-                    .interactiveDismissDisabled(true)
-                    .navigationBarBackButtonHidden(true)
+                AdminSpanView(store: store)
             }
         }
     }

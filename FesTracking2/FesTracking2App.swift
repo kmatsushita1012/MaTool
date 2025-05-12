@@ -15,7 +15,6 @@ import AWSMobileClient
 struct FesTracking2App: App {
     //    @UIApplicationDelegateAdaptor(AppDelegate.self) var delegate
     init(){
-        print("App")
         FirebaseApp.configure()
     }
     var body: some Scene {

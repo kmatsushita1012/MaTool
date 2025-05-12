@@ -12,6 +12,26 @@ struct SettingsView: View {
     let store: StoreOf<SettingsFeature>
     
     var body: some View {
-        Text("Settings")
+        NavigationStack{
+            VStack{
+                Text("Settings")
+            }
+            .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
+                    Button(action: {
+                        store.send(.homeTapped)
+                    }) {
+                        Image(systemName: "house")
+                            .foregroundColor(.black)
+                    }
+                    .padding(.horizontal, 8)
+                }
+                ToolbarItem(placement: .principal) {
+                    Text("設定")
+                        .bold()
+                }
+            }
+        }
+        
     }
 }

@@ -11,25 +11,31 @@ struct Route:Codable, Equatable {
     let districtId: String
     var date:SimpleDate = .today
     var title: String = ""
-    var visibility: Visibility = .all
     var description: String?
     var points: [Point] = []
     var segments: [Segment] = []
-    var start: SimpleTime?
-    var goal: SimpleTime?
+    var start: SimpleTime = SimpleTime(hour: 9, minute: 0)
+    var goal: SimpleTime = SimpleTime(hour: 12, minute: 0)
 }
 
+extension Route: Identifiable {
+    var id: String {
+        return Route.makeId(districtId,date,title)
+    }
+    static func makeId(_ districtId:String, _ date: SimpleDate, _ title: String)->String {
+        return "\(districtId)_\(date.year)-\(date.month)-\(date.day)_\(title)"
+    }
+}
 
 extension Route {
     static let sample = Route(
         districtId: "Johoku",
         date: SimpleDate.sample,
         title: "午後",
-        visibility: .all,
         description: "準備中",
         points: [
-            Point(id: UUID().uuidString,coordinate: Coordinate(latitude: 34.777681, longitude: 138.007029), title: "出発", time: SimpleTime(hour: 9, minute: 0),isPassed: true),
-            Point(id: UUID().uuidString,coordinate: Coordinate(latitude: 34.778314, longitude: 138.008176), title: "到着", description: "お疲れ様です", time: SimpleTime(hour: 12, minute: 0),isPassed: true)
+            Point(id: UUID().uuidString,coordinate: Coordinate(latitude: 34.777681, longitude: 138.007029), title: "出発", time: SimpleTime(hour: 9, minute: 0)),
+            Point(id: UUID().uuidString,coordinate: Coordinate(latitude: 34.778314, longitude: 138.008176), title: "到着", description: "お疲れ様です", time: SimpleTime(hour: 12, minute: 0))
         ],
         segments: [
             Segment(id: UUID().uuidString, start: Coordinate(latitude: 34.777681, longitude: 138.007029), end: Coordinate(latitude: 34.778314, longitude: 138.008176), coordinates: [

@@ -17,6 +17,7 @@ struct PublicDistrict: Codable, Equatable, Identifiable {
     let area: [Coordinate]
     let imagePath:String?
     let performances: [Performance]
+    let visibility: Visibility
 }
 
 extension PublicDistrict: Hashable {
@@ -35,11 +36,12 @@ extension PublicDistrict {
             base: self.base,
             area: self.area,
             imagePath: self.imagePath,
-            performances: self.performances
+            performances: self.performances,
+            visibility: self.visibility
         )
     }
 }
 
 extension PublicDistrict {
-    static let sample = Self(id:"Johoku", name: "城北町",regionId: "kakegawa", regionName: "掛川祭", description: "省略",base: Coordinate.sample, area: [], imagePath:nil, performances: [Performance.sample])
+    static let sample = Self(id:"Johoku", name: "城北町",regionId: "kakegawa", regionName: "掛川祭", description: "省略",base: Coordinate.sample, area: [], imagePath:nil, performances: [Performance.sample], visibility: .all)
 }

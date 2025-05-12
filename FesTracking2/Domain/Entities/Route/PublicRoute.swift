@@ -12,12 +12,11 @@ struct PublicRoute: Codable,Equatable{
     let districtName: String
     let date: SimpleDate
     let title: String
-    let visibility: Visibility
     let description: String?
     let points: [Point]
     let segments: [Segment]
-    let start: SimpleTime?
-    let goal: SimpleTime?
+    let start: SimpleTime
+    let goal: SimpleTime
 }
 
 extension PublicRoute: Identifiable {
@@ -36,13 +35,24 @@ extension PublicRoute {
             districtId: self.districtId,
             date: self.date,
             title: self.title,
-            visibility: self.visibility,
             description: self.description,
             points: self.points,
             segments: self.segments,
             start: self.start,
             goal: self.goal
         )
+    }
+    
+    init(from route: Route, name: String) {
+        districtId = route.districtId
+        districtName = name
+        date = route.date
+        title = route.title
+        description = route.description
+        points = route.points
+        segments = route.segments
+        start = route.start
+        goal =  route.goal
     }
 }
 
@@ -53,7 +63,6 @@ extension PublicRoute {
         districtName: "城北町",
         date: SimpleDate.sample,
         title: "午後",
-        visibility: .all,
         description: "省略",
         points: [
             Point(id: UUID().uuidString, coordinate: Coordinate(latitude: 34.777681, longitude: 138.007029), title: "出発", time: SimpleTime(hour: 9, minute: 0),isPassed: true),

@@ -12,46 +12,63 @@ struct AppView: View {
     @Bindable var store: StoreOf<AppFeature>
 
     var body: some View {
-        NavigationStack{
+        NavigationStack {
             VStack(spacing: 16) {
-                VStack {
+                CardView {
                     Text("地図")
-                        .onTapGesture {
-                            store.send(.routeTapped)
-                        }
+                        .foregroundStyle(.white)
+                }
+                .contentShape(Rectangle())
+                .onTapGesture {
+                    store.send(.routeTapped)
                 }
                 .background(.red)
+                .cornerRadius(8)
                 HStack(spacing: 16)  {
                     VStack(spacing: 16)  {
-                        VStack {
+                        CardView {
                             Text("紹介")
-                                .onTapGesture {
-                                    store.send(.infoTapped)
-                                }
+                                .foregroundStyle(.white)
                         }
-                        VStack {
+                        .contentShape(Rectangle())
+                        .onTapGesture {
+                            store.send(.infoTapped)
+                        }
+                        .background(.blue)
+                        .cornerRadius(8)
+                        CardView {
                             Text("編集")
-                                .onTapGesture {
-                                    store.send(.adminTapped)
-                                }
+                                .foregroundStyle(.white)
                         }
+                        .contentShape(Rectangle())
+                        .onTapGesture {
+                            store.send(.adminTapped)
+                        }
+                        .background(.orange)
+                        .cornerRadius(8)
                     }
                     VStack(spacing: 16)  {
-                        VStack {
+                        CardView {
                             Text("設定")
-                                .onTapGesture {
-                                    store.send(.settingsTapped)
-                                }
+                                .foregroundStyle(.black)
                         }
-                        VStack {
-                            Text("出力")
-                                .onTapGesture {
-                                    store.send(.exportTapped)
-                                }
+                        .contentShape(Rectangle())
+                        .onTapGesture {
+                            store.send(.settingsTapped)
                         }
+                        .background(.yellow)
+                        .cornerRadius(8)
+                        CardView {
+                            Text("準備中")
+                                .foregroundStyle(.black)
+                        }
+                        .contentShape(Rectangle())
+                        .background(.green)
+                        .cornerRadius(8)
                     }
                 }
             }
+            .padding()
             .navigationTitle(
                 "MaTool"
             )
@@ -64,14 +81,14 @@ struct AppView: View {
             .fullScreenCover(item: $store.scope(state: \.destination?.login, action: \.destination.login)) { store in
                 LoginView(store: store)
             }
-            .fullScreenCover(item: $store.scope(state: \.destination?.admin, action: \.destination.admin)) { store in
+            .fullScreenCover(item: $store.scope(state: \.destination?.districtAdmin, action: \.destination.districtAdmin)) { store in
                 AdminDistrictView(store: store)
+            }
+            .fullScreenCover(item: $store.scope(state: \.destination?.regionAdmin, action: \.destination.regionAdmin)) { store in
+                AdminRegionView(store: store)
             }
             .fullScreenCover(item: $store.scope(state: \.destination?.settings, action: \.destination.settings)) { store in
                 SettingsView(store: store)
-            }
-            .fullScreenCover(item: $store.scope(state: \.destination?.export, action: \.destination.export)) { store in
-                AdminRouteExportView(store: store)
             }
         }
         .onAppear(){
@@ -80,4 +97,21 @@ struct AppView: View {
     }
 }
 
+
+struct CardView<Content: View>: View {
+    let content: () -> Content
+
+    init(@ViewBuilder content: @escaping () -> Content) {
+        self.content = content
+    }
+
+    var body: some View {
+        VStack {
+            content()
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .layoutPriority(1)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+}
 

@@ -14,14 +14,16 @@ struct Point: Codable{
     var description: String?
     var time: SimpleTime?
     let isPassed: Bool
+    var shouldExport: Bool
     
-    init(id:String, coordinate: Coordinate, title: String?=nil, description: String?=nil, time: SimpleTime?=nil, isPassed: Bool = false) {
+    init(id:String, coordinate: Coordinate, title: String?=nil, description: String?=nil, time: SimpleTime?=nil, isPassed: Bool = false, shouldExport: Bool = false) {
         self.id = id
         self.coordinate = coordinate
         self.title = title
         self.description = description
         self.time = time
         self.isPassed = isPassed
+        self.shouldExport = shouldExport
     }
 }
 

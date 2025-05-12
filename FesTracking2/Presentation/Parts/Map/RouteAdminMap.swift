@@ -15,23 +15,7 @@ struct RouteAdminMap: UIViewRepresentable {
     var onMapLongPress: (Coordinate) -> Void
     var pointTapped: (Point) -> Void
     var polylineTapped: (Segment) -> Void
-    @Binding var mapViewRef: MKMapView?
     
-    init(
-        points: [Point],
-        segments: [Segment],
-        onMapLongPress: @escaping (Coordinate) -> Void = { _ in },
-        pointTapped: @escaping (Point) -> Void = { _ in },
-        polylineTapped: @escaping (Segment) -> Void = { _ in },
-        mapViewRef: Binding<MKMapView?> = .constant(nil)
-    ) {
-        self.points = points
-        self.segments = segments
-        self.onMapLongPress = onMapLongPress
-        self.pointTapped = pointTapped
-        self.polylineTapped = polylineTapped
-        self._mapViewRef = mapViewRef
-    }
 
     func makeCoordinator() -> Coordinator {
         Coordinator(self)
@@ -45,9 +29,6 @@ struct RouteAdminMap: UIViewRepresentable {
         let longPress = UILongPressGestureRecognizer(target: context.coordinator, action: #selector(Coordinator.handleLongPress(_:)))
         mapView.addGestureRecognizer(longPress)
         
-        DispatchQueue.main.async {
-            self.mapViewRef = mapView
-        }
 
         return mapView
     }
@@ -58,14 +39,14 @@ struct RouteAdminMap: UIViewRepresentable {
 
         // アノテーション追加
         for point in points {
-            let annotation = PointAnnotation(point: point)
+            let annotation = PointAnnotation(point, type: .simple )
             annotation.coordinate = point.coordinate.toCL()
             mapView.addAnnotation(annotation)
         }
 
         // ポリライン追加
         for segment in segments {
-            let polyline = TappablePolyline(coordinates: segment.coordinates.map({$0.toCL()}), count: segment.coordinates.count)
+            let polyline = SegmentPolyline(coordinates: segment.coordinates.map({$0.toCL()}), count: segment.coordinates.count)
             polyline.segment = segment // ユーザーデータに保持
             mapView.addOverlay(polyline)
         }
@@ -101,7 +82,7 @@ struct RouteAdminMap: UIViewRepresentable {
         }
 
         func mapView(_ mapView: MKMapView, rendererFor overlay: MKOverlay) -> MKOverlayRenderer {
-            if let tappablePolyline = overlay as? TappablePolyline {
+            if let tappablePolyline = overlay as? SegmentPolyline {
                 let renderer = MKPolylineRenderer(overlay: tappablePolyline)
                 renderer.strokeColor = .blue
                 renderer.lineWidth = 4
@@ -113,25 +94,11 @@ struct RouteAdminMap: UIViewRepresentable {
 
 
         func mapView(_ mapView: MKMapView, didSelect overlay: MKOverlay) {
-            if let polyline = overlay as? TappablePolyline,
+            if let polyline = overlay as? SegmentPolyline,
                let segment = polyline.segment{
                 parent.polylineTapped(segment)
             }
         }
 
     }
-}
-
-
-private class PointAnnotation: MKPointAnnotation {
-    let point: Point
-    init(point: Point) {
-        self.point = point
-        super.init()
-        self.title = point.title
-    }
-}
-
-private class TappablePolyline: MKPolyline {
-    var segment: Segment? = nil
 }

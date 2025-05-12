@@ -17,6 +17,7 @@ struct RoutePickerView: View {
                 .padding(8)
                 .background(.white)
                 .cornerRadius(8)
+                .shadow(radius: 3)
             if store.isExpanded {
                 ForEach(store.others) { item in
                     ToggleOptionItem(title: item.text, onTap: { store.send(.selected(item))})
@@ -24,6 +25,7 @@ struct RoutePickerView: View {
                         .background(Color(UIColor.systemGray5))
                         .cornerRadius(8)
                         .padding(.top, 4)
+                        .shadow(radius: 3)
                 }
             }
         }

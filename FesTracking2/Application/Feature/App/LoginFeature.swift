@@ -21,7 +21,7 @@ struct LoginFeature {
     enum Action: BindableAction, Equatable {
         case binding(BindingAction<State>)
         case signInButtonTapped
-        case received(Result<Bool, AWSCognitoError>)
+        case received(Result<UserRole, AWSCognitoError>)
         case homeTapped
     }
     
@@ -56,8 +56,6 @@ struct LoginFeature {
                     }
                 }
             case .received(.failure(let error)):
-                print("responseReceived failure")
-                print(error.localizedDescription)
                 state.errorMessage = error.localizedDescription
                 return .none
             case .homeTapped:

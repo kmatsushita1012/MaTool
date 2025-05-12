@@ -1,5 +1,5 @@
 //
-//  SpanAdminFeature.swift
+//  AdminSpanFeature.swift
 //  FesTracking2
 //
 //  Created by 松下和也 on 2025/04/17.
@@ -9,7 +9,7 @@ import ComposableArchitecture
 import Foundation
 
 @Reducer
-struct SpanAdminFeature {
+struct AdminSpanFeature {
     @ObservableState
     struct State: Equatable{
         let id: String
@@ -43,7 +43,7 @@ struct SpanAdminFeature {
         case cancelButtonTapped
     }
     
-    var body: some ReducerOf<SpanAdminFeature>{
+    var body: some ReducerOf<AdminSpanFeature>{
         BindingReducer()
         Reduce{ state, action in
             switch action {
