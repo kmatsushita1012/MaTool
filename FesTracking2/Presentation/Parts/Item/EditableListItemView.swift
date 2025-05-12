@@ -25,7 +25,6 @@ struct EditableListItemView: View {
             Spacer()
             Button(role: .destructive) {
                 onDelete()
-                print("onDelete")
             } label: {
                 Image(systemName: "trash")
             }
@@ -34,7 +33,6 @@ struct EditableListItemView: View {
             .padding(.horizontal,4)
             Button {
                 onEdit()
-                print("onEdit")
             } label: {
                 Image(systemName: editIconName ?? "square.and.pencil")
             }

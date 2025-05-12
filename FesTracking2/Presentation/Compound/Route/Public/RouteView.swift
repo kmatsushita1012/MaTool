@@ -21,8 +21,10 @@ struct RouteView: View {
                 ZStack {
                     if let store = store.scope(state: \.map?.route, action: \.map.route) {
                         RouteMapView(store: store)
+                            .ignoresSafeArea(edges: .bottom)
                     } else if let store = store.scope(state: \.map?.locations, action: \.map.locations) {
                         LocationsMapView(store: store)
+                            .ignoresSafeArea(edges: .bottom)
                     }else {
                         Spacer()
                     }
@@ -40,6 +42,7 @@ struct RouteView: View {
                         store.send(.homeTapped)
                     }) {
                         Image(systemName: "house")
+                            .foregroundColor(.black)
                     }
                     .padding(.horizontal, 8)
                 }

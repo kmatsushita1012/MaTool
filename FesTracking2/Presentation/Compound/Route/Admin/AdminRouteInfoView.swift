@@ -17,12 +17,7 @@ struct AdminRouteInfoView: View{
                 Section(header: Text("日付")){
                     DatePicker(
                         "日付を選択",
-                        selection: Binding(
-                            get: { store.route.date.toDate },
-                            set: { date in
-                                store.send(.binding(.set(\.route.date, SimpleDate.fromDate(date))))
-                            }
-                        ),
+                        selection: $store.route.date.fullDate,
                         displayedComponents: [.date]
                     )
                     .environment(\.locale, Locale(identifier: "ja_JP"))
@@ -34,7 +29,6 @@ struct AdminRouteInfoView: View{
                     TextEditor(text: $store.route.description.nonOptional)
                         .frame(height:60)
                 }
-                
                 Section(header: Text("経路")) {
                     Button(action: {
                         store.send(.mapButtonTapped)
@@ -43,50 +37,38 @@ struct AdminRouteInfoView: View{
                             .font(.body)
                     }
                 }
-                Section(header: Text("公開範囲")) {
-                    Picker("公開範囲を選択", selection: $store.route.visibility) {
-                        ForEach(Visibility.allCases) { option in
-                            Text(option.label).tag(option)
-                        }
-                    }
-                    .pickerStyle(.menu)
-                }
-                //TODO isONをStateにつくって簡略化
                 Section(header: Text("時刻") ) {
-                    Toggle("時刻を設定", isOn: Binding(
-                        get: { store.route.start != nil },
-                        set: { hasTime in
-                            store.send(.binding(.set(
-                                \.route.start,
-                                 hasTime ? SimpleTime.fromDate(Date()) : nil
-                            )))
-                        }
-                    ))
-                    if store.route.start != nil {
-                        DatePicker(
-                            "開始時刻",
-                            selection: Binding(
-                                get: { store.route.start?.toDate ?? Date() },
-                                set: { date in
-                                    store.send(.binding(.set(\.route.start, SimpleTime.fromDate(date))))
-                                }
-                            ),
-                            displayedComponents: [.hourAndMinute]
-                        )
-                        .datePickerStyle(.compact)
-                        DatePicker(
-                            "終了時刻",
-                            selection: Binding(
-                                get: { store.route.goal?.toDate ?? Date() },
-                                set: { date in
-                                    store.send(.binding(.set(\.route.goal, SimpleTime.fromDate(date))))
-                                }
-                            ),
-                            displayedComponents: [.hourAndMinute]
-                        )
-                        .datePickerStyle(.compact)
-                        
+                    DatePicker(
+                        "開始時刻",
+                        selection: $store.route.start.fullDate,
+                        displayedComponents: [.hourAndMinute]
+                    )
+                    .datePickerStyle(.compact)
+                    DatePicker(
+                        "終了時刻",
+                        selection: $store.route.goal.fullDate,
+                        displayedComponents: [.hourAndMinute]
+                    )
+                    .datePickerStyle(.compact)
+                }
+                Section {
+                    NavigationItem(
+                        title: "経路図出力（PDF）",
+                        onTap: { store.send(.exportTapped) }
+                    )
+                }
+                if case .edit(_,_,_) = store.mode {
+                    Section {
+                        Text("削除")
+                            .onTapGesture {
+                                store.send(.deleteTapped)
+                            }
+                            .foregroundStyle(.red)
                     }
+                }
+                if let errorMessage = store.errorMessage{
+                    Text(errorMessage)
+                        .foregroundStyle(.red)
                 }
             }
             .toolbar {
@@ -104,7 +86,7 @@ struct AdminRouteInfoView: View{
                     Button{
                         store.send(.saveButtonTapped)
                     } label: {
-                        Text("保存")
+                        Text(store.mode.isCreate ? "作成" : "保存")
                             .bold()
                     }
                     .padding(8)
@@ -112,16 +94,17 @@ struct AdminRouteInfoView: View{
             }
             .navigationBarTitleDisplayMode(.inline)
             .fullScreenCover(
-                item: $store.scope(state: \.map, action: \.map)
+                item: $store.scope(state: \.destination?.map, action: \.destination.map)
             ) { store in
                 AdminRouteMapView(store: store)
-                    .interactiveDismissDisabled(true)
-                    .navigationBarBackButtonHidden(true)
+            }
+            .fullScreenCover(
+                item: $store.scope(state: \.destination?.export, action: \.destination.export)
+            ) { store in
+                AdminRouteExportView(store: store)
             }
         }
-        
         .onAppear {
-            print("send onAppear")
             store.send(.onAppear)
         }
     }

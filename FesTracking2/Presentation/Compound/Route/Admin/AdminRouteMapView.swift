@@ -28,8 +28,18 @@ struct AdminRouteMapView: View{
                 VStack {
                     HStack {
                         Spacer()
-                        RouteButton(systemImageName: "arrow.uturn.left", action:{store.send(.undoButtonTapped)}).padding(4)
-                        RouteButton(systemImageName: "arrow.uturn.right",action:{store.send(.redoButtonTapped)}).padding(4)
+                        RouteButton(
+                            systemImageName: "arrow.uturn.left",
+                            action:{store.send(.undoButtonTapped)}
+                        )
+                        .frame(width: 64, height: 64)
+                        .padding(4)
+                        RouteButton(
+                            systemImageName: "arrow.uturn.right",
+                            action:{store.send(.redoButtonTapped)}
+                        )
+                        .frame(width: 64, height: 64)
+                        .padding(4)
                     }
                     Spacer()
                 }
@@ -63,13 +73,3 @@ struct AdminRouteMapView: View{
         }
     }
 }
-
-//#Preview {
-//    AdminRouteMapView(store:
-//        Store(initialState:
-//                AdminRouteMapFeature.State(route:Route.sample),
-//          reducer:
-//                { AdminRouteMapFeature() }
-//         )
-//    )
-//}

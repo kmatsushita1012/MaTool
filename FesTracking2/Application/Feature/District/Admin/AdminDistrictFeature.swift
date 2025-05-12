@@ -33,10 +33,8 @@ struct AdminDistrictFeature {
         case onInfo
         case onRouteAdd
         case onRouteEdit(RouteSummary)
-        case onRouteDelete(RouteSummary)
         case getDistrictReceived(Result<PublicDistrict,ApiError>)
         case getRoutesReceived(Result<[RouteSummary],ApiError>)
-        case deleteRouteReceived(Result<String,ApiError>)
         case onLocation
         case destination(PresentationAction<Destination.Action>)
         case onSignOut
@@ -47,7 +45,6 @@ struct AdminDistrictFeature {
     
     var body: some ReducerOf<AdminDistrictFeature> {
         Reduce{state,action in
-            print("district admin destination \(state.destination != nil)")
             switch action {
             case .onInfo:
                 state.destination = .info(DistrictInfoAdminFeature.State(item: state.district))
@@ -58,33 +55,25 @@ struct AdminDistrictFeature {
             case .onRouteEdit(let route):
                 state.destination = .route(AdminRouteInfoFeature.State(mode: .edit(id: route.districtId, date: route.date, title: route.title)))
                 return .none
-            case .onRouteDelete(let route):
-                return .run {[route = route] send in
-                    let result = await apiClient.deleteRoute(route.districtId, route.date, route.title,"")
-                    await send(.deleteRouteReceived(result))
-                }
             case .getDistrictReceived(.success(let value)):
                 state.district = value.toModel()
                 return .none
             case .getRoutesReceived(.success(let value)):
                 state.routes = value
                 return .none
-            case .deleteRouteReceived(.success(_)):
-                return .run {[id = state.district.id] send in
-                    let result = await apiClient.getRoutes(id)
-                    await send(.getRoutesReceived(result))
-                }
             case .onLocation:
                 state.destination = .location(LocationAdminFeature.State(id: state.district.id, isTracking: usecase.isTracking))
                 return .none
             case .destination(.presented(let destination)):
                 switch destination {
                 case .info(.cancelButtonTapped),
-                        .route(.cancelButtonTapped),.location(.dismissButtonTapped):
+                    .route(.cancelButtonTapped),
+                    .location(.dismissButtonTapped):
                     state.destination = nil
                     return .none
                 case .info(.postReceived(.success(_))),
-                        .route(.postReceived(.success(_))):
+                    .route(.postReceived(.success(_))),
+                    .route(.deleteReceived(.success(_))):
                     state.destination = nil
                     return .merge(
                         .run {[id = state.district.id] send in
@@ -108,7 +97,9 @@ struct AdminDistrictFeature {
                 return .none
             case .signOutReceived(.failure(_)):
                 return .none
-            case .getDistrictReceived(.failure(_)),.getRoutesReceived(.failure(_)),.deleteRouteReceived(.failure(_)),.destination(.dismiss):
+            case .getDistrictReceived(.failure(_)),
+                .getRoutesReceived(.failure(_)),
+                .destination(.dismiss):
                 return .none
             case .homeTapped:
                 return .none

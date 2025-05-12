@@ -7,6 +7,7 @@
 
 import ComposableArchitecture
 import MapKit
+import Foundation
 
 @Reducer
 struct AdminRouteExportFeature {
@@ -14,7 +15,7 @@ struct AdminRouteExportFeature {
     struct State: Equatable {
         let route: Route
         var points: [Point] {
-            route.points.filter{ $0.title != nil }
+            filterPoints(route)
         }
         var segments: [Segment] {
             route.segments
@@ -22,15 +23,12 @@ struct AdminRouteExportFeature {
         var path:String {
             route.title
         }
-        init(route:Route){
-            self.route = route
-        }
     }
     @CasePathable
-    enum Action: Equatable,BindableAction {
+    enum Action: Equatable, BindableAction {
         case binding(BindingAction<State>)
         case exportTapped
-        case homeTapped
+        case dismissTapped
     }
     
     var body: some ReducerOf<AdminRouteExportFeature> {
@@ -41,17 +39,26 @@ struct AdminRouteExportFeature {
                 return .none
             case .exportTapped:
                 return .none
-            case .homeTapped:
+            case .dismissTapped:
                 return .none
             }
         }
     }
 }
 
-
-
-func fileSave(fileName: String) -> URL {
-    let dir = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!
-    let filePath = dir.appendingPathComponent(fileName, isDirectory: false)
-    return filePath
+private func filterPoints(_ route:Route)-> [Point] {
+    var newPoints:[Point] = []
+    if let firstPoint = route.points.first,
+        !firstPoint.shouldExport {
+        let tempFirst = Point(id: UUID().uuidString, coordinate: firstPoint.coordinate, title: "出発", time: route.start, shouldExport: true)
+        newPoints.append(tempFirst)
+    }
+    newPoints.append(contentsOf: route.points.filter{ $0.shouldExport })
+    if route.points.count >= 2,
+       let lastPoint = route.points.last,
+       !lastPoint.shouldExport {
+        let tempLast = Point(id: UUID().uuidString, coordinate: lastPoint.coordinate, title: "到着", time: route.goal, shouldExport: true)
+        newPoints.append(tempLast)
+    }
+    return newPoints
 }

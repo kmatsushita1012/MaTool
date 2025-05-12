@@ -61,7 +61,11 @@ struct RouteFeature{
                 case .success(let districts):
                     let items = [Content.locations] + districts.map{ Content.route($0) }
                     //TODO
-                    state.districtPicker = PickerFeature.State(items: items, selected: Content.locations)
+                    if let first = districts.first {
+                        state.districtPicker = PickerFeature.State(items: items, selected: Content.route(first))
+                    }else{
+                        state.districtPicker = PickerFeature.State(items: items, selected: Content.locations)
+                    }
                 case .failure(let error):
                     state.error = error.localizedDescription
                 }

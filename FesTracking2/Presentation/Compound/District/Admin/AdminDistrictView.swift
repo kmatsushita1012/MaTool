@@ -19,20 +19,21 @@ struct AdminDistrictView: View{
                         title: "地区情報",
                         iconName: "info.circle" ,
                         onTap: { store.send(.onInfo) })
-                    NavigationItem(title: "位置情報配信",
-                                       iconName: "mappin.and.ellipse" , onTap: { store.send(.onLocation) })
+                    NavigationItem(
+                        title: "位置情報配信",
+                        iconName: "mappin.and.ellipse",
+                        onTap: {
+                            store.send(.onLocation)
+                        }
+                    )
                 }
                 Section(header: Text("経路")){
                     List(store.routes) { route in
-                        EditableListItemView(
-                            text: "\(route.date.text(year: false)) \(route.title)",
-                            onEdit: {
+                        NavigationItem(
+                            title: "\(route.date.text(year: false)) \(route.title)",
+                            onTap: {
                                 store.send(.onRouteEdit(route))
-                            },
-                            onDelete: {
-                                store.send(.onRouteDelete(route))
-                            },
-                            editIconName: "arrow.triangle.swap"
+                            }
                         )
                     }
                     Button(action: {
@@ -54,6 +55,17 @@ struct AdminDistrictView: View{
             .navigationTitle(
                 store.district.name
             )
+            .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
+                    Button(action: {
+                        store.send(.homeTapped)
+                    }) {
+                        Image(systemName: "house")
+                            .foregroundColor(.black)
+                    }
+                    .padding(.horizontal, 8)
+                }
+            }
             .fullScreenCover(item: $store.scope(state: \.destination?.info, action: \.destination.info)) { store in
                 AdminDistrictInfoView(store: store)
                     .interactiveDismissDisabled(true)

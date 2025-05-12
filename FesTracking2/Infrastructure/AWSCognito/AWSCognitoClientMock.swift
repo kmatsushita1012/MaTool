@@ -15,13 +15,10 @@ extension AWSCognitoClient: TestDependencyKey {
 extension AWSCognitoClient {
     static let noop = Self(
         initialize: {
-            return .success(true)
+            return .success(.district("johoku"))
         },
         signIn: { username,password in
-            return .success(true)
-        },
-        getUserId: {
-            return .success("Johoku")
+            return .success(.district("johoku"))
         },
         getTokens: {
             return .failure(.unknown("Mock"))

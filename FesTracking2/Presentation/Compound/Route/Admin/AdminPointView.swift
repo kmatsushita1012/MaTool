@@ -11,8 +11,6 @@ import ComposableArchitecture
 struct AdminPointView: View {
     @Bindable var store: StoreOf<AdminPointFeature>
     
-    
-    
     let savedTitles: [String] = ["ポンポコニャ","浮世囃子","伊勢音頭","六段くづし","木遣くづし","奴さん","休憩"]
     
     var body: some View {
@@ -52,15 +50,11 @@ struct AdminPointView: View {
                     if store.item.time != nil {
                         DatePicker(
                             "時刻を選択",
-                            selection: Binding(
-                                get: { store.item.time?.toDate ?? Date() },
-                                set: { date in
-                                    store.send(.binding(.set(\.item.time, SimpleTime.fromDate(date))))
-                                }
-                            ),
+                            selection: $store.item.time.fullDate,
                             displayedComponents: [.hourAndMinute]
                         )
                         .datePickerStyle(.compact)
+                        Toggle("経路図（PDF）への出力", isOn: $store.item.shouldExport)
                     }
                 }
             }

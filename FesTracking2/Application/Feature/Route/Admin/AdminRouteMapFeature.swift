@@ -69,7 +69,7 @@ struct AdminRouteMapFeature{
                     state.route.points.removeLast()
                     state.route.segments.removeLast()
                     let pair = StackItem(id: UUID(), point: point, segment: segment)
-                    
+                    state.stack.push(pair)
                 }
                 return .none
             case .redoButtonTapped:
