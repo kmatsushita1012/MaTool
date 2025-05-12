@@ -38,6 +38,14 @@ struct AdminDistrictInfoView: View {
                             .font(.body)
                     }
                 }
+                Section(header: Text("ルート")) {
+                    Picker("公開範囲を選択", selection: $store.item.visibility) {
+                        ForEach(Visibility.allCases) { option in
+                            Text(option.label).tag(option)
+                        }
+                    }
+                    .pickerStyle(.menu)
+                }
                 Section(header: Text("余興")) {
                     List(store.item.performances) { item in
                         EditableListItemView(
@@ -79,20 +87,14 @@ struct AdminDistrictInfoView: View {
                 }
             }
             .navigationBarTitleDisplayMode(.inline)
-            .navigationDestination(item: $store.scope(state: \.destination?.base, action: \.destination.base)) { store in
+            .fullScreenCover(item: $store.scope(state: \.destination?.base, action: \.destination.base)) { store in
                 AdminBaseView(store: store)
-                    .interactiveDismissDisabled(true)
-                    .navigationBarBackButtonHidden(true)
             }
-            .navigationDestination(item: $store.scope(state: \.destination?.area, action: \.destination.area)) { store in
+            .fullScreenCover(item: $store.scope(state: \.destination?.area, action: \.destination.area)) { store in
                 AdminAreaView(store: store)
-                    .interactiveDismissDisabled(true)
-                    .navigationBarBackButtonHidden(true)
             }
-            .navigationDestination(item: $store.scope(state: \.destination?.performance, action: \.destination.performance)) { store in
+            .fullScreenCover(item: $store.scope(state: \.destination?.performance, action: \.destination.performance)) { store in
                 AdminPerformanceView(store: store)
-                    .interactiveDismissDisabled(true)
-                    .navigationBarBackButtonHidden(true)
             }
         }
     }

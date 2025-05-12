@@ -39,17 +39,13 @@ struct LocationAdminFeature{
         Reduce{state, action in
             switch action{
             case .onAppear:
-                print("onAppear")
                 return .run { send in
-                    print("run")
                     for await history in usecase.historyStream {
-                        print("reducer stream")
                         await send(.historyUpdated(history))
                     }
                 }
                 .cancellable(id: "HistoryStream", cancelInFlight: true)
             case .onDisappear:
-                print("disappear")
                 return .cancel(id: "HistoryStream")
             case .binding:
                 return .none

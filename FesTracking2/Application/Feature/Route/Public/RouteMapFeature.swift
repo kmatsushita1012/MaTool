@@ -6,6 +6,7 @@
 //
 
 import ComposableArchitecture
+import Foundation
 
 @Reducer
 struct RouteMapFeature {
@@ -58,3 +59,20 @@ struct RouteMapFeature {
 
 extension RouteMapFeature.Destination.State: Equatable {}
 extension RouteMapFeature.Destination.Action: Equatable {}
+
+private func filterPoints(_ route: Route) -> [Point] {
+    var newPoints:[Point] = []
+    if let firstPoint = route.points.first,
+        firstPoint.title?.isEmpty ?? false {
+        let tempFirst = Point(id: UUID().uuidString, coordinate: firstPoint.coordinate, title: "出発", time: route.start, shouldExport: true)
+        newPoints.append(tempFirst)
+    }
+    newPoints.append(contentsOf: route.points.filter{ $0.title?.isEmpty ?? false })
+    if route.points.count >= 2,
+       let lastPoint = route.points.last,
+       lastPoint.title?.isEmpty ?? false {
+        let tempFirst = Point(id: UUID().uuidString, coordinate: lastPoint.coordinate, title: "到着", time: route.goal, shouldExport: true)
+        newPoints.append(tempFirst)
+    }
+    return newPoints
+}

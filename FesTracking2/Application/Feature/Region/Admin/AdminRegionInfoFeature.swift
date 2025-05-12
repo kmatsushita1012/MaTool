@@ -1,5 +1,5 @@
 //
-//  RegionAdminFeature.swift
+//  AdminRegionInfoFeature.swift
 //  FesTracking2
 //
 //  Created by 松下和也 on 2025/04/17.
@@ -8,14 +8,14 @@
 import ComposableArchitecture
 
 @Reducer
-struct RegionAdminFeature {
+struct AdminRegionInfoFeature {
     
     @Dependency(\.apiClient) var apiClient
     
     @ObservableState
     struct State: Equatable {
         var item: Region
-        @Presents var span: SpanAdminFeature.State?
+        @Presents var span: AdminSpanFeature.State?
     }
     @CasePathable
     enum Action: BindableAction {
@@ -26,9 +26,9 @@ struct RegionAdminFeature {
         case onSpanEdit(Span)
         case onSpanDelete(Span)
         case onSpanAdd
-        case span(PresentationAction<SpanAdminFeature.Action>)
+        case span(PresentationAction<AdminSpanFeature.Action>)
     }
-    var body: some ReducerOf<RegionAdminFeature> {
+    var body: some ReducerOf<AdminRegionInfoFeature> {
         BindingReducer()
         Reduce{ state, action in
             switch action {
@@ -46,13 +46,13 @@ struct RegionAdminFeature {
             case .received(.failure(_)):
                 return .none
             case .onSpanEdit(let item):
-                state.span = SpanAdminFeature.State(item)
+                state.span = AdminSpanFeature.State(item)
                 return .none
             case .onSpanDelete(let item):
                 state.item.spans.removeAll(where: {$0.id == item.id})
                 return .none
             case .onSpanAdd:
-                state.span = SpanAdminFeature.State()
+                state.span = AdminSpanFeature.State()
                 return .none
             case .span(.presented(.doneButtonTapped)):
                 if let span = state.span?.span {
@@ -62,7 +62,6 @@ struct RegionAdminFeature {
                 state.span = nil
                 return .none
             case .span(.presented(.cancelButtonTapped)):
-                print(state.item.spans)
                 state.span = nil
                 return .none
             case .span(_):
@@ -70,7 +69,7 @@ struct RegionAdminFeature {
             }
         }
         .ifLet(\.$span, action: \.span){
-            SpanAdminFeature()
+            AdminSpanFeature()
         }
     }
 }

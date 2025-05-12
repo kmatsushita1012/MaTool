@@ -38,12 +38,3 @@ extension SimpleTime {
 
 
 
-extension Binding where Value == String? {
-    /// nil を "" に変換し、"" を nil に変換する Binding<String> を作成
-    var nonOptional: Binding<String> {
-        Binding<String>(
-            get: { self.wrappedValue ?? "" },
-            set: { self.wrappedValue = $0.isEmpty ? nil : $0 }
-        )
-    }
-}

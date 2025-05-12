@@ -6,7 +6,6 @@
 //
 
 import ComposableArchitecture
-import Foundation
 
 @Reducer
 struct SettingsFeature {
@@ -19,7 +18,7 @@ struct SettingsFeature {
         case homeTapped
     }
 
-    var body: some ReducerOf<Self> {
+    var body: some ReducerOf<SettingsFeature> {
 
     }
 }

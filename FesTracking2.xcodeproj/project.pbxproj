@@ -10,15 +10,17 @@
 		255E9767B36B35B5699F4165 /* Pods_FesTracking2Tests.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 17A70AED86F1CA931E10BF8A /* Pods_FesTracking2Tests.framework */; };
 		2914184A2DA2B8B8003D7C72 /* DistrictDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 291418492DA2B8B8003D7C72 /* DistrictDetailView.swift */; };
 		2914184C2DA2B8E9003D7C72 /* RouteView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2914184B2DA2B8E9003D7C72 /* RouteView.swift */; };
-		291418502DA2B981003D7C72 /* RegionDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2914184D2DA2B981003D7C72 /* RegionDetailView.swift */; };
-		291418512DA2B981003D7C72 /* RegionItemView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2914184E2DA2B981003D7C72 /* RegionItemView.swift */; };
-		291418522DA2B981003D7C72 /* RegionListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2914184F2DA2B981003D7C72 /* RegionListView.swift */; };
+		291D91992DCDAD45007E5A80 /* ExportableMap.swift in Sources */ = {isa = PBXBuildFile; fileRef = 291D91982DCDAD3C007E5A80 /* ExportableMap.swift */; };
+		291D919B2DCDAD71007E5A80 /* MapFragments.swift in Sources */ = {isa = PBXBuildFile; fileRef = 291D919A2DCDAD68007E5A80 /* MapFragments.swift */; };
 		292D0B892DB0C94800176E51 /* Performance.swift in Sources */ = {isa = PBXBuildFile; fileRef = 292D0B882DB0C94300176E51 /* Performance.swift */; };
 		292D0B8B2DB0CADD00176E51 /* AdminPerformanceView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 292D0B8A2DB0CAD700176E51 /* AdminPerformanceView.swift */; };
 		292D0B8D2DB0CB2700176E51 /* PerformanceAdminFeature.swift in Sources */ = {isa = PBXBuildFile; fileRef = 292D0B8C2DB0CB1E00176E51 /* PerformanceAdminFeature.swift */; };
 		292D0B8F2DB0D44100176E51 /* EditableListItemView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 292D0B8E2DB0D43700176E51 /* EditableListItemView.swift */; };
-		292D0BA12DB0E0DC00176E51 /* RegionAdminFeature.swift in Sources */ = {isa = PBXBuildFile; fileRef = 292D0BA02DB0E0D600176E51 /* RegionAdminFeature.swift */; };
-		292D0BAA2DB0E31300176E51 /* RegionInfoAdminView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 292D0BA92DB0E30C00176E51 /* RegionInfoAdminView.swift */; };
+		292D0BA12DB0E0DC00176E51 /* AdminRegionInfoFeature.swift in Sources */ = {isa = PBXBuildFile; fileRef = 292D0BA02DB0E0D600176E51 /* AdminRegionInfoFeature.swift */; };
+		292D0BAA2DB0E31300176E51 /* AdminRegionInfoView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 292D0BA92DB0E30C00176E51 /* AdminRegionInfoView.swift */; };
+		292D108A2DCDD6CA0022D8A0 /* UserRole.swift in Sources */ = {isa = PBXBuildFile; fileRef = 292D10892DCDD6C50022D8A0 /* UserRole.swift */; };
+		292D108C2DCDDB9F0022D8A0 /* AdminRegionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 292D108B2DCDDB9B0022D8A0 /* AdminRegionView.swift */; };
+		292D108E2DCDDBCC0022D8A0 /* AdminRegionFeature.swift in Sources */ = {isa = PBXBuildFile; fileRef = 292D108D2DCDDBC30022D8A0 /* AdminRegionFeature.swift */; };
 		29460A0B2D8C28AC0097CAA1 /* LoginFeature.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29460A0A2D8C28A40097CAA1 /* LoginFeature.swift */; };
 		29460A0D2D8C29030097CAA1 /* LoginView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29460A0C2D8C28FC0097CAA1 /* LoginView.swift */; };
 		29460A1A2D8C32490097CAA1 /* awsconfiguration.json in Resources */ = {isa = PBXBuildFile; fileRef = 29460A162D8C314F0097CAA1 /* awsconfiguration.json */; };
@@ -29,16 +31,13 @@
 		296795CB2DA4F3D9008D3CE1 /* AdminRouteMapView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 296795CA2DA4F3CD008D3CE1 /* AdminRouteMapView.swift */; };
 		296795CF2DA4F7B1008D3CE1 /* Span.swift in Sources */ = {isa = PBXBuildFile; fileRef = 296795CE2DA4F7AF008D3CE1 /* Span.swift */; };
 		296795D12DA4F902008D3CE1 /* RouteAdminMap.swift in Sources */ = {isa = PBXBuildFile; fileRef = 296795D02DA4F8FB008D3CE1 /* RouteAdminMap.swift */; };
-		296795D42DA4FF01008D3CE1 /* Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 296795D32DA4FEFD008D3CE1 /* Extensions.swift */; };
+		296795D42DA4FF01008D3CE1 /* ShareExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 296795D32DA4FEFD008D3CE1 /* ShareExtension.swift */; };
 		2972017B2D9CFA50003424EF /* async.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2972017A2D9CFA41003424EF /* async.swift */; };
 		297201822D9CFC35003424EF /* DistrictDetail.swift in Sources */ = {isa = PBXBuildFile; fileRef = 297201812D9CFC2B003424EF /* DistrictDetail.swift */; };
 		297201842D9CFFC3003424EF /* DistrictSummaries.swift in Sources */ = {isa = PBXBuildFile; fileRef = 297201832D9CFFBD003424EF /* DistrictSummaries.swift */; };
-		297201872D9D00B2003424EF /* RegionDetail.swift in Sources */ = {isa = PBXBuildFile; fileRef = 297201852D9D00B2003424EF /* RegionDetail.swift */; };
-		297201882D9D00B2003424EF /* RegionSummaries.swift in Sources */ = {isa = PBXBuildFile; fileRef = 297201862D9D00B2003424EF /* RegionSummaries.swift */; };
 		2972018B2D9D00FF003424EF /* RouteFeature.swift in Sources */ = {isa = PBXBuildFile; fileRef = 297201892D9D00FF003424EF /* RouteFeature.swift */; };
 		2972018F2D9D0165003424EF /* DistrictPageFeature.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2972018E2D9D015E003424EF /* DistrictPageFeature.swift */; };
 		297201912D9D0693003424EF /* RegionPage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 297201902D9D0693003424EF /* RegionPage.swift */; };
-		297201932D9D077C003424EF /* AuthFeature.swift in Sources */ = {isa = PBXBuildFile; fileRef = 297201922D9D0777003424EF /* AuthFeature.swift */; };
 		2978C4A92DCB3B5200D3F7CE /* PointFeature.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2978C4A82DCB3B4E00D3F7CE /* PointFeature.swift */; };
 		2978C4AB2DCB3BD300D3F7CE /* LocationFeature.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2978C4AA2DCB3BCE00D3F7CE /* LocationFeature.swift */; };
 		2978C4AD2DCB3C9D00D3F7CE /* PointView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2978C4AC2DCB3C9A00D3F7CE /* PointView.swift */; };
@@ -57,6 +56,7 @@
 		298BD7BB2D71E46900CB63F1 /* FesTracking2UITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 298BD7BA2D71E46900CB63F1 /* FesTracking2UITests.swift */; };
 		298BD7BD2D71E46900CB63F1 /* FesTracking2UITestsLaunchTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 298BD7BC2D71E46900CB63F1 /* FesTracking2UITestsLaunchTests.swift */; };
 		298CAF792D9D6ADF00C57C26 /* DistrictListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 298CAF782D9D6ADF00C57C26 /* DistrictListView.swift */; };
+		2993C8202DD0704F000D0E1A /* Bindings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2993C81F2DD0704B000D0E1A /* Bindings.swift */; };
 		299770202DA527FB00EEB5F4 /* RouteButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2997701F2DA527F800EEB5F4 /* RouteButton.swift */; };
 		299770222DA564A300EEB5F4 /* AdminPointView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 299770212DA5649E00EEB5F4 /* AdminPointView.swift */; };
 		2997C2ED2D79CA4B0032566B /* DistrictInfoAdminFeature.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2997C2EC2D79CA3E0032566B /* DistrictInfoAdminFeature.swift */; };
@@ -99,8 +99,8 @@
 		29AD86532DB2422200C3E8B2 /* Fragments.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29AD86522DB2421E00C3E8B2 /* Fragments.swift */; };
 		29B5FD612D80870A008838BB /* RegionSummary.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29B5FD602D808703008838BB /* RegionSummary.swift */; };
 		29B5FD632D80877D008838BB /* DistrictSummary.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29B5FD622D808776008838BB /* DistrictSummary.swift */; };
-		29B638A72DB0E7E400DF8419 /* SpanAdminFeature.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29B638A62DB0E7DF00DF8419 /* SpanAdminFeature.swift */; };
-		29B638A92DB0E89600DF8419 /* SpanAdminView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29B638A82DB0E89000DF8419 /* SpanAdminView.swift */; };
+		29B638A72DB0E7E400DF8419 /* AdminSpanFeature.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29B638A62DB0E7DF00DF8419 /* AdminSpanFeature.swift */; };
+		29B638A92DB0E89600DF8419 /* AdminSpanView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29B638A82DB0E89000DF8419 /* AdminSpanView.swift */; };
 		29BC19412DB6134900C6F918 /* Date.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29BC19402DB6134700C6F918 /* Date.swift */; };
 		29BC19442DB6236700C6F918 /* AppView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29BC19432DB6235D00C6F918 /* AppView.swift */; };
 		29BC19462DB6258100C6F918 /* SettingsFeature.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29BC19452DB6258100C6F918 /* SettingsFeature.swift */; };
@@ -126,7 +126,6 @@
 		29DAB0722DA163E4005E94BA /* AWSCognitoClientMock.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29DAB0712DA163DE005E94BA /* AWSCognitoClientMock.swift */; };
 		29DF09C62DCC9DFB00489DB8 /* InfoFeature.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29DF09C52DCC9DF600489DB8 /* InfoFeature.swift */; };
 		29DF09C82DCC9E5A00489DB8 /* InfoView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29DF09C72DCC9E5700489DB8 /* InfoView.swift */; };
-		29DF09CA2DCCA47400489DB8 /* Sample.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29DF09C92DCCA47000489DB8 /* Sample.swift */; };
 		29E8C3302DBB3F090086F6BB /* PublicDistrict.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29E8C32F2DBB3F020086F6BB /* PublicDistrict.swift */; };
 		29E8C3322DBB41010086F6BB /* PublicLocation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29E8C3312DBB40FC0086F6BB /* PublicLocation.swift */; };
 		29F403062DAA95DF003527D1 /* Route.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29F403052DAA95DA003527D1 /* Route.swift */; };
@@ -159,15 +158,17 @@
 		269836BF39E1F2EAD3C8133A /* Pods-FesTracking2Tests.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-FesTracking2Tests.release.xcconfig"; path = "Target Support Files/Pods-FesTracking2Tests/Pods-FesTracking2Tests.release.xcconfig"; sourceTree = "<group>"; };
 		291418492DA2B8B8003D7C72 /* DistrictDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DistrictDetailView.swift; sourceTree = "<group>"; };
 		2914184B2DA2B8E9003D7C72 /* RouteView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RouteView.swift; sourceTree = "<group>"; };
-		2914184D2DA2B981003D7C72 /* RegionDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RegionDetailView.swift; sourceTree = "<group>"; };
-		2914184E2DA2B981003D7C72 /* RegionItemView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RegionItemView.swift; sourceTree = "<group>"; };
-		2914184F2DA2B981003D7C72 /* RegionListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RegionListView.swift; sourceTree = "<group>"; };
+		291D91982DCDAD3C007E5A80 /* ExportableMap.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExportableMap.swift; sourceTree = "<group>"; };
+		291D919A2DCDAD68007E5A80 /* MapFragments.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MapFragments.swift; sourceTree = "<group>"; };
 		292D0B882DB0C94300176E51 /* Performance.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Performance.swift; sourceTree = "<group>"; };
 		292D0B8A2DB0CAD700176E51 /* AdminPerformanceView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdminPerformanceView.swift; sourceTree = "<group>"; };
 		292D0B8C2DB0CB1E00176E51 /* PerformanceAdminFeature.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PerformanceAdminFeature.swift; sourceTree = "<group>"; };
 		292D0B8E2DB0D43700176E51 /* EditableListItemView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditableListItemView.swift; sourceTree = "<group>"; };
-		292D0BA02DB0E0D600176E51 /* RegionAdminFeature.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RegionAdminFeature.swift; sourceTree = "<group>"; };
-		292D0BA92DB0E30C00176E51 /* RegionInfoAdminView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RegionInfoAdminView.swift; sourceTree = "<group>"; };
+		292D0BA02DB0E0D600176E51 /* AdminRegionInfoFeature.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdminRegionInfoFeature.swift; sourceTree = "<group>"; };
+		292D0BA92DB0E30C00176E51 /* AdminRegionInfoView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdminRegionInfoView.swift; sourceTree = "<group>"; };
+		292D10892DCDD6C50022D8A0 /* UserRole.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserRole.swift; sourceTree = "<group>"; };
+		292D108B2DCDDB9B0022D8A0 /* AdminRegionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdminRegionView.swift; sourceTree = "<group>"; };
+		292D108D2DCDDBC30022D8A0 /* AdminRegionFeature.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdminRegionFeature.swift; sourceTree = "<group>"; };
 		29460A0A2D8C28A40097CAA1 /* LoginFeature.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoginFeature.swift; sourceTree = "<group>"; };
 		29460A0C2D8C28FC0097CAA1 /* LoginView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoginView.swift; sourceTree = "<group>"; };
 		29460A162D8C314F0097CAA1 /* awsconfiguration.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = awsconfiguration.json; sourceTree = "<group>"; };
@@ -178,16 +179,13 @@
 		296795CA2DA4F3CD008D3CE1 /* AdminRouteMapView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdminRouteMapView.swift; sourceTree = "<group>"; };
 		296795CE2DA4F7AF008D3CE1 /* Span.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Span.swift; sourceTree = "<group>"; };
 		296795D02DA4F8FB008D3CE1 /* RouteAdminMap.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RouteAdminMap.swift; sourceTree = "<group>"; };
-		296795D32DA4FEFD008D3CE1 /* Extensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Extensions.swift; sourceTree = "<group>"; };
+		296795D32DA4FEFD008D3CE1 /* ShareExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShareExtension.swift; sourceTree = "<group>"; };
 		2972017A2D9CFA41003424EF /* async.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = async.swift; sourceTree = "<group>"; };
 		297201812D9CFC2B003424EF /* DistrictDetail.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DistrictDetail.swift; sourceTree = "<group>"; };
 		297201832D9CFFBD003424EF /* DistrictSummaries.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DistrictSummaries.swift; sourceTree = "<group>"; };
-		297201852D9D00B2003424EF /* RegionDetail.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RegionDetail.swift; sourceTree = "<group>"; };
-		297201862D9D00B2003424EF /* RegionSummaries.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RegionSummaries.swift; sourceTree = "<group>"; };
 		297201892D9D00FF003424EF /* RouteFeature.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RouteFeature.swift; sourceTree = "<group>"; };
 		2972018E2D9D015E003424EF /* DistrictPageFeature.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DistrictPageFeature.swift; sourceTree = "<group>"; };
 		297201902D9D0693003424EF /* RegionPage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RegionPage.swift; sourceTree = "<group>"; };
-		297201922D9D0777003424EF /* AuthFeature.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthFeature.swift; sourceTree = "<group>"; };
 		2978C4A82DCB3B4E00D3F7CE /* PointFeature.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PointFeature.swift; sourceTree = "<group>"; };
 		2978C4AA2DCB3BCE00D3F7CE /* LocationFeature.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocationFeature.swift; sourceTree = "<group>"; };
 		2978C4AC2DCB3C9A00D3F7CE /* PointView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PointView.swift; sourceTree = "<group>"; };
@@ -209,6 +207,7 @@
 		298BD7BA2D71E46900CB63F1 /* FesTracking2UITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FesTracking2UITests.swift; sourceTree = "<group>"; };
 		298BD7BC2D71E46900CB63F1 /* FesTracking2UITestsLaunchTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FesTracking2UITestsLaunchTests.swift; sourceTree = "<group>"; };
 		298CAF782D9D6ADF00C57C26 /* DistrictListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DistrictListView.swift; sourceTree = "<group>"; };
+		2993C81F2DD0704B000D0E1A /* Bindings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Bindings.swift; sourceTree = "<group>"; };
 		2997701F2DA527F800EEB5F4 /* RouteButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RouteButton.swift; sourceTree = "<group>"; };
 		299770212DA5649E00EEB5F4 /* AdminPointView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdminPointView.swift; sourceTree = "<group>"; };
 		2997C2EC2D79CA3E0032566B /* DistrictInfoAdminFeature.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DistrictInfoAdminFeature.swift; sourceTree = "<group>"; };
@@ -252,8 +251,8 @@
 		29AD86522DB2421E00C3E8B2 /* Fragments.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Fragments.swift; sourceTree = "<group>"; };
 		29B5FD602D808703008838BB /* RegionSummary.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RegionSummary.swift; sourceTree = "<group>"; };
 		29B5FD622D808776008838BB /* DistrictSummary.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DistrictSummary.swift; sourceTree = "<group>"; };
-		29B638A62DB0E7DF00DF8419 /* SpanAdminFeature.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpanAdminFeature.swift; sourceTree = "<group>"; };
-		29B638A82DB0E89000DF8419 /* SpanAdminView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpanAdminView.swift; sourceTree = "<group>"; };
+		29B638A62DB0E7DF00DF8419 /* AdminSpanFeature.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdminSpanFeature.swift; sourceTree = "<group>"; };
+		29B638A82DB0E89000DF8419 /* AdminSpanView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdminSpanView.swift; sourceTree = "<group>"; };
 		29BC19402DB6134700C6F918 /* Date.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Date.swift; sourceTree = "<group>"; };
 		29BC19432DB6235D00C6F918 /* AppView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppView.swift; sourceTree = "<group>"; };
 		29BC19452DB6258100C6F918 /* SettingsFeature.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsFeature.swift; sourceTree = "<group>"; };
@@ -279,7 +278,6 @@
 		29DAB0712DA163DE005E94BA /* AWSCognitoClientMock.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AWSCognitoClientMock.swift; sourceTree = "<group>"; };
 		29DF09C52DCC9DF600489DB8 /* InfoFeature.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InfoFeature.swift; sourceTree = "<group>"; };
 		29DF09C72DCC9E5700489DB8 /* InfoView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InfoView.swift; sourceTree = "<group>"; };
-		29DF09C92DCCA47000489DB8 /* Sample.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sample.swift; sourceTree = "<group>"; };
 		29E8C32F2DBB3F020086F6BB /* PublicDistrict.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PublicDistrict.swift; sourceTree = "<group>"; };
 		29E8C3312DBB40FC0086F6BB /* PublicLocation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PublicLocation.swift; sourceTree = "<group>"; };
 		29F403052DAA95DA003527D1 /* Route.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Route.swift; sourceTree = "<group>"; };
@@ -337,9 +335,6 @@
 		292D0B902DB0DFBC00176E51 /* Public */ = {
 			isa = PBXGroup;
 			children = (
-				2914184D2DA2B981003D7C72 /* RegionDetailView.swift */,
-				2914184E2DA2B981003D7C72 /* RegionItemView.swift */,
-				2914184F2DA2B981003D7C72 /* RegionListView.swift */,
 			);
 			path = Public;
 			sourceTree = "<group>";
@@ -347,8 +342,6 @@
 		292D0B9E2DB0E0C200176E51 /* Public */ = {
 			isa = PBXGroup;
 			children = (
-				297201862D9D00B2003424EF /* RegionSummaries.swift */,
-				297201852D9D00B2003424EF /* RegionDetail.swift */,
 			);
 			path = Public;
 			sourceTree = "<group>";
@@ -356,8 +349,9 @@
 		292D0B9F2DB0E0D000176E51 /* Admin */ = {
 			isa = PBXGroup;
 			children = (
-				292D0BA02DB0E0D600176E51 /* RegionAdminFeature.swift */,
-				29B638A62DB0E7DF00DF8419 /* SpanAdminFeature.swift */,
+				292D0BA02DB0E0D600176E51 /* AdminRegionInfoFeature.swift */,
+				292D108D2DCDDBC30022D8A0 /* AdminRegionFeature.swift */,
+				29B638A62DB0E7DF00DF8419 /* AdminSpanFeature.swift */,
 			);
 			path = Admin;
 			sourceTree = "<group>";
@@ -365,8 +359,9 @@
 		292D0BA62DB0E24800176E51 /* Admin */ = {
 			isa = PBXGroup;
 			children = (
-				292D0BA92DB0E30C00176E51 /* RegionInfoAdminView.swift */,
-				29B638A82DB0E89000DF8419 /* SpanAdminView.swift */,
+				292D0BA92DB0E30C00176E51 /* AdminRegionInfoView.swift */,
+				292D108B2DCDDB9B0022D8A0 /* AdminRegionView.swift */,
+				29B638A82DB0E89000DF8419 /* AdminSpanView.swift */,
 			);
 			path = Admin;
 			sourceTree = "<group>";
@@ -420,7 +415,8 @@
 		296795D22DA4F96C008D3CE1 /* Core */ = {
 			isa = PBXGroup;
 			children = (
-				296795D32DA4FEFD008D3CE1 /* Extensions.swift */,
+				296795D32DA4FEFD008D3CE1 /* ShareExtension.swift */,
+				2993C81F2DD0704B000D0E1A /* Bindings.swift */,
 			);
 			path = Core;
 			sourceTree = "<group>";
@@ -481,7 +477,6 @@
 				29A64ADC2DB4A295007C3859 /* AppFeature.swift */,
 				29DF09C52DCC9DF600489DB8 /* InfoFeature.swift */,
 				29BC19452DB6258100C6F918 /* SettingsFeature.swift */,
-				297201922D9D0777003424EF /* AuthFeature.swift */,
 				29460A0A2D8C28A40097CAA1 /* LoginFeature.swift */,
 				2948FCEF2DC5C37800C73E99 /* PickerFeature.swift */,
 			);
@@ -674,6 +669,7 @@
 			isa = PBXGroup;
 			children = (
 				29A0434E2D7DC61000E77C91 /* SimpleDate.swift */,
+				292D10892DCDD6C50022D8A0 /* UserRole.swift */,
 				29BC19402DB6134700C6F918 /* Date.swift */,
 				296795CE2DA4F7AF008D3CE1 /* Span.swift */,
 				29A043522D7DC83800E77C91 /* SimpleTime.swift */,
@@ -705,7 +701,6 @@
 			isa = PBXGroup;
 			children = (
 				299BBF262DC60C450092C4D9 /* ToggleItem.swift */,
-				29DF09C92DCCA47000489DB8 /* Sample.swift */,
 				29A138CB2DB3CE9500C95C31 /* NavigationItem.swift */,
 				2978C4AE2DCB3D8B00D3F7CE /* BulletItem.swift */,
 				292D0B8E2DB0D43700176E51 /* EditableListItemView.swift */,
@@ -726,6 +721,8 @@
 			isa = PBXGroup;
 			children = (
 				296795D02DA4F8FB008D3CE1 /* RouteAdminMap.swift */,
+				291D919A2DCDAD68007E5A80 /* MapFragments.swift */,
+				291D91982DCDAD3C007E5A80 /* ExportableMap.swift */,
 				29BC19492DB626F300C6F918 /* RouteMap.swift */,
 				29CB077E2DAF8C500009A47D /* DistrictAdminMap.swift */,
 				29AD864F2DB210F000C3E8B2 /* LocationAdminMap.swift */,
@@ -1195,30 +1192,32 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				297201872D9D00B2003424EF /* RegionDetail.swift in Sources */,
 				298CAF792D9D6ADF00C57C26 /* DistrictListView.swift in Sources */,
 				29A688BA2DCC4B25004415BF /* DocumentPicker.swift in Sources */,
 				2978C4AF2DCB3DAE00D3F7CE /* BulletItem.swift in Sources */,
 				2948FCF22DC5CAB000C73E99 /* RoutePickerView.swift in Sources */,
 				29AD86532DB2422200C3E8B2 /* Fragments.swift in Sources */,
-				297201882D9D00B2003424EF /* RegionSummaries.swift in Sources */,
 				29BC19442DB6236700C6F918 /* AppView.swift in Sources */,
 				2914184A2DA2B8B8003D7C72 /* DistrictDetailView.swift in Sources */,
 				29A138CC2DB3CEFD00C95C31 /* NavigationItem.swift in Sources */,
 				299770202DA527FB00EEB5F4 /* RouteButton.swift in Sources */,
+				292D108A2DCDD6CA0022D8A0 /* UserRole.swift in Sources */,
 				2972018F2D9D0165003424EF /* DistrictPageFeature.swift in Sources */,
 				29A0434A2D7DC43100E77C91 /* Segment.swift in Sources */,
 				2948FCF02DC5C38100C73E99 /* PickerFeature.swift in Sources */,
+				292D108E2DCDDBCC0022D8A0 /* AdminRegionFeature.swift in Sources */,
 				29F403062DAA95DF003527D1 /* Route.swift in Sources */,
-				296795D42DA4FF01008D3CE1 /* Extensions.swift in Sources */,
+				296795D42DA4FF01008D3CE1 /* ShareExtension.swift in Sources */,
 				29A043592D7DCFD200E77C91 /* District.swift in Sources */,
 				299A06A82DB13B3E00E76898 /* AdminDistrictView.swift in Sources */,
 				299BBF2D2DC7AF7D0092C4D9 /* LocationsMapFeature.swift in Sources */,
 				29A043512D7DC67500E77C91 /* Coordinate.swift in Sources */,
 				299BBF2F2DC7B7E40092C4D9 /* LocationsMapView.swift in Sources */,
+				291D919B2DCDAD71007E5A80 /* MapFragments.swift in Sources */,
 				29DAB06D2DA1608E005E94BA /* AWSCognitoClient.swift in Sources */,
 				29486DD42D8B0CD000C50C0D /* DistrictItemView.swift in Sources */,
 				2978C4B12DCB4A8600D3F7CE /* LocationView.swift in Sources */,
+				2993C8202DD0704F000D0E1A /* Bindings.swift in Sources */,
 				29E8C3322DBB41010086F6BB /* PublicLocation.swift in Sources */,
 				29CB07812DAF933A0009A47D /* AdminAreaView.swift in Sources */,
 				2997C2F12D79D8870032566B /* AdminPointFeature.swift in Sources */,
@@ -1230,15 +1229,14 @@
 				292D0B8F2DB0D44100176E51 /* EditableListItemView.swift in Sources */,
 				2972017B2D9CFA50003424EF /* async.swift in Sources */,
 				29A0434F2D7DC61500E77C91 /* SimpleDate.swift in Sources */,
-				292D0BA12DB0E0DC00176E51 /* RegionAdminFeature.swift in Sources */,
+				292D0BA12DB0E0DC00176E51 /* AdminRegionInfoFeature.swift in Sources */,
 				29CF49132D7426A400036D28 /* UserDefaultsClient.swift in Sources */,
-				297201932D9D077C003424EF /* AuthFeature.swift in Sources */,
-				292D0BAA2DB0E31300176E51 /* RegionInfoAdminView.swift in Sources */,
+				292D0BAA2DB0E31300176E51 /* AdminRegionInfoView.swift in Sources */,
 				299770222DA564A300EEB5F4 /* AdminPointView.swift in Sources */,
 				29DAB0722DA163E4005E94BA /* AWSCognitoClientMock.swift in Sources */,
 				29460A0D2D8C29030097CAA1 /* LoginView.swift in Sources */,
 				29BC19412DB6134900C6F918 /* Date.swift in Sources */,
-				29B638A72DB0E7E400DF8419 /* SpanAdminFeature.swift in Sources */,
+				29B638A72DB0E7E400DF8419 /* AdminSpanFeature.swift in Sources */,
 				29AD86492DB2032300C3E8B2 /* LocationClient.swift in Sources */,
 				29A043532D7DC83B00E77C91 /* SimpleTime.swift in Sources */,
 				29CF49082D7425F600036D28 /* HTTP.swift in Sources */,
@@ -1260,13 +1258,11 @@
 				2997C2F32D79E1130032566B /* AdminSegmentFeature.swift in Sources */,
 				29A043442D7DC25800E77C91 /* RouteSummary.swift in Sources */,
 				29460A0B2D8C28AC0097CAA1 /* LoginFeature.swift in Sources */,
-				291418502DA2B981003D7C72 /* RegionDetailView.swift in Sources */,
+				291D91992DCDAD45007E5A80 /* ExportableMap.swift in Sources */,
 				29CB077D2DAF8B970009A47D /* AdminBaseView.swift in Sources */,
 				29AD86502DB210F500C3E8B2 /* LocationAdminMap.swift in Sources */,
 				299BBF272DC60C480092C4D9 /* ToggleItem.swift in Sources */,
 				29BC194A2DB626F300C6F918 /* RouteMap.swift in Sources */,
-				291418512DA2B981003D7C72 /* RegionItemView.swift in Sources */,
-				291418522DA2B981003D7C72 /* RegionListView.swift in Sources */,
 				2978C4AD2DCB3C9D00D3F7CE /* PointView.swift in Sources */,
 				29CB07792DAF80850009A47D /* AreaAdminFeature.swift in Sources */,
 				299A51642DA944DB00B24828 /* AdminRouteInfoFeature.swift in Sources */,
@@ -1298,10 +1294,10 @@
 				29A64ADD2DB4A29A007C3859 /* AppFeature.swift in Sources */,
 				29B5FD632D80877D008838BB /* DistrictSummary.swift in Sources */,
 				29E8C3302DBB3F090086F6BB /* PublicDistrict.swift in Sources */,
+				292D108C2DCDDB9F0022D8A0 /* AdminRegionView.swift in Sources */,
 				29A043572D7DCE0C00E77C91 /* Region.swift in Sources */,
 				29CB07752DAF7D1E0009A47D /* AdminDistrictInfoView.swift in Sources */,
-				29B638A92DB0E89600DF8419 /* SpanAdminView.swift in Sources */,
-				29DF09CA2DCCA47400489DB8 /* Sample.swift in Sources */,
+				29B638A92DB0E89600DF8419 /* AdminSpanView.swift in Sources */,
 				29AD864B2DB2040E00C3E8B2 /* LocationClientLive.swift in Sources */,
 				29A043482D7DC36400E77C91 /* Point.swift in Sources */,
 				29A043462D7DC2B200E77C91 /* PublicRoute.swift in Sources */,

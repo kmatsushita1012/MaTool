@@ -18,11 +18,11 @@ struct ApiClient {
     var getRoutes: (_ districtId: String) async -> Result<[RouteSummary], ApiError>
     var getRoute: (_ districtId: String, _ date: SimpleDate, _ title: String) async -> Result<PublicRoute, ApiError>
     var getCurrentRoute: (_ districtId: String) async -> Result<PublicRoute, ApiError>
-    var getLocation: (_ districtId: String) async -> Result<PublicLocation?, ApiError>
-    var getLocations: (_ regionId: String) async -> Result<[PublicLocation], ApiError>
     var postRoute: (_ route: Route,_ accessToken: String) async -> Result<String, ApiError>
     var putRoute: (_ route: Route,_ accessToken: String) async -> Result<String, ApiError>
     var deleteRoute: (_ districtId: String,_ date:SimpleDate, _ title:String,_ accessToken: String) async -> Result<String, ApiError>
+    var getLocation: (_ districtId: String) async -> Result<PublicLocation?, ApiError>
+    var getLocations: (_ regionId: String) async -> Result<[PublicLocation], ApiError>
     var postLocation: (_ location: Location,_ accessToken: String) async -> Result<String, ApiError>
     var deleteLocation: (_ districtId: String,_ accessToken: String) async -> Result<String, ApiError>
     var getSegmentCoordinate: (_ start: Coordinate, _ end: Coordinate) async -> Result<[Coordinate],ApiError>

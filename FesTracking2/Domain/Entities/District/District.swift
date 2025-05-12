@@ -16,6 +16,7 @@ struct District: Codable, Equatable, Identifiable{
     var area: [Coordinate] = []
     var imagePath:String? = nil
     var performances: [Performance] = []
+    var visibility: Visibility
 }
 
 
@@ -26,5 +27,5 @@ extension District: Hashable{
 }
 
 extension District {
-    static let sample = Self(id: "Johoku", name: "城北町", regionId: "kakegawa", description: "省略", performances: [Performance.sample])
+    static let sample = Self(id: "Johoku", name: "城北町", regionId: "kakegawa", description: "省略", performances: [Performance.sample], visibility: .all)
 }

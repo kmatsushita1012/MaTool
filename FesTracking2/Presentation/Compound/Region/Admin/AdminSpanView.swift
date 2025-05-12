@@ -1,5 +1,5 @@
 //
-//  SpanAdminView.swift
+//  AdminSpanView.swift
 //  FesTracking2
 //
 //  Created by 松下和也 on 2025/04/17.
@@ -8,8 +8,8 @@
 import SwiftUI
 import ComposableArchitecture
 
-struct SpanAdminView:View{
-    @Bindable var store:StoreOf<SpanAdminFeature>
+struct AdminSpanView:View{
+    @Bindable var store:StoreOf<AdminSpanFeature>
     
     var body: some View {
         NavigationStack {

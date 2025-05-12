@@ -17,14 +17,14 @@ struct AppFeature {
         case route(RouteFeature)
         case info(InfoFeature)
         case login(LoginFeature)
-        case admin(AdminDistrictFeature)
+        case districtAdmin(AdminDistrictFeature)
+        case regionAdmin(AdminRegionFeature)
         case settings(SettingsFeature)
-        case export(AdminRouteExportFeature)
     }
     
     @ObservableState
     struct State: Equatable {
-        var isLoggedIn = false
+        var isLoggedIn: UserRole = .guest
         @Presents var destination: Destination.State?
     }
     
@@ -35,35 +35,33 @@ struct AppFeature {
     @CasePathable
     enum Action:Equatable {
         case onAppear
-        case awsReceived(Result<Bool,AWSCognitoError>)
-        case apiReceived(district:Result<PublicDistrict,ApiError>,routes:Result<[RouteSummary],ApiError>)
-        case destination(Destination.Action)
+        case awsReceived(Result<UserRole,AWSCognitoError>)
+        case apiReceived(district: Result<PublicDistrict,ApiError>, routes: Result<[RouteSummary],ApiError>)
+        case destination(PresentationAction<Destination.Action>)
         case routeTapped
         case infoTapped
         case adminTapped
         case settingsTapped
-        case exportTapped
     }
 
-    var body: some ReducerOf<Self> {
+    var body: some ReducerOf<AppFeature> {
         Reduce { state, action in
             switch action {
             case .onAppear:
                 return .run { send in
                     let result = await awsCognitoClient.initialize()
-                    print("AWS init \(result)")
                     await send(.awsReceived(result))
                 }
             case .awsReceived(.success(let value)):
                 state.isLoggedIn = value
                 return .none
             case .awsReceived(.failure(_)):
-                state.isLoggedIn = false
+                state.isLoggedIn = .guest
                 return .none
             case .apiReceived(let districtResult, let routesResult):
                 if case let .success(district) = districtResult,
                    case let .success(routes) = routesResult{
-                    state.destination = .admin(AdminDistrictFeature.State(district: district.toModel(), routes: routes))
+                    state.destination = .districtAdmin(AdminDistrictFeature.State(district: district.toModel(), routes: routes))
                 }else{
                     //Todo
                 }
@@ -75,56 +73,67 @@ struct AppFeature {
                 state.destination = .info(InfoFeature.State())
                 return .none
             case .adminTapped:
-                if state.isLoggedIn {
-                    return fetchApi()
-                }else {
+                if case let .district(id) = state.isLoggedIn {
+                    return districtAdminEffect(id)
+                } else if case let .region(id) = state.isLoggedIn {
+                    return regionAdminEffect(id)
+                } else {
                     state.destination = .login(LoginFeature.State())
                     return .none
                 }
             case .settingsTapped:
                 state.destination = .settings(SettingsFeature.State())
                 return .none
-            case .exportTapped:
-                state.destination = .export(AdminRouteExportFeature.State(route: Route.sample))
-                return .none
-            case .destination(.login(.received(.success(let value)))):
-                state.isLoggedIn = value
-                return fetchApi()
-            case .destination(.login(.received(.failure(_)))):
-                state.isLoggedIn = false
-                return .none
-            case .destination(.admin(.signOutReceived(_))):
-                state.destination = nil
-                state.isLoggedIn = false
-                return .none
-            case .destination(.route(.homeTapped)),
-                .destination(.info(.homeTapped)),
-                .destination(.admin(.homeTapped)),
-                .destination(.login(.homeTapped)),
-                .destination(.settings(.homeTapped)),
-                .destination(.export(.homeTapped)):
-                state.destination = nil
-                return .none
-            case .destination(_):
+            case .destination(.presented(let child)):
+                switch child {
+                case .login(.received(.success(let value))):
+                    state.isLoggedIn = value
+                    if case let .district(id) = value{
+                        return districtAdminEffect(id)
+                    } else if case let .region(id) = value {
+                        return regionAdminEffect(id)
+                    } else {
+                        return .none
+                    }
+                case .login(.received(.failure(_))):
+                    state.isLoggedIn = .guest
+                    return .none
+                case .districtAdmin(.signOutReceived(_)):
+                    state.destination = nil
+                    state.isLoggedIn = .guest
+                    return .none
+                case .route(.homeTapped),
+                    .info(.homeTapped),
+                    .districtAdmin(.homeTapped),
+                    .login(.homeTapped),
+                    .settings(.homeTapped):
+                    state.destination = nil
+                    return .none
+                default:
+                    return .none
+                }
+            case.destination(_):
                 return .none
             }
         }
         .ifLet(\.$destination, action: \.destination)
     }
     
-    func fetchApi()-> Effect<Action> {
+    func districtAdminEffect(_ id: String)-> Effect<Action> {
         return .run { send in
-            let result = await awsCognitoClient.getUserId()
-            switch result{
-            case .success(let id):
-                print("AWS UserId \(id)")
-                async let districtResult = apiClient.getDistrict(id)
-                async let routesResult =  apiClient.getRoutes(id)
-                let _ = await (districtResult, routesResult)
-                await send(.apiReceived(district: districtResult, routes: routesResult))
-            case .failure(let error):
-                return
-            }
+            async let districtResult = apiClient.getDistrict(id)
+            async let routesResult =  apiClient.getRoutes(id)
+            let _ = await (districtResult, routesResult)
+            await send(.apiReceived(district: districtResult, routes: routesResult))
+        }
+    }
+    
+    func regionAdminEffect(_ id: String)-> Effect<Action> {
+        return .run { send in
+            async let districtResult = apiClient.getDistrict(id)
+            async let routesResult =  apiClient.getRoutes(id)
+            let _ = await (districtResult, routesResult)
+            await send(.apiReceived(district: districtResult, routes: routesResult))
         }
     }
 }

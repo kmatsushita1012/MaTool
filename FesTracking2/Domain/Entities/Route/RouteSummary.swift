@@ -12,7 +12,6 @@ struct RouteSummary: Codable, Equatable{
     let districtName: String
     let date:SimpleDate
     let title: String
-    let visibility: Visibility
 }
 
 extension RouteSummary: Identifiable, Hashable {
@@ -28,10 +27,9 @@ extension RouteSummary{
         self.districtName = route.districtName
         self.date = route.date
         self.title = route.title
-        self.visibility = route.visibility
     }
     var text: String {
-        return "\(districtName) \(date.month)/\(date.day) \(title)"
+        return "\(date.month)/\(date.day) \(title)"
     }
 }
 
@@ -41,6 +39,5 @@ extension RouteSummary{
         districtName: "城北町",
         date: SimpleDate.sample,
         title: "午後",
-        visibility: .all,
     )
 }

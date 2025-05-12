@@ -12,6 +12,8 @@ extension ApiClient: TestDependencyKey {
     internal static let previewValue = Self.noop
 }
 
+var routes: [Route] = [Route.sample]
+
 extension ApiClient {
     public static let noop = Self(
         getRegions: {
@@ -36,28 +38,39 @@ extension ApiClient {
             return Result.success("Success")
         },
         getRoutes: { _ in
-            return Result.success([RouteSummary.sample,route2])
+            let summaries = routes.map{ RouteSummary(from: PublicRoute(from: $0, name: "城北町")) }
+            return Result.success(summaries)
         },
-        getRoute: { _,_,_  in
-            return Result.success(PublicRoute.sample)
+        getRoute: { id,date,title  in
+            let route = routes.filter{ $0.districtId == id && $0.date == date && $0.title == title }.first ?? Route.sample
+            return Result.success( PublicRoute(from: route, name: "城北町") )
         },
         getCurrentRoute: { _ in
-            return Result.success(PublicRoute.sample)
+            let route = routes.first ?? Route.sample
+            return Result.success(PublicRoute(from: route, name: "城北町"))
+        },
+        postRoute: { route,_ in
+            routes.append(route)
+            return Result.success("Success")
+        },
+        putRoute: { route,_ in
+            if let index = routes.firstIndex(where: { $0.id == route.id }) {
+                routes[index] = route
+            }
+            return Result.success("Success")
+        },
+        deleteRoute: { districtId, date, title,_  in
+            let id = Route.makeId(districtId, date, title)
+            if let index = routes.firstIndex(where: { $0.id == id }) {
+                routes.remove(at: index)
+            }
+            return Result.success("Success")
         },
         getLocation: { _ in
             return Result.success(PublicLocation.sample)
         },
         getLocations: { _ in
             return Result.success([PublicLocation.sample])
-        },
-        postRoute: { _,_ in
-            return Result.success("Success")
-        },
-        putRoute: { _,_ in
-            return Result.success("Success")
-        },
-        deleteRoute: { _,_,_,_  in
-            return Result.success("Success")
         },
         postLocation: { _,_ in
             return Result.success("Success")
@@ -72,4 +85,3 @@ extension ApiClient {
     )
 }
 
-let route2 = RouteSummary(districtId: "johoku", districtName: "城北町", date: SimpleDate.sample, title: "午前", visibility: .all)

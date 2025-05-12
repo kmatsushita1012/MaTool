@@ -21,9 +21,9 @@ extension Visibility {
         case .admin:
             return "非公開"
         case .route:
-            return "経路のみ"
+            return "経路のみ公開"
         case .all:
-            return "全て"
+            return "全て公開"
         }
     }
 }

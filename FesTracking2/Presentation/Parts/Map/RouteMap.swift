@@ -48,7 +48,7 @@ struct RouteMap: UIViewRepresentable {
         // アノテーション追加
         if let points = self.points{
             for point in points {
-                let annotation = PointAnnotation(point: point)
+                let annotation = PointAnnotation(point, type: .simple )
                 annotation.coordinate = point.coordinate.toCL()
                 mapView.addAnnotation(annotation)
             }
@@ -57,7 +57,7 @@ struct RouteMap: UIViewRepresentable {
         // ポリライン追加
         if let segments = self.segments{
             for segment in segments {
-                let polyline = TappablePolyline(coordinates: segment.coordinates.map({$0.toCL()}), count: segment.coordinates.count)
+                let polyline = SegmentPolyline(coordinates: segment.coordinates.map({$0.toCL()}), count: segment.coordinates.count)
                 polyline.segment = segment // ユーザーデータに保持
                 mapView.addOverlay(polyline)
             }
@@ -102,8 +102,8 @@ struct RouteMap: UIViewRepresentable {
         
 
         func mapView(_ mapView: MKMapView, rendererFor overlay: MKOverlay) -> MKOverlayRenderer {
-            if let tappablePolyline = overlay as? TappablePolyline {
-                let renderer = MKPolylineRenderer(overlay: tappablePolyline)
+            if let polyline = overlay as? SegmentPolyline {
+                let renderer = MKPolylineRenderer(overlay: polyline)
                 renderer.strokeColor = .blue
                 renderer.lineWidth = 4
                 renderer.alpha = 0.8
@@ -115,25 +115,4 @@ struct RouteMap: UIViewRepresentable {
 }
 
 
-private class PointAnnotation: MKPointAnnotation {
-    let point: Point
-    init(point: Point) {
-        self.point = point
-        super.init()
-        self.title = point.title
-    }
-}
 
-private class TappablePolyline: MKPolyline {
-    var segment: Segment? = nil
-}
-
-private class LocationAnnotation: MKPointAnnotation {
-    let location: PublicLocation
-    
-    init(location: PublicLocation) {
-        self.location = location
-        super.init()
-        self.title = location.districtId
-    }
-}

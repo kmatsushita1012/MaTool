@@ -11,11 +11,6 @@ import ComposableArchitecture
 
 struct ContentView: View {
     let store: StoreOf<AppFeature>
-    
-    init(store: StoreOf<AppFeature>) {
-        self.store = store
-        print("ContentView")
-    }
 
     var body: some View {
         AdminDistrictView(store:
