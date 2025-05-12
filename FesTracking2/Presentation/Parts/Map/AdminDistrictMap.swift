@@ -8,7 +8,7 @@ import UIKit
 import MapKit
 import SwiftUI
 
-struct DistrictAdminMap: UIViewRepresentable {
+struct AdminDistrictMap: UIViewRepresentable {
     var coordinates: [Coordinate]?
     var isShownPolygon: Bool
 
@@ -56,10 +56,10 @@ struct DistrictAdminMap: UIViewRepresentable {
     }
 
     class Coordinator: NSObject, MKMapViewDelegate {
-        var parent: DistrictAdminMap
+        var parent: AdminDistrictMap
         var hasSetRegion = false
 
-        init(_ parent: DistrictAdminMap) {
+        init(_ parent: AdminDistrictMap) {
             self.parent = parent
         }
 

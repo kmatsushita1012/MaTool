@@ -16,7 +16,7 @@ struct AdminDistrictFeature {
     
     @Reducer
     enum Destination {
-        case info(DistrictInfoAdminFeature)
+        case edit(AdminDistrictEditFeature)
         case route(AdminRouteInfoFeature)
         case location(LocationAdminFeature)
     }
@@ -47,7 +47,7 @@ struct AdminDistrictFeature {
         Reduce{state,action in
             switch action {
             case .onInfo:
-                state.destination = .info(DistrictInfoAdminFeature.State(item: state.district))
+                state.destination = .edit(AdminDistrictEditFeature.State(item: state.district))
                 return .none
             case .onRouteAdd:
                 state.destination = .route(AdminRouteInfoFeature.State(mode: .create(id: state.district.id)))
@@ -66,12 +66,12 @@ struct AdminDistrictFeature {
                 return .none
             case .destination(.presented(let destination)):
                 switch destination {
-                case .info(.cancelButtonTapped),
+                case .edit(.cancelButtonTapped),
                     .route(.cancelButtonTapped),
                     .location(.dismissButtonTapped):
                     state.destination = nil
                     return .none
-                case .info(.postReceived(.success(_))),
+                case .edit(.postReceived(.success(_))),
                     .route(.postReceived(.success(_))),
                     .route(.deleteReceived(.success(_))):
                     state.destination = nil

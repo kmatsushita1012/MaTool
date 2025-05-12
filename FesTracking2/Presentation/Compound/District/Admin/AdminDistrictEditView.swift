@@ -9,8 +9,8 @@ import SwiftUI
 import PhotosUI
 import ComposableArchitecture
 
-struct AdminDistrictInfoView: View {
-    @Bindable var store: StoreOf<DistrictInfoAdminFeature>
+struct AdminDistrictEditView: View {
+    @Bindable var store: StoreOf<AdminDistrictEditFeature>
     
     var body: some View {
         NavigationStack{
@@ -73,7 +73,7 @@ struct AdminDistrictInfoView: View {
                     .padding(8)
                 }
                 ToolbarItem(placement: .principal) {
-                    Text("編集")
+                    Text("地区情報")
                         .bold()
                 }
                 ToolbarItem(placement: .topBarTrailing) {

@@ -67,7 +67,7 @@ struct AdminDistrictView: View{
                 }
             }
             .fullScreenCover(item: $store.scope(state: \.destination?.info, action: \.destination.info)) { store in
-                AdminDistrictInfoView(store: store)
+               AdminDistrictEditView(store: store)
                     .interactiveDismissDisabled(true)
                     .navigationBarBackButtonHidden(true)
             }
