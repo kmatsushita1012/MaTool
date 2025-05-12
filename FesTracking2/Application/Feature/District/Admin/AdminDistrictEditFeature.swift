@@ -11,7 +11,7 @@ import PhotosUI
 import _PhotosUI_SwiftUI
 
 @Reducer
-struct DistrictInfoAdminFeature{
+struct AdminDistrictEditFeature{
     
     @Dependency(\.apiClient) var apiClient
     
@@ -42,7 +42,7 @@ struct DistrictInfoAdminFeature{
         case destination(PresentationAction<Destination.Action>)
     }
     
-    var body: some ReducerOf<DistrictInfoAdminFeature>{
+    var body: some ReducerOf<AdminDistrictEditFeature>{
         BindingReducer()
         Reduce{ state, action in
             switch action {
@@ -101,8 +101,8 @@ struct DistrictInfoAdminFeature{
     }
 }
 
-extension DistrictInfoAdminFeature.Destination.State: Equatable {}
-extension DistrictInfoAdminFeature.Destination.Action: Equatable {}
+extension AdminDistrictEditFeature.Destination.State: Equatable {}
+extension AdminDistrictEditFeature.Destination.Action: Equatable {}
 
 //            case .binding(\.image):
 //                guard let item = state.selectedItem else { return .none }

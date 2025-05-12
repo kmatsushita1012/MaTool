@@ -37,7 +37,7 @@ struct AdminSpanFeature {
         }
     }
     @CasePathable
-    enum Action:BindableAction {
+    enum Action: Equatable, BindableAction {
         case binding(BindingAction<State>)
         case doneButtonTapped
         case cancelButtonTapped

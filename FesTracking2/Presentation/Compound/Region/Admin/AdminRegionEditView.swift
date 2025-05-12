@@ -1,5 +1,5 @@
 //
-//  RegionAdmin.swift
+//  adminRegion.swift
 //  FesTracking2
 //
 //  Created by 松下和也 on 2025/04/17.
@@ -8,17 +8,14 @@
 import SwiftUI
 import ComposableArchitecture
 
-struct AdminRegionInfoView: View{
+struct AdminRegionEditView: View{
     
-    @Bindable var store: StoreOf<AdminRegionInfoFeature>
+    @Bindable var store: StoreOf<AdminRegionEditFeature>
     
     var body: some View{
         NavigationStack {
             Form {
-                Section(header: Text("祭典名")) {
-                    TextField("祭典名を入力",text: $store.item.name)
-                }
-                Section(header: Text("紹介文")) {
+                Section(header: Text("説明")) {
                     TextEditor(text: $store.item.description.nonOptional)
                         .frame(height:120)
                 }
@@ -51,17 +48,17 @@ struct AdminRegionInfoView: View{
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
                     Button("キャンセル") {
-                        store.send(.cancelButtonTapped)
+                        store.send(.cancelTapped)
                     }
                     .padding(8)
                 }
                 ToolbarItem(placement: .principal) {
-                    Text("編集")
+                    Text("祭典情報")
                         .bold()
                 }
                 ToolbarItem(placement: .topBarTrailing) {
                     Button{
-                        store.send(.saveButtonTapped)
+                        store.send(.saveTapped)
                     } label: {
                         Text("保存")
                             .bold()
