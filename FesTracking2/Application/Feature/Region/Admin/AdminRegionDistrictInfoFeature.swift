@@ -11,6 +11,7 @@ import ComposableArchitecture
 struct AdminRegionDistrictInfoFeature {
     
     @Dependency(\.apiClient) var apiClient
+    @Dependency(\.accessToken) var accessToken
     
     @ObservableState
     struct State: Equatable {
@@ -32,7 +33,7 @@ struct AdminRegionDistrictInfoFeature {
             switch action {
             case .exportTapped(let route):
                 return .run{ send in
-                    let result = await apiClient.getRoute(route.districtId, route.date, route.title)
+                    let result = await apiClient.getRoute(route.districtId, route.date, route.title, accessToken.value)
                     await send(.exportPrepared(result))
                 }
             case .exportPrepared(.success(let route)):

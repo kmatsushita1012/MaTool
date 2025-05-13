@@ -14,6 +14,7 @@ import _PhotosUI_SwiftUI
 struct AdminDistrictEditFeature{
     
     @Dependency(\.apiClient) var apiClient
+    @Dependency(\.accessToken) var accessToken
     
     @Reducer
     enum Destination {
@@ -52,8 +53,12 @@ struct AdminDistrictEditFeature{
                 return .none
             case .saveButtonTapped:
                 return .run{ [item = state.item] send in
-                    let result = await apiClient.putDistrict(item, "")
-                    await send(.postReceived(result))
+                    if let token = accessToken.value{
+                        let result = await apiClient.putDistrict(item, token)
+                        await send(.postReceived(result))
+                    }else{
+                        await send(.postReceived(.failure(ApiError.unknown("No Access Token"))))
+                    }
                 }
             case .postReceived(_):
                 return .none

@@ -50,7 +50,11 @@ extension ApiClient: DependencyKey {
             let body = encodeRequest(district)
             switch body {
             case .success(let body):
-                let response = await performPostRequest(path: "/districts", body: body,accessToken: accessToken)
+                let response = await performPostRequest(
+                    path: "/districts", 
+                    body: body,
+                    accessToken: accessToken
+                    )
                 return decodeResponse(String.self, from: response)
             case .failure(let failure):
                 return Result.failure(ApiError.encoding(failure.localizedDescription))
@@ -60,35 +64,42 @@ extension ApiClient: DependencyKey {
             let body = encodeRequest(district)
             switch body {
             case .success(let body):
-                let response = await performPutRequest(path: "/districts/\(district.id)", body: body,accessToken: accessToken)
+                let response = await performPutRequest(
+                    path: "/districts/\(district.id)", 
+                    body: body, 
+                    accessToken: accessToken
+                    )
                 return decodeResponse(String.self, from: response)
             case .failure(let failure):
                 return Result.failure(ApiError.encoding(failure.localizedDescription))
             }
         },
-        getRoutes: { districtId in
+        getRoutes: { districtId, accessToken in
             let response = await performGetRequest(
                 path: "/districts/\(districtId)/route",
-                query: ["districtId":districtId]
+                query: ["districtId":districtId],
+                accessToken: accessToken
             )
             return decodeResponse([RouteSummary].self, from: response)
         },
-        getRoute: { districtId, date, title in
+        getRoute: { districtId, date, title, accessToken in
             var query:[String:Any] = [
                 "year":date.year,
                 "month":date.month,
                 "day":date.day,
-                "title":title
+                "title":title,
             ]
             let response = await performGetRequest(
                 path: "/districts/\(districtId)/routes",
-                query: query
+                query: query,
+                accessToken: accessToken,
             )
             return decodeResponse(PublicRoute.self, from: response)
         },
-        getCurrentRoute: { districtId in
+        getCurrentRoute: { districtId, accessToken in
             let response = await performGetRequest(
                 path: "/district/\(districtId)/routes",
+                accessToken: accessToken
             )
             return decodeResponse(PublicRoute.self, from: response)
         },
@@ -96,7 +107,11 @@ extension ApiClient: DependencyKey {
             let body = encodeRequest(route)
             switch body {
             case .success(let body):
-                let response = await performPostRequest(path: "/route", body: body,accessToken: accessToken)
+                let response = await performPostRequest(
+                    path: "/route", 
+                    body: body, 
+                    accessToken: accessToken
+                    )
                 return decodeResponse(String.self, from: response)
             case .failure(let failure):
                 return Result.failure(ApiError.encoding(failure.localizedDescription))
@@ -106,7 +121,11 @@ extension ApiClient: DependencyKey {
             let body = encodeRequest(route)
             switch body {
             case .success(let body):
-                let response = await performPostRequest(path: "/route/\(route.districtId)/\(route.date.text())/\(route.title)", body: body,accessToken: accessToken)
+                let response = await performPostRequest(
+                    path: "/route/\(route.districtId)/\(route.date.text())/\(route.title)", 
+                    body: body, 
+                    accessToken: accessToken
+                    )
                 return decodeResponse(String.self, from: response)
             case .failure(let failure):
                 return Result.failure(ApiError.encoding(failure.localizedDescription))
@@ -121,20 +140,22 @@ extension ApiClient: DependencyKey {
                     "month":String(date.month),
                     "day":String(date.day),
                     "title":title
-                ]
-                
+                ],
+                accessToken: accessToken
             )
             return decodeResponse(String.self, from: response)
         },
-        getLocation: { districtId in
+        getLocation: { districtId, accessToken in
             let response = await performGetRequest(
                 path: "/locations/\(districtId)",
+                accessToken: accessToken
             )
             return decodeResponse(PublicLocation?.self, from: response)
         },
-        getLocations: { districtId in
+        getLocations: { districtId, accessToken in
             let response = await performGetRequest(
-                path: "/locations"
+                path: "/locations", 
+                accessToken: accessToken
             )
             return decodeResponse([PublicLocation].self, from: response)
         },
@@ -142,7 +163,11 @@ extension ApiClient: DependencyKey {
             let body = encodeRequest(location)
             switch body {
             case .success(let body):
-                let response = await performPostRequest(path: "/location", body: body,accessToken: accessToken)
+                let response = await performPostRequest(
+                    path: "/location", 
+                    body: body, 
+                    accessToken: accessToken
+                    )
                 return decodeResponse(String.self, from: response)
             case .failure(let failure):
                 return Result.failure(ApiError.encoding(failure.localizedDescription))
@@ -151,7 +176,8 @@ extension ApiClient: DependencyKey {
         deleteLocation: { id, accessToken in
             let response = await performDeleteRequest(
                 path: "/location",
-                query: ["districtId":id]
+                query: ["districtId":id],
+                accessToken: accessToken
             )
             return decodeResponse(String.self, from: response)
         },

@@ -10,9 +10,10 @@ import Foundation
 import Dependencies
 
 final class LocationSharingUseCase: Sendable {
-    @Dependency(\.locationClient) var locationClient
-    @Dependency(\.userDefaultsClient) var userDefaultsClient
+
     @Dependency(\.apiClient) var apiClient
+    @Dependency(\.accessToken) var accessToken
+    @Dependency(\.locationClient) var locationClient
 
     private var timer: Timer?
     private var locationHistory: [Status] = []
@@ -39,17 +40,19 @@ final class LocationSharingUseCase: Sendable {
         locationClient.stopTracking()
         stopTimer()
         isTracking = false
+        guard let token = accessToken.value else { return }
         Task {
-            await deleteLocation(id)
+            await deleteLocation(id, accessToken: token)
         }
     }
 
-    private func startTimer(_ id: String,_ interval: TimeInterval) {
+    private func startTimer(_ id: String, _ interval: TimeInterval) {
         stopTimer()
         timer = Timer.scheduledTimer(withTimeInterval: interval, repeats: true) { [weak self] _ in
             guard let self else { return }
+            guard let token = accessToken.value else { return }
             Task {
-                await self.fetchLocationAndSend(id)
+                await self.fetchLocationAndSend(id, accessToken: token)
             }
         }
     }
@@ -64,7 +67,7 @@ final class LocationSharingUseCase: Sendable {
         continuation.yield(locationHistory)
     }
 
-    private func fetchLocationAndSend(_ id: String) async {
+    private func fetchLocationAndSend(_ id: String, accessToken: String) async {
         let locationResult = locationClient.getLocation()
         switch locationResult {
         case .loading:
@@ -73,7 +76,7 @@ final class LocationSharingUseCase: Sendable {
             appendHistory(.locationError(Date()))
         case .success(let cllocation):
             let location = Location(districtId: id, coordinate: Coordinate.fromCL(cllocation.coordinate), timestamp: Date())
-            let result = await apiClient.postLocation(location,"")
+            let result = await apiClient.postLocation(location, accessToken)
             switch result {
             case .success:
                 appendHistory(.update(location))
@@ -83,8 +86,8 @@ final class LocationSharingUseCase: Sendable {
         }
     }
     
-    private func deleteLocation(_ id: String) async {
-        let result = await apiClient.deleteLocation(id,"")
+    private func deleteLocation(_ id: String, accessToken: String) async {
+        let result = await apiClient.deleteLocation(id, accessToken)
         switch result {
         case .success:
             appendHistory(.delete(Date()))

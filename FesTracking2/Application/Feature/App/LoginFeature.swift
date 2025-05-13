@@ -26,7 +26,7 @@ struct LoginFeature {
     }
     
     @Dependency(\.awsCognitoClient) var awsCognitoClient
-    @Dependency(\.userDefaultsClient) var userDefaultsClient
+    @Dependency(\.accessToken) var accessToken
 
     var body: some ReducerOf<LoginFeature> {
         BindingReducer()
@@ -45,9 +45,8 @@ struct LoginFeature {
                     let result = await awsCognitoClient.getTokens()
                     switch result {
                     case .success(let tokens):
-                        if let accessToken = tokens.accessToken?.tokenString {
-                            await userDefaultsClient.setString(accessToken, "AccessToken")
-                            print("Access Token: \(accessToken)")
+                        if let token = tokens.accessToken?.tokenString {
+                            accessToken.value = token
                         } else {
                             print("No access token found")
                         }
