@@ -18,7 +18,9 @@ struct AdminDistrictView: View{
                     NavigationItem(
                         title: "地区情報",
                         iconName: "info.circle" ,
-                        onTap: { store.send(.onInfo) })
+                        onTap: {
+                            store.send(.onEdit)
+                        })
                     NavigationItem(
                         title: "位置情報配信",
                         iconName: "mappin.and.ellipse",
@@ -30,7 +32,7 @@ struct AdminDistrictView: View{
                 Section(header: Text("経路")){
                     List(store.routes) { route in
                         NavigationItem(
-                            title: "\(route.date.text(year: false)) \(route.title)",
+                            title: route.text(format:"m/d T"),
                             onTap: {
                                 store.send(.onRouteEdit(route))
                             }
@@ -66,18 +68,14 @@ struct AdminDistrictView: View{
                     .padding(.horizontal, 8)
                 }
             }
-            .fullScreenCover(item: $store.scope(state: \.destination?.info, action: \.destination.info)) { store in
+            .fullScreenCover(item: $store.scope(state: \.destination?.edit, action: \.destination.edit)) { store in
                AdminDistrictEditView(store: store)
-                    .interactiveDismissDisabled(true)
-                    .navigationBarBackButtonHidden(true)
             }
             .fullScreenCover(item: $store.scope(state: \.destination?.location, action: \.destination.location)) { store in
                 LocationAdminView(store: store)
             }
             .fullScreenCover(item: $store.scope(state: \.destination?.route, action: \.destination.route)) { store in
                 AdminRouteInfoView(store: store)
-                    .interactiveDismissDisabled(true)
-                    .navigationBarBackButtonHidden(true)
             }
         }
     }

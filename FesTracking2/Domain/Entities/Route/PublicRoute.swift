@@ -26,8 +26,32 @@ extension PublicRoute: Identifiable {
 }
 
 extension PublicRoute {
-    var text: String {
-        return "\(districtName) \(date.month)/\(date.day) \(title)"
+    func text(format: String) -> String {
+        var result = ""
+
+        var i = format.startIndex
+        while i < format.endIndex {
+            let char = format[i]
+
+            switch char {
+            case "D":
+                result += districtName
+            case "T":
+                result += title
+            case "y":
+                result += String(date.year)
+            case "m":
+                result += String(format: "%02d", date.month)
+            case "d":
+                result += String(format: "%02d", date.day)
+            default:
+                result += String(char)
+            }
+
+            i = format.index(after: i)
+        }
+
+        return result
     }
     
     func toModel() -> Route {

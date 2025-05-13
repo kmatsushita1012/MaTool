@@ -37,7 +37,7 @@ struct AdminRouteExportView: View{
                     .padding(.horizontal, 8)
                 }
                 ToolbarItem(placement: .principal) {
-                    Text("ルート出力")
+                    Text(store.title)
                         .bold()
                 }
                 if let image = mapSnapshot,

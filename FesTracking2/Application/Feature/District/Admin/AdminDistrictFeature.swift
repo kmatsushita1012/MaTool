@@ -23,14 +23,14 @@ struct AdminDistrictFeature {
     
     @ObservableState
     struct State:Equatable {
-        var district: District
+        var district: PublicDistrict
         var routes: [RouteSummary]
         @Presents var destination: Destination.State?
     }
     
     @CasePathable
     enum Action:Equatable {
-        case onInfo
+        case onEdit
         case onRouteAdd
         case onRouteEdit(RouteSummary)
         case getDistrictReceived(Result<PublicDistrict,ApiError>)
@@ -46,8 +46,8 @@ struct AdminDistrictFeature {
     var body: some ReducerOf<AdminDistrictFeature> {
         Reduce{state,action in
             switch action {
-            case .onInfo:
-                state.destination = .edit(AdminDistrictEditFeature.State(item: state.district))
+            case .onEdit:
+                state.destination = .edit(AdminDistrictEditFeature.State(item: state.district.toModel()))
                 return .none
             case .onRouteAdd:
                 state.destination = .route(AdminRouteInfoFeature.State(mode: .create(id: state.district.id)))
@@ -56,7 +56,7 @@ struct AdminDistrictFeature {
                 state.destination = .route(AdminRouteInfoFeature.State(mode: .edit(id: route.districtId, date: route.date, title: route.title)))
                 return .none
             case .getDistrictReceived(.success(let value)):
-                state.district = value.toModel()
+                state.district = value
                 return .none
             case .getRoutesReceived(.success(let value)):
                 state.routes = value
