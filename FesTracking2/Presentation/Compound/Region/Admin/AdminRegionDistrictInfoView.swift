@@ -9,12 +9,23 @@ import SwiftUI
 import ComposableArchitecture
 
 struct AdminRegionDistrictInfoView: View {
-    let store: StoreOf<AdminRegionDistrictInfoFeature>
+    @Bindable var store: StoreOf<AdminRegionDistrictInfoFeature>
     
     var body: some View {
         NavigationStack{
-            VStack{
-                Text("AdminRegionDistrict")
+            Form{
+                Section(header: Text("経路")) {
+                    VStack{
+                        List(store.routes) { route in
+                            NavigationItem(
+                                title: route.text(format: "m/d T"),
+                                onTap: {
+                                    store.send(.exportTapped(route))
+                                }
+                            )
+                        }
+                    }
+                }
             }
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
@@ -30,6 +41,12 @@ struct AdminRegionDistrictInfoView: View {
                     Text(store.district.name)
                         .bold()
                 }
+            }
+            .navigationBarTitleDisplayMode(.inline)
+            .fullScreenCover(
+                item: $store.scope(state: \.export, action: \.export)
+            ) { store in
+                AdminRouteExportView(store: store)
             }
         }
     }

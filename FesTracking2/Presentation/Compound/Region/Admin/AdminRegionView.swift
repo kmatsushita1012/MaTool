@@ -36,10 +36,28 @@ struct AdminRegionView: View {
                             .frame(maxWidth: .infinity, alignment: .center)
                     }
                 }
+                Section {
+                    Text("ログアウト")
+                        .foregroundColor(.red)
+                        .onTapGesture {
+                            store.send(.signOutTapped)
+                        }
+                }
             }
             .navigationTitle(
                 store.region.name
             )
+            .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
+                    Button(action: {
+                        store.send(.homeTapped)
+                    }) {
+                        Image(systemName: "house")
+                            .foregroundColor(.black)
+                    }
+                    .padding(.horizontal, 8)
+                }
+            }
             .fullScreenCover(
                 item: $store.scope(state: \.destination?.edit, action: \.destination.edit)
             ) { store in

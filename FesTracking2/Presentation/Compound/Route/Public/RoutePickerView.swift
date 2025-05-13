@@ -13,14 +13,14 @@ struct RoutePickerView: View {
     
     var body: some View {
         VStack(spacing: 8)  {
-            ToggleSelectedItem(title: store.selected.text, isExpanded: $store.isExpanded)
+            ToggleSelectedItem(title: store.selected.text(format:"m/d T"), isExpanded: $store.isExpanded)
                 .padding(8)
                 .background(.white)
                 .cornerRadius(8)
                 .shadow(radius: 3)
             if store.isExpanded {
-                ForEach(store.others) { item in
-                    ToggleOptionItem(title: item.text, onTap: { store.send(.selected(item))})
+                ForEach(store.others) { route in
+                    ToggleOptionItem(title: route.text(format:"m/d T"), onTap: { store.send(.selected(route))})
                         .padding(8)
                         .background(Color(UIColor.systemGray5))
                         .cornerRadius(8)
