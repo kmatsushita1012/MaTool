@@ -10,6 +10,7 @@ import ComposableArchitecture
 struct RouteFeature{
     
     @Dependency(\.apiClient) var apiClient
+    @Dependency(\.accessToken) var accessToken
     
     enum Content: Equatable{
         case locations
@@ -52,8 +53,8 @@ struct RouteFeature{
                 //TODO
                 let regionId = "kakegawa"
                 return .merge(
-                    routeEffect(id),
-                    routesEffect(id),
+                    routeEffect(id, accessToken: accessToken.value),
+                    routesEffect(id,accessToken:  accessToken.value),
                     districtsEffect(regionId),
                 )
             case .districtsReceived(let result):
@@ -119,15 +120,15 @@ struct RouteFeature{
                 state.routePicker = nil
                 switch content {
                 case .locations:
-                    return locationsEffect("")
+                    return locationsEffect("", accessToken: accessToken.value)
                 case .route(let district):
                     return .merge(
-                        routeEffect(district.id),
-                        routesEffect(district.id)
+                        routeEffect(district.id, accessToken: accessToken.value),
+                        routesEffect(district.id, accessToken: accessToken.value)
                     )
                 }
             case .routePicker(.selected(let route)):
-                return routeEffect(route)
+                return routeEffect(route, accessToken: accessToken.value)
             case .districtPicker(_),.routePicker(_), .map(_), .homeTapped:
                 return .none
             }
@@ -142,19 +143,19 @@ struct RouteFeature{
         
     }
     
-    func routeEffect(_ id: String) -> Effect<Action> {
+    func routeEffect(_ id: String, accessToken: String?) -> Effect<Action> {
         .run { send in
-            async let routeTask = apiClient.getCurrentRoute(id)
-            async let locationTask = apiClient.getLocation(id)
+            async let routeTask = apiClient.getCurrentRoute(id, accessToken)
+            async let locationTask = apiClient.getLocation(id, accessToken)
             let (routeResult, locationResult) = await (routeTask, locationTask)
             await send(.routeReceived(route: routeResult, location: locationResult))
         }
     }
     
-    func routeEffect(_ summary: RouteSummary) -> Effect<Action> {
+    func routeEffect(_ summary: RouteSummary, accessToken: String?) -> Effect<Action> {
         .run { send in
-            async let routeTask = apiClient.getRoute(summary.districtId, summary.date, summary.title)
-            async let locationTask = apiClient.getLocation(summary.districtId)
+            async let routeTask = apiClient.getRoute(summary.districtId, summary.date, summary.title, accessToken)
+            async let locationTask = apiClient.getLocation(summary.districtId, accessToken)
             let (routeResult, locationResult) = await (routeTask, locationTask)
             await send(.routeReceived(route: routeResult, location: locationResult))
         }
@@ -167,16 +168,16 @@ struct RouteFeature{
         }
     }
     
-    func routesEffect(_ id: String) -> Effect<Action> {
+    func routesEffect(_ id: String, accessToken: String?) -> Effect<Action> {
         .run { send in
-            let result = await apiClient.getRoutes(id);
+            let result = await apiClient.getRoutes(id, accessToken);
             await send(.routesReceived(result))
         }
     }
     
-    func locationsEffect(_ id: String) -> Effect<Action> {
+    func locationsEffect(_ id: String, accessToken: String?) -> Effect<Action> {
         .run { send in
-            let result = await apiClient.getLocations(id);
+            let result = await apiClient.getLocations(id, accessToken);
             await send(.locationsReceived(result))
         }
     }

@@ -12,6 +12,10 @@ import Foundation
 @Reducer
 struct AppFeature {
     
+    @Dependency(\.apiClient) var apiClient
+    @Dependency(\.awsCognitoClient) var awsCognitoClient
+    @Dependency(\.accessToken) var accessToken
+    
     @Reducer
     enum Destination {
         case route(RouteFeature)
@@ -28,9 +32,6 @@ struct AppFeature {
         @Presents var destination: Destination.State?
     }
     
-    @Dependency(\.awsCognitoClient) var awsCognitoClient
-    @Dependency(\.userDefaultsClient) var userDefaultsClient
-    @Dependency(\.apiClient) var apiClient
 
     @CasePathable
     enum Action:Equatable {
@@ -55,7 +56,19 @@ struct AppFeature {
                 }
             case .awsInitReceived(.success(let value)):
                 state.isLoggedIn = value
-                return .none
+                return .run { send in
+                    let result = await awsCognitoClient.getTokens()
+                    switch result {
+                    case .success(let tokens):
+                        if let token = tokens.accessToken?.tokenString {
+                            accessToken.value = token
+                        } else {
+                            print("No access token found")
+                        }
+                    case .failure(_):
+                        break
+                    }
+                }
             case .awsInitReceived(.failure(_)):
                 state.isLoggedIn = .guest
                 return .none
@@ -83,7 +96,7 @@ struct AppFeature {
                 return .none
             case .adminTapped:
                 if case let .district(id) = state.isLoggedIn {
-                    return adminDistrictEffect(id)
+                    return adminDistrictEffect(id, accessToken: accessToken.value)
                 } else if case let .region(id) = state.isLoggedIn {
                     return adminRegionEffect(id)
                 } else {
@@ -98,7 +111,7 @@ struct AppFeature {
                 case .login(.received(.success(let value))):
                     state.isLoggedIn = value
                     if case let .district(id) = value{
-                        return adminDistrictEffect(id)
+                        return adminDistrictEffect(id, accessToken: accessToken.value)
                     } else if case let .region(id) = value {
                         return adminRegionEffect(id)
                     } else {
@@ -111,6 +124,7 @@ struct AppFeature {
                         .adminRegion(.signOutReceived(.success(_))):
                     state.destination = nil
                     state.isLoggedIn = .guest
+                    accessToken.value = nil
                     return .none
                 case .route(.homeTapped),
                     .info(.homeTapped),
@@ -130,10 +144,11 @@ struct AppFeature {
         .ifLet(\.$destination, action: \.destination)
     }
     
-    func adminDistrictEffect(_ id: String)-> Effect<Action> {
+    func adminDistrictEffect(_ id: String, accessToken: String?)-> Effect<Action> {
+        print(accessToken)
         return .run { send in
             async let districtResult = apiClient.getDistrict(id)
-            async let routesResult =  apiClient.getRoutes(id)
+            async let routesResult =  apiClient.getRoutes(id,  accessToken)
             let _ = await (districtResult, routesResult)
             await send(.adminDistrictReceived(district: districtResult, routes: routesResult))
         }

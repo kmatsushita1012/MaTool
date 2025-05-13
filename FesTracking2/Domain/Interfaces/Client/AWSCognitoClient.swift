@@ -42,3 +42,16 @@ extension DependencyValues {
     set { self[AWSCognitoClient.self] = newValue }
   }
 }
+
+final class AWSCognitoAccessTokenStore {
+    var value: String?
+}
+
+extension DependencyValues {
+    var accessToken: AWSCognitoAccessTokenStore {
+        get { self[AWSCognitoAccessTokenStore.self] }
+        set { self[AWSCognitoAccessTokenStore.self] = newValue }
+    }
+}
+
+
