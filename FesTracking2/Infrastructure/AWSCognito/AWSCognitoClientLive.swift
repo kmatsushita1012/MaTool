@@ -49,17 +49,10 @@ extension AWSCognitoClient: DependencyKey {
                             continuation.resume(returning: .failure(.unknown(error.localizedDescription)))
                             return
                         }
-
                         guard let tokens = tokens else {
                             continuation.resume(returning: .failure(.unknown("notSignedIn")))
                             return
                         }
-//
-//                        let result = Tokens(
-//                            idToken: tokens.idToken?.tokenString ?? "",
-//                            accessToken: tokens.accessToken?.tokenString ?? "",
-//                            refreshToken: tokens.refreshToken?.tokenString ?? ""
-//                        )
                         continuation.resume(returning: .success(tokens))
                     }
                 }
@@ -104,3 +97,6 @@ extension AWSCognitoClient: DependencyKey {
 
 }
 
+extension AWSCognitoAccessTokenStore: DependencyKey {
+    static let liveValue = AWSCognitoAccessTokenStore()
+}

@@ -59,7 +59,7 @@ struct AdminRouteInfoFeature {
     }
     
     @Dependency(\.apiClient) var apiClient
-    @Dependency(\.userDefaultsClient) var userDefaultsClient
+    @Dependency(\.accessToken) var accessToken
     
     var body: some ReducerOf<AdminRouteInfoFeature> {
         BindingReducer()
@@ -69,7 +69,7 @@ struct AdminRouteInfoFeature {
                 if case let .edit(id,date,title) = state.mode{
                     state.isLoading = true
                     return .run { send in
-                        let result = await apiClient.getRoute(id,date,title)
+                        let result = await apiClient.getRoute(id,date,title, accessToken.value)
                         await send(.getReceived(result))
                     }
                 }
@@ -93,20 +93,24 @@ struct AdminRouteInfoFeature {
                     state.errorMessage = "タイトルには1文字以上を設定してください。"
                     return .none
                 }
-                guard let accessToken = userDefaultsClient.stringForKey("AccessToken") else {
-                    state.errorMessage = "No access token found"
-                    return .none
-                }
                 switch state.mode {
                 case .create:
                     return .run { [route = state.route] send in
-                        let result = await apiClient.postRoute(route, accessToken)
-                        await send(.deleteReceived(result))
+                        if let token = accessToken.value{
+                            let result = await apiClient.postRoute(route, token)
+                            await send(.postReceived(result))
+                        }else{
+                            await send(.postReceived(.failure(.unknown("No Access Token"))))
+                        }
                     }
                 case .edit:
                     return .run { [route = state.route] send in
-                        let result = await apiClient.putRoute(route, accessToken)
-                        await send(.postReceived(result))
+                        if let token = accessToken.value{
+                            let result = await apiClient.putRoute(route, token)
+                            await send(.postReceived(result))
+                        }else{
+                            await send(.postReceived(.failure(.unknown("No Access Token"))))
+                        }
                     }
                 }
             case .cancelButtonTapped:
@@ -117,7 +121,11 @@ struct AdminRouteInfoFeature {
             case .deleteTapped:
                 return .run { [route = state.route] send in
                     //TODO
-                    let result = await apiClient.deleteRoute(route.districtId, route.date, route.title, "")
+                    guard let token = accessToken.value else {
+                        await send(.postReceived(.failure(.unknown("No Access Token"))))
+                        return
+                    }
+                    let result = await apiClient.deleteRoute(route.districtId, route.date, route.title, token)
                     await send(.postReceived(result))
                 }
             case .postReceived(.success(_)):

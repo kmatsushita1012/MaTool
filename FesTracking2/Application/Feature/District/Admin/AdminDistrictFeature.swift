@@ -13,6 +13,7 @@ struct AdminDistrictFeature {
     @Dependency(\.apiClient) var apiClient
     @Dependency(\.locationSharingUseCase) var usecase
     @Dependency(\.awsCognitoClient) var awsCognitoClient
+    @Dependency(\.accessToken) var accessToken
     
     @Reducer
     enum Destination {
@@ -81,7 +82,7 @@ struct AdminDistrictFeature {
                             await send(.getDistrictReceived(result))
                         },
                         .run {[id = state.district.id] send in
-                            let result = await apiClient.getRoutes(id)
+                            let result = await apiClient.getRoutes(id, accessToken.value)
                             await send(.getRoutesReceived(result))
                         }
                     )

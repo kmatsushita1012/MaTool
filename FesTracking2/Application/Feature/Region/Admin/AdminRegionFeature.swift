@@ -12,6 +12,7 @@ struct AdminRegionFeature {
     
     @Dependency(\.apiClient) var apiClient
     @Dependency(\.awsCognitoClient) var awsCognitoClient
+    @Dependency(\.accessToken) var accessToken
     
     @Reducer
     enum Destination {
@@ -47,7 +48,7 @@ struct AdminRegionFeature {
                 return .none
             case .onDistrictInfo(let district):
                 return .run { send in
-                    let result = await apiClient.getRoutes(district.id)
+                    let result = await apiClient.getRoutes(district.id, accessToken.value)
                     await send(.districtInfoPrepared(district, result))
                 }
             case .onDistrictCreate:

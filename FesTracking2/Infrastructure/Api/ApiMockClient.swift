@@ -37,15 +37,15 @@ extension ApiClient {
         putDistrict: { _,_ in
             return Result.success("Success")
         },
-        getRoutes: { _ in
+        getRoutes: { _,_ in
             let summaries = routes.map{ RouteSummary(from: PublicRoute(from: $0, name: "城北町")) }
             return Result.success(summaries)
         },
-        getRoute: { id,date,title  in
+        getRoute: { id,date,title,_  in
             let route = routes.filter{ $0.districtId == id && $0.date == date && $0.title == title }.first ?? Route.sample
             return Result.success( PublicRoute(from: route, name: "城北町") )
         },
-        getCurrentRoute: { _ in
+        getCurrentRoute: { _,_ in
             let route = routes.first ?? Route.sample
             return Result.success(PublicRoute(from: route, name: "城北町"))
         },
@@ -66,10 +66,10 @@ extension ApiClient {
             }
             return Result.success("Success")
         },
-        getLocation: { _ in
+        getLocation: { _,_ in
             return Result.success(PublicLocation.sample)
         },
-        getLocations: { _ in
+        getLocations: { _,_ in
             return Result.success([PublicLocation.sample])
         },
         postLocation: { _,_ in

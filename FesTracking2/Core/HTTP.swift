@@ -42,7 +42,7 @@ func executeURLSession(request:URLRequest) async -> Result<Data,Error> {
     }
 }
 
-func performGetRequest(path: String, query: [String: Any] = [:]) async -> Result<Data, Error> {
+func performGetRequest(path: String, query: [String: Any] = [:], accessToken: String? = nil ) async -> Result<Data, Error> {
     // 環境変数からベースURLを取得（例: "https://example.com"）
     guard var urlComponents = URLComponents(string: "https://example.com" + path) else {
         return .failure(NSError(domain: "Invalid base URL or path", code: -1, userInfo: nil))
@@ -67,6 +67,9 @@ func performGetRequest(path: String, query: [String: Any] = [:]) async -> Result
     }
     var request = URLRequest(url: url)
     request.httpMethod = "GET"
+    if let accessToken = accessToken{
+        request.setValue("Bearer \(accessToken)", forHTTPHeaderField: "Authorization")
+    }
     return await executeURLSession(request: request)
 }
 

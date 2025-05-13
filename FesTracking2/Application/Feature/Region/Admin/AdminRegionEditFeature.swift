@@ -11,6 +11,7 @@ import ComposableArchitecture
 struct AdminRegionEditFeature {
     
     @Dependency(\.apiClient) var apiClient
+    @Dependency(\.accessToken) var accessToken
     
     @ObservableState
     struct State: Equatable {
@@ -38,8 +39,12 @@ struct AdminRegionEditFeature {
                 return .none
             case .saveTapped:
                 return .run { [region = state.item] send in
-                    let result = await apiClient.putRegion(region,"")
-                    await send(.received(result))
+                    if let token = accessToken.value{
+                        let result = await apiClient.putRegion(region, token)
+                        await send(.received(result))
+                    }else{
+                        await send(.received(.failure(ApiError.unknown("No Access Token"))))
+                    }
                 }
             case .cancelTapped:
                 return .none
