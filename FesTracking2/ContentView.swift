@@ -15,7 +15,7 @@ struct ContentView: View {
     var body: some View {
         AdminDistrictView(store:
             Store(initialState:
-                    AdminDistrictFeature.State(district: District.sample, routes: [RouteSummary.sample]),
+                    AdminDistrictFeature.State(district: PublicDistrict.sample, routes: [RouteSummary.sample]),
               reducer:
                     { AdminDistrictFeature() }
              )

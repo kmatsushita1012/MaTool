@@ -62,7 +62,7 @@ struct AppFeature {
             case .adminDistrictReceived(let districtResult, let routesResult):
                 if case let .success(district) = districtResult,
                    case let .success(routes) = routesResult{
-                    state.destination = .adminDistrict(AdminDistrictFeature.State(district: district.toModel(), routes: routes))
+                    state.destination = .adminDistrict(AdminDistrictFeature.State(district: district, routes: routes))
                 }else{
                     //Todo
                 }
@@ -107,13 +107,15 @@ struct AppFeature {
                 case .login(.received(.failure(_))):
                     state.isLoggedIn = .guest
                     return .none
-                case .adminDistrict(.signOutReceived(_)):
+                case .adminDistrict(.signOutReceived(.success(_))),
+                        .adminRegion(.signOutReceived(.success(_))):
                     state.destination = nil
                     state.isLoggedIn = .guest
                     return .none
                 case .route(.homeTapped),
                     .info(.homeTapped),
                     .adminDistrict(.homeTapped),
+                    .adminRegion(.homeTapped),
                     .login(.homeTapped),
                     .settings(.homeTapped):
                     state.destination = nil

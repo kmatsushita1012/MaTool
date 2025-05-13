@@ -13,6 +13,7 @@ import Foundation
 struct AdminRouteExportFeature {
     @ObservableState
     struct State: Equatable {
+        var title: String = "ルート出力"
         let route: Route
         var points: [Point] {
             filterPoints(route)

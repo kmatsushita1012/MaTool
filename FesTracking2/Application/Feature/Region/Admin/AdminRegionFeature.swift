@@ -10,6 +10,9 @@ import ComposableArchitecture
 @Reducer
 struct AdminRegionFeature {
     
+    @Dependency(\.apiClient) var apiClient
+    @Dependency(\.awsCognitoClient) var awsCognitoClient
+    
     @Reducer
     enum Destination {
         case edit(AdminRegionEditFeature)
@@ -29,6 +32,10 @@ struct AdminRegionFeature {
         case onEdit
         case onDistrictInfo(PublicDistrict)
         case onDistrictCreate
+        case homeTapped
+        case signOutTapped
+        case districtInfoPrepared(PublicDistrict, Result<[RouteSummary],ApiError>)
+        case signOutReceived(Result<Bool,AWSCognitoError>)
         case destination(PresentationAction<Destination.Action>)
     }
     
@@ -39,10 +46,26 @@ struct AdminRegionFeature {
                 state.destination = .edit(AdminRegionEditFeature.State(item: state.region))
                 return .none
             case .onDistrictInfo(let district):
-                state.destination = .districtInfo(AdminRegionDistrictInfoFeature.State(district:  district, routes: [RouteSummary.sample]))
-                return .none
+                return .run { send in
+                    let result = await apiClient.getRoutes(district.id)
+                    await send(.districtInfoPrepared(district, result))
+                }
             case .onDistrictCreate:
                 state.destination = .districtCreate(AdminRegionDistrictCreateFeature.State())
+                return .none
+            case .homeTapped:
+                return .none
+            case .signOutTapped:
+                return .run { send in
+                    let result = await awsCognitoClient.signOut()
+                    await send(.signOutReceived(result))
+                }
+            case .districtInfoPrepared(let district, .success(let routes)):
+                state.destination = .districtInfo(AdminRegionDistrictInfoFeature.State(district: district, routes: routes))
+                return .none
+            case .districtInfoPrepared(_, .failure(_)):
+                return .none
+            case .signOutReceived(_):
                 return .none
             case .destination(.presented(let childAction)):
                 switch childAction{
