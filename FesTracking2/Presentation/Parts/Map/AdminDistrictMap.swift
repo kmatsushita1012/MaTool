@@ -11,6 +11,7 @@ import SwiftUI
 struct AdminDistrictMap: UIViewRepresentable {
     var coordinates: [Coordinate]?
     var isShownPolygon: Bool
+    let region: MKCoordinateRegion? = nil
 
     var onMapLongPress: (Coordinate) -> Void
 
@@ -25,6 +26,17 @@ struct AdminDistrictMap: UIViewRepresentable {
         // 長押しジェスチャー追加
         let longPress = UILongPressGestureRecognizer(target: context.coordinator, action: #selector(Coordinator.handleLongPress(_:)))
         mapView.addGestureRecognizer(longPress)
+        
+        if let region = region {
+            mapView.setRegion(region, animated: false)
+        } else if let coordinates = coordinates,
+            !coordinates.isEmpty {
+            let avgLatitude = coordinates.map { $0.latitude }.reduce(0, +) / Double(coordinates.count)
+            let avgLongitude = coordinates.map { $0.longitude }.reduce(0, +) / Double(coordinates.count)
+            let center = CLLocationCoordinate2D(latitude: avgLatitude, longitude: avgLongitude)
+            let region = MKCoordinateRegion(center: center, span: MKCoordinateSpan(latitudeDelta: spanDelta, longitudeDelta: spanDelta))
+            mapView.setRegion(region, animated: false)
+        }
 
         return mapView
     }
@@ -47,17 +59,10 @@ struct AdminDistrictMap: UIViewRepresentable {
             mapView.addOverlay(polygonOverlay)
         }
         
-        if !context.coordinator.hasSetRegion, let first = coordinates.first {
-            let center = CLLocationCoordinate2D(latitude: first.latitude, longitude: first.longitude)
-            let region = MKCoordinateRegion(center: center, span: MKCoordinateSpan(latitudeDelta: 0.05, longitudeDelta: 0.05))
-            mapView.setRegion(region, animated: false)
-            context.coordinator.hasSetRegion = true
-        }
     }
 
     class Coordinator: NSObject, MKMapViewDelegate {
         var parent: AdminDistrictMap
-        var hasSetRegion = false
 
         init(_ parent: AdminDistrictMap) {
             self.parent = parent

@@ -7,7 +7,8 @@
 
 import Foundation
 
-struct Route:Codable, Equatable {
+struct Route: Codable, Equatable, Identifiable {
+    let id: String
     let districtId: String
     var date:SimpleDate = .today
     var title: String = ""
@@ -18,17 +19,9 @@ struct Route:Codable, Equatable {
     var goal: SimpleTime = SimpleTime(hour: 12, minute: 0)
 }
 
-extension Route: Identifiable {
-    var id: String {
-        return Route.makeId(districtId,date,title)
-    }
-    static func makeId(_ districtId:String, _ date: SimpleDate, _ title: String)->String {
-        return "\(districtId)_\(date.year)-\(date.month)-\(date.day)_\(title)"
-    }
-}
-
 extension Route {
     static let sample = Route(
+        id: UUID().uuidString,
         districtId: "Johoku",
         date: SimpleDate.sample,
         title: "午後",

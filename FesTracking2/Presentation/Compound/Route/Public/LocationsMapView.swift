@@ -14,7 +14,6 @@ struct LocationsMapView: View {
     var body: some View {
         RouteMap(
             locations: store.locations,
-            pointTapped: {_ in },
             locationTapped: { store.send(.locationTapped($0)) }
         )
         .sheet(item: $store.scope(state: \.location, action: \.location)){ store in

@@ -7,18 +7,24 @@
 
 import Dependencies
 
-extension AWSCognitoClient: TestDependencyKey {
+extension AWSCognito.Client: TestDependencyKey {
     internal static let testValue = Self.noop
     internal static let previewValue = Self.noop
 }
 
-extension AWSCognitoClient {
+extension AWSCognito.Client {
     static let noop = Self(
         initialize: {
-            return .success(.district("johoku"))
+            return .success("Success")
         },
-        signIn: { username,password in
-            return .success(.district("johoku"))
+        signIn: { username, password in
+            return .success
+        },
+        confirmSignIn: { newPassword in
+            return .success("Success")
+        },
+        getUserRole: {
+            return .success(.district("祭_町"))
         },
         getTokens: {
             return .failure(.unknown("Mock"))

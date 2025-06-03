@@ -11,6 +11,7 @@ import MapKit
 struct ExportableMap: UIViewRepresentable {
     var points: [Point]
     var segments: [Segment]
+    let region: MKCoordinateRegion? = nil
 
     @Binding var mapSnapshot: UIImage?
 
@@ -22,7 +23,16 @@ struct ExportableMap: UIViewRepresentable {
         let mapView = MKMapView()
         mapView.delegate = context.coordinator
         mapView.pointOfInterestFilter = .excludingAll
-        
+        if let region = region{
+            mapView.setRegion(region, animated: false)
+        }else if !context.coordinator.hasSetRegion, !points.isEmpty {
+           let avgLatitude = points.map { $0.coordinate.latitude }.reduce(0, +) / Double(points.count)
+           let avgLongitude = points.map { $0.coordinate.longitude }.reduce(0, +) / Double(points.count)
+           let center = CLLocationCoordinate2D(latitude: avgLatitude, longitude: avgLongitude)
+           let region = MKCoordinateRegion(center: center, span: MKCoordinateSpan(latitudeDelta: spanDelta, longitudeDelta: spanDelta))
+           mapView.setRegion(region, animated: false)
+           context.coordinator.hasSetRegion = true
+       }
         return mapView
     }
 
@@ -42,13 +52,6 @@ struct ExportableMap: UIViewRepresentable {
             let polyline = SegmentPolyline(coordinates: segment.coordinates.map({$0.toCL()}), count: segment.coordinates.count)
             polyline.segment = segment
             mapView.addOverlay(polyline)
-        }
-
-        if !context.coordinator.hasSetRegion, let first = points.first {
-            let center = CLLocationCoordinate2D(latitude: first.coordinate.latitude, longitude: first.coordinate.longitude)
-            let region = MKCoordinateRegion(center: center, span: MKCoordinateSpan(latitudeDelta: 0.05, longitudeDelta: 0.05))
-            mapView.setRegion(region, animated: false)
-            context.coordinator.hasSetRegion = true
         }
     }
 

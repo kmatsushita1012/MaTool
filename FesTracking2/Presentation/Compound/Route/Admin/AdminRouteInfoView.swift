@@ -31,7 +31,7 @@ struct AdminRouteInfoView: View{
                 }
                 Section(header: Text("経路")) {
                     Button(action: {
-                        store.send(.mapButtonTapped)
+                        store.send(.mapTapped)
                     }) {
                         Label("地図で編集", systemImage: "map")
                             .font(.body)
@@ -57,7 +57,7 @@ struct AdminRouteInfoView: View{
                         onTap: { store.send(.exportTapped) }
                     )
                 }
-                if case .edit(_,_,_) = store.mode {
+                if !store.mode.isCreate {
                     Section {
                         Text("削除")
                             .onTapGesture {
@@ -66,15 +66,11 @@ struct AdminRouteInfoView: View{
                             .foregroundStyle(.red)
                     }
                 }
-                if let errorMessage = store.errorMessage{
-                    Text(errorMessage)
-                        .foregroundStyle(.red)
-                }
             }
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
                     Button("キャンセル") {
-                        store.send(.cancelButtonTapped)
+                        store.send(.cancelTapped)
                     }
                     .padding(8)
                 }
@@ -84,7 +80,7 @@ struct AdminRouteInfoView: View{
                 }
                 ToolbarItem(placement: .topBarTrailing) {
                     Button{
-                        store.send(.saveButtonTapped)
+                        store.send(.saveTapped)
                     } label: {
                         Text(store.mode.isCreate ? "作成" : "保存")
                             .bold()
@@ -103,6 +99,8 @@ struct AdminRouteInfoView: View{
             ) { store in
                 AdminRouteExportView(store: store)
             }
+            .alert($store.scope(state: \.alert, action: \.alert))
+            .loadingOverlay(isLoading: store.isLoading)
         }
         .onAppear {
             store.send(.onAppear)

@@ -15,8 +15,6 @@ struct AdminRouteMap: UIViewRepresentable {
     var pointTapped: (Point) -> Void
     var polylineTapped: (Segment) -> Void
     var region: MKCoordinateRegion?
-    private var
-    
 
     func makeCoordinator() -> Coordinator {
         Coordinator(self)
@@ -31,9 +29,11 @@ struct AdminRouteMap: UIViewRepresentable {
         mapView.addGestureRecognizer(longPress)
         if let region = region{
             mapView.setRegion(region, animated: false)
-        } else if let first = points.first {
-            let center = CLLocationCoordinate2D(latitude: first.coordinate.latitude, longitude: first.coordinate.longitude)
-            let region = MKCoordinateRegion(center: center, span: MKCoordinateSpan(latitudeDelta: 0.05, longitudeDelta: 0.05))
+        } else if  !points.isEmpty {
+            let avgLatitude = points.map { $0.coordinate.latitude }.reduce(0, +) / Double(points.count)
+            let avgLongitude = points.map { $0.coordinate.longitude }.reduce(0, +) / Double(points.count)
+            let center = CLLocationCoordinate2D(latitude: avgLatitude, longitude: avgLongitude)
+            let region = MKCoordinateRegion(center: center, span: MKCoordinateSpan(latitudeDelta: spanDelta, longitudeDelta: spanDelta))
             mapView.setRegion(region, animated: false)
         }
         return mapView

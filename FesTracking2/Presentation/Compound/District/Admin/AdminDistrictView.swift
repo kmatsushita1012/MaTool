@@ -14,7 +14,7 @@ struct AdminDistrictView: View{
     var body: some View {
         NavigationStack {
             Form{
-                Section{
+                Section {
                     NavigationItem(
                         title: "地区情報",
                         iconName: "info.circle" ,
@@ -77,6 +77,8 @@ struct AdminDistrictView: View{
             .fullScreenCover(item: $store.scope(state: \.destination?.route, action: \.destination.route)) { store in
                 AdminRouteInfoView(store: store)
             }
+            .alert($store.scope(state: \.alert, action: \.alert))
+            .loadingOverlay(isLoading: store.isLoading)
         }
     }
 }

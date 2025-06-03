@@ -16,7 +16,6 @@ struct RouteView: View {
             VStack(spacing: 0){
                 if let store = store.scope(state: \.districtPicker, action: \.districtPicker) {
                     DistrictPickerView(store: store)
-                    
                 }
                 ZStack {
                     if let store = store.scope(state: \.map?.route, action: \.map.route) {
@@ -55,7 +54,8 @@ struct RouteView: View {
         }
         
         .onAppear() {
-            store.send(.onAppear("johoku"))
+            //TODO
+            store.send(.onAppear)
         }
     }
     

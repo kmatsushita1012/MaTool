@@ -17,5 +17,5 @@ struct PublicLocation: Codable{
 extension PublicLocation: Equatable {}
 
 extension PublicLocation {
-    static let sample = Self(districtId: "johoku",districtName: "城北町", coordinate: Coordinate.sample, timestamp: Date.sample)
+    static let sample = Self(districtId: "掛川祭_城北町",districtName: "城北町", coordinate: Coordinate.sample, timestamp: Date.sample)
 }

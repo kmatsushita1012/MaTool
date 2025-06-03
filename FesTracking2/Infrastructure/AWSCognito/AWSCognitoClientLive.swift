@@ -8,7 +8,8 @@
 import AWSMobileClient
 import Dependencies
 
-extension AWSCognitoClient: DependencyKey {
+
+extension AWSCognito.Client: DependencyKey {
     static let liveValue = Self(
         initialize: {
             await withCheckedContinuation { continuation in
@@ -17,14 +18,7 @@ extension AWSCognitoClient: DependencyKey {
                         continuation.resume(returning: .failure(.unknown("init \(error.localizedDescription)")))
                         return
                     }
-                    guard let _ = userState else {
-                        continuation.resume(returning: .success(.guest))
-                        return
-                    }
-
-                    getRole { result in
-                        continuation.resume(returning: result)
-                    }
+                    continuation.resume(returning: .success("Success"))
                 }
             }
         },
@@ -32,12 +26,67 @@ extension AWSCognitoClient: DependencyKey {
             await withCheckedContinuation { continuation in
                 AWSMobileClient.default().signIn(username: username, password: password) { result, error in
                     if let error = error {
-                        continuation.resume(returning: .failure(.unknown("sing \(error.localizedDescription)")))
+                        print(error)
+                        continuation.resume(returning: .failure(.unknown("signIn \(error.localizedDescription)")))
                         return
                     }
-
-                    getRole { roleResult in
-                        continuation.resume(returning: roleResult)
+                    guard let result = result else {
+                        continuation.resume(returning: .failure(.unknown("result is null")))
+                        return
+                    }
+                    print(result.signInState)
+                    switch result.signInState {
+                        case .signedIn:
+                            print("Cognito signedIn")
+                            continuation.resume(returning: .success)
+                        case .newPasswordRequired:
+                            print("Cognito newPassword")
+                            continuation.resume(returning: .newPasswordRequired)
+                        case .smsMFA,
+                            .customChallenge,
+                            .unknown,
+                            .passwordVerifier,
+                            .deviceSRPAuth,
+                            .devicePasswordVerifier,
+                            .adminNoSRPAuth:
+                            continuation.resume(returning: .failure(.unknown("Sign-in state: \(result.signInState.rawValue)")))
+                    }
+                }
+            }
+        },
+        confirmSignIn: { newPassword in
+            await withCheckedContinuation { continuation in
+                AWSMobileClient.default().confirmSignIn(challengeResponse: newPassword) { result, error in
+                    if let error = error {
+                        print("Password update error: \(error.localizedDescription)")
+                        continuation.resume(returning: .failure(.unknown("confirmSignIn \(error.localizedDescription)")))
+                    } else {
+                        continuation.resume(returning: .success("Success"))
+                    }
+                }
+            }
+        },
+        getUserRole: {
+            await withCheckedContinuation { continuation in
+                AWSMobileClient.default().getUserAttributes { attributes, error in
+                    if let error = error {
+                        continuation.resume(returning: .failure(.unknown("role \(error.localizedDescription)")))
+                        return
+                    }
+                    guard let attributes = attributes,
+                          let role = attributes["custom:role"],
+                          let username = AWSMobileClient.default().username else {
+                        continuation.resume(returning: .success(.guest))
+                        return
+                    }
+                    
+                    switch role {
+                    case "region":
+                        continuation.resume(returning: .success(.region(username)))
+                    case "district":
+                        continuation.resume(returning: .success(.district(username)))
+                    default:
+                        continuation.resume(returning: .success(.guest))
                     }
                 }
             }
@@ -61,7 +110,7 @@ extension AWSCognitoClient: DependencyKey {
             await withCheckedContinuation { continuation in
                 AWSMobileClient.default().signOut { error in
                     if let error = error {
-                        continuation.resume(returning: .failure(AWSCognitoError.network(error.localizedDescription)))
+                        continuation.resume(returning: .failure(AWSCognito.Error.network(error.localizedDescription)))
                     } else{
                         continuation.resume(returning: .success(true))
                     }
@@ -69,32 +118,6 @@ extension AWSCognitoClient: DependencyKey {
             }
         }
     )
-    
-    static func getRole(completion: @escaping (Result<UserRole, AWSCognitoError>) -> Void) {
-        AWSMobileClient.default().getUserAttributes { attributes, error in
-            if let error = error {
-                completion(.failure(.unknown("role \(error.localizedDescription)")))
-                return
-            }
-            guard let attributes = attributes,
-                  let sub = attributes["sub"],
-                  let role = attributes["custom:role"] else {
-                
-                completion(.success(.guest))
-                return
-            }
-
-            switch role {
-            case "region":
-                completion(.success(.region(sub)))
-            case "district":
-                completion(.success(.district(sub)))
-            default:
-                completion(.success(.guest))
-            }
-        }
-    }
-
 }
 
 extension AWSCognitoAccessTokenStore: DependencyKey {

@@ -15,15 +15,19 @@ struct AdminPointFeature{
     struct State: Equatable{
         var item: Point
         var showPopover: Bool = false
+        let performances: [Performance]
+        var events: [InfoItem] {
+            return performances.map{ InfoItem(title: $0.name, description: " 演者 \($0.performer)\n \($0.description ?? "" )") } + [InfoItem(title: "休憩", description: nil)]
+        }
     }
     
     @CasePathable
     enum Action: BindableAction, Equatable {
         case binding(BindingAction<State>)
-        case doneButtonTapped
-        case cancelButtonTapped
+        case doneTapped
+        case cancelTapped
         case titleFieldFocused
-        case titleOptionSelected(String)
+        case titleOptionSelected(InfoItem)
     }
     
     var body: some ReducerOf<AdminPointFeature> {
@@ -32,15 +36,16 @@ struct AdminPointFeature{
             switch action{
             case .binding:
                 return .none
-            case .doneButtonTapped:
+            case .doneTapped:
                 return .none
-            case .cancelButtonTapped:
+            case .cancelTapped:
                 return .none
             case .titleFieldFocused:
                 state.showPopover = true
                 return .none
             case .titleOptionSelected(let option):
-                state.item.title = option
+                state.item.title = option.title
+                state.item.description = option.description
                 state.showPopover = false
                 return .none
             }
@@ -48,3 +53,5 @@ struct AdminPointFeature{
         }
     }
 }
+
+

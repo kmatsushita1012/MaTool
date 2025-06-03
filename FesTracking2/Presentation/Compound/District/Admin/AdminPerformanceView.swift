@@ -10,7 +10,7 @@ import ComposableArchitecture
 
 struct AdminPerformanceView:View {
     
-    @Bindable var store: StoreOf<PerformanceAdminFeature>
+    @Bindable var store: StoreOf<AdminPerformanceFeature>
     
     var body: some View {
         NavigationStack{
@@ -29,7 +29,7 @@ struct AdminPerformanceView:View {
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
                     Button{
-                        store.send(.cancelButtonTapped)
+                        store.send(.cancelTapped)
                     } label: {
                         Text("キャンセル")
                     }
@@ -41,7 +41,7 @@ struct AdminPerformanceView:View {
                 }
                 ToolbarItem(placement: .topBarTrailing) {
                     Button{
-                        store.send(.doneButtonTapped)
+                        store.send(.doneTapped)
                     } label: {
                         Text("完了")
                             .bold()

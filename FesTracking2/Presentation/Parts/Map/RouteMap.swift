@@ -14,21 +14,22 @@ struct RouteMap: UIViewRepresentable {
     var locations: [PublicLocation]?
     var pointTapped: (Point)->Void
     var locationTapped: (PublicLocation)->Void
+    let region: MKCoordinateRegion?
     
-    init(points: [Point]? = nil, segments: [Segment]? = nil, locations: [PublicLocation]? = nil, pointTapped: @escaping (Point) -> Void, locationTapped: @escaping (PublicLocation) -> Void) {
-        self.points = points
-        self.segments = segments
+    init(locations: [PublicLocation]? = nil, locationTapped: @escaping (PublicLocation) -> Void, region: MKCoordinateRegion? = nil) {
         self.locations = locations
-        self.pointTapped = pointTapped
+        self.pointTapped = { _ in }
         self.locationTapped = locationTapped
+        self.region = region
     }
     
-    init(points: [Point]? = nil, segments: [Segment]? = nil, location: PublicLocation? = nil, pointTapped: @escaping (Point) -> Void, locationTapped: @escaping (PublicLocation) -> Void) {
+    init(points: [Point]? = nil, segments: [Segment]? = nil, location: PublicLocation? = nil, pointTapped: @escaping (Point) -> Void, locationTapped: @escaping (PublicLocation) -> Void, region: MKCoordinateRegion? = nil) {
         self.points = points
         self.segments = segments
         self.locations = location.map { [$0] }
         self.pointTapped = pointTapped
         self.locationTapped = locationTapped
+        self.region = region
     }
     
     func makeCoordinator() -> Coordinator {
@@ -38,6 +39,19 @@ struct RouteMap: UIViewRepresentable {
     func makeUIView(context: Context) -> MKMapView {
         let mapView = MKMapView()
         mapView.delegate = context.coordinator
+        if let region = region {
+            mapView.setRegion(region, animated: false)
+        } else if let points = points,
+            !points.isEmpty {
+            let total = points.reduce((lat: 0.0, lon: 0.0)) { result, point in
+                (lat: result.lat + point.coordinate.latitude, lon: result.lon + point.coordinate.longitude)
+            }
+            let avgLat = total.lat / Double(points.count)
+            let avgLon = total.lon / Double(points.count)
+            let center = CLLocationCoordinate2D(latitude: avgLat, longitude: avgLon)
+            let region = MKCoordinateRegion(center: center, span: MKCoordinateSpan(latitudeDelta: spanDelta, longitudeDelta: spanDelta))
+            mapView.setRegion(region, animated: false)
+        }
         return mapView
     }
 
@@ -58,7 +72,7 @@ struct RouteMap: UIViewRepresentable {
         if let segments = self.segments{
             for segment in segments {
                 let polyline = SegmentPolyline(coordinates: segment.coordinates.map({$0.toCL()}), count: segment.coordinates.count)
-                polyline.segment = segment // ユーザーデータに保持
+                polyline.segment = segment 
                 mapView.addOverlay(polyline)
             }
         }
@@ -70,22 +84,11 @@ struct RouteMap: UIViewRepresentable {
                 annotation.coordinate = location.coordinate.toCL()
                 mapView.addAnnotation(annotation)
             }
-            
-        }
-
-        if !context.coordinator.hasSetRegion,
-           let points = points,
-           let first = points.first {
-            let center = CLLocationCoordinate2D(latitude: first.coordinate.latitude, longitude: first.coordinate.longitude)
-            let region = MKCoordinateRegion(center: center, span: MKCoordinateSpan(latitudeDelta: 0.05, longitudeDelta: 0.05))
-            mapView.setRegion(region, animated: false)
-            context.coordinator.hasSetRegion = true
         }
     }
 
     class Coordinator: NSObject, MKMapViewDelegate {
         var parent: RouteMap
-        var hasSetRegion = false
 
         init(_ parent: RouteMap) {
             self.parent = parent

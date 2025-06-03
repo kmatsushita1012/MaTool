@@ -39,7 +39,7 @@ struct AdminSpanView:View{
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
                     Button{
-                        store.send(.cancelButtonTapped)
+                        store.send(.cancelTapped)
                     } label: {
                         Text("キャンセル")
                     }
@@ -51,7 +51,7 @@ struct AdminSpanView:View{
                 }
                 ToolbarItem(placement: .topBarTrailing) {
                     Button{
-                        store.send(.doneButtonTapped)
+                        store.send(.doneTapped)
                     } label: {
                         Text("完了")
                             .bold()
