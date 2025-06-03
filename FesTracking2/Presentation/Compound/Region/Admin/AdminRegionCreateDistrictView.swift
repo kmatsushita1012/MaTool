@@ -30,9 +30,9 @@ struct AdminRegionDistrictCreateView: View {
                 }
                 ToolbarItem(placement: .topBarTrailing) {
                     Button{
-                        store.send(.saveTapped)
+                        store.send(.createTapped)
                     } label: {
-                        Text("保存")
+                        Text("作成")
                             .bold()
                     }
                     .padding(8)

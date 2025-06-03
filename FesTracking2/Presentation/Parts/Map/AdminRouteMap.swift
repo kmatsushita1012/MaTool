@@ -8,13 +8,14 @@ import UIKit
 import MapKit
 import SwiftUI
 
-struct RouteAdminMap: UIViewRepresentable {
+struct AdminRouteMap: UIViewRepresentable {
     var points: [Point]
     var segments: [Segment]
-
     var onMapLongPress: (Coordinate) -> Void
     var pointTapped: (Point) -> Void
     var polylineTapped: (Segment) -> Void
+    var region: MKCoordinateRegion?
+    private var
     
 
     func makeCoordinator() -> Coordinator {
@@ -28,8 +29,13 @@ struct RouteAdminMap: UIViewRepresentable {
         // 長押しジェスチャー追加
         let longPress = UILongPressGestureRecognizer(target: context.coordinator, action: #selector(Coordinator.handleLongPress(_:)))
         mapView.addGestureRecognizer(longPress)
-        
-
+        if let region = region{
+            mapView.setRegion(region, animated: false)
+        } else if let first = points.first {
+            let center = CLLocationCoordinate2D(latitude: first.coordinate.latitude, longitude: first.coordinate.longitude)
+            let region = MKCoordinateRegion(center: center, span: MKCoordinateSpan(latitudeDelta: 0.05, longitudeDelta: 0.05))
+            mapView.setRegion(region, animated: false)
+        }
         return mapView
     }
 
@@ -50,20 +56,12 @@ struct RouteAdminMap: UIViewRepresentable {
             polyline.segment = segment // ユーザーデータに保持
             mapView.addOverlay(polyline)
         }
-
-        if !context.coordinator.hasSetRegion, let first = points.first {
-            let center = CLLocationCoordinate2D(latitude: first.coordinate.latitude, longitude: first.coordinate.longitude)
-            let region = MKCoordinateRegion(center: center, span: MKCoordinateSpan(latitudeDelta: 0.05, longitudeDelta: 0.05))
-            mapView.setRegion(region, animated: false)
-            context.coordinator.hasSetRegion = true
-        }
     }
 
     class Coordinator: NSObject, MKMapViewDelegate {
-        var parent: RouteAdminMap
-        var hasSetRegion = false
+        var parent: AdminRouteMap
 
-        init(_ parent: RouteAdminMap) {
+        init(_ parent: AdminRouteMap) {
             self.parent = parent
         }
 
