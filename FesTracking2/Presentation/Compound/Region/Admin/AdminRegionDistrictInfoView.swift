@@ -15,15 +15,13 @@ struct AdminRegionDistrictInfoView: View {
         NavigationStack{
             Form{
                 Section(header: Text("経路")) {
-                    VStack{
-                        List(store.routes) { route in
-                            NavigationItem(
-                                title: route.text(format: "m/d T"),
-                                onTap: {
-                                    store.send(.exportTapped(route))
-                                }
-                            )
-                        }
+                    List(store.routes) { route in
+                        NavigationItem(
+                            title: route.text(format: "m/d T"),
+                            onTap: {
+                                store.send(.exportTapped(route))
+                            }
+                        )
                     }
                 }
             }

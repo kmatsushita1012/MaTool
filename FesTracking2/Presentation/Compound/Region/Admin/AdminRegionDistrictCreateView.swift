@@ -14,16 +14,8 @@ struct AdminRegionCreateDistrictView: View {
     
     var body: some View {
         NavigationStack {
-            Form{
-                Section(header: Text("町名")) {
-                    TextField("町名を入力",text: $store.name)
-                }
-                Section(header: Text("メールアドレス")) {
-                    TextField("メールアドレスを入力",text: $store.email)
-                        .textContentType(.emailAddress)
-                        .autocapitalization(.none)
-                        .disableAutocorrection(true)
-                }
+            VStack {
+                Text("AdminRegionCreateDistrictView")
             }
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {

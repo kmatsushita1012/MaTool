@@ -16,8 +16,9 @@ final class LocationSharingUseCase: Sendable {
     @Dependency(\.locationClient) var locationClient
 
     private var timer: Timer?
-    private var locationHistory: [Status] = []
+    private(set) var locationHistory: [Status] = []
     private(set) var isTracking: Bool = false
+    private(set) var interval: Int = 60
 
     private var historyStreamPair = AsyncStream<[Status]>.makeStream()
     var historyStream: AsyncStream<[Status]> {
@@ -28,11 +29,12 @@ final class LocationSharingUseCase: Sendable {
         historyStreamPair.continuation
     }
 
-    func startTracking(id: String,interval: TimeInterval = 1.0) {
+    func startTracking(id: String,interval: Int = 1) {
         guard !isTracking else { return }
         isTracking = true
         locationClient.startTracking()
-        startTimer(id,interval)
+        self.interval = interval
+        startTimer(id, TimeInterval(interval))
     }
 
     func stopTracking(id: String) {
@@ -48,12 +50,15 @@ final class LocationSharingUseCase: Sendable {
 
     private func startTimer(_ id: String, _ interval: TimeInterval) {
         stopTimer()
+        guard let token = accessToken.value else { return }
         timer = Timer.scheduledTimer(withTimeInterval: interval, repeats: true) { [weak self] _ in
             guard let self else { return }
-            guard let token = accessToken.value else { return }
             Task {
                 await self.fetchLocationAndSend(id, accessToken: token)
             }
+        }
+        Task {
+            await self.fetchLocationAndSend(id, accessToken: token)
         }
     }
 
@@ -76,7 +81,7 @@ final class LocationSharingUseCase: Sendable {
             appendHistory(.locationError(Date()))
         case .success(let cllocation):
             let location = Location(districtId: id, coordinate: Coordinate.fromCL(cllocation.coordinate), timestamp: Date())
-            let result = await apiClient.postLocation(location, accessToken)
+            let result = await apiClient.putLocation(location, accessToken)
             switch result {
             case .success:
                 appendHistory(.update(location))

@@ -18,29 +18,32 @@ struct AdminDistrictEditFeature{
     
     @Reducer
     enum Destination {
-        case base(BaseAdminFeature)
-        case area(AreaAdminFeature)
-        case performance(PerformanceAdminFeature)
+        case base(AdminBaseFeature)
+        case area(AdminAreaFeature)
+        case performance(AdminPerformanceFeature)
     }
     
     @ObservableState
     struct State: Equatable{
         var item: District
         var image: PhotosPickerItem?
+        var isLoading: Bool = false
         @Presents var destination: Destination.State?
+        @Presents var alert: OkAlert.State?
     }
     @CasePathable
     enum Action: BindableAction, Equatable {
         case binding(BindingAction<State>)
-        case cancelButtonTapped
-        case saveButtonTapped
+        case cancelTapped
+        case saveTapped
+        case baseTapped
+        case areaTapped
+        case performanceAddTapped
+        case performanceEditTapped(Performance)
+        case performanceDeleteTapped(Performance)
         case postReceived(Result<String,ApiError>)
-        case baseButtonTapped
-        case areaButtonTapped
-        case performanceAddButtonTapped
-        case performanceEditButtonTapped(Performance)
-        case performanceDeleteButtonTapped(Performance)
         case destination(PresentationAction<Destination.Action>)
+        case alert(PresentationAction<OkAlert.Action>)
     }
     
     var body: some ReducerOf<AdminDistrictEditFeature>{
@@ -49,9 +52,10 @@ struct AdminDistrictEditFeature{
             switch action {
             case .binding:
                 return .none
-            case .cancelButtonTapped:
+            case .cancelTapped:
                 return .none
-            case .saveButtonTapped:
+            case .saveTapped:
+                state.isLoading = true
                 return .run{ [item = state.item] send in
                     if let token = accessToken.value{
                         let result = await apiClient.putDistrict(item, token)
@@ -60,49 +64,64 @@ struct AdminDistrictEditFeature{
                         await send(.postReceived(.failure(ApiError.unknown("No Access Token"))))
                     }
                 }
-            case .postReceived(_):
+            case .baseTapped:
+                state.destination = .base(AdminBaseFeature.State(coordinate: state.item.base))
                 return .none
-            case .baseButtonTapped:
-                state.destination = .base(BaseAdminFeature.State(coordinate: state.item.base))
+            case .areaTapped:
+                state.destination = .area(AdminAreaFeature.State(coordinates: state.item.area))
                 return .none
-            case .areaButtonTapped:
-                state.destination = .area(AreaAdminFeature.State(coordinates: state.item.area))
+            case .performanceAddTapped:
+                state.destination = .performance(AdminPerformanceFeature.State())
                 return .none
-            case .performanceAddButtonTapped:
-                state.destination = .performance(PerformanceAdminFeature.State())
+            case .performanceEditTapped(let item):
+                state.destination = .performance(AdminPerformanceFeature.State(item: item))
                 return .none
-            case .performanceEditButtonTapped(let item):
-                state.destination = .performance(PerformanceAdminFeature.State(item: item))
-                return .none
-            case .performanceDeleteButtonTapped(let item):
+            case .performanceDeleteTapped(let item):
                 state.item.performances.removeAll(where: { $0.id == item.id })
                 return .none
-            case .destination(.presented(.base(.doneButtonTapped))):
-                if case let .base(baseState) = state.destination {
-                    state.item.base = baseState.coordinate
+            case .postReceived(let result):
+                state.isLoading = false
+                if case let .failure(error) = result {
+                    state.alert = OkAlert.make("保存に失敗しました。\(error.localizedDescription)")
                 }
-                state.destination = nil
                 return .none
-            case .destination(.presented(.area(.doneButtonTapped))):
-                if case let .area(areaState) = state.destination {
-                    state.item.area = areaState.coordinates
+            case .destination(.presented(let childAction)):
+                switch childAction {
+                case .base(.doneTapped):
+                    if case let .base(baseState) = state.destination {
+                        state.item.base = baseState.coordinate
+                    }
+                    state.destination = nil
+                    return .none
+                case .area(.doneTapped):
+                    if case let .area(areaState) = state.destination {
+                        state.item.area = areaState.coordinates
+                    }
+                    state.destination = nil
+                    return .none
+                case .performance(.doneTapped):
+                    if case let .performance(performanceState) = state.destination {
+                        state.item.performances.upsert(performanceState.item)
+                    }
+                    state.destination = nil
+                    return .none
+                case .performance(.cancelTapped):
+                    state.destination = nil
+                    return .none
+                default:
+                    return .none
                 }
-                state.destination = nil
-                return .none
-            case .destination(.presented(.performance(.doneButtonTapped))):
-                if case let .performance(performanceState) = state.destination {
-                    state.item.performances.upsert(performanceState.item)
-                }
-                state.destination = nil
-                return .none
-            case .destination(.presented(.performance(.cancelButtonTapped))):
-                state.destination = nil
-                return .none
             case .destination(_):
+                return .none
+            case .alert(.presented(.okTapped)):
+                state.alert = nil
+                return .none
+            case .alert(_):
                 return .none
             }
         }
         .ifLet(\.$destination, action: \.destination)
+        .ifLet(\.$alert, action: \.alert)
     }
 }
 

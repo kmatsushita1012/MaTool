@@ -24,7 +24,7 @@ struct AdminDistrictEditView: View {
                 }
                 Section(header: Text("会所")) {
                     Button(action: {
-                        store.send(.baseButtonTapped)
+                        store.send(.baseTapped)
                     }) {
                         Label("地図で選択", systemImage: "map")
                             .font(.body)
@@ -32,7 +32,7 @@ struct AdminDistrictEditView: View {
                 }
                 Section(header: Text("町域")) {
                     Button(action: {
-                        store.send(.areaButtonTapped)
+                        store.send(.areaTapped)
                     }) {
                         Label("地図で選択", systemImage: "map")
                             .font(.body)
@@ -51,14 +51,14 @@ struct AdminDistrictEditView: View {
                         EditableListItemView(
                             text: item.name,
                             onEdit: {
-                                store.send(.performanceEditButtonTapped(item))
+                                store.send(.performanceEditTapped(item))
                             },
                             onDelete: {
-                                store.send(.performanceDeleteButtonTapped(item))
+                                store.send(.performanceDeleteTapped(item))
                             })
                     }
                     Button(action: {
-                        store.send(.performanceAddButtonTapped)
+                        store.send(.performanceAddTapped)
                     }) {
                         Label("追加", systemImage: "plus.circle")
                             .frame(maxWidth: .infinity, alignment: .center)
@@ -68,7 +68,7 @@ struct AdminDistrictEditView: View {
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
                     Button("キャンセル") {
-                        store.send(.cancelButtonTapped)
+                        store.send(.cancelTapped)
                     }
                     .padding(8)
                 }
@@ -78,7 +78,7 @@ struct AdminDistrictEditView: View {
                 }
                 ToolbarItem(placement: .topBarTrailing) {
                     Button{
-                        store.send(.saveButtonTapped)
+                        store.send(.saveTapped)
                     } label: {
                         Text("保存")
                             .bold()
@@ -96,6 +96,7 @@ struct AdminDistrictEditView: View {
             .fullScreenCover(item: $store.scope(state: \.destination?.performance, action: \.destination.performance)) { store in
                 AdminPerformanceView(store: store)
             }
+            .alert($store.scope(state: \.alert, action: \.alert))
         }
     }
 }

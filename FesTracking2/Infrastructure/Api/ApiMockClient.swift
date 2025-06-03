@@ -31,7 +31,7 @@ extension ApiClient {
         getDistrict: { _ in
             return Result.success(PublicDistrict.sample)
         },
-        postDistrict: { _,_ in
+        postDistrict: { _,_,_,_ in
             return Result.success("Success")
         },
         putDistrict: { _,_ in
@@ -41,8 +41,8 @@ extension ApiClient {
             let summaries = routes.map{ RouteSummary(from: PublicRoute(from: $0, name: "城北町")) }
             return Result.success(summaries)
         },
-        getRoute: { id,date,title,_  in
-            let route = routes.filter{ $0.districtId == id && $0.date == date && $0.title == title }.first ?? Route.sample
+        getRoute: { id, _  in
+            let route = routes.filter{ $0.id == id }.first ?? Route.sample
             return Result.success( PublicRoute(from: route, name: "城北町") )
         },
         getCurrentRoute: { _,_ in
@@ -59,8 +59,7 @@ extension ApiClient {
             }
             return Result.success("Success")
         },
-        deleteRoute: { districtId, date, title,_  in
-            let id = Route.makeId(districtId, date, title)
+        deleteRoute: { id, _  in
             if let index = routes.firstIndex(where: { $0.id == id }) {
                 routes.remove(at: index)
             }
@@ -72,7 +71,7 @@ extension ApiClient {
         getLocations: { _,_ in
             return Result.success([PublicLocation.sample])
         },
-        postLocation: { _,_ in
+        putLocation: { _,_ in
             return Result.success("Success")
         },
         deleteLocation: { _,_ in

@@ -7,20 +7,12 @@
 
 import SwiftUI
 
-struct ProgressScreen<Content: View>: View {
-    let isLoading: Bool
-    let content: () -> Content
-
-    init(isLoading: Bool, @ViewBuilder content: @escaping () -> Content) {
-        self.isLoading = isLoading
-        self.content = content
-    }
-
-    var body: some View {
+extension View {
+    func loadingOverlay(isLoading: Bool) -> some View {
         ZStack {
-            content()
+            self
             if isLoading {
-                Color.black.opacity(0.3)
+                Color.black.opacity(0.2)
                     .ignoresSafeArea()
                 ProgressView()
                     .progressViewStyle(CircularProgressViewStyle(tint: .white))

@@ -7,20 +7,14 @@
 
 import Foundation
 
-struct Location: Codable{
+struct Location: Codable, Equatable, Hashable{
     let districtId: String
     let coordinate: Coordinate
     let timestamp: Date
 }
 
-extension Location: Equatable {
-    static func == (lhs: Location, rhs: Location) -> Bool {
-        return lhs.districtId == rhs.districtId && lhs.timestamp == rhs.timestamp
-    }
-}
-
 extension Location {
-    static let sample = Self(districtId: "johoku", coordinate: Coordinate.sample, timestamp: Date.sample)
+    static let sample = Self(districtId: "掛川祭_城北町", coordinate: Coordinate.sample, timestamp: Date.sample)
 }
 
 

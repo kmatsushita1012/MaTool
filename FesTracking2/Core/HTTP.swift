@@ -32,104 +32,114 @@ class NetworkManager {
 func executeURLSession(request:URLRequest) async -> Result<Data,Error> {
     do {
         let (data, response) = try await URLSession.shared.data(for: request)
-        if let httpResponse = response as? HTTPURLResponse, (200...299).contains(httpResponse.statusCode) {
+        if let httpResponse = response as? HTTPURLResponse, (200...299).contains(httpResponse.statusCode){
+            print("Success \(request.httpMethod)  \(response.url?.absoluteString)")
             return .success(data)
         } else {
+            print("failure \(request.httpMethod) \(response.url?.absoluteString) \((response as? HTTPURLResponse)?.statusCode)")
             return .failure(NSError(domain: "HTTP Error", code: (response as? HTTPURLResponse)?.statusCode ?? -1, userInfo: nil))
         }
     } catch {
+        print("failure  \(request.httpMethod) \(request.url?.absoluteString) \(error)\n")
         return .failure(error)
     }
 }
 
-func performGetRequest(path: String, query: [String: Any] = [:], accessToken: String? = nil ) async -> Result<Data, Error> {
-    // 環境変数からベースURLを取得（例: "https://example.com"）
-    guard var urlComponents = URLComponents(string: "https://example.com" + path) else {
-        return .failure(NSError(domain: "Invalid base URL or path", code: -1, userInfo: nil))
+func makeURL(_ base: String, _ path: String, _ query: [String: Any]? = nil) throws -> URL{
+    guard var urlComponents = URLComponents(string: base + path) else {
+        throw NSError(domain: "Invalid base URL or path", code: -1, userInfo: nil)
     }
     // クエリパラメータを設定
-    urlComponents.queryItems = query.compactMap { key, value in
-        if let stringValue = value as? String {
-            return URLQueryItem(name: key, value: stringValue)
-        } else if let intValue = value as? Int {
-            return URLQueryItem(name: key, value: String(intValue))
-        } else if let doubleValue = value as? Double {
-            return URLQueryItem(name: key, value: String(doubleValue))
-        } else if let boolValue = value as? Bool {
-            return URLQueryItem(name: key, value: boolValue ? "true" : "false")
-        } else {
-            return nil // サポートされていない型は無視
+    if let query = query {
+        urlComponents.queryItems = query.compactMap { key, value in
+            if let stringValue = value as? String {
+                return URLQueryItem(name: key, value: stringValue)
+            } else if let intValue = value as? Int {
+                return URLQueryItem(name: key, value: String(intValue))
+            } else if let doubleValue = value as? Double {
+                return URLQueryItem(name: key, value: String(doubleValue))
+            } else if let boolValue = value as? Bool {
+                return URLQueryItem(name: key, value: boolValue ? "true" : "false")
+            } else {
+                return nil // サポートされていない型は無視
+            }
         }
     }
     // URLを構築
     guard let url = urlComponents.url else {
-        return .failure(NSError(domain: "Invalid URL", code: -1, userInfo: nil))
+        throw NSError(domain: "Invalid URL", code: -1, userInfo: nil)
     }
+    return url
+}
+
+func makeRequest(_ url: URL, _ method: String, body: Data? = nil, accessToken: String? = nil) -> URLRequest{
     var request = URLRequest(url: url)
-    request.httpMethod = "GET"
+    request.httpMethod = method
     if let accessToken = accessToken{
         request.setValue("Bearer \(accessToken)", forHTTPHeaderField: "Authorization")
     }
+    if let body = body {
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.httpBody = body
+    }
+    return request
+}
+
+func performGetRequest(
+    base: String,
+    path: String,
+    query: [String: Any] = [:],
+    accessToken: String? = nil
+) async -> Result<Data, Error> {
+    let urlResult = Result { try makeURL(base, path, query) }
+    guard case .success(let url) = urlResult else {
+        return urlResult.map { _ in Data() }
+    }
+    let request = makeRequest(url, "GET", accessToken: accessToken)
     return await executeURLSession(request: request)
 }
 
-func performPostRequest(path: String, body: Data, accessToken: String? = nil ) async -> Result<Data, Error> {
-    guard let url = URL(string: "https://example.com" + path) else {
-        return .failure(NSError(domain: "Invalid URL", code: -1, userInfo: nil))
+func performPostRequest(
+    base: String,
+    path: String,
+    query: [String: Any] = [:],
+    body: Data,
+    accessToken: String? = nil
+) async -> Result<Data, Error> {
+    let urlResult = Result { try makeURL(base, path, query) }
+    guard case .success(let url) = urlResult else {
+        return urlResult.map { _ in Data() }
     }
-    
-    var request = URLRequest(url: url)
-    request.httpMethod = "POST"
-    if let accessToken = accessToken{
-        request.setValue("Bearer \(accessToken)", forHTTPHeaderField: "Authorization")
-    }
-    request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-    request.httpBody = body
+    let request = makeRequest(url, "POST", body: body, accessToken: accessToken)
     return await executeURLSession(request: request)
 }
 
-func performPutRequest(path: String, body: Data, accessToken: String? = nil ) async -> Result<Data, Error> {
-    guard let url = URL(string: "https://example.com" + path) else {
-        return .failure(NSError(domain: "Invalid URL", code: -1, userInfo: nil))
+func performPutRequest(
+    base: String,
+    path: String,
+    query: [String: Any] = [:],
+    body: Data,
+    accessToken: String? = nil
+) async -> Result<Data, Error> {
+    let urlResult = Result { try makeURL(base, path, query) }
+    guard case .success(let url) = urlResult else {
+        return urlResult.map { _ in Data() }
     }
-    
-    var request = URLRequest(url: url)
-    request.httpMethod = "PUT"
-    if let accessToken = accessToken{
-        request.setValue("Bearer \(accessToken)", forHTTPHeaderField: "Authorization")
-    }
-    request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-    request.httpBody = body
+    let request = makeRequest(url, "PUT", body: body, accessToken: accessToken)
     return await executeURLSession(request: request)
 }
 
-func performDeleteRequest(path: String, query: [String: Any] = [:], accessToken: String? = nil) async -> Result<Data, Error> {
-    // 環境変数からベースURLを取得（例: "https://example.com"）
-    guard var urlComponents = URLComponents(string: "https://example.com" + path) else {
-        return .failure(NSError(domain: "Invalid base URL or path", code: -1, userInfo: nil))
+func performDeleteRequest(
+    base: String,
+    path: String,
+    query: [String: Any] = [:],
+    accessToken: String? = nil
+) async -> Result<Data, Error> {
+    let urlResult = Result { try makeURL(base, path, query) }
+    guard case .success(let url) = urlResult else {
+        return urlResult.map { _ in Data() }
     }
-    // クエリパラメータを設定
-    urlComponents.queryItems = query.compactMap { key, value in
-        if let stringValue = value as? String {
-            return URLQueryItem(name: key, value: stringValue)
-        } else if let intValue = value as? Int {
-            return URLQueryItem(name: key, value: String(intValue))
-        } else if let doubleValue = value as? Double {
-            return URLQueryItem(name: key, value: String(doubleValue))
-        } else if let boolValue = value as? Bool {
-            return URLQueryItem(name: key, value: boolValue ? "true" : "false")
-        } else {
-            return nil // サポートされていない型は無視
-        }
-    }
-    guard let url = urlComponents.url else {
-        return .failure(NSError(domain: "Invalid Query Parameters", code: -1, userInfo: nil))
-    }
-    var request = URLRequest(url: url)
-    request.httpMethod = "DELETE"
-    if let accessToken = accessToken{
-        request.setValue("Bearer \(accessToken)", forHTTPHeaderField: "Authorization")
-    }
+    let request = makeRequest(url, "DELETE", accessToken: accessToken)
     return await executeURLSession(request: request)
 }
 

@@ -13,13 +13,15 @@ struct AdminRouteMapFeature{
     
     @ObservableState
     struct State: Equatable{
+        
         var route: Route
         var stack: Stack<StackItem> = Stack()
-        var errorMessage: String?
-        var isUndoAble: Bool { !route.points.isEmpty}
-        var isRedoAble: Bool{ !stack.isEmpty }
+        var isUndoable: Bool { !route.points.isEmpty}
+        var isRedoable: Bool{ !stack.isEmpty }
+        let performances: [Performance]
         @Presents var pointAdmin: AdminPointFeature.State?
         @Presents var segmentAdmin: AdminSegmentFeature.State?
+        @Presents var alert: OkAlert.State?
     }
     
     @CasePathable
@@ -28,12 +30,13 @@ struct AdminRouteMapFeature{
         case mapLongPressed(Coordinate)
         case annotationTapped(Point)
         case polylineTapped(Segment)
-        case undoButtonTapped
-        case redoButtonTapped
-        case doneButtonTapped
-        case cancelButtonTapped
+        case undoTapped
+        case redoTapped
+        case doneTapped
+        case cancelTapped
         case pointAdmin(PresentationAction<AdminPointFeature.Action>)
         case segmentAdmin(PresentationAction<AdminSegmentFeature.Action>)
+        case alert(PresentationAction<OkAlert.Action>)
     }
     
     var body: some ReducerOf<AdminRouteMapFeature> {
@@ -54,12 +57,12 @@ struct AdminRouteMapFeature{
                 state.stack.clear()
                 return .none
             case .annotationTapped(let point):
-                state.pointAdmin = AdminPointFeature.State(item: point)
+                state.pointAdmin = AdminPointFeature.State(item: point, performances: state.performances)
                 return .none
             case .polylineTapped(let segment):
                 state.segmentAdmin = AdminSegmentFeature.State(item: segment)
                 return .none
-            case .undoButtonTapped:
+            case .undoTapped:
                 if state.route.points.isEmpty {
                     return .none
                 }
@@ -72,7 +75,7 @@ struct AdminRouteMapFeature{
                     state.stack.push(pair)
                 }
                 return .none
-            case .redoButtonTapped:
+            case .redoTapped:
                 if(state.stack.isEmpty){
                     return .none
                 }
@@ -81,33 +84,38 @@ struct AdminRouteMapFeature{
                     state.route.segments.append(pair.segment)
                 }
                 return .none
-            case .doneButtonTapped:
+            case .doneTapped:
                 return .none
-            case .cancelButtonTapped:
+            case .cancelTapped:
                 return .none
-            case .pointAdmin(.presented(.doneButtonTapped)):
+            case .pointAdmin(.presented(.doneTapped)):
                 if let pointAdmin = state.pointAdmin,
                    let index = state.route.points.firstIndex(where: { $0.id == pointAdmin.item.id }) {
                     state.route.points[index] = pointAdmin.item
                 }
                 state.pointAdmin = nil
                 return .none
-            case .pointAdmin(.presented(.cancelButtonTapped)):
+            case .pointAdmin(.presented(.cancelTapped)):
                 state.pointAdmin = nil
                 return .none
             case .pointAdmin:
                 return .none
-            case .segmentAdmin(.presented(.saveButtonTapped)):
+            case .segmentAdmin(.presented(.saveTapped)):
                 if let segmentAdmin = state.segmentAdmin,
                    let index = state.route.segments.firstIndex(where: { $0.id == segmentAdmin.item.id }) {
                     state.route.segments[index] = segmentAdmin.item
                 }
                 state.segmentAdmin = nil
                 return .none
-            case .segmentAdmin(.presented(.cancelButtonTapped)):
+            case .segmentAdmin(.presented(.cancelTapped)):
                 state.pointAdmin = nil
                 return .none
             case .segmentAdmin:
+                return .none
+            case .alert(.presented(.okTapped)):
+                state.alert = nil
+                return .none
+            case .alert:
                 return .none
             }
         }
@@ -117,6 +125,7 @@ struct AdminRouteMapFeature{
         .ifLet(\.$segmentAdmin, action: \.segmentAdmin){
             AdminSegmentFeature()
         }
+        .ifLet(\.alert, action: \.alert)
     }
 }
 

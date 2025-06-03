@@ -19,19 +19,20 @@ struct OnboardingFeature {
         var regions: [Region]?
         var selectedRegion: Region?
         var districts: [PublicDistrict]?
-        var selectedDistrict: PublicDistrict?
         var isRegionsLoading: Bool = false
+        var regionsErrorMessage: String? = nil
         var isDistrictsLoading: Bool = false
-        var isLoading: Bool {
-            isRegionsLoading || isDistrictsLoading
-        }
+        var districtsErrorMessage: Bool = false
+        
     }
     
     @CasePathable
     enum Action: Equatable, BindableAction {
         case binding(BindingAction<State>)
         case onAppear
-        case okTapped
+        case externalGuestTapped
+        case adminTapped
+        case districtSelected(PublicDistrict)
         case regionsReceived(Result<[Region], ApiError>)
         case districtsReceived(Result<[PublicDistrict], ApiError>)
     }
@@ -42,12 +43,15 @@ struct OnboardingFeature {
             switch action {
             case .binding(\.selectedRegion):
                 state.isDistrictsLoading = true
-                guard let region = state.selectedRegion else { return .none }
+                guard let region = state.selectedRegion else {
+                    state.districts = nil
+                    return .none
+                }
                 return .run { send in
                     let result = await apiClient.getDistricts(region.id)
                     await send(.districtsReceived(result))
                 }
-            case .binding(_):
+            case .binding:
                 return .none
             case .onAppear:
                 state.isRegionsLoading = true
@@ -55,21 +59,25 @@ struct OnboardingFeature {
                     let result = await apiClient.getRegions()
                     await send(.regionsReceived(result))
                 }
-            case .okTapped:
+            case .externalGuestTapped,
+                .adminTapped:
+                guard let region = state.selectedRegion else {
+                    return .none
+                }
+                userDefaultsClient.setString(region.id, favoriteRegionPath)
+                userDefaultsClient.setBool(true, hasLaunchedBeforePath)
+                return .none
+            case .districtSelected(let district):
                 guard let region = state.selectedRegion else {
                     //TODOエラーハンドル
                     return .none
                 }
                 userDefaultsClient.setString(region.id, favoriteRegionPath)
-                guard let district = state.selectedDistrict else {
-                    userDefaultsClient.setString(nil, favoriteDistrictPath)
-                    return .none
-                }
-                if region.id != district.regionId {
-                    //TODOエラーハンドル
+                if(district.regionId != region.id){
                     return .none
                 }
                 userDefaultsClient.setString(district.id, favoriteDistrictPath)
+                userDefaultsClient.setBool(true, hasLaunchedBeforePath)
                 return .none
             case .regionsReceived(.success(let value)):
                 state.regions = value

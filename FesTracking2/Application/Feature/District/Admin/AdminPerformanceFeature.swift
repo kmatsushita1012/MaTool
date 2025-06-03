@@ -1,5 +1,5 @@
 //
-//  PerformanceAdminFeature.swift
+//  AdminPerformanceFeature.swift
 //  FesTracking2
 //
 //  Created by 松下和也 on 2025/04/17.
@@ -9,7 +9,7 @@ import SwiftUI
 import ComposableArchitecture
 
 @Reducer
-struct PerformanceAdminFeature{
+struct AdminPerformanceFeature{
     @ObservableState
     struct State: Equatable{
         var item: Performance = Performance(id: UUID().uuidString)
@@ -21,7 +21,7 @@ struct PerformanceAdminFeature{
         case cancelTapped
     }
     
-    var body: some ReducerOf<PerformanceAdminFeature>{
+    var body: some ReducerOf<AdminPerformanceFeature>{
         BindingReducer()
         Reduce{ state, action in
             switch action {

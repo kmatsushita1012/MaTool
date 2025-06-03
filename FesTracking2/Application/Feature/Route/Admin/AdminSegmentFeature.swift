@@ -23,8 +23,8 @@ struct AdminSegmentFeature{
     enum Action: Equatable{
         case switchCurve(Bool)
         case received(Result<[Coordinate],ApiError>)
-        case saveButtonTapped
-        case cancelButtonTapped
+        case saveTapped
+        case cancelTapped
     }
     
     var body:some ReducerOf<AdminSegmentFeature>{
@@ -52,9 +52,9 @@ struct AdminSegmentFeature{
                 state.isLoading = false
                 state.errorMessage = error.localizedDescription
                 return .none
-            case .saveButtonTapped:
+            case .saveTapped:
                 return .none
-            case .cancelButtonTapped:
+            case .cancelTapped:
                 return .none
             }
         

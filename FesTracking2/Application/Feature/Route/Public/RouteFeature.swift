@@ -11,6 +11,7 @@ struct RouteFeature{
     
     @Dependency(\.apiClient) var apiClient
     @Dependency(\.accessToken) var accessToken
+    @Dependency(\.userDefaultsClient) var userDefaultsClient
     
     enum Content: Equatable{
         case locations
@@ -37,7 +38,7 @@ struct RouteFeature{
         case districtPicker(PickerFeature<Content>.Action)
         case routePicker(PickerFeature<RouteSummary>.Action)
         case map(PresentationAction<Destination.Action>)
-        case onAppear(String)
+        case onAppear
         case districtsReceived(Result<[PublicDistrict],ApiError>)
         case routesReceived(Result<[RouteSummary],ApiError>)
         case routeReceived(route: Result<PublicRoute,ApiError>, location: Result<PublicLocation?,ApiError>)
@@ -49,21 +50,31 @@ struct RouteFeature{
     var body: some ReducerOf<RouteFeature> {
         Reduce{ state, action in
             switch action {
-            case .onAppear(let id):
+            case .onAppear:
                 //TODO
-                let regionId = "kakegawa"
-                return .merge(
-                    routeEffect(id, accessToken: accessToken.value),
-                    routesEffect(id,accessToken:  accessToken.value),
-                    districtsEffect(regionId),
-                )
+                guard let regionId = userDefaultsClient.stringForKey(favoriteRegionPath) else {
+                    return .none
+                }
+                if let districtId = userDefaultsClient.stringForKey(favoriteDistrictPath){
+                    return .merge(
+                        routeEffect(districtId, accessToken: accessToken.value),
+                        routesEffect(districtId,accessToken: accessToken.value),
+                        districtsEffect(regionId),
+                    )
+                }else{
+                    return .merge(
+                        locationsEffect(regionId, accessToken: accessToken.value),
+                        districtsEffect(regionId),
+                    )
+                }
             case .districtsReceived(let result):
                 switch result {
                 case .success(let districts):
                     let items = [Content.locations] + districts.map{ Content.route($0) }
                     //TODO
-                    if let first = districts.first {
-                        state.districtPicker = PickerFeature.State(items: items, selected: Content.route(first))
+                    if let districtId = userDefaultsClient.stringForKey(favoriteDistrictPath),
+                       let selected = districts.first{ $0.id == districtId } {
+                        state.districtPicker = PickerFeature.State(items: items, selected: Content.route(selected))
                     }else{
                         state.districtPicker = PickerFeature.State(items: items, selected: Content.locations)
                     }
@@ -73,7 +84,8 @@ struct RouteFeature{
                 return .none
             case .routesReceived(let result):
                 switch result {
-                case .success(let routes):
+                case .success(var routes):
+                    routes.sort()
                     state.routePicker = PickerFeature.State(items: routes)
                 case .failure(let error):
                     state.error = error.localizedDescription
@@ -120,7 +132,8 @@ struct RouteFeature{
                 state.routePicker = nil
                 switch content {
                 case .locations:
-                    return locationsEffect("", accessToken: accessToken.value)
+                    //TODO
+                    return locationsEffect(Region.sample.id, accessToken: accessToken.value)
                 case .route(let district):
                     return .merge(
                         routeEffect(district.id, accessToken: accessToken.value),
@@ -154,7 +167,7 @@ struct RouteFeature{
     
     func routeEffect(_ summary: RouteSummary, accessToken: String?) -> Effect<Action> {
         .run { send in
-            async let routeTask = apiClient.getRoute(summary.districtId, summary.date, summary.title, accessToken)
+            async let routeTask = apiClient.getRoute(summary.id, accessToken)
             async let locationTask = apiClient.getLocation(summary.districtId, accessToken)
             let (routeResult, locationResult) = await (routeTask, locationTask)
             await send(.routeReceived(route: routeResult, location: locationResult))

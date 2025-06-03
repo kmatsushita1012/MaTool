@@ -1,5 +1,5 @@
 //
-//  BaseAdminFeature.swift
+//  AdminBaseFeature.swift
 //  FesTracking2
 //
 //  Created by 松下和也 on 2025/04/16.
@@ -8,7 +8,7 @@
 import ComposableArchitecture
 
 @Reducer
-struct BaseAdminFeature {
+struct AdminBaseFeature {
     
     @ObservableState
     struct State: Equatable {
@@ -21,7 +21,7 @@ struct BaseAdminFeature {
         case doneTapped
     }
     
-    var body: some ReducerOf<BaseAdminFeature>{
+    var body: some ReducerOf<AdminBaseFeature>{
         Reduce { state, action in
             switch(action){
             case .mapTapped(let coordinate):

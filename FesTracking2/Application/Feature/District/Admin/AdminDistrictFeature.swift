@@ -19,18 +19,25 @@ struct AdminDistrictFeature {
     enum Destination {
         case edit(AdminDistrictEditFeature)
         case route(AdminRouteInfoFeature)
-        case location(LocationAdminFeature)
+        case location(AdminLocationFeature)
     }
     
     @ObservableState
     struct State:Equatable {
         var district: PublicDistrict
         var routes: [RouteSummary]
+        var isDistrictLoading: Bool = false
+        var isRoutesLoading: Bool = false
+        var isAWSLoading: Bool = false
         @Presents var destination: Destination.State?
+        @Presents var alert: OkAlert.State?
+        var isLoading: Bool {
+            isDistrictLoading || isRoutesLoading || isAWSLoading
+        }
     }
     
     @CasePathable
-    enum Action:Equatable {
+    enum Action: Equatable {
         case onEdit
         case onRouteAdd
         case onRouteEdit(RouteSummary)
@@ -39,8 +46,9 @@ struct AdminDistrictFeature {
         case onLocation
         case destination(PresentationAction<Destination.Action>)
         case onSignOut
-        case signOutReceived(Result<Bool,AWSCognitoError>)
+        case signOutReceived(Result<Bool,AWSCognito.Error>)
         case homeTapped
+        case alert(PresentationAction<OkAlert.Action>)
     }
     
     
@@ -51,31 +59,46 @@ struct AdminDistrictFeature {
                 state.destination = .edit(AdminDistrictEditFeature.State(item: state.district.toModel()))
                 return .none
             case .onRouteAdd:
-                state.destination = .route(AdminRouteInfoFeature.State(mode: .create(id: state.district.id)))
+                state.destination = .route(AdminRouteInfoFeature.State(mode: .create(districtId: state.district.id), performances: state.district.performances))
                 return .none
             case .onRouteEdit(let route):
-                state.destination = .route(AdminRouteInfoFeature.State(mode: .edit(id: route.districtId, date: route.date, title: route.title)))
+                state.destination = .route(AdminRouteInfoFeature.State(mode: .edit(id: route.id), performances: state.district.performances))
                 return .none
-            case .getDistrictReceived(.success(let value)):
-                state.district = value
+            case .getDistrictReceived(let result):
+                state.isDistrictLoading = false
+                switch result {
+                case .success(let value):
+                    state.district = value
+                case .failure(let error):
+                    state.alert = OkAlert.make("情報の取得に失敗しました。 \(error.localizedDescription)")
+                }
                 return .none
-            case .getRoutesReceived(.success(let value)):
-                state.routes = value
+            case .getRoutesReceived(let result):
+                state.isRoutesLoading = false
+                switch result {
+                case .success(var value):
+                    value.sort()
+                    state.routes = value
+                case .failure(let error):
+                    state.alert = OkAlert.make("情報の取得に失敗しました。 \(error.localizedDescription)")
+                }
                 return .none
             case .onLocation:
-                state.destination = .location(LocationAdminFeature.State(id: state.district.id, isTracking: usecase.isTracking))
+                state.destination = .location(AdminLocationFeature.State(id: state.district.id, isTracking: usecase.isTracking))
                 return .none
-            case .destination(.presented(let destination)):
-                switch destination {
-                case .edit(.cancelButtonTapped),
-                    .route(.cancelButtonTapped),
-                    .location(.dismissButtonTapped):
+            case .destination(.presented(let childAction)):
+                switch childAction {
+                case .edit(.cancelTapped),
+                    .route(.cancelTapped),
+                    .location(.dismissTapped):
                     state.destination = nil
                     return .none
                 case .edit(.postReceived(.success(_))),
                     .route(.postReceived(.success(_))),
                     .route(.deleteReceived(.success(_))):
                     state.destination = nil
+                    state.isDistrictLoading = true
+                    state.isRoutesLoading = true
                     return .merge(
                         .run {[id = state.district.id] send in
                             let result = await apiClient.getDistrict(id)
@@ -90,23 +113,31 @@ struct AdminDistrictFeature {
                     return .none
                 }
             case .onSignOut:
+                state.isAWSLoading = true
                 return .run { send in
                     let result = await awsCognitoClient.signOut()
                     await send(.signOutReceived(result))
                 }
-            case .signOutReceived(.success(_)):
+            case .signOutReceived(let result):
+                state.isAWSLoading = false
+                if case let .failure(error) = result {
+                    state.alert = OkAlert.make("サインアウトに失敗しました。 \(error.localizedDescription)")
+                }
                 return .none
-            case .signOutReceived(.failure(_)):
-                return .none
-            case .getDistrictReceived(.failure(_)),
-                .getRoutesReceived(.failure(_)),
-                .destination(.dismiss):
+            case .destination(.dismiss):
+                state.destination = nil
                 return .none
             case .homeTapped:
+                return .none
+            case .alert(.presented(.okTapped)):
+                state.alert = nil
+                return .none
+            case .alert(_):
                 return .none
             }
         }
         .ifLet(\.$destination, action: \.destination)
+        .ifLet(\.$alert, action: \.alert)
     }
 }
 

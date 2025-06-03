@@ -9,7 +9,7 @@ import SwiftUI
 import ComposableArchitecture
 
 struct AdminAreaView:View {
-    let store: StoreOf<AreaAdminFeature>
+    let store: StoreOf<AdminAreaFeature>
     
     var body: some View {
         NavigationStack{
@@ -24,7 +24,7 @@ struct AdminAreaView:View {
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
                     Button(action: {
-                        store.send(.undoButtonTapped)
+                        store.send(.undoTapped)
                     }) {
                         Image(systemName: "arrow.uturn.backward")
                     }
@@ -36,7 +36,7 @@ struct AdminAreaView:View {
                 }
                 ToolbarItem(placement: .topBarTrailing) {
                     Button{
-                        store.send(.doneButtonTapped)
+                        store.send(.doneTapped)
                     } label: {
                         Text("完了")
                             .bold()

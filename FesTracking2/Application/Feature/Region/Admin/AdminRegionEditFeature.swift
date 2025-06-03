@@ -17,6 +17,7 @@ struct AdminRegionEditFeature {
     struct State: Equatable {
         var item: Region
         @Presents var span: AdminSpanFeature.State?
+        @Presents var alert: OkAlert.State?
     }
     
     @CasePathable
@@ -29,6 +30,7 @@ struct AdminRegionEditFeature {
         case onSpanDelete(Span)
         case onSpanAdd
         case span(PresentationAction<AdminSpanFeature.Action>)
+        case alert(PresentationAction<OkAlert.Action>)
     }
     
     var body: some ReducerOf<AdminRegionEditFeature> {
@@ -43,14 +45,15 @@ struct AdminRegionEditFeature {
                         let result = await apiClient.putRegion(region, token)
                         await send(.received(result))
                     }else{
-                        await send(.received(.failure(ApiError.unknown("No Access Token"))))
+                        await send(.received(.failure(ApiError.unauthorized("アクセストークンが存在しません。"))))
                     }
                 }
             case .cancelTapped:
                 return .none
             case .received(.success(_)):
                 return .none
-            case .received(.failure(_)):
+            case .received(.failure(let error)):
+                state.alert = OkAlert.make("保存に失敗しました。\(error.localizedDescription)")
                 return .none
             case .onSpanEdit(let item):
                 state.span = AdminSpanFeature.State(item)
@@ -61,22 +64,28 @@ struct AdminRegionEditFeature {
             case .onSpanAdd:
                 state.span = AdminSpanFeature.State()
                 return .none
-            case .span(.presented(.doneButtonTapped)):
+            case .span(.presented(.doneTapped)):
                 if let span = state.span?.span {
                     state.item.spans.upsert(span)
                     state.item.spans.sort()
                 }
                 state.span = nil
                 return .none
-            case .span(.presented(.cancelButtonTapped)):
+            case .span(.presented(.cancelTapped)):
                 state.span = nil
                 return .none
             case .span(_):
+                return .none
+            case .alert(.presented(.okTapped)):
+                state.alert = nil
+                return .none
+            case .alert(_):
                 return .none
             }
         }
         .ifLet(\.$span, action: \.span){
             AdminSpanFeature()
         }
+        .ifLet(\.$alert, action: \.alert)
     }
 }

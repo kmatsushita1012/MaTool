@@ -11,7 +11,6 @@ import ComposableArchitecture
 struct DistrictPickerView: View {
     let store: StoreOf<PickerFeature<RouteFeature.Content>>
     
-    
     var body: some View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing:8){

@@ -28,20 +28,45 @@ extension SimpleDate: Comparable {
 
 
 extension SimpleDate {
-    func text(year: Bool = true, month: Bool = true, day: Bool = true) -> String {
-        var dateString = ""
-        if year {
-            dateString += "\(self.year)"
+    func text(format: String) -> String {
+        var result = ""
+        var i = format.startIndex
+
+        while i < format.endIndex {
+            let char = format[i]
+
+            // 次の2文字目を読み取れるなら見る
+            let nextIndex = format.index(after: i)
+            let hasNext = nextIndex < format.endIndex
+            let nextChar = hasNext ? format[nextIndex] : nil
+
+            switch char {
+            case "y":
+                result += String(year)
+            case "m":
+                if nextChar == "2" {
+                    result += String(format: "%02d", month)
+                    i = format.index(after: nextIndex)
+                    continue
+                } else {
+                    result += String(month)
+                }
+            case "d":
+                if nextChar == "2" {
+                    result += String(format: "%02d", day)
+                    i = format.index(after: nextIndex)
+                    continue
+                } else {
+                    result += String(day)
+                }
+            default:
+                result += String(char)
+            }
+
+            i = format.index(after: i)
         }
-        if month {
-            if !dateString.isEmpty { dateString += " " }  // Add space before month if year was added
-            dateString += "\(self.month)"
-        }
-        if day {
-            if !dateString.isEmpty { dateString += "/" }  // Add slash before day if year/month was added
-            dateString += "\(self.day)"
-        }
-        return dateString
+
+        return result
     }
 }
 

@@ -18,7 +18,7 @@ struct AdminRegionFeature {
     enum Destination {
         case edit(AdminRegionEditFeature)
         case districtInfo(AdminRegionDistrictInfoFeature)
-        case districtCreate(AdminRegionDistrictCreateFeature)
+        case districtCreate(AdminRegionCreateDistrictFeature)
     }
     
     @ObservableState
@@ -26,18 +26,20 @@ struct AdminRegionFeature {
         let region: Region
         let districts: [PublicDistrict]
         @Presents var destination: Destination.State?
+        @Presents var alert: OkAlert.State?
     }
     
     @CasePathable
     enum Action: Equatable {
         case onEdit
         case onDistrictInfo(PublicDistrict)
-        case onDistrictCreate
+        case onCreateDistrict
         case homeTapped
         case signOutTapped
         case districtInfoPrepared(PublicDistrict, Result<[RouteSummary],ApiError>)
-        case signOutReceived(Result<Bool,AWSCognitoError>)
+        case signOutReceived(Result<Bool,AWSCognito.Error>)
         case destination(PresentationAction<Destination.Action>)
+        case alert(PresentationAction<OkAlert.Action>)
     }
     
     var body: some ReducerOf<AdminRegionFeature> {
@@ -51,8 +53,8 @@ struct AdminRegionFeature {
                     let result = await apiClient.getRoutes(district.id, accessToken.value)
                     await send(.districtInfoPrepared(district, result))
                 }
-            case .onDistrictCreate:
-                state.destination = .districtCreate(AdminRegionDistrictCreateFeature.State())
+            case .onCreateDistrict:
+                state.destination = .districtCreate(AdminRegionCreateDistrictFeature.State(region: state.region))
                 return .none
             case .homeTapped:
                 return .none
@@ -61,7 +63,8 @@ struct AdminRegionFeature {
                     let result = await awsCognitoClient.signOut()
                     await send(.signOutReceived(result))
                 }
-            case .districtInfoPrepared(let district, .success(let routes)):
+            case .districtInfoPrepared(let district, .success(var routes)):
+                routes.sort()
                 state.destination = .districtInfo(AdminRegionDistrictInfoFeature.State(district: district, routes: routes))
                 return .none
             case .districtInfoPrepared(_, .failure(_)):
@@ -72,7 +75,8 @@ struct AdminRegionFeature {
                 switch childAction{
                 case .edit(.cancelTapped),
                     .districtInfo(.dismissTapped),
-                    .districtCreate(.cancelTapped):
+                    .districtCreate(.cancelTapped),
+                    .edit(.received(.success(_))):
                     state.destination = nil
                     return .none
                 case .edit,
@@ -83,9 +87,15 @@ struct AdminRegionFeature {
             case .destination(.dismiss):
                 state.destination = nil
                 return .none
+            case .alert(.presented):
+                state.alert = nil
+                return .none
+            case .alert:
+                return .none
             }
         }
         .ifLet(\.$destination, action: \.destination)
+        .ifLet(\.$alert, action: \.alert)
     }
 }
 

@@ -7,19 +7,12 @@
 
 import Foundation
 
-struct Span: Codable{
+struct Span: Codable, Identifiable, Hashable, Equatable{
     let id: String
     let start: Date
     let end: Date
 }
 
-extension Span: Equatable{
-    static func == (lhs: Span, rhs: Span) -> Bool {
-        return  lhs.start == rhs.start && lhs.end == rhs.end
-    }
-}
-
-extension Span: Identifiable{}
 
 extension Span: Comparable{
     static func < (lhs: Span, rhs: Span) -> Bool {

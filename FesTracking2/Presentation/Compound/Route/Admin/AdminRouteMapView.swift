@@ -17,7 +17,7 @@ struct AdminRouteMapView: View{
             // 背景のMap
         NavigationStack{
             ZStack {
-                RouteAdminMap(
+                AdminRouteMap(
                     points: store.route.points,
                     segments: store.route.segments,
                     onMapLongPress: { coordinate in store.send(.mapLongPressed(coordinate))},
@@ -30,13 +30,13 @@ struct AdminRouteMapView: View{
                         Spacer()
                         RouteButton(
                             systemImageName: "arrow.uturn.left",
-                            action:{store.send(.undoButtonTapped)}
+                            action:{store.send(.undoTapped)}
                         )
                         .frame(width: 64, height: 64)
                         .padding(4)
                         RouteButton(
                             systemImageName: "arrow.uturn.right",
-                            action:{store.send(.redoButtonTapped)}
+                            action:{store.send(.redoTapped)}
                         )
                         .frame(width: 64, height: 64)
                         .padding(4)
@@ -51,7 +51,7 @@ struct AdminRouteMapView: View{
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
                     Button("キャンセル") {
-                        store.send(.cancelButtonTapped)
+                        store.send(.cancelTapped)
                     }
                     .padding(8)
                 }
@@ -61,7 +61,7 @@ struct AdminRouteMapView: View{
                 }
                 ToolbarItem(placement: .topBarTrailing) {
                     Button{
-                        store.send(.doneButtonTapped)
+                        store.send(.doneTapped)
                     } label: {
                         Text("完了")
                             .bold()

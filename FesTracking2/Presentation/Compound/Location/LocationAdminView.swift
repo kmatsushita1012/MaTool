@@ -9,31 +9,48 @@ import SwiftUI
 import ComposableArchitecture
 
 struct LocationAdminView: View {
-    @Bindable var store: StoreOf<LocationAdminFeature>
+    @Bindable var store: StoreOf<AdminLocationFeature>
     
     var body: some View {
         NavigationStack{
-            VStack {
-                HStack {
-                    Toggle("配信", isOn: $store.isTracking.sending(\.toggleChanged))
-                        .padding()
+            Form {
+                Section {
+                    HStack {
+                        Toggle("配信", isOn: $store.isTracking.sending(\.toggleChanged))
+                    }
+                    Picker("間隔", selection: $store.selectedInterval) {
+                        ForEach(store.intervals, id: \.self) { span in
+                            Text("\(span)分")
+                        }
+                    }
+                    .pickerStyle(.menu)
                 }
-                LocationAdminMap(location: store.location)
-                Text("履歴")
-                    .font(.title3)
-                    .bold()
-                    .padding(.top)
-                List(store.history.map{ $0.text }.reversed(), id: \.self) { text in
-                    Text(text)
-                        .font(.body)
-                        .padding(.vertical, 2)
+                AdminLocationMap(location: store.location)
+                    .frame(height: UIScreen.main.bounds.height * 0.3)
+                    .clipShape(RoundedRectangle(cornerRadius: 12))
+                    .background(
+                        RoundedRectangle(cornerRadius: 12)
+                            .fill(Color(UIColor.secondarySystemGroupedBackground))
+                    )
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 12)
+                            .stroke(Color(UIColor.separator), lineWidth: 0.5)
+                    )
+                    .padding(0)
+                if !store.history.isEmpty{
+                    Section(header: Text("履歴")) {
+                        ForEach(store.history.suffix(10).reversed(), id: \.self) { history in
+                            Text(history.text)
+                                .font(.body)
+                                .padding(.vertical, 2)
+                        }
+                    }
                 }
-                .listStyle(.plain)
             }
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
                     Button {
-                        store.send(.dismissButtonTapped)
+                        store.send(.dismissTapped)
                     } label: {
                         HStack {
                             Image(systemName: "chevron.left")

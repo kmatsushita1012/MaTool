@@ -30,7 +30,7 @@ struct AdminRegionView: View {
                         )
                     }
                     Button(action: {
-                        store.send(.onDistrictCreate)
+                        store.send(.onCreateDistrict)
                     }) {
                         Label("追加", systemImage: "plus.circle")
                             .frame(maxWidth: .infinity, alignment: .center)
@@ -45,7 +45,7 @@ struct AdminRegionView: View {
                 }
             }
             .navigationTitle(
-                store.region.name
+                "\(store.region.name) \(store.region.subname)"
             )
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
@@ -71,7 +71,7 @@ struct AdminRegionView: View {
             .fullScreenCover(
                 item: $store.scope(state: \.destination?.districtCreate, action: \.destination.districtCreate)
             ) { store in
-                AdminRegionDistrictCreateView(store: store)
+                AdminRegionCreateDistrictView(store: store)
             }
         }
     }

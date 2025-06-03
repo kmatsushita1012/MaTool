@@ -7,7 +7,8 @@
 
 import Foundation
 
-struct PublicRoute: Codable,Equatable{
+struct PublicRoute: Codable, Equatable, Identifiable{
+    let id: String
     let districtId: String
     let districtName: String
     let date: SimpleDate
@@ -19,19 +20,17 @@ struct PublicRoute: Codable,Equatable{
     let goal: SimpleTime
 }
 
-extension PublicRoute: Identifiable {
-    var id: String {
-        return "\(districtId)_\(date.year)-\(date.month)-\(date.day)_\(title)"
-    }
-}
-
 extension PublicRoute {
     func text(format: String) -> String {
         var result = ""
-
         var i = format.startIndex
+        
         while i < format.endIndex {
             let char = format[i]
+            
+            let nextIndex = format.index(after: i)
+            let hasNext = nextIndex < format.endIndex
+            let nextChar = hasNext ? format[nextIndex] : nil
 
             switch char {
             case "D":
@@ -41,21 +40,33 @@ extension PublicRoute {
             case "y":
                 result += String(date.year)
             case "m":
-                result += String(format: "%02d", date.month)
+                if nextChar == "2" {
+                    result += String(format: "%02d", date.month)
+                    i = format.index(after: nextIndex)
+                    continue
+                } else {
+                    result += String(date.month)
+                }
             case "d":
-                result += String(format: "%02d", date.day)
+                if nextChar == "2" {
+                    result += String(format: "%02d", date.day)
+                    i = format.index(after: nextIndex)
+                    continue
+                } else {
+                    result += String(date.day)
+                }
             default:
                 result += String(char)
             }
 
             i = format.index(after: i)
         }
-
         return result
     }
     
     func toModel() -> Route {
         return Route(
+            id: self.id,
             districtId: self.districtId,
             date: self.date,
             title: self.title,
@@ -68,6 +79,7 @@ extension PublicRoute {
     }
     
     init(from route: Route, name: String) {
+        id = route.id
         districtId = route.districtId
         districtName = name
         date = route.date
@@ -83,6 +95,7 @@ extension PublicRoute {
 
 extension PublicRoute {
     static let sample = Self(
+        id: UUID().uuidString,
         districtId: "Johoku",
         districtName: "城北町",
         date: SimpleDate.sample,
