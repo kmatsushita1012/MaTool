@@ -27,5 +27,5 @@ extension District: Hashable{
 }
 
 extension District {
-    static let sample = Self(id: "Johoku", name: "城北町", regionId: "kakegawa", description: "省略", performances: [Performance.sample], visibility: .all)
+    static let sample = Self(id: "掛川祭_城北町", name: "城北町", regionId: "掛川祭_年番本部", description: "省略", performances: [Performance.sample], visibility: .all)
 }

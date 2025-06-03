@@ -7,7 +7,7 @@
 
 import Foundation
 
-enum Status:Equatable {
+enum Status:Equatable, Hashable {
     case update(Location)
     case delete(Date)
     case loading(Date)

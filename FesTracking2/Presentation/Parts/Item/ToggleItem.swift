@@ -16,7 +16,7 @@ struct ToggleSelectedItem: View {
             Text(title)
                 .font(.title3)
             Spacer()
-            Image(systemName: isExpanded ? "chevron.down" : "chevron.up")
+            Image(systemName: isExpanded ? "chevron.up" : "chevron.down")
                 .foregroundColor(.gray)
                 .padding(.leading, 8)
         }

@@ -10,12 +10,14 @@ import ComposableArchitecture
 
 struct AppView: View {
     @Bindable var store: StoreOf<AppFeature>
+    
 
     var body: some View {
         NavigationStack {
             VStack(spacing: 16) {
-                CardView {
+                CardItem {
                     Text("地図")
+                        .font(.title3)
                         .foregroundStyle(.white)
                 }
                 .contentShape(Rectangle())
@@ -26,8 +28,9 @@ struct AppView: View {
                 .cornerRadius(8)
                 HStack(spacing: 16)  {
                     VStack(spacing: 16)  {
-                        CardView {
+                        CardItem {
                             Text("紹介")
+                                .font(.title3)
                                 .foregroundStyle(.white)
                         }
                         .contentShape(Rectangle())
@@ -36,8 +39,9 @@ struct AppView: View {
                         }
                         .background(.blue)
                         .cornerRadius(8)
-                        CardView {
+                        CardItem {
                             Text("編集")
+                                .font(.title3)
                                 .foregroundStyle(.white)
                         }
                         .contentShape(Rectangle())
@@ -48,8 +52,9 @@ struct AppView: View {
                         .cornerRadius(8)
                     }
                     VStack(spacing: 16)  {
-                        CardView {
+                        CardItem {
                             Text("設定")
+                                .font(.title3)
                                 .foregroundStyle(.black)
                         }
                         .contentShape(Rectangle())
@@ -58,8 +63,9 @@ struct AppView: View {
                         }
                         .background(.yellow)
                         .cornerRadius(8)
-                        CardView {
+                        CardItem {
                             Text("準備中")
+                                .font(.title3)
                                 .foregroundStyle(.black)
                         }
                         .contentShape(Rectangle())
@@ -90,6 +96,8 @@ struct AppView: View {
             .fullScreenCover(item: $store.scope(state: \.destination?.settings, action: \.destination.settings)) { store in
                 SettingsView(store: store)
             }
+            .alert($store.scope(state: \.alert, action: \.alert))
+            .loadingOverlay(isLoading: store.isLoading)
         }
         .onAppear(){
             store.send(.onAppear)
@@ -98,20 +106,4 @@ struct AppView: View {
 }
 
 
-struct CardView<Content: View>: View {
-    let content: () -> Content
-
-    init(@ViewBuilder content: @escaping () -> Content) {
-        self.content = content
-    }
-
-    var body: some View {
-        VStack {
-            content()
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .layoutPriority(1)
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-    }
-}
 

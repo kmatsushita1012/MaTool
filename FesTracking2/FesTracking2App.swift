@@ -14,12 +14,25 @@ import AWSMobileClient
 @main
 struct FesTracking2App: App {
     //    @UIApplicationDelegateAdaptor(AppDelegate.self) var delegate
+    @AppStorage(hasLaunchedBeforePath, store: UserDefaults(suiteName: "matool")) var hasLaunchedBefore: Bool = false
+    
     init(){
         FirebaseApp.configure()
     }
     var body: some Scene {
         WindowGroup {
-            AppView(store: Store(initialState:AppFeature.State()){ AppFeature()} )
+            if hasLaunchedBefore {
+                AppView(store: Store(initialState:AppFeature.State()){ AppFeature()} )
+            } else {
+                OnboardingView(store: Store(initialState: OnboardingFeature.State()){ OnboardingFeature() })
+            }
+            
         }
     }
 }
+
+//定数
+let spanDelta: Double = 0.02
+let favoriteRegionPath: String = "region"
+let favoriteDistrictPath: String = "district"
+let hasLaunchedBeforePath = "hasLaunchedBefore"

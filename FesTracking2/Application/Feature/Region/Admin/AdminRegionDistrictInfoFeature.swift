@@ -18,6 +18,7 @@ struct AdminRegionDistrictInfoFeature {
         let district: PublicDistrict
         let routes: [RouteSummary]
         @Presents var export: AdminRouteExportFeature.State?
+        @Presents var alert: OkAlert.State?
     }
     
     @CasePathable
@@ -26,6 +27,7 @@ struct AdminRegionDistrictInfoFeature {
         case exportPrepared(Result<PublicRoute,ApiError>)
         case dismissTapped
         case export(PresentationAction<AdminRouteExportFeature.Action>)
+        case alert(PresentationAction<OkAlert.Action>)
     }
     
     var body: some ReducerOf<AdminRegionDistrictInfoFeature> {
@@ -33,13 +35,14 @@ struct AdminRegionDistrictInfoFeature {
             switch action {
             case .exportTapped(let route):
                 return .run{ send in
-                    let result = await apiClient.getRoute(route.districtId, route.date, route.title, accessToken.value)
+                    let result = await apiClient.getRoute(route.id, accessToken.value)
                     await send(.exportPrepared(result))
                 }
             case .exportPrepared(.success(let route)):
                 state.export = .init(title: route.text(format: "D m/d T"), route: route.toModel())
                 return .none
-            case .exportPrepared(.failure(_)):
+            case .exportPrepared(.failure(let error)):
+                state.alert = OkAlert.make("情報の取得に失敗しました。\n\(error.localizedDescription)")
                 return .none
             case .dismissTapped:
                 return .none
@@ -48,8 +51,13 @@ struct AdminRegionDistrictInfoFeature {
                 return .none
             case .export:
                 return .none
+            case .alert(.presented(.okTapped)):
+                state.alert = nil
+                return .none
+            case .alert:
+                return .none
             }
         }
+        .ifLet(\.$alert, action: \.alert)
     }
-    
 }

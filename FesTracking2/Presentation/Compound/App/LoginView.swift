@@ -11,14 +11,13 @@ import ComposableArchitecture
 struct LoginView: View {
     @Bindable var store: StoreOf<LoginFeature>
     
-
     var body: some View {
         NavigationStack{
             VStack {
                 Text("ログイン")
                     .font(.largeTitle)
                     .padding()
-                TextField("ユーザー名", text: $store.username)
+                TextField("ID（〇〇祭_×××）", text: $store.id)
                     .textFieldStyle(RoundedBorderTextFieldStyle())
                     .padding()
                 SecureField("パスワード", text: $store.password)
@@ -32,7 +31,7 @@ struct LoginView: View {
                 }
                 
                 Button(action: {
-                    store.send(.signInButtonTapped)
+                    store.send(.signInTapped)
                 }) {
                     Text("ログイン")
                         .frame(maxWidth: .infinity)
@@ -54,6 +53,9 @@ struct LoginView: View {
                     }
                     .padding(.horizontal, 8)
                 }
+            }
+            .fullScreenCover(item: $store.scope(state: \.confirmSignIn, action: \.confirmSignIn)){ store in
+                ConfirmSignInView(store:store)
             }
         }
     }

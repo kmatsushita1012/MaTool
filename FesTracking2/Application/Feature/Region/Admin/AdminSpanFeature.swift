@@ -33,14 +33,14 @@ struct AdminSpanFeature {
             let now = Date()
             date = now
             start = Date.theDayAt(date: now, hour: 9, minute: 0, second: 0)
-            end = Date.theDayAt(date: now, hour: 12, minute: 0, second: 0)
+            end = Date.theDayAt(date: now, hour: 18, minute: 0, second: 0)
         }
     }
     @CasePathable
     enum Action: Equatable, BindableAction {
         case binding(BindingAction<State>)
-        case doneButtonTapped
-        case cancelButtonTapped
+        case doneTapped
+        case cancelTapped
     }
     
     var body: some ReducerOf<AdminSpanFeature>{
@@ -49,9 +49,9 @@ struct AdminSpanFeature {
             switch action {
             case .binding:
                 return .none
-            case .doneButtonTapped:
+            case .doneTapped:
                 return .none
-            case .cancelButtonTapped:
+            case .cancelTapped:
                 return .none
             }
         }

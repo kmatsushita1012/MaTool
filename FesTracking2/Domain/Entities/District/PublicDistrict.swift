@@ -43,5 +43,5 @@ extension PublicDistrict {
 }
 
 extension PublicDistrict {
-    static let sample = Self(id:"Johoku", name: "城北町",regionId: "kakegawa", regionName: "掛川祭", description: "省略",base: Coordinate.sample, area: [], imagePath:nil, performances: [Performance.sample], visibility: .all)
+    static let sample = Self(id:"Johoku", name: "城北町",regionId: "掛川祭_年番本部", regionName: "掛川祭", description: "省略",base: Coordinate.sample, area: [], imagePath:nil, performances: [Performance.sample], visibility: .all)
 }

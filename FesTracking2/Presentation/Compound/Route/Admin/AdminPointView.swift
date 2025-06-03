@@ -11,8 +11,6 @@ import ComposableArchitecture
 struct AdminPointView: View {
     @Bindable var store: StoreOf<AdminPointFeature>
     
-    let savedTitles: [String] = ["ポンポコニャ","浮世囃子","伊勢音頭","六段くづし","木遣くづし","奴さん","休憩"]
-    
     var body: some View {
         NavigationView {
             Form {
@@ -20,7 +18,7 @@ struct AdminPointView: View {
                     HStack{
                         TextField("イベントを入力", text: $store.item.title.nonOptional)
                             .popover(isPresented: $store.showPopover, content: {
-                                Popover(items: savedTitles,textClosure: { $0 }, onTapGesture: { option in
+                                Popover(items: store.events, textClosure: { $0.title }, onTapGesture: { option in
                                     store.send(.titleOptionSelected(option))
                                     
                                 }).presentationCompactAdaptation(PresentationAdaptation.popover)
@@ -61,7 +59,7 @@ struct AdminPointView: View {
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
                     Button{
-                        store.send(.cancelButtonTapped)
+                        store.send(.cancelTapped)
                     } label: {
                         Text("キャンセル")
                     }
@@ -73,7 +71,7 @@ struct AdminPointView: View {
                 }
                 ToolbarItem(placement: .topBarTrailing) {
                     Button{
-                        store.send(.doneButtonTapped)
+                        store.send(.doneTapped)
                     } label: {
                         Text("完了")
                             .bold()
@@ -86,10 +84,6 @@ struct AdminPointView: View {
         }
     }
 }
-#Preview{
-    AdminPointView(store: Store(initialState: AdminPointFeature.State(item: Point.sample), reducer: { AdminPointFeature() }))
-}
-
 
 
 struct Popover<T: Hashable> : View{
@@ -106,7 +100,7 @@ struct Popover<T: Hashable> : View{
                     VStack(spacing: 0) {
                         Text(textClosure(item))
                             .frame(maxWidth: .infinity, alignment: .leading)
-                            .padding(8)
+                            .padding(16)
                             .contentShape(Rectangle())
                             .onTapGesture {
                                 onTapGesture(item)
