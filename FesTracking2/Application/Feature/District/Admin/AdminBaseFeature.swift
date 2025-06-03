@@ -17,8 +17,8 @@ struct BaseAdminFeature {
     @CasePathable
     enum Action: Equatable{
         case mapTapped(Coordinate)
-        case cancelButtonTapped
-        case doneButtonTapped
+        case cancelTapped
+        case doneTapped
     }
     
     var body: some ReducerOf<BaseAdminFeature>{
@@ -27,10 +27,10 @@ struct BaseAdminFeature {
             case .mapTapped(let coordinate):
                 state.coordinate = coordinate
                 return .none
-            case .cancelButtonTapped:
+            case .cancelTapped:
                 state.coordinate = nil
                 return .none
-            case .doneButtonTapped:
+            case .doneTapped:
                 return .none
             }
         }

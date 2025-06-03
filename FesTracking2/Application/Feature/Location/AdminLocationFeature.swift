@@ -9,7 +9,7 @@ import ComposableArchitecture
 import CoreLocation
 
 @Reducer
-struct LocationAdminFeature{
+struct AdminLocationFeature{
     
     @ObservableState
     struct State:Equatable{
@@ -18,6 +18,8 @@ struct LocationAdminFeature{
         var isTracking: Bool
         var isLoading: Bool = false
         var history: [Status] = []
+        var selectedInterval: Int = 1
+        let intervals = [1,2,3,4,5,10,15,20,30,60]
     }
     
     @CasePathable
@@ -27,18 +29,20 @@ struct LocationAdminFeature{
         case binding(BindingAction<State>)
         case toggleChanged(Bool)
         case historyUpdated([Status])
-        case dismissButtonTapped
+        case dismissTapped
     }
     
     @Dependency(\.apiClient) var apiClient
     @Dependency(\.locationClient) var locationClient
     @Dependency(\.locationSharingUseCase) var usecase
     
-    var body: some ReducerOf<LocationAdminFeature> {
+    var body: some ReducerOf<AdminLocationFeature> {
         BindingReducer()
         Reduce{state, action in
             switch action{
             case .onAppear:
+                state.selectedInterval = usecase.interval
+                state.history = usecase.locationHistory
                 return .run { send in
                     for await history in usecase.historyStream {
                         await send(.historyUpdated(history))
@@ -51,17 +55,16 @@ struct LocationAdminFeature{
                 return .none
             case .toggleChanged(let value):
                 state.isTracking = value
-                let interval = 1.0
                 if(value){
-                    usecase.startTracking(id: "johoku",interval:interval)
+                    usecase.startTracking(id: "掛川祭_城北町", interval: state.selectedInterval)
                 }else{
-                    usecase.stopTracking(id: "johoku")
+                    usecase.stopTracking(id: "掛川祭_城北町")
                 }
                 return .none
             case .historyUpdated(let history):
                 state.history = history
                 return .none
-            case .dismissButtonTapped:
+            case .dismissTapped:
                 return .cancel(id: "HistoryStream")
             }
         }

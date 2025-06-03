@@ -1,31 +1,33 @@
 //
-//  AdminRegionDistrictCreateFeature.swift
+//  PerformanceAdminFeature.swift
 //  FesTracking2
 //
-//  Created by 松下和也 on 2025/05/12.
+//  Created by 松下和也 on 2025/04/17.
 //
 
+import SwiftUI
 import ComposableArchitecture
 
 @Reducer
-struct AdminRegionDistrictCreateFeature {
+struct PerformanceAdminFeature{
     @ObservableState
-    struct State: Equatable {
-        
+    struct State: Equatable{
+        var item: Performance = Performance(id: UUID().uuidString)
     }
-    @CasePathable
-    enum Action: Equatable, BindableAction {
+    
+    enum Action: BindableAction, Equatable{
         case binding(BindingAction<State>)
-        case saveTapped
+        case doneTapped
         case cancelTapped
     }
-    var body: some ReducerOf<AdminRegionDistrictCreateFeature> {
+    
+    var body: some ReducerOf<PerformanceAdminFeature>{
         BindingReducer()
         Reduce{ state, action in
             switch action {
             case .binding:
                 return .none
-            case .saveTapped:
+            case .doneTapped:
                 return .none
             case .cancelTapped:
                 return .none

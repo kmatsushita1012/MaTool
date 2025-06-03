@@ -9,7 +9,7 @@ import UIKit
 import MapKit
 import SwiftUI
 
-struct LocationAdminMap: UIViewRepresentable {
+struct AdminLocationMap: UIViewRepresentable {
     var location: Location?
     
     func makeUIView(context: Context) -> MKMapView {
@@ -25,7 +25,7 @@ struct LocationAdminMap: UIViewRepresentable {
         if let userLocation = mapView.userLocation.location {
             let region = MKCoordinateRegion(
                 center: userLocation.coordinate,
-                span: MKCoordinateSpan(latitudeDelta: 0.05, longitudeDelta: 0.05) // ズームレベルを調整
+                span: MKCoordinateSpan(latitudeDelta: spanDelta, longitudeDelta: spanDelta) // ズームレベルを調整
             )
             mapView.setRegion(region, animated: true)
         }
@@ -42,9 +42,9 @@ struct LocationAdminMap: UIViewRepresentable {
     }
     
     class Coordinator: NSObject, MKMapViewDelegate {
-        var parent: LocationAdminMap
+        var parent: AdminLocationMap
         
-        init(_ parent: LocationAdminMap) {
+        init(_ parent: AdminLocationMap) {
             self.parent = parent
         }
     }
