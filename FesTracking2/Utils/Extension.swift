@@ -57,3 +57,12 @@ extension Array where Element: Identifiable & Equatable {
 extension Color {
     static let customLightRed = Color(red: 255/255, green: 183/255, blue: 167/255)
 }
+
+extension MKCoordinateRegion: Equatable {
+    public static func == (lhs: MKCoordinateRegion, rhs: MKCoordinateRegion) -> Bool {
+        return lhs.center.latitude == rhs.center.latitude &&
+               lhs.center.longitude == rhs.center.longitude &&
+               lhs.span.latitudeDelta == rhs.span.latitudeDelta &&
+               lhs.span.longitudeDelta == rhs.span.longitudeDelta
+    }
+}

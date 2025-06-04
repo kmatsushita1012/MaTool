@@ -73,7 +73,7 @@ struct RouteFeature{
                     let items = [Content.locations] + districts.map{ Content.route($0) }
                     //TODO
                     if let districtId = userDefaultsClient.stringForKey(favoriteDistrictPath),
-                       let selected = districts.first{ $0.id == districtId } {
+                       let selected = districts.first(where: { $0.id == districtId }) {
                         state.districtPicker = PickerFeature.State(items: items, selected: Content.route(selected))
                     }else{
                         state.districtPicker = PickerFeature.State(items: items, selected: Content.locations)
@@ -85,8 +85,7 @@ struct RouteFeature{
             case .routesReceived(let result):
                 switch result {
                 case .success(var routes):
-                    routes.sort()
-                    state.routePicker = PickerFeature.State(items: routes)
+                    state.routePicker = PickerFeature.State(items: routes.sorted())
                 case .failure(let error):
                     state.error = error.localizedDescription
                 }

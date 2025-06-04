@@ -13,7 +13,8 @@ struct ExportableMap: UIViewRepresentable {
     var segments: [Segment]
     let region: MKCoordinateRegion? = nil
 
-    @Binding var mapSnapshot: UIImage?
+    @Binding var wholeSnapshot: UIImage?
+    @Binding var partialSnapshot: UIImage?
 
     func makeCoordinator() -> Coordinator {
         Coordinator(self)
@@ -61,6 +62,7 @@ struct ExportableMap: UIViewRepresentable {
 
         init(_ parent: ExportableMap) {
             self.parent = parent
+            
         }
         
         func mapView(_ mapView: MKMapView, rendererFor overlay: MKOverlay) -> MKOverlayRenderer {
@@ -78,7 +80,6 @@ struct ExportableMap: UIViewRepresentable {
             if annotation is MKUserLocation {
                 return nil // 現在地はデフォルトのまま
             }
-
             let identifier = "AnnotationView"
 
             var annotationView = mapView.dequeueReusableAnnotationView(withIdentifier: identifier)
@@ -87,111 +88,176 @@ struct ExportableMap: UIViewRepresentable {
             } else {
                 annotationView?.annotation = annotation
             }
-
-            // 全てのアノテーションを常に表示
             annotationView?.displayPriority = .required
-
-            // クラスタリング無効化（密接アノテーションも表示させるため）
             if #available(iOS 11.0, *) {
                 (annotationView as? MKMarkerAnnotationView)?.clusteringIdentifier = nil
             }
-
-            // 見た目調整（任意）
             if let markerView = annotationView as? MKMarkerAnnotationView {
                 markerView.markerTintColor = .red
                 markerView.canShowCallout = true
             }
-
             return annotationView
         }
-
         
         func mapView(_ mapView: MKMapView, regionDidChangeAnimated animated: Bool) {
-            parent.takeSnapshot(mapView: mapView)
+            parent.exportVisibleMapToPDF(mapView: mapView)
+            if parent.wholeSnapshot == nil {
+                parent.exportFullMapToPDF(mapView: mapView)
+            }
         }
     }
     
-    private func takeSnapshot(mapView: MKMapView) {
-        let options = MKMapSnapshotter.Options()
-        options.region = mapView.region
-        options.pointOfInterestFilter = .excludingAll
-        options.size = mapView.frame.size == .zero ? CGSize(width: 300, height: 300) : mapView.frame.size
-        let snapshotter = MKMapSnapshotter(options: options)
-        snapshotter.start { snapshot, error in
-            guard let snapshot = snapshot else { return }
-            UIGraphicsBeginImageContextWithOptions(options.size, true, 0)
-            snapshot.image.draw(at: .zero)
-            // Draw polyline
-            for segment in segments{
-                if segment.coordinates.count > 1 {
-                    let path = UIBezierPath()
-                    let firstPoint = snapshot.point(for: segment.coordinates[0].toCL())
-                    path.move(to: firstPoint)
-                    for coord in segment.coordinates.dropFirst() {
-                        let point = snapshot.point(for: coord.toCL())
-                        path.addLine(to: point)
-                    }
-                    UIColor.white.setStroke()
-                    path.lineWidth = 8
-                    path.stroke()
-                    UIColor.blue.setStroke()
-                    path.lineWidth = 4
-                    path.stroke()
-                }
+    func exportFullMapToPDF(mapView: MKMapView) {
+        let region = calculateRegionIncludingAll()
+        takeSnapshot(of: region, size: CGSize(width: 594, height: 420)) { image in
+            guard let image = image else {
+                return
             }
-            // Draw pins
-            for point in points {
-                let pointInSnapshot = snapshot.point(for: point.coordinate.toCL())
-                guard let pinImage = UIImage(systemName: "mappin")?.withTintColor(.red, renderingMode: .alwaysOriginal) else {
+            DispatchQueue.main.async {
+                self.wholeSnapshot = image
+            }
+        }
+    }
+
+    func exportVisibleMapToPDF(mapView: MKMapView) {
+        let region = mapView.region
+        let size = mapView.frame.size
+        takeSnapshot(of: region, size: size) { image in
+            guard let image = image else {
+                return
+            }
+            DispatchQueue.main.async {
+                self.partialSnapshot = image
+            }
+        }
+    }
+
+    private func calculateRegionIncludingAll() -> MKCoordinateRegion {
+        let allCoordinates = points.map { $0.coordinate.toCL() }
+        let minLat = allCoordinates.map { $0.latitude }.min() ?? 0
+        let maxLat = allCoordinates.map { $0.latitude }.max() ?? 0
+        let minLon = allCoordinates.map { $0.longitude }.min() ?? 0
+        let maxLon = allCoordinates.map { $0.longitude }.max() ?? 0
+
+        let center = CLLocationCoordinate2D(
+            latitude: (minLat + maxLat) / 2,
+            longitude: (minLon + maxLon) / 2
+        )
+        let span = MKCoordinateSpan(
+            latitudeDelta: (maxLat - minLat) * 1.4,
+            longitudeDelta: (maxLon - minLon) * 1.4
+        )
+        return MKCoordinateRegion(center: center, span: span)
+    }
+    
+    private func takeSnapshot(of region: MKCoordinateRegion, size: CGSize, completion: @escaping (UIImage?) -> Void) {
+        let options = MKMapSnapshotter.Options()
+        options.region = region
+        options.pointOfInterestFilter = .excludingAll
+        options.size = size == .zero ? CGSize(width: 594, height: 420) : size
+        let snapshotter = MKMapSnapshotter(options: options)
+        withExtendedLifetime(snapshotter) {
+            snapshotter.start { snapshot, error in
+                guard let snapshot = snapshot else {
+                    completion(nil)
                     return
                 }
-                pinImage.draw(at: CGPoint(x: pointInSnapshot.x - pinImage.size.width/2, y: pointInSnapshot.y - pinImage.size.height))
-                // キャプション
-                let title = point.title ?? ""
-                let time = point.time?.text ?? ""
-                let caption = (title + time)  as NSString? ?? ""
-                let font = UIFont.boldSystemFont(ofSize: 12)
-                let textAttributes: [NSAttributedString.Key: Any] = [
-                    .font: font,
-                    .foregroundColor: UIColor.black
-                ]
-                let textSize = caption.size(withAttributes: textAttributes)
-                let textPadding: CGFloat = 4
-                var backgroundRect: CGRect
-                if point != points.last {
-                    backgroundRect = CGRect(
-                        x: pointInSnapshot.x - textSize.width / 2 - textPadding,
-                        y: pointInSnapshot.y + 4,
-                        width: textSize.width + textPadding * 2,
-                        height: textSize.height + textPadding * 2
-                    )
-                } else{
-                    backgroundRect = CGRect(
-                        x: pointInSnapshot.x - textSize.width / 2 - textPadding,
-                        y: pointInSnapshot.y - pinImage.size.height - ( textSize.height + textPadding * 2 ) - 4,
-                        width: textSize.width + textPadding * 2,
-                        height: textSize.height + textPadding * 2
-                    )
-                }
+                
+                UIGraphicsBeginImageContextWithOptions(options.size, true, 0)
+                snapshot.image.draw(at: .zero)
+                drawPolylines(on: snapshot)
+                drawPinsAndCaptions(on: snapshot)
+                let image = UIGraphicsGetImageFromCurrentImageContext()
+                UIGraphicsEndImageContext()
+                completion(image)
+            }
+        }
+    }
+    
+    private func drawPolylines(on snapshot: MKMapSnapshotter.Snapshot) {
+        for segment in segments {
+            guard segment.coordinates.count > 1 else { continue }
 
-                // 白背景
-                let context = UIGraphicsGetCurrentContext()
+            let path = UIBezierPath()
+            let start = snapshot.point(for: segment.coordinates[0].toCL())
+            path.move(to: start)
+
+            for coord in segment.coordinates.dropFirst() {
+                let point = snapshot.point(for: coord.toCL())
+                path.addLine(to: point)
+            }
+
+            UIColor.white.setStroke()
+            path.lineWidth = 8
+            path.stroke()
+
+            UIColor.blue.setStroke()
+            path.lineWidth = 4
+            path.stroke()
+        }
+    }
+    
+    private func drawPinsAndCaptions(on snapshot: MKMapSnapshotter.Snapshot) {
+        var drawnRects: [CGRect] = [] // ローカルで衝突回避用に保持
+
+        for (index, point) in points.enumerated() {
+            let pointInSnapshot = snapshot.point(for: point.coordinate.toCL())
+
+            guard let pinImage = UIImage(systemName: "mappin")?.withTintColor(.red, renderingMode: .alwaysOriginal) else { continue }
+            pinImage.draw(at: CGPoint(x: pointInSnapshot.x - pinImage.size.width / 2,
+                                      y: pointInSnapshot.y - pinImage.size.height))
+
+            drawCaption(for: point, at: pointInSnapshot, pinImage: pinImage, drawnRects: &drawnRects)
+        }
+    }
+
+    private func drawCaption(for point: Point, at location: CGPoint, pinImage: UIImage, drawnRects: inout [CGRect]) {
+        let title = point.title ?? ""
+        let time = point.time?.text ?? ""
+        let caption = (title + time) as NSString
+        let font = UIFont.boldSystemFont(ofSize: 12)
+        let attributes: [NSAttributedString.Key: Any] = [
+            .font: font,
+            .foregroundColor: UIColor.black
+        ]
+
+        let textSize = caption.size(withAttributes: attributes)
+        let padding: CGFloat = 4
+        let context = UIGraphicsGetCurrentContext()
+
+        // 描画候補方向（下・上・右・左）
+        let directions: [(dx: CGFloat, dy: CGFloat)] = [
+            (0, +1), (0, -1), (+1, 0), (-1, 0)
+        ]
+
+        for direction in directions {
+            let origin = CGPoint(
+                x: location.x + direction.dx * (pinImage.size.width + padding),
+                y: location.y + direction.dy * (pinImage.size.height + padding)
+            )
+
+            let rect = CGRect(
+                x: origin.x - textSize.width / 2 - padding,
+                y: origin.y - textSize.height / 2 - padding,
+                width: textSize.width + padding * 2,
+                height: textSize.height + padding * 2
+            )
+
+            if drawnRects.allSatisfy({ !$0.intersects(rect) }) {
+                // 背景
                 context?.setFillColor(UIColor.white.cgColor)
-                context?.fill(backgroundRect)
+                context?.fill(rect)
 
-                // 黒文字（中央揃え）
-                let textOrigin = CGPoint(
-                    x: backgroundRect.origin.x + textPadding,
-                    y: backgroundRect.origin.y + textPadding
-                )
-                caption.draw(at: textOrigin, withAttributes: textAttributes)
-            }
+                // テキスト
+                caption.draw(at: CGPoint(x: rect.origin.x + padding,
+                                         y: rect.origin.y + padding),
+                             withAttributes: attributes)
 
-            let image = UIGraphicsGetImageFromCurrentImageContext()
-            UIGraphicsEndImageContext()
-            DispatchQueue.main.async {
-                self.mapSnapshot = image
+                drawnRects.append(rect)
+                return
             }
-       }
-   }
+        }
+        // すべて衝突した場合は描画しない
+    }
+
 }
