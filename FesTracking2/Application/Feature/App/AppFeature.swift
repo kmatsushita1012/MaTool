@@ -66,9 +66,8 @@ struct AppFeature {
                 }
             case .adminDistrictPrepared(let districtResult, let routesResult):
                 if case let .success(district) = districtResult,
-                   case var .success(routes) = routesResult{
-                    routes.sort()
-                    state.destination = .adminDistrict(AdminDistrictFeature.State(district: district,  routes: routes))
+                   case let .success(routes) = routesResult{
+                    state.destination = .adminDistrict(AdminDistrictFeature.State(district: district,  routes: routes.sorted()))
                 }else{
                     state.alert = OkAlert.make("情報の取得に失敗しました")
                 }
@@ -105,7 +104,8 @@ struct AppFeature {
             case .settingsTapped:
                 state.destination = .settings(SettingsFeature.State())
                 return .none
-            case .awsInitializeReceived(.success(let value)):
+            case .awsInitializeReceived(.success(_)):
+                state.isAWSLoading = false
                 return awsUserRoleAndTokenEffect(shouldNavigate: false)
             case .awsInitializeReceived(.failure(_)):
                 state.userRole = .guest
@@ -136,7 +136,10 @@ struct AppFeature {
                 case .login(.received(.failure(_))):
                     state.alert = OkAlert.make("ログインに失敗しました")
                     state.userRole = .guest
-                    return .none
+                    return .run { send in
+                        let result = await awsCognitoClient.signOut()
+                        print(result)
+                    }
                 case .adminDistrict(.signOutReceived(.success(_))),
                     .adminRegion(.signOutReceived(.success(_))):
                     state.destination = nil
@@ -154,7 +157,8 @@ struct AppFeature {
                 default:
                     return .none
                 }
-            case .destination(_):
+            case .destination(.dismiss):
+                state.destination = nil
                 return .none
             case .alert(.presented(.okTapped)):
                 state.alert = nil

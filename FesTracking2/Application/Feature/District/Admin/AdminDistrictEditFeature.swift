@@ -11,7 +11,7 @@ import PhotosUI
 import _PhotosUI_SwiftUI
 
 @Reducer
-struct AdminDistrictEditFeature{
+struct AdminDistrictEditFeature {
     
     @Dependency(\.apiClient) var apiClient
     @Dependency(\.accessToken) var accessToken

@@ -39,14 +39,15 @@ struct AdminRegionDistrictInfoFeature {
                     await send(.exportPrepared(result))
                 }
             case .exportPrepared(.success(let route)):
-                state.export = .init(title: route.text(format: "D m/d T"), route: route.toModel())
+                state.export = .init(route: route)
                 return .none
             case .exportPrepared(.failure(let error)):
                 state.alert = OkAlert.make("情報の取得に失敗しました。\n\(error.localizedDescription)")
                 return .none
             case .dismissTapped:
                 return .none
-            case .export(.presented(.dismissTapped)), .export(.dismiss):
+            case .export(.presented(.dismissTapped)),
+                .export(.dismiss):
                 state.export = nil
                 return .none
             case .export:

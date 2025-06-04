@@ -13,16 +13,21 @@ import Foundation
 struct AdminRouteExportFeature {
     @ObservableState
     struct State: Equatable {
-        var title: String = "ルート出力"
-        let route: Route
+        let route: PublicRoute
         var points: [Point] {
             filterPoints(route)
         }
         var segments: [Segment] {
             route.segments
         }
-        var path:String {
-            route.title
+        var title: String {
+            route.text(format: "D m/d T")
+        }
+        var partialPath: String {
+            "\(route.text(format: "D_y-m-d_T"))_part_\(Date().stamp).pdf"
+        }
+        var wholePath: String {
+            "\(route.text(format: "D_y-m-d_T"))_full.pdf"
         }
     }
     @CasePathable
@@ -47,7 +52,7 @@ struct AdminRouteExportFeature {
     }
 }
 
-private func filterPoints(_ route:Route)-> [Point] {
+private func filterPoints(_ route: PublicRoute)-> [Point] {
     var newPoints:[Point] = []
     if let firstPoint = route.points.first,
         !firstPoint.shouldExport {

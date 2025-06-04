@@ -20,6 +20,12 @@ struct Route: Codable, Equatable, Identifiable {
 }
 
 extension Route {
+    var text: String {
+        return ""
+    }
+}
+
+extension Route {
     static let sample = Route(
         id: UUID().uuidString,
         districtId: "Johoku",
