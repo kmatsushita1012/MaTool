@@ -14,7 +14,8 @@ struct AdminRouteMap: UIViewRepresentable {
     var onMapLongPress: (Coordinate) -> Void
     var pointTapped: (Point) -> Void
     var polylineTapped: (Segment) -> Void
-    var region: MKCoordinateRegion?
+    @Binding var region: MKCoordinateRegion?
+
 
     func makeCoordinator() -> Coordinator {
         Coordinator(self)
@@ -27,13 +28,8 @@ struct AdminRouteMap: UIViewRepresentable {
         // 長押しジェスチャー追加
         let longPress = UILongPressGestureRecognizer(target: context.coordinator, action: #selector(Coordinator.handleLongPress(_:)))
         mapView.addGestureRecognizer(longPress)
-        if let region = region{
-            mapView.setRegion(region, animated: false)
-        } else if  !points.isEmpty {
-            let avgLatitude = points.map { $0.coordinate.latitude }.reduce(0, +) / Double(points.count)
-            let avgLongitude = points.map { $0.coordinate.longitude }.reduce(0, +) / Double(points.count)
-            let center = CLLocationCoordinate2D(latitude: avgLatitude, longitude: avgLongitude)
-            let region = MKCoordinateRegion(center: center, span: MKCoordinateSpan(latitudeDelta: spanDelta, longitudeDelta: spanDelta))
+        
+        if let region = region {
             mapView.setRegion(region, animated: false)
         }
         return mapView
@@ -55,6 +51,10 @@ struct AdminRouteMap: UIViewRepresentable {
             let polyline = SegmentPolyline(coordinates: segment.coordinates.map({$0.toCL()}), count: segment.coordinates.count)
             polyline.segment = segment // ユーザーデータに保持
             mapView.addOverlay(polyline)
+        }
+        
+        if let region = region, region.center.latitude != mapView.region.center.latitude || region.center.longitude != mapView.region.center.longitude {
+            mapView.setRegion(region, animated: true)
         }
     }
 
@@ -89,8 +89,11 @@ struct AdminRouteMap: UIViewRepresentable {
             }
             return MKOverlayRenderer()
         }
-
-
+        
+        func mapView(_ mapView: MKMapView, regionDidChangeAnimated animated: Bool) {
+            parent.region = mapView.region
+        }
+        
         func mapView(_ mapView: MKMapView, didSelect overlay: MKOverlay) {
             if let polyline = overlay as? SegmentPolyline,
                let segment = polyline.segment{

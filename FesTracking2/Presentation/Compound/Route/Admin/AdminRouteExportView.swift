@@ -13,7 +13,8 @@ import UniformTypeIdentifiers
 struct AdminRouteExportView: View{
     @Bindable var store: StoreOf<AdminRouteExportFeature>
     
-    @State private var mapSnapshot: UIImage? = nil
+    @State private var partialSnapshot: UIImage? = nil
+    @State private var wholeSnapshot: UIImage? = nil
     
     var body: some View{
         // 背景のMap
@@ -22,7 +23,8 @@ struct AdminRouteExportView: View{
                 ExportableMap(
                     points: store.points,
                     segments: store.segments,
-                    mapSnapshot: $mapSnapshot,
+                    wholeSnapshot: $wholeSnapshot,
+                    partialSnapshot: $partialSnapshot
                 )
                     .ignoresSafeArea(edges: .bottom)
             }
@@ -40,17 +42,31 @@ struct AdminRouteExportView: View{
                     Text(store.title)
                         .bold()
                 }
-                if let image = mapSnapshot,
-                    let pdf = createPDF(with: image){
+                if let wholeSnapshot = wholeSnapshot,
+                   let wholePdf = createPDF(with: wholeSnapshot, path: store.wholePath){
+                    ToolbarItem(placement: .topBarTrailing) {
+                    ShareLink(
+                       item: wholePdf,
+                       preview: SharePreview(
+                            "行動図（全体）",
+                            image: Image(systemName: "map.circle"))){
+                                Image(systemName: "map.circle")
+                            }
+                    }
+                }
+                if let partialSnapshot = partialSnapshot,
+                   let partialPdf = createPDF(with: partialSnapshot, path: store.partialPath){
                     ToolbarItem(placement: .topBarTrailing) {
                         ShareLink(
-                           item: pdf,
-                           preview: SharePreview(
-                                        "行動図",
-                                        image: Image(systemName: "point.topleft.down.to.point.bottomright.curvepath")))
+                            item: partialPdf,
+                            preview: SharePreview(
+                                "行動図",
+                                image: Image(systemName: "crop"))){
+                                    Image(systemName: "crop")
+                                }
                     }
-                    
                 }
+                
             }
             .navigationBarTitleDisplayMode(.inline)
         }
@@ -58,7 +74,7 @@ struct AdminRouteExportView: View{
     }
 }
 
-func createPDF(with image: UIImage) -> URL? {
+func createPDF(with image: UIImage,path: String) -> URL? {
    let pdfData = NSMutableData()
    let pdfRect = CGRect(origin: .zero, size: image.size)
    UIGraphicsBeginPDFContextToData(pdfData, pdfRect, nil)
@@ -66,7 +82,7 @@ func createPDF(with image: UIImage) -> URL? {
    image.draw(in: pdfRect)
    UIGraphicsEndPDFContext()
 
-   let tempURL = FileManager.default.temporaryDirectory.appendingPathComponent("map.pdf")
+   let tempURL = FileManager.default.temporaryDirectory.appendingPathComponent(path)
    do {
        try pdfData.write(to: tempURL, options: .atomic)
        return tempURL

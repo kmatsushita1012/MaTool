@@ -63,9 +63,8 @@ struct AdminRegionFeature {
                     let result = await awsCognitoClient.signOut()
                     await send(.signOutReceived(result))
                 }
-            case .districtInfoPrepared(let district, .success(var routes)):
-                routes.sort()
-                state.destination = .districtInfo(AdminRegionDistrictInfoFeature.State(district: district, routes: routes))
+            case .districtInfoPrepared(let district, .success(let routes)):
+                state.destination = .districtInfo(AdminRegionDistrictInfoFeature.State(district: district, routes: routes.sorted()))
                 return .none
             case .districtInfoPrepared(_, .failure(_)):
                 return .none
@@ -73,10 +72,13 @@ struct AdminRegionFeature {
                 return .none
             case .destination(.presented(let childAction)):
                 switch childAction{
+                case .edit(.received(.success)),
+                    .districtCreate(.received(.success)):
+                    state.destination = nil
+                    return .none
                 case .edit(.cancelTapped),
                     .districtInfo(.dismissTapped),
-                    .districtCreate(.cancelTapped),
-                    .edit(.received(.success(_))):
+                    .districtCreate(.cancelTapped):
                     state.destination = nil
                     return .none
                 case .edit,

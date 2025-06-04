@@ -31,12 +31,12 @@ struct AdminDistrictView: View{
                 }
                 Section(header: Text("経路")){
                     List(store.routes) { route in
-                        NavigationItem(
-                            title: route.text(format:"m/d T"),
-                            onTap: {
-                                store.send(.onRouteEdit(route))
-                            }
+                        AdminRouteItem(
+                            text: route.text(format:"m/d T"),
+                            onEdit: { store.send(.onRouteEdit(route)) },
+                            onExport:{ store.send(.onRouteExport(route)) }
                         )
+                        .onTapGesture(perform: { store.send(.onRouteEdit(route)) })
                     }
                     Button(action: {
                         store.send(.onRouteAdd)
@@ -76,6 +76,9 @@ struct AdminDistrictView: View{
             }
             .fullScreenCover(item: $store.scope(state: \.destination?.route, action: \.destination.route)) { store in
                 AdminRouteInfoView(store: store)
+            }
+            .fullScreenCover(item: $store.scope(state: \.destination?.export, action: \.destination.export)) { store in
+                AdminRouteExportView(store: store)
             }
             .alert($store.scope(state: \.alert, action: \.alert))
             .loadingOverlay(isLoading: store.isLoading)

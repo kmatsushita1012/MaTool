@@ -7,24 +7,15 @@
 
 import SwiftUI
 
-struct AdminRouteItem:View {
+struct AdminRouteItem: View {
     let text: String
     let onEdit: () -> Void
     let onExport: () -> Void
-    let onDelete: () -> Void
     
     var body: some View {
         HStack{
             Text(text)
             Spacer()
-            Button(role: .destructive) {
-                onDelete()
-            } label: {
-                Image(systemName: "trash")
-            }
-            .tint(.red)
-            .buttonStyle(BorderlessButtonStyle())
-            .padding(.horizontal,4)
             Button {
                 onEdit()
             } label: {
@@ -34,7 +25,7 @@ struct AdminRouteItem:View {
             .buttonStyle(BorderlessButtonStyle())
             .padding(.horizontal,4)
             Button {
-                onEdit()
+                onExport()
             } label: {
                 Image(systemName: "square.and.arrow.up")
             }

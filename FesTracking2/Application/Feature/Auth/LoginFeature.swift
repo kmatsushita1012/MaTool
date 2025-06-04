@@ -65,7 +65,7 @@ struct LoginFeature {
             case .homeTapped:
                 return .none
             case .confirmSignIn(.presented(.received(.success))):
-                state.confirmSignIn = nil
+//                state.confirmSignIn = nil
                 return .none
             case .confirmSignIn(.presented(.received(.failure))):
                 state.confirmSignIn = nil

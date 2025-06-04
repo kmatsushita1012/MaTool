@@ -10,7 +10,7 @@ import MapKit
 import ComposableArchitecture
 
 struct AdminRouteMapView: View{
-    let store: StoreOf<AdminRouteMapFeature>
+    @Bindable var store: StoreOf<AdminRouteMapFeature>
     @State private var selectedDetent: PresentationDetent = .large
     
     var body: some View{
@@ -22,7 +22,8 @@ struct AdminRouteMapView: View{
                     segments: store.route.segments,
                     onMapLongPress: { coordinate in store.send(.mapLongPressed(coordinate))},
                     pointTapped: { point in store.send(.annotationTapped(point))},
-                    polylineTapped: { segment in store.send(.polylineTapped(segment))}
+                    polylineTapped: { segment in store.send(.polylineTapped(segment))},
+                    region: $store.region
                 )
                 .edgesIgnoringSafeArea(.bottom)
                 VStack {

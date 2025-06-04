@@ -14,47 +14,43 @@ struct AdminRouteInfoFeature {
     @Reducer
     enum Destination {
         case map(AdminRouteMapFeature)
-        case export(AdminRouteExportFeature)
     }
     
     @ObservableState
     struct State: Equatable{
         enum Mode:Equatable {
-            case create(districtId: String)
-            case edit(id: String)
+            case create(String)
+            case edit(Route)
         }
         
         let mode: Mode
         var route: Route
         var isLoading: Bool = false
         let performances: [Performance]
+        let base: Coordinate?
         @Presents var destination: Destination.State?
         @Presents var alert: OkAlert.State?
         
-        init(mode: Mode, performances: [Performance]){
+        init(mode: Mode, performances: [Performance], base: Coordinate?){
             self.mode = mode
             self.performances = performances
+            self.base = base
             switch(mode){
             case let .create(id):
                 self.route = .init(id: UUID().uuidString, districtId: id)
-            case let .edit(id):
-                //仮で初期化
-                self.isLoading = true
-                self.route = .init(id: UUID().uuidString, districtId: id)
+            case let .edit(route):
+                self.route = route
             }
         }
     }
     
     @CasePathable
     enum Action: BindableAction, Equatable {
-        case onAppear
         case binding(BindingAction<State>)
         case mapTapped
         case saveTapped
         case cancelTapped
-        case exportTapped
         case deleteTapped
-        case getReceived(Result<PublicRoute, ApiError>)
         case postReceived(Result<String, ApiError>)
         case deleteReceived(Result<String, ApiError>)
         case destination(PresentationAction<Destination.Action>)
@@ -69,24 +65,18 @@ struct AdminRouteInfoFeature {
         BindingReducer()
         Reduce{ state, action in
             switch (action) {
-            case .onAppear:
-                if case let .edit(id) = state.mode{
-                    state.isLoading = true
-                    return .run { send in
-                        let result = await apiClient.getRoute(id, accessToken.value)
-                        await send(.getReceived(result))
-                    }
-                }
-                return .none
             case .binding:
                 return .none
             case .mapTapped:
                 //TODO 余興情報渡し
-                state.destination = .map(AdminRouteMapFeature.State(route: state.route, performances: state.performances))
+                state.destination = .map(AdminRouteMapFeature.State(route: state.route, performances: state.performances, base: state.base))
                 return .none
             case .saveTapped:
                 if state.route.title.isEmpty {
                     state.alert = OkAlert.make("タイトルは1文字以上を指定してください。")
+                    return .none
+                } else if state.route.title.contains("/") {
+                    state.alert = OkAlert.make("タイトルに\"/\"を含むことはできません")
                     return .none
                 }
                 state.isLoading = true
@@ -112,9 +102,6 @@ struct AdminRouteInfoFeature {
                 }
             case .cancelTapped:
                 return .none
-            case .exportTapped:
-                state.destination = .export(AdminRouteExportFeature.State(route: state.route))
-                return .none
             case .deleteTapped:
                 state.isLoading = true
                 return .run { [route = state.route] send in
@@ -126,15 +113,6 @@ struct AdminRouteInfoFeature {
                     let result = await apiClient.deleteRoute(route.id, token)
                     await send(.postReceived(result))
                 }
-            case .getReceived(let result):
-                state.isLoading = false
-                switch result {
-                case .success(let value):
-                    state.route = value.toModel()
-                case .failure(let error):
-                    state.alert = OkAlert.make("情報の取得に失敗しました。 \(error.localizedDescription)")
-                }
-                return .none
             case .postReceived(let result):
                 state.isLoading = false
                 if case let .failure(error) = result {
@@ -155,11 +133,10 @@ struct AdminRouteInfoFeature {
                     }
                     state.destination = nil
                     return .none
-                case .map(.cancelTapped),
-                    .export(.dismissTapped):
+                case .map(.cancelTapped):
                     state.destination = nil
                     return .none
-                case .map,.export:
+                case .map:
                     return .none
                 }
             case .destination(.dismiss):

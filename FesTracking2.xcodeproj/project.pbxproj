@@ -391,6 +391,7 @@
 		29486DD12D8B094F00C50C0D /* Compound */ = {
 			isa = PBXGroup;
 			children = (
+				29A0B0A62DEF172900312106 /* Auth */,
 				29BC19422DB6234C00C6F918 /* App */,
 				299A06AB2DB1429600E76898 /* Location */,
 				298CAF712D9D6A6E00C57C26 /* District */,
@@ -552,7 +553,7 @@
 				29AD86512DB212DB00C3E8B2 /* Info.plist */,
 				2983AB722D74152C002F6CB5 /* Domain */,
 				29CF49152D74315300036D28 /* Application */,
-				29CF49062D7425D600036D28 /* Core */,
+				29CF49062D7425D600036D28 /* Utils */,
 				29CF49032D74244500036D28 /* Infrastructure */,
 				2983AB772D741534002F6CB5 /* Presentation */,
 				298BD79D2D71E46600CB63F1 /* FesTracking2App.swift */,
@@ -702,6 +703,15 @@
 			path = Region;
 			sourceTree = "<group>";
 		};
+		29A0B0A62DEF172900312106 /* Auth */ = {
+			isa = PBXGroup;
+			children = (
+				29460A0C2D8C28FC0097CAA1 /* LoginView.swift */,
+				29AB1B452DE1FFE500AC37F3 /* ConfirmSignInView.swift */,
+			);
+			path = Auth;
+			sourceTree = "<group>";
+		};
 		29A64AE22DB4AD77007C3859 /* Location */ = {
 			isa = PBXGroup;
 			children = (
@@ -767,9 +777,7 @@
 		29BC19422DB6234C00C6F918 /* App */ = {
 			isa = PBXGroup;
 			children = (
-				29460A0C2D8C28FC0097CAA1 /* LoginView.swift */,
 				29AB1B472DE2116700AC37F3 /* OnboardingView.swift */,
-				29AB1B452DE1FFE500AC37F3 /* ConfirmSignInView.swift */,
 				29BC19432DB6235D00C6F918 /* AppView.swift */,
 				29DF09C72DCC9E5700489DB8 /* InfoView.swift */,
 				29BC19472DB625C200C6F918 /* SettingsView.swift */,
@@ -849,14 +857,14 @@
 			path = Api;
 			sourceTree = "<group>";
 		};
-		29CF49062D7425D600036D28 /* Core */ = {
+		29CF49062D7425D600036D28 /* Utils */ = {
 			isa = PBXGroup;
 			children = (
 				29CF49072D7425F600036D28 /* HTTP.swift */,
 				2972017A2D9CFA41003424EF /* async.swift */,
 				29CF49182D7440EB00036D28 /* Extension.swift */,
 			);
-			path = Core;
+			path = Utils;
 			sourceTree = "<group>";
 		};
 		29CF490D2D74266500036D28 /* Entities */ = {

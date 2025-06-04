@@ -51,12 +51,6 @@ struct AdminRouteInfoView: View{
                     )
                     .datePickerStyle(.compact)
                 }
-                Section {
-                    NavigationItem(
-                        title: "経路図出力（PDF）",
-                        onTap: { store.send(.exportTapped) }
-                    )
-                }
                 if !store.mode.isCreate {
                     Section {
                         Text("削除")
@@ -75,14 +69,14 @@ struct AdminRouteInfoView: View{
                     .padding(8)
                 }
                 ToolbarItem(placement: .principal) {
-                    Text("編集")
+                    Text(store.mode.isCreate ?  "新規作成" : "編集")
                         .bold()
                 }
                 ToolbarItem(placement: .topBarTrailing) {
                     Button{
                         store.send(.saveTapped)
                     } label: {
-                        Text(store.mode.isCreate ? "作成" : "保存")
+                        Text("保存")
                             .bold()
                     }
                     .padding(8)
@@ -94,16 +88,8 @@ struct AdminRouteInfoView: View{
             ) { store in
                 AdminRouteMapView(store: store)
             }
-            .fullScreenCover(
-                item: $store.scope(state: \.destination?.export, action: \.destination.export)
-            ) { store in
-                AdminRouteExportView(store: store)
-            }
             .alert($store.scope(state: \.alert, action: \.alert))
             .loadingOverlay(isLoading: store.isLoading)
-        }
-        .onAppear {
-            store.send(.onAppear)
         }
     }
 }

@@ -19,6 +19,7 @@ struct AdminDistrictFeature {
     enum Destination {
         case edit(AdminDistrictEditFeature)
         case route(AdminRouteInfoFeature)
+        case export(AdminRouteExportFeature)
         case location(AdminLocationFeature)
     }
     
@@ -28,11 +29,13 @@ struct AdminDistrictFeature {
         var routes: [RouteSummary]
         var isDistrictLoading: Bool = false
         var isRoutesLoading: Bool = false
+        var isRouteLoading: Bool = false
+        var isExportLoading: Bool = false
         var isAWSLoading: Bool = false
         @Presents var destination: Destination.State?
         @Presents var alert: OkAlert.State?
         var isLoading: Bool {
-            isDistrictLoading || isRoutesLoading || isAWSLoading
+            isDistrictLoading || isRoutesLoading || isAWSLoading || isRouteLoading || isExportLoading
         }
     }
     
@@ -41,8 +44,11 @@ struct AdminDistrictFeature {
         case onEdit
         case onRouteAdd
         case onRouteEdit(RouteSummary)
+        case onRouteExport(RouteSummary)
         case getDistrictReceived(Result<PublicDistrict,ApiError>)
         case getRoutesReceived(Result<[RouteSummary],ApiError>)
+        case routePrepared(Result<PublicRoute,ApiError>)
+        case exportPrepared(Result<PublicRoute,ApiError>)
         case onLocation
         case destination(PresentationAction<Destination.Action>)
         case onSignOut
@@ -53,17 +59,26 @@ struct AdminDistrictFeature {
     
     
     var body: some ReducerOf<AdminDistrictFeature> {
-        Reduce{state,action in
+        Reduce{ state, action in
             switch action {
             case .onEdit:
                 state.destination = .edit(AdminDistrictEditFeature.State(item: state.district.toModel()))
                 return .none
             case .onRouteAdd:
-                state.destination = .route(AdminRouteInfoFeature.State(mode: .create(districtId: state.district.id), performances: state.district.performances))
+                state.destination = .route(AdminRouteInfoFeature.State(mode: .create(state.district.id), performances: state.district.performances, base: state.district.base))
                 return .none
             case .onRouteEdit(let route):
-                state.destination = .route(AdminRouteInfoFeature.State(mode: .edit(id: route.id), performances: state.district.performances))
-                return .none
+                state.isRouteLoading = true
+                return .run { send in
+                    let result = await apiClient.getRoute(route.id, accessToken.value)
+                    await send(.routePrepared(result))
+                }
+            case .onRouteExport(let route):
+                state.isExportLoading = true
+                return .run { send in
+                    let result = await apiClient.getRoute(route.id, accessToken.value)
+                    await send(.exportPrepared(result))
+                }
             case .getDistrictReceived(let result):
                 state.isDistrictLoading = false
                 switch result {
@@ -76,9 +91,26 @@ struct AdminDistrictFeature {
             case .getRoutesReceived(let result):
                 state.isRoutesLoading = false
                 switch result {
-                case .success(var value):
-                    value.sort()
-                    state.routes = value
+                case .success(let value):
+                    state.routes = value.sorted()
+                case .failure(let error):
+                    state.alert = OkAlert.make("情報の取得に失敗しました。 \(error.localizedDescription)")
+                }
+                return .none
+            case .routePrepared(let result):
+                state.isRouteLoading = false
+                switch result {
+                case .success(let value):
+                    state.destination = .route(AdminRouteInfoFeature.State(mode: .edit(value.toModel()), performances: state.district.performances , base: state.district.base))
+                case .failure(let error):
+                    state.alert = OkAlert.make("情報の取得に失敗しました。 \(error.localizedDescription)")
+                }
+                return .none
+            case .exportPrepared(let result):
+                state.isExportLoading = false
+                switch result {
+                case .success(let value):
+                    state.destination = .export(AdminRouteExportFeature.State(route: value))
                 case .failure(let error):
                     state.alert = OkAlert.make("情報の取得に失敗しました。 \(error.localizedDescription)")
                 }
@@ -90,12 +122,13 @@ struct AdminDistrictFeature {
                 switch childAction {
                 case .edit(.cancelTapped),
                     .route(.cancelTapped),
-                    .location(.dismissTapped):
+                    .location(.dismissTapped),
+                    .export(.dismissTapped):
                     state.destination = nil
                     return .none
-                case .edit(.postReceived(.success(_))),
-                    .route(.postReceived(.success(_))),
-                    .route(.deleteReceived(.success(_))):
+                case .edit(.postReceived(.success)),
+                    .route(.postReceived(.success)),
+                    .route(.deleteReceived(.success)):
                     state.destination = nil
                     state.isDistrictLoading = true
                     state.isRoutesLoading = true
@@ -109,9 +142,15 @@ struct AdminDistrictFeature {
                             await send(.getRoutesReceived(result))
                         }
                     )
-                default:
+                case .edit,
+                    .route,
+                    .location,
+                    .export:
                     return .none
                 }
+            case .destination(.dismiss):
+                state.destination = nil
+                return .none
             case .onSignOut:
                 state.isAWSLoading = true
                 return .run { send in
@@ -123,9 +162,6 @@ struct AdminDistrictFeature {
                 if case let .failure(error) = result {
                     state.alert = OkAlert.make("サインアウトに失敗しました。 \(error.localizedDescription)")
                 }
-                return .none
-            case .destination(.dismiss):
-                state.destination = nil
                 return .none
             case .homeTapped:
                 return .none

@@ -7,25 +7,38 @@
 
 import ComposableArchitecture
 import Foundation
+import MapKit
 
 @Reducer
 struct AdminRouteMapFeature{
     
     @ObservableState
     struct State: Equatable{
-        
         var route: Route
         var stack: Stack<StackItem> = Stack()
         var isUndoable: Bool { !route.points.isEmpty}
         var isRedoable: Bool{ !stack.isEmpty }
         let performances: [Performance]
+        var region: MKCoordinateRegion?
         @Presents var pointAdmin: AdminPointFeature.State?
         @Presents var segmentAdmin: AdminSegmentFeature.State?
         @Presents var alert: OkAlert.State?
+        
+        init(route:Route, performances: [Performance], base: Coordinate?){
+            self.route = route
+            self.performances = performances
+            if let base = base{
+                self.region = MKCoordinateRegion(
+                    center: base.toCL(),
+                    span: MKCoordinateSpan(latitudeDelta: spanDelta, longitudeDelta: spanDelta)
+                )
+            }
+        }
     }
     
     @CasePathable
-    enum Action: Equatable{
+    enum Action: Equatable, BindableAction{
+        case binding(BindingAction<State>)
         case editPoint(Point)
         case mapLongPressed(Coordinate)
         case annotationTapped(Point)
@@ -40,8 +53,11 @@ struct AdminRouteMapFeature{
     }
     
     var body: some ReducerOf<AdminRouteMapFeature> {
+        BindingReducer()
         Reduce{ state, action in
             switch action {
+            case .binding:
+                return .none
             case .editPoint(let point):
                 if let index = state.route.points.firstIndex(where: { $0.id == point.id }) {
                     state.route.points[index] = point
