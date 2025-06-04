@@ -107,6 +107,7 @@
 		29AD86492DB2032300C3E8B2 /* LocationClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29AD86482DB2032000C3E8B2 /* LocationClient.swift */; };
 		29AD864B2DB2040E00C3E8B2 /* LocationClientLive.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29AD864A2DB2040A00C3E8B2 /* LocationClientLive.swift */; };
 		29AD86502DB210F500C3E8B2 /* AdminLocationMap.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29AD864F2DB210F000C3E8B2 /* AdminLocationMap.swift */; };
+		29B2D0942DF0788E008592F8 /* EditManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29B2D0932DF07843008592F8 /* EditManager.swift */; };
 		29B5FD632D80877D008838BB /* DistrictSummary.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29B5FD622D808776008838BB /* DistrictSummary.swift */; };
 		29B638A72DB0E7E400DF8419 /* AdminSpanFeature.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29B638A62DB0E7DF00DF8419 /* AdminSpanFeature.swift */; };
 		29B638A92DB0E89600DF8419 /* AdminSpanView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29B638A82DB0E89000DF8419 /* AdminSpanView.swift */; };
@@ -268,6 +269,7 @@
 		29AD864A2DB2040A00C3E8B2 /* LocationClientLive.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocationClientLive.swift; sourceTree = "<group>"; };
 		29AD864F2DB210F000C3E8B2 /* AdminLocationMap.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdminLocationMap.swift; sourceTree = "<group>"; };
 		29AD86512DB212DB00C3E8B2 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		29B2D0932DF07843008592F8 /* EditManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditManager.swift; sourceTree = "<group>"; };
 		29B5FD622D808776008838BB /* DistrictSummary.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DistrictSummary.swift; sourceTree = "<group>"; };
 		29B638A62DB0E7DF00DF8419 /* AdminSpanFeature.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdminSpanFeature.swift; sourceTree = "<group>"; };
 		29B638A82DB0E89000DF8419 /* AdminSpanView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdminSpanView.swift; sourceTree = "<group>"; };
@@ -863,6 +865,7 @@
 				29CF49072D7425F600036D28 /* HTTP.swift */,
 				2972017A2D9CFA41003424EF /* async.swift */,
 				29CF49182D7440EB00036D28 /* Extension.swift */,
+				29B2D0932DF07843008592F8 /* EditManager.swift */,
 			);
 			path = Utils;
 			sourceTree = "<group>";
@@ -1288,6 +1291,7 @@
 				299936AB2D7AD499009D651E /* UserDefaultsLiveClient.swift in Sources */,
 				2978C4A92DCB3B5200D3F7CE /* PointFeature.swift in Sources */,
 				2997C2F32D79E1130032566B /* AdminSegmentFeature.swift in Sources */,
+				29B2D0942DF0788E008592F8 /* EditManager.swift in Sources */,
 				29A043442D7DC25800E77C91 /* RouteSummary.swift in Sources */,
 				29460A0B2D8C28AC0097CAA1 /* LoginFeature.swift in Sources */,
 				291D91992DCDAD45007E5A80 /* ExportableMap.swift in Sources */,
