@@ -107,6 +107,7 @@
 		29AD86492DB2032300C3E8B2 /* LocationClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29AD86482DB2032000C3E8B2 /* LocationClient.swift */; };
 		29AD864B2DB2040E00C3E8B2 /* LocationClientLive.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29AD864A2DB2040A00C3E8B2 /* LocationClientLive.swift */; };
 		29AD86502DB210F500C3E8B2 /* AdminLocationMap.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29AD864F2DB210F000C3E8B2 /* AdminLocationMap.swift */; };
+		29B1599A2DF1888900F469A9 /* DistrictTool.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29B159992DF1888300F469A9 /* DistrictTool.swift */; };
 		29B2D0942DF0788E008592F8 /* EditManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29B2D0932DF07843008592F8 /* EditManager.swift */; };
 		29B5FD632D80877D008838BB /* DistrictSummary.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29B5FD622D808776008838BB /* DistrictSummary.swift */; };
 		29B638A72DB0E7E400DF8419 /* AdminSpanFeature.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29B638A62DB0E7DF00DF8419 /* AdminSpanFeature.swift */; };
@@ -269,6 +270,7 @@
 		29AD864A2DB2040A00C3E8B2 /* LocationClientLive.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocationClientLive.swift; sourceTree = "<group>"; };
 		29AD864F2DB210F000C3E8B2 /* AdminLocationMap.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdminLocationMap.swift; sourceTree = "<group>"; };
 		29AD86512DB212DB00C3E8B2 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		29B159992DF1888300F469A9 /* DistrictTool.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DistrictTool.swift; sourceTree = "<group>"; };
 		29B2D0932DF07843008592F8 /* EditManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditManager.swift; sourceTree = "<group>"; };
 		29B5FD622D808776008838BB /* DistrictSummary.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DistrictSummary.swift; sourceTree = "<group>"; };
 		29B638A62DB0E7DF00DF8419 /* AdminSpanFeature.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdminSpanFeature.swift; sourceTree = "<group>"; };
@@ -630,6 +632,7 @@
 			isa = PBXGroup;
 			children = (
 				29A043582D7DCFCF00E77C91 /* District.swift */,
+				29B159992DF1888300F469A9 /* DistrictTool.swift */,
 				29B5FD622D808776008838BB /* DistrictSummary.swift */,
 				292D0B882DB0C94300176E51 /* Performance.swift */,
 				29E8C32F2DBB3F020086F6BB /* PublicDistrict.swift */,
@@ -1276,6 +1279,7 @@
 				29A043532D7DC83B00E77C91 /* SimpleTime.swift in Sources */,
 				29CF49082D7425F600036D28 /* HTTP.swift in Sources */,
 				292D0B8D2DB0CB2700176E51 /* AdminPerformanceFeature.swift in Sources */,
+				29B1599A2DF1888900F469A9 /* DistrictTool.swift in Sources */,
 				29DF09C62DCC9DFB00489DB8 /* InfoFeature.swift in Sources */,
 				299A06AA2DB13BAC00E76898 /* AdminDistrictFeature.swift in Sources */,
 				29DAB0702DA1623C005E94BA /* AWSCognitoClientLive.swift in Sources */,
