@@ -19,7 +19,7 @@ struct AdminRouteInfoFeature {
     @ObservableState
     struct State: Equatable{
         enum Mode:Equatable {
-            case create(String)
+            case create(String,Span)
             case edit(Route)
         }
         
@@ -36,8 +36,14 @@ struct AdminRouteInfoFeature {
             self.performances = performances
             self.base = base
             switch(mode){
-            case let .create(id):
-                self.route = .init(id: UUID().uuidString, districtId: id)
+            case let .create(id, span):
+                self.route = .init(
+                    id: UUID().uuidString,
+                    districtId: id,
+                    date: SimpleDate.fromDate(span.start),
+                    start: SimpleTime.fromDate(span.start),
+                    goal: SimpleTime.fromDate(span.end)
+                )
             case let .edit(route):
                 self.route = route
             }
