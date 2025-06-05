@@ -390,7 +390,7 @@
 			path = Admin;
 			sourceTree = "<group>";
 		};
-		29486DD12D8B094F00C50C0D /* Compound */ = {
+		29486DD12D8B094F00C50C0D /* View */ = {
 			isa = PBXGroup;
 			children = (
 				29A0B0A62DEF172900312106 /* Auth */,
@@ -400,7 +400,7 @@
 				298CAF722D9D6A7500C57C26 /* Route */,
 				298CAF702D9D6A6800C57C26 /* Region */,
 			);
-			path = Compound;
+			path = View;
 			sourceTree = "<group>";
 		};
 		29486DD22D8B095D00C50C0D /* Parts */ = {
@@ -516,7 +516,7 @@
 				29550E502DE4553300E9D9B6 /* Style */,
 				296795D22DA4F96C008D3CE1 /* Core */,
 				29486DD22D8B095D00C50C0D /* Parts */,
-				29486DD12D8B094F00C50C0D /* Compound */,
+				29486DD12D8B094F00C50C0D /* View */,
 			);
 			path = Presentation;
 			sourceTree = "<group>";
