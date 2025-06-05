@@ -37,6 +37,9 @@ extension ApiClient {
         putDistrict: { _,_ in
             return Result.success("Success")
         },
+        getTool: { _,_ in
+            return Result.success(DistrictTool.sample)
+        },
         getRoutes: { _,_ in
             let summaries = routes.map{ RouteSummary(from: PublicRoute(from: $0, name: "城北町")) }
             return Result.success(summaries)
