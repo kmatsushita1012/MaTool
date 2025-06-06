@@ -91,6 +91,14 @@ extension ApiClient: DependencyKey {
                 return Result.failure(ApiError.encoding(failure.localizedDescription))
             }
         },
+        getTool: { districtId, accessToken in
+            let response = await performGetRequest(
+                base: base,
+                path: "/districts/\(districtId)/tools",
+                accessToken: accessToken
+            )
+            return decodeResponse(DistrictTool.self, from: response)
+        },
         getRoutes: { districtId, accessToken in
             let response = await performGetRequest(
                 base: base,

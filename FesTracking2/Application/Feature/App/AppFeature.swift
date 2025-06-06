@@ -69,7 +69,7 @@ struct AppFeature {
                    case let .success(routes) = routesResult{
                     state.destination = .adminDistrict(AdminDistrictFeature.State(district: district,  routes: routes.sorted()))
                 }else{
-                    state.alert = OkAlert.make("情報の取得に失敗しました")
+                    state.alert = OkAlert.error("情報の取得に失敗しました")
                 }
                 state.isAdminDistrictLoading = false
                 return .none
@@ -79,7 +79,7 @@ struct AppFeature {
                    case let .success(districts) = districtsResult{
                     state.destination = .adminRegion(AdminRegionFeature.State(region: region, districts: districts))
                 }else{
-                    state.alert = OkAlert.make("情報の取得に失敗しました")
+                    state.alert = OkAlert.error("情報の取得に失敗しました")
                 }
                 state.isAdminRegionLoading = false
                 return .none
@@ -134,7 +134,7 @@ struct AppFeature {
                     .login(.confirmSignIn(.presented(.received(.success)))):
                     return awsUserRoleAndTokenEffect(shouldNavigate: true)
                 case .login(.received(.failure(_))):
-                    state.alert = OkAlert.make("ログインに失敗しました")
+                    state.alert = OkAlert.error("ログインに失敗しました")
                     state.userRole = .guest
                     return .run { send in
                         let result = await awsCognitoClient.signOut()

@@ -94,12 +94,5 @@ struct AdminRouteMap: UIViewRepresentable {
             parent.region = mapView.region
         }
         
-        func mapView(_ mapView: MKMapView, didSelect overlay: MKOverlay) {
-            if let polyline = overlay as? SegmentPolyline,
-               let segment = polyline.segment{
-                parent.polylineTapped(segment)
-            }
-        }
-
     }
 }

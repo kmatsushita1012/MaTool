@@ -15,6 +15,7 @@ struct ApiClient {
     var getDistrict: (_ districtId: String) async -> Result<PublicDistrict, ApiError>
     var postDistrict: (_ regionId: String, _ districtName: String, _ email: String, _ accessToken: String) async -> Result<String, ApiError>
     var putDistrict: (_ district: District, _ accessToken: String) async -> Result<String, ApiError>
+    var getTool: (_ districtId: String, _ accessToken: String?) async -> Result<DistrictTool, ApiError>
     var getRoutes: (_ districtId: String, _ accessToken: String?) async -> Result<[RouteSummary], ApiError>
     var getRoute: (_ id: String, _ accessToken: String?) async -> Result<PublicRoute, ApiError>
     var getCurrentRoute: (_ districtId: String,_ accessToken: String?) async -> Result<PublicRoute, ApiError>

@@ -53,7 +53,7 @@ struct AdminRegionEditFeature {
             case .received(.success(_)):
                 return .none
             case .received(.failure(let error)):
-                state.alert = OkAlert.make("保存に失敗しました。\(error.localizedDescription)")
+                state.alert = OkAlert.error("保存に失敗しました。\(error.localizedDescription)")
                 return .none
             case .onSpanEdit(let item):
                 state.span = AdminSpanFeature.State(item)

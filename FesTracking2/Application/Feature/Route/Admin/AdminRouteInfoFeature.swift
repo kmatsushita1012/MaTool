@@ -19,7 +19,7 @@ struct AdminRouteInfoFeature {
     @ObservableState
     struct State: Equatable{
         enum Mode:Equatable {
-            case create(String)
+            case create(String,Span)
             case edit(Route)
         }
         
@@ -36,8 +36,14 @@ struct AdminRouteInfoFeature {
             self.performances = performances
             self.base = base
             switch(mode){
-            case let .create(id):
-                self.route = .init(id: UUID().uuidString, districtId: id)
+            case let .create(id, span):
+                self.route = .init(
+                    id: UUID().uuidString,
+                    districtId: id,
+                    date: SimpleDate.fromDate(span.start),
+                    start: SimpleTime.fromDate(span.start),
+                    goal: SimpleTime.fromDate(span.end)
+                )
             case let .edit(route):
                 self.route = route
             }
@@ -73,10 +79,10 @@ struct AdminRouteInfoFeature {
                 return .none
             case .saveTapped:
                 if state.route.title.isEmpty {
-                    state.alert = OkAlert.make("タイトルは1文字以上を指定してください。")
+                    state.alert = OkAlert.error("タイトルは1文字以上を指定してください。")
                     return .none
                 } else if state.route.title.contains("/") {
-                    state.alert = OkAlert.make("タイトルに\"/\"を含むことはできません")
+                    state.alert = OkAlert.error("タイトルに\"/\"を含むことはできません")
                     return .none
                 }
                 state.isLoading = true
@@ -116,13 +122,13 @@ struct AdminRouteInfoFeature {
             case .postReceived(let result):
                 state.isLoading = false
                 if case let .failure(error) = result {
-                    state.alert = OkAlert.make("情報の取得に失敗しました。 \(error.localizedDescription)")
+                    state.alert = OkAlert.error("情報の取得に失敗しました。 \(error.localizedDescription)")
                 }
                 return .none
             case .deleteReceived(let result):
                 state.isLoading = false
                 if case let .failure(error) = result {
-                    state.alert = OkAlert.make("情報の取得に失敗しました。 \(error.localizedDescription)")
+                    state.alert = OkAlert.error("情報の取得に失敗しました。 \(error.localizedDescription)")
                 }
                 return .none
             case .destination(.presented(let childAction)):
