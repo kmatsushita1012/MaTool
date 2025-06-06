@@ -29,7 +29,7 @@ struct AdminDistrictView: View{
                         }
                     )
                 }
-                Section(header: Text("経路")){
+                Section(header: Text("行動")){
                     List(store.routes) { route in
                         AdminRouteItem(
                             text: route.text(format:"m/d T"),

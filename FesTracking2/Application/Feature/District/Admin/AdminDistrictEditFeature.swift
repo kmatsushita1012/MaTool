@@ -82,7 +82,7 @@ struct AdminDistrictEditFeature {
             case .postReceived(let result):
                 state.isLoading = false
                 if case let .failure(error) = result {
-                    state.alert = OkAlert.make("保存に失敗しました。\(error.localizedDescription)")
+                    state.alert = OkAlert.error("保存に失敗しました。\(error.localizedDescription)")
                 }
                 return .none
             case .destination(.presented(let childAction)):

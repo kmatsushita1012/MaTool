@@ -26,6 +26,9 @@ struct AdminPointFeature{
         case binding(BindingAction<State>)
         case doneTapped
         case cancelTapped
+        case moveTapped
+        case insertTapped
+        case deleteTapped
         case titleFieldFocused
         case titleOptionSelected(InfoItem)
     }
@@ -40,6 +43,12 @@ struct AdminPointFeature{
                 return .none
             case .cancelTapped:
                 return .none
+            case .moveTapped:
+               return .none
+           case .insertTapped:
+               return .none
+           case .deleteTapped:
+               return .none
             case .titleFieldFocused:
                 state.showPopover = true
                 return .none

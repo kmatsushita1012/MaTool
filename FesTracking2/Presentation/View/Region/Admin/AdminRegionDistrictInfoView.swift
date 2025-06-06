@@ -14,7 +14,7 @@ struct AdminRegionDistrictInfoView: View {
     var body: some View {
         NavigationStack{
             Form{
-                Section(header: Text("経路")) {
+                Section(header: Text("行動")) {
                     List(store.routes) { route in
                         NavigationItem(
                             title: route.text(format: "m/d T"),

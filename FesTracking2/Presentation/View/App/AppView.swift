@@ -29,20 +29,21 @@ struct AppView: View {
                 HStack(spacing: 16)  {
                     VStack(spacing: 16)  {
                         CardItem {
-                            Text("紹介")
+                            Text("準備中")
                                 .font(.title3)
                                 .foregroundStyle(.white)
                         }
                         .contentShape(Rectangle())
                         .onTapGesture {
-                            store.send(.infoTapped)
+//                            store.send(.infoTapped)
                         }
                         .background(.blue)
                         .cornerRadius(8)
                         CardItem {
-                            Text("編集")
+                            Text("管理者用\nページ")
                                 .font(.title3)
                                 .foregroundStyle(.white)
+                                .multilineTextAlignment(.center)
                         }
                         .contentShape(Rectangle())
                         .onTapGesture {
@@ -53,13 +54,13 @@ struct AppView: View {
                     }
                     VStack(spacing: 16)  {
                         CardItem {
-                            Text("設定")
+                            Text("準備中")
                                 .font(.title3)
                                 .foregroundStyle(.black)
                         }
                         .contentShape(Rectangle())
                         .onTapGesture {
-                            store.send(.settingsTapped)
+//                            store.send(.settingsTapped)
                         }
                         .background(.yellow)
                         .cornerRadius(8)

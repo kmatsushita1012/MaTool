@@ -18,7 +18,7 @@ final class LocationSharingUseCase: Sendable {
     private var timer: Timer?
     private(set) var locationHistory: [Status] = []
     private(set) var isTracking: Bool = false
-    private(set) var interval: Int = 60
+    private(set) var interval: Interval = Interval.sample
 
     private var historyStreamPair = AsyncStream<[Status]>.makeStream()
     var historyStream: AsyncStream<[Status]> {
@@ -29,12 +29,12 @@ final class LocationSharingUseCase: Sendable {
         historyStreamPair.continuation
     }
 
-    func startTracking(id: String,interval: Int = 1) {
+    func startTracking(id: String, interval: Interval) {
         guard !isTracking else { return }
         isTracking = true
         locationClient.startTracking()
         self.interval = interval
-        startTimer(id, TimeInterval(interval))
+        startTimer(id, TimeInterval(interval.value))
     }
 
     func stopTracking(id: String) {

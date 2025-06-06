@@ -9,7 +9,7 @@ import Foundation
 
 struct Point: Codable{
     let id: String
-    let coordinate: Coordinate
+    var coordinate: Coordinate
     var title: String?
     var description: String?
     var time: SimpleTime?

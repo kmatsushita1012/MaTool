@@ -46,7 +46,7 @@ struct AdminRegionCreateDistrictView: View {
                     .padding(8)
                 }
             }
-            
+            .navigationBarTitleDisplayMode(.inline)
         }
     }
 }
