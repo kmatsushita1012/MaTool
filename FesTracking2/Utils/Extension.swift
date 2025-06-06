@@ -9,7 +9,6 @@ import Foundation
 import Combine
 import ComposableArchitecture
 import MapKit
-import SwiftUICore
 
 extension Array where Element: Identifiable & Equatable {
     mutating func upsert(_ element: Element) {
