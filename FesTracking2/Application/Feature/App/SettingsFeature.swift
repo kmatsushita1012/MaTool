@@ -19,6 +19,8 @@ struct SettingsFeature {
     }
 
     var body: some ReducerOf<SettingsFeature> {
-
+        Reduce{ state,action in
+            return .none
+        }
     }
 }
