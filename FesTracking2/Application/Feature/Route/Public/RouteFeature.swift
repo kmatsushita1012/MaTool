@@ -59,12 +59,12 @@ struct RouteFeature{
                     return .merge(
                         routeEffect(districtId, accessToken: accessToken.value),
                         routesEffect(districtId,accessToken: accessToken.value),
-                        districtsEffect(regionId),
+                        districtsEffect(regionId)
                     )
                 }else{
                     return .merge(
                         locationsEffect(regionId, accessToken: accessToken.value),
-                        districtsEffect(regionId),
+                        districtsEffect(regionId)
                     )
                 }
             case .districtsReceived(let result):
