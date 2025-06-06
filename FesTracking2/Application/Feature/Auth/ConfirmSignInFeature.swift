@@ -35,10 +35,10 @@ struct ConfirmSignInFeature {
                 return .none
             case .submitTapped:
                 if state.password1 != state.password2 {
-                    state.alert = OkAlert.make("パスワードが一致しません。")
+                    state.alert = OkAlert.error("パスワードが一致しません。")
                     return .none
                 }else if !isValidPassword(state.password1) {
-                    state.alert = OkAlert.make("パスワードが条件を満たしていません。次の条件を満たしてください。\n 8文字以上 \n 少なくとも 1 つの数字を含む \n 少なくとも 1 つの大文字を含む \n 少なくとも 1 つの小文字を含む")
+                    state.alert = OkAlert.error("パスワードが条件を満たしていません。次の条件を満たしてください。\n 8文字以上 \n 少なくとも 1 つの数字を含む \n 少なくとも 1 つの大文字を含む \n 少なくとも 1 つの小文字を含む")
                     return .none
                 }
                 return .run { [ password1 = state.password1 ]send in
@@ -50,7 +50,7 @@ struct ConfirmSignInFeature {
             case .received(.success):
                 return .none
             case .received(.failure(let error)):
-                state.alert = OkAlert.make("送信に失敗しました。\(error.localizedDescription)")
+                state.alert = OkAlert.error("送信に失敗しました。\(error.localizedDescription)")
                 return .none
             case .alert(.presented(.okTapped)):
                 state.alert = nil

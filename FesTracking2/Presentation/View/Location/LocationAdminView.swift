@@ -19,8 +19,8 @@ struct LocationAdminView: View {
                         Toggle("配信", isOn: $store.isTracking.sending(\.toggleChanged))
                     }
                     Picker("間隔", selection: $store.selectedInterval) {
-                        ForEach(store.intervals, id: \.self) { span in
-                            Text("\(span)分")
+                        ForEach(store.intervals, id: \.self) { interval in
+                            Text(interval.label)
                         }
                     }
                     .pickerStyle(.menu)
