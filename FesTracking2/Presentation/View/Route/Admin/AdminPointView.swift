@@ -26,7 +26,7 @@ struct AdminPointView: View {
                         Button(action: {
                             store.send(.titleFieldFocused)
                             }) {
-                                Image(systemName: "ellipsis.circle")
+                                Image(systemName: "ellipsis")
                                     .font(.title2)
                             }
                     }
@@ -52,7 +52,34 @@ struct AdminPointView: View {
                             displayedComponents: [.hourAndMinute]
                         )
                         .datePickerStyle(.compact)
-                        Toggle("経路図（PDF）への出力", isOn: $store.item.shouldExport)
+                    }
+                }
+                Section {
+                    Toggle("経路図（PDF）への出力", isOn: $store.item.shouldExport)
+                }
+                
+                Section {
+                    Button(action: {
+                        store.send(.moveTapped)
+                    }) {
+                        Label("この地点を移動", systemImage: "line.diagonal.arrow")
+                            .font(.body)
+                    }
+                    Button(action: {
+                        store.send(.insertTapped)
+                    }) {
+                        Label("この地点の前に新しい地点を挿入", systemImage: "plus.circle")
+                            .font(.body)
+                    }
+                }
+                
+                Section {
+                    Button(action: {
+                        store.send(.deleteTapped)
+                    }) {
+                        Label("この地点を削除", systemImage: "trash")
+                            .font(.body)
+                            .foregroundStyle(.red)
                     }
                 }
             }

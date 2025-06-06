@@ -165,7 +165,8 @@ struct ExportableMap: UIViewRepresentable {
                 
                 UIGraphicsBeginImageContextWithOptions(options.size, true, 0)
                 snapshot.image.draw(at: .zero)
-                drawPolylines(on: snapshot)
+                drawPolylines(on: snapshot,color: UIColor.white,lineWidth: 8)
+                drawPolylines(on: snapshot,color: UIColor.blue,lineWidth: 4)
                 drawPinsAndCaptions(on: snapshot)
                 let image = UIGraphicsGetImageFromCurrentImageContext()
                 UIGraphicsEndImageContext()
@@ -174,7 +175,7 @@ struct ExportableMap: UIViewRepresentable {
         }
     }
     
-    private func drawPolylines(on snapshot: MKMapSnapshotter.Snapshot) {
+    private func drawPolylines(on snapshot: MKMapSnapshotter.Snapshot, color: UIColor, lineWidth: CGFloat ) {
         for segment in segments {
             guard segment.coordinates.count > 1 else { continue }
 
@@ -186,13 +187,8 @@ struct ExportableMap: UIViewRepresentable {
                 let point = snapshot.point(for: coord.toCL())
                 path.addLine(to: point)
             }
-
-            UIColor.white.setStroke()
-            path.lineWidth = 8
-            path.stroke()
-
-            UIColor.blue.setStroke()
-            path.lineWidth = 4
+            color.setStroke()
+            path.lineWidth = lineWidth
             path.stroke()
         }
     }

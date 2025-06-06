@@ -16,7 +16,19 @@ struct OkAlert {
     // typealias で AlertState を短縮
     typealias State = AlertState<Action>
 
-    static func make(_ text: String, title: String = "エラー") -> State {
+    static func error(_ text: String, title: String = "エラー") -> State {
+        State {
+            TextState(title)
+        } actions: {
+            ButtonState(action: .okTapped) {
+                TextState("確認")
+            }
+        } message: {
+            TextState(text)
+        }
+    }
+    
+    static func success(_ text: String, title: String = "完了") -> State {
         State {
             TextState(title)
         } actions: {

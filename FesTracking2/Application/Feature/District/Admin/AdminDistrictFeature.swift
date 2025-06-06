@@ -66,13 +66,16 @@ struct AdminDistrictFeature {
                 state.destination = .edit(AdminDistrictEditFeature.State(item: state.district.toModel()))
                 return .none
             case .onRouteAdd:
-                
-                return .none
+                state.isRouteLoading = true
+                return .run {[districtId = state.district.id] send in
+                    let result = await apiClient.getTool(districtId, accessToken.value)
+                    await send(.routeCreatePrepared(result))
+                }
             case .onRouteEdit(let route):
                 state.isRouteLoading = true
                 return .run { send in
                     let routeResult = await apiClient.getRoute(route.id, accessToken.value)
-                    let toolResult = await apiClient.getTool(route.id, accessToken.value)
+                    let toolResult = await apiClient.getTool(route.districtId, accessToken.value)
                     await send(.routeEditPrepared(routeResult, toolResult))
                 }
             case .onRouteExport(let route):
@@ -87,7 +90,7 @@ struct AdminDistrictFeature {
                 case .success(let value):
                     state.district = value
                 case .failure(let error):
-                    state.alert = OkAlert.make("情報の取得に失敗しました。 \(error.localizedDescription)")
+                    state.alert = OkAlert.error("情報の取得に失敗しました。 \(error.localizedDescription)")
                 }
                 return .none
             case .getRoutesReceived(let result):
@@ -96,7 +99,7 @@ struct AdminDistrictFeature {
                 case .success(let value):
                     state.routes = value.sorted()
                 case .failure(let error):
-                    state.alert = OkAlert.make("情報の取得に失敗しました。 \(error.localizedDescription)")
+                    state.alert = OkAlert.error("情報の取得に失敗しました。 \(error.localizedDescription)")
                 }
                 return .none
             case .routeEditPrepared(let routeResult, let toolResult):
@@ -110,7 +113,7 @@ struct AdminDistrictFeature {
                             base: tool.base)
                     )
                 } else {
-                    state.alert = OkAlert.make("情報の取得に失敗しました。")
+                    state.alert = OkAlert.error("情報の取得に失敗しました。")
                 }
                 return .none
             case .routeCreatePrepared(let result):
@@ -124,16 +127,17 @@ struct AdminDistrictFeature {
                             base: tool.base)
                     )
                 case .failure(let error):
-                    state.alert = OkAlert.make("情報の取得に失敗しました。 \(error.localizedDescription)")
+                    state.alert = OkAlert.error("情報の取得に失敗しました。 \(error.localizedDescription)")
                 }
                 return .none
+            
             case .exportPrepared(let result):
                 state.isExportLoading = false
                 switch result {
                 case .success(let value):
                     state.destination = .export(AdminRouteExportFeature.State(route: value))
                 case .failure(let error):
-                    state.alert = OkAlert.make("情報の取得に失敗しました。 \(error.localizedDescription)")
+                    state.alert = OkAlert.error("情報の取得に失敗しました。 \(error.localizedDescription)")
                 }
                 return .none
             case .onLocation:
@@ -181,7 +185,7 @@ struct AdminDistrictFeature {
             case .signOutReceived(let result):
                 state.isAWSLoading = false
                 if case let .failure(error) = result {
-                    state.alert = OkAlert.make("サインアウトに失敗しました。 \(error.localizedDescription)")
+                    state.alert = OkAlert.error("サインアウトに失敗しました。 \(error.localizedDescription)")
                 }
                 return .none
             case .homeTapped:
