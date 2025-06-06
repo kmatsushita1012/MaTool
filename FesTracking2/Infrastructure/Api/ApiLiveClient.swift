@@ -45,7 +45,7 @@ extension ApiClient: DependencyKey {
         getDistricts: { regionId in
             let response = await performGetRequest(
                 base: base,
-                path: "/regions/\(regionId)/districts",
+                path: "/regions/\(regionId)/districts"
             )
             return decodeResponse([PublicDistrict].self, from: response)
         },
@@ -111,7 +111,7 @@ extension ApiClient: DependencyKey {
             let response = await performGetRequest(
                 base: base,
                 path: "/routes/\(id)",
-                accessToken: accessToken,
+                accessToken: accessToken
             )
             return decodeResponse(PublicRoute.self, from: response)
         },
