@@ -17,7 +17,7 @@ struct AdminBaseView:View {
                 AdminDistrictMap(
                     coordinates: store.coordinate.map { [$0] },
                     isShownPolygon: false,
-                    onMapLongPress: { coordinate in store.send(.mapTapped(coordinate))},
+                    onMapLongPress: { coordinate in store.send(.mapTapped(coordinate))}
                 )
                 .edgesIgnoringSafeArea(.all)
             }

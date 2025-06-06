@@ -17,5 +17,9 @@ struct PointFeature {
     @CasePathable
     enum Action: Equatable {
     }
-    var body: some ReducerOf<PointFeature> {}
+    var body: some ReducerOf<PointFeature> {
+        Reduce { state, action in
+            return .none
+        }
+    }
 }
