@@ -93,18 +93,18 @@ extension AWSCognito.Client: DependencyKey {
         },
         getTokens: {
             await withCheckedContinuation { continuation in
-                    AWSMobileClient.default().getTokens { tokens, error in
-                        if let error = error {
-                            continuation.resume(returning: .failure(.unknown(error.localizedDescription)))
-                            return
-                        }
-                        guard let tokens = tokens else {
-                            continuation.resume(returning: .failure(.unknown("notSignedIn")))
-                            return
-                        }
-                        continuation.resume(returning: .success(tokens))
+                AWSMobileClient.default().getTokens { tokens, error in
+                    if let error = error {
+                        continuation.resume(returning: .failure(.unknown(error.localizedDescription)))
+                        return
                     }
+                    guard let tokens = tokens else {
+                        continuation.resume(returning: .failure(.unknown("notSignedIn")))
+                        return
+                    }
+                    continuation.resume(returning: .success(tokens))
                 }
+            }
         },
         signOut: {
             await withCheckedContinuation { continuation in

@@ -107,6 +107,8 @@
 		29AD86492DB2032300C3E8B2 /* LocationClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29AD86482DB2032000C3E8B2 /* LocationClient.swift */; };
 		29AD864B2DB2040E00C3E8B2 /* LocationClientLive.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29AD864A2DB2040A00C3E8B2 /* LocationClientLive.swift */; };
 		29AD86502DB210F500C3E8B2 /* AdminLocationMap.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29AD864F2DB210F000C3E8B2 /* AdminLocationMap.swift */; };
+		29B1599A2DF1888900F469A9 /* DistrictTool.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29B159992DF1888300F469A9 /* DistrictTool.swift */; };
+		29B2D0942DF0788E008592F8 /* EditManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29B2D0932DF07843008592F8 /* EditManager.swift */; };
 		29B5FD632D80877D008838BB /* DistrictSummary.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29B5FD622D808776008838BB /* DistrictSummary.swift */; };
 		29B638A72DB0E7E400DF8419 /* AdminSpanFeature.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29B638A62DB0E7DF00DF8419 /* AdminSpanFeature.swift */; };
 		29B638A92DB0E89600DF8419 /* AdminSpanView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29B638A82DB0E89000DF8419 /* AdminSpanView.swift */; };
@@ -268,6 +270,8 @@
 		29AD864A2DB2040A00C3E8B2 /* LocationClientLive.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocationClientLive.swift; sourceTree = "<group>"; };
 		29AD864F2DB210F000C3E8B2 /* AdminLocationMap.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdminLocationMap.swift; sourceTree = "<group>"; };
 		29AD86512DB212DB00C3E8B2 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		29B159992DF1888300F469A9 /* DistrictTool.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DistrictTool.swift; sourceTree = "<group>"; };
+		29B2D0932DF07843008592F8 /* EditManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditManager.swift; sourceTree = "<group>"; };
 		29B5FD622D808776008838BB /* DistrictSummary.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DistrictSummary.swift; sourceTree = "<group>"; };
 		29B638A62DB0E7DF00DF8419 /* AdminSpanFeature.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdminSpanFeature.swift; sourceTree = "<group>"; };
 		29B638A82DB0E89000DF8419 /* AdminSpanView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdminSpanView.swift; sourceTree = "<group>"; };
@@ -350,13 +354,6 @@
 			path = Pods;
 			sourceTree = "<group>";
 		};
-		292D0B902DB0DFBC00176E51 /* Public */ = {
-			isa = PBXGroup;
-			children = (
-			);
-			path = Public;
-			sourceTree = "<group>";
-		};
 		292D0B9E2DB0E0C200176E51 /* Public */ = {
 			isa = PBXGroup;
 			children = (
@@ -379,16 +376,16 @@
 		292D0BA62DB0E24800176E51 /* Admin */ = {
 			isa = PBXGroup;
 			children = (
+				292D108B2DCDDB9B0022D8A0 /* AdminRegionView.swift */,
 				292D0BA92DB0E30C00176E51 /* AdminRegionEditView.swift */,
 				29A385192DD1B778008A1D08 /* AdminRegionDistrictInfoView.swift */,
 				29A3851B2DD1B7D8008A1D08 /* AdminRegionCreateDistrictView.swift */,
-				292D108B2DCDDB9B0022D8A0 /* AdminRegionView.swift */,
 				29B638A82DB0E89000DF8419 /* AdminSpanView.swift */,
 			);
 			path = Admin;
 			sourceTree = "<group>";
 		};
-		29486DD12D8B094F00C50C0D /* Compound */ = {
+		29486DD12D8B094F00C50C0D /* View */ = {
 			isa = PBXGroup;
 			children = (
 				29A0B0A62DEF172900312106 /* Auth */,
@@ -398,7 +395,7 @@
 				298CAF722D9D6A7500C57C26 /* Route */,
 				298CAF702D9D6A6800C57C26 /* Region */,
 			);
-			path = Compound;
+			path = View;
 			sourceTree = "<group>";
 		};
 		29486DD22D8B095D00C50C0D /* Parts */ = {
@@ -514,7 +511,7 @@
 				29550E502DE4553300E9D9B6 /* Style */,
 				296795D22DA4F96C008D3CE1 /* Core */,
 				29486DD22D8B095D00C50C0D /* Parts */,
-				29486DD12D8B094F00C50C0D /* Compound */,
+				29486DD12D8B094F00C50C0D /* View */,
 			);
 			path = Presentation;
 			sourceTree = "<group>";
@@ -593,7 +590,6 @@
 			isa = PBXGroup;
 			children = (
 				292D0BA62DB0E24800176E51 /* Admin */,
-				292D0B902DB0DFBC00176E51 /* Public */,
 			);
 			path = Region;
 			sourceTree = "<group>";
@@ -628,6 +624,7 @@
 			isa = PBXGroup;
 			children = (
 				29A043582D7DCFCF00E77C91 /* District.swift */,
+				29B159992DF1888300F469A9 /* DistrictTool.swift */,
 				29B5FD622D808776008838BB /* DistrictSummary.swift */,
 				292D0B882DB0C94300176E51 /* Performance.swift */,
 				29E8C32F2DBB3F020086F6BB /* PublicDistrict.swift */,
@@ -810,8 +807,8 @@
 		29CB07762DAF7E5F0009A47D /* Admin */ = {
 			isa = PBXGroup;
 			children = (
-				2997C2EC2D79CA3E0032566B /* AdminDistrictEditFeature.swift */,
 				299A06A92DB13BA300E76898 /* AdminDistrictFeature.swift */,
+				2997C2EC2D79CA3E0032566B /* AdminDistrictEditFeature.swift */,
 				29CB07782DAF807F0009A47D /* AdminAreaFeature.swift */,
 				29CB077A2DAF865C0009A47D /* AdminBaseFeature.swift */,
 				292D0B8C2DB0CB1E00176E51 /* AdminPerformanceFeature.swift */,
@@ -863,6 +860,7 @@
 				29CF49072D7425F600036D28 /* HTTP.swift */,
 				2972017A2D9CFA41003424EF /* async.swift */,
 				29CF49182D7440EB00036D28 /* Extension.swift */,
+				29B2D0932DF07843008592F8 /* EditManager.swift */,
 			);
 			path = Utils;
 			sourceTree = "<group>";
@@ -1273,6 +1271,7 @@
 				29A043532D7DC83B00E77C91 /* SimpleTime.swift in Sources */,
 				29CF49082D7425F600036D28 /* HTTP.swift in Sources */,
 				292D0B8D2DB0CB2700176E51 /* AdminPerformanceFeature.swift in Sources */,
+				29B1599A2DF1888900F469A9 /* DistrictTool.swift in Sources */,
 				29DF09C62DCC9DFB00489DB8 /* InfoFeature.swift in Sources */,
 				299A06AA2DB13BAC00E76898 /* AdminDistrictFeature.swift in Sources */,
 				29DAB0702DA1623C005E94BA /* AWSCognitoClientLive.swift in Sources */,
@@ -1288,6 +1287,7 @@
 				299936AB2D7AD499009D651E /* UserDefaultsLiveClient.swift in Sources */,
 				2978C4A92DCB3B5200D3F7CE /* PointFeature.swift in Sources */,
 				2997C2F32D79E1130032566B /* AdminSegmentFeature.swift in Sources */,
+				29B2D0942DF0788E008592F8 /* EditManager.swift in Sources */,
 				29A043442D7DC25800E77C91 /* RouteSummary.swift in Sources */,
 				29460A0B2D8C28AC0097CAA1 /* LoginFeature.swift in Sources */,
 				291D91992DCDAD45007E5A80 /* ExportableMap.swift in Sources */,
@@ -1504,11 +1504,13 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_IDENTITY = "Apple Development";
-				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 3;
+				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Distribution";
+				CODE_SIGN_STYLE = Manual;
+				CURRENT_PROJECT_VERSION = 1;
 				DEPLOYMENT_POSTPROCESSING = NO;
 				DEVELOPMENT_ASSET_PATHS = "\"FesTracking2/Preview Content\"";
-				DEVELOPMENT_TEAM = SN9A65C32S;
+				DEVELOPMENT_TEAM = "";
+				"DEVELOPMENT_TEAM[sdk=iphoneos*]" = SN9A65C32S;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = FesTracking2/Info.plist;
@@ -1520,15 +1522,17 @@
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.0.5;
+				MARKETING_VERSION = 2.0.0;
 				OTHER_SWIFT_FLAGS = "$(inherited) -D COCOAPODS";
 				PRODUCT_BUNDLE_IDENTIFIER = StudioMK.FesTracking;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
+				"PROVISIONING_PROFILE_SPECIFIER[sdk=iphoneos*]" = FesTracking;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
@@ -1542,11 +1546,13 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_IDENTITY = "Apple Development";
-				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 3;
+				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Distribution";
+				CODE_SIGN_STYLE = Manual;
+				CURRENT_PROJECT_VERSION = 1;
 				DEPLOYMENT_POSTPROCESSING = NO;
 				DEVELOPMENT_ASSET_PATHS = "\"FesTracking2/Preview Content\"";
-				DEVELOPMENT_TEAM = SN9A65C32S;
+				DEVELOPMENT_TEAM = "";
+				"DEVELOPMENT_TEAM[sdk=iphoneos*]" = SN9A65C32S;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = FesTracking2/Info.plist;
@@ -1558,14 +1564,16 @@
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.0.5;
+				MARKETING_VERSION = 2.0.0;
 				PRODUCT_BUNDLE_IDENTIFIER = StudioMK.FesTracking;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
+				"PROVISIONING_PROFILE_SPECIFIER[sdk=iphoneos*]" = FesTracking;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";

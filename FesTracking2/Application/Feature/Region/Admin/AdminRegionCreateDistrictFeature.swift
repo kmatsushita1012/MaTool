@@ -48,7 +48,7 @@ struct AdminRegionCreateDistrictFeature {
             case .received(.success(_)):
                 return .none
             case .received(.failure(let error)):
-                state.alert = OkAlert.make("作成に失敗しました。\n\(error.localizedDescription)")
+                state.alert = OkAlert.error("作成に失敗しました。\n\(error.localizedDescription)")
                 return .none
             case .alert(.presented(.okTapped)):
                 state.alert = nil

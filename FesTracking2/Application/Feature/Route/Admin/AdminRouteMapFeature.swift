@@ -12,20 +12,35 @@ import MapKit
 @Reducer
 struct AdminRouteMapFeature{
     
+    @Reducer
+    enum Destination {
+        case point(AdminPointFeature)
+        case segment(AdminSegmentFeature)
+    }
+    
+    enum Operation: Equatable{
+        case add
+        case move(Int)
+        case insert(Int)
+    }
+    
     @ObservableState
     struct State: Equatable{
-        var route: Route
-        var stack: Stack<StackItem> = Stack()
-        var isUndoable: Bool { !route.points.isEmpty}
-        var isRedoable: Bool{ !stack.isEmpty }
+        var manager: EditManager<Route>
+        var operation: Operation = .add
         let performances: [Performance]
         var region: MKCoordinateRegion?
-        @Presents var pointAdmin: AdminPointFeature.State?
-        @Presents var segmentAdmin: AdminSegmentFeature.State?
+        @Presents var destination: Destination.State?
         @Presents var alert: OkAlert.State?
+        var canUndo: Bool { manager.canUndo }
+        var canRedo: Bool{ manager.canRedo }
+        var route: Route {
+            manager.value
+        }
         
-        init(route:Route, performances: [Performance], base: Coordinate?){
-            self.route = route
+        
+        init(route: Route, performances: [Performance], base: Coordinate?){
+            self.manager = EditManager(route)
             self.performances = performances
             if let base = base{
                 self.region = MKCoordinateRegion(
@@ -39,7 +54,6 @@ struct AdminRouteMapFeature{
     @CasePathable
     enum Action: Equatable, BindableAction{
         case binding(BindingAction<State>)
-        case editPoint(Point)
         case mapLongPressed(Coordinate)
         case annotationTapped(Point)
         case polylineTapped(Segment)
@@ -47,8 +61,7 @@ struct AdminRouteMapFeature{
         case redoTapped
         case doneTapped
         case cancelTapped
-        case pointAdmin(PresentationAction<AdminPointFeature.Action>)
-        case segmentAdmin(PresentationAction<AdminSegmentFeature.Action>)
+        case destination(PresentationAction<Destination.Action>)
         case alert(PresentationAction<OkAlert.Action>)
     }
     
@@ -58,75 +71,131 @@ struct AdminRouteMapFeature{
             switch action {
             case .binding:
                 return .none
-            case .editPoint(let point):
-                if let index = state.route.points.firstIndex(where: { $0.id == point.id }) {
-                    state.route.points[index] = point
-                }
-                return .none
             case .mapLongPressed(let coordinate):
-                let next = Point(id: UUID().uuidString, coordinate: coordinate, title: nil, description: nil, time: nil, isPassed: false)
-                if let last = state.route.points.last{
-                    let segment = Segment(id: UUID().uuidString, start: last.coordinate, end: next.coordinate)
-                    state.route.segments.append(segment)
+                switch state.operation {
+                case .add:
+                    let point = Point(id: UUID().uuidString, coordinate: coordinate, title: nil, description: nil, time: nil, isPassed: false)
+                    state.manager.apply{
+                        guard let last = $0.points.last else {
+                            $0.points.append(point)
+                            return
+                        }
+                        $0.points.append(point)
+                        let segment = Segment(id: UUID().uuidString, start: last.coordinate, end: coordinate)
+                        $0.segments.append(segment)
+                    }
+                    return .none
+                case .move(let index):
+                    if index < 0 || index >= state.route.points.count { return .none }
+                    state.manager.apply{
+                        $0.points[index].coordinate = coordinate
+                        if index > 0 {
+                            $0.segments[index-1] = Segment(id: UUID().uuidString, start: $0.points[index-1].coordinate, end: coordinate)
+                        }
+                        if index < $0.segments.count{
+                            $0.segments[index] = Segment(id: UUID().uuidString, start: coordinate, end: $0.points[index+1].coordinate)
+                        }
+                    }
+                    state.operation = .add
+                    return .none
+                case .insert(let index):
+                    if index < 0 || index >= state.route.points.count { return .none }
+                    let point = Point(id: UUID().uuidString, coordinate: coordinate, title: nil, description: nil, time: nil, isPassed: false)
+                    state.manager.apply{
+                        if index > 0 {
+                            let segment = Segment(id: UUID().uuidString, start: $0.points[index-1].coordinate, end: coordinate)
+                            $0.segments[index-1] = segment
+                        }
+                        let segment = Segment(id: UUID().uuidString, start: coordinate, end: $0.points[index].coordinate)
+                        if index < $0.segments.count {
+                            $0.segments.insert(segment, at: index)
+                        }else{
+                            $0.segments.append(segment)
+                        }
+                        $0.points.insert(point, at: index)
+                    }
+                    state.operation = .add
+                    return .none
                 }
-                state.route.points.append(next)
-                state.stack.clear()
-                return .none
             case .annotationTapped(let point):
-                state.pointAdmin = AdminPointFeature.State(item: point, performances: state.performances)
+                state.destination = .point(AdminPointFeature.State(item: point, performances: state.performances))
+                state.operation = .add
                 return .none
             case .polylineTapped(let segment):
-                state.segmentAdmin = AdminSegmentFeature.State(item: segment)
+                state.destination = .segment(AdminSegmentFeature.State(item: segment))
+                state.operation = .add
                 return .none
             case .undoTapped:
-                if state.route.points.isEmpty {
-                    return .none
-                }
-                //TODO
-                if let point = state.route.points.last,
-                   let segment = state.route.segments.last{
-                    state.route.points.removeLast()
-                    state.route.segments.removeLast()
-                    let pair = StackItem(id: UUID(), point: point, segment: segment)
-                    state.stack.push(pair)
-                }
+                state.manager.undo()
+                state.operation = .add
                 return .none
             case .redoTapped:
-                if(state.stack.isEmpty){
-                    return .none
-                }
-                if let pair = state.stack.pop(){
-                    state.route.points.append(pair.point)
-                    state.route.segments.append(pair.segment)
-                }
+                state.manager.redo()
+                state.operation = .add
                 return .none
             case .doneTapped:
                 return .none
             case .cancelTapped:
                 return .none
-            case .pointAdmin(.presented(.doneTapped)):
-                if let pointAdmin = state.pointAdmin,
-                   let index = state.route.points.firstIndex(where: { $0.id == pointAdmin.item.id }) {
-                    state.route.points[index] = pointAdmin.item
+            case .destination(.presented(let childAction)):
+                switch childAction {
+                case .point(.moveTapped):
+                    if case let .point(pointState) = state.destination,
+                       let index = state.route.points.firstIndex(where: { $0.id == pointState.item.id }){
+                        state.operation = .move(index)
+                    }
+                    state.destination = nil
+                    return .none
+                case .point(.insertTapped):
+                    if case let .point(pointState) = state.destination,
+                       let index = state.route.points.firstIndex(where: { $0.id == pointState.item.id }){
+                        state.operation = .insert(index)
+                    }
+                    state.destination = nil
+                    return .none
+                case .point(.deleteTapped):
+                    if case let .point(pointState) = state.destination,
+                       let index = state.route.points.firstIndex(where: { $0.id == pointState.item.id }){
+                        state.manager.apply {
+                            if index < $0.segments.count {
+                                $0.segments.remove(at: index)
+                            }
+                            if index > 0{
+                                $0.segments[index-1] = Segment(id: UUID().uuidString, start: $0.points[index-1].coordinate, end: $0.points[index+1].coordinate)
+                            }
+                            $0.points.remove(at: index)
+                        }
+                    }
+                    state.destination = nil
+                    return .none
+                case .point(.doneTapped):
+                    if case let .point(pointState) = state.destination,
+                       let index = state.route.points.firstIndex(where: { $0.id == pointState.item.id }){
+                        state.manager.apply {
+                            $0.points[index] = pointState.item
+                        }
+                    }
+                    state.destination = nil
+                    return .none
+                case .segment(.doneTapped):
+                    if case let .segment(segmentState) = state.destination{
+                        state.manager.apply {
+                            guard let index = $0.segments.firstIndex(where: { $0.id == segmentState.item.id }) else { return }
+                            $0.segments[index] = segmentState.item
+                        }
+                    }
+                    state.destination = nil
+                    return .none
+                case .point(.cancelTapped),
+                    .segment(.cancelTapped):
+                    state.destination = nil
+                    return .none
+                case .point,
+                    .segment:
+                    return .none
                 }
-                state.pointAdmin = nil
-                return .none
-            case .pointAdmin(.presented(.cancelTapped)):
-                state.pointAdmin = nil
-                return .none
-            case .pointAdmin:
-                return .none
-            case .segmentAdmin(.presented(.saveTapped)):
-                if let segmentAdmin = state.segmentAdmin,
-                   let index = state.route.segments.firstIndex(where: { $0.id == segmentAdmin.item.id }) {
-                    state.route.segments[index] = segmentAdmin.item
-                }
-                state.segmentAdmin = nil
-                return .none
-            case .segmentAdmin(.presented(.cancelTapped)):
-                state.pointAdmin = nil
-                return .none
-            case .segmentAdmin:
+            case .destination(.dismiss):
+                state.destination = nil
                 return .none
             case .alert(.presented(.okTapped)):
                 state.alert = nil
@@ -135,21 +204,10 @@ struct AdminRouteMapFeature{
                 return .none
             }
         }
-        .ifLet(\.$pointAdmin, action: \.pointAdmin){
-            AdminPointFeature()
-        }
-        .ifLet(\.$segmentAdmin, action: \.segmentAdmin){
-            AdminSegmentFeature()
-        }
-        .ifLet(\.alert, action: \.alert)
+        .ifLet(\.$destination, action: \.destination)
+        .ifLet(\.$alert, action: \.alert)
     }
 }
 
-struct StackItem: Codable, Equatable{
-    let id: UUID
-    let point: Point
-    let segment: Segment
-    static func == (lhs: StackItem, rhs: StackItem) -> Bool {
-        return false
-    }
-}
+extension AdminRouteMapFeature.Destination.State: Equatable {}
+extension AdminRouteMapFeature.Destination.Action: Equatable {}

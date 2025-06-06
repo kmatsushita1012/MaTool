@@ -20,7 +20,7 @@ struct AdminRegionView: View {
                         iconName: "info.circle" ,
                         onTap: { store.send(.onEdit) })
                 }
-                Section(header: Text("経路")){
+                Section(header: Text("参加町")){
                     List(store.districts) { district in
                         NavigationItem(
                             title: district.name,

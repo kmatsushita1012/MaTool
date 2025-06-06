@@ -42,7 +42,7 @@ struct AdminRegionDistrictInfoFeature {
                 state.export = .init(route: route)
                 return .none
             case .exportPrepared(.failure(let error)):
-                state.alert = OkAlert.make("情報の取得に失敗しました。\n\(error.localizedDescription)")
+                state.alert = OkAlert.error("情報の取得に失敗しました。\n\(error.localizedDescription)")
                 return .none
             case .dismissTapped:
                 return .none

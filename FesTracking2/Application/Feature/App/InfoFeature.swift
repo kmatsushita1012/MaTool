@@ -18,6 +18,8 @@ struct InfoFeature {
         case homeTapped
     }
     var body: some ReducerOf<InfoFeature> {
-        
+        Reduce { state,action in
+            return .none
+        }
     }
 }
