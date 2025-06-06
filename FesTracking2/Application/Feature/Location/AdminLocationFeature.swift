@@ -18,8 +18,8 @@ struct AdminLocationFeature{
         var isTracking: Bool
         var isLoading: Bool = false
         var history: [Status] = []
-        var selectedInterval: Int = 1
-        let intervals = [1,2,3,4,5,10,15,20,30,60]
+        var selectedInterval: Interval = Interval.sample
+        let intervals = Interval.options
     }
     
     @CasePathable
@@ -69,5 +69,21 @@ struct AdminLocationFeature{
             }
         }
     }
+}
+
+
+struct Interval: Equatable, Hashable {
+    let label: String
+    let value: Int
     
+    static let sample = Interval(label: "1分", value: 60)
+    static let options = [
+        Interval(label: "1秒（確認用）", value: 1),
+        Interval(label: "1分", value: 60),
+        Interval(label: "2分", value: 120),
+        Interval(label: "3分", value: 180),
+        Interval(label: "5分", value: 300),
+        Interval(label: "10分", value: 600),
+        Interval(label: "15分", value: 900)
+    ]
 }

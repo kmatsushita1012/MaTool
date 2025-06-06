@@ -27,27 +27,41 @@ struct AdminRouteMapView: View{
                 )
                 .edgesIgnoringSafeArea(.bottom)
                 VStack {
-                    HStack {
-                        Spacer()
-                        RouteButton(
-                            systemImageName: "arrow.uturn.left",
-                            action:{store.send(.undoTapped)}
-                        )
-                        .frame(width: 64, height: 64)
-                        .padding(4)
-                        RouteButton(
-                            systemImageName: "arrow.uturn.right",
-                            action:{store.send(.redoTapped)}
-                        )
-                        .frame(width: 64, height: 64)
-                        .padding(4)
+                    HStack(spacing: 16) {
+                        Text(store.operation.text)
+                            .font(.title3)
+                            .padding(.horizontal, 12)
+                            .padding(.vertical, 6)
+                            .background(Color.black.opacity(0.5))
+                            .foregroundColor(.white)
+                            .cornerRadius(10)
+                        Button(action: {
+                            store.send(.undoTapped)
+                        }) {
+                            Image(systemName: "arrow.uturn.backward")
+                                .font(.title2)
+                                .foregroundColor(.white)
+                                .padding(8)
+                                .background(Color.black.opacity(0.5))
+                                .clipShape(Circle())
+                        }
+                        .disabled(!store.canUndo)
+                        Button(action: {
+                            store.send(.redoTapped)
+                        }) {
+                            Image(systemName: "arrow.uturn.forward")
+                                .font(.title2)
+                                .foregroundColor(.white)
+                                .padding(8)
+                                .background(Color.black.opacity(0.5))
+                                .clipShape(Circle())
+                        }
+                        .disabled(!store.canRedo)
                     }
+                    .padding()
+                    .frame(maxWidth: .infinity, alignment: .topTrailing)
                     Spacer()
                 }
-            }.sheet(store: store.scope(state: \.$pointAdmin, action: \.pointAdmin)) { store in
-                AdminPointView(store: store)
-                    .presentationDetents([.fraction(0.3), .large], selection: $selectedDetent)
-                    .interactiveDismissDisabled(true)
             }
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
@@ -71,6 +85,28 @@ struct AdminRouteMapView: View{
                 }
             }
             .navigationBarTitleDisplayMode(.inline)
+            .sheet(item: $store.scope(state: \.destination?.point, action: \.destination.point)) { store in
+                AdminPointView(store: store)
+                    .presentationDetents([.fraction(0.3), .large], selection: $selectedDetent)
+                    .interactiveDismissDisabled(true)
+            }
+//            .fullScreenCover(item: $store.scope(state: \.destination?.segment, action: \.destination.segment)) { store in
+//                AdminSegmentView(store: store)
+//                    .presentationDetents([.fraction(0.3), .large], selection: $selectedDetent)
+//                    .interactiveDismissDisabled(true)
+//            }
+        }
+    }
+}
+extension AdminRouteMapFeature.Operation {
+    var text: String {
+        switch self {
+        case .add:
+            return "長押しで地点を追加"
+        case .insert:
+            return "長押しで地点を挿入"
+        case .move:
+            return "長押しで地点を移動"
         }
     }
 }

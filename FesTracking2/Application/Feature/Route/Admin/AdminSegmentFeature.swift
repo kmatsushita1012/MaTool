@@ -23,7 +23,7 @@ struct AdminSegmentFeature{
     enum Action: Equatable{
         case switchCurve(Bool)
         case received(Result<[Coordinate],ApiError>)
-        case saveTapped
+        case doneTapped
         case cancelTapped
     }
     
@@ -52,7 +52,7 @@ struct AdminSegmentFeature{
                 state.isLoading = false
                 state.errorMessage = error.localizedDescription
                 return .none
-            case .saveTapped:
+            case .doneTapped:
                 return .none
             case .cancelTapped:
                 return .none
