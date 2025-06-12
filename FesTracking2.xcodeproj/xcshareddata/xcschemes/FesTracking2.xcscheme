@@ -52,6 +52,17 @@
                ReferencedContainer = "container:FesTracking2.xcodeproj">
             </BuildableReference>
          </TestableReference>
+         <TestableReference
+            skipped = "NO"
+            parallelizable = "YES">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "29C550702DF7D97C00547F51"
+               BuildableName = "MaToolPresentationAdminTests.xctest"
+               BlueprintName = "MaToolPresentationAdminTests"
+               ReferencedContainer = "container:FesTracking2.xcodeproj">
+            </BuildableReference>
+         </TestableReference>
       </Testables>
    </TestAction>
    <LaunchAction

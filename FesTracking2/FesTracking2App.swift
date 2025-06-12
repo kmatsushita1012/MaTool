@@ -22,9 +22,9 @@ struct FesTracking2App: App {
     var body: some Scene {
         WindowGroup {
             if hasLaunchedBefore {
-                AppView(store: Store(initialState:AppFeature.State()){ AppFeature()} )
+                AppView(store: Store(initialState:Home.State()){ Home()} )
             } else {
-                OnboardingView(store: Store(initialState: OnboardingFeature.State()){ OnboardingFeature() })
+                OnboardingStoreView(store: Store(initialState: OnboardingFeature.State()){ OnboardingFeature() })
             }
             
         }
@@ -32,7 +32,7 @@ struct FesTracking2App: App {
 }
 
 //定数
-let spanDelta: Double = 0.02
+let spanDelta: Double = 0.005
 let favoriteRegionPath: String = "region"
 let favoriteDistrictPath: String = "district"
 let hasLaunchedBeforePath = "hasLaunchedBefore"
