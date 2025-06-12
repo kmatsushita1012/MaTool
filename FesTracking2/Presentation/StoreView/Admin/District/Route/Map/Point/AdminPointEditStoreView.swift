@@ -1,0 +1,151 @@
+//
+//  AdminPointView.swift
+//  FesTracking2
+//
+//  Created by 松下和也 on 2025/04/08.
+//
+
+import SwiftUI
+import ComposableArchitecture
+
+struct AdminPointView: View {
+    @Bindable var store: StoreOf<AdminPointEdit>
+    
+    var body: some View {
+        NavigationView {
+            Form {
+                Section(header: Text("イベント")) {
+                    HStack{
+                        TextField("イベントを入力", text: $store.item.title.nonOptional)
+                            .popover(isPresented: $store.showPopover, content: {
+                                Popover(items: store.events, textClosure: { $0.title }, onTapGesture: { option in
+                                    store.send(.titleOptionSelected(option))
+                                    
+                                }).presentationCompactAdaptation(PresentationAdaptation.popover)
+                            })
+                        Button(action: {
+                            store.send(.titleFieldFocused)
+                            }) {
+                                Image(systemName: "ellipsis")
+                                    .font(.title2)
+                            }
+                    }
+                }
+                Section(header: Text("詳細")) {
+                    TextField("説明を入力", text: $store.item.description.nonOptional)
+                }
+                
+                Section(header: Text("時刻") ) {
+                    Toggle("時刻を設定", isOn: Binding(
+                        get: { store.item.time != nil },
+                        set: { hasTime in
+                            store.send(.binding(.set(
+                                \.item.time,
+                                 hasTime ? SimpleTime.fromDate(Date()) : nil
+                            )))
+                        }
+                    ))
+                    if store.item.time != nil {
+                        DatePicker(
+                            "時刻を選択",
+                            selection: $store.item.time.fullDate,
+                            displayedComponents: [.hourAndMinute]
+                        )
+                        .datePickerStyle(.compact)
+                    }
+                }
+                Section {
+                    Toggle("経路図（PDF）への出力", isOn: $store.item.shouldExport)
+                }
+                
+                Section {
+                    Button(action: {
+                        store.send(.moveTapped)
+                    }) {
+                        Label("この地点を移動", systemImage: "line.diagonal.arrow")
+                            .font(.body)
+                    }
+                    Button(action: {
+                        store.send(.insertTapped)
+                    }) {
+                        Label("この地点の前に新しい地点を挿入", systemImage: "plus.circle")
+                            .font(.body)
+                    }
+                }
+                
+                Section {
+                    Button(action: {
+                        store.send(.deleteTapped)
+                    }) {
+                        Label("この地点を削除", systemImage: "trash")
+                            .font(.body)
+                            .foregroundStyle(.red)
+                    }
+                }
+            }
+            .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
+                    Button{
+                        store.send(.cancelTapped)
+                    } label: {
+                        Text("キャンセル")
+                    }
+                    .padding(.horizontal, 8)
+                }
+                ToolbarItem(placement: .principal) {
+                    Text("地点編集")
+                        .bold()
+                }
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button{
+                        store.send(.doneTapped)
+                    } label: {
+                        Text("完了")
+                            .bold()
+                    }
+                    .padding(.horizontal, 8)
+                }
+            }
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbarBackground(.visible, for: .navigationBar)
+        }
+    }
+}
+
+
+struct Popover<T: Hashable> : View{
+    let items: [T]
+    let textClosure: (T)->String
+    let onTapGesture: (T)->Void
+    
+    var body: some View {
+        ScrollView {
+            VStack(spacing: 0) {
+                ForEach(items.indices, id: \.self) { index in
+                    let item = items[index]
+                    
+                    VStack(spacing: 0) {
+                        Text(textClosure(item))
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .padding(16)
+                            .contentShape(Rectangle())
+                            .onTapGesture {
+                                onTapGesture(item)
+                            }
+                        if index != items.count - 1 {
+                            Divider()
+                        }
+                    }
+                }
+            }
+            .background(Color.white)
+            .clipShape(RoundedRectangle(cornerRadius: 8))
+            .overlay(
+                RoundedRectangle(cornerRadius: 8)
+                    .stroke(Color.gray.opacity(0.2))
+            )
+        }
+        .frame(maxHeight: 300)
+    }
+}
+
