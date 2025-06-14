@@ -61,7 +61,7 @@ struct MenuSelector<T: Hashable>: View {
                         .foregroundColor(.gray)
                 }
                 .padding(.horizontal)
-                .padding(.vertical, 8)
+                .padding(.vertical, 16)
                 .background(
                     RoundedRectangle(cornerRadius: 8)
                         .stroke(errorMessage != nil ? Color.red : Color.blue, lineWidth: 1.5)
