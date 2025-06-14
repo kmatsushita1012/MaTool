@@ -36,7 +36,6 @@ struct AdminDistrictView: View{
                             onEdit: { store.send(.onRouteEdit(route)) },
                             onExport:{ store.send(.onRouteExport(route)) }
                         )
-                        .onTapGesture(perform: { store.send(.onRouteEdit(route)) })
                     }
                     Button(action: {
                         store.send(.onRouteAdd)
@@ -45,13 +44,13 @@ struct AdminDistrictView: View{
                             .frame(maxWidth: .infinity, alignment: .center)
                     }
                 }
-                
                 Section {
-                    Text("ログアウト")
-                        .foregroundColor(.red)
-                        .onTapGesture {
-                            store.send(.onSignOut)
-                        }
+                    Button(action: {
+                        store.send(.onSignOut)
+                    }) {
+                        Text("ログアウト")
+                            .foregroundColor(.red)
+                    }
                 }
             }
             .navigationTitle(
@@ -81,7 +80,7 @@ struct AdminDistrictView: View{
                 AdminRouteExportView(store: store)
             }
             .alert($store.scope(state: \.alert, action: \.alert))
-            .loadingOverlay(isLoading: store.isLoading)
+            .loadingOverlay(store.isLoading)
         }
     }
 }

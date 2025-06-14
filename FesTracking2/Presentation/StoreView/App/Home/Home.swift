@@ -15,6 +15,7 @@ struct Home {
     @Dependency(\.apiClient) var apiClient
     @Dependency(\.awsCognitoClient) var awsCognitoClient
     @Dependency(\.accessToken) var accessToken
+    @Dependency(\.userDefaultsClient) var userDefaultsClient
     
     @Reducer
     enum Destination {
@@ -30,10 +31,9 @@ struct Home {
     struct State: Equatable {
         var userRole: UserRole = .guest
         var isAWSLoading: Bool = true
-        var isAdminDistrictLoading: Bool = false
-        var isAdminRegionLoading: Bool = false
+        var isDestinationLoading: Bool = false
         var isLoading: Bool {
-            isAWSLoading || isAdminDistrictLoading || isAdminRegionLoading
+            isAWSLoading || isDestinationLoading
         }
         @Presents var destination: Destination.State?
         @Presents var alert: OkAlert.State?
@@ -50,7 +50,13 @@ struct Home {
         case awsInitializeReceived(Result<String, AWSCognito.Error>)
         case awsUserRoleReceived(Result<UserRole, AWSCognito.Error>, shouldNavigate: Bool)
         case adminDistrictPrepared(Result<PublicDistrict,ApiError>, Result<[RouteSummary],ApiError>)
-        case adminRegionPrepared(Result<Region,ApiError>,  Result<[PublicDistrict],ApiError>)
+        case adminRegionPrepared(Result<Region,ApiError>, Result<[PublicDistrict],ApiError>)
+        case settingsPrepared(
+            Result<[Region],ApiError>,
+            Result<Region?,ApiError>,
+            Result<[PublicDistrict],ApiError>,
+            Result<PublicDistrict?,ApiError>
+        )
         case destination(PresentationAction<Destination.Action>)
         case alert(PresentationAction<OkAlert.Action>)
     }
@@ -71,7 +77,7 @@ struct Home {
                 }else{
                     state.alert = OkAlert.error("情報の取得に失敗しました")
                 }
-                state.isAdminDistrictLoading = false
+                state.isDestinationLoading = false
                 return .none
             case .adminRegionPrepared(let regionResult, let districtsResult):
                 
@@ -81,7 +87,7 @@ struct Home {
                 }else{
                     state.alert = OkAlert.error("情報の取得に失敗しました")
                 }
-                state.isAdminRegionLoading = false
+                state.isDestinationLoading = false
                 return .none
             case .routeTapped:
                 state.destination = .route(PublicMap.State())
@@ -92,20 +98,21 @@ struct Home {
             case .adminTapped:
                 print(state.userRole)
                 if case let .district(id) = state.userRole {
-                    state.isAdminDistrictLoading = true
+                    state.isDestinationLoading = true
                     return adminDistrictEffect(id, accessToken: accessToken.value)
                 } else if case let .region(id) = state.userRole {
-                    state.isAdminRegionLoading = true
+                    state.isDestinationLoading = true
                     return adminRegionEffect(id)
                 } else {
                     state.destination = .login(Login.State())
                     return .none
                 }
             case .settingsTapped:
-                state.destination = .settings(Settings.State())
-                return .none
+                state.isDestinationLoading = true
+                let regionId = userDefaultsClient.stringForKey(defaultRegionKey)
+                let districtId = userDefaultsClient.stringForKey(defaultDistrictKey)
+                return settingsEffect(regionId: regionId, districtId: districtId)
             case .awsInitializeReceived(.success(_)):
-                state.isAWSLoading = false
                 return awsUserRoleAndTokenEffect(shouldNavigate: false)
             case .awsInitializeReceived(.failure(_)):
                 state.userRole = .guest
@@ -128,18 +135,34 @@ struct Home {
                 state.userRole = .guest
                 state.isAWSLoading = false
                 return .none
+            case let .settingsPrepared(regionsResult, regionResult, districtsResult, districtResult):
+                state.isDestinationLoading = false
+                switch (regionsResult, regionResult, districtsResult, districtResult) {
+                case let (.success(regions), .success(region), .success(districts), .success(district)):
+                    state.destination = .settings(
+                        Settings.State(
+                            regions: regions,
+                            selectedRegion: region,
+                            districts: districts,
+                            selectedDistrict: district
+                        )
+                    )
+                    return .none
+                case let (.failure(error), _, _, _),
+                    let (_, .failure(error), _, _),
+                    let (_, _, .failure(error), _),
+                    let (_, _, _, .failure(error)):
+                        state.alert = OkAlert.error("情報の取得に失敗しました  \(error.localizedDescription)")
+                        return .none
+                }
             case .destination(.presented(let childAction)):
                 switch childAction {
                 case .login(.received(.success)),
                     .login(.confirmSignIn(.presented(.received(.success)))):
                     return awsUserRoleAndTokenEffect(shouldNavigate: true)
                 case .login(.received(.failure(_))):
-                    state.alert = OkAlert.error("ログインに失敗しました")
                     state.userRole = .guest
-                    return .run { send in
-                        let result = await awsCognitoClient.signOut()
-                        print(result)
-                    }
+                    return .none
                 case .adminDistrict(.signOutReceived(.success(_))),
                     .adminRegion(.signOutReceived(.success(_))):
                     state.destination = nil
@@ -151,7 +174,7 @@ struct Home {
                     .adminDistrict(.homeTapped),
                     .adminRegion(.homeTapped),
                     .login(.homeTapped),
-                    .settings(.homeTapped):
+                    .settings(.dismissTapped):
                     state.destination = nil
                     return .none
                 default:
@@ -184,7 +207,8 @@ struct Home {
         .run { send in
             async let regionResult = apiClient.getRegion(id)
             async let districtsResult =  apiClient.getDistricts(id)
-            let _ = await (regionResult, districtsResult)
+            let a = await (regionResult, districtsResult)
+            print(a)
             await send(.adminRegionPrepared(regionResult, districtsResult))
         }
     }
@@ -207,9 +231,45 @@ struct Home {
             },
             .run { send in
                 let result = await awsCognitoClient.getUserRole()
+                if case .success(let userRole) = result {
+                    switch userRole{
+                    case .region(_):
+                        break
+                    case .district(let id):
+                        userDefaultsClient.setString(id, defaultDistrictKey)
+                    case .guest:
+                        break
+                    }
+                }
                 await send(.awsUserRoleReceived(result, shouldNavigate: shouldNavigate))
             }
         )
+    }
+    
+    func settingsEffect(regionId: String?, districtId: String?) -> Effect<Action> {
+        .run { send in
+            async let regionsResult = apiClient.getRegions()
+
+            async let regionResult: Result<Region?, ApiError> = {
+                guard let id = regionId else { return .success(nil) }
+                return await apiClient.getRegion(id).map { Optional($0) }
+            }()
+            async let districtsResult: Result<[PublicDistrict], ApiError> = {
+                guard let id = regionId else { return .success([]) }
+                return await apiClient.getDistricts(id)
+            }()
+            async let districtResult: Result<PublicDistrict?, ApiError> = {
+                guard let id = districtId else { return .success(nil) }
+                return await apiClient.getDistrict(id).map { Optional($0) }
+            }()
+
+            let regions = await regionsResult
+            let region = await regionResult
+            let districts = await districtsResult
+            let district = await districtResult
+
+            await send(.settingsPrepared(regions, region, districts, district))
+        }
     }
     
 }

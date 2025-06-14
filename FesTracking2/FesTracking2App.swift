@@ -33,6 +33,8 @@ struct FesTracking2App: App {
 
 //定数
 let spanDelta: Double = 0.005
-let favoriteRegionPath: String = "region"
-let favoriteDistrictPath: String = "district"
+let defaultRegionKey: String = "region"
+let defaultDistrictKey: String = "district"
 let hasLaunchedBeforePath = "hasLaunchedBefore"
+let userGuideURLString = ""
+let contactURLString = ""

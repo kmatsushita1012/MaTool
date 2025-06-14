@@ -49,6 +49,7 @@ struct ConfirmSignInStoreView: View {
                 }
             }
             .alert($store.scope(state: \.alert, action: \.alert))
+            .loadingOverlay(store.isLoading)
         }
     }
 }
