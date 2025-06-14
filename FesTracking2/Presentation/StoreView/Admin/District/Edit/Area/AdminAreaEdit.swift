@@ -24,8 +24,9 @@ struct AdminAreaEdit{
     enum Action: Equatable, BindableAction{
         case binding(BindingAction<State>)
         case mapTapped(Coordinate)
-        case undoTapped
+        case dismissTapped
         case doneTapped
+        case undoTapped
     }
     
     var body: some ReducerOf<AdminAreaEdit>{
@@ -37,12 +38,14 @@ struct AdminAreaEdit{
             case .mapTapped(let coordinate):
                 state.coordinates.append(coordinate)
                 return .none
+            case .doneTapped:
+                return .none
+            case .dismissTapped:
+                return .none
             case .undoTapped:
                 if(!state.coordinates.isEmpty){
                     state.coordinates.removeLast()
                 }
-                return .none
-            case .doneTapped:
                 return .none
             }
         }

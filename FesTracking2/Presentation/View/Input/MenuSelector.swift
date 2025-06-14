@@ -12,12 +12,25 @@ struct MenuSelector<T: Hashable>: View {
     let items: [T]?
     @Binding var selection: T?
     let textForItem: (T?) -> String
+    let isNullable: Bool
     var errorMessage: String?
 
-    var hasError: Bool {
-        errorMessage != nil
+    init(
+        title: String,
+        items: [T]? = nil,
+        selection: Binding<T?>,
+        textForItem: @escaping (T?) -> String,
+        isNullable: Bool = true,
+        errorMessage: String? = nil
+    ) {
+        self.title = title
+        self.items = items
+        self._selection = selection
+        self.textForItem = textForItem
+        self.isNullable = isNullable
+        self.errorMessage = errorMessage
     }
-
+    
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
             // ヘッダー
@@ -27,14 +40,16 @@ struct MenuSelector<T: Hashable>: View {
 
             // Menu 選択部分
             Menu {
-                Button("未設定") {
-                    selection = nil
-                }
                 if let items = items {
                     ForEach(items, id: \.self) { item in
                         Button(textForItem(item)) {
                             selection = item
                         }
+                    }
+                }
+                if isNullable {
+                    Button(textForItem(nil)) {
+                        selection = nil
                     }
                 }
             } label: {
@@ -49,7 +64,7 @@ struct MenuSelector<T: Hashable>: View {
                 .padding(.vertical, 8)
                 .background(
                     RoundedRectangle(cornerRadius: 8)
-                        .stroke(hasError ? Color.red : Color.blue, lineWidth: 1.5)
+                        .stroke(errorMessage != nil ? Color.red : Color.blue, lineWidth: 1.5)
                 )
             }
 

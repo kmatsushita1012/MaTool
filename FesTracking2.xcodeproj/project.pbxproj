@@ -52,7 +52,7 @@
 		298BD7BB2D71E46900CB63F1 /* FesTracking2UITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 298BD7BA2D71E46900CB63F1 /* FesTracking2UITests.swift */; };
 		298BD7BD2D71E46900CB63F1 /* FesTracking2UITestsLaunchTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 298BD7BC2D71E46900CB63F1 /* FesTracking2UITestsLaunchTests.swift */; };
 		2993C8202DD0704F000D0E1A /* Bindings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2993C81F2DD0704B000D0E1A /* Bindings.swift */; };
-		299770202DA527FB00EEB5F4 /* RouteButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2997701F2DA527F800EEB5F4 /* RouteButton.swift */; };
+		299770202DA527FB00EEB5F4 /* DismissButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2997701F2DA527F800EEB5F4 /* DismissButton.swift */; };
 		2997C2ED2D79CA4B0032566B /* AdminDistrictEdit.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2997C2EC2D79CA3E0032566B /* AdminDistrictEdit.swift */; };
 		2997C2F12D79D8870032566B /* AdminPointEdit.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2997C2F02D79D8820032566B /* AdminPointEdit.swift */; };
 		2997C2F32D79E1130032566B /* AdminSegmentFeature.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2997C2F22D79E10B0032566B /* AdminSegmentFeature.swift */; };
@@ -138,6 +138,7 @@
 		29F403062DAA95DF003527D1 /* Route.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29F403052DAA95DA003527D1 /* Route.swift */; };
 		29F8A2BE2D9EF079001633B3 /* ComposableArchitecture in Frameworks */ = {isa = PBXBuildFile; productRef = 29F8A2BD2D9EF079001633B3 /* ComposableArchitecture */; };
 		29F8A2C12D9EF13E001633B3 /* FirebaseAppDistribution-Beta in Frameworks */ = {isa = PBXBuildFile; productRef = 29F8A2C02D9EF13E001633B3 /* FirebaseAppDistribution-Beta */; };
+		29F8A7932DFD645000331A7F /* TitleView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29F8A7922DFD643C00331A7F /* TitleView.swift */; };
 		59414DD9ADD88C0A71E94FE3 /* Pods_FesTracking2_FesTracking2UITests.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A8F61DA4134BD89A5D2377A2 /* Pods_FesTracking2_FesTracking2UITests.framework */; };
 		D78195157F20422B3B5A8EA3 /* Pods_FesTracking2.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = EF51269A5D5AB06C2B7C01CD /* Pods_FesTracking2.framework */; };
 /* End PBXBuildFile section */
@@ -245,7 +246,7 @@
 		298BD7BA2D71E46900CB63F1 /* FesTracking2UITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FesTracking2UITests.swift; sourceTree = "<group>"; };
 		298BD7BC2D71E46900CB63F1 /* FesTracking2UITestsLaunchTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FesTracking2UITestsLaunchTests.swift; sourceTree = "<group>"; };
 		2993C81F2DD0704B000D0E1A /* Bindings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Bindings.swift; sourceTree = "<group>"; };
-		2997701F2DA527F800EEB5F4 /* RouteButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RouteButton.swift; sourceTree = "<group>"; };
+		2997701F2DA527F800EEB5F4 /* DismissButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DismissButton.swift; sourceTree = "<group>"; };
 		2997C2EC2D79CA3E0032566B /* AdminDistrictEdit.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdminDistrictEdit.swift; sourceTree = "<group>"; };
 		2997C2F02D79D8820032566B /* AdminPointEdit.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdminPointEdit.swift; sourceTree = "<group>"; };
 		2997C2F22D79E10B0032566B /* AdminSegmentFeature.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdminSegmentFeature.swift; sourceTree = "<group>"; };
@@ -329,6 +330,7 @@
 		29E8C32F2DBB3F020086F6BB /* PublicDistrict.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PublicDistrict.swift; sourceTree = "<group>"; };
 		29E8C3312DBB40FC0086F6BB /* PublicLocation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PublicLocation.swift; sourceTree = "<group>"; };
 		29F403052DAA95DA003527D1 /* Route.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Route.swift; sourceTree = "<group>"; };
+		29F8A7922DFD643C00331A7F /* TitleView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TitleView.swift; sourceTree = "<group>"; };
 		2ED28BC68D7C76B5AD0147C2 /* Pods-FesTracking2.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-FesTracking2.debug.xcconfig"; path = "Target Support Files/Pods-FesTracking2/Pods-FesTracking2.debug.xcconfig"; sourceTree = "<group>"; };
 		853A27735A6145CF5C6B1C0B /* Pods-FesTracking2-FesTracking2UITests.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-FesTracking2-FesTracking2UITests.debug.xcconfig"; path = "Target Support Files/Pods-FesTracking2-FesTracking2UITests/Pods-FesTracking2-FesTracking2UITests.debug.xcconfig"; sourceTree = "<group>"; };
 		A8F61DA4134BD89A5D2377A2 /* Pods_FesTracking2_FesTracking2UITests.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_FesTracking2_FesTracking2UITests.framework; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -433,7 +435,7 @@
 				29AD864E2DB20EC200C3E8B2 /* Others */,
 				29A688BB2DCC4B2E004415BF /* Item */,
 				29AD864D2DB20EB500C3E8B2 /* Map */,
-				2997701E2DA527ED00EEB5F4 /* Button */,
+				2997701E2DA527ED00EEB5F4 /* Input */,
 			);
 			path = View;
 			sourceTree = "<group>";
@@ -574,12 +576,14 @@
 			path = FesTracking2UITests;
 			sourceTree = "<group>";
 		};
-		2997701E2DA527ED00EEB5F4 /* Button */ = {
+		2997701E2DA527ED00EEB5F4 /* Input */ = {
 			isa = PBXGroup;
 			children = (
-				2997701F2DA527F800EEB5F4 /* RouteButton.swift */,
+				29C5505F2DF7D5D400547F51 /* Toggle */,
+				29550E532DE45CD100E9D9B6 /* MenuSelector.swift */,
+				2997701F2DA527F800EEB5F4 /* DismissButton.swift */,
 			);
-			path = Button;
+			path = Input;
 			sourceTree = "<group>";
 		};
 		29998EA22DA4128200CBC1DC /* District */ = {
@@ -683,9 +687,8 @@
 		29AD864E2DB20EC200C3E8B2 /* Others */ = {
 			isa = PBXGroup;
 			children = (
-				29C5505F2DF7D5D400547F51 /* Toggle */,
-				29550E532DE45CD100E9D9B6 /* MenuSelector.swift */,
 				293F2C2C2DD77E9F002C056E /* LoadingOverlay.swift */,
+				29F8A7922DFD643C00331A7F /* TitleView.swift */,
 				295EA2D32DEE9E7E006CDE08 /* CardView.swift */,
 			);
 			path = Others;
@@ -1482,7 +1485,7 @@
 				29BC19442DB6236700C6F918 /* HomeStoreView.swift in Sources */,
 				293F2C2F2DD78559002C056E /* OkAlert.swift in Sources */,
 				29A138CC2DB3CEFD00C95C31 /* NavigationItemView.swift in Sources */,
-				299770202DA527FB00EEB5F4 /* RouteButton.swift in Sources */,
+				299770202DA527FB00EEB5F4 /* DismissButton.swift in Sources */,
 				292D108A2DCDD6CA0022D8A0 /* UserRole.swift in Sources */,
 				29A0434A2D7DC43100E77C91 /* Segment.swift in Sources */,
 				2948FCF02DC5C38100C73E99 /* PickerFeature.swift in Sources */,
@@ -1510,6 +1513,7 @@
 				2972017B2D9CFA50003424EF /* async.swift in Sources */,
 				29A0434F2D7DC61500E77C91 /* SimpleDate.swift in Sources */,
 				292D0BA12DB0E0DC00176E51 /* AdminRegionEdit.swift in Sources */,
+				29F8A7932DFD645000331A7F /* TitleView.swift in Sources */,
 				29CF49132D7426A400036D28 /* UserDefaultsClient.swift in Sources */,
 				292D0BAA2DB0E31300176E51 /* AdminRegionEditStoreView.swift in Sources */,
 				29DAB0722DA163E4005E94BA /* AWSCognitoClientMock.swift in Sources */,
@@ -1806,7 +1810,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 2.0.0;
+				MARKETING_VERSION = 2.0.1;
 				OTHER_SWIFT_FLAGS = "$(inherited) -D COCOAPODS";
 				PRODUCT_BUNDLE_IDENTIFIER = StudioMK.FesTracking;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -1848,7 +1852,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 2.0.0;
+				MARKETING_VERSION = 2.0.1;
 				PRODUCT_BUNDLE_IDENTIFIER = StudioMK.FesTracking;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";

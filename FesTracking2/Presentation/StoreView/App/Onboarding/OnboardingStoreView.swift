@@ -22,7 +22,8 @@ struct OnboardingStoreView: View {
                     selection: $store.selectedRegion,
                     textForItem: { region in
                         region?.name ?? "未設定"
-                    }
+                    },
+                    isNullable: false
                 )
                 .frame(height: 128)
                 Spacer()
@@ -55,7 +56,7 @@ struct OnboardingStoreView: View {
                 Button(action: {
                     store.send(.adminTapped)
                 }) {
-                    Text("管理者の方")
+                    Text("参加町代表者、管理者の方")
                     
                 }
                 .buttonStyle(SecondaryButtonStyle())
@@ -65,7 +66,7 @@ struct OnboardingStoreView: View {
             .onAppear(){
                 store.send(.onAppear)
             }
-            .loadingOverlay(isLoading: store.isRegionsLoading)
+            .loadingOverlay(store.isRegionsLoading)
         }
     }
 }

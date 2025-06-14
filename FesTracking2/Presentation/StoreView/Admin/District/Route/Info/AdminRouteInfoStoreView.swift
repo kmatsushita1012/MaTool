@@ -89,7 +89,7 @@ struct AdminRouteInfoView: View{
                 AdminRouteMapStoreView(store: store)
             }
             .alert($store.scope(state: \.alert, action: \.alert))
-            .loadingOverlay(isLoading: store.isLoading)
+            .loadingOverlay(store.isLoading)
         }
     }
 }

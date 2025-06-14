@@ -33,5 +33,9 @@ struct AdminRouteItem: View {
             .buttonStyle(BorderlessButtonStyle())
             .padding(.horizontal,4)
         }
+        .contentShape(Rectangle())
+        .onTapGesture {
+            onEdit()
+        }
     }
 }

@@ -43,18 +43,6 @@ struct AdminRouteExportView: View{
                     Text(store.title)
                         .bold()
                 }
-                if let wholeSnapshot = wholeSnapshot,
-                   let wholePdf = createPDF(with: wholeSnapshot, path: store.wholePath){
-                    ToolbarItem(placement: .topBarTrailing) {
-                    ShareLink(
-                       item: wholePdf,
-                       preview: SharePreview(
-                            "行動図（全体）",
-                            image: Image(systemName: "map.circle"))){
-                                Image(systemName: "map.circle")
-                            }
-                    }
-                }
                 if let partialSnapshot = partialSnapshot,
                    let partialPdf = createPDF(with: partialSnapshot, path: store.partialPath){
                     ToolbarItem(placement: .topBarTrailing) {
@@ -62,9 +50,25 @@ struct AdminRouteExportView: View{
                             item: partialPdf,
                             preview: SharePreview(
                                 "行動図",
-                                image: Image(systemName: "crop"))){
-                                    Image(systemName: "crop")
-                                }
+                                image: Image(systemName: "camera")
+                            )
+                        ){
+                            Image(systemName: "camera")
+                        }
+                    }
+                }
+                if let wholeSnapshot = wholeSnapshot,
+                   let wholePdf = createPDF(with: wholeSnapshot, path: store.wholePath){
+                    ToolbarItem(placement: .topBarTrailing) {
+                        ShareLink(
+                           item: wholePdf,
+                           preview: SharePreview(
+                                "行動図（全体）",
+                                image: Image(systemName: "point.topright.arrow.triangle.backward.to.point.bottomleft.scurvepath")
+                           )
+                        ){
+                            Image(systemName: "point.topright.arrow.triangle.backward.to.point.bottomleft.scurvepath")
+                        }
                     }
                 }
                 

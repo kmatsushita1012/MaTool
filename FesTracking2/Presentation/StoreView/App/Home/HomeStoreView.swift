@@ -35,7 +35,7 @@ struct AppView: View {
                         }
                         .contentShape(Rectangle())
                         .onTapGesture {
-//                            store.send(.infoTapped)
+                            store.send(.infoTapped)
                         }
                         .background(.blue)
                         .cornerRadius(8)
@@ -54,13 +54,13 @@ struct AppView: View {
                     }
                     VStack(spacing: 16)  {
                         CardItem {
-                            Text("準備中")
+                            Text("設定")
                                 .font(.title3)
                                 .foregroundStyle(.black)
                         }
                         .contentShape(Rectangle())
                         .onTapGesture {
-//                            store.send(.settingsTapped)
+                            store.send(.settingsTapped)
                         }
                         .background(.yellow)
                         .cornerRadius(8)
@@ -98,7 +98,7 @@ struct AppView: View {
                 SettingsStoreView(store: store)
             }
             .alert($store.scope(state: \.alert, action: \.alert))
-            .loadingOverlay(isLoading: store.isLoading)
+            .loadingOverlay(store.isLoading)
         }
         .onAppear(){
             store.send(.onAppear)

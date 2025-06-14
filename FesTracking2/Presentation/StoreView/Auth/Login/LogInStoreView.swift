@@ -20,6 +20,7 @@ struct LoginStoreView: View {
                 TextField("ID（〇〇祭_×××）", text: $store.id)
                     .textFieldStyle(RoundedBorderTextFieldStyle())
                     .padding()
+                    
                 SecureField("パスワード", text: $store.password)
                     .textFieldStyle(RoundedBorderTextFieldStyle())
                     .padding()
@@ -57,6 +58,7 @@ struct LoginStoreView: View {
             .fullScreenCover(item: $store.scope(state: \.confirmSignIn, action: \.confirmSignIn)){ store in
                 ConfirmSignInStoreView(store:store)
             }
+            .loadingOverlay(store.isLoading)
         }
     }
 }
