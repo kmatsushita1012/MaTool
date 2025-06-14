@@ -25,7 +25,6 @@ struct OnboardingStoreView: View {
                     },
                     isNullable: false
                 )
-                .frame(height: 128)
                 Spacer()
                 Menu {
                     if let districts = store.districts{
@@ -37,13 +36,15 @@ struct OnboardingStoreView: View {
                     }
                 } label: {
                     Text("参加町の方")
+                        .fontWeight(.semibold)
                         .frame(maxWidth: .infinity)
-                        .padding(.vertical, 12)
+                        .padding(.vertical, 16)
                         .background(.blue)
                         .foregroundColor(.white)
                         .cornerRadius(8)
                 }
                 .padding()
+                
                 Button(action: {
                     store.send(.externalGuestTapped)
                 }) {
