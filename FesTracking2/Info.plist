@@ -2,6 +2,11 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<key>UILaunchScreen</key>
+	<dict>
+		<key>UIImageName</key>
+		<string>LaunchImage</string>
+	</dict>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>現在地を表示するために、位置情報の「使用中のみ許可」が必要です。</string>
 	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
