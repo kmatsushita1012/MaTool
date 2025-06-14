@@ -9,29 +9,68 @@ import ComposableArchitecture
 import SwiftUI
 
 struct SettingsStoreView: View {
-    let store: StoreOf<Settings>
+    @Bindable var store: StoreOf<Settings>
     
     var body: some View {
-        NavigationStack{
+        VStack{
+            TitleView(
+                imageName: "SettingsBackground",
+                titleText: "MaTool",
+                isDismissEnabled: store.isDismissEnabled
+            ) {
+                store.send(.dismissTapped)
+            }
+            .ignoresSafeArea(edges: .top)
+            Spacer()
             VStack{
-                Text("Settings")
-            }
-            .toolbar {
-                ToolbarItem(placement: .topBarLeading) {
-                    Button(action: {
-                        store.send(.homeTapped)
-                    }) {
-                        Image(systemName: "house")
-                            .foregroundColor(.black)
+                MenuSelector(
+                    title: "祭典を変更",
+                    items: store.regions,
+                    selection: $store.selectedRegion,
+                    textForItem: { region in
+                        region?.name ?? "未設定"
+                    },
+                    isNullable: false
+                )
+                MenuSelector(
+                    title: "参加町を変更",
+                    items: store.districts,
+                    selection: $store.selectedDistrict,
+                    textForItem: { district in
+                        district?.name ?? "未設定"
                     }
-                    .padding(.horizontal, 8)
+                )
+            }
+            .padding()
+            Spacer()
+            VStack(alignment: .leading){
+                Link(destination: store.userGuide) {
+                    HStack {
+                        Image("LeftDoubleArrow")
+                            .resizable()
+                            .frame(width: 20, height: 20)
+                        Text("MaToolの使い方")
+                            .font(.headline)
+                        Spacer()
+                    }
+                    .font(.headline)
                 }
-                ToolbarItem(placement: .principal) {
-                    Text("設定")
-                        .bold()
+                Link(destination: store.contact) {
+                    HStack {
+                        Image("LeftDoubleArrow")
+                            .resizable()
+                            .frame(width: 20, height: 20)
+                        Text("お問い合わせ")
+                            .font(.headline)
+                        Spacer()
+                    }
+                    .font(.headline)
                 }
             }
+            .padding()
+            Spacer()
         }
-        
+        .loadingOverlay(store.isLoading)
+        .ignoresSafeArea(edges: .top)
     }
 }

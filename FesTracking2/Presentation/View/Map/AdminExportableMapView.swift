@@ -143,8 +143,8 @@ struct ExportableMap: UIViewRepresentable {
                 
                 UIGraphicsBeginImageContextWithOptions(options.size, true, 0)
                 snapshot.image.draw(at: .zero)
-                drawPolylines(on: snapshot,color: UIColor.white,lineWidth: 8)
-                drawPolylines(on: snapshot,color: UIColor.blue,lineWidth: 4)
+                drawPolylines(on: snapshot,color: UIColor.white,lineWidth: 4)
+                drawPolylines(on: snapshot,color: UIColor.blue,lineWidth: 3)
                 drawPinsAndCaptions(on: snapshot)
                 let image = UIGraphicsGetImageFromCurrentImageContext()
                 UIGraphicsEndImageContext()
@@ -177,48 +177,82 @@ struct ExportableMap: UIViewRepresentable {
         for (index, point) in points.enumerated() {
             let pointInSnapshot = snapshot.point(for: point.coordinate.toCL())
 
-            guard let pinImage = UIImage(systemName: "mappin")?.withTintColor(.red, renderingMode: .alwaysOriginal) else { continue }
-            pinImage.draw(at: CGPoint(x: pointInSnapshot.x - pinImage.size.width / 2,
-                                      y: pointInSnapshot.y - pinImage.size.height))
+            guard let originalImage = UIImage(systemName: "circle.fill") else { continue }
 
-            drawCaption(for: point, at: pointInSnapshot, pinImage: pinImage, drawnRects: &drawnRects)
+            let smallSize = CGSize(width: 10, height: 10)
+
+            let pinImage = UIGraphicsImageRenderer(size: smallSize).image { _ in
+                originalImage.withTintColor(.red, renderingMode: .alwaysOriginal)
+                    .draw(in: CGRect(origin: .zero, size: smallSize))
+            }
+            pinImage.draw(at:
+                CGPoint(x: pointInSnapshot.x - pinImage.size.width / 2,
+                        y: pointInSnapshot.y - pinImage.size.height/2)
+            )
+
+            drawCaption(for: point, index: index, at: pointInSnapshot, pinImage: pinImage, drawnRects: &drawnRects)
         }
     }
 
-    private func drawCaption(for point: Point, at location: CGPoint, pinImage: UIImage, drawnRects: inout [CGRect]) {
-        let title = point.title ?? ""
-        let time = point.time?.text ?? ""
-        let caption = (title + time) as NSString
-        let font = UIFont.boldSystemFont(ofSize: 12)
+    private func drawCaption(for point: Point,index: Int, at location: CGPoint, pinImage: UIImage, drawnRects: inout [CGRect]) {
+        var caption = "\(index + 1)"
+        if let title = point.title{
+            caption += ":\(title)"
+        }
+        if let time = point.time?.text{
+            caption += "\n\(time)"
+        }
+        
+        let font = UIFont.boldSystemFont(ofSize: 8)
         let attributes: [NSAttributedString.Key: Any] = [
             .font: font,
             .foregroundColor: UIColor.black
         ]
 
         let textSize = caption.size(withAttributes: attributes)
-        let padding: CGFloat = 4
+        let padding: CGFloat = 2
+        let margin: CGFloat = 5
         let context = UIGraphicsGetCurrentContext()
         
         let directions: [(dx: CGFloat, dy: CGFloat)] = [
-            (0, +1), (0, -1), (+1, 0), (-1, 0)
+            (+1, -1), (+1, +1), (-1, +1), (-1, -1)
         ]
-
         for direction in directions {
-            let origin = CGPoint(
-                x: location.x + direction.dx * (pinImage.size.width + padding),
-                y: location.y + direction.dy * (pinImage.size.height + padding)
+            let halfWidth = textSize.width / 2 + padding
+            let halfHeight = textSize.height / 2 + padding
+            let center = CGPoint(
+                x: location.x + direction.dx * (margin + halfWidth),
+                y: location.y + direction.dy * (margin + halfHeight)
             )
-
+            print(direction)
+            print(center)
+            // TODO: 調整
             let rect = CGRect(
-                x: origin.x - textSize.width / 2 - padding,
-                y: origin.y - textSize.height / 2 - padding,
+                x: center.x - halfWidth ,
+                y: center.y - halfHeight,
                 width: textSize.width + padding * 2,
                 height: textSize.height + padding * 2
             )
 
             if drawnRects.allSatisfy({ !$0.intersects(rect) }) {
-                context?.setFillColor(UIColor.white.cgColor)
+                // 吹き出し線
+                context?.setStrokeColor(UIColor.red.cgColor)
+                context?.setLineWidth(1.0)
+                context?.beginPath()
+                context?.move(to: location)
+                let point = CGPoint(
+                    x: location.x + direction.dx * margin,
+                    y: location.y + direction.dy * margin
+                )
+                context?.addLine(to: point)
+                context?.strokePath()
+                //背景
+                context?.setFillColor(UIColor(white: 1.0, alpha: 0.7).cgColor)
                 context?.fill(rect)
+                context?.setStrokeColor(UIColor.red.cgColor)
+                context?.setLineWidth(0.5)
+                context?.stroke(rect)
+                //キャプション
                 caption.draw(at: CGPoint(x: rect.origin.x + padding,
                                          y: rect.origin.y + padding),
                              withAttributes: attributes)
@@ -227,5 +261,5 @@ struct ExportableMap: UIViewRepresentable {
             }
         }
     }
-
 }
+

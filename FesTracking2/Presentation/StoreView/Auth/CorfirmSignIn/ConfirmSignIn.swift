@@ -15,6 +15,7 @@ struct ConfirmSignIn {
     struct State: Equatable {
         var password1: String = ""
         var password2: String = ""
+        var isLoading: Bool = false
         @Presents var alert: OkAlert.State? = nil
     }
     
@@ -41,6 +42,7 @@ struct ConfirmSignIn {
                     state.alert = OkAlert.error("パスワードが条件を満たしていません。次の条件を満たしてください。\n 8文字以上 \n 少なくとも 1 つの数字を含む \n 少なくとも 1 つの大文字を含む \n 少なくとも 1 つの小文字を含む")
                     return .none
                 }
+                state.isLoading = true
                 return .run { [ password1 = state.password1 ]send in
                     let result = await awsCognitoClient.confirmSignIn(password1)
                     await send(.received(result))
@@ -48,8 +50,10 @@ struct ConfirmSignIn {
             case .dismissTapped:
                 return .none
             case .received(.success):
+                state.isLoading = false
                 return .none
             case .received(.failure(let error)):
+                state.isLoading = false
                 state.alert = OkAlert.error("送信に失敗しました。\(error.localizedDescription)")
                 return .none
             case .alert(.presented(.okTapped)):

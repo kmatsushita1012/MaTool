@@ -10,11 +10,17 @@ import ComposableArchitecture
 
 @Reducer
 struct Login {
+    
+    @Dependency(\.awsCognitoClient) var awsCognitoClient
+    @Dependency(\.accessToken) var accessToken
+    @Dependency(\.userDefaultsClient) var userDefaultsClient
+    
     @ObservableState
     struct State: Equatable {
         var id: String = ""
         var password: String = ""
-        var errorMessage: String?
+        var isLoading: Bool = false
+        var errorMessage: String? = nil
         @Presents var confirmSignIn: ConfirmSignIn.State?
     }
     @CasePathable
@@ -26,9 +32,6 @@ struct Login {
         case confirmSignIn(PresentationAction<ConfirmSignIn.Action>)
     }
     
-    @Dependency(\.awsCognitoClient) var awsCognitoClient
-    @Dependency(\.accessToken) var accessToken
-
     var body: some ReducerOf<Login> {
         BindingReducer()
         Reduce{ state, action in
@@ -36,32 +39,26 @@ struct Login {
             case .binding(_):
                 return .none
             case .signInTapped:
+                state.isLoading = true
                 return .run {[id = state.id, password = state.password] send in
                     let result = await awsCognitoClient.signIn(id, password)
                     await send(.received(result))
                 }
-            case .received(AWSCognito.SignInResult.success):
+            case .received(.success):
+                state.isLoading = false
                 state.errorMessage = nil
-                
-                return .run { send in
-                    let result = await awsCognitoClient.getTokens()
-                    switch result {
-                    case .success(let tokens):
-                        if let token = tokens.accessToken?.tokenString {
-                            accessToken.value = token
-                        } else {
-                            print("No access token found")
-                        }
-                    case .failure(_):
-                        return
-                    }
-                }
-            case .received(AWSCognito.SignInResult.newPasswordRequired):
+                return .none
+            case .received(.newPasswordRequired):
                 state.confirmSignIn = ConfirmSignIn.State()
+                state.isLoading = false
+                state.errorMessage = nil
                 return .none
-            case .received(AWSCognito.SignInResult.failure(let error)):
-                state.errorMessage = error.localizedDescription
-                return .none
+            case .received(.failure(let error)):
+                state.errorMessage = "ログインに失敗しました。\(error.localizedDescription)"
+                return .run { send in
+                    let result = await awsCognitoClient.signOut()
+                    print(result)
+                }
             case .homeTapped:
                 return .none
             case .confirmSignIn(.presented(.received(.success))):

@@ -64,7 +64,7 @@ struct OnboardingFeature {
                 guard let region = state.selectedRegion else {
                     return .none
                 }
-                userDefaultsClient.setString(region.id, favoriteRegionPath)
+                userDefaultsClient.setString(region.id, defaultRegionKey)
                 userDefaultsClient.setBool(true, hasLaunchedBeforePath)
                 return .none
             case .districtSelected(let district):
@@ -72,11 +72,11 @@ struct OnboardingFeature {
                     //TODOエラーハンドル
                     return .none
                 }
-                userDefaultsClient.setString(region.id, favoriteRegionPath)
+                userDefaultsClient.setString(region.id, defaultRegionKey)
                 if(district.regionId != region.id){
                     return .none
                 }
-                userDefaultsClient.setString(district.id, favoriteDistrictPath)
+                userDefaultsClient.setString(district.id, defaultDistrictKey)
                 userDefaultsClient.setBool(true, hasLaunchedBeforePath)
                 return .none
             case .regionsReceived(.success(let value)):
