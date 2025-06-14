@@ -52,10 +52,10 @@ struct PublicMap{
             switch action {
             case .onAppear:
                 //TODO
-                guard let regionId = userDefaultsClient.stringForKey(favoriteRegionPath) else {
+                guard let regionId = userDefaultsClient.stringForKey(defaultRegionKey) else {
                     return .none
                 }
-                if let districtId = userDefaultsClient.stringForKey(favoriteDistrictPath){
+                if let districtId = userDefaultsClient.stringForKey(defaultDistrictKey){
                     return .merge(
                         routeEffect(districtId, accessToken: accessToken.value),
                         routesEffect(districtId,accessToken: accessToken.value),
@@ -72,7 +72,7 @@ struct PublicMap{
                 case .success(let districts):
                     let items = [Content.locations] + districts.map{ Content.route($0) }
                     //TODO
-                    if let districtId = userDefaultsClient.stringForKey(favoriteDistrictPath),
+                    if let districtId = userDefaultsClient.stringForKey(defaultDistrictKey),
                        let selected = districts.first(where: { $0.id == districtId }) {
                         state.districtPicker = PickerFeature.State(items: items, selected: Content.route(selected))
                     }else{

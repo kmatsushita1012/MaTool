@@ -21,15 +21,35 @@ struct AdminBaseView:View {
                     onMapLongPress: { coordinate in store.send(.mapTapped(coordinate))}
                 )
                 .edgesIgnoringSafeArea(.all)
+                
+                VStack {
+                    HStack {
+                        Spacer()
+                        Button(action: {
+                            store.send(.clearTapped)
+                        }) {
+                            Image(systemName: "eraser")
+                                .font(.title2)
+                                .padding(12)
+                                .background(Color(.systemBackground).opacity(0.8))
+                                .clipShape(Circle())
+                        }
+                        .padding()
+                    }
+                    Spacer()
+                }
             }
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
-                    Button(action: {
-                        store.send(.cancelTapped)
-                    }) {
-                        Image(systemName: "arrow.uturn.backward")
+                    Button {
+                        store.send(.dismissTapped)
+                    } label: {
+                        HStack {
+                            Image(systemName: "chevron.left")
+                            Text("キャンセル")
+                        }
+                        .padding(8)
                     }
-                    .padding(.horizontal, 8)
                 }
                 ToolbarItem(placement: .principal) {
                     Text("会所位置編集")

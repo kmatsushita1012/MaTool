@@ -8,7 +8,7 @@
 import SwiftUI
 
 extension View {
-    func loadingOverlay(isLoading: Bool) -> some View {
+    func loadingOverlay(_ isLoading: Bool) -> some View {
         ZStack {
             self
             if isLoading {

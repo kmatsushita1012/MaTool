@@ -99,6 +99,10 @@ struct AdminDistrictEdit {
                     }
                     state.destination = nil
                     return .none
+                case .base(.dismissTapped),
+                        .area(.dismissTapped):
+                    state.destination = nil
+                    return .none
                 case .performance(.doneTapped):
                     if case let .performance(performanceState) = state.destination {
                         state.item.performances.upsert(performanceState.item)

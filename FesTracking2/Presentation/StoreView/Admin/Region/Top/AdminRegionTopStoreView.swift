@@ -37,11 +37,12 @@ struct AdminRegionView: View {
                     }
                 }
                 Section {
-                    Text("ログアウト")
-                        .foregroundColor(.red)
-                        .onTapGesture {
-                            store.send(.signOutTapped)
-                        }
+                    Button(action: {
+                        store.send(.signOutTapped)
+                    }) {
+                        Text("ログアウト")
+                            .foregroundColor(.red)
+                    }
                 }
             }
             .navigationTitle(
