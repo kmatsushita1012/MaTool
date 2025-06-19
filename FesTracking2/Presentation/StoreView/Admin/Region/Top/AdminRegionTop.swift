@@ -39,7 +39,7 @@ struct AdminRegionTop {
         case signOutTapped
         case districtsReceived(Result<[PublicDistrict],ApiError>)
         case districtInfoPrepared(PublicDistrict, Result<[RouteSummary],ApiError>)
-        case signOutReceived(Result<Bool,AuthError>)
+        case signOutReceived(Result<Empty,AuthError>)
         case destination(PresentationAction<Destination.Action>)
         case alert(PresentationAction<OkAlert.Action>)
     }
@@ -78,7 +78,7 @@ struct AdminRegionTop {
             case .districtInfoPrepared(_, .failure(let error)):
                 state.alert = OkAlert.error("情報の取得に失敗しました。\(error.localizedDescription)")
                 return .none
-            case .signOutReceived(.success(_)):
+            case .signOutReceived(.success):
                 return .none
             case .signOutReceived(.failure(let error)):
                 state.alert = OkAlert.error("サインアウトに失敗しました。\(error.localizedDescription)")
