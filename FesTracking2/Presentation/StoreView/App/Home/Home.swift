@@ -13,7 +13,7 @@ import Foundation
 struct Home {
     
     @Dependency(\.apiClient) var apiClient
-    @Dependency(\.awsCognitoClient) var awsCognitoClient
+    @Dependency(\.authProvider) var authProvider
     @Dependency(\.accessToken) var accessToken
     @Dependency(\.userDefaultsClient) var userDefaultsClient
     
@@ -47,8 +47,8 @@ struct Home {
         case infoTapped
         case adminTapped
         case settingsTapped
-        case awsInitializeReceived(Result<String, AWSCognito.Error>)
-        case awsUserRoleReceived(Result<UserRole, AWSCognito.Error>, shouldNavigate: Bool)
+        case awsInitializeReceived(Result<String, AuthError>)
+        case awsUserRoleReceived(Result<UserRole, AuthError>, shouldNavigate: Bool)
         case adminDistrictPrepared(Result<PublicDistrict,ApiError>, Result<[RouteSummary],ApiError>)
         case adminRegionPrepared(Result<Region,ApiError>, Result<[PublicDistrict],ApiError>)
         case settingsPrepared(
@@ -67,7 +67,7 @@ struct Home {
             case .onAppear:
                 state.isAWSLoading = true
                 return .run { send in
-                    let result = await awsCognitoClient.initialize()
+                    let result = await authProvider.initialize()
                     await send(.awsInitializeReceived(result))
                 }
             case .adminDistrictPrepared(let districtResult, let routesResult):
@@ -125,8 +125,10 @@ struct Home {
                     return .none
                 }
                 if case let .district(id) = userRole{
+                    state.isDestinationLoading = true
                     return adminDistrictEffect(id, accessToken: accessToken.value)
                 } else if case let .region(id) = userRole {
+                    state.isDestinationLoading = true
                     return adminRegionEffect(id)
                 } else {
                     return .none
@@ -159,9 +161,9 @@ struct Home {
                 switch childAction {
                 case .login(.received(.success)),
                     .login(.confirmSignIn(.presented(.received(.success)))):
+                    state.isAWSLoading = true
                     return awsUserRoleAndTokenEffect(shouldNavigate: true)
                 case .login(.received(.failure(_))):
-                    state.userRole = .guest
                     return .none
                 case .adminDistrict(.signOutReceived(.success(_))),
                     .adminRegion(.signOutReceived(.success(_))):
@@ -216,7 +218,7 @@ struct Home {
     func awsUserRoleAndTokenEffect(shouldNavigate: Bool)->Effect<Action> {
         .merge(
             .run { send in
-                let result = await awsCognitoClient.getTokens()
+                let result = await authProvider.getTokens()
                 switch result {
                 case .success(let tokens):
                     if let token = tokens.accessToken?.tokenString {
@@ -230,7 +232,7 @@ struct Home {
                 }
             },
             .run { send in
-                let result = await awsCognitoClient.getUserRole()
+                let result = await authProvider.getUserRole()
                 if case .success(let userRole) = result {
                     switch userRole{
                     case .region(_):

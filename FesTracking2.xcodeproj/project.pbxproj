@@ -84,7 +84,7 @@
 		29A3851A2DD1B781008A1D08 /* AdminRegionDistrictDetailStoreView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29A385192DD1B778008A1D08 /* AdminRegionDistrictDetailStoreView.swift */; };
 		29A3851C2DD1B7E1008A1D08 /* AdminRegionDistrictCreateStoreView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29A3851B2DD1B7D8008A1D08 /* AdminRegionDistrictCreateStoreView.swift */; };
 		29A64ADD2DB4A29A007C3859 /* Home.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29A64ADC2DB4A295007C3859 /* Home.swift */; };
-		29A64ADF2DB4A65B007C3859 /* LocationSharingUsecase.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29A64ADE2DB4A654007C3859 /* LocationSharingUsecase.swift */; };
+		29A64ADF2DB4A65B007C3859 /* LocationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29A64ADE2DB4A654007C3859 /* LocationService.swift */; };
 		29A64AE42DB4AD7F007C3859 /* Status.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29A64AE32DB4AD7D007C3859 /* Status.swift */; };
 		29A688B62DCC4133004415BF /* Visibility.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29A688B52DCC412F004415BF /* Visibility.swift */; };
 		29A688B82DCC46B6004415BF /* AdminRouteExport.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29A688B72DCC46A6004415BF /* AdminRouteExport.swift */; };
@@ -94,7 +94,7 @@
 		29AB1B462DE1FFE500AC37F3 /* ConfirmSignInStoreView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29AB1B452DE1FFE500AC37F3 /* ConfirmSignInStoreView.swift */; };
 		29AB1B482DE2116F00AC37F3 /* OnboardingStoreView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29AB1B472DE2116700AC37F3 /* OnboardingStoreView.swift */; };
 		29AB1B4A2DE2124600AC37F3 /* Onboarding.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29AB1B492DE2124100AC37F3 /* Onboarding.swift */; };
-		29AD86492DB2032300C3E8B2 /* LocationClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29AD86482DB2032000C3E8B2 /* LocationClient.swift */; };
+		29AD86492DB2032300C3E8B2 /* LocationProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29AD86482DB2032000C3E8B2 /* LocationProvider.swift */; };
 		29AD864B2DB2040E00C3E8B2 /* LocationClientLive.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29AD864A2DB2040A00C3E8B2 /* LocationClientLive.swift */; };
 		29AD86502DB210F500C3E8B2 /* AdminLocationMapView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29AD864F2DB210F000C3E8B2 /* AdminLocationMapView.swift */; };
 		29B1599A2DF1888900F469A9 /* DistrictTool.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29B159992DF1888300F469A9 /* DistrictTool.swift */; };
@@ -119,17 +119,21 @@
 		29CB077D2DAF8B970009A47D /* AdminBaseEditStoreView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29CB077C2DAF8B940009A47D /* AdminBaseEditStoreView.swift */; };
 		29CB077F2DAF8C510009A47D /* AdminDistrictMapView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29CB077E2DAF8C500009A47D /* AdminDistrictMapView.swift */; };
 		29CB07812DAF933A0009A47D /* AdminAreaEditStoreView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29CB07802DAF93350009A47D /* AdminAreaEditStoreView.swift */; };
+		29CBB3392E043608006687A3 /* ApiError.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29CBB3382E043606006687A3 /* ApiError.swift */; };
+		29CBB33D2E04365F006687A3 /* AuthProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29CBB33C2E04365A006687A3 /* AuthProvider.swift */; };
+		29CBB33F2E04376E006687A3 /* AuthError.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29CBB33E2E04376B006687A3 /* AuthError.swift */; };
+		29CBB3412E04388D006687A3 /* AuthService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29CBB3402E043889006687A3 /* AuthService.swift */; };
 		29CF49082D7425F600036D28 /* HTTP.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29CF49072D7425F600036D28 /* HTTP.swift */; };
-		29CF490A2D74262300036D28 /* ApiLiveClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29CF49092D74262300036D28 /* ApiLiveClient.swift */; };
-		29CF490C2D74263400036D28 /* ApiMockClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29CF490B2D74263400036D28 /* ApiMockClient.swift */; };
-		29CF49112D74269A00036D28 /* ApiClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29CF49102D74269A00036D28 /* ApiClient.swift */; };
+		29CF490A2D74262300036D28 /* LiveApiRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29CF49092D74262300036D28 /* LiveApiRepository.swift */; };
+		29CF490C2D74263400036D28 /* MockApiRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29CF490B2D74263400036D28 /* MockApiRepository.swift */; };
+		29CF49112D74269A00036D28 /* ApiRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29CF49102D74269A00036D28 /* ApiRepository.swift */; };
 		29CF49132D7426A400036D28 /* UserDefaultsClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29CF49122D7426A400036D28 /* UserDefaultsClient.swift */; };
 		29CF49192D7440EB00036D28 /* Extension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29CF49182D7440EB00036D28 /* Extension.swift */; };
 		29DAB0612DA15CD1005E94BA /* AdminRouteMap.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29DAB0602DA15CCF005E94BA /* AdminRouteMap.swift */; };
 		29DAB0642DA15CFC005E94BA /* AdminLocation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29DAB0632DA15CF0005E94BA /* AdminLocation.swift */; };
 		29DAB06D2DA1608E005E94BA /* AWSCognito.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29DAB06C2DA16084005E94BA /* AWSCognito.swift */; };
-		29DAB0702DA1623C005E94BA /* AWSCognitoClientLive.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29DAB06F2DA16235005E94BA /* AWSCognitoClientLive.swift */; };
-		29DAB0722DA163E4005E94BA /* AWSCognitoClientMock.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29DAB0712DA163DE005E94BA /* AWSCognitoClientMock.swift */; };
+		29DAB0702DA1623C005E94BA /* AwsCognitoProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29DAB06F2DA16235005E94BA /* AwsCognitoProvider.swift */; };
+		29DAB0722DA163E4005E94BA /* MockAuthProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29DAB0712DA163DE005E94BA /* MockAuthProvider.swift */; };
 		29DF09C62DCC9DFB00489DB8 /* Info.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29DF09C52DCC9DF600489DB8 /* Info.swift */; };
 		29DF09C82DCC9E5A00489DB8 /* InfoStoreView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29DF09C72DCC9E5700489DB8 /* InfoStoreView.swift */; };
 		29E4FB4C2DDCD105008C89CF /* ConfirmSignIn.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29E4FB4B2DDCD086008C89CF /* ConfirmSignIn.swift */; };
@@ -278,7 +282,7 @@
 		29A385192DD1B778008A1D08 /* AdminRegionDistrictDetailStoreView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdminRegionDistrictDetailStoreView.swift; sourceTree = "<group>"; };
 		29A3851B2DD1B7D8008A1D08 /* AdminRegionDistrictCreateStoreView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdminRegionDistrictCreateStoreView.swift; sourceTree = "<group>"; };
 		29A64ADC2DB4A295007C3859 /* Home.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Home.swift; sourceTree = "<group>"; };
-		29A64ADE2DB4A654007C3859 /* LocationSharingUsecase.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocationSharingUsecase.swift; sourceTree = "<group>"; };
+		29A64ADE2DB4A654007C3859 /* LocationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocationService.swift; sourceTree = "<group>"; };
 		29A64AE32DB4AD7D007C3859 /* Status.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Status.swift; sourceTree = "<group>"; };
 		29A688B52DCC412F004415BF /* Visibility.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Visibility.swift; sourceTree = "<group>"; };
 		29A688B72DCC46A6004415BF /* AdminRouteExport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdminRouteExport.swift; sourceTree = "<group>"; };
@@ -288,7 +292,7 @@
 		29AB1B452DE1FFE500AC37F3 /* ConfirmSignInStoreView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConfirmSignInStoreView.swift; sourceTree = "<group>"; };
 		29AB1B472DE2116700AC37F3 /* OnboardingStoreView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingStoreView.swift; sourceTree = "<group>"; };
 		29AB1B492DE2124100AC37F3 /* Onboarding.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Onboarding.swift; sourceTree = "<group>"; };
-		29AD86482DB2032000C3E8B2 /* LocationClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocationClient.swift; sourceTree = "<group>"; };
+		29AD86482DB2032000C3E8B2 /* LocationProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocationProvider.swift; sourceTree = "<group>"; };
 		29AD864A2DB2040A00C3E8B2 /* LocationClientLive.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocationClientLive.swift; sourceTree = "<group>"; };
 		29AD864F2DB210F000C3E8B2 /* AdminLocationMapView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdminLocationMapView.swift; sourceTree = "<group>"; };
 		29AD86512DB212DB00C3E8B2 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
@@ -313,17 +317,21 @@
 		29CB077C2DAF8B940009A47D /* AdminBaseEditStoreView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdminBaseEditStoreView.swift; sourceTree = "<group>"; };
 		29CB077E2DAF8C500009A47D /* AdminDistrictMapView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdminDistrictMapView.swift; sourceTree = "<group>"; };
 		29CB07802DAF93350009A47D /* AdminAreaEditStoreView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdminAreaEditStoreView.swift; sourceTree = "<group>"; };
+		29CBB3382E043606006687A3 /* ApiError.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ApiError.swift; sourceTree = "<group>"; };
+		29CBB33C2E04365A006687A3 /* AuthProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthProvider.swift; sourceTree = "<group>"; };
+		29CBB33E2E04376B006687A3 /* AuthError.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthError.swift; sourceTree = "<group>"; };
+		29CBB3402E043889006687A3 /* AuthService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthService.swift; sourceTree = "<group>"; };
 		29CF49072D7425F600036D28 /* HTTP.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HTTP.swift; sourceTree = "<group>"; };
-		29CF49092D74262300036D28 /* ApiLiveClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ApiLiveClient.swift; sourceTree = "<group>"; };
-		29CF490B2D74263400036D28 /* ApiMockClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ApiMockClient.swift; sourceTree = "<group>"; };
-		29CF49102D74269A00036D28 /* ApiClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ApiClient.swift; sourceTree = "<group>"; };
+		29CF49092D74262300036D28 /* LiveApiRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveApiRepository.swift; sourceTree = "<group>"; };
+		29CF490B2D74263400036D28 /* MockApiRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockApiRepository.swift; sourceTree = "<group>"; };
+		29CF49102D74269A00036D28 /* ApiRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ApiRepository.swift; sourceTree = "<group>"; };
 		29CF49122D7426A400036D28 /* UserDefaultsClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserDefaultsClient.swift; sourceTree = "<group>"; };
 		29CF49182D7440EB00036D28 /* Extension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Extension.swift; sourceTree = "<group>"; };
 		29DAB0602DA15CCF005E94BA /* AdminRouteMap.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdminRouteMap.swift; sourceTree = "<group>"; };
 		29DAB0632DA15CF0005E94BA /* AdminLocation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdminLocation.swift; sourceTree = "<group>"; };
 		29DAB06C2DA16084005E94BA /* AWSCognito.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AWSCognito.swift; sourceTree = "<group>"; };
-		29DAB06F2DA16235005E94BA /* AWSCognitoClientLive.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AWSCognitoClientLive.swift; sourceTree = "<group>"; };
-		29DAB0712DA163DE005E94BA /* AWSCognitoClientMock.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AWSCognitoClientMock.swift; sourceTree = "<group>"; };
+		29DAB06F2DA16235005E94BA /* AwsCognitoProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AwsCognitoProvider.swift; sourceTree = "<group>"; };
+		29DAB0712DA163DE005E94BA /* MockAuthProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockAuthProvider.swift; sourceTree = "<group>"; };
 		29DF09C52DCC9DF600489DB8 /* Info.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Info.swift; sourceTree = "<group>"; };
 		29DF09C72DCC9E5700489DB8 /* InfoStoreView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InfoStoreView.swift; sourceTree = "<group>"; };
 		29E4FB4B2DDCD086008C89CF /* ConfirmSignIn.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConfirmSignIn.swift; sourceTree = "<group>"; };
@@ -487,8 +495,7 @@
 		2983AB722D74152C002F6CB5 /* Domain */ = {
 			isa = PBXGroup;
 			children = (
-				29BC193F2DB605FF00C6F918 /* Usecase */,
-				29DAB05F2D9FC546005E94BA /* Interfaces */,
+				29DAB05F2D9FC546005E94BA /* Contracts */,
 				29CF490D2D74266500036D28 /* Entities */,
 			);
 			path = Domain;
@@ -694,12 +701,13 @@
 			path = Others;
 			sourceTree = "<group>";
 		};
-		29BC193F2DB605FF00C6F918 /* Usecase */ = {
+		29BC193F2DB605FF00C6F918 /* Service */ = {
 			isa = PBXGroup;
 			children = (
-				29A64ADE2DB4A654007C3859 /* LocationSharingUsecase.swift */,
+				29A64ADE2DB4A654007C3859 /* LocationService.swift */,
+				29CBB3402E043889006687A3 /* AuthService.swift */,
 			);
-			path = Usecase;
+			path = Service;
 			sourceTree = "<group>";
 		};
 		29BC19422DB6234C00C6F918 /* App */ = {
@@ -1025,11 +1033,70 @@
 			path = Toggle;
 			sourceTree = "<group>";
 		};
+		29CBB3372E0435CF006687A3 /* Api */ = {
+			isa = PBXGroup;
+			children = (
+				29CF49102D74269A00036D28 /* ApiRepository.swift */,
+				29CBB3382E043606006687A3 /* ApiError.swift */,
+			);
+			path = Api;
+			sourceTree = "<group>";
+		};
+		29CBB33A2E043615006687A3 /* Location */ = {
+			isa = PBXGroup;
+			children = (
+				29AD86482DB2032000C3E8B2 /* LocationProvider.swift */,
+			);
+			path = Location;
+			sourceTree = "<group>";
+		};
+		29CBB33B2E043640006687A3 /* Auth */ = {
+			isa = PBXGroup;
+			children = (
+				29DAB06C2DA16084005E94BA /* AWSCognito.swift */,
+				29CBB33C2E04365A006687A3 /* AuthProvider.swift */,
+				29CBB33E2E04376B006687A3 /* AuthError.swift */,
+			);
+			path = Auth;
+			sourceTree = "<group>";
+		};
+		29CBB3422E043B61006687A3 /* AwsCognito */ = {
+			isa = PBXGroup;
+			children = (
+				29DAB06F2DA16235005E94BA /* AwsCognitoProvider.swift */,
+			);
+			path = AwsCognito;
+			sourceTree = "<group>";
+		};
+		29CBB3432E043B8F006687A3 /* Mock */ = {
+			isa = PBXGroup;
+			children = (
+				29DAB0712DA163DE005E94BA /* MockAuthProvider.swift */,
+			);
+			path = Mock;
+			sourceTree = "<group>";
+		};
+		29CBB3442E043BBD006687A3 /* Live */ = {
+			isa = PBXGroup;
+			children = (
+				29CF49092D74262300036D28 /* LiveApiRepository.swift */,
+			);
+			path = Live;
+			sourceTree = "<group>";
+		};
+		29CBB3452E043BDB006687A3 /* Mock */ = {
+			isa = PBXGroup;
+			children = (
+				29CF490B2D74263400036D28 /* MockApiRepository.swift */,
+			);
+			path = Mock;
+			sourceTree = "<group>";
+		};
 		29CF49032D74244500036D28 /* Data */ = {
 			isa = PBXGroup;
 			children = (
 				29AD864C2DB2041200C3E8B2 /* Location */,
-				29DAB06E2DA16220005E94BA /* AWSCognito */,
+				29DAB06E2DA16220005E94BA /* Auth */,
 				29CF49052D74248B00036D28 /* Api */,
 				29CF49042D74248300036D28 /* UserDefaults */,
 			);
@@ -1048,8 +1115,8 @@
 		29CF49052D74248B00036D28 /* Api */ = {
 			isa = PBXGroup;
 			children = (
-				29CF49092D74262300036D28 /* ApiLiveClient.swift */,
-				29CF490B2D74263400036D28 /* ApiMockClient.swift */,
+				29CBB3442E043BBD006687A3 /* Live */,
+				29CBB3452E043BDB006687A3 /* Mock */,
 			);
 			path = Api;
 			sourceTree = "<group>";
@@ -1080,9 +1147,6 @@
 		29CF490E2D74266F00036D28 /* Client */ = {
 			isa = PBXGroup;
 			children = (
-				29CF49102D74269A00036D28 /* ApiClient.swift */,
-				29AD86482DB2032000C3E8B2 /* LocationClient.swift */,
-				29DAB06C2DA16084005E94BA /* AWSCognito.swift */,
 				29CF49122D7426A400036D28 /* UserDefaultsClient.swift */,
 			);
 			path = Client;
@@ -1091,17 +1155,21 @@
 		29CF49152D74315300036D28 /* Application */ = {
 			isa = PBXGroup;
 			children = (
+				29BC193F2DB605FF00C6F918 /* Service */,
 				2972017C2D9CFBF2003424EF /* Feature */,
 			);
 			path = Application;
 			sourceTree = "<group>";
 		};
-		29DAB05F2D9FC546005E94BA /* Interfaces */ = {
+		29DAB05F2D9FC546005E94BA /* Contracts */ = {
 			isa = PBXGroup;
 			children = (
+				29CBB33B2E043640006687A3 /* Auth */,
+				29CBB33A2E043615006687A3 /* Location */,
+				29CBB3372E0435CF006687A3 /* Api */,
 				29CF490E2D74266F00036D28 /* Client */,
 			);
-			path = Interfaces;
+			path = Contracts;
 			sourceTree = "<group>";
 		};
 		29DAB0662DA15E8E005E94BA /* Admin */ = {
@@ -1121,13 +1189,13 @@
 			path = Public;
 			sourceTree = "<group>";
 		};
-		29DAB06E2DA16220005E94BA /* AWSCognito */ = {
+		29DAB06E2DA16220005E94BA /* Auth */ = {
 			isa = PBXGroup;
 			children = (
-				29DAB06F2DA16235005E94BA /* AWSCognitoClientLive.swift */,
-				29DAB0712DA163DE005E94BA /* AWSCognitoClientMock.swift */,
+				29CBB3422E043B61006687A3 /* AwsCognito */,
+				29CBB3432E043B8F006687A3 /* Mock */,
 			);
-			path = AWSCognito;
+			path = Auth;
 			sourceTree = "<group>";
 		};
 		D2B77F2FCB1569E5BDDFA692 /* Frameworks */ = {
@@ -1516,19 +1584,21 @@
 				29F8A7932DFD645000331A7F /* TitleView.swift in Sources */,
 				29CF49132D7426A400036D28 /* UserDefaultsClient.swift in Sources */,
 				292D0BAA2DB0E31300176E51 /* AdminRegionEditStoreView.swift in Sources */,
-				29DAB0722DA163E4005E94BA /* AWSCognitoClientMock.swift in Sources */,
+				29DAB0722DA163E4005E94BA /* MockAuthProvider.swift in Sources */,
 				29460A0D2D8C29030097CAA1 /* LogInStoreView.swift in Sources */,
 				29BC19412DB6134900C6F918 /* Date.swift in Sources */,
 				29B638A72DB0E7E400DF8419 /* AdminSpanEdit.swift in Sources */,
 				29AB1B482DE2116F00AC37F3 /* OnboardingStoreView.swift in Sources */,
-				29AD86492DB2032300C3E8B2 /* LocationClient.swift in Sources */,
+				29AD86492DB2032300C3E8B2 /* LocationProvider.swift in Sources */,
+				29CBB3392E043608006687A3 /* ApiError.swift in Sources */,
 				29A043532D7DC83B00E77C91 /* SimpleTime.swift in Sources */,
 				29CF49082D7425F600036D28 /* HTTP.swift in Sources */,
+				29CBB3412E04388D006687A3 /* AuthService.swift in Sources */,
 				292D0B8D2DB0CB2700176E51 /* AdminPerformanceEdit.swift in Sources */,
 				29B1599A2DF1888900F469A9 /* DistrictTool.swift in Sources */,
 				29DF09C62DCC9DFB00489DB8 /* Info.swift in Sources */,
 				299A06AA2DB13BAC00E76898 /* AdminDistrictTop.swift in Sources */,
-				29DAB0702DA1623C005E94BA /* AWSCognitoClientLive.swift in Sources */,
+				29DAB0702DA1623C005E94BA /* AwsCognitoProvider.swift in Sources */,
 				2997C2ED2D79CA4B0032566B /* AdminDistrictEdit.swift in Sources */,
 				29DAB0642DA15CFC005E94BA /* AdminLocation.swift in Sources */,
 				29C550612DF7D6A300547F51 /* PublicMap.swift in Sources */,
@@ -1558,6 +1628,7 @@
 				299A51642DA944DB00B24828 /* AdminRouteInfo.swift in Sources */,
 				29A688B82DCC46B6004415BF /* AdminRouteExport.swift in Sources */,
 				299936AE2D7AD5BF009D651E /* UserDefaultsMockClient.swift in Sources */,
+				29CBB33F2E04376E006687A3 /* AuthError.swift in Sources */,
 				29AB1B462DE1FFE500AC37F3 /* ConfirmSignInStoreView.swift in Sources */,
 				29CF49192D7440EB00036D28 /* Extension.swift in Sources */,
 				29DF09C82DCC9E5A00489DB8 /* InfoStoreView.swift in Sources */,
@@ -1571,12 +1642,13 @@
 				299BBF292DC611310092C4D9 /* PublicRouteMapStoreView.swift in Sources */,
 				29BC19462DB6258100C6F918 /* Settings.swift in Sources */,
 				29DAB0612DA15CD1005E94BA /* AdminRouteMap.swift in Sources */,
-				29CF49112D74269A00036D28 /* ApiClient.swift in Sources */,
-				29CF490C2D74263400036D28 /* ApiMockClient.swift in Sources */,
+				29CF49112D74269A00036D28 /* ApiRepository.swift in Sources */,
+				29CBB33D2E04365F006687A3 /* AuthProvider.swift in Sources */,
+				29CF490C2D74263400036D28 /* MockApiRepository.swift in Sources */,
 				29BC19482DB625C700C6F918 /* SettingsStoreView.swift in Sources */,
 				2978C4AB2DCB3BD300D3F7CE /* LocationFeature.swift in Sources */,
 				292D0B8B2DB0CADD00176E51 /* AdminPerformanceEditStoreView.swift in Sources */,
-				29A64ADF2DB4A65B007C3859 /* LocationSharingUsecase.swift in Sources */,
+				29A64ADF2DB4A65B007C3859 /* LocationService.swift in Sources */,
 				29A64ADD2DB4A29A007C3859 /* Home.swift in Sources */,
 				29B5FD632D80877D008838BB /* DistrictSummary.swift in Sources */,
 				29E8C3302DBB3F090086F6BB /* PublicDistrict.swift in Sources */,
@@ -1590,7 +1662,7 @@
 				29C5505B2DF7D40300547F51 /* AdminRouteMapStoreView.swift in Sources */,
 				29A043482D7DC36400E77C91 /* Point.swift in Sources */,
 				29A043462D7DC2B200E77C91 /* PublicRoute.swift in Sources */,
-				29CF490A2D74262300036D28 /* ApiLiveClient.swift in Sources */,
+				29CF490A2D74262300036D28 /* LiveApiRepository.swift in Sources */,
 				29550E542DE45CD800E9D9B6 /* MenuSelector.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -1787,11 +1859,13 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_IDENTITY = "Apple Development";
-				CODE_SIGN_STYLE = Automatic;
+				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Distribution";
+				CODE_SIGN_STYLE = Manual;
 				CURRENT_PROJECT_VERSION = 1;
 				DEPLOYMENT_POSTPROCESSING = NO;
 				DEVELOPMENT_ASSET_PATHS = "\"FesTracking2/Preview Content\"";
-				DEVELOPMENT_TEAM = SN9A65C32S;
+				DEVELOPMENT_TEAM = "";
+				"DEVELOPMENT_TEAM[sdk=iphoneos*]" = SN9A65C32S;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = FesTracking2/Info.plist;
@@ -1813,6 +1887,7 @@
 				PRODUCT_BUNDLE_IDENTIFIER = StudioMK.FesTracking;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
+				"PROVISIONING_PROFILE_SPECIFIER[sdk=iphoneos*]" = FesTracking;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
@@ -1826,11 +1901,13 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_IDENTITY = "Apple Development";
-				CODE_SIGN_STYLE = Automatic;
+				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Distribution";
+				CODE_SIGN_STYLE = Manual;
 				CURRENT_PROJECT_VERSION = 1;
 				DEPLOYMENT_POSTPROCESSING = NO;
 				DEVELOPMENT_ASSET_PATHS = "\"FesTracking2/Preview Content\"";
-				DEVELOPMENT_TEAM = SN9A65C32S;
+				DEVELOPMENT_TEAM = "";
+				"DEVELOPMENT_TEAM[sdk=iphoneos*]" = SN9A65C32S;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = FesTracking2/Info.plist;
@@ -1851,6 +1928,7 @@
 				PRODUCT_BUNDLE_IDENTIFIER = StudioMK.FesTracking;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
+				"PROVISIONING_PROFILE_SPECIFIER[sdk=iphoneos*]" = FesTracking;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";

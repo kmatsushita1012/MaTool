@@ -11,8 +11,8 @@ import ComposableArchitecture
 struct AdminDistrictTop {
     
     @Dependency(\.apiClient) var apiClient
-    @Dependency(\.locationSharingUseCase) var usecase
-    @Dependency(\.awsCognitoClient) var awsCognitoClient
+    @Dependency(\.locationService) var locationService
+    @Dependency(\.authProvider) var authProvider
     @Dependency(\.accessToken) var accessToken
     
     @Reducer
@@ -53,7 +53,7 @@ struct AdminDistrictTop {
         case onLocation
         case destination(PresentationAction<Destination.Action>)
         case onSignOut
-        case signOutReceived(Result<Bool,AWSCognito.Error>)
+        case signOutReceived(Result<Bool,AuthError>)
         case homeTapped
         case alert(PresentationAction<OkAlert.Action>)
     }
@@ -141,7 +141,7 @@ struct AdminDistrictTop {
                 }
                 return .none
             case .onLocation:
-                state.destination = .location(AdminLocation.State(id: state.district.id, isTracking: usecase.isTracking))
+                state.destination = .location(AdminLocation.State(id: state.district.id, isTracking: locationService.isTracking))
                 return .none
             case .destination(.presented(let childAction)):
                 switch childAction {
@@ -179,7 +179,7 @@ struct AdminDistrictTop {
             case .onSignOut:
                 state.isAWSLoading = true
                 return .run { send in
-                    let result = await awsCognitoClient.signOut()
+                    let result = await authProvider.signOut()
                     await send(.signOutReceived(result))
                 }
             case .signOutReceived(let result):

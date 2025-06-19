@@ -34,17 +34,17 @@ struct AdminLocation{
     
     @Dependency(\.apiClient) var apiClient
     @Dependency(\.locationClient) var locationClient
-    @Dependency(\.locationSharingUseCase) var usecase
+    @Dependency(\.locationService) var locationService
     
     var body: some ReducerOf<AdminLocation> {
         BindingReducer()
         Reduce{state, action in
             switch action{
             case .onAppear:
-                state.selectedInterval = usecase.interval
-                state.history = usecase.locationHistory
+                state.selectedInterval = locationService.interval
+                state.history = locationService.locationHistory
                 return .run { send in
-                    for await history in usecase.historyStream {
+                    for await history in locationService.historyStream {
                         await send(.historyUpdated(history))
                     }
                 }
@@ -56,9 +56,9 @@ struct AdminLocation{
             case .toggleChanged(let value):
                 state.isTracking = value
                 if(value){
-                    usecase.startTracking(id: "掛川祭_城北町", interval: state.selectedInterval)
+                    locationService.startTracking(id: "掛川祭_城北町", interval: state.selectedInterval)
                 }else{
-                    usecase.stopTracking(id: "掛川祭_城北町")
+                    locationService.stopTracking(id: "掛川祭_城北町")
                 }
                 return .none
             case .historyUpdated(let history):
