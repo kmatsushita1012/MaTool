@@ -24,7 +24,7 @@ struct ConfirmSignIn {
         case binding(BindingAction<State>)
         case submitTapped
         case dismissTapped
-        case received(Result<String, AuthError>)
+        case received(Result<Empty, AuthError>)
         case alert(PresentationAction<OkAlert.Action>)
     }
     
