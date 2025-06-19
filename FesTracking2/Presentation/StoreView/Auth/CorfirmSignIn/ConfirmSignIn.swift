@@ -9,7 +9,7 @@ import ComposableArchitecture
 
 @Reducer
 struct ConfirmSignIn {
-    @Dependency(\.awsCognitoClient) var awsCognitoClient
+    @Dependency(\.authProvider) var authProvider
     
     @ObservableState
     struct State: Equatable {
@@ -24,7 +24,7 @@ struct ConfirmSignIn {
         case binding(BindingAction<State>)
         case submitTapped
         case dismissTapped
-        case received(Result<String, AWSCognito.Error>)
+        case received(Result<String, AuthError>)
         case alert(PresentationAction<OkAlert.Action>)
     }
     
@@ -44,7 +44,7 @@ struct ConfirmSignIn {
                 }
                 state.isLoading = true
                 return .run { [ password1 = state.password1 ]send in
-                    let result = await awsCognitoClient.confirmSignIn(password1)
+                    let result = await authProvider.confirmSignIn(password1)
                     await send(.received(result))
                 }
             case .dismissTapped:
