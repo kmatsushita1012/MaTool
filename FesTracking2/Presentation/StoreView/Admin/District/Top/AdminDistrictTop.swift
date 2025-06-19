@@ -53,7 +53,7 @@ struct AdminDistrictTop {
         case onLocation
         case destination(PresentationAction<Destination.Action>)
         case onSignOut
-        case signOutReceived(Result<Bool,AuthError>)
+        case signOutReceived(Result<Empty,AuthError>)
         case homeTapped
         case alert(PresentationAction<OkAlert.Action>)
     }

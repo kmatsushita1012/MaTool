@@ -47,7 +47,7 @@ struct Home {
         case infoTapped
         case adminTapped
         case settingsTapped
-        case awsInitializeReceived(Result<String, AuthError>)
+        case awsInitializeReceived(Result<Empty, AuthError>)
         case awsUserRoleReceived(Result<UserRole, AuthError>, shouldNavigate: Bool)
         case adminDistrictPrepared(Result<PublicDistrict,ApiError>, Result<[RouteSummary],ApiError>)
         case adminRegionPrepared(Result<Region,ApiError>, Result<[PublicDistrict],ApiError>)
@@ -112,7 +112,7 @@ struct Home {
                 let regionId = userDefaultsClient.stringForKey(defaultRegionKey)
                 let districtId = userDefaultsClient.stringForKey(defaultDistrictKey)
                 return settingsEffect(regionId: regionId, districtId: districtId)
-            case .awsInitializeReceived(.success(_)):
+            case .awsInitializeReceived(.success):
                 return awsUserRoleAndTokenEffect(shouldNavigate: false)
             case .awsInitializeReceived(.failure(_)):
                 state.userRole = .guest
