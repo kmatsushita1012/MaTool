@@ -9,3 +9,5 @@ struct InfoItem: Equatable, Hashable{
     let title: String
     let description: String?
 }
+
+struct Empty: Equatable {}

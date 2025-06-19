@@ -18,7 +18,7 @@ extension AuthProvider: DependencyKey {
                         continuation.resume(returning: .failure(.unknown("init \(error.localizedDescription)")))
                         return
                     }
-                    continuation.resume(returning: .success("Success"))
+                    continuation.resume(returning: .success(Empty()))
                 }
             }
         },
@@ -59,7 +59,7 @@ extension AuthProvider: DependencyKey {
                         print("Password update error: \(error.localizedDescription)")
                         continuation.resume(returning: .failure(.unknown("confirmSignIn \(error.localizedDescription)")))
                     } else {
-                        continuation.resume(returning: .success("Success"))
+                        continuation.resume(returning: .success(Empty()))
                     }
                 }
             }
@@ -110,7 +110,7 @@ extension AuthProvider: DependencyKey {
                     if let error = error {
                         continuation.resume(returning: .failure(AuthError.network(error.localizedDescription)))
                     } else{
-                        continuation.resume(returning: .success(true))
+                        continuation.resume(returning: .success(Empty()))
                     }
                 }
             }
