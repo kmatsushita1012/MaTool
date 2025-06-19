@@ -11,7 +11,7 @@ import ComposableArchitecture
 struct AdminRegionTop {
     
     @Dependency(\.apiClient) var apiClient
-    @Dependency(\.awsCognitoClient) var awsCognitoClient
+    @Dependency(\.authProvider) var authProvider
     @Dependency(\.accessToken) var accessToken
     
     @Reducer
@@ -39,7 +39,7 @@ struct AdminRegionTop {
         case signOutTapped
         case districtsReceived(Result<[PublicDistrict],ApiError>)
         case districtInfoPrepared(PublicDistrict, Result<[RouteSummary],ApiError>)
-        case signOutReceived(Result<Bool,AWSCognito.Error>)
+        case signOutReceived(Result<Bool,AuthError>)
         case destination(PresentationAction<Destination.Action>)
         case alert(PresentationAction<OkAlert.Action>)
     }
@@ -62,7 +62,7 @@ struct AdminRegionTop {
                 return .none
             case .signOutTapped:
                 return .run { send in
-                    let result = await awsCognitoClient.signOut()
+                    let result = await authProvider.signOut()
                     await send(.signOutReceived(result))
                 }
             case .districtsReceived(.success(let value)):
@@ -96,7 +96,7 @@ struct AdminRegionTop {
                         let result  = await apiClient.getDistricts(regionId)
                         await send(.districtsReceived(result))
                     }
-                case .districtCreate(.received(.failure(let error))):
+                case .districtCreate(.received(.failure(_))):
                     state.destination = nil
                     state.alert = OkAlert.error("参加町の追加に失敗しました。")
                     return .none

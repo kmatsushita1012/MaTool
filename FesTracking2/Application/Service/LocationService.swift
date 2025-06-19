@@ -9,7 +9,7 @@ import Foundation
 import Foundation
 import Dependencies
 
-final class LocationSharingUseCase: Sendable {
+final class LocationService: Sendable {
 
     @Dependency(\.apiClient) var apiClient
     @Dependency(\.accessToken) var accessToken
@@ -106,19 +106,19 @@ final class LocationSharingUseCase: Sendable {
     }
 }
 
-extension LocationSharingUseCase: DependencyKey {
-    static let liveValue: LocationSharingUseCase = LocationSharingUseCase()
+extension LocationService: DependencyKey {
+    static let liveValue: LocationService = LocationService()
 }
 
-extension LocationSharingUseCase: TestDependencyKey {
-    static let testValue: LocationSharingUseCase = LocationSharingUseCase()
+extension LocationService: TestDependencyKey {
+    static let testValue: LocationService = LocationService()
 }
 
 
 extension DependencyValues {
-    var locationSharingUseCase: LocationSharingUseCase {
-        get { self[LocationSharingUseCase.self] }
-        set { self[LocationSharingUseCase.self] = newValue }
+    var locationService: LocationService {
+        get { self[LocationService.self] }
+        set { self[LocationService.self] = newValue }
     }
 }
 

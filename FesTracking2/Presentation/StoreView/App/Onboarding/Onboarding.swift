@@ -83,14 +83,14 @@ struct OnboardingFeature {
                 state.regions = value
                 state.isRegionsLoading = false
                 return .none
-            case .regionsReceived(.failure(let error)):
+            case .regionsReceived(.failure(_)):
                 state.isRegionsLoading = false
                 return .none
             case .districtsReceived(.success(let value)):
                 state.districts = value
                 state.isDistrictsLoading = false
                 return .none
-            case .districtsReceived(.failure(let error)):
+            case .districtsReceived(.failure(_)):
                 state.isDistrictsLoading = false
                 return .none
             }

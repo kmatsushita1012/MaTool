@@ -9,7 +9,7 @@ import AWSMobileClient
 import Dependencies
 
 
-extension AWSCognito.Client: DependencyKey {
+extension AuthProvider: DependencyKey {
     static let liveValue = Self(
         initialize: {
             await withCheckedContinuation { continuation in
@@ -26,7 +26,6 @@ extension AWSCognito.Client: DependencyKey {
             await withCheckedContinuation { continuation in
                 AWSMobileClient.default().signIn(username: username, password: password) { result, error in
                     if let error = error {
-                        print(error)
                         continuation.resume(returning: .failure(.unknown("signIn \(error.localizedDescription)")))
                         return
                     }
@@ -34,7 +33,6 @@ extension AWSCognito.Client: DependencyKey {
                         continuation.resume(returning: .failure(.unknown("result is null")))
                         return
                     }
-                    print(result.signInState)
                     switch result.signInState {
                         case .signedIn:
                             print("Cognito signedIn")
@@ -110,7 +108,7 @@ extension AWSCognito.Client: DependencyKey {
             await withCheckedContinuation { continuation in
                 AWSMobileClient.default().signOut(options: SignOutOptions(invalidateTokens: true))  { error in
                     if let error = error {
-                        continuation.resume(returning: .failure(AWSCognito.Error.network(error.localizedDescription)))
+                        continuation.resume(returning: .failure(AuthError.network(error.localizedDescription)))
                     } else{
                         continuation.resume(returning: .success(true))
                     }
