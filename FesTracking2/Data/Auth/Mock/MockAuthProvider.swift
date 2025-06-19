@@ -7,12 +7,12 @@
 
 import Dependencies
 
-extension AWSCognito.Client: TestDependencyKey {
+extension AuthProvider: TestDependencyKey {
     internal static let testValue = Self.noop
     internal static let previewValue = Self.noop
 }
 
-extension AWSCognito.Client {
+extension AuthProvider {
     static let noop = Self(
         initialize: {
             return .success("Success")

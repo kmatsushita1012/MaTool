@@ -7,14 +7,14 @@
 
 import Dependencies
 
-extension ApiClient: TestDependencyKey {
+extension ApiRepotiroy: TestDependencyKey {
     internal static let testValue = Self.noop
     internal static let previewValue = Self.noop
 }
 
 var routes: [Route] = [Route.sample]
 
-extension ApiClient {
+extension ApiRepotiroy {
     public static let noop = Self(
         getRegions: {
             return Result.success([Region.sample])

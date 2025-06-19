@@ -24,8 +24,8 @@ final class LocationManagerDelegate: NSObject, CLLocationManagerDelegate {
 }
 
 
-extension LocationClient {
-    static func live() -> LocationClient {
+extension LocationProvider {
+    static func live() -> LocationProvider {
         let manager = CLLocationManager()
         let delegate = LocationManagerDelegate()
         manager.delegate = delegate
@@ -34,7 +34,7 @@ extension LocationClient {
         manager.allowsBackgroundLocationUpdates = true
         var isTracking = false
         
-        return LocationClient(
+        return LocationProvider(
             startTracking: {
                 manager.startUpdatingLocation()
                 isTracking = true

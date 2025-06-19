@@ -10,9 +10,8 @@ import Dependencies
 
 let base = "https://eqp8rvam4h.execute-api.ap-northeast-1.amazonaws.com"
 
-extension ApiClient: DependencyKey {
-    static let liveValue = Self.live
-    static let live = Self(
+extension ApiRepotiroy: DependencyKey {
+    static let liveValue = Self(
         getRegions: {
             let response = await performGetRequest(
                 base: base,
