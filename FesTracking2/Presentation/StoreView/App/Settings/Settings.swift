@@ -54,7 +54,6 @@ struct Settings {
                     let result = await apiClient.getDistricts(region.id)
                     await send(.districtsReceived(result))
                 }
-                return .none
             case .binding(\.selectedDistrict):
                 userDefaultsClient.setString(state.selectedDistrict?.id, defaultDistrictKey)
                 return .none
