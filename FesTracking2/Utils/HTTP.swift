@@ -33,14 +33,14 @@ func executeURLSession(request:URLRequest) async -> Result<Data,Error> {
     do {
         let (data, response) = try await URLSession.shared.data(for: request)
         if let httpResponse = response as? HTTPURLResponse, (200...299).contains(httpResponse.statusCode){
-            print("Success \(request.httpMethod)  \(response.url?.absoluteString)")
+            print("Success \(String(describing: request.httpMethod))  \(String(describing: response.url?.absoluteString))")
             return .success(data)
         } else {
-            print("failure \(request.httpMethod) \(response.url?.absoluteString) \((response as? HTTPURLResponse)?.statusCode)")
+            print("failure \(String(describing: request.httpMethod)) \(String(describing: response.url?.absoluteString)) \(String(describing: (response as? HTTPURLResponse)?.statusCode))")
             return .failure(NSError(domain: "HTTP Error", code: (response as? HTTPURLResponse)?.statusCode ?? -1, userInfo: nil))
         }
     } catch {
-        print("failure  \(request.httpMethod) \(request.url?.absoluteString) \(error)\n")
+        print("failure  \(String(describing: request.httpMethod)) \(String(describing: request.url?.absoluteString)) \(error)\n")
         return .failure(error)
     }
 }

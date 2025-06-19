@@ -11,7 +11,7 @@ import ComposableArchitecture
 @Reducer
 struct Login {
     
-    @Dependency(\.awsCognitoClient) var awsCognitoClient
+    @Dependency(\.authProvider) var authProvider
     @Dependency(\.accessToken) var accessToken
     @Dependency(\.userDefaultsClient) var userDefaultsClient
     
@@ -27,7 +27,7 @@ struct Login {
     enum Action: Equatable, BindableAction {
         case binding(BindingAction<State>)
         case signInTapped
-        case received(AWSCognito.SignInResult)
+        case received(AuthSignInResult)
         case homeTapped
         case confirmSignIn(PresentationAction<ConfirmSignIn.Action>)
     }
@@ -41,11 +41,10 @@ struct Login {
             case .signInTapped:
                 state.isLoading = true
                 return .run {[id = state.id, password = state.password] send in
-                    let result = await awsCognitoClient.signIn(id, password)
+                    let result = await authProvider.signIn(id, password)
                     await send(.received(result))
                 }
             case .received(.success):
-                state.isLoading = false
                 state.errorMessage = nil
                 return .none
             case .received(.newPasswordRequired):
@@ -54,9 +53,10 @@ struct Login {
                 state.errorMessage = nil
                 return .none
             case .received(.failure(let error)):
+                state.isLoading = false
                 state.errorMessage = "ログインに失敗しました。\(error.localizedDescription)"
                 return .run { send in
-                    let result = await awsCognitoClient.signOut()
+                    let result = await authProvider.signOut()
                     print(result)
                 }
             case .homeTapped:

@@ -1,5 +1,5 @@
 //
-//  LocationClient.swift
+//  LocationProvider.swift
 //  FesTracking2
 //
 //  Created by 松下和也 on 2025/04/18.
@@ -9,7 +9,7 @@ import Combine
 import ComposableArchitecture
 import CoreLocation
 
-struct LocationClient {
+struct LocationProvider {
     var startTracking: () -> Void
     var getLocation:() -> AsyncValue<CLLocation>
     var isTracking:() ->Bool
@@ -19,13 +19,13 @@ struct LocationClient {
 
 
 extension DependencyValues {
-    var locationClient: LocationClient {
-        get { self[LocationClientKey.self] }
-        set { self[LocationClientKey.self] = newValue }
+    var locationClient: LocationProvider {
+        get { self[LocationProviderKey.self] }
+        set { self[LocationProviderKey.self] = newValue }
     }
 
-    private enum LocationClientKey: DependencyKey {
-        static var liveValue: LocationClient {
+    private enum LocationProviderKey: DependencyKey {
+        static var liveValue: LocationProvider {
             .live()
         }
     }

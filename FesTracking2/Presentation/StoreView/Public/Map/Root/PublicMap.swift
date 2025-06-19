@@ -84,7 +84,7 @@ struct PublicMap{
                 return .none
             case .routesReceived(let result):
                 switch result {
-                case .success(var routes):
+                case .success(let routes):
                     state.routePicker = PickerFeature.State(items: routes.sorted())
                 case .failure(let error):
                     state.error = error.localizedDescription
