@@ -11,7 +11,7 @@ import ComposableArchitecture
 struct AdminRegionEdit {
     
     @Dependency(\.apiClient) var apiClient
-    @Dependency(\.accessToken) var accessToken
+    @Dependency(\.authService) var authService
     
     @ObservableState
     struct State: Equatable {
@@ -41,11 +41,11 @@ struct AdminRegionEdit {
                 return .none
             case .saveTapped:
                 return .run { [region = state.item] send in
-                    if let token = accessToken.value{
+                    if let token = await authService.getAccessToken() {
                         let result = await apiClient.putRegion(region, token)
                         await send(.received(result))
                     }else{
-                        await send(.received(.failure(ApiError.unauthorized("アクセストークンが存在しません。"))))
+                        await send(.received(.failure(ApiError.unauthorized("認証に失敗しました。ログインし直してください"))))
                     }
                 }
             case .cancelTapped:

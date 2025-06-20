@@ -10,7 +10,7 @@ import Dependencies
 
 struct AuthProvider {
     var initialize: () async -> Result<Empty, AuthError>
-    var signIn: (_ username: String, _ password: String) async -> AuthSignInResult
+    var signIn: (_ username: String, _ password: String) async -> SignInResponse
     var confirmSignIn: (_ newPassword: String) async -> Result<Empty, AuthError>
     var getUserRole: () async -> Result<UserRole, AuthError>
     var getTokens: () async -> Result<Tokens, AuthError>

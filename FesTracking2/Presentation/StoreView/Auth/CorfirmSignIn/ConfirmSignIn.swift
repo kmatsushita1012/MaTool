@@ -9,7 +9,7 @@ import ComposableArchitecture
 
 @Reducer
 struct ConfirmSignIn {
-    @Dependency(\.authProvider) var authProvider
+    @Dependency(\.authService) var authService
     
     @ObservableState
     struct State: Equatable {
@@ -24,7 +24,7 @@ struct ConfirmSignIn {
         case binding(BindingAction<State>)
         case submitTapped
         case dismissTapped
-        case received(Result<Empty, AuthError>)
+        case received(Result<UserRole, AuthError>)
         case alert(PresentationAction<OkAlert.Action>)
     }
     
@@ -43,8 +43,8 @@ struct ConfirmSignIn {
                     return .none
                 }
                 state.isLoading = true
-                return .run { [ password1 = state.password1 ]send in
-                    let result = await authProvider.confirmSignIn(password1)
+                return .run { [password = state.password1] send in
+                    let result = await authService.confirmSignIn(password: password)
                     await send(.received(result))
                 }
             case .dismissTapped:
