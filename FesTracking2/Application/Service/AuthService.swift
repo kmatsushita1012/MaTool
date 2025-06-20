@@ -7,12 +7,12 @@
 
 import Dependencies
 
-struct AuthService: Sendable {
+actor AuthService {
     
     @Dependency(\.authProvider) var authProvider
     
     var userRole: UserRole = .guest
-    var accessToken: String?
+    var accessToken: String? = nil
     
     private func fetchAuthData() async -> Result<(String?, UserRole), AuthError> {
         async let tokenResult = authProvider.getTokens()
@@ -30,7 +30,7 @@ struct AuthService: Sendable {
         }
     }
     
-    mutating func loadAuthData() async -> Result<Empty, AuthError> {
+    private func loadAuthData() async -> Result<Empty, AuthError> {
         let result = await fetchAuthData()
         switch result {
         case .success(let (token, role)):
@@ -42,52 +42,81 @@ struct AuthService: Sendable {
         }
     }
     
-    mutating func initialize() async -> Result<Empty,AuthError> {
+    func initialize() async -> Result<UserRole,AuthError> {
         let initializeResult = await authProvider.initialize()
-        if case .failure = initializeResult {
-            return initializeResult
+        if case .failure(let error) = initializeResult {
+            return .failure(error)
         }
         let loadResult = await self.loadAuthData()
         switch loadResult {
         case .success:
-            return initializeResult
-        case .failure:
-            return loadResult
-        }
-    }
-    
-    mutating func signIn(username: String, password: String) async -> AuthSignInResult {
-        let signInResult = await authProvider.signIn(username, password)
-        if case .failure = signInResult {
-            return signInResult
-        }else if case .newPasswordRequired = signInResult{
-            return signInResult
-        }
-        let loadResult = await self.loadAuthData()
-        switch loadResult {
-        case .success:
-            return signInResult
+            return .success(userRole)
         case .failure(let error):
+            let _ = await signOut()
             return .failure(error)
         }
     }
     
-    mutating func confirmSignIn(username: String, password: String) async-> Result<Empty,AuthError> {
-        let confirmSignInResult = await authProvider.confirmSignIn(password)
-        if case .failure = confirmSignInResult {
-            return confirmSignInResult
+    func signIn(_ username: String, password: String) async -> SignInResult {
+        let signInResult = await authProvider.signIn(username, password)
+        if case .failure(let error) = signInResult {
+            return .failure(error)
+        }else if case .newPasswordRequired = signInResult{
+            return .newPasswordRequired
         }
         let loadResult = await self.loadAuthData()
         switch loadResult {
         case .success:
-            return confirmSignInResult
-        case .failure:
-            return loadResult
+            return .success(userRole)
+        case .failure(let error):
+            let _ = await signOut()
+            return .failure(error)
         }
     }
     
-    func signOut() async -> Result<Empty,AuthError> {
+    func confirmSignIn(password: String) async-> Result<UserRole,AuthError> {
+        let confirmSignInResult = await authProvider.confirmSignIn(password)
+        if case .failure(let error) = confirmSignInResult {
+            return .failure(error)
+        }
+        let loadResult = await self.loadAuthData()
+        switch loadResult {
+        case .success:
+            return .success(userRole)
+        case .failure(let error):
+            let _ = await signOut()
+            return .failure(error)
+        }
+    }
+    
+    func signOut() async -> Result<UserRole, AuthError> {
         let signOutResult = await authProvider.signOut()
-        return signOutResult
+        if case .failure(let error) = signOutResult{
+            return .failure(error)
+        }
+        accessToken = nil
+        userRole = .guest
+        return .success(userRole)
+    }
+    
+    func getAccessToken() async -> String? {
+        return accessToken
+    }
+    
+    func getUserRole() async -> UserRole {
+        return userRole
+    }
+}
+
+private enum AuthServiceKey: DependencyKey {
+    static let liveValue = AuthService()
+    static let testValue = AuthService()
+    static let previewValue = AuthService()
+}
+
+extension DependencyValues {
+    var authService: AuthService {
+        get { self[AuthServiceKey.self] }
+        set { self[AuthServiceKey.self] = newValue }
     }
 }

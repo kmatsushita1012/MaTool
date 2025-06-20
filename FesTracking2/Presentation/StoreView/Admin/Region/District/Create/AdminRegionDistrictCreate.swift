@@ -11,7 +11,7 @@ import ComposableArchitecture
 struct AdminRegionDistrictCreate {
     
     @Dependency(\.apiClient) var apiClient
-    @Dependency(\.accessToken) var accessToken
+    @Dependency(\.authService) var authService
     
     @ObservableState
     struct State: Equatable {
@@ -38,9 +38,9 @@ struct AdminRegionDistrictCreate {
                 if state.name.isEmpty || state.email.isEmpty {
                     return .none
                 }
-                guard let token = accessToken.value else { return .none }
                 return .run { [region = state.region, name = state.name, email = state.email] send in
-                    let result = await apiClient.postDistrict(region.id, name, email, token)
+                    guard let accessToken = await authService.getAccessToken() else { return }
+                    let result = await apiClient.postDistrict(region.id, name, email, accessToken)
                     await send(.received(result))
                 }
             case .cancelTapped:

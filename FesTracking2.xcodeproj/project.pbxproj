@@ -63,6 +63,8 @@
 		299A06AD2DB142A200E76898 /* AdminLocationStoreView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 299A06AC2DB1429E00E76898 /* AdminLocationStoreView.swift */; };
 		299A51622DA942CF00B24828 /* AdminRouteInfoStoreView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 299A51612DA942C100B24828 /* AdminRouteInfoStoreView.swift */; };
 		299A51642DA944DB00B24828 /* AdminRouteInfo.swift in Sources */ = {isa = PBXBuildFile; fileRef = 299A51632DA944D400B24828 /* AdminRouteInfo.swift */; };
+		299AD5942E04F6AE007ACBC4 /* SignInResult.swift in Sources */ = {isa = PBXBuildFile; fileRef = 299AD5932E04F6AA007ACBC4 /* SignInResult.swift */; };
+		299AD5962E04F9A3007ACBC4 /* SignInResponce.swift in Sources */ = {isa = PBXBuildFile; fileRef = 299AD5952E04F994007ACBC4 /* SignInResponce.swift */; };
 		299BBF272DC60C480092C4D9 /* ToggleItemView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 299BBF262DC60C450092C4D9 /* ToggleItemView.swift */; };
 		299BBF292DC611310092C4D9 /* PublicRouteMapStoreView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 299BBF282DC6112B0092C4D9 /* PublicRouteMapStoreView.swift */; };
 		299BBF2B2DC7AF070092C4D9 /* PublicRouteMap.swift in Sources */ = {isa = PBXBuildFile; fileRef = 299BBF2A2DC7AEF00092C4D9 /* PublicRouteMap.swift */; };
@@ -123,7 +125,7 @@
 		29CBB33D2E04365F006687A3 /* AuthProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29CBB33C2E04365A006687A3 /* AuthProvider.swift */; };
 		29CBB33F2E04376E006687A3 /* AuthError.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29CBB33E2E04376B006687A3 /* AuthError.swift */; };
 		29CBB3412E04388D006687A3 /* AuthService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29CBB3402E043889006687A3 /* AuthService.swift */; };
-		29CF49082D7425F600036D28 /* HTTP.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29CF49072D7425F600036D28 /* HTTP.swift */; };
+		29CF49082D7425F600036D28 /* Http.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29CF49072D7425F600036D28 /* Http.swift */; };
 		29CF490A2D74262300036D28 /* LiveApiRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29CF49092D74262300036D28 /* LiveApiRepository.swift */; };
 		29CF490C2D74263400036D28 /* MockApiRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29CF490B2D74263400036D28 /* MockApiRepository.swift */; };
 		29CF49112D74269A00036D28 /* ApiRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29CF49102D74269A00036D28 /* ApiRepository.swift */; };
@@ -261,6 +263,8 @@
 		299A06AC2DB1429E00E76898 /* AdminLocationStoreView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdminLocationStoreView.swift; sourceTree = "<group>"; };
 		299A51612DA942C100B24828 /* AdminRouteInfoStoreView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdminRouteInfoStoreView.swift; sourceTree = "<group>"; };
 		299A51632DA944D400B24828 /* AdminRouteInfo.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdminRouteInfo.swift; sourceTree = "<group>"; };
+		299AD5932E04F6AA007ACBC4 /* SignInResult.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SignInResult.swift; sourceTree = "<group>"; };
+		299AD5952E04F994007ACBC4 /* SignInResponce.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SignInResponce.swift; sourceTree = "<group>"; };
 		299BBF262DC60C450092C4D9 /* ToggleItemView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ToggleItemView.swift; sourceTree = "<group>"; };
 		299BBF282DC6112B0092C4D9 /* PublicRouteMapStoreView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PublicRouteMapStoreView.swift; sourceTree = "<group>"; };
 		299BBF2A2DC7AEF00092C4D9 /* PublicRouteMap.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PublicRouteMap.swift; sourceTree = "<group>"; };
@@ -321,7 +325,7 @@
 		29CBB33C2E04365A006687A3 /* AuthProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthProvider.swift; sourceTree = "<group>"; };
 		29CBB33E2E04376B006687A3 /* AuthError.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthError.swift; sourceTree = "<group>"; };
 		29CBB3402E043889006687A3 /* AuthService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthService.swift; sourceTree = "<group>"; };
-		29CF49072D7425F600036D28 /* HTTP.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HTTP.swift; sourceTree = "<group>"; };
+		29CF49072D7425F600036D28 /* Http.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Http.swift; sourceTree = "<group>"; };
 		29CF49092D74262300036D28 /* LiveApiRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveApiRepository.swift; sourceTree = "<group>"; };
 		29CF490B2D74263400036D28 /* MockApiRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockApiRepository.swift; sourceTree = "<group>"; };
 		29CF49102D74269A00036D28 /* ApiRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ApiRepository.swift; sourceTree = "<group>"; };
@@ -605,6 +609,15 @@
 			path = District;
 			sourceTree = "<group>";
 		};
+		299AD5922E04F683007ACBC4 /* Auth */ = {
+			isa = PBXGroup;
+			children = (
+				292D10892DCDD6C50022D8A0 /* UserRole.swift */,
+				299AD5932E04F6AA007ACBC4 /* SignInResult.swift */,
+			);
+			path = Auth;
+			sourceTree = "<group>";
+		};
 		29A043422D7DC23300E77C91 /* Route */ = {
 			isa = PBXGroup;
 			children = (
@@ -623,7 +636,6 @@
 			children = (
 				29A0434E2D7DC61000E77C91 /* SimpleDate.swift */,
 				29AB1B432DE1FD0800AC37F3 /* Others.swift */,
-				292D10892DCDD6C50022D8A0 /* UserRole.swift */,
 				29BC19402DB6134700C6F918 /* Date.swift */,
 				296795CE2DA4F7AF008D3CE1 /* Span.swift */,
 				29A043522D7DC83800E77C91 /* SimpleTime.swift */,
@@ -1056,6 +1068,7 @@
 				29DAB06C2DA16084005E94BA /* AWSCognito.swift */,
 				29CBB33C2E04365A006687A3 /* AuthProvider.swift */,
 				29CBB33E2E04376B006687A3 /* AuthError.swift */,
+				299AD5952E04F994007ACBC4 /* SignInResponce.swift */,
 			);
 			path = Auth;
 			sourceTree = "<group>";
@@ -1124,7 +1137,7 @@
 		29CF49062D7425D600036D28 /* Utils */ = {
 			isa = PBXGroup;
 			children = (
-				29CF49072D7425F600036D28 /* HTTP.swift */,
+				29CF49072D7425F600036D28 /* Http.swift */,
 				2972017A2D9CFA41003424EF /* async.swift */,
 				29CF49182D7440EB00036D28 /* Extension.swift */,
 				29B2D0932DF07843008592F8 /* EditManager.swift */,
@@ -1135,6 +1148,7 @@
 		29CF490D2D74266500036D28 /* Entities */ = {
 			isa = PBXGroup;
 			children = (
+				299AD5922E04F683007ACBC4 /* Auth */,
 				29A64AE22DB4AD77007C3859 /* Location */,
 				29998EA22DA4128200CBC1DC /* District */,
 				29A043542D7DCD4A00E77C91 /* Region */,
@@ -1592,11 +1606,12 @@
 				29AD86492DB2032300C3E8B2 /* LocationProvider.swift in Sources */,
 				29CBB3392E043608006687A3 /* ApiError.swift in Sources */,
 				29A043532D7DC83B00E77C91 /* SimpleTime.swift in Sources */,
-				29CF49082D7425F600036D28 /* HTTP.swift in Sources */,
+				29CF49082D7425F600036D28 /* Http.swift in Sources */,
 				29CBB3412E04388D006687A3 /* AuthService.swift in Sources */,
 				292D0B8D2DB0CB2700176E51 /* AdminPerformanceEdit.swift in Sources */,
 				29B1599A2DF1888900F469A9 /* DistrictTool.swift in Sources */,
 				29DF09C62DCC9DFB00489DB8 /* Info.swift in Sources */,
+				299AD5942E04F6AE007ACBC4 /* SignInResult.swift in Sources */,
 				299A06AA2DB13BAC00E76898 /* AdminDistrictTop.swift in Sources */,
 				29DAB0702DA1623C005E94BA /* AwsCognitoProvider.swift in Sources */,
 				2997C2ED2D79CA4B0032566B /* AdminDistrictEdit.swift in Sources */,
@@ -1643,6 +1658,7 @@
 				29BC19462DB6258100C6F918 /* Settings.swift in Sources */,
 				29DAB0612DA15CD1005E94BA /* AdminRouteMap.swift in Sources */,
 				29CF49112D74269A00036D28 /* ApiRepository.swift in Sources */,
+				299AD5962E04F9A3007ACBC4 /* SignInResponce.swift in Sources */,
 				29CBB33D2E04365F006687A3 /* AuthProvider.swift in Sources */,
 				29CF490C2D74263400036D28 /* MockApiRepository.swift in Sources */,
 				29BC19482DB625C700C6F918 /* SettingsStoreView.swift in Sources */,
