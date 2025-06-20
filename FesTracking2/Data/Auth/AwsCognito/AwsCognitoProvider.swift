@@ -117,7 +117,3 @@ extension AuthProvider: DependencyKey {
         }
     )
 }
-
-extension AWSCognitoAccessTokenStore: DependencyKey {
-    static let liveValue = AWSCognitoAccessTokenStore()
-}

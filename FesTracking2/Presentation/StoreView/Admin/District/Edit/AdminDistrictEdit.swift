@@ -14,7 +14,7 @@ import _PhotosUI_SwiftUI
 struct AdminDistrictEdit {
     
     @Dependency(\.apiClient) var apiClient
-    @Dependency(\.accessToken) var accessToken
+    @Dependency(\.authService) var authService
     
     @Reducer
     enum Destination {
@@ -57,11 +57,11 @@ struct AdminDistrictEdit {
             case .saveTapped:
                 state.isLoading = true
                 return .run{ [item = state.item] send in
-                    if let token = accessToken.value{
+                    if let token = await authService.getAccessToken(){
                         let result = await apiClient.putDistrict(item, token)
                         await send(.postReceived(result))
                     }else{
-                        await send(.postReceived(.failure(ApiError.unknown("No Access Token"))))
+                        await send(.postReceived(.failure(ApiError.unknown("認証に失敗しました。ログインし直してください"))))
                     }
                 }
             case .baseTapped:
