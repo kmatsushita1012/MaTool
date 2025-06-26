@@ -11,10 +11,10 @@ struct District: Codable, Equatable, Identifiable{
     let id: String
     var name: String
     let regionId: String
-    var description: String? = nil
-    var base: Coordinate? = nil
+    @NullEncodable var description: String? = nil
+    @NullEncodable var base: Coordinate? = nil
     var area: [Coordinate] = []
-    var imagePath:String? = nil
+    @NullEncodable var imagePath:String? = nil
     var performances: [Performance] = []
     var visibility: Visibility
 }

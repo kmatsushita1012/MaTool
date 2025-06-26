@@ -12,7 +12,7 @@ struct Route: Codable, Equatable, Identifiable {
     let districtId: String
     var date:SimpleDate = .today
     var title: String = ""
-    var description: String?
+    @NullEncodable var description: String?
     var points: [Point] = []
     var segments: [Segment] = []
     var start: SimpleTime = SimpleTime(hour: 9, minute: 0)

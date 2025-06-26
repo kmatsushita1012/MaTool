@@ -53,11 +53,12 @@ struct AdminRouteInfoView: View{
                 }
                 if !store.mode.isCreate {
                     Section {
-                        Text("削除")
-                            .onTapGesture {
-                                store.send(.deleteTapped)
-                            }
-                            .foregroundStyle(.red)
+                        Button(action: {
+                            store.send(.deleteTapped)
+                        }) {
+                            Text("ログアウト")
+                                .foregroundColor(.red)
+                        }
                     }
                 }
             }
