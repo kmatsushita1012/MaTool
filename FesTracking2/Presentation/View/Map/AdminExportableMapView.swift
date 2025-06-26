@@ -172,7 +172,7 @@ struct AdminRouteExportMapView: UIViewRepresentable {
     }
     
     private func drawPinsAndCaptions(on snapshot: MKMapSnapshotter.Snapshot) {
-        var drawnRects: [CGRect] = [] // ローカルで衝突回避用に保持
+        var drawnRects: [CGRect] = []
 
         for (index, point) in points.enumerated() {
             let pointInSnapshot = snapshot.point(for: point.coordinate.toCL())
@@ -224,8 +224,6 @@ struct AdminRouteExportMapView: UIViewRepresentable {
                 x: location.x + direction.dx * (margin + halfWidth),
                 y: location.y + direction.dy * (margin + halfHeight)
             )
-            print(direction)
-            print(center)
             // TODO: 調整
             let rect = CGRect(
                 x: center.x - halfWidth ,

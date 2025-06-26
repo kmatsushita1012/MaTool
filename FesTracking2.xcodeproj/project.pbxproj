@@ -34,7 +34,7 @@
 		296795CF2DA4F7B1008D3CE1 /* Span.swift in Sources */ = {isa = PBXBuildFile; fileRef = 296795CE2DA4F7AF008D3CE1 /* Span.swift */; };
 		296795D12DA4F902008D3CE1 /* AdminRouteMapView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 296795D02DA4F8FB008D3CE1 /* AdminRouteMapView.swift */; };
 		296795D42DA4FF01008D3CE1 /* PresentationUtils.swift in Sources */ = {isa = PBXBuildFile; fileRef = 296795D32DA4FEFD008D3CE1 /* PresentationUtils.swift */; };
-		2972017B2D9CFA50003424EF /* async.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2972017A2D9CFA41003424EF /* async.swift */; };
+		2972017B2D9CFA50003424EF /* Async.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2972017A2D9CFA41003424EF /* Async.swift */; };
 		2978C4A92DCB3B5200D3F7CE /* PointFeature.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2978C4A82DCB3B4E00D3F7CE /* PointFeature.swift */; };
 		2978C4AB2DCB3BD300D3F7CE /* LocationFeature.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2978C4AA2DCB3BCE00D3F7CE /* LocationFeature.swift */; };
 		2978C4AD2DCB3C9D00D3F7CE /* PointView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2978C4AC2DCB3C9A00D3F7CE /* PointView.swift */; };
@@ -108,6 +108,7 @@
 		29B5FD632D80877D008838BB /* DistrictSummary.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29B5FD622D808776008838BB /* DistrictSummary.swift */; };
 		29B638A72DB0E7E400DF8419 /* AdminSpanEdit.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29B638A62DB0E7DF00DF8419 /* AdminSpanEdit.swift */; };
 		29B638A92DB0E89600DF8419 /* AdminSpanEditStoreView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29B638A82DB0E89000DF8419 /* AdminSpanEditStoreView.swift */; };
+		29BBDC832E0D862400CA03EE /* Json.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29BBDC822E0D862400CA03EE /* Json.swift */; };
 		29BC19412DB6134900C6F918 /* Date.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29BC19402DB6134700C6F918 /* Date.swift */; };
 		29BC19442DB6236700C6F918 /* HomeStoreView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29BC19432DB6235D00C6F918 /* HomeStoreView.swift */; };
 		29BC19462DB6258100C6F918 /* Settings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29BC19452DB6258100C6F918 /* Settings.swift */; };
@@ -234,7 +235,7 @@
 		296795CE2DA4F7AF008D3CE1 /* Span.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Span.swift; sourceTree = "<group>"; };
 		296795D02DA4F8FB008D3CE1 /* AdminRouteMapView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdminRouteMapView.swift; sourceTree = "<group>"; };
 		296795D32DA4FEFD008D3CE1 /* PresentationUtils.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PresentationUtils.swift; sourceTree = "<group>"; };
-		2972017A2D9CFA41003424EF /* async.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = async.swift; sourceTree = "<group>"; };
+		2972017A2D9CFA41003424EF /* Async.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Async.swift; sourceTree = "<group>"; };
 		2978C4A82DCB3B4E00D3F7CE /* PointFeature.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PointFeature.swift; sourceTree = "<group>"; };
 		2978C4AA2DCB3BCE00D3F7CE /* LocationFeature.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocationFeature.swift; sourceTree = "<group>"; };
 		2978C4AC2DCB3C9A00D3F7CE /* PointView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PointView.swift; sourceTree = "<group>"; };
@@ -311,6 +312,7 @@
 		29B5FD622D808776008838BB /* DistrictSummary.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DistrictSummary.swift; sourceTree = "<group>"; };
 		29B638A62DB0E7DF00DF8419 /* AdminSpanEdit.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdminSpanEdit.swift; sourceTree = "<group>"; };
 		29B638A82DB0E89000DF8419 /* AdminSpanEditStoreView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdminSpanEditStoreView.swift; sourceTree = "<group>"; };
+		29BBDC822E0D862400CA03EE /* Json.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Json.swift; sourceTree = "<group>"; };
 		29BC19402DB6134700C6F918 /* Date.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Date.swift; sourceTree = "<group>"; };
 		29BC19432DB6235D00C6F918 /* HomeStoreView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeStoreView.swift; sourceTree = "<group>"; };
 		29BC19452DB6258100C6F918 /* Settings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Settings.swift; sourceTree = "<group>"; };
@@ -1154,7 +1156,8 @@
 			children = (
 				29CF49072D7425F600036D28 /* Http.swift */,
 				298C682B2E0C1ADD009570A5 /* ReleaseNotesChecker.swift */,
-				2972017A2D9CFA41003424EF /* async.swift */,
+				29BBDC822E0D862400CA03EE /* Json.swift */,
+				2972017A2D9CFA41003424EF /* Async.swift */,
 				29CF49182D7440EB00036D28 /* Extension.swift */,
 				29B2D0932DF07843008592F8 /* EditManager.swift */,
 			);
@@ -1609,7 +1612,7 @@
 				29CB077B2DAF86610009A47D /* AdminBaseEdit.swift in Sources */,
 				2914184C2DA2B8E9003D7C72 /* PublicMapStoreView.swift in Sources */,
 				292D0B8F2DB0D44100176E51 /* EditableListItemView.swift in Sources */,
-				2972017B2D9CFA50003424EF /* async.swift in Sources */,
+				2972017B2D9CFA50003424EF /* Async.swift in Sources */,
 				29A0434F2D7DC61500E77C91 /* SimpleDate.swift in Sources */,
 				292D0BA12DB0E0DC00176E51 /* AdminRegionEdit.swift in Sources */,
 				29F8A7932DFD645000331A7F /* TitleView.swift in Sources */,
@@ -1672,6 +1675,7 @@
 				296795D12DA4F902008D3CE1 /* AdminRouteMapView.swift in Sources */,
 				296795CF2DA4F7B1008D3CE1 /* Span.swift in Sources */,
 				29A3851A2DD1B781008A1D08 /* AdminRegionDistrictDetailStoreView.swift in Sources */,
+				29BBDC832E0D862400CA03EE /* Json.swift in Sources */,
 				299BBF2B2DC7AF070092C4D9 /* PublicRouteMap.swift in Sources */,
 				29A688C22DCC4E38004415BF /* AdminRouteItemView.swift in Sources */,
 				299BBF292DC611310092C4D9 /* PublicRouteMapStoreView.swift in Sources */,

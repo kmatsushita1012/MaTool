@@ -28,6 +28,11 @@ struct AdminRouteMapView: UIViewRepresentable {
         // 長押しジェスチャー追加
         let longPress = UILongPressGestureRecognizer(target: context.coordinator, action: #selector(Coordinator.handleLongPress(_:)))
         mapView.addGestureRecognizer(longPress)
+        mapView.pointOfInterestFilter = MKPointOfInterestFilter(excluding: [
+            .restaurant,
+            .nightlife
+        ])
+
         
         if let region = region {
             mapView.setRegion(region, animated: false)
@@ -72,7 +77,30 @@ struct AdminRouteMapView: UIViewRepresentable {
             let coordinate = mapView.convert(location, toCoordinateFrom: mapView)
             parent.onMapLongPress(Coordinate.fromCL(coordinate))
         }
+        
+        func mapView(_ mapView: MKMapView, viewFor annotation: MKAnnotation) -> MKAnnotationView? {
+            if annotation is MKUserLocation {
+                return nil // 現在地はデフォルトのまま
+            }
+            let identifier = "AnnotationView"
 
+            var annotationView = mapView.dequeueReusableAnnotationView(withIdentifier: identifier)
+            if annotationView == nil {
+                annotationView = MKMarkerAnnotationView(annotation: annotation, reuseIdentifier: identifier)
+            } else {
+                annotationView?.annotation = annotation
+            }
+            annotationView?.displayPriority = .required
+            if #available(iOS 11.0, *) {
+                (annotationView as? MKMarkerAnnotationView)?.clusteringIdentifier = nil
+            }
+            if let markerView = annotationView as? MKMarkerAnnotationView {
+                markerView.markerTintColor = .red
+                markerView.canShowCallout = true
+            }
+            return annotationView
+        }
+        
         func mapView(_ mapView: MKMapView, didSelect view: MKAnnotationView) {
             if let annotation = view.annotation as? PointAnnotation {
                 parent.pointTapped(annotation.point)

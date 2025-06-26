@@ -10,13 +10,14 @@ import Foundation
 
 @Reducer
 struct Settings {
-    
+    @Dependency(\.authService) var authService
     @Dependency(\.apiClient) var apiClient
     @Dependency(\.userDefaultsClient) var userDefaultsClient
     
     @ObservableState
     struct State: Equatable {
-        let regions: [Region]
+        let isOfflineMode: Bool
+        var regions: [Region] = []
         var selectedRegion: Region? = nil
         var districts: [PublicDistrict] = []
         var selectedDistrict: PublicDistrict? = nil
@@ -25,7 +26,7 @@ struct Settings {
         var contact: URL = URL(string: contactURLString)!
         @Presents var alert: OkAlert.State? = nil
         var isDismissEnabled: Bool {
-            selectedRegion != nil
+            selectedRegion != nil || !isOfflineMode
         }
     }
 
@@ -33,6 +34,8 @@ struct Settings {
     enum Action: Equatable, BindableAction {
         case binding(BindingAction<State>)
         case dismissTapped
+        case signOutTapped
+        case signOutReceived(Result<UserRole,AuthError>)
         case districtsReceived(Result<[PublicDistrict], ApiError>)
         case alert(PresentationAction<OkAlert.Action>)
     }
@@ -59,8 +62,16 @@ struct Settings {
                 return .none
             case .binding:
                 return .none
-            case .dismissTapped:
-
+            case .signOutTapped:
+                return .run { send in
+                    let result = await authService.signOut()
+                    await send(.signOutReceived(result))
+                }
+            case .signOutReceived(.success):
+                state.alert = OkAlert.success("サインアウトしました")
+                return .none
+            case .signOutReceived(.failure(let error)):
+                state.alert = OkAlert.error("情報の取得に失敗しました \(error.localizedDescription)")
                 return .none
             case .districtsReceived(.success(let value)):
                 state.districts = value
@@ -74,6 +85,8 @@ struct Settings {
                 state.alert = nil
                 return .none
             case .alert:
+                return .none
+            case .dismissTapped:
                 return .none
             }
         }

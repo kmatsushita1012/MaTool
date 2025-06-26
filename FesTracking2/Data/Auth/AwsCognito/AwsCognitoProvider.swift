@@ -107,6 +107,7 @@ extension AuthProvider: DependencyKey {
         signOut: {
             await withCheckedContinuation { continuation in
                 AWSMobileClient.default().signOut(options: SignOutOptions(invalidateTokens: true))  { error in
+                    AWSMobileClient.default().clearKeychain()
                     if let error = error {
                         continuation.resume(returning: .failure(AuthError.network(error.localizedDescription)))
                     } else{

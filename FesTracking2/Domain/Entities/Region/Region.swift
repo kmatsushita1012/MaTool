@@ -10,13 +10,13 @@ struct Region: Codable, Equatable, Identifiable, Hashable {
     let id: String
     var name: String
     var subname: String
-    var description: String?
+    @NullEncodable var description: String?
     var prefecture: String
     var city: String
     var base: Coordinate
     var spans: [Span] = []
     var milestones: [Information] = []
-    var imagePath:String?
+    @NullEncodable var imagePath:String?
 }
 
 
