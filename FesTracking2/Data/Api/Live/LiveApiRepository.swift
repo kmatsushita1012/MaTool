@@ -123,6 +123,7 @@ extension ApiRepotiroy: DependencyKey {
             return decodeResponse(PublicRoute.self, from: response)
         },
         postRoute: { route, accessToken in
+            print(route)
             let body = encodeRequest(route)
             switch body {
             case .success(let body):
@@ -222,6 +223,7 @@ private func decodeResponse<T:Codable>(_ type:T.Type, from response: Result<Data
             let decodedObject = try JSONDecoder().decode(type, from: data)
             return Result.success(decodedObject)
         }catch{
+            print(error)
             return Result.failure(ApiError.decoding("レスポンスの解析に失敗しました"))
         }
     case .failure(let error):

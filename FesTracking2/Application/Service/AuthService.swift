@@ -11,49 +11,18 @@ actor AuthService {
     
     @Dependency(\.authProvider) var authProvider
     
-    var userRole: UserRole = .guest
-    var accessToken: String? = nil
-    
-    private func fetchAuthData() async -> Result<(String?, UserRole), AuthError> {
-        async let tokenResult = authProvider.getTokens()
-        async let userRoleResult = authProvider.getUserRole()
-
-        let (token, userRole) = await (tokenResult, userRoleResult)
-        
-        switch (token, userRole) {
-        case (.success(let token), .success(let role)):
-            return .success((token.accessToken?.tokenString, role))
-        case (.failure(let err), _):
-            return .failure(err)
-        case (_, .failure(let err)):
-            return .failure(err)
-        }
-    }
-    
-    private func loadAuthData() async -> Result<Empty, AuthError> {
-        let result = await fetchAuthData()
-        switch result {
-        case .success(let (token, role)):
-            self.accessToken = token
-            self.userRole = role
-            return .success(Empty())
-        case .failure(let err):
-            return .failure(err)
-        }
-    }
-    
     func initialize() async -> Result<UserRole,AuthError> {
         let initializeResult = await authProvider.initialize()
         if case .failure(let error) = initializeResult {
             return .failure(error)
         }
-        let loadResult = await self.loadAuthData()
-        switch loadResult {
-        case .success:
-            return .success(userRole)
+        let userRoleResult = await authProvider.getUserRole()
+        switch userRoleResult {
+        case .success(let value):
+            return .success(value)
         case .failure(let error):
-            let _ = await signOut()
-            return .failure(error)
+            let _ = await authProvider.signOut()
+            return .success(.guest)
         }
     }
     
@@ -64,13 +33,13 @@ actor AuthService {
         }else if case .newPasswordRequired = signInResult{
             return .newPasswordRequired
         }
-        let loadResult = await self.loadAuthData()
-        switch loadResult {
-        case .success:
-            return .success(userRole)
+        let userRoleResult = await authProvider.getUserRole()
+        switch userRoleResult {
+        case .success(let value):
+            return .success(value)
         case .failure(let error):
-            let _ = await signOut()
-            return .failure(error)
+            let _ = await authProvider.signOut()
+            return .success(.guest)
         }
     }
     
@@ -79,13 +48,13 @@ actor AuthService {
         if case .failure(let error) = confirmSignInResult {
             return .failure(error)
         }
-        let loadResult = await self.loadAuthData()
-        switch loadResult {
-        case .success:
-            return .success(userRole)
+        let userRoleResult = await authProvider.getUserRole()
+        switch userRoleResult {
+        case .success(let value):
+            return .success(value)
         case .failure(let error):
-            let _ = await signOut()
-            return .failure(error)
+            let _ = await authProvider.signOut()
+            return .success(.guest)
         }
     }
     
@@ -94,18 +63,19 @@ actor AuthService {
         if case .failure(let error) = signOutResult{
             return .failure(error)
         }
-        accessToken = nil
-        userRole = .guest
-        return .success(userRole)
+        return .success(.guest)
     }
     
     func getAccessToken() async -> String? {
-        return accessToken
+        let result = await authProvider.getTokens()
+        switch result {
+        case .success(let value):
+            return value.accessToken?.tokenString
+        case .failure:
+            return nil
+        }
     }
     
-    func getUserRole() async -> UserRole {
-        return userRole
-    }
 }
 
 private enum AuthServiceKey: DependencyKey {

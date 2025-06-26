@@ -36,7 +36,10 @@ struct AdminPointView: View {
                         .frame(height:60)
                 }
                 
-                Section(header: Text("時刻") ) {
+                Section(
+                    header: Text("時刻"),
+                    footer: Text("出発時刻および到着時刻は省略可")
+                ) {
                     Toggle("時刻を設定", isOn: Binding(
                         get: { store.item.time != nil },
                         set: { hasTime in
