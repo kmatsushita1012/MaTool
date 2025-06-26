@@ -12,8 +12,7 @@ struct AdminDistrictTop {
     
     @Dependency(\.apiClient) var apiClient
     @Dependency(\.locationService) var locationService
-    @Dependency(\.authProvider) var authProvider
-    @Dependency(\.accessToken) var accessToken
+    @Dependency(\.authService) var authService
     
     @Reducer
     enum Destination {
@@ -52,8 +51,8 @@ struct AdminDistrictTop {
         case exportPrepared(Result<PublicRoute,ApiError>)
         case onLocation
         case destination(PresentationAction<Destination.Action>)
-        case onSignOut
-        case signOutReceived(Result<Bool,AuthError>)
+        case signOutTapped
+        case signOutReceived(Result<UserRole, AuthError>)
         case homeTapped
         case alert(PresentationAction<OkAlert.Action>)
     }
@@ -68,20 +67,20 @@ struct AdminDistrictTop {
             case .onRouteAdd:
                 state.isRouteLoading = true
                 return .run {[districtId = state.district.id] send in
-                    let result = await apiClient.getTool(districtId, accessToken.value)
+                    let result = await apiClient.getTool(districtId, authService.getAccessToken())
                     await send(.routeCreatePrepared(result))
                 }
             case .onRouteEdit(let route):
                 state.isRouteLoading = true
                 return .run { send in
-                    let routeResult = await apiClient.getRoute(route.id, accessToken.value)
-                    let toolResult = await apiClient.getTool(route.districtId, accessToken.value)
+                    let routeResult = await apiClient.getRoute(route.id, authService.getAccessToken())
+                    let toolResult = await apiClient.getTool(route.districtId, authService.getAccessToken())
                     await send(.routeEditPrepared(routeResult, toolResult))
                 }
             case .onRouteExport(let route):
                 state.isExportLoading = true
                 return .run { send in
-                    let result = await apiClient.getRoute(route.id, accessToken.value)
+                    let result = await apiClient.getRoute(route.id, authService.getAccessToken())
                     await send(.exportPrepared(result))
                 }
             case .getDistrictReceived(let result):
@@ -109,7 +108,7 @@ struct AdminDistrictTop {
                     state.destination = .route(
                         AdminRouteInfo.State(
                             mode: .edit(route.toModel()),
-                            performances: tool.performances,
+                            milestones: tool.milestones,
                             base: tool.base)
                     )
                 } else {
@@ -122,8 +121,11 @@ struct AdminDistrictTop {
                 case .success(let tool):
                     state.destination = .route(
                         AdminRouteInfo.State(
-                            mode: .create(state.district.id, tool.spans.first ?? Span.sample),
-                            performances: tool.performances,
+                            mode: .create(
+                                state.district.id,
+                                tool.spans.first ?? Span.sample
+                            ),
+                            milestones: tool.milestones,
                             base: tool.base)
                     )
                 case .failure(let error):
@@ -135,13 +137,19 @@ struct AdminDistrictTop {
                 state.isExportLoading = false
                 switch result {
                 case .success(let value):
-                    state.destination = .export(AdminRouteExport.State(route: value))
+                    state.destination = .export(
+                        AdminRouteExport.State(route: value)
+                    )
                 case .failure(let error):
                     state.alert = OkAlert.error("情報の取得に失敗しました。 \(error.localizedDescription)")
                 }
                 return .none
             case .onLocation:
-                state.destination = .location(AdminLocation.State(id: state.district.id, isTracking: locationService.isTracking))
+                state.destination = .location(
+                    AdminLocation.State(
+                        id: state.district.id,
+                        isTracking: locationService.isTracking)
+                )
                 return .none
             case .destination(.presented(let childAction)):
                 switch childAction {
@@ -163,7 +171,7 @@ struct AdminDistrictTop {
                             await send(.getDistrictReceived(result))
                         },
                         .run {[id = state.district.id] send in
-                            let result = await apiClient.getRoutes(id, accessToken.value)
+                            let result = await apiClient.getRoutes(id, authService.getAccessToken())
                             await send(.getRoutesReceived(result))
                         }
                     )
@@ -176,10 +184,10 @@ struct AdminDistrictTop {
             case .destination(.dismiss):
                 state.destination = nil
                 return .none
-            case .onSignOut:
+            case .signOutTapped:
                 state.isAWSLoading = true
                 return .run { send in
-                    let result = await authProvider.signOut()
+                    let result = await authService.signOut()
                     await send(.signOutReceived(result))
                 }
             case .signOutReceived(let result):

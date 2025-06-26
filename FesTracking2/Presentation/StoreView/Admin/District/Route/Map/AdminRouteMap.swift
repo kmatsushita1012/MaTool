@@ -28,7 +28,7 @@ struct AdminRouteMap{
     struct State: Equatable{
         var manager: EditManager<Route>
         var operation: Operation = .add
-        let performances: [Performance]
+        let milestones: [Information]
         var region: MKCoordinateRegion?
         @Presents var destination: Destination.State?
         @Presents var alert: OkAlert.State?
@@ -39,9 +39,9 @@ struct AdminRouteMap{
         }
         
         
-        init(route: Route, performances: [Performance], base: Coordinate?){
+        init(route: Route, milestones: [Information], base: Coordinate?){
             self.manager = EditManager(route)
-            self.performances = performances
+            self.milestones = milestones
             if !route.points.isEmpty{
                 self.region = makeRegion(route.points.map{ $0.coordinate })
             }else if let base = base{
@@ -117,7 +117,8 @@ struct AdminRouteMap{
                     return .none
                 }
             case .annotationTapped(let point):
-                state.destination = .point(AdminPointEdit.State(item: point, performances: state.performances))
+                state.destination = .point(
+                    AdminPointEdit.State(item: point, milestones: state.milestones))
                 state.operation = .add
                 return .none
             case .polylineTapped(let segment):

@@ -11,8 +11,7 @@ import ComposableArchitecture
 struct AdminRegionTop {
     
     @Dependency(\.apiClient) var apiClient
-    @Dependency(\.authProvider) var authProvider
-    @Dependency(\.accessToken) var accessToken
+    @Dependency(\.authService) var authService
     
     @Reducer
     enum Destination {
@@ -39,7 +38,7 @@ struct AdminRegionTop {
         case signOutTapped
         case districtsReceived(Result<[PublicDistrict],ApiError>)
         case districtInfoPrepared(PublicDistrict, Result<[RouteSummary],ApiError>)
-        case signOutReceived(Result<Bool,AuthError>)
+        case signOutReceived(Result<UserRole,AuthError>)
         case destination(PresentationAction<Destination.Action>)
         case alert(PresentationAction<OkAlert.Action>)
     }
@@ -52,7 +51,7 @@ struct AdminRegionTop {
                 return .none
             case .onDistrictInfo(let district):
                 return .run { send in
-                    let result = await apiClient.getRoutes(district.id, accessToken.value)
+                    let result = await apiClient.getRoutes(district.id, authService.getAccessToken())
                     await send(.districtInfoPrepared(district, result))
                 }
             case .onCreateDistrict:
@@ -62,7 +61,7 @@ struct AdminRegionTop {
                 return .none
             case .signOutTapped:
                 return .run { send in
-                    let result = await authProvider.signOut()
+                    let result = await authService.signOut()
                     await send(.signOutReceived(result))
                 }
             case .districtsReceived(.success(let value)):
@@ -78,7 +77,7 @@ struct AdminRegionTop {
             case .districtInfoPrepared(_, .failure(let error)):
                 state.alert = OkAlert.error("情報の取得に失敗しました。\(error.localizedDescription)")
                 return .none
-            case .signOutReceived(.success(_)):
+            case .signOutReceived(.success):
                 return .none
             case .signOutReceived(.failure(let error)):
                 state.alert = OkAlert.error("サインアウトに失敗しました。\(error.localizedDescription)")

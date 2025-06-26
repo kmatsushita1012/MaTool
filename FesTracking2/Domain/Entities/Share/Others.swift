@@ -9,3 +9,11 @@ struct InfoItem: Equatable, Hashable{
     let title: String
     let description: String?
 }
+
+struct Information: Codable, Equatable, Hashable, Identifiable{
+    let id: String
+    var name: String = ""
+    var description: String? = nil
+}
+
+struct Empty: Equatable {}
