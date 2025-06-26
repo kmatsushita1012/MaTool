@@ -13,8 +13,7 @@ import Foundation
 struct Home {
     
     @Dependency(\.apiClient) var apiClient
-    @Dependency(\.authProvider) var authProvider
-    @Dependency(\.accessToken) var accessToken
+    @Dependency(\.authService) var authService
     @Dependency(\.userDefaultsClient) var userDefaultsClient
     
     @Reducer
@@ -47,8 +46,7 @@ struct Home {
         case infoTapped
         case adminTapped
         case settingsTapped
-        case awsInitializeReceived(Result<String, AuthError>)
-        case awsUserRoleReceived(Result<UserRole, AuthError>, shouldNavigate: Bool)
+        case awsInitializeReceived(Result<UserRole, AuthError>)
         case adminDistrictPrepared(Result<PublicDistrict,ApiError>, Result<[RouteSummary],ApiError>)
         case adminRegionPrepared(Result<Region,ApiError>, Result<[PublicDistrict],ApiError>)
         case settingsPrepared(
@@ -67,7 +65,7 @@ struct Home {
             case .onAppear:
                 state.isAWSLoading = true
                 return .run { send in
-                    let result = await authProvider.initialize()
+                    let result = await authService.initialize()
                     await send(.awsInitializeReceived(result))
                 }
             case .adminDistrictPrepared(let districtResult, let routesResult):
@@ -96,14 +94,14 @@ struct Home {
                 state.destination = .info(Info.State())
                 return .none
             case .adminTapped:
-                print(state.userRole)
-                if case let .district(id) = state.userRole {
-                    state.isDestinationLoading = true
-                    return adminDistrictEffect(id, accessToken: accessToken.value)
-                } else if case let .region(id) = state.userRole {
+                switch state.userRole {
+                case .region(let id):
                     state.isDestinationLoading = true
                     return adminRegionEffect(id)
-                } else {
+                case .district(let id):
+                    state.isDestinationLoading = true
+                    return adminDistrictEffect(id)
+                case .guest:
                     state.destination = .login(Login.State())
                     return .none
                 }
@@ -112,29 +110,11 @@ struct Home {
                 let regionId = userDefaultsClient.stringForKey(defaultRegionKey)
                 let districtId = userDefaultsClient.stringForKey(defaultDistrictKey)
                 return settingsEffect(regionId: regionId, districtId: districtId)
-            case .awsInitializeReceived(.success(_)):
-                return awsUserRoleAndTokenEffect(shouldNavigate: false)
-            case .awsInitializeReceived(.failure(_)):
-                state.userRole = .guest
-                state.isAWSLoading = false
-                return .none
-            case .awsUserRoleReceived(.success(let userRole),shouldNavigate: let shouldNavigate):
+            case .awsInitializeReceived(.success(let userRole)):
                 state.userRole = userRole
                 state.isAWSLoading = false
-                if(!shouldNavigate){
-                    return .none
-                }
-                if case let .district(id) = userRole{
-                    state.isDestinationLoading = true
-                    return adminDistrictEffect(id, accessToken: accessToken.value)
-                } else if case let .region(id) = userRole {
-                    state.isDestinationLoading = true
-                    return adminRegionEffect(id)
-                } else {
-                    return .none
-                }
-            case .awsUserRoleReceived(.failure(_), shouldNavigate: _):
-                state.userRole = .guest
+                return .none
+            case .awsInitializeReceived(.failure(_)):
                 state.isAWSLoading = false
                 return .none
             case let .settingsPrepared(regionsResult, regionResult, districtsResult, districtResult):
@@ -159,17 +139,25 @@ struct Home {
                 }
             case .destination(.presented(let childAction)):
                 switch childAction {
-                case .login(.received(.success)),
-                    .login(.confirmSignIn(.presented(.received(.success)))):
-                    state.isAWSLoading = true
-                    return awsUserRoleAndTokenEffect(shouldNavigate: true)
+                case .login(.received(.success(let userRole))),
+                    .login(.confirmSignIn(.presented(.received(.success(let userRole))))):
+                    state.userRole = userRole
+                    switch state.userRole {
+                    case .region(let id):
+                        state.isDestinationLoading = true
+                        return adminRegionEffect(id)
+                    case .district(let id):
+                        state.isDestinationLoading = true
+                        return adminDistrictEffect(id)
+                    case .guest:
+                        return .none
+                    }
                 case .login(.received(.failure(_))):
                     return .none
-                case .adminDistrict(.signOutReceived(.success(_))),
-                    .adminRegion(.signOutReceived(.success(_))):
+                case .adminDistrict(.signOutReceived(.success(let userRole))),
+                    .adminRegion(.signOutReceived(.success(let userRole))):
+                    state.userRole = userRole
                     state.destination = nil
-                    state.userRole = .guest
-                    accessToken.value = nil
                     return .none
                 case .route(.homeTapped),
                     .info(.homeTapped),
@@ -196,8 +184,9 @@ struct Home {
         .ifLet(\.$alert, action: \.alert)
     }
     
-    func adminDistrictEffect(_ id: String, accessToken: String?)-> Effect<Action> {
+    func adminDistrictEffect(_ id: String)-> Effect<Action> {
         .run { send in
+            guard let accessToken = await authService.getAccessToken() else { return }
             async let districtResult = apiClient.getDistrict(id)
             async let routesResult =  apiClient.getRoutes(id,  accessToken)
             let _ = await (districtResult, routesResult)
@@ -213,39 +202,6 @@ struct Home {
             print(a)
             await send(.adminRegionPrepared(regionResult, districtsResult))
         }
-    }
-    
-    func awsUserRoleAndTokenEffect(shouldNavigate: Bool)->Effect<Action> {
-        .merge(
-            .run { send in
-                let result = await authProvider.getTokens()
-                switch result {
-                case .success(let tokens):
-                    if let token = tokens.accessToken?.tokenString {
-                        accessToken.value = token
-                    } else {
-                        print("No access token found")
-                    }
-                case .failure(_):
-                    //TODO
-                    break
-                }
-            },
-            .run { send in
-                let result = await authProvider.getUserRole()
-                if case .success(let userRole) = result {
-                    switch userRole{
-                    case .region(_):
-                        break
-                    case .district(let id):
-                        userDefaultsClient.setString(id, defaultDistrictKey)
-                    case .guest:
-                        break
-                    }
-                }
-                await send(.awsUserRoleReceived(result, shouldNavigate: shouldNavigate))
-            }
-        )
     }
     
     func settingsEffect(regionId: String?, districtId: String?) -> Effect<Action> {
@@ -269,7 +225,7 @@ struct Home {
             let region = await regionResult
             let districts = await districtsResult
             let district = await districtResult
-
+            
             await send(.settingsPrepared(regions, region, districts, district))
         }
     }

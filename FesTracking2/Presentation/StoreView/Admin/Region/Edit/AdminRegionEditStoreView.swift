@@ -44,6 +44,26 @@ struct AdminRegionEditView: View{
                             .frame(maxWidth: .infinity, alignment: .center)
                     }
                 }
+                Section(header: Text("経由地")) {
+                    List(store.item.milestones) { milestone in
+                        EditableListItemView(
+                            text: milestone.name,
+                            onEdit: {
+                                store.send(.onMilestoneEdit(milestone))
+                            },
+                            onDelete: {
+                                store.send(.onMilestoneDelete(milestone))
+                            }
+                        )
+                        .padding(0)
+                    }
+                    Button(action: {
+                        store.send(.onMilestoneAdd)
+                    }) {
+                        Label("追加", systemImage: "plus.circle")
+                            .frame(maxWidth: .infinity, alignment: .center)
+                    }
+                }
             }
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
@@ -68,9 +88,14 @@ struct AdminRegionEditView: View{
             }
             .navigationBarTitleDisplayMode(.inline)
             .fullScreenCover(
-                item: $store.scope(state: \.span, action: \.span)
+                item: $store.scope(state: \.destination?.span, action: \.destination.span)
             ) { store in
                 AdminSpanView(store: store)
+            }
+            .fullScreenCover(
+                item: $store.scope(state: \.destination?.milestone, action:  \.destination.milestone)
+            ) { store in
+                InformationEditStoreView(store: store)
             }
         }
     }

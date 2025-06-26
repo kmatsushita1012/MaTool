@@ -20,7 +20,7 @@ struct AdminRouteExportView: View{
         // 背景のMap
         NavigationStack{
             ZStack {
-                ExportableMap(
+                AdminRouteExportMapView(
                     points: store.points,
                     segments: store.segments,
                     region: $store.region,

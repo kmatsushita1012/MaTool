@@ -26,14 +26,14 @@ struct AdminRouteInfo {
         let mode: Mode
         var route: Route
         var isLoading: Bool = false
-        let performances: [Performance]
+        let milestones: [Information]
         let base: Coordinate?
         @Presents var destination: Destination.State?
         @Presents var alert: OkAlert.State?
         
-        init(mode: Mode, performances: [Performance], base: Coordinate?){
+        init(mode: Mode, milestones: [Information], base: Coordinate?){
             self.mode = mode
-            self.performances = performances
+            self.milestones = milestones
             self.base = base
             switch(mode){
             case let .create(id, span):
@@ -65,7 +65,7 @@ struct AdminRouteInfo {
     }
     
     @Dependency(\.apiClient) var apiClient
-    @Dependency(\.accessToken) var accessToken
+    @Dependency(\.authService) var authService
     
     var body: some ReducerOf<AdminRouteInfo> {
         BindingReducer()
@@ -75,7 +75,7 @@ struct AdminRouteInfo {
                 return .none
             case .mapTapped:
                 //TODO 余興情報渡し
-                state.destination = .map(AdminRouteMap.State(route: state.route, performances: state.performances, base: state.base))
+                state.destination = .map(AdminRouteMap.State(route: state.route, milestones: state.milestones, base: state.base))
                 return .none
             case .saveTapped:
                 if state.route.title.isEmpty {
@@ -89,20 +89,20 @@ struct AdminRouteInfo {
                 switch state.mode {
                 case .create:
                     return .run { [route = state.route] send in
-                        if let token = accessToken.value{
+                        if let token = await authService.getAccessToken() {
                             let result = await apiClient.postRoute(route, token)
                             await send(.postReceived(result))
                         }else{
-                            await send(.postReceived(.failure(.unknown("No Access Token"))))
+                            await send(.postReceived(.failure(.unknown("認証に失敗しました。ログインし直してください。"))))
                         }
                     }
                 case .edit:
                     return .run { [route = state.route] send in
-                        if let token = accessToken.value{
+                        if let token = await authService.getAccessToken(){
                             let result = await apiClient.putRoute(route, token)
                             await send(.postReceived(result))
                         }else{
-                            await send(.postReceived(.failure(.unknown("No Access Token"))))
+                            await send(.postReceived(.failure(.unknown("認証に失敗しました。ログインし直してください。"))))
                         }
                     }
                 }
@@ -112,8 +112,8 @@ struct AdminRouteInfo {
                 state.isLoading = true
                 return .run { [route = state.route] send in
                     //TODO
-                    guard let token = accessToken.value else {
-                        await send(.postReceived(.failure(.unknown("No Access Token"))))
+                    guard let token = await authService.getAccessToken() else {
+                        await send(.postReceived(.failure(.unknown("認証に失敗しました。ログインし直してください。"))))
                         return
                     }
                     let result = await apiClient.deleteRoute(route.id, token)
