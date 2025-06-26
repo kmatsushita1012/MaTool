@@ -1,5 +1,5 @@
 //
-//  ExportableMap.swift
+//  AdminRouteExportMapView.swift
 //  FesTracking2
 //
 //  Created by 松下和也 on 2025/05/09.
@@ -8,7 +8,7 @@
 import SwiftUI
 import MapKit
 
-struct ExportableMap: UIViewRepresentable {
+struct AdminRouteExportMapView: UIViewRepresentable {
     var points: [Point]
     var segments: [Segment]
     @Binding var region: MKCoordinateRegion?
@@ -50,10 +50,10 @@ struct ExportableMap: UIViewRepresentable {
     }
 
     class Coordinator: NSObject, MKMapViewDelegate {
-        var parent: ExportableMap
+        var parent: AdminRouteExportMapView
         var hasSetRegion = false
 
-        init(_ parent: ExportableMap) {
+        init(_ parent: AdminRouteExportMapView) {
             self.parent = parent
             
         }

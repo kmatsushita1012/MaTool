@@ -5,6 +5,7 @@
 //  Created by 松下和也 on 2025/04/17.
 //
 
+import Foundation
 import ComposableArchitecture
 
 @Reducer
@@ -13,10 +14,16 @@ struct AdminRegionEdit {
     @Dependency(\.apiClient) var apiClient
     @Dependency(\.authService) var authService
     
+    @Reducer
+    enum Destination {
+        case span(AdminSpanEdit)
+        case milestone(InformationEdit)
+    }
+    
     @ObservableState
     struct State: Equatable {
         var item: Region
-        @Presents var span: AdminSpanEdit.State?
+        @Presents var destination: Destination.State?
         @Presents var alert: OkAlert.State?
     }
     
@@ -29,7 +36,10 @@ struct AdminRegionEdit {
         case onSpanEdit(Span)
         case onSpanDelete(Span)
         case onSpanAdd
-        case span(PresentationAction<AdminSpanEdit.Action>)
+        case onMilestoneEdit(Information)
+        case onMilestoneDelete(Information)
+        case onMilestoneAdd
+        case destination(PresentationAction<Destination.Action>)
         case alert(PresentationAction<OkAlert.Action>)
     }
     
@@ -56,25 +66,62 @@ struct AdminRegionEdit {
                 state.alert = OkAlert.error("保存に失敗しました。\(error.localizedDescription)")
                 return .none
             case .onSpanEdit(let item):
-                state.span = AdminSpanEdit.State(item)
+                state.destination = .span(
+                    AdminSpanEdit.State(item)
+                )
                 return .none
             case .onSpanDelete(let item):
                 state.item.spans.removeAll(where: {$0.id == item.id})
                 return .none
             case .onSpanAdd:
-                state.span = AdminSpanEdit.State()
+                state.destination = .span(AdminSpanEdit.State())
                 return .none
-            case .span(.presented(.doneTapped)):
-                if let span = state.span?.span {
-                    state.item.spans.upsert(span)
-                    state.item.spans.sort()
+            case .onMilestoneEdit(let item):
+                state.destination = .milestone(
+                    InformationEdit.State(
+                        title: "経由地",
+                        item: item
+                    )
+                )
+                return .none
+            case .onMilestoneDelete(let item):
+                state.item.milestones.removeAll(where: {$0.id == item.id})
+                return .none
+            case .onMilestoneAdd:
+                state.destination = .milestone(
+                    InformationEdit.State(
+                        title: "経由地",
+                        item: Information(
+                            id: UUID().uuidString
+                        )
+                    )
+                )
+                return .none
+            case .destination(.presented(let action)):
+                switch action {
+                    case .span(.doneTapped):
+                        if case let .span(spanState) = state.destination {
+                            state.item.spans.upsert(spanState.span)
+                            state.item.spans.sort()
+                        }
+                        state.destination = nil
+                        return .none
+                    case .milestone(.doneTapped):
+                        if case let .milestone(milestoneState) = state.destination {
+                            state.item.milestones.upsert(milestoneState.item)
+                        }
+                        state.destination = nil
+                        return .none
+                    case.span(.cancelTapped),
+                        .milestone(.cancelTapped):
+                        state.destination = nil
+                        return .none
+                    case .span,
+                        .milestone:
+                        return .none
                 }
-                state.span = nil
-                return .none
-            case .span(.presented(.cancelTapped)):
-                state.span = nil
-                return .none
-            case .span(_):
+            case .destination:
+                state.destination = nil
                 return .none
             case .alert(.presented(.okTapped)):
                 state.alert = nil
@@ -83,9 +130,10 @@ struct AdminRegionEdit {
                 return .none
             }
         }
-        .ifLet(\.$span, action: \.span){
-            AdminSpanEdit()
-        }
+        .ifLet(\.$destination, action: \.destination)
         .ifLet(\.$alert, action: \.alert)
     }
 }
+
+extension AdminRegionEdit.Destination.State: Equatable{}
+extension AdminRegionEdit.Destination.Action: Equatable{}
