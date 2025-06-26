@@ -26,14 +26,14 @@ struct AdminRouteInfo {
         let mode: Mode
         var route: Route
         var isLoading: Bool = false
-        let performances: [Performance]
+        let milestones: [Information]
         let base: Coordinate?
         @Presents var destination: Destination.State?
         @Presents var alert: OkAlert.State?
         
-        init(mode: Mode, performances: [Performance], base: Coordinate?){
+        init(mode: Mode, milestones: [Information], base: Coordinate?){
             self.mode = mode
-            self.performances = performances
+            self.milestones = milestones
             self.base = base
             switch(mode){
             case let .create(id, span):
@@ -75,7 +75,7 @@ struct AdminRouteInfo {
                 return .none
             case .mapTapped:
                 //TODO 余興情報渡し
-                state.destination = .map(AdminRouteMap.State(route: state.route, performances: state.performances, base: state.base))
+                state.destination = .map(AdminRouteMap.State(route: state.route, milestones: state.milestones, base: state.base))
                 return .none
             case .saveTapped:
                 if state.route.title.isEmpty {

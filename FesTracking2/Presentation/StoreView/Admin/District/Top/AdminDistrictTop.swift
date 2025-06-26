@@ -108,7 +108,7 @@ struct AdminDistrictTop {
                     state.destination = .route(
                         AdminRouteInfo.State(
                             mode: .edit(route.toModel()),
-                            performances: tool.performances,
+                            milestones: tool.milestones,
                             base: tool.base)
                     )
                 } else {
@@ -121,8 +121,11 @@ struct AdminDistrictTop {
                 case .success(let tool):
                     state.destination = .route(
                         AdminRouteInfo.State(
-                            mode: .create(state.district.id, tool.spans.first ?? Span.sample),
-                            performances: tool.performances,
+                            mode: .create(
+                                state.district.id,
+                                tool.spans.first ?? Span.sample
+                            ),
+                            milestones: tool.milestones,
                             base: tool.base)
                     )
                 case .failure(let error):
@@ -134,13 +137,19 @@ struct AdminDistrictTop {
                 state.isExportLoading = false
                 switch result {
                 case .success(let value):
-                    state.destination = .export(AdminRouteExport.State(route: value))
+                    state.destination = .export(
+                        AdminRouteExport.State(route: value)
+                    )
                 case .failure(let error):
                     state.alert = OkAlert.error("情報の取得に失敗しました。 \(error.localizedDescription)")
                 }
                 return .none
             case .onLocation:
-                state.destination = .location(AdminLocation.State(id: state.district.id, isTracking: locationService.isTracking))
+                state.destination = .location(
+                    AdminLocation.State(
+                        id: state.district.id,
+                        isTracking: locationService.isTracking)
+                )
                 return .none
             case .destination(.presented(let childAction)):
                 switch childAction {
