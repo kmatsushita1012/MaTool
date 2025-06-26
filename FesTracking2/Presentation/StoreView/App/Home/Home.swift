@@ -32,7 +32,7 @@ struct Home {
         var isAWSLoading: Bool = true
         var isDestinationLoading: Bool = false
         var isLoading: Bool {
-            isAWSLoading || isDestinationLoading
+            isDestinationLoading
         }
         @Presents var destination: Destination.State?
         @Presents var alert: OkAlert.State?
@@ -94,6 +94,10 @@ struct Home {
                 state.destination = .info(Info.State())
                 return .none
             case .adminTapped:
+                if state.isAWSLoading {
+                    state.alert = OkAlert.error("認証中です。もう一度お試しください。再度このエラーが出る場合は設定画面から強制サインアウトをお試しください。")
+                    return .none
+                }
                 switch state.userRole {
                 case .region(let id):
                     state.isDestinationLoading = true
@@ -123,6 +127,7 @@ struct Home {
                 case let (.success(regions), .success(region), .success(districts), .success(district)):
                     state.destination = .settings(
                         Settings.State(
+                            isOfflineMode: true,
                             regions: regions,
                             selectedRegion: region,
                             districts: districts,
@@ -134,7 +139,11 @@ struct Home {
                     let (_, .failure(error), _, _),
                     let (_, _, .failure(error), _),
                     let (_, _, _, .failure(error)):
-                        state.alert = OkAlert.error("情報の取得に失敗しました  \(error.localizedDescription)")
+                        state.destination = .settings(
+                            Settings.State(
+                                isOfflineMode: false
+                            )
+                        )
                         return .none
                 }
             case .destination(.presented(let childAction)):
@@ -158,6 +167,9 @@ struct Home {
                     .adminRegion(.signOutReceived(.success(let userRole))):
                     state.userRole = userRole
                     state.destination = nil
+                    return .none
+                case .settings(.signOutReceived(.success(let userRole))):
+                    state.userRole = userRole
                     return .none
                 case .route(.homeTapped),
                     .info(.homeTapped),
@@ -198,8 +210,7 @@ struct Home {
         .run { send in
             async let regionResult = apiClient.getRegion(id)
             async let districtsResult =  apiClient.getDistricts(id)
-            let a = await (regionResult, districtsResult)
-            print(a)
+            let _ = await (regionResult, districtsResult)
             await send(.adminRegionPrepared(regionResult, districtsResult))
         }
     }

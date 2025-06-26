@@ -69,7 +69,18 @@ struct SettingsStoreView: View {
             }
             .padding()
             Spacer()
+            Button(action: {
+                store.send(.signOutTapped)
+            }) {
+                Text("強制サインアウト")
+            }
+            .buttonStyle(.borderedProminent)
+            .tint(.red)
+            Text("※この操作は管理者のみ有効です")
+                .font(.footnote)
+                .foregroundColor(.gray)
         }
+        .alert($store.scope(state: \.alert, action: \.alert))
         .loadingOverlay(store.isLoading)
         .ignoresSafeArea(edges: .top)
     }
