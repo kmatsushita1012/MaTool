@@ -11,8 +11,7 @@ import ComposableArchitecture
 @Reducer
 struct Login {
     
-    @Dependency(\.authProvider) var authProvider
-    @Dependency(\.accessToken) var accessToken
+    @Dependency(\.authService) var authService
     @Dependency(\.userDefaultsClient) var userDefaultsClient
     
     @ObservableState
@@ -27,7 +26,7 @@ struct Login {
     enum Action: Equatable, BindableAction {
         case binding(BindingAction<State>)
         case signInTapped
-        case received(AuthSignInResult)
+        case received(SignInResult)
         case homeTapped
         case confirmSignIn(PresentationAction<ConfirmSignIn.Action>)
     }
@@ -41,7 +40,7 @@ struct Login {
             case .signInTapped:
                 state.isLoading = true
                 return .run {[id = state.id, password = state.password] send in
-                    let result = await authProvider.signIn(id, password)
+                    let result = await authService.signIn(id, password: password)
                     await send(.received(result))
                 }
             case .received(.success):
@@ -56,7 +55,7 @@ struct Login {
                 state.isLoading = false
                 state.errorMessage = "ログインに失敗しました。\(error.localizedDescription)"
                 return .run { send in
-                    let result = await authProvider.signOut()
+                    let result = await authService.signOut()
                     print(result)
                 }
             case .homeTapped:

@@ -10,7 +10,7 @@ struct DistrictTool: Codable, Equatable {
   let districtName: String
   let regionId: String
   let regionName: String
-  let performances: [Performance]
+  let milestones: [Information]
   let base: Coordinate
   let spans: [Span]
 }
@@ -21,7 +21,7 @@ extension DistrictTool {
         districtName: "城北町",
         regionId: "掛川祭_年番本部",
         regionName: "年番本部",
-        performances: [Performance.sample],
+        milestones: [],
         base: Coordinate.sample,
         spans: [Span.sample])
 }
