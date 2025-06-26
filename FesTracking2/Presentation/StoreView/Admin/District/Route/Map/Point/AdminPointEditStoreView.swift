@@ -18,7 +18,7 @@ struct AdminPointView: View {
                     HStack{
                         TextField("イベントを入力", text: $store.item.title.nonOptional)
                             .popover(isPresented: $store.showPopover, content: {
-                                Popover(items: store.events, textClosure: { $0.title }, onTapGesture: { option in
+                                Popover(items: store.milestones, textClosure: { $0.name }, onTapGesture: { option in
                                     store.send(.titleOptionSelected(option))
                                     
                                 }).presentationCompactAdaptation(PresentationAdaptation.popover)
@@ -32,7 +32,8 @@ struct AdminPointView: View {
                     }
                 }
                 Section(header: Text("詳細")) {
-                    TextField("説明を入力", text: $store.item.description.nonOptional)
+                    TextEditor(text: $store.item.description.nonOptional)
+                        .frame(height:60)
                 }
                 
                 Section(header: Text("時刻") ) {
@@ -127,7 +128,7 @@ struct Popover<T: Hashable> : View{
                     VStack(spacing: 0) {
                         Text(textClosure(item))
                             .frame(maxWidth: .infinity, alignment: .leading)
-                            .padding(16)
+                            .padding(8)
                             .contentShape(Rectangle())
                             .onTapGesture {
                                 onTapGesture(item)

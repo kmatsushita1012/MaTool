@@ -15,13 +15,13 @@ extension AuthProvider: TestDependencyKey {
 extension AuthProvider {
     static let noop = Self(
         initialize: {
-            return .success("Success")
+            return .success(Empty())
         },
         signIn: { username, password in
             return .success
         },
         confirmSignIn: { newPassword in
-            return .success("Success")
+            return .success(Empty())
         },
         getUserRole: {
             return .success(.district("祭_町"))
@@ -30,7 +30,7 @@ extension AuthProvider {
             return .failure(.unknown("Mock"))
         },
         signOut: {
-            return .success(true)
+            return .success(Empty())
         }
     )
 }

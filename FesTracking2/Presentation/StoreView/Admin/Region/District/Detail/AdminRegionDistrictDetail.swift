@@ -11,7 +11,7 @@ import ComposableArchitecture
 struct AdminRegionDistrictInfo {
     
     @Dependency(\.apiClient) var apiClient
-    @Dependency(\.accessToken) var accessToken
+    @Dependency(\.authService) var authService
     
     @ObservableState
     struct State: Equatable {
@@ -35,7 +35,7 @@ struct AdminRegionDistrictInfo {
             switch action {
             case .exportTapped(let route):
                 return .run{ send in
-                    let result = await apiClient.getRoute(route.id, accessToken.value)
+                    let result = await apiClient.getRoute(route.id, authService.getAccessToken())
                     await send(.exportPrepared(result))
                 }
             case .exportPrepared(.success(let route)):
