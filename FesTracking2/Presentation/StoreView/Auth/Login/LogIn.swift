@@ -63,7 +63,6 @@ struct Login {
                 state.errorMessage = "ログインに失敗しました。\(error.localizedDescription)"
                 return .run { send in
                     let result = await authService.signOut()
-                    print(result)
                 }
             case .homeTapped:
                 return .none

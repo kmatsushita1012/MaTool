@@ -41,8 +41,8 @@ struct AdminRouteInfo {
                     id: UUID().uuidString,
                     districtId: id,
                     date: SimpleDate.fromDate(span.start),
-                    start: SimpleTime.fromDate(span.start),
-                    goal: SimpleTime.fromDate(span.end)
+                    start: SimpleTime(hour: 12, minute: 0),
+                    goal: SimpleTime(hour: 12, minute: 0)
                 )
             case let .edit(route):
                 self.route = route
@@ -83,6 +83,9 @@ struct AdminRouteInfo {
                     return .none
                 } else if state.route.title.contains("/") {
                     state.alert = OkAlert.error("タイトルに\"/\"を含むことはできません")
+                    return .none
+                } else if state.route.start >= state.route.goal{
+                    state.alert = OkAlert.error("終了時刻は開始時刻より前に設定してください")
                     return .none
                 }
                 state.isLoading = true
