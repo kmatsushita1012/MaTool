@@ -32,7 +32,7 @@ struct AdminRegionEdit {
         case binding(BindingAction<State>)
         case saveTapped
         case cancelTapped
-        case received(Result<String, ApiError>)
+        case putReceived(Result<String, ApiError>)
         case onSpanEdit(Span)
         case onSpanDelete(Span)
         case onSpanAdd
@@ -53,16 +53,16 @@ struct AdminRegionEdit {
                 return .run { [region = state.item] send in
                     if let token = await authService.getAccessToken() {
                         let result = await apiClient.putRegion(region, token)
-                        await send(.received(result))
+                        await send(.putReceived(result))
                     }else{
-                        await send(.received(.failure(ApiError.unauthorized("認証に失敗しました。ログインし直してください"))))
+                        await send(.putReceived(.failure(ApiError.unauthorized("認証に失敗しました。ログインし直してください"))))
                     }
                 }
             case .cancelTapped:
                 return .none
-            case .received(.success(_)):
+            case .putReceived(.success(_)):
                 return .none
-            case .received(.failure(let error)):
+            case .putReceived(.failure(let error)):
                 state.alert = OkAlert.error("保存に失敗しました。\(error.localizedDescription)")
                 return .none
             case .onSpanEdit(let item):

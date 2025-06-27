@@ -123,7 +123,6 @@ extension ApiRepotiroy: DependencyKey {
             return decodeResponse(PublicRoute.self, from: response)
         },
         postRoute: { route, accessToken in
-            print(route)
             let body = encodeRequest(route)
             switch body {
             case .success(let body):

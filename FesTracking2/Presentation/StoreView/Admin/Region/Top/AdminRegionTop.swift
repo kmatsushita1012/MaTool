@@ -22,7 +22,7 @@ struct AdminRegionTop {
     
     @ObservableState
     struct State: Equatable {
-        let region: Region
+        var region: Region
         var districts: [PublicDistrict]
         var isLoading: Bool = false
         @Presents var destination: Destination.State?
@@ -36,6 +36,7 @@ struct AdminRegionTop {
         case onCreateDistrict
         case homeTapped
         case signOutTapped
+        case regionReceived(Result<Region,ApiError>)
         case districtsReceived(Result<[PublicDistrict],ApiError>)
         case districtInfoPrepared(PublicDistrict, Result<[RouteSummary],ApiError>)
         case signOutReceived(Result<UserRole,AuthError>)
@@ -64,6 +65,14 @@ struct AdminRegionTop {
                     let result = await authService.signOut()
                     await send(.signOutReceived(result))
                 }
+            case .regionReceived(.success(let value)):
+                state.isLoading = false
+                state.region = value
+                return .none
+            case .regionReceived(.failure(let error)):
+                state.isLoading = false
+                state.alert = OkAlert.error("情報の取得に失敗しました。\(error.localizedDescription)")
+                return .none
             case .districtsReceived(.success(let value)):
                 state.isLoading = false
                 state.districts = value
@@ -84,9 +93,10 @@ struct AdminRegionTop {
                 return .none
             case .destination(.presented(let childAction)):
                 switch childAction{
-                case .edit(.received(.success)):
+                case .edit(.putReceived(.success)):
                     state.destination = nil
-                    return .none
+                    state.isLoading = true
+                    return getRegionEffect(state.region.id)
                 case .districtCreate(.received(.success)):
                     state.isLoading = true
                     state.destination = nil
@@ -121,6 +131,13 @@ struct AdminRegionTop {
         }
         .ifLet(\.$destination, action: \.destination)
         .ifLet(\.$alert, action: \.alert)
+    }
+    
+    func getRegionEffect(_ id: String) -> Effect<Action> {
+        .run { send in
+            let result = await apiClient.getRegion(id)
+            await send(.regionReceived(result))
+        }
     }
 }
 
