@@ -9,11 +9,11 @@ import Foundation
 import Dependencies
 
 public struct UserDefaultsClient {
-    public var stringForKey: @Sendable (String) -> String?
-    public var boolForKey: @Sendable (String) -> Bool
-    public var dataForKey: @Sendable (String) -> Data?
-    public var doubleForKey: @Sendable (String) -> Double
-    public var integerForKey: @Sendable (String) -> Int
+    public var string: @Sendable (String) -> String?
+    public var bool: @Sendable (String) -> Bool
+    public var data: @Sendable (String) -> Data?
+    public var double: @Sendable (String) -> Double
+    public var integer: @Sendable (String) -> Int
     public var remove: @Sendable (String) async -> Void
     public var setString: @Sendable (String?, String) -> Void
     public var setBool: @Sendable (Bool?, String) -> Void
@@ -24,11 +24,11 @@ public struct UserDefaultsClient {
 
 extension UserDefaultsClient{
     static let noop = Self(
-        stringForKey: { _ in return "" },
-        boolForKey: { _ in return true },
-        dataForKey: { _ in return nil},
-        doubleForKey: { _ in return 0.0},
-        integerForKey: { _ in return 0},
+        string: { _ in return "" },
+        bool: { _ in return true },
+        data: { _ in return nil},
+        double: { _ in return 0.0},
+        integer: { _ in return 0},
         remove: { _ in return },
         setString: { _,_  in return },
         setBool: { _,_  in return },

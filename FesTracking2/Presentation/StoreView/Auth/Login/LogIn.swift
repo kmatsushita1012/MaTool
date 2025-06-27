@@ -43,9 +43,16 @@ struct Login {
                     let result = await authService.signIn(id, password: password)
                     await send(.received(result))
                 }
-            case .received(.success):
+            case .received(.success(let userRole)):
                 state.errorMessage = nil
-                return .none
+                switch userRole {
+                case .region(let id),
+                    .district(let id):
+                    userDefaultsClient.setString(id, loginIdKey)
+                    return .none
+                case .guest:
+                    return .none
+                }
             case .received(.newPasswordRequired):
                 state.confirmSignIn = ConfirmSignIn.State()
                 state.isLoading = false
