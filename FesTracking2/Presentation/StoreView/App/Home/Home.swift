@@ -124,29 +124,16 @@ struct Home {
                 return .none
             case let .settingsPrepared(regionsResult, regionResult, districtsResult, districtResult):
                 state.isDestinationLoading = false
-                switch (regionsResult, regionResult, districtsResult, districtResult) {
-                case let (.success(regions), .success(region), .success(districts), .success(district)):
-                    state.destination = .settings(
-                        Settings.State(
-                            isOfflineMode: true,
-                            regions: regions,
-                            selectedRegion: region,
-                            districts: districts,
-                            selectedDistrict: district
-                        )
+                state.destination = .settings(
+                    Settings.State(
+                        isOfflineMode: regionsResult.value == nil,
+                        regions: regionsResult.value ?? [],
+                        selectedRegion: regionResult.value ?? nil,
+                        districts: districtsResult.value ?? [],
+                        selectedDistrict: districtResult.value ?? nil
                     )
-                    return .none
-                case let (.failure(error), _, _, _),
-                    let (_, .failure(error), _, _),
-                    let (_, _, .failure(error), _),
-                    let (_, _, _, .failure(error)):
-                        state.destination = .settings(
-                            Settings.State(
-                                isOfflineMode: false
-                            )
-                        )
-                        return .none
-                }
+                )
+                return .none
             case .destination(.presented(let childAction)):
                 switch childAction {
                 case .login(.received(.success(let userRole))),
