@@ -17,7 +17,7 @@ struct LoginStoreView: View {
                 Text("ログイン")
                     .font(.largeTitle)
                     .padding()
-                TextField("ID（〇〇祭_×××）", text: $store.id)
+                TextField("ID", text: $store.id)
                     .textFieldStyle(RoundedBorderTextFieldStyle())
                     .padding()
                     

@@ -35,6 +35,7 @@ struct FesTracking2App: App {
 let spanDelta: Double = 0.005
 let defaultRegionKey: String = "region"
 let defaultDistrictKey: String = "district"
+let loginIdKey: String = "login"
 let hasLaunchedBeforePath = "hasLaunchedBefore"
 let userGuideURLString = ""
 let contactURLString = ""
