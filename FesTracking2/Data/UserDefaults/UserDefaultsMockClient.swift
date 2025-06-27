@@ -10,11 +10,11 @@ extension UserDefaultsClient: TestDependencyKey {
   public static let previewValue = Self.noop
 
   public static let testValue = Self(
-    stringForKey: unimplemented("\(Self.self).stringForKey", placeholder: nil),
-    boolForKey: unimplemented("\(Self.self).boolForKey", placeholder: false),
-    dataForKey: unimplemented("\(Self.self).dataForKey", placeholder: nil),
-    doubleForKey: unimplemented("\(Self.self).doubleForKey", placeholder: 0),
-    integerForKey: unimplemented("\(Self.self).integerForKey", placeholder: 0),
+    string: unimplemented("\(Self.self).string", placeholder: nil),
+    bool: unimplemented("\(Self.self).bool", placeholder: false),
+    data: unimplemented("\(Self.self).data", placeholder: nil),
+    double: unimplemented("\(Self.self).double", placeholder: 0),
+    integer: unimplemented("\(Self.self).integer", placeholder: 0),
     remove: unimplemented("\(Self.self).remove"),
     setString: unimplemented("\(Self.self).setBool"),
     setBool: unimplemented("\(Self.self).setBool"),

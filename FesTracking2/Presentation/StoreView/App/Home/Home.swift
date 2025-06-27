@@ -106,13 +106,14 @@ struct Home {
                     state.isDestinationLoading = true
                     return adminDistrictEffect(id)
                 case .guest:
-                    state.destination = .login(Login.State())
+                    let id = userDefaultsClient.string(loginIdKey) ?? ""
+                    state.destination = .login(Login.State(id: id))
                     return .none
                 }
             case .settingsTapped:
                 state.isDestinationLoading = true
-                let regionId = userDefaultsClient.stringForKey(defaultRegionKey)
-                let districtId = userDefaultsClient.stringForKey(defaultDistrictKey)
+                let regionId = userDefaultsClient.string(defaultRegionKey)
+                let districtId = userDefaultsClient.string(defaultDistrictKey)
                 return settingsEffect(regionId: regionId, districtId: districtId)
             case .awsInitializeReceived(.success(let userRole)):
                 state.userRole = userRole
