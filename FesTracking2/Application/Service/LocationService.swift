@@ -12,7 +12,7 @@ import Dependencies
 final class LocationService: Sendable {
 
     @Dependency(\.apiClient) var apiClient
-    @Dependency(\.accessToken) var accessToken
+    @Dependency(\.authService) var authService
     @Dependency(\.locationClient) var locationClient
 
     private var timer: Timer?
@@ -42,22 +42,24 @@ final class LocationService: Sendable {
         locationClient.stopTracking()
         stopTimer()
         isTracking = false
-        guard let token = accessToken.value else { return }
+       
         Task {
+            guard let token = await authService.getAccessToken() else { return }
             await deleteLocation(id, accessToken: token)
         }
     }
 
     private func startTimer(_ id: String, _ interval: TimeInterval) {
         stopTimer()
-        guard let token = accessToken.value else { return }
         timer = Timer.scheduledTimer(withTimeInterval: interval, repeats: true) { [weak self] _ in
             guard let self else { return }
             Task {
+                guard let token = await self.authService.getAccessToken() else { return }
                 await self.fetchLocationAndSend(id, accessToken: token)
             }
         }
         Task {
+            guard let token = await authService.getAccessToken() else { return }
             await self.fetchLocationAndSend(id, accessToken: token)
         }
     }

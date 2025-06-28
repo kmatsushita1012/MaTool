@@ -1,5 +1,5 @@
 //
-//  ExportableMap.swift
+//  AdminRouteExportMapView.swift
 //  FesTracking2
 //
 //  Created by 松下和也 on 2025/05/09.
@@ -8,7 +8,7 @@
 import SwiftUI
 import MapKit
 
-struct ExportableMap: UIViewRepresentable {
+struct AdminRouteExportMapView: UIViewRepresentable {
     var points: [Point]
     var segments: [Segment]
     @Binding var region: MKCoordinateRegion?
@@ -50,10 +50,10 @@ struct ExportableMap: UIViewRepresentable {
     }
 
     class Coordinator: NSObject, MKMapViewDelegate {
-        var parent: ExportableMap
+        var parent: AdminRouteExportMapView
         var hasSetRegion = false
 
-        init(_ parent: ExportableMap) {
+        init(_ parent: AdminRouteExportMapView) {
             self.parent = parent
             
         }
@@ -172,7 +172,7 @@ struct ExportableMap: UIViewRepresentable {
     }
     
     private func drawPinsAndCaptions(on snapshot: MKMapSnapshotter.Snapshot) {
-        var drawnRects: [CGRect] = [] // ローカルで衝突回避用に保持
+        var drawnRects: [CGRect] = []
 
         for (index, point) in points.enumerated() {
             let pointInSnapshot = snapshot.point(for: point.coordinate.toCL())
@@ -224,8 +224,6 @@ struct ExportableMap: UIViewRepresentable {
                 x: location.x + direction.dx * (margin + halfWidth),
                 y: location.y + direction.dy * (margin + halfHeight)
             )
-            print(direction)
-            print(center)
             // TODO: 調整
             let rect = CGRect(
                 x: center.x - halfWidth ,

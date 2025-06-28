@@ -14,7 +14,9 @@ struct LocationAdminView: View {
     var body: some View {
         NavigationStack{
             Form {
-                Section {
+                Section(
+                    footer: Text("始めに短い間隔で試すことで、動作の安定性を確認しやすくなります。")
+                ) {
                     HStack {
                         Toggle("配信", isOn: $store.isTracking.sending(\.toggleChanged))
                     }

@@ -11,7 +11,7 @@ struct Performance: Codable, Equatable, Identifiable {
     let id: String
     var name: String = ""
     var performer: String = ""
-    var description: String?
+    @NullEncodable var description: String?
 }
 
 extension Performance {

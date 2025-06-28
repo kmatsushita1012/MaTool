@@ -33,12 +33,9 @@ struct MenuSelector<T: Hashable>: View {
     
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
-            // ヘッダー
             Text(title)
                 .font(.subheadline)
                 .foregroundColor(.primary)
-
-            // Menu 選択部分
             Menu {
                 if let items = items {
                     ForEach(items, id: \.self) { item in

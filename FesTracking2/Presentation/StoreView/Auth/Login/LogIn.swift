@@ -11,8 +11,7 @@ import ComposableArchitecture
 @Reducer
 struct Login {
     
-    @Dependency(\.authProvider) var authProvider
-    @Dependency(\.accessToken) var accessToken
+    @Dependency(\.authService) var authService
     @Dependency(\.userDefaultsClient) var userDefaultsClient
     
     @ObservableState
@@ -27,7 +26,7 @@ struct Login {
     enum Action: Equatable, BindableAction {
         case binding(BindingAction<State>)
         case signInTapped
-        case received(AuthSignInResult)
+        case received(SignInResult)
         case homeTapped
         case confirmSignIn(PresentationAction<ConfirmSignIn.Action>)
     }
@@ -41,12 +40,19 @@ struct Login {
             case .signInTapped:
                 state.isLoading = true
                 return .run {[id = state.id, password = state.password] send in
-                    let result = await authProvider.signIn(id, password)
+                    let result = await authService.signIn(id, password: password)
                     await send(.received(result))
                 }
-            case .received(.success):
+            case .received(.success(let userRole)):
                 state.errorMessage = nil
-                return .none
+                switch userRole {
+                case .region(let id),
+                    .district(let id):
+                    userDefaultsClient.setString(id, loginIdKey)
+                    return .none
+                case .guest:
+                    return .none
+                }
             case .received(.newPasswordRequired):
                 state.confirmSignIn = ConfirmSignIn.State()
                 state.isLoading = false
@@ -56,8 +62,7 @@ struct Login {
                 state.isLoading = false
                 state.errorMessage = "ログインに失敗しました。\(error.localizedDescription)"
                 return .run { send in
-                    let result = await authProvider.signOut()
-                    print(result)
+                    let result = await authService.signOut()
                 }
             case .homeTapped:
                 return .none

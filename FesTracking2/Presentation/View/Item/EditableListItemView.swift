@@ -10,13 +10,11 @@ struct EditableListItemView: View {
     let text: String
     let onEdit: ()->Void
     let onDelete: ()->Void
-    let editIconName:String?
     
-    init (text: String, onEdit: @escaping ()->Void, onDelete: @escaping ()->Void, editIconName:String? = nil){
+    init (text: String, onEdit: @escaping ()->Void, onDelete: @escaping ()->Void){
         self.text = text
         self.onEdit = onEdit
         self.onDelete = onDelete
-        self.editIconName = editIconName
     }
     
     var body: some View {
@@ -34,7 +32,7 @@ struct EditableListItemView: View {
             Button {
                 onEdit()
             } label: {
-                Image(systemName: editIconName ?? "square.and.pencil")
+                Image(systemName: "square.and.pencil")
             }
             .tint(.blue)
             .buttonStyle(BorderlessButtonStyle())
