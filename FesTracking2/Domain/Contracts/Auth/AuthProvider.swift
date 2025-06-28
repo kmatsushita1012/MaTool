@@ -9,12 +9,12 @@ import AWSMobileClient
 import Dependencies
 
 struct AuthProvider {
-    var initialize: () async -> Result<String, AuthError>
-    var signIn: (_ username: String, _ password: String) async -> AuthSignInResult
-    var confirmSignIn: (_ newPassword: String) async -> Result<String, AuthError>
+    var initialize: () async -> Result<Empty, AuthError>
+    var signIn: (_ username: String, _ password: String) async -> SignInResponse
+    var confirmSignIn: (_ newPassword: String) async -> Result<Empty, AuthError>
     var getUserRole: () async -> Result<UserRole, AuthError>
     var getTokens: () async -> Result<Tokens, AuthError>
-    var signOut: () async -> Result<Bool, AuthError>
+    var signOut: () async -> Result<Empty, AuthError>
 }
 
 extension DependencyValues {

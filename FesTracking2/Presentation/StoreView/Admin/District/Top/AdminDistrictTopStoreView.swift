@@ -46,7 +46,7 @@ struct AdminDistrictView: View{
                 }
                 Section {
                     Button(action: {
-                        store.send(.onSignOut)
+                        store.send(.signOutTapped)
                     }) {
                         Text("ログアウト")
                             .foregroundColor(.red)

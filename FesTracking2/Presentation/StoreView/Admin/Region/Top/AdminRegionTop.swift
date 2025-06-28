@@ -11,8 +11,7 @@ import ComposableArchitecture
 struct AdminRegionTop {
     
     @Dependency(\.apiClient) var apiClient
-    @Dependency(\.authProvider) var authProvider
-    @Dependency(\.accessToken) var accessToken
+    @Dependency(\.authService) var authService
     
     @Reducer
     enum Destination {
@@ -23,7 +22,7 @@ struct AdminRegionTop {
     
     @ObservableState
     struct State: Equatable {
-        let region: Region
+        var region: Region
         var districts: [PublicDistrict]
         var isLoading: Bool = false
         @Presents var destination: Destination.State?
@@ -37,9 +36,10 @@ struct AdminRegionTop {
         case onCreateDistrict
         case homeTapped
         case signOutTapped
+        case regionReceived(Result<Region,ApiError>)
         case districtsReceived(Result<[PublicDistrict],ApiError>)
         case districtInfoPrepared(PublicDistrict, Result<[RouteSummary],ApiError>)
-        case signOutReceived(Result<Bool,AuthError>)
+        case signOutReceived(Result<UserRole,AuthError>)
         case destination(PresentationAction<Destination.Action>)
         case alert(PresentationAction<OkAlert.Action>)
     }
@@ -52,7 +52,7 @@ struct AdminRegionTop {
                 return .none
             case .onDistrictInfo(let district):
                 return .run { send in
-                    let result = await apiClient.getRoutes(district.id, accessToken.value)
+                    let result = await apiClient.getRoutes(district.id, authService.getAccessToken())
                     await send(.districtInfoPrepared(district, result))
                 }
             case .onCreateDistrict:
@@ -62,9 +62,17 @@ struct AdminRegionTop {
                 return .none
             case .signOutTapped:
                 return .run { send in
-                    let result = await authProvider.signOut()
+                    let result = await authService.signOut()
                     await send(.signOutReceived(result))
                 }
+            case .regionReceived(.success(let value)):
+                state.isLoading = false
+                state.region = value
+                return .none
+            case .regionReceived(.failure(let error)):
+                state.isLoading = false
+                state.alert = OkAlert.error("情報の取得に失敗しました。\(error.localizedDescription)")
+                return .none
             case .districtsReceived(.success(let value)):
                 state.isLoading = false
                 state.districts = value
@@ -78,16 +86,17 @@ struct AdminRegionTop {
             case .districtInfoPrepared(_, .failure(let error)):
                 state.alert = OkAlert.error("情報の取得に失敗しました。\(error.localizedDescription)")
                 return .none
-            case .signOutReceived(.success(_)):
+            case .signOutReceived(.success):
                 return .none
             case .signOutReceived(.failure(let error)):
-                state.alert = OkAlert.error("サインアウトに失敗しました。\(error.localizedDescription)")
+                state.alert = OkAlert.error("ログアウトに失敗しました。\(error.localizedDescription)")
                 return .none
             case .destination(.presented(let childAction)):
                 switch childAction{
-                case .edit(.received(.success)):
+                case .edit(.putReceived(.success)):
                     state.destination = nil
-                    return .none
+                    state.isLoading = true
+                    return getRegionEffect(state.region.id)
                 case .districtCreate(.received(.success)):
                     state.isLoading = true
                     state.destination = nil
@@ -122,6 +131,13 @@ struct AdminRegionTop {
         }
         .ifLet(\.$destination, action: \.destination)
         .ifLet(\.$alert, action: \.alert)
+    }
+    
+    func getRegionEffect(_ id: String) -> Effect<Action> {
+        .run { send in
+            let result = await apiClient.getRegion(id)
+            await send(.regionReceived(result))
+        }
     }
 }
 

@@ -35,6 +35,7 @@ struct FesTracking2App: App {
 let spanDelta: Double = 0.005
 let defaultRegionKey: String = "region"
 let defaultDistrictKey: String = "district"
+let loginIdKey: String = "login"
 let hasLaunchedBeforePath = "hasLaunchedBefore"
 let userGuideURLString = "https://s3.ap-northeast-1.amazonaws.com/studiomk.documents/userguides/matool.pdf"
 let contactURLString = "https://forms.gle/ppaAwkqrFPKiC9mr8"
