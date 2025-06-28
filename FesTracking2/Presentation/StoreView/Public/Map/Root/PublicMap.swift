@@ -10,7 +10,7 @@ import ComposableArchitecture
 struct PublicMap{
     
     @Dependency(\.apiClient) var apiClient
-    @Dependency(\.accessToken) var accessToken
+    @Dependency(\.authService) var authService
     @Dependency(\.userDefaultsClient) var userDefaultsClient
     
     enum Content: Equatable{
@@ -52,18 +52,18 @@ struct PublicMap{
             switch action {
             case .onAppear:
                 //TODO
-                guard let regionId = userDefaultsClient.stringForKey(defaultRegionKey) else {
+                guard let regionId = userDefaultsClient.string(defaultRegionKey) else {
                     return .none
                 }
-                if let districtId = userDefaultsClient.stringForKey(defaultDistrictKey){
+                if let districtId = userDefaultsClient.string(defaultDistrictKey){
                     return .merge(
-                        routeEffect(districtId, accessToken: accessToken.value),
-                        routesEffect(districtId,accessToken: accessToken.value),
+                        routeEffect(districtId),
+                        routesEffect(districtId),
                         districtsEffect(regionId)
                     )
                 }else{
                     return .merge(
-                        locationsEffect(regionId, accessToken: accessToken.value),
+                        locationsEffect(regionId),
                         districtsEffect(regionId)
                     )
                 }
@@ -72,7 +72,7 @@ struct PublicMap{
                 case .success(let districts):
                     let items = [Content.locations] + districts.map{ Content.route($0) }
                     //TODO
-                    if let districtId = userDefaultsClient.stringForKey(defaultDistrictKey),
+                    if let districtId = userDefaultsClient.string(defaultDistrictKey),
                        let selected = districts.first(where: { $0.id == districtId }) {
                         state.districtPicker = PickerFeature.State(items: items, selected: Content.route(selected))
                     }else{
@@ -132,15 +132,15 @@ struct PublicMap{
                 switch content {
                 case .locations:
                     //TODO
-                    return locationsEffect(Region.sample.id, accessToken: accessToken.value)
+                    return locationsEffect(Region.sample.id)
                 case .route(let district):
                     return .merge(
-                        routeEffect(district.id, accessToken: accessToken.value),
-                        routesEffect(district.id, accessToken: accessToken.value)
+                        routeEffect(district.id),
+                        routesEffect(district.id)
                     )
                 }
             case .routePicker(.selected(let route)):
-                return routeEffect(route, accessToken: accessToken.value)
+                return routeEffect(route)
             case .districtPicker(_),.routePicker(_), .map(_), .homeTapped:
                 return .none
             }
@@ -155,8 +155,9 @@ struct PublicMap{
         
     }
     
-    func routeEffect(_ id: String, accessToken: String?) -> Effect<Action> {
+    func routeEffect(_ id: String) -> Effect<Action> {
         .run { send in
+            let accessToken = await authService.getAccessToken()
             async let routeTask = apiClient.getCurrentRoute(id, accessToken)
             async let locationTask = apiClient.getLocation(id, accessToken)
             let (routeResult, locationResult) = await (routeTask, locationTask)
@@ -164,8 +165,9 @@ struct PublicMap{
         }
     }
     
-    func routeEffect(_ summary: RouteSummary, accessToken: String?) -> Effect<Action> {
+    func routeEffect(_ summary: RouteSummary) -> Effect<Action> {
         .run { send in
+            let accessToken = await authService.getAccessToken()
             async let routeTask = apiClient.getRoute(summary.id, accessToken)
             async let locationTask = apiClient.getLocation(summary.districtId, accessToken)
             let (routeResult, locationResult) = await (routeTask, locationTask)
@@ -180,15 +182,17 @@ struct PublicMap{
         }
     }
     
-    func routesEffect(_ id: String, accessToken: String?) -> Effect<Action> {
+    func routesEffect(_ id: String) -> Effect<Action> {
         .run { send in
+            let accessToken = await authService.getAccessToken()
             let result = await apiClient.getRoutes(id, accessToken);
             await send(.routesReceived(result))
         }
     }
     
-    func locationsEffect(_ id: String, accessToken: String?) -> Effect<Action> {
+    func locationsEffect(_ id: String) -> Effect<Action> {
         .run { send in
+            let accessToken = await authService.getAccessToken()
             let result = await apiClient.getLocations(id, accessToken);
             await send(.locationsReceived(result))
         }
