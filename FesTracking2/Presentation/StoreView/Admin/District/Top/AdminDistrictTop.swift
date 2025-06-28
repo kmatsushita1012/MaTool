@@ -193,7 +193,7 @@ struct AdminDistrictTop {
             case .signOutReceived(let result):
                 state.isAWSLoading = false
                 if case let .failure(error) = result {
-                    state.alert = OkAlert.error("サインアウトに失敗しました。 \(error.localizedDescription)")
+                    state.alert = OkAlert.error("ログアウトに失敗しました。 \(error.localizedDescription)")
                 }
                 return .none
             case .homeTapped:

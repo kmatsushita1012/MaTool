@@ -72,7 +72,7 @@ struct SettingsStoreView: View {
             Button(action: {
                 store.send(.signOutTapped)
             }) {
-                Text("強制サインアウト")
+                Text("強制ログアウト")
             }
             .buttonStyle(.borderedProminent)
             .tint(.red)

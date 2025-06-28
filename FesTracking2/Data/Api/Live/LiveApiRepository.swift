@@ -218,8 +218,14 @@ extension ApiRepotiroy: DependencyKey {
 private func decodeResponse<T:Codable>(_ type:T.Type, from response: Result<Data,Error>)->Result<T,ApiError>{
     switch response {
     case .success(let data):
+        let decoder = JSONDecoder()
+        decoder.dateDecodingStrategy = .custom { decoder in
+            let container = try decoder.singleValueContainer()
+            let seconds = try container.decode(Double.self)
+            return Date(timeIntervalSince1970: seconds)
+        }
         do{
-            let decodedObject = try JSONDecoder().decode(type, from: data)
+            let decodedObject = try decoder.decode(type, from: data)
             return Result.success(decodedObject)
         }catch{
             print(error)
@@ -232,6 +238,11 @@ private func decodeResponse<T:Codable>(_ type:T.Type, from response: Result<Data
 private func encodeRequest<T: Encodable>(_ object: T) -> Result<Data, Error> {
     let encoder = JSONEncoder()
     encoder.outputFormatting = .prettyPrinted // オプション: JSONを見やすくする
+    encoder.dateEncodingStrategy = .custom { date, encoder in
+        var container = encoder.singleValueContainer()
+        let seconds = Int64(date.timeIntervalSince1970)
+        try container.encode(seconds)
+    }
     do {
         let data = try encoder.encode(object)
         return .success(data)

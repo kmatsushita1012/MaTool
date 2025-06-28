@@ -89,7 +89,7 @@ struct AdminRegionTop {
             case .signOutReceived(.success):
                 return .none
             case .signOutReceived(.failure(let error)):
-                state.alert = OkAlert.error("サインアウトに失敗しました。\(error.localizedDescription)")
+                state.alert = OkAlert.error("ログアウトに失敗しました。\(error.localizedDescription)")
                 return .none
             case .destination(.presented(let childAction)):
                 switch childAction{

@@ -95,7 +95,7 @@ struct Home {
                 return .none
             case .adminTapped:
                 if state.isAWSLoading {
-                    state.alert = OkAlert.error("認証中です。もう一度お試しください。再度このエラーが出る場合は設定画面から強制サインアウトをお試しください。")
+                    state.alert = OkAlert.error("認証中です。もう一度お試しください。再度このエラーが出る場合は設定画面から強制ログアウトをお試しください。")
                     return .none
                 }
                 switch state.userRole {
