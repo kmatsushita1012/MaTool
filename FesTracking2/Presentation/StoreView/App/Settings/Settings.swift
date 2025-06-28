@@ -68,7 +68,7 @@ struct Settings {
                     await send(.signOutReceived(result))
                 }
             case .signOutReceived(.success):
-                state.alert = OkAlert.success("サインアウトしました")
+                state.alert = OkAlert.success("ログアウトしました")
                 return .none
             case .signOutReceived(.failure(let error)):
                 state.alert = OkAlert.error("情報の取得に失敗しました \(error.localizedDescription)")
