@@ -15,10 +15,7 @@ struct AdminPointEdit{
     struct State: Equatable{
         var item: Point
         var showPopover: Bool = false
-        let performances: [Performance]
-        var events: [InfoItem] {
-            return performances.map{ InfoItem(title: $0.name, description: " 演者 \($0.performer)\n \($0.description ?? "" )") } + [InfoItem(title: "休憩", description: nil)]
-        }
+        var milestones: [Information]
     }
     
     @CasePathable
@@ -30,7 +27,7 @@ struct AdminPointEdit{
         case insertTapped
         case deleteTapped
         case titleFieldFocused
-        case titleOptionSelected(InfoItem)
+        case titleOptionSelected(Information)
     }
     
     var body: some ReducerOf<AdminPointEdit> {
@@ -53,7 +50,7 @@ struct AdminPointEdit{
                 state.showPopover = true
                 return .none
             case .titleOptionSelected(let option):
-                state.item.title = option.title
+                state.item.title = option.name
                 state.item.description = option.description
                 state.showPopover = false
                 return .none
