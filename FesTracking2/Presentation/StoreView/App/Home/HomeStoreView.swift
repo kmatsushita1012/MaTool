@@ -100,9 +100,6 @@ struct AppView: View {
             .alert($store.scope(state: \.alert, action: \.alert))
             .loadingOverlay(store.isLoading)
         }
-        .background(
-            ReleaseNotesChecker()
-        )
         .onAppear(){
             store.send(.onAppear)
         }
