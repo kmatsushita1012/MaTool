@@ -12,7 +12,7 @@ struct AdminRegionView: View {
     @Bindable var store: StoreOf<AdminRegionTop>
     
     var body: some View {
-        NavigationStack {
+        NavigationView {
             Form {
                 Section {
                     NavigationItem(

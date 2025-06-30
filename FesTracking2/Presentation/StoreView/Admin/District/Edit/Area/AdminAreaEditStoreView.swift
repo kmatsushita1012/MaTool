@@ -12,7 +12,7 @@ struct AdminAreaView:View {
     @Bindable var store: StoreOf<AdminAreaEdit>
     
     var body: some View {
-        NavigationStack{
+        NavigationView{
             ZStack {
                 AdminDistrictMap(
                     coordinates: store.coordinates,

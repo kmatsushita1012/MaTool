@@ -12,7 +12,7 @@ struct AdminSpanView:View{
     @Bindable var store:StoreOf<AdminSpanEdit>
     
     var body: some View {
-        NavigationStack {
+        NavigationView {
             Form {
                 Section(header: Text("日付")) {
                     DatePicker(
