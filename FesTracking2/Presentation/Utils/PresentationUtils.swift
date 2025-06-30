@@ -16,7 +16,7 @@ func filterPoints(_ route: PublicRoute)-> [Point] {
         let tempFirst = Point(id: firstPoint.id, coordinate: firstPoint.coordinate, title: "出発", time: route.start, shouldExport: true)
         newPoints.append(tempFirst)
     }
-    newPoints.append(contentsOf: route.points.filter{ $0.shouldExport })
+    newPoints.append(contentsOf: route.points[1..<(route.points.count - 1)].filter{ $0.shouldExport })
     if route.points.count >= 2,
        let lastPoint = route.points.last,
        !lastPoint.shouldExport {

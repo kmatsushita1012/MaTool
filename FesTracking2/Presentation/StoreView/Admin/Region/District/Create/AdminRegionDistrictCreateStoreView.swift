@@ -47,6 +47,7 @@ struct AdminRegionCreateDistrictView: View {
                 }
             }
             .navigationBarTitleDisplayMode(.inline)
+            .loadingOverlay(store.isLoading)
         }
     }
 }
