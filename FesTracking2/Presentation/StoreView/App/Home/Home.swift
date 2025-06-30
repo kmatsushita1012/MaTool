@@ -29,7 +29,7 @@ struct Home {
     @ObservableState
     struct State: Equatable {
         var userRole: UserRole = .guest
-        var isAWSLoading: Bool = true
+        var isAuthLoading: Bool = true
         var isDestinationLoading: Bool = false
         var isLoading: Bool {
             isDestinationLoading
@@ -63,7 +63,7 @@ struct Home {
         Reduce { state, action in
             switch action {
             case .onAppear:
-                state.isAWSLoading = true
+                state.isAuthLoading = true
                 return .run { send in
                     let result = await authService.initialize()
                     await send(.awsInitializeReceived(result))
@@ -94,7 +94,7 @@ struct Home {
                 state.destination = .info(Info.State())
                 return .none
             case .adminTapped:
-                if state.isAWSLoading {
+                if state.isAuthLoading {
                     state.alert = OkAlert.error("認証中です。もう一度お試しください。再度このエラーが出る場合は設定画面から強制ログアウトをお試しください。")
                     return .none
                 }
@@ -117,10 +117,10 @@ struct Home {
                 return settingsEffect(regionId: regionId, districtId: districtId)
             case .awsInitializeReceived(.success(let userRole)):
                 state.userRole = userRole
-                state.isAWSLoading = false
+                state.isAuthLoading = false
                 return .none
             case .awsInitializeReceived(.failure(_)):
-                state.isAWSLoading = false
+                state.isAuthLoading = false
                 return .none
             case let .settingsPrepared(regionsResult, regionResult, districtsResult, districtResult):
                 state.isDestinationLoading = false

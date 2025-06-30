@@ -1,5 +1,5 @@
 //
-//  AdminRegionDistrictInfoView.swift
+//  AdminRegionDistrictListView.swift
 //  FesTracking2
 //
 //  Created by 松下和也 on 2025/05/12.
@@ -8,8 +8,8 @@
 import SwiftUI
 import ComposableArchitecture
 
-struct AdminRegionDistrictInfoView: View {
-    @Bindable var store: StoreOf<AdminRegionDistrictInfo>
+struct AdminRegionDistrictListView: View {
+    @Bindable var store: StoreOf<AdminRegionDistrictList>
     
     var body: some View {
         NavigationStack{
@@ -46,6 +46,7 @@ struct AdminRegionDistrictInfoView: View {
             ) { store in
                 AdminRouteExportView(store: store)
             }
+            .loadingOverlay(store.isLoading)
         }
     }
 }

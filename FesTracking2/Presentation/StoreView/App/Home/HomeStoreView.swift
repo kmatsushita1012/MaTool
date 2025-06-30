@@ -51,6 +51,7 @@ struct AppView: View {
                         }
                         .background(.orange)
                         .cornerRadius(8)
+                        .loadingOverlay(store.isAuthLoading)
                     }
                     VStack(spacing: 16)  {
                         CardItem {
