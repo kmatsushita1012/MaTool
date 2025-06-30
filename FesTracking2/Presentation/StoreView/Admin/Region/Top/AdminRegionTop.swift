@@ -16,7 +16,7 @@ struct AdminRegionTop {
     @Reducer
     enum Destination {
         case edit(AdminRegionEdit)
-        case districtInfo(AdminRegionDistrictInfo)
+        case districtInfo(AdminRegionDistrictList)
         case districtCreate(AdminRegionDistrictCreate)
     }
     
@@ -24,9 +24,13 @@ struct AdminRegionTop {
     struct State: Equatable {
         var region: Region
         var districts: [PublicDistrict]
-        var isLoading: Bool = false
+        var isApiLoading: Bool = false
+        var isAuthLoading: Bool = false
         @Presents var destination: Destination.State?
         @Presents var alert: OkAlert.State?
+        var isLoading: Bool {
+            isApiLoading || isAuthLoading
+        }
     }
     
     @CasePathable
@@ -51,6 +55,7 @@ struct AdminRegionTop {
                 state.destination = .edit(AdminRegionEdit.State(item: state.region))
                 return .none
             case .onDistrictInfo(let district):
+                state.isApiLoading = true
                 return .run { send in
                     let result = await apiClient.getRoutes(district.id, authService.getAccessToken())
                     await send(.districtInfoPrepared(district, result))
@@ -61,44 +66,50 @@ struct AdminRegionTop {
             case .homeTapped:
                 return .none
             case .signOutTapped:
+                state.isAuthLoading = true
                 return .run { send in
                     let result = await authService.signOut()
                     await send(.signOutReceived(result))
                 }
             case .regionReceived(.success(let value)):
-                state.isLoading = false
+                state.isApiLoading = false
                 state.region = value
                 return .none
             case .regionReceived(.failure(let error)):
-                state.isLoading = false
+                state.isApiLoading = false
                 state.alert = OkAlert.error("情報の取得に失敗しました。\(error.localizedDescription)")
                 return .none
             case .districtsReceived(.success(let value)):
-                state.isLoading = false
+                state.isApiLoading = false
                 state.districts = value
                 return .none
             case .districtsReceived(.failure(let error)):
+                state.isApiLoading = false
                 state.alert = OkAlert.error("情報の取得に失敗しました。\(error.localizedDescription)")
                 return .none
             case .districtInfoPrepared(let district, .success(let routes)):
-                state.destination = .districtInfo(AdminRegionDistrictInfo.State(district: district, routes: routes.sorted()))
+                state.isApiLoading = false
+                state.destination = .districtInfo(AdminRegionDistrictList.State(district: district, routes: routes.sorted()))
                 return .none
             case .districtInfoPrepared(_, .failure(let error)):
+                state.isApiLoading = false
                 state.alert = OkAlert.error("情報の取得に失敗しました。\(error.localizedDescription)")
                 return .none
             case .signOutReceived(.success):
+                state.isAuthLoading = false
                 return .none
             case .signOutReceived(.failure(let error)):
+                state.isAuthLoading = false
                 state.alert = OkAlert.error("ログアウトに失敗しました。\(error.localizedDescription)")
                 return .none
             case .destination(.presented(let childAction)):
                 switch childAction{
                 case .edit(.putReceived(.success)):
+                    state.isApiLoading = true
                     state.destination = nil
-                    state.isLoading = true
                     return getRegionEffect(state.region.id)
                 case .districtCreate(.received(.success)):
-                    state.isLoading = true
+                    state.isApiLoading = true
                     state.destination = nil
                     state.alert = OkAlert.success("参加町の追加が完了しました。")
                     return .run {[regionId = state.region.id] send in

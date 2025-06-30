@@ -67,7 +67,7 @@ struct AdminRegionView: View {
             .fullScreenCover(
                 item: $store.scope(state: \.destination?.districtInfo, action: \.destination.districtInfo)
             ) { store in
-                AdminRegionDistrictInfoView(store: store)
+                AdminRegionDistrictListView(store: store)
             }
             .fullScreenCover(
                 item: $store.scope(state: \.destination?.districtCreate, action: \.destination.districtCreate)
@@ -75,6 +75,7 @@ struct AdminRegionView: View {
                 AdminRegionCreateDistrictView(store: store)
             }
             .alert($store.scope(state: \.alert, action: \.alert))
+            .loadingOverlay(store.isLoading)
         }
     }
 }
