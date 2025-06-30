@@ -12,7 +12,7 @@ struct AdminRegionDistrictListView: View {
     @Bindable var store: StoreOf<AdminRegionDistrictList>
     
     var body: some View {
-        NavigationStack{
+        NavigationView{
             Form{
                 Section(header: Text("行動")) {
                     List(store.routes) { route in

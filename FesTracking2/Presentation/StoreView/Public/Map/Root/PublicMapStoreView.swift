@@ -12,7 +12,7 @@ struct PublicMapStoreView: View {
     @Bindable var store: StoreOf<PublicMap>
     
     var body: some View {
-        NavigationStack{
+        NavigationView{
             VStack(spacing: 0){
                 if let store = store.scope(state: \.districtPicker, action: \.districtPicker) {
                     DistrictPickerView(store: store)
