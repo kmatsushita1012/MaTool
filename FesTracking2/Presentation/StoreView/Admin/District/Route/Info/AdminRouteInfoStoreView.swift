@@ -12,7 +12,7 @@ struct AdminRouteInfoView: View{
     @Bindable var store: StoreOf<AdminRouteInfo>
     
     var body: some View{
-        NavigationStack{
+        NavigationView{
             Form{
                 Section(header: Text("日付")){
                     DatePicker(

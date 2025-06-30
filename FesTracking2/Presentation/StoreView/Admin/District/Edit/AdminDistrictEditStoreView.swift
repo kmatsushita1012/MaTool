@@ -13,7 +13,7 @@ struct AdminDistrictEditView: View {
     @Bindable var store: StoreOf<AdminDistrictEdit>
     
     var body: some View {
-        NavigationStack{
+        NavigationView{
             Form {
                 Section(header: Text("町名")) {
                     TextField("町名を入力",text: $store.item.name)

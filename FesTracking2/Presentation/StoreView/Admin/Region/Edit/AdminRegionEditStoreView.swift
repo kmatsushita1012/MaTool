@@ -13,7 +13,7 @@ struct AdminRegionEditView: View{
     @Bindable var store: StoreOf<AdminRegionEdit>
     
     var body: some View{
-        NavigationStack {
+        NavigationView {
             Form {
                 Section(header: Text("説明")) {
                     TextEditor(text: $store.item.description.nonOptional)
