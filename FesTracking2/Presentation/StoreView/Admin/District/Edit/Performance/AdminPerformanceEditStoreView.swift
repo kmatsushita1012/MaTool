@@ -13,7 +13,7 @@ struct AdminPerformanceView:View {
     @Bindable var store: StoreOf<AdminPerformanceEdit>
     
     var body: some View {
-        NavigationStack{
+        NavigationView{
             Form {
                 Section(header: Text("演目名")) {
                     TextField("演目名を入力 (例:〇〇音頭)", text: $store.item.name)
