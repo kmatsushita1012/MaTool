@@ -21,7 +21,7 @@
 		292D108C2DCDDB9F0022D8A0 /* AdminRegionTopStoreView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 292D108B2DCDDB9B0022D8A0 /* AdminRegionTopStoreView.swift */; };
 		292D108E2DCDDBCC0022D8A0 /* AdminRegionTop.swift in Sources */ = {isa = PBXBuildFile; fileRef = 292D108D2DCDDBC30022D8A0 /* AdminRegionTop.swift */; };
 		293F2C2D2DD77EA4002C056E /* LoadingOverlay.swift in Sources */ = {isa = PBXBuildFile; fileRef = 293F2C2C2DD77E9F002C056E /* LoadingOverlay.swift */; };
-		293F2C2F2DD78559002C056E /* OkAlert.swift in Sources */ = {isa = PBXBuildFile; fileRef = 293F2C2E2DD7854D002C056E /* OkAlert.swift */; };
+		293F2C2F2DD78559002C056E /* Alert.swift in Sources */ = {isa = PBXBuildFile; fileRef = 293F2C2E2DD7854D002C056E /* Alert.swift */; };
 		29460A0B2D8C28AC0097CAA1 /* LogIn.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29460A0A2D8C28A40097CAA1 /* LogIn.swift */; };
 		29460A0D2D8C29030097CAA1 /* LogInStoreView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29460A0C2D8C28FC0097CAA1 /* LogInStoreView.swift */; };
 		29460A1A2D8C32490097CAA1 /* awsconfiguration.json in Resources */ = {isa = PBXBuildFile; fileRef = 29460A162D8C314F0097CAA1 /* awsconfiguration.json */; };
@@ -221,7 +221,7 @@
 		292D108B2DCDDB9B0022D8A0 /* AdminRegionTopStoreView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdminRegionTopStoreView.swift; sourceTree = "<group>"; };
 		292D108D2DCDDBC30022D8A0 /* AdminRegionTop.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdminRegionTop.swift; sourceTree = "<group>"; };
 		293F2C2C2DD77E9F002C056E /* LoadingOverlay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoadingOverlay.swift; sourceTree = "<group>"; };
-		293F2C2E2DD7854D002C056E /* OkAlert.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OkAlert.swift; sourceTree = "<group>"; };
+		293F2C2E2DD7854D002C056E /* Alert.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Alert.swift; sourceTree = "<group>"; };
 		29460A0A2D8C28A40097CAA1 /* LogIn.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LogIn.swift; sourceTree = "<group>"; };
 		29460A0C2D8C28FC0097CAA1 /* LogInStoreView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LogInStoreView.swift; sourceTree = "<group>"; };
 		29460A162D8C314F0097CAA1 /* awsconfiguration.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = awsconfiguration.json; sourceTree = "<group>"; };
@@ -462,7 +462,7 @@
 			isa = PBXGroup;
 			children = (
 				2948FCEF2DC5C37800C73E99 /* PickerFeature.swift */,
-				293F2C2E2DD7854D002C056E /* OkAlert.swift */,
+				293F2C2E2DD7854D002C056E /* Alert.swift */,
 			);
 			path = Utils;
 			sourceTree = "<group>";
@@ -1583,7 +1583,7 @@
 				29AB1B4A2DE2124600AC37F3 /* Onboarding.swift in Sources */,
 				29A385182DD1B59E008A1D08 /* AdminRegionDistrictCreate.swift in Sources */,
 				29BC19442DB6236700C6F918 /* HomeStoreView.swift in Sources */,
-				293F2C2F2DD78559002C056E /* OkAlert.swift in Sources */,
+				293F2C2F2DD78559002C056E /* Alert.swift in Sources */,
 				29A138CC2DB3CEFD00C95C31 /* NavigationItemView.swift in Sources */,
 				299770202DA527FB00EEB5F4 /* DismissButton.swift in Sources */,
 				292D108A2DCDD6CA0022D8A0 /* UserRole.swift in Sources */,

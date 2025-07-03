@@ -35,14 +35,14 @@ struct Home {
             isDestinationLoading
         }
         @Presents var destination: Destination.State?
-        @Presents var alert: OkAlert.State?
+        @Presents var alert: Alert.State?
     }
     
 
     @CasePathable
     enum Action: Equatable {
         case onAppear
-        case routeTapped
+        case mapTapped
         case infoTapped
         case adminTapped
         case settingsTapped
@@ -56,7 +56,7 @@ struct Home {
             Result<PublicDistrict?,ApiError>
         )
         case destination(PresentationAction<Destination.Action>)
-        case alert(PresentationAction<OkAlert.Action>)
+        case alert(PresentationAction<Alert.Action>)
     }
 
     var body: some ReducerOf<Home> {
@@ -73,7 +73,7 @@ struct Home {
                    case let .success(routes) = routesResult{
                     state.destination = .adminDistrict(AdminDistrictTop.State(district: district,  routes: routes.sorted()))
                 }else{
-                    state.alert = OkAlert.error("情報の取得に失敗しました")
+                    state.alert = Alert.error("情報の取得に失敗しました")
                 }
                 state.isDestinationLoading = false
                 return .none
@@ -83,11 +83,11 @@ struct Home {
                    case let .success(districts) = districtsResult{
                     state.destination = .adminRegion(AdminRegionTop.State(region: region, districts: districts))
                 }else{
-                    state.alert = OkAlert.error("情報の取得に失敗しました")
+                    state.alert = Alert.error("情報の取得に失敗しました")
                 }
                 state.isDestinationLoading = false
                 return .none
-            case .routeTapped:
+            case .mapTapped:
                 state.destination = .route(PublicMap.State())
                 return .none
             case .infoTapped:
@@ -95,7 +95,7 @@ struct Home {
                 return .none
             case .adminTapped:
                 if state.isAuthLoading {
-                    state.alert = OkAlert.error("認証中です。もう一度お試しください。再度このエラーが出る場合は設定画面から強制ログアウトをお試しください。")
+                    state.alert = Alert.error("認証中です。もう一度お試しください。再度このエラーが出る場合は設定画面から強制ログアウトをお試しください。")
                     return .none
                 }
                 switch state.userRole {

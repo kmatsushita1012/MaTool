@@ -48,14 +48,12 @@ struct AdminDistrictEditView: View {
                 }
                 Section(header: Text("余興")) {
                     List(store.item.performances) { item in
-                        EditableListItemView(
-                            text: item.name,
-                            onEdit: {
+                        NavigationItemView(
+                            title: item.name,
+                            onTap: {
                                 store.send(.performanceEditTapped(item))
-                            },
-                            onDelete: {
-                                store.send(.performanceDeleteTapped(item))
-                            })
+                            }
+                        )
                     }
                     Button(action: {
                         store.send(.performanceAddTapped)

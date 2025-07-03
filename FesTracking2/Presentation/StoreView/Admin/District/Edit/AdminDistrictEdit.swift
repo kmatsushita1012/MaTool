@@ -29,7 +29,7 @@ struct AdminDistrictEdit {
         var image: PhotosPickerItem?
         var isLoading: Bool = false
         @Presents var destination: Destination.State?
-        @Presents var alert: OkAlert.State?
+        @Presents var alert: Alert.State?
     }
     @CasePathable
     enum Action: BindableAction, Equatable {
@@ -40,10 +40,9 @@ struct AdminDistrictEdit {
         case areaTapped
         case performanceAddTapped
         case performanceEditTapped(Performance)
-        case performanceDeleteTapped(Performance)
         case postReceived(Result<String,ApiError>)
         case destination(PresentationAction<Destination.Action>)
-        case alert(PresentationAction<OkAlert.Action>)
+        case alert(PresentationAction<Alert.Action>)
     }
     
     var body: some ReducerOf<AdminDistrictEdit>{
@@ -76,13 +75,10 @@ struct AdminDistrictEdit {
             case .performanceEditTapped(let item):
                 state.destination = .performance(AdminPerformanceEdit.State(item: item))
                 return .none
-            case .performanceDeleteTapped(let item):
-                state.item.performances.removeAll(where: { $0.id == item.id })
-                return .none
             case .postReceived(let result):
                 state.isLoading = false
                 if case let .failure(error) = result {
-                    state.alert = OkAlert.error("保存に失敗しました。\(error.localizedDescription)")
+                    state.alert = Alert.error("保存に失敗しました。\(error.localizedDescription)")
                 }
                 return .none
             case .destination(.presented(let childAction)):
@@ -112,10 +108,17 @@ struct AdminDistrictEdit {
                 case .performance(.cancelTapped):
                     state.destination = nil
                     return .none
+                case .performance(.alert(.presented(.okTapped))):
+                    if case let .performance(performanceState) = state.destination {
+                        state.item.performances.removeAll(where: { $0.id == performanceState.item.id })
+                    }
+                    state.destination = nil
+                    return .none
                 default:
                     return .none
                 }
-            case .destination(_):
+            case .destination(.dismiss):
+                state.destination = nil
                 return .none
             case .alert(.presented(.okTapped)):
                 state.alert = nil

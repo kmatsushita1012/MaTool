@@ -15,14 +15,14 @@ struct AdminRegionView: View {
         NavigationView {
             Form {
                 Section {
-                    NavigationItem(
+                    NavigationItemView(
                         title: "祭典情報",
                         iconName: "info.circle" ,
                         onTap: { store.send(.onEdit) })
                 }
                 Section(header: Text("参加町")){
                     List(store.districts) { district in
-                        NavigationItem(
+                        NavigationItemView(
                             title: district.name,
                             onTap: {
                                 store.send(.onDistrictInfo(district))

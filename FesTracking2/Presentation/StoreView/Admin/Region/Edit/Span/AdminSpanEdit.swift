@@ -10,12 +10,19 @@ import Foundation
 
 @Reducer
 struct AdminSpanEdit {
+    enum Mode {
+        case create
+        case edit
+    }
+    
     @ObservableState
     struct State: Equatable{
+        let mode: Mode
         let id: String
         var date: Date
         var start: Date
         var end: Date
+        @Presents var alert: Alert.State? = nil
         
         var span: Span {
             return Span(id: id, start: Date.combine(date: date, time: start), end: Date.combine(date: date, time: end))
@@ -26,6 +33,7 @@ struct AdminSpanEdit {
             date = span.start
             start = span.start
             end = span.end
+            mode = .edit
         }
         
         init(){
@@ -34,6 +42,7 @@ struct AdminSpanEdit {
             date = now
             start = Date.theDayAt(date: now, hour: 9, minute: 0, second: 0)
             end = Date.theDayAt(date: now, hour: 18, minute: 0, second: 0)
+            mode = .create
         }
     }
     @CasePathable
@@ -41,6 +50,8 @@ struct AdminSpanEdit {
         case binding(BindingAction<State>)
         case doneTapped
         case cancelTapped
+        case deleteTapped
+        case alert(PresentationAction<Alert.Action>)
     }
     
     var body: some ReducerOf<AdminSpanEdit>{
@@ -52,6 +63,19 @@ struct AdminSpanEdit {
             case .doneTapped:
                 return .none
             case .cancelTapped:
+                return .none
+            case .deleteTapped:
+                if state.mode == .create {
+                    return .none
+                }
+                state.alert = Alert.delete("このデータを削除してもよろしいですか。元の画面で保存を押すと削除され、操作を取り戻すことはできません。")
+                return .none
+            //Parent Use
+            case .alert(.presented(.okTapped)):
+                state.alert = nil
+                return .none
+            case .alert:
+                state.alert = nil
                 return .none
             }
         }

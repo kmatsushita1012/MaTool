@@ -35,6 +35,16 @@ struct AdminSpanView:View{
                     )
                     .datePickerStyle(.compact)
                 }
+                if store.mode == .edit {
+                    Section {
+                        Button(action: {
+                            store.send(.deleteTapped)
+                        }) {
+                            Text("削除")
+                                .foregroundColor(.red)
+                        }
+                    }
+                }
             }
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
@@ -61,5 +71,6 @@ struct AdminSpanView:View{
             }
             .navigationBarTitleDisplayMode(.inline)
         }
+        .alert($store.scope(state: \.alert, action: \.alert))
     }
 }

@@ -26,8 +26,8 @@ struct AdminRegionTop {
         var districts: [PublicDistrict]
         var isApiLoading: Bool = false
         var isAuthLoading: Bool = false
-        @Presents var destination: Destination.State?
-        @Presents var alert: OkAlert.State?
+        @Presents var destination: Destination.State? = nil
+        @Presents var alert: Alert.State? = nil
         var isLoading: Bool {
             isApiLoading || isAuthLoading
         }
@@ -45,7 +45,7 @@ struct AdminRegionTop {
         case districtInfoPrepared(PublicDistrict, Result<[RouteSummary],ApiError>)
         case signOutReceived(Result<UserRole,AuthError>)
         case destination(PresentationAction<Destination.Action>)
-        case alert(PresentationAction<OkAlert.Action>)
+        case alert(PresentationAction<Alert.Action>)
     }
     
     var body: some ReducerOf<AdminRegionTop> {
@@ -77,7 +77,7 @@ struct AdminRegionTop {
                 return .none
             case .regionReceived(.failure(let error)):
                 state.isApiLoading = false
-                state.alert = OkAlert.error("情報の取得に失敗しました。\(error.localizedDescription)")
+                state.alert = Alert.error("情報の取得に失敗しました。\(error.localizedDescription)")
                 return .none
             case .districtsReceived(.success(let value)):
                 state.isApiLoading = false
@@ -85,7 +85,7 @@ struct AdminRegionTop {
                 return .none
             case .districtsReceived(.failure(let error)):
                 state.isApiLoading = false
-                state.alert = OkAlert.error("情報の取得に失敗しました。\(error.localizedDescription)")
+                state.alert = Alert.error("情報の取得に失敗しました。\(error.localizedDescription)")
                 return .none
             case .districtInfoPrepared(let district, .success(let routes)):
                 state.isApiLoading = false
@@ -93,14 +93,14 @@ struct AdminRegionTop {
                 return .none
             case .districtInfoPrepared(_, .failure(let error)):
                 state.isApiLoading = false
-                state.alert = OkAlert.error("情報の取得に失敗しました。\(error.localizedDescription)")
+                state.alert = Alert.error("情報の取得に失敗しました。\(error.localizedDescription)")
                 return .none
             case .signOutReceived(.success):
                 state.isAuthLoading = false
                 return .none
             case .signOutReceived(.failure(let error)):
                 state.isAuthLoading = false
-                state.alert = OkAlert.error("ログアウトに失敗しました。\(error.localizedDescription)")
+                state.alert = Alert.error("ログアウトに失敗しました。\(error.localizedDescription)")
                 return .none
             case .destination(.presented(let childAction)):
                 switch childAction{
@@ -111,14 +111,14 @@ struct AdminRegionTop {
                 case .districtCreate(.received(.success)):
                     state.isApiLoading = true
                     state.destination = nil
-                    state.alert = OkAlert.success("参加町の追加が完了しました。")
+                    state.alert = Alert.success("参加町の追加が完了しました。")
                     return .run {[regionId = state.region.id] send in
                         let result  = await apiClient.getDistricts(regionId)
                         await send(.districtsReceived(result))
                     }
                 case .districtCreate(.received(.failure(_))):
                     state.destination = nil
-                    state.alert = OkAlert.error("参加町の追加に失敗しました。")
+                    state.alert = Alert.error("参加町の追加に失敗しました。")
                     return .none
                 case .edit(.cancelTapped),
                     .districtInfo(.dismissTapped),
