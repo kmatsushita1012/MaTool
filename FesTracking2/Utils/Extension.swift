@@ -26,7 +26,7 @@ extension Color {
     static let customLightRed = Color(red: 255/255, green: 183/255, blue: 167/255)
 }
 
-extension MKCoordinateRegion: Equatable {
+extension MKCoordinateRegion: @retroactive Equatable {
     public static func == (lhs: MKCoordinateRegion, rhs: MKCoordinateRegion) -> Bool {
         return lhs.center.latitude == rhs.center.latitude &&
                lhs.center.longitude == rhs.center.longitude &&

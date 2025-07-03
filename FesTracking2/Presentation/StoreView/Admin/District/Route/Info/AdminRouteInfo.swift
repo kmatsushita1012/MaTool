@@ -16,20 +16,25 @@ struct AdminRouteInfo {
         case map(AdminRouteMap)
     }
     
+    @Reducer
+    enum AlertDestination{
+        case notice(Alert)
+        case delete(Alert)
+    }
+    
     @ObservableState
     struct State: Equatable{
         enum Mode:Equatable {
             case create(String,Span)
             case edit(Route)
         }
-        
         let mode: Mode
         var route: Route
         var isLoading: Bool = false
         let milestones: [Information]
         let base: Coordinate?
-        @Presents var destination: Destination.State?
-        @Presents var alert: OkAlert.State?
+        @Presents var destination: Destination.State? = nil
+        @Presents var alert: AlertDestination.State? = nil
         
         init(mode: Mode, milestones: [Information], base: Coordinate?){
             self.mode = mode
@@ -60,8 +65,7 @@ struct AdminRouteInfo {
         case postReceived(Result<String, ApiError>)
         case deleteReceived(Result<String, ApiError>)
         case destination(PresentationAction<Destination.Action>)
-        case alert(PresentationAction<OkAlert.Action>)
-        
+        case alert(PresentationAction<AlertDestination.Action>)
     }
     
     @Dependency(\.apiClient) var apiClient
@@ -79,13 +83,13 @@ struct AdminRouteInfo {
                 return .none
             case .saveTapped:
                 if state.route.title.isEmpty {
-                    state.alert = OkAlert.error("タイトルは1文字以上を指定してください。")
+                    state.alert = .notice(Alert.error("タイトルは1文字以上を指定してください。"))
                     return .none
                 } else if state.route.title.contains("/") {
-                    state.alert = OkAlert.error("タイトルに\"/\"を含むことはできません")
+                    state.alert = .notice(Alert.error("タイトルに\"/\"を含むことはできません"))
                     return .none
                 } else if state.route.start >= state.route.goal{
-                    state.alert = OkAlert.error("終了時刻は開始時刻より前に設定してください")
+                    state.alert = .notice(Alert.error("終了時刻は開始時刻より前に設定してください"))
                     return .none
                 }
                 state.isLoading = true
@@ -112,26 +116,18 @@ struct AdminRouteInfo {
             case .cancelTapped:
                 return .none
             case .deleteTapped:
-                state.isLoading = true
-                return .run { [route = state.route] send in
-                    //TODO
-                    guard let token = await authService.getAccessToken() else {
-                        await send(.postReceived(.failure(.unknown("認証に失敗しました。ログインし直してください。"))))
-                        return
-                    }
-                    let result = await apiClient.deleteRoute(route.id, token)
-                    await send(.postReceived(result))
-                }
+                state.alert = .delete(Alert.delete())
+                return .none
             case .postReceived(let result):
                 state.isLoading = false
                 if case let .failure(error) = result {
-                    state.alert = OkAlert.error("情報の取得に失敗しました。 \(error.localizedDescription)")
+                    state.alert = .notice(Alert.error("情報の取得に失敗しました。 \(error.localizedDescription)"))
                 }
                 return .none
             case .deleteReceived(let result):
                 state.isLoading = false
                 if case let .failure(error) = result {
-                    state.alert = OkAlert.error("情報の取得に失敗しました。 \(error.localizedDescription)")
+                    state.alert = .notice(Alert.error("情報の取得に失敗しました。 \(error.localizedDescription)"))
                 }
                 return .none
             case .destination(.presented(let childAction)):
@@ -151,10 +147,26 @@ struct AdminRouteInfo {
             case .destination(.dismiss):
                 state.destination = nil
                 return .none
-            case .alert(.presented(.okTapped)):
+            case .alert(.presented(let destination)):
+                switch destination {
+                case .notice(.okTapped):
+                    state.alert = nil
+                    return .none
+                case .delete(.okTapped):
+                    state.alert = nil
+                    state.isLoading = true
+                    return .run { [route = state.route] send in
+                        //TODO
+                        guard let token = await authService.getAccessToken() else {
+                            await send(.postReceived(.failure(.unknown("認証に失敗しました。ログインし直してください。"))))
+                            return
+                        }
+                        let result = await apiClient.deleteRoute(route.id, token)
+                        await send(.postReceived(result))
+                    }
+                }
+            case .alert:
                 state.alert = nil
-                return .none
-            case .alert(_):
                 return .none
             }
         }
@@ -165,6 +177,10 @@ struct AdminRouteInfo {
 
 extension AdminRouteInfo.Destination.State: Equatable {}
 extension AdminRouteInfo.Destination.Action: Equatable {}
+
+extension AdminRouteInfo.AlertDestination.State: Equatable {}
+extension AdminRouteInfo.AlertDestination.Action: Equatable {}
+
 extension AdminRouteInfo.State.Mode {
     var isCreate: Bool {
         if case .create = self {

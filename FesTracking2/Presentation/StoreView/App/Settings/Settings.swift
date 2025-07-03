@@ -24,7 +24,7 @@ struct Settings {
         var isLoading: Bool = false
         var userGuide: URL = URL(string: userGuideURLString)!
         var contact: URL = URL(string: contactURLString)!
-        @Presents var alert: OkAlert.State? = nil
+        @Presents var alert: Alert.State? = nil
         var isDismissEnabled: Bool {
             selectedRegion != nil || !isOfflineMode
         }
@@ -37,7 +37,7 @@ struct Settings {
         case signOutTapped
         case signOutReceived(Result<UserRole,AuthError>)
         case districtsReceived(Result<[PublicDistrict], ApiError>)
-        case alert(PresentationAction<OkAlert.Action>)
+        case alert(PresentationAction<Alert.Action>)
     }
 
     var body: some ReducerOf<Settings> {
@@ -68,10 +68,10 @@ struct Settings {
                     await send(.signOutReceived(result))
                 }
             case .signOutReceived(.success):
-                state.alert = OkAlert.success("ログアウトしました")
+                state.alert = Alert.success("ログアウトしました")
                 return .none
             case .signOutReceived(.failure(let error)):
-                state.alert = OkAlert.error("情報の取得に失敗しました \(error.localizedDescription)")
+                state.alert = Alert.error("情報の取得に失敗しました \(error.localizedDescription)")
                 return .none
             case .districtsReceived(.success(let value)):
                 state.districts = value
@@ -79,7 +79,7 @@ struct Settings {
                 return .none
             case .districtsReceived(.failure(let error)):
                 state.isLoading = false
-                state.alert = OkAlert.error("情報の取得に失敗しました \(error.localizedDescription)")
+                state.alert = Alert.error("情報の取得に失敗しました \(error.localizedDescription)")
                 return .none
             case .alert(.presented(.okTapped)):
                 state.alert = nil

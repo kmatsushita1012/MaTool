@@ -7,19 +7,23 @@
 
 import SwiftUI
 
-struct CardItem<Content: View>: View {
-    let content: () -> Content
-
-    init(@ViewBuilder content: @escaping () -> Content) {
-        self.content = content
-    }
-
+struct CardView: View {
+    let title: String
+    let foregroundColor: Color
+    let backgroundColor: Color
+    
     var body: some View {
         VStack {
-            content()
+            Text(title)
+                .font(.title3)
+                .foregroundStyle(foregroundColor)
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .layoutPriority(1)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .contentShape(Rectangle())
+        .background(backgroundColor)
+        .cornerRadius(8)
     }
 }
+

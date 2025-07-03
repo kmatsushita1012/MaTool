@@ -25,6 +25,16 @@ struct AdminPerformanceView:View {
                     TextEditor(text: $store.item.description.nonOptional)
                         .frame(height:120)
                 }
+                if store.mode == .edit {
+                    Section {
+                        Button(action: {
+                            store.send(.deleteTapped)
+                        }) {
+                            Text("削除")
+                                .foregroundColor(.red)
+                        }
+                    }
+                }
             }
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
@@ -51,5 +61,6 @@ struct AdminPerformanceView:View {
             }
             .navigationBarTitleDisplayMode(.inline)
         }
+        .alert($store.scope(state: \.alert, action: \.alert))
     }
 }

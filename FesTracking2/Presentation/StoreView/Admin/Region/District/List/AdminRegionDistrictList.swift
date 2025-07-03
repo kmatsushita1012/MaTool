@@ -19,7 +19,7 @@ struct AdminRegionDistrictList {
         let routes: [RouteSummary]
         var isLoading: Bool = false
         @Presents var export: AdminRouteExport.State?
-        @Presents var alert: OkAlert.State?
+        @Presents var alert: Alert.State?
     }
     
     @CasePathable
@@ -28,7 +28,7 @@ struct AdminRegionDistrictList {
         case exportPrepared(Result<PublicRoute,ApiError>)
         case dismissTapped
         case export(PresentationAction<AdminRouteExport.Action>)
-        case alert(PresentationAction<OkAlert.Action>)
+        case alert(PresentationAction<Alert.Action>)
     }
     
     var body: some ReducerOf<AdminRegionDistrictList> {
@@ -46,7 +46,7 @@ struct AdminRegionDistrictList {
                 return .none
             case .exportPrepared(.failure(let error)):
                 state.isLoading = false
-                state.alert = OkAlert.error("情報の取得に失敗しました。\n\(error.localizedDescription)")
+                state.alert = Alert.error("情報の取得に失敗しました。\n\(error.localizedDescription)")
                 return .none
             case .dismissTapped:
                 return .none

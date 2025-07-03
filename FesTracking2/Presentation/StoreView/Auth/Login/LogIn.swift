@@ -46,8 +46,13 @@ struct Login {
             case .received(.success(let userRole)):
                 state.errorMessage = nil
                 switch userRole {
-                case .region(let id),
-                    .district(let id):
+                case .region(let id):
+                    userDefaultsClient.setString(id, defaultRegionKey)
+                    userDefaultsClient.setString(nil, defaultDistrictKey)
+                    userDefaultsClient.setString(id, loginIdKey)
+                    return .none
+                case .district(let id):
+                    userDefaultsClient.setString(id, defaultDistrictKey)
                     userDefaultsClient.setString(id, loginIdKey)
                     return .none
                 case .guest:
@@ -61,9 +66,7 @@ struct Login {
             case .received(.failure(let error)):
                 state.isLoading = false
                 state.errorMessage = "ログインに失敗しました。\(error.localizedDescription)"
-                return .run { send in
-                    let result = await authService.signOut()
-                }
+                return .none
             case .homeTapped:
                 return .none
             case .confirmSignIn(.presented(.received(.success))):
