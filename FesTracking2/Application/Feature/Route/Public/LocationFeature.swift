@@ -18,5 +18,9 @@ struct LocationFeature {
     enum Action: Equatable {
         
     }
-    var body: some ReducerOf<LocationFeature> {}
+    var body: some ReducerOf<LocationFeature> {
+        Reduce{ state, action in
+            return .none
+        }
+    }
 }
