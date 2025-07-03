@@ -20,7 +20,7 @@ actor AuthService {
         switch userRoleResult {
         case .success(let value):
             return .success(value)
-        case .failure(let error):
+        case .failure(let _):
             let _ = await authProvider.signOut()
             return .success(.guest)
         }
@@ -37,7 +37,7 @@ actor AuthService {
         switch userRoleResult {
         case .success(let value):
             return .success(value)
-        case .failure(let error):
+        case .failure(let _):
             let _ = await authProvider.signOut()
             return .success(.guest)
         }
@@ -52,7 +52,7 @@ actor AuthService {
         switch userRoleResult {
         case .success(let value):
             return .success(value)
-        case .failure(let error):
+        case .failure(let _):
             let _ = await authProvider.signOut()
             return .success(.guest)
         }

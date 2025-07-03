@@ -56,9 +56,9 @@ struct AdminLocation{
             case .toggleChanged(let value):
                 state.isTracking = value
                 if(value){
-                    locationService.startTracking(id: "掛川祭_城北町", interval: state.selectedInterval)
+                    locationService.startTracking(id: state.id, interval: state.selectedInterval)
                 }else{
-                    locationService.stopTracking(id: "掛川祭_城北町")
+                    locationService.stopTracking(id: state.id)
                 }
                 return .none
             case .historyUpdated(let history):

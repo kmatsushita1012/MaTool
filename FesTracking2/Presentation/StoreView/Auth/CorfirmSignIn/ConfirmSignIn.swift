@@ -16,7 +16,7 @@ struct ConfirmSignIn {
         var password1: String = ""
         var password2: String = ""
         var isLoading: Bool = false
-        @Presents var alert: OkAlert.State? = nil
+        @Presents var alert: Alert.State? = nil
     }
     
     @CasePathable
@@ -25,7 +25,7 @@ struct ConfirmSignIn {
         case submitTapped
         case dismissTapped
         case received(Result<UserRole, AuthError>)
-        case alert(PresentationAction<OkAlert.Action>)
+        case alert(PresentationAction<Alert.Action>)
     }
     
     var body: some ReducerOf<ConfirmSignIn> {
@@ -36,10 +36,10 @@ struct ConfirmSignIn {
                 return .none
             case .submitTapped:
                 if state.password1 != state.password2 {
-                    state.alert = OkAlert.error("パスワードが一致しません。")
+                    state.alert = Alert.error("パスワードが一致しません。")
                     return .none
                 }else if !isValidPassword(state.password1) {
-                    state.alert = OkAlert.error("パスワードが条件を満たしていません。次の条件を満たしてください。\n 8文字以上 \n 少なくとも 1 つの数字を含む \n 少なくとも 1 つの大文字を含む \n 少なくとも 1 つの小文字を含む")
+                    state.alert = Alert.error("パスワードが条件を満たしていません。次の条件を満たしてください。\n 8文字以上 \n 少なくとも 1 つの数字を含む \n 少なくとも 1 つの大文字を含む \n 少なくとも 1 つの小文字を含む")
                     return .none
                 }
                 state.isLoading = true
@@ -54,7 +54,7 @@ struct ConfirmSignIn {
                 return .none
             case .received(.failure(let error)):
                 state.isLoading = false
-                state.alert = OkAlert.error("送信に失敗しました。\(error.localizedDescription)")
+                state.alert = Alert.error("送信に失敗しました。\(error.localizedDescription)")
                 return .none
             case .alert(.presented(.okTapped)):
                 state.alert = nil

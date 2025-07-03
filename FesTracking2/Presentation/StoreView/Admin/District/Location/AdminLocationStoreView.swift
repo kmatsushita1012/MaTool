@@ -12,7 +12,7 @@ struct LocationAdminView: View {
     @Bindable var store: StoreOf<AdminLocation>
     
     var body: some View {
-        NavigationStack{
+        NavigationView{
             Form {
                 Section(
                     footer: Text("始めに短い間隔で試すことで、動作の安定性を確認しやすくなります。")

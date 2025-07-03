@@ -18,7 +18,8 @@ struct AdminRegionDistrictCreate {
         let region: Region
         var name: String = ""
         var email: String = ""
-        @Presents var alert: OkAlert.State?
+        var isLoading: Bool = false
+        @Presents var alert: Alert.State?
     }
     @CasePathable
     enum Action: Equatable, BindableAction {
@@ -26,7 +27,7 @@ struct AdminRegionDistrictCreate {
         case createTapped
         case cancelTapped
         case received(Result<String,ApiError>)
-        case alert(PresentationAction<OkAlert.Action>)
+        case alert(PresentationAction<Alert.Action>)
     }
     var body: some ReducerOf<AdminRegionDistrictCreate> {
         BindingReducer()
@@ -38,6 +39,7 @@ struct AdminRegionDistrictCreate {
                 if state.name.isEmpty || state.email.isEmpty {
                     return .none
                 }
+                state.isLoading = true
                 return .run { [region = state.region, name = state.name, email = state.email] send in
                     guard let accessToken = await authService.getAccessToken() else { return }
                     let result = await apiClient.postDistrict(region.id, name, email, accessToken)
@@ -46,9 +48,11 @@ struct AdminRegionDistrictCreate {
             case .cancelTapped:
                 return .none
             case .received(.success(_)):
+                state.isLoading = false
                 return .none
             case .received(.failure(let error)):
-                state.alert = OkAlert.error("作成に失敗しました。\n\(error.localizedDescription)")
+                state.isLoading = false
+                state.alert = Alert.error("作成に失敗しました。\n\(error.localizedDescription)")
                 return .none
             case .alert(.presented(.okTapped)):
                 state.alert = nil

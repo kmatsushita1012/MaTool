@@ -11,7 +11,7 @@ import ComposableArchitecture
 struct InfoStoreView: View {
     let store: StoreOf<Info>
     var body: some View {
-        NavigationStack{
+        NavigationView{
             VStack{
                 Text("info")
             }

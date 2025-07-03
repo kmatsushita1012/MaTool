@@ -11,6 +11,7 @@ import ComposableArchitecture
 @Reducer
 struct AdminPointEdit{
     
+    
     @ObservableState
     struct State: Equatable{
         var item: Point
