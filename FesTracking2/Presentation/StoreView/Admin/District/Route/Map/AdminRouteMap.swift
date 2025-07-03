@@ -31,7 +31,7 @@ struct AdminRouteMap{
         let milestones: [Information]
         var region: MKCoordinateRegion?
         @Presents var destination: Destination.State?
-        @Presents var alert: OkAlert.State?
+        @Presents var alert: Alert.State?
         var canUndo: Bool { manager.canUndo }
         var canRedo: Bool{ manager.canRedo }
         var route: Route {
@@ -61,7 +61,7 @@ struct AdminRouteMap{
         case doneTapped
         case cancelTapped
         case destination(PresentationAction<Destination.Action>)
-        case alert(PresentationAction<OkAlert.Action>)
+        case alert(PresentationAction<Alert.Action>)
     }
     
     var body: some ReducerOf<AdminRouteMap> {
@@ -99,7 +99,7 @@ struct AdminRouteMap{
                     return .none
                 case .insert(let index):
                     if index < 0 || index >= state.route.points.count { return .none }
-                    let point = Point(id: UUID().uuidString, coordinate: coordinate, title: nil, description: nil, time: nil, isPassed: false)
+                    let point = Point(id: UUID().uuidString, coordinate: coordinate)
                     state.manager.apply{
                         if index > 0 {
                             let segment = Segment(id: UUID().uuidString, start: $0.points[index-1].coordinate, end: coordinate)
@@ -154,14 +154,17 @@ struct AdminRouteMap{
                     state.destination = nil
                     return .none
                 case .point(.deleteTapped):
+                    
                     if case let .point(pointState) = state.destination,
                        let index = state.route.points.firstIndex(where: { $0.id == pointState.item.id }){
                         state.manager.apply {
                             if index < $0.segments.count {
                                 $0.segments.remove(at: index)
                             }
-                            if index > 0{
+                            if index > 0 && index < $0.points.count-1{
                                 $0.segments[index-1] = Segment(id: UUID().uuidString, start: $0.points[index-1].coordinate, end: $0.points[index+1].coordinate)
+                            }else if index == $0.points.count-1 {
+                                $0.segments.remove(at: index-1)
                             }
                             $0.points.remove(at: index)
                         }

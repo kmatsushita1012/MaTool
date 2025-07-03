@@ -24,7 +24,7 @@ struct AdminRegionEdit {
     struct State: Equatable {
         var item: Region
         @Presents var destination: Destination.State?
-        @Presents var alert: OkAlert.State?
+        @Presents var alert: Alert.State?
     }
     
     @CasePathable
@@ -34,13 +34,12 @@ struct AdminRegionEdit {
         case cancelTapped
         case putReceived(Result<String, ApiError>)
         case onSpanEdit(Span)
-        case onSpanDelete(Span)
         case onSpanAdd
         case onMilestoneEdit(Information)
         case onMilestoneDelete(Information)
         case onMilestoneAdd
         case destination(PresentationAction<Destination.Action>)
-        case alert(PresentationAction<OkAlert.Action>)
+        case alert(PresentationAction<Alert.Action>)
     }
     
     var body: some ReducerOf<AdminRegionEdit> {
@@ -63,15 +62,12 @@ struct AdminRegionEdit {
             case .putReceived(.success(_)):
                 return .none
             case .putReceived(.failure(let error)):
-                state.alert = OkAlert.error("保存に失敗しました。\(error.localizedDescription)")
+                state.alert = Alert.error("保存に失敗しました。\(error.localizedDescription)")
                 return .none
             case .onSpanEdit(let item):
                 state.destination = .span(
                     AdminSpanEdit.State(item)
                 )
-                return .none
-            case .onSpanDelete(let item):
-                state.item.spans.removeAll(where: {$0.id == item.id})
                 return .none
             case .onSpanAdd:
                 state.destination = .span(AdminSpanEdit.State())
@@ -114,6 +110,12 @@ struct AdminRegionEdit {
                         return .none
                     case.span(.cancelTapped),
                         .milestone(.cancelTapped):
+                        state.destination = nil
+                        return .none
+                    case .span(.alert(.presented(.okTapped))):
+                        if case let .span(spanState) = state.destination {
+                            state.item.spans.removeAll(where: {$0.id == spanState.span.id})
+                        }
                         state.destination = nil
                         return .none
                     case .span,

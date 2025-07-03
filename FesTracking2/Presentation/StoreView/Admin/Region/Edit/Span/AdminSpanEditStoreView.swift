@@ -12,7 +12,7 @@ struct AdminSpanView:View{
     @Bindable var store:StoreOf<AdminSpanEdit>
     
     var body: some View {
-        NavigationStack {
+        NavigationView {
             Form {
                 Section(header: Text("日付")) {
                     DatePicker(
@@ -34,6 +34,16 @@ struct AdminSpanView:View{
                         displayedComponents: [.hourAndMinute]
                     )
                     .datePickerStyle(.compact)
+                }
+                if store.mode == .edit {
+                    Section {
+                        Button(action: {
+                            store.send(.deleteTapped)
+                        }) {
+                            Text("削除")
+                                .foregroundColor(.red)
+                        }
+                    }
                 }
             }
             .toolbar {
@@ -61,5 +71,6 @@ struct AdminSpanView:View{
             }
             .navigationBarTitleDisplayMode(.inline)
         }
+        .alert($store.scope(state: \.alert, action: \.alert))
     }
 }

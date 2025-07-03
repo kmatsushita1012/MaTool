@@ -12,17 +12,17 @@ struct AdminRegionView: View {
     @Bindable var store: StoreOf<AdminRegionTop>
     
     var body: some View {
-        NavigationStack {
+        NavigationView {
             Form {
                 Section {
-                    NavigationItem(
+                    NavigationItemView(
                         title: "祭典情報",
                         iconName: "info.circle" ,
                         onTap: { store.send(.onEdit) })
                 }
                 Section(header: Text("参加町")){
                     List(store.districts) { district in
-                        NavigationItem(
+                        NavigationItemView(
                             title: district.name,
                             onTap: {
                                 store.send(.onDistrictInfo(district))
@@ -67,7 +67,7 @@ struct AdminRegionView: View {
             .fullScreenCover(
                 item: $store.scope(state: \.destination?.districtInfo, action: \.destination.districtInfo)
             ) { store in
-                AdminRegionDistrictInfoView(store: store)
+                AdminRegionDistrictListView(store: store)
             }
             .fullScreenCover(
                 item: $store.scope(state: \.destination?.districtCreate, action: \.destination.districtCreate)
@@ -75,6 +75,7 @@ struct AdminRegionView: View {
                 AdminRegionCreateDistrictView(store: store)
             }
             .alert($store.scope(state: \.alert, action: \.alert))
+            .loadingOverlay(store.isLoading)
         }
     }
 }

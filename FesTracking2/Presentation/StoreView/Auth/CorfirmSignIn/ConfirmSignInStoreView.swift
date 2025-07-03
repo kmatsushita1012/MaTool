@@ -13,7 +13,7 @@ struct ConfirmSignInStoreView: View {
     
 
     var body: some View {
-        NavigationStack{
+        NavigationView{
             VStack {
                 Text("パスワード変更")
                     .font(.largeTitle)

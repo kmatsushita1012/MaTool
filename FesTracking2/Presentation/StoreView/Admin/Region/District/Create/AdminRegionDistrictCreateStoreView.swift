@@ -13,7 +13,7 @@ struct AdminRegionCreateDistrictView: View {
     @Bindable var store: StoreOf<AdminRegionDistrictCreate>
     
     var body: some View {
-        NavigationStack {
+        NavigationView {
             Form{
                 Section(header: Text("町名")) {
                     TextField("町名を入力",text: $store.name)
@@ -47,6 +47,7 @@ struct AdminRegionCreateDistrictView: View {
                 }
             }
             .navigationBarTitleDisplayMode(.inline)
+            .loadingOverlay(store.isLoading)
         }
     }
 }

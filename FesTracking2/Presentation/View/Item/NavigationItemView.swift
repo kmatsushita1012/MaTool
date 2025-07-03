@@ -1,5 +1,5 @@
 //
-//  NavigationItemView.swift
+//  NavigationItemViewView.swift
 //  FesTracking2
 //
 //  Created by 松下和也 on 2025/04/19.
@@ -7,11 +7,11 @@
 
 import SwiftUI
 
-struct NavigationItem: View {
-    var title: String
-    var iconName: String?
+struct NavigationItemView: View {
+    let title: String
+    var iconName: String? = nil
     var status: String? = nil
-    var onTap: () -> Void
+    let onTap: () -> Void
 
     var body: some View {
         HStack {
