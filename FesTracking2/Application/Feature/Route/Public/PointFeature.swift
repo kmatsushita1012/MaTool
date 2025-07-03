@@ -18,5 +18,8 @@ struct PointFeature {
     enum Action: Equatable {
     }
     var body: some ReducerOf<PointFeature> {
+        Reduce{ state, action in
+            return .none
+        }
     }
 }
