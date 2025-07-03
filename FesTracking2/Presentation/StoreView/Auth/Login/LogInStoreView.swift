@@ -12,7 +12,7 @@ struct LoginStoreView: View {
     @Bindable var store: StoreOf<Login>
     
     var body: some View {
-        NavigationStack{
+        NavigationView{
             VStack {
                 Text("ログイン")
                     .font(.largeTitle)

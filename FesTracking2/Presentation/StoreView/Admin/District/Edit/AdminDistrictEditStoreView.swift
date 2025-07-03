@@ -13,7 +13,7 @@ struct AdminDistrictEditView: View {
     @Bindable var store: StoreOf<AdminDistrictEdit>
     
     var body: some View {
-        NavigationStack{
+        NavigationView{
             Form {
                 Section(header: Text("町名")) {
                     TextField("町名を入力",text: $store.item.name)
@@ -48,14 +48,12 @@ struct AdminDistrictEditView: View {
                 }
                 Section(header: Text("余興")) {
                     List(store.item.performances) { item in
-                        EditableListItemView(
-                            text: item.name,
-                            onEdit: {
+                        NavigationItemView(
+                            title: item.name,
+                            onTap: {
                                 store.send(.performanceEditTapped(item))
-                            },
-                            onDelete: {
-                                store.send(.performanceDeleteTapped(item))
-                            })
+                            }
+                        )
                     }
                     Button(action: {
                         store.send(.performanceAddTapped)

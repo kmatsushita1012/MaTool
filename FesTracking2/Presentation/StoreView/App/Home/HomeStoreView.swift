@@ -15,63 +15,49 @@ struct AppView: View {
     var body: some View {
         NavigationStack {
             VStack(spacing: 16) {
-                CardItem {
-                    Text("地図")
-                        .font(.title3)
-                        .foregroundStyle(.white)
-                }
-                .contentShape(Rectangle())
+                CardView(
+                    title: "地図",
+                    foregroundColor: .white,
+                    backgroundColor: .red
+                )
                 .onTapGesture {
-                    store.send(.routeTapped)
+                    store.send(.mapTapped)
                 }
-                .background(.red)
-                .cornerRadius(8)
                 HStack(spacing: 16)  {
                     VStack(spacing: 16)  {
-                        CardItem {
-                            Text("準備中")
-                                .font(.title3)
-                                .foregroundStyle(.white)
-                        }
-                        .contentShape(Rectangle())
-                        .onTapGesture {
+                        CardView(
+                            title: "準備中",
+                            foregroundColor: .white,
+                            backgroundColor: .blue
+                        )
+                        .onTapGesture{
                             store.send(.infoTapped)
                         }
-                        .background(.blue)
-                        .cornerRadius(8)
-                        CardItem {
-                            Text("管理者用\nページ")
-                                .font(.title3)
-                                .foregroundStyle(.white)
-                                .multilineTextAlignment(.center)
-                        }
-                        .contentShape(Rectangle())
+                        CardView(
+                            title: "管理者用\nページ",
+                            foregroundColor: .white,
+                            backgroundColor: .orange
+                        )
                         .onTapGesture {
                             store.send(.adminTapped)
                         }
-                        .background(.orange)
-                        .cornerRadius(8)
+                        .loadingOverlay(store.isAuthLoading)
                     }
                     VStack(spacing: 16)  {
-                        CardItem {
-                            Text("設定")
-                                .font(.title3)
-                                .foregroundStyle(.black)
-                        }
-                        .contentShape(Rectangle())
+                        CardView(
+                            title: "設定",
+                            foregroundColor: .black,
+                            backgroundColor: .yellow
+                        )
                         .onTapGesture {
                             store.send(.settingsTapped)
                         }
-                        .background(.yellow)
-                        .cornerRadius(8)
-                        CardItem {
-                            Text("準備中")
-                                .font(.title3)
-                                .foregroundStyle(.black)
-                        }
-                        .contentShape(Rectangle())
-                        .background(.green)
-                        .cornerRadius(8)
+                        CardView(
+                            title: "準備中",
+                            foregroundColor: .black,
+                            backgroundColor: .green
+                        )
+                        .onTapGesture{}
                     }
                 }
             }

@@ -29,20 +29,20 @@ struct Home {
     @ObservableState
     struct State: Equatable {
         var userRole: UserRole = .guest
-        var isAWSLoading: Bool = true
+        var isAuthLoading: Bool = true
         var isDestinationLoading: Bool = false
         var isLoading: Bool {
             isDestinationLoading
         }
         @Presents var destination: Destination.State?
-        @Presents var alert: OkAlert.State?
+        @Presents var alert: Alert.State?
     }
     
 
     @CasePathable
     enum Action: Equatable {
         case onAppear
-        case routeTapped
+        case mapTapped
         case infoTapped
         case adminTapped
         case settingsTapped
@@ -56,14 +56,14 @@ struct Home {
             Result<PublicDistrict?,ApiError>
         )
         case destination(PresentationAction<Destination.Action>)
-        case alert(PresentationAction<OkAlert.Action>)
+        case alert(PresentationAction<Alert.Action>)
     }
 
     var body: some ReducerOf<Home> {
         Reduce { state, action in
             switch action {
             case .onAppear:
-                state.isAWSLoading = true
+                state.isAuthLoading = true
                 return .run { send in
                     let result = await authService.initialize()
                     await send(.awsInitializeReceived(result))
@@ -73,7 +73,7 @@ struct Home {
                    case let .success(routes) = routesResult{
                     state.destination = .adminDistrict(AdminDistrictTop.State(district: district,  routes: routes.sorted()))
                 }else{
-                    state.alert = OkAlert.error("情報の取得に失敗しました")
+                    state.alert = Alert.error("情報の取得に失敗しました")
                 }
                 state.isDestinationLoading = false
                 return .none
@@ -83,19 +83,19 @@ struct Home {
                    case let .success(districts) = districtsResult{
                     state.destination = .adminRegion(AdminRegionTop.State(region: region, districts: districts))
                 }else{
-                    state.alert = OkAlert.error("情報の取得に失敗しました")
+                    state.alert = Alert.error("情報の取得に失敗しました")
                 }
                 state.isDestinationLoading = false
                 return .none
-            case .routeTapped:
+            case .mapTapped:
                 state.destination = .route(PublicMap.State())
                 return .none
             case .infoTapped:
                 state.destination = .info(Info.State())
                 return .none
             case .adminTapped:
-                if state.isAWSLoading {
-                    state.alert = OkAlert.error("認証中です。もう一度お試しください。再度このエラーが出る場合は設定画面から強制ログアウトをお試しください。")
+                if state.isAuthLoading {
+                    state.alert = Alert.error("認証中です。もう一度お試しください。再度このエラーが出る場合は設定画面から強制ログアウトをお試しください。")
                     return .none
                 }
                 switch state.userRole {
@@ -117,10 +117,10 @@ struct Home {
                 return settingsEffect(regionId: regionId, districtId: districtId)
             case .awsInitializeReceived(.success(let userRole)):
                 state.userRole = userRole
-                state.isAWSLoading = false
+                state.isAuthLoading = false
                 return .none
             case .awsInitializeReceived(.failure(_)):
-                state.isAWSLoading = false
+                state.isAuthLoading = false
                 return .none
             case let .settingsPrepared(regionsResult, regionResult, districtsResult, districtResult):
                 state.isDestinationLoading = false

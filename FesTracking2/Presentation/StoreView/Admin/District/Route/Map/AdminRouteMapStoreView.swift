@@ -15,7 +15,7 @@ struct AdminRouteMapStoreView: View{
     
     var body: some View{
             // 背景のMap
-        NavigationStack{
+        NavigationView{
             ZStack {
                 AdminRouteMapView(
                     points: store.route.points,

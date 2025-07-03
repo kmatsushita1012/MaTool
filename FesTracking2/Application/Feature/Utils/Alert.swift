@@ -7,7 +7,8 @@
 
 import ComposableArchitecture
 
-struct OkAlert {
+@Reducer
+struct Alert {
     @CasePathable
     enum Action: Equatable {
         case okTapped
@@ -15,7 +16,13 @@ struct OkAlert {
 
     // typealias で AlertState を短縮
     typealias State = AlertState<Action>
-
+    
+    var body: some ReducerOf<Alert> {
+        Reduce { state, action in
+            return Effect.none
+        }
+    }
+    
     static func error(_ text: String, title: String = "エラー") -> State {
         State {
             TextState(title)
@@ -34,6 +41,21 @@ struct OkAlert {
         } actions: {
             ButtonState(action: .okTapped) {
                 TextState("確認")
+            }
+        } message: {
+            TextState(text)
+        }
+    }
+    
+    static func delete(
+        _ text: String = "このデータを削除してもよろしいですか？この操作は元に戻せません。",
+        title: String = "確認"
+    ) -> State {
+        State {
+            TextState(title)
+        } actions: {
+            ButtonState(role: .destructive, action: .okTapped) {
+                TextState("削除")
             }
         } message: {
             TextState(text)

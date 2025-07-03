@@ -13,7 +13,7 @@ struct AdminRegionEditView: View{
     @Bindable var store: StoreOf<AdminRegionEdit>
     
     var body: some View{
-        NavigationStack {
+        NavigationView {
             Form {
                 Section(header: Text("説明")) {
                     TextEditor(text: $store.item.description.nonOptional)
@@ -27,14 +27,12 @@ struct AdminRegionEditView: View{
                 }
                 Section(header: Text("開催日程")) {
                     List(store.item.spans) { span in
-                        EditableListItemView(
-                            text: span.text(year:false),
-                            onEdit: {
+                        NavigationItemView(
+                            title: span.text(year:false),
+                            onTap: {
                                 store.send(.onSpanEdit(span))
-                            },
-                            onDelete: {
-                                store.send(.onSpanDelete(span))
-                            })
+                            }
+                        )
                         .padding(0)
                     }
                     Button(action: {
@@ -87,16 +85,16 @@ struct AdminRegionEditView: View{
                 }
             }
             .navigationBarTitleDisplayMode(.inline)
-            .fullScreenCover(
-                item: $store.scope(state: \.destination?.span, action: \.destination.span)
-            ) { store in
-                AdminSpanView(store: store)
-            }
-            .fullScreenCover(
-                item: $store.scope(state: \.destination?.milestone, action:  \.destination.milestone)
-            ) { store in
-                InformationEditStoreView(store: store)
-            }
+        }
+        .fullScreenCover(
+            item: $store.scope(state: \.destination?.span, action: \.destination.span)
+        ) { store in
+            AdminSpanView(store: store)
+        }
+        .fullScreenCover(
+            item: $store.scope(state: \.destination?.milestone, action:  \.destination.milestone)
+        ) { store in
+            InformationEditStoreView(store: store)
         }
     }
 }

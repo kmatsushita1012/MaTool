@@ -18,7 +18,7 @@ struct AdminRouteExportView: View{
     
     var body: some View{
         // 背景のMap
-        NavigationStack{
+        NavigationView{
             ZStack {
                 AdminRouteExportMapView(
                     points: store.points,

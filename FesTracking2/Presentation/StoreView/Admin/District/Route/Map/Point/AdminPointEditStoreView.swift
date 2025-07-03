@@ -38,7 +38,7 @@ struct AdminPointView: View {
                 
                 Section(
                     header: Text("時刻"),
-                    footer: Text("出発時刻および到着時刻は省略可")
+                    footer: Text("先頭および末尾の地点は「経路図（PDF）への出力」がオフでも自動的に経路図に出力されます。時刻は前画面で設定した開始時刻もしくは終了時刻が適用されます。オンの場合はこの画面の「時刻を設定」で設定した時刻が適用されます。")
                 ) {
                     Toggle("時刻を設定", isOn: Binding(
                         get: { store.item.time != nil },
@@ -57,8 +57,6 @@ struct AdminPointView: View {
                         )
                         .datePickerStyle(.compact)
                     }
-                }
-                Section {
                     Toggle("経路図（PDF）への出力", isOn: $store.item.shouldExport)
                 }
                 
