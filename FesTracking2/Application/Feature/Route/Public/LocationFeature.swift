@@ -19,7 +19,7 @@ struct LocationFeature {
         
     }
     var body: some ReducerOf<LocationFeature> {
-        Reduce{ state,action in
+        Reduce{ state, action in
             return .none
         }
     }

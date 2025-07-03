@@ -10,11 +10,11 @@ import Foundation
 struct Point: Codable{
     let id: String
     var coordinate: Coordinate
-    @NullEncodable var title: String?
-    @NullEncodable var description: String?
-    @NullEncodable var time: SimpleTime?
-    let isPassed: Bool
-    var shouldExport: Bool
+    @NullEncodable var title: String? = nil
+    @NullEncodable var description: String? = nil
+    @NullEncodable var time: SimpleTime? = nil
+    var isPassed: Bool = false
+    var shouldExport: Bool = false
     
     init(id:String, coordinate: Coordinate, title: String?=nil, description: String?=nil, time: SimpleTime?=nil, isPassed: Bool = false, shouldExport: Bool = false) {
         self.id = id

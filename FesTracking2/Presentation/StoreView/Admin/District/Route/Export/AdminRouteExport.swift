@@ -60,3 +60,21 @@ struct AdminRouteExport {
 }
 
 
+extension AdminRouteExport.State {
+    private func filterPoints(_ route: PublicRoute)-> [Point] {
+        var newPoints:[Point] = []
+        if let firstPoint = route.points.first,
+            !firstPoint.shouldExport {
+            let tempFirst = Point(id: firstPoint.id, coordinate: firstPoint.coordinate, title: "出発", time: route.start, shouldExport: true)
+            newPoints.append(tempFirst)
+        }
+        newPoints.append(contentsOf: route.points.filter{ $0.shouldExport })
+        if route.points.count >= 2,
+           let lastPoint = route.points.last,
+           !lastPoint.shouldExport {
+            let tempLast = Point(id: lastPoint.id, coordinate: lastPoint.coordinate, title: "到着", time: route.goal, shouldExport: true)
+            newPoints.append(tempLast)
+        }
+        return newPoints
+    }
+}

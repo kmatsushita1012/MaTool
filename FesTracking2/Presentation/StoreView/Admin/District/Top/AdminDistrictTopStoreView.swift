@@ -12,16 +12,16 @@ struct AdminDistrictView: View{
     @Bindable var store: StoreOf<AdminDistrictTop>
     
     var body: some View {
-        NavigationStack {
+        NavigationView {
             Form{
                 Section {
-                    NavigationItem(
+                    NavigationItemView(
                         title: "地区情報",
                         iconName: "info.circle" ,
                         onTap: {
                             store.send(.onEdit)
                         })
-                    NavigationItem(
+                    NavigationItemView(
                         title: "位置情報配信",
                         iconName: "mappin.and.ellipse",
                         onTap: {
