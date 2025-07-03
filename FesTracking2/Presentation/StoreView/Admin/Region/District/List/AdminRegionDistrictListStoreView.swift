@@ -16,7 +16,7 @@ struct AdminRegionDistrictListView: View {
             Form{
                 Section(header: Text("行動")) {
                     List(store.routes) { route in
-                        NavigationItem(
+                        NavigationItemView(
                             title: route.text(format: "m/d T"),
                             onTap: {
                                 store.send(.exportTapped(route))

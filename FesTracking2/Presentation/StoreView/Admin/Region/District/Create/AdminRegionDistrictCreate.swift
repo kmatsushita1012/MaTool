@@ -19,7 +19,7 @@ struct AdminRegionDistrictCreate {
         var name: String = ""
         var email: String = ""
         var isLoading: Bool = false
-        @Presents var alert: OkAlert.State?
+        @Presents var alert: Alert.State?
     }
     @CasePathable
     enum Action: Equatable, BindableAction {
@@ -27,7 +27,7 @@ struct AdminRegionDistrictCreate {
         case createTapped
         case cancelTapped
         case received(Result<String,ApiError>)
-        case alert(PresentationAction<OkAlert.Action>)
+        case alert(PresentationAction<Alert.Action>)
     }
     var body: some ReducerOf<AdminRegionDistrictCreate> {
         BindingReducer()
@@ -52,7 +52,7 @@ struct AdminRegionDistrictCreate {
                 return .none
             case .received(.failure(let error)):
                 state.isLoading = false
-                state.alert = OkAlert.error("作成に失敗しました。\n\(error.localizedDescription)")
+                state.alert = Alert.error("作成に失敗しました。\n\(error.localizedDescription)")
                 return .none
             case .alert(.presented(.okTapped)):
                 state.alert = nil

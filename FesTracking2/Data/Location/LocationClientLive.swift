@@ -41,6 +41,8 @@ extension LocationProvider {
             },
             getLocation: {
                 if CLLocationManager.authorizationStatus() == .denied {
+                    manager.requestWhenInUseAuthorization()
+                    manager.requestAlwaysAuthorization()
                     return .failure(LocationError.authorizationDenied)
                 }
                 if !CLLocationManager.locationServicesEnabled() {
