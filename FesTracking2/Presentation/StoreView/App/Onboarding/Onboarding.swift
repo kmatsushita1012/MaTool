@@ -20,10 +20,7 @@ struct OnboardingFeature {
         var selectedRegion: Region?
         var districts: [PublicDistrict]?
         var isRegionsLoading: Bool = false
-        var regionsErrorMessage: String? = nil
         var isDistrictsLoading: Bool = false
-        var districtsErrorMessage: Bool = false
-        
     }
     
     @CasePathable

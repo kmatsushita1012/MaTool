@@ -32,7 +32,7 @@ struct AdminDistrictTop {
         var isExportLoading: Bool = false
         var isAWSLoading: Bool = false
         @Presents var destination: Destination.State?
-        @Presents var alert: OkAlert.State?
+        @Presents var alert: Alert.State?
         var isLoading: Bool {
             isDistrictLoading || isRoutesLoading || isAWSLoading || isRouteLoading || isExportLoading
         }
@@ -54,7 +54,7 @@ struct AdminDistrictTop {
         case signOutTapped
         case signOutReceived(Result<UserRole, AuthError>)
         case homeTapped
-        case alert(PresentationAction<OkAlert.Action>)
+        case alert(PresentationAction<Alert.Action>)
     }
     
     
@@ -89,7 +89,7 @@ struct AdminDistrictTop {
                 case .success(let value):
                     state.district = value
                 case .failure(let error):
-                    state.alert = OkAlert.error("情報の取得に失敗しました。 \(error.localizedDescription)")
+                    state.alert = Alert.error("情報の取得に失敗しました。 \(error.localizedDescription)")
                 }
                 return .none
             case .getRoutesReceived(let result):
@@ -98,7 +98,7 @@ struct AdminDistrictTop {
                 case .success(let value):
                     state.routes = value.sorted()
                 case .failure(let error):
-                    state.alert = OkAlert.error("情報の取得に失敗しました。 \(error.localizedDescription)")
+                    state.alert = Alert.error("情報の取得に失敗しました。 \(error.localizedDescription)")
                 }
                 return .none
             case .routeEditPrepared(let routeResult, let toolResult):
@@ -112,7 +112,7 @@ struct AdminDistrictTop {
                             base: tool.base)
                     )
                 } else {
-                    state.alert = OkAlert.error("情報の取得に失敗しました。")
+                    state.alert = Alert.error("情報の取得に失敗しました。")
                 }
                 return .none
             case .routeCreatePrepared(let result):
@@ -129,7 +129,7 @@ struct AdminDistrictTop {
                             base: tool.base)
                     )
                 case .failure(let error):
-                    state.alert = OkAlert.error("情報の取得に失敗しました。 \(error.localizedDescription)")
+                    state.alert = Alert.error("情報の取得に失敗しました。 \(error.localizedDescription)")
                 }
                 return .none
             
@@ -141,7 +141,7 @@ struct AdminDistrictTop {
                         AdminRouteExport.State(route: value)
                     )
                 case .failure(let error):
-                    state.alert = OkAlert.error("情報の取得に失敗しました。 \(error.localizedDescription)")
+                    state.alert = Alert.error("情報の取得に失敗しました。 \(error.localizedDescription)")
                 }
                 return .none
             case .onLocation:
@@ -193,7 +193,7 @@ struct AdminDistrictTop {
             case .signOutReceived(let result):
                 state.isAWSLoading = false
                 if case let .failure(error) = result {
-                    state.alert = OkAlert.error("ログアウトに失敗しました。 \(error.localizedDescription)")
+                    state.alert = Alert.error("ログアウトに失敗しました。 \(error.localizedDescription)")
                 }
                 return .none
             case .homeTapped:

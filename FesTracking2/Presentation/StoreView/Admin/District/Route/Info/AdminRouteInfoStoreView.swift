@@ -56,7 +56,7 @@ struct AdminRouteInfoView: View{
                         Button(action: {
                             store.send(.deleteTapped)
                         }) {
-                            Text("ログアウト")
+                            Text("削除")
                                 .foregroundColor(.red)
                         }
                     }
@@ -84,13 +84,14 @@ struct AdminRouteInfoView: View{
                 }
             }
             .navigationBarTitleDisplayMode(.inline)
-            .fullScreenCover(
-                item: $store.scope(state: \.destination?.map, action: \.destination.map)
-            ) { store in
-                AdminRouteMapStoreView(store: store)
-            }
-            .alert($store.scope(state: \.alert, action: \.alert))
-            .loadingOverlay(store.isLoading)
         }
+        .fullScreenCover(
+            item: $store.scope(state: \.destination?.map, action: \.destination.map)
+        ) { store in
+            AdminRouteMapStoreView(store: store)
+        }
+        .alert($store.scope(state: \.alert?.notice, action: \.alert.notice))
+        .alert($store.scope(state: \.alert?.delete, action: \.alert.delete))
+        .loadingOverlay(store.isLoading)
     }
 }
