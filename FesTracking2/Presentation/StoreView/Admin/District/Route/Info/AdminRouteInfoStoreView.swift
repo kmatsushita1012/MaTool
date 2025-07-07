@@ -23,7 +23,7 @@ struct AdminRouteInfoView: View{
                     .environment(\.locale, Locale(identifier: "ja_JP"))
                 }
                 Section(header: Text("タイトル")) {
-                    TextField("タイトルを入力（例：土曜午前）",text: $store.route.title)
+                    TextField("タイトルを入力（例：午前）",text: $store.route.title)
                 }
                 Section(header: Text("説明")) {
                     TextEditor(text: $store.route.description.nonOptional)
