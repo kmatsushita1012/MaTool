@@ -39,13 +39,13 @@ struct AdminRouteMap{
         }
         
         
-        init(route: Route, milestones: [Information], base: Coordinate?){
+        init(route: Route, milestones: [Information], origin: Coordinate){
             self.manager = EditManager(route)
             self.milestones = milestones
             if !route.points.isEmpty{
                 self.region = makeRegion(route.points.map{ $0.coordinate })
-            }else if let base = base{
-                self.region = makeRegion(origin: base, spanDelta: spanDelta)
+            }else{
+                self.region = makeRegion(origin: origin, spanDelta: spanDelta)
             }
         }
     }
