@@ -10,6 +10,7 @@ import ComposableArchitecture
 @Reducer
 struct ConfirmSignIn {
     @Dependency(\.authService) var authService
+    @Dependency(\.userDefaultsClient) var userDefaultsClient
     
     @ObservableState
     struct State: Equatable {
@@ -49,9 +50,20 @@ struct ConfirmSignIn {
                 }
             case .dismissTapped:
                 return .none
-            case .received(.success):
-                state.isLoading = false
-                return .none
+            case .received(.success(let userRole)):
+                switch userRole {
+                case .region(let id):
+                    userDefaultsClient.setString(id, defaultRegionKey)
+                    userDefaultsClient.setString(nil, defaultDistrictKey)
+                    userDefaultsClient.setString(id, loginIdKey)
+                    return .none
+                case .district(let id):
+                    userDefaultsClient.setString(id, defaultDistrictKey)
+                    userDefaultsClient.setString(id, loginIdKey)
+                    return .none
+                case .guest:
+                    return .none
+                }
             case .received(.failure(let error)):
                 state.isLoading = false
                 state.alert = Alert.error("送信に失敗しました。\(error.localizedDescription)")

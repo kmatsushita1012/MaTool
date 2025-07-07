@@ -45,7 +45,6 @@ struct AdminBaseView:View {
                         store.send(.dismissTapped)
                     } label: {
                         HStack {
-                            Image(systemName: "chevron.left")
                             Text("キャンセル")
                         }
                         .padding(8)

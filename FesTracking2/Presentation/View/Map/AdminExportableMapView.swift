@@ -102,7 +102,7 @@ struct AdminRouteExportMapView: UIViewRepresentable {
     }
     
     func exportFullMapToPDF(mapView: MKMapView) {
-        let region = makeRegion(points.map{ $0.coordinate }, ratio: 1.4)
+        let region = makeRegion(segments.map{ $0.coordinates }.flatMap { $0 }, ratio: 1.4)
         takeSnapshot(of: region, size: CGSize(width: 594, height: 420)) { image in
             guard let image = image else {
                 return
