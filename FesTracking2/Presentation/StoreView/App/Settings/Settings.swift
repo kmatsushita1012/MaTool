@@ -26,7 +26,7 @@ struct Settings {
         var contact: URL = URL(string: contactURLString)!
         @Presents var alert: Alert.State? = nil
         var isDismissEnabled: Bool {
-            selectedRegion != nil || !isOfflineMode
+            selectedRegion != nil || isOfflineMode
         }
     }
 

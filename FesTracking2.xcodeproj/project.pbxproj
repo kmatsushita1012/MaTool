@@ -51,7 +51,6 @@
 		298BD7B12D71E46900CB63F1 /* FesTracking2Tests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 298BD7B02D71E46900CB63F1 /* FesTracking2Tests.swift */; };
 		298BD7BB2D71E46900CB63F1 /* FesTracking2UITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 298BD7BA2D71E46900CB63F1 /* FesTracking2UITests.swift */; };
 		298BD7BD2D71E46900CB63F1 /* FesTracking2UITestsLaunchTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 298BD7BC2D71E46900CB63F1 /* FesTracking2UITestsLaunchTests.swift */; };
-		298C682A2E0C197E009570A5 /* SwiftyUpdateKit in Frameworks */ = {isa = PBXBuildFile; productRef = 298C68292E0C197E009570A5 /* SwiftyUpdateKit */; };
 		298C68312E0C2D16009570A5 /* InformationEdit.swift in Sources */ = {isa = PBXBuildFile; fileRef = 298C68302E0C2D10009570A5 /* InformationEdit.swift */; };
 		298C68332E0C2D29009570A5 /* InformationEditStoreView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 298C68322E0C2D1E009570A5 /* InformationEditStoreView.swift */; };
 		2993C8202DD0704F000D0E1A /* Bindings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2993C81F2DD0704B000D0E1A /* Bindings.swift */; };
@@ -116,9 +115,6 @@
 		29C5505A2DF7D40300547F51 /* AdminPointEditStoreView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29C550562DF7D40300547F51 /* AdminPointEditStoreView.swift */; };
 		29C5505B2DF7D40300547F51 /* AdminRouteMapStoreView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29C550582DF7D40300547F51 /* AdminRouteMapStoreView.swift */; };
 		29C550612DF7D6A300547F51 /* PublicMap.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29C550602DF7D6A200547F51 /* PublicMap.swift */; };
-		29C550722DF7D97C00547F51 /* MaToolPresentationAdmin.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 29C550672DF7D97B00547F51 /* MaToolPresentationAdmin.framework */; };
-		29C5507C2DF7D97C00547F51 /* MaToolPresentationAdmin.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 29C550672DF7D97B00547F51 /* MaToolPresentationAdmin.framework */; };
-		29C5507D2DF7D97C00547F51 /* MaToolPresentationAdmin.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 29C550672DF7D97B00547F51 /* MaToolPresentationAdmin.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		29CB07752DAF7D1E0009A47D /* AdminDistrictEditStoreView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29CB07742DAF7D150009A47D /* AdminDistrictEditStoreView.swift */; };
 		29CB07792DAF80850009A47D /* AdminAreaEdit.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29CB07782DAF807F0009A47D /* AdminAreaEdit.swift */; };
 		29CB077B2DAF86610009A47D /* AdminBaseEdit.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29CB077A2DAF865C0009A47D /* AdminBaseEdit.swift */; };
@@ -167,42 +163,7 @@
 			remoteGlobalIDString = 298BD7992D71E46600CB63F1;
 			remoteInfo = FesTracking2;
 		};
-		29C550732DF7D97C00547F51 /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = 298BD7922D71E46600CB63F1 /* Project object */;
-			proxyType = 1;
-			remoteGlobalIDString = 29C550662DF7D97B00547F51;
-			remoteInfo = MaToolPresentationAdmin;
-		};
-		29C550752DF7D97C00547F51 /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = 298BD7922D71E46600CB63F1 /* Project object */;
-			proxyType = 1;
-			remoteGlobalIDString = 298BD7992D71E46600CB63F1;
-			remoteInfo = FesTracking2;
-		};
-		29C5507A2DF7D97C00547F51 /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = 298BD7922D71E46600CB63F1 /* Project object */;
-			proxyType = 1;
-			remoteGlobalIDString = 29C550662DF7D97B00547F51;
-			remoteInfo = MaToolPresentationAdmin;
-		};
 /* End PBXContainerItemProxy section */
-
-/* Begin PBXCopyFilesBuildPhase section */
-		29C550812DF7D97C00547F51 /* Embed Frameworks */ = {
-			isa = PBXCopyFilesBuildPhase;
-			buildActionMask = 2147483647;
-			dstPath = "";
-			dstSubfolderSpec = 10;
-			files = (
-				29C5507D2DF7D97C00547F51 /* MaToolPresentationAdmin.framework in Embed Frameworks */,
-			);
-			name = "Embed Frameworks";
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-/* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
 		17A70AED86F1CA931E10BF8A /* Pods_FesTracking2Tests.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_FesTracking2Tests.framework; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -319,8 +280,6 @@
 		29C550562DF7D40300547F51 /* AdminPointEditStoreView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdminPointEditStoreView.swift; sourceTree = "<group>"; };
 		29C550582DF7D40300547F51 /* AdminRouteMapStoreView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdminRouteMapStoreView.swift; sourceTree = "<group>"; };
 		29C550602DF7D6A200547F51 /* PublicMap.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PublicMap.swift; sourceTree = "<group>"; };
-		29C550672DF7D97B00547F51 /* MaToolPresentationAdmin.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = MaToolPresentationAdmin.framework; sourceTree = BUILT_PRODUCTS_DIR; };
-		29C550712DF7D97C00547F51 /* MaToolPresentationAdminTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = MaToolPresentationAdminTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		29CB07742DAF7D150009A47D /* AdminDistrictEditStoreView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdminDistrictEditStoreView.swift; sourceTree = "<group>"; };
 		29CB07782DAF807F0009A47D /* AdminAreaEdit.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdminAreaEdit.swift; sourceTree = "<group>"; };
 		29CB077A2DAF865C0009A47D /* AdminBaseEdit.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdminBaseEdit.swift; sourceTree = "<group>"; };
@@ -361,10 +320,8 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				298C682A2E0C197E009570A5 /* SwiftyUpdateKit in Frameworks */,
 				29F8A2BE2D9EF079001633B3 /* ComposableArchitecture in Frameworks */,
 				D78195157F20422B3B5A8EA3 /* Pods_FesTracking2.framework in Frameworks */,
-				29C5507C2DF7D97C00547F51 /* MaToolPresentationAdmin.framework in Frameworks */,
 				29F8A2C12D9EF13E001633B3 /* FirebaseAppDistribution-Beta in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -382,21 +339,6 @@
 			buildActionMask = 2147483647;
 			files = (
 				59414DD9ADD88C0A71E94FE3 /* Pods_FesTracking2_FesTracking2UITests.framework in Frameworks */,
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-		29C550642DF7D97B00547F51 /* Frameworks */ = {
-			isa = PBXFrameworksBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-		29C5506E2DF7D97C00547F51 /* Frameworks */ = {
-			isa = PBXFrameworksBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-				29C550722DF7D97C00547F51 /* MaToolPresentationAdmin.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -546,8 +488,6 @@
 				298BD79A2D71E46600CB63F1 /* FesTracking2.app */,
 				298BD7AC2D71E46900CB63F1 /* FesTracking2Tests.xctest */,
 				298BD7B62D71E46900CB63F1 /* FesTracking2UITests.xctest */,
-				29C550672DF7D97B00547F51 /* MaToolPresentationAdmin.framework */,
-				29C550712DF7D97C00547F51 /* MaToolPresentationAdminTests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -1240,16 +1180,6 @@
 		};
 /* End PBXGroup section */
 
-/* Begin PBXHeadersBuildPhase section */
-		29C550622DF7D97B00547F51 /* Headers */ = {
-			isa = PBXHeadersBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-/* End PBXHeadersBuildPhase section */
-
 /* Begin PBXNativeTarget section */
 		298BD7992D71E46600CB63F1 /* FesTracking2 */ = {
 			isa = PBXNativeTarget;
@@ -1260,18 +1190,15 @@
 				298BD7972D71E46600CB63F1 /* Frameworks */,
 				298BD7982D71E46600CB63F1 /* Resources */,
 				1D04B61A2EE0F032841C4904 /* [CP] Embed Pods Frameworks */,
-				29C550812DF7D97C00547F51 /* Embed Frameworks */,
 			);
 			buildRules = (
 			);
 			dependencies = (
-				29C5507B2DF7D97C00547F51 /* PBXTargetDependency */,
 			);
 			name = FesTracking2;
 			packageProductDependencies = (
 				29F8A2BD2D9EF079001633B3 /* ComposableArchitecture */,
 				29F8A2C02D9EF13E001633B3 /* FirebaseAppDistribution-Beta */,
-				298C68292E0C197E009570A5 /* SwiftyUpdateKit */,
 			);
 			productName = FesTracking2;
 			productReference = 298BD79A2D71E46600CB63F1 /* FesTracking2.app */;
@@ -1316,47 +1243,6 @@
 			productReference = 298BD7B62D71E46900CB63F1 /* FesTracking2UITests.xctest */;
 			productType = "com.apple.product-type.bundle.ui-testing";
 		};
-		29C550662DF7D97B00547F51 /* MaToolPresentationAdmin */ = {
-			isa = PBXNativeTarget;
-			buildConfigurationList = 29C5507E2DF7D97C00547F51 /* Build configuration list for PBXNativeTarget "MaToolPresentationAdmin" */;
-			buildPhases = (
-				29C550622DF7D97B00547F51 /* Headers */,
-				29C550632DF7D97B00547F51 /* Sources */,
-				29C550642DF7D97B00547F51 /* Frameworks */,
-				29C550652DF7D97B00547F51 /* Resources */,
-			);
-			buildRules = (
-			);
-			dependencies = (
-			);
-			name = MaToolPresentationAdmin;
-			packageProductDependencies = (
-			);
-			productName = MaToolPresentationAdmin;
-			productReference = 29C550672DF7D97B00547F51 /* MaToolPresentationAdmin.framework */;
-			productType = "com.apple.product-type.framework";
-		};
-		29C550702DF7D97C00547F51 /* MaToolPresentationAdminTests */ = {
-			isa = PBXNativeTarget;
-			buildConfigurationList = 29C550822DF7D97C00547F51 /* Build configuration list for PBXNativeTarget "MaToolPresentationAdminTests" */;
-			buildPhases = (
-				29C5506D2DF7D97C00547F51 /* Sources */,
-				29C5506E2DF7D97C00547F51 /* Frameworks */,
-				29C5506F2DF7D97C00547F51 /* Resources */,
-			);
-			buildRules = (
-			);
-			dependencies = (
-				29C550742DF7D97C00547F51 /* PBXTargetDependency */,
-				29C550762DF7D97C00547F51 /* PBXTargetDependency */,
-			);
-			name = MaToolPresentationAdminTests;
-			packageProductDependencies = (
-			);
-			productName = MaToolPresentationAdminTests;
-			productReference = 29C550712DF7D97C00547F51 /* MaToolPresentationAdminTests.xctest */;
-			productType = "com.apple.product-type.bundle.unit-test";
-		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -1378,13 +1264,6 @@
 						CreatedOnToolsVersion = 15.4;
 						TestTargetID = 298BD7992D71E46600CB63F1;
 					};
-					29C550662DF7D97B00547F51 = {
-						CreatedOnToolsVersion = 16.3;
-					};
-					29C550702DF7D97C00547F51 = {
-						CreatedOnToolsVersion = 16.3;
-						TestTargetID = 298BD7992D71E46600CB63F1;
-					};
 				};
 			};
 			buildConfigurationList = 298BD7952D71E46600CB63F1 /* Build configuration list for PBXProject "FesTracking2" */;
@@ -1400,7 +1279,6 @@
 			packageReferences = (
 				29F8A2BC2D9EF078001633B3 /* XCRemoteSwiftPackageReference "swift-composable-architecture" */,
 				29F8A2BF2D9EF13E001633B3 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */,
-				298C68282E0C197E009570A5 /* XCRemoteSwiftPackageReference "SwiftyUpdateKit" */,
 			);
 			productRefGroup = 298BD79B2D71E46600CB63F1 /* Products */;
 			projectDirPath = "";
@@ -1409,8 +1287,6 @@
 				298BD7992D71E46600CB63F1 /* FesTracking2 */,
 				298BD7AB2D71E46900CB63F1 /* FesTracking2Tests */,
 				298BD7B52D71E46900CB63F1 /* FesTracking2UITests */,
-				29C550662DF7D97B00547F51 /* MaToolPresentationAdmin */,
-				29C550702DF7D97C00547F51 /* MaToolPresentationAdminTests */,
 			);
 		};
 /* End PBXProject section */
@@ -1439,20 +1315,6 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 		298BD7B42D71E46900CB63F1 /* Resources */ = {
-			isa = PBXResourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-		29C550652DF7D97B00547F51 /* Resources */ = {
-			isa = PBXResourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-		29C5506F2DF7D97C00547F51 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -1720,20 +1582,6 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		29C550632DF7D97B00547F51 /* Sources */ = {
-			isa = PBXSourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-		29C5506D2DF7D97C00547F51 /* Sources */ = {
-			isa = PBXSourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
@@ -1746,21 +1594,6 @@
 			isa = PBXTargetDependency;
 			target = 298BD7992D71E46600CB63F1 /* FesTracking2 */;
 			targetProxy = 298BD7B72D71E46900CB63F1 /* PBXContainerItemProxy */;
-		};
-		29C550742DF7D97C00547F51 /* PBXTargetDependency */ = {
-			isa = PBXTargetDependency;
-			target = 29C550662DF7D97B00547F51 /* MaToolPresentationAdmin */;
-			targetProxy = 29C550732DF7D97C00547F51 /* PBXContainerItemProxy */;
-		};
-		29C550762DF7D97C00547F51 /* PBXTargetDependency */ = {
-			isa = PBXTargetDependency;
-			target = 298BD7992D71E46600CB63F1 /* FesTracking2 */;
-			targetProxy = 29C550752DF7D97C00547F51 /* PBXContainerItemProxy */;
-		};
-		29C5507B2DF7D97C00547F51 /* PBXTargetDependency */ = {
-			isa = PBXTargetDependency;
-			target = 29C550662DF7D97B00547F51 /* MaToolPresentationAdmin */;
-			targetProxy = 29C5507A2DF7D97C00547F51 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
@@ -1918,7 +1751,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 2.0.2;
+				MARKETING_VERSION = 2.0.4;
 				OTHER_SWIFT_FLAGS = "$(inherited) -D COCOAPODS";
 				PRODUCT_BUNDLE_IDENTIFIER = StudioMK.FesTracking;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -1960,7 +1793,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 2.0.2;
+				MARKETING_VERSION = 2.0.4;
 				PRODUCT_BUNDLE_IDENTIFIER = StudioMK.FesTracking;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
@@ -2047,122 +1880,6 @@
 			};
 			name = Release;
 		};
-		29C5507F2DF7D97C00547F51 /* Debug */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				BUILD_LIBRARY_FOR_DISTRIBUTION = YES;
-				CODE_SIGN_IDENTITY = "Apple Development";
-				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Distribution";
-				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = "";
-				DYLIB_COMPATIBILITY_VERSION = 1;
-				DYLIB_CURRENT_VERSION = 1;
-				DYLIB_INSTALL_NAME_BASE = "@rpath";
-				ENABLE_MODULE_VERIFIER = YES;
-				ENABLE_USER_SCRIPT_SANDBOXING = YES;
-				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_NSHumanReadableCopyright = "";
-				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
-				IPHONEOS_DEPLOYMENT_TARGET = 18.4;
-				LD_RUNPATH_SEARCH_PATHS = (
-					"$(inherited)",
-					"@executable_path/Frameworks",
-					"@loader_path/Frameworks",
-				);
-				MARKETING_VERSION = 1.0;
-				MODULE_VERIFIER_SUPPORTED_LANGUAGES = "objective-c objective-c++";
-				MODULE_VERIFIER_SUPPORTED_LANGUAGE_STANDARDS = "gnu17 gnu++20";
-				PRODUCT_BUNDLE_IDENTIFIER = StudioMK.MaToolPresentationAdmin;
-				PRODUCT_NAME = "$(TARGET_NAME:c99extidentifier)";
-				SKIP_INSTALL = YES;
-				SWIFT_EMIT_LOC_STRINGS = YES;
-				SWIFT_INSTALL_MODULE = YES;
-				SWIFT_INSTALL_OBJC_HEADER = NO;
-				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = "1,2";
-				VERSIONING_SYSTEM = "apple-generic";
-				VERSION_INFO_PREFIX = "";
-			};
-			name = Debug;
-		};
-		29C550802DF7D97C00547F51 /* Release */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				BUILD_LIBRARY_FOR_DISTRIBUTION = YES;
-				CODE_SIGN_IDENTITY = "Apple Development";
-				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Distribution";
-				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = "";
-				DYLIB_COMPATIBILITY_VERSION = 1;
-				DYLIB_CURRENT_VERSION = 1;
-				DYLIB_INSTALL_NAME_BASE = "@rpath";
-				ENABLE_MODULE_VERIFIER = YES;
-				ENABLE_USER_SCRIPT_SANDBOXING = YES;
-				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_NSHumanReadableCopyright = "";
-				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
-				IPHONEOS_DEPLOYMENT_TARGET = 18.4;
-				LD_RUNPATH_SEARCH_PATHS = (
-					"$(inherited)",
-					"@executable_path/Frameworks",
-					"@loader_path/Frameworks",
-				);
-				MARKETING_VERSION = 1.0;
-				MODULE_VERIFIER_SUPPORTED_LANGUAGES = "objective-c objective-c++";
-				MODULE_VERIFIER_SUPPORTED_LANGUAGE_STANDARDS = "gnu17 gnu++20";
-				PRODUCT_BUNDLE_IDENTIFIER = StudioMK.MaToolPresentationAdmin;
-				PRODUCT_NAME = "$(TARGET_NAME:c99extidentifier)";
-				SKIP_INSTALL = YES;
-				SWIFT_EMIT_LOC_STRINGS = YES;
-				SWIFT_INSTALL_MODULE = YES;
-				SWIFT_INSTALL_OBJC_HEADER = NO;
-				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = "1,2";
-				VERSIONING_SYSTEM = "apple-generic";
-				VERSION_INFO_PREFIX = "";
-			};
-			name = Release;
-		};
-		29C550832DF7D97C00547F51 /* Debug */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = SN9A65C32S;
-				ENABLE_USER_SCRIPT_SANDBOXING = YES;
-				GENERATE_INFOPLIST_FILE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 18.4;
-				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = StudioMK.MaToolPresentationAdminTests;
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				SWIFT_EMIT_LOC_STRINGS = NO;
-				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = "1,2";
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/FesTracking2.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/FesTracking2";
-			};
-			name = Debug;
-		};
-		29C550842DF7D97C00547F51 /* Release */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = SN9A65C32S;
-				ENABLE_USER_SCRIPT_SANDBOXING = YES;
-				GENERATE_INFOPLIST_FILE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 18.4;
-				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = StudioMK.MaToolPresentationAdminTests;
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				SWIFT_EMIT_LOC_STRINGS = NO;
-				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = "1,2";
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/FesTracking2.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/FesTracking2";
-			};
-			name = Release;
-		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -2202,35 +1919,9 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		29C5507E2DF7D97C00547F51 /* Build configuration list for PBXNativeTarget "MaToolPresentationAdmin" */ = {
-			isa = XCConfigurationList;
-			buildConfigurations = (
-				29C5507F2DF7D97C00547F51 /* Debug */,
-				29C550802DF7D97C00547F51 /* Release */,
-			);
-			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
-		};
-		29C550822DF7D97C00547F51 /* Build configuration list for PBXNativeTarget "MaToolPresentationAdminTests" */ = {
-			isa = XCConfigurationList;
-			buildConfigurations = (
-				29C550832DF7D97C00547F51 /* Debug */,
-				29C550842DF7D97C00547F51 /* Release */,
-			);
-			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
-		};
 /* End XCConfigurationList section */
 
 /* Begin XCRemoteSwiftPackageReference section */
-		298C68282E0C197E009570A5 /* XCRemoteSwiftPackageReference "SwiftyUpdateKit" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/HituziANDO/SwiftyUpdateKit.git";
-			requirement = {
-				kind = upToNextMajorVersion;
-				minimumVersion = 1.5.0;
-			};
-		};
 		29F8A2BC2D9EF078001633B3 /* XCRemoteSwiftPackageReference "swift-composable-architecture" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/pointfreeco/swift-composable-architecture";
@@ -2250,11 +1941,6 @@
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
-		298C68292E0C197E009570A5 /* SwiftyUpdateKit */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 298C68282E0C197E009570A5 /* XCRemoteSwiftPackageReference "SwiftyUpdateKit" */;
-			productName = SwiftyUpdateKit;
-		};
 		29F8A2BD2D9EF079001633B3 /* ComposableArchitecture */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = 29F8A2BC2D9EF078001633B3 /* XCRemoteSwiftPackageReference "swift-composable-architecture" */;

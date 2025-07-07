@@ -65,7 +65,7 @@ struct AdminLocation{
                 state.history = history
                 return .none
             case .dismissTapped:
-                return .cancel(id: "HistoryStream")
+                return .none
             }
         }
     }
