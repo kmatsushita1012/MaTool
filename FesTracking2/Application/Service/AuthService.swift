@@ -49,13 +49,7 @@ actor AuthService {
             return .failure(error)
         }
         let userRoleResult = await authProvider.getUserRole()
-        switch userRoleResult {
-        case .success(let value):
-            return .success(value)
-        case .failure(let _):
-            let _ = await authProvider.signOut()
-            return .success(.guest)
-        }
+        return userRoleResult
     }
     
     func signOut() async -> Result<UserRole, AuthError> {
