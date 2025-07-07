@@ -14,9 +14,9 @@ struct AdminAreaEdit{
     struct State:Equatable {
         var coordinates: [Coordinate]
         var region: MKCoordinateRegion?
-        init(coordinates: [Coordinate], base: Coordinate? = nil){
+        init(coordinates: [Coordinate], origin: Coordinate){
             self.coordinates = coordinates
-            region = makeRegion(base: base, spanDelta: spanDelta)
+            region = makeRegion(origin: origin, spanDelta: spanDelta)
         }
     }
     

@@ -21,6 +21,7 @@ struct PublicRouteMap {
     struct State: Equatable {
         let route: PublicRoute?
         let location: PublicLocation?
+        let origin: Coordinate
         var region: MKCoordinateRegion?
         @Presents var sheet: Destination.State?
         var points: [Point]? {
@@ -34,13 +35,17 @@ struct PublicRouteMap {
             route?.segments
         }
         
-        init(route: PublicRoute?, location: PublicLocation?){
+        init(route: PublicRoute?, location: PublicLocation?, origin: Coordinate){
             self.route = route
             self.location = location
+            self.origin = origin
             if let location = location{
-                self.region = makeRegion(base: location.coordinate, spanDelta: spanDelta)
-            }else if let route = route{
+                self.region = makeRegion(origin: location.coordinate, spanDelta: spanDelta)
+            }else if let route = route,
+                     !route.points.isEmpty{
                 self.region = makeRegion(route.points.map{ $0.coordinate })
+            } else {
+                self.region = makeRegion(origin: origin, spanDelta: spanDelta)
             }
         }
     }
