@@ -15,9 +15,9 @@ struct PublicLocationsMap {
         let locations: [PublicLocation]?
         var region: MKCoordinateRegion?
         @Presents var location: LocationFeature.State?
-        init(locations:[PublicLocation]?, base: Coordinate? = nil){
+        init(locations:[PublicLocation]?, origin: Coordinate){
             self.locations = locations
-            self.region = makeRegion(base: base, spanDelta: spanDelta)
+            self.region = makeRegion(origin: origin, spanDelta: spanDelta)
         }
     }
     

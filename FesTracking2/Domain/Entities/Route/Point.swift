@@ -7,7 +7,7 @@
 
 import Foundation
 
-struct Point: Codable{
+struct Point: Codable, Identifiable, Equatable, Hashable{
     let id: String
     var coordinate: Coordinate
     @NullEncodable var title: String? = nil
@@ -24,18 +24,6 @@ struct Point: Codable{
         self.time = time
         self.isPassed = isPassed
         self.shouldExport = shouldExport
-    }
-}
-
-extension Point: Equatable {
-    static func == (lhs: Point, rhs: Point) -> Bool {
-        return lhs.id == rhs.id
-    }
-}
-
-extension Point: Hashable {
-    func hash(into hasher: inout Hasher) {
-        hasher.combine(id)
     }
 }
 

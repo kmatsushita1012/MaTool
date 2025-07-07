@@ -28,6 +28,7 @@ struct AdminDistrictEdit {
         var item: District
         var image: PhotosPickerItem?
         var isLoading: Bool = false
+        let tool: DistrictTool
         @Presents var destination: Destination.State?
         @Presents var alert: Alert.State?
     }
@@ -64,10 +65,19 @@ struct AdminDistrictEdit {
                     }
                 }
             case .baseTapped:
-                state.destination = .base(AdminBaseEdit.State(coordinate: state.item.base))
+                if let base = state.item.base{
+                    state.destination = .base(AdminBaseEdit.State(base: base))
+                } else {
+                    state.destination = .base(AdminBaseEdit.State(origin: state.tool.base))
+                }
                 return .none
             case .areaTapped:
-                state.destination = .area(AdminAreaEdit.State(coordinates: state.item.area, base: state.item.base))
+                state.destination = .area(
+                    AdminAreaEdit.State(
+                        coordinates: state.item.area,
+                        origin: state.item.base ?? state.tool.base
+                    )
+                )
                 return .none
             case .performanceAddTapped:
                 state.destination = .performance(AdminPerformanceEdit.State())

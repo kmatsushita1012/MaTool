@@ -32,7 +32,6 @@ struct AdminRouteMapView: UIViewRepresentable {
             .restaurant,
             .nightlife
         ])
-
         
         if let region = region {
             mapView.setRegion(region, animated: false)
