@@ -48,7 +48,7 @@ struct PublicMapView: UIViewRepresentable {
     func updateUIView(_ mapView: MKMapView, context: Context) {
         mapView.removeAnnotations(mapView.annotations)
         mapView.removeOverlays(mapView.overlays)
-
+        
         // アノテーション追加
         if let points = self.points{
             for point in points {
@@ -75,15 +75,44 @@ struct PublicMapView: UIViewRepresentable {
                 mapView.addAnnotation(annotation)
             }
         }
+        
+        if let region = region,
+            region.center.latitude != mapView.region.center.latitude
+            || region.center.longitude != mapView.region.center.longitude {
+            mapView.setRegion(region, animated: true)
+        }
     }
 
     class Coordinator: NSObject, MKMapViewDelegate {
         var parent: PublicMapView
-
+        
         init(_ parent: PublicMapView) {
             self.parent = parent
         }
+        
+        func mapView(_ mapView: MKMapView, viewFor annotation: MKAnnotation) -> MKAnnotationView? {
+            if annotation is MKUserLocation {
+                return nil // 現在地はデフォルトのまま
+            }
+            let identifier = "AnnotationView"
 
+            var annotationView = mapView.dequeueReusableAnnotationView(withIdentifier: identifier)
+            if annotationView == nil {
+                annotationView = MKMarkerAnnotationView(annotation: annotation, reuseIdentifier: identifier)
+            } else {
+                annotationView?.annotation = annotation
+            }
+            annotationView?.displayPriority = .required
+            if #available(iOS 11.0, *) {
+                (annotationView as? MKMarkerAnnotationView)?.clusteringIdentifier = nil
+            }
+            if let markerView = annotationView as? MKMarkerAnnotationView {
+                markerView.markerTintColor = .red
+                markerView.canShowCallout = true
+            }
+            return annotationView
+        }
+        
         func mapView(_ mapView: MKMapView, didSelect view: MKAnnotationView) {
             if let annotation = view.annotation as? PointAnnotation {
                 parent.pointTapped(annotation.point)
