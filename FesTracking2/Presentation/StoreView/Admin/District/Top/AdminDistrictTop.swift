@@ -112,7 +112,7 @@ struct AdminDistrictTop {
                     state.destination = .edit(
                         AdminDistrictEdit.State(
                             item: state.district.toModel(),
-                            tool: tool,
+                            tool: tool
                         )
                     )
                 case .failure(let error):
