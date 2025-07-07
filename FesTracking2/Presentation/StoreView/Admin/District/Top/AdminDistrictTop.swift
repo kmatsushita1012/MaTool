@@ -127,7 +127,8 @@ struct AdminDistrictTop {
                         AdminRouteInfo.State(
                             mode: .edit(route.toModel()),
                             milestones: tool.milestones,
-                            base: tool.base)
+                            origin: tool.base
+                        )
                     )
                 } else {
                     state.alert = Alert.error("情報の取得に失敗しました。")
@@ -144,7 +145,8 @@ struct AdminDistrictTop {
                                 tool.spans.first ?? Span.sample
                             ),
                             milestones: tool.milestones,
-                            base: tool.base)
+                            origin: tool.base
+                        )
                     )
                 case .failure(let error):
                     state.alert = Alert.error("情報の取得に失敗しました。 \(error.localizedDescription)")
