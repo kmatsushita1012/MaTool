@@ -179,7 +179,7 @@ struct PublicMap{
                 .routeReceived(
                     route: routeResult,
                     location: locationResult,
-                    tool: toolResult,
+                    tool: toolResult
                 )
             )
         }
@@ -196,7 +196,7 @@ struct PublicMap{
                 .routeReceived(
                     route: routeResult,
                     location: locationResult,
-                    tool: toolResult,
+                    tool: toolResult
                 )
             )
         }

@@ -1,5 +1,5 @@
 {
-  "originHash" : "1b476b0d626366dbcd91fd521fdf8f7c16ccd2ffd24663d13c53ec2c5c8b56a4",
+  "originHash" : "e7018d1e834721edc743ecfa9f03432beab4d7a86939a9eb23573e302bf6a328",
   "pins" : [
     {
       "identity" : "abseil-cpp-binary",
@@ -296,15 +296,6 @@
       "state" : {
         "revision" : "f99ae8aa18f0cf0d53481901f88a0991dc3bd4a2",
         "version" : "601.0.1"
-      }
-    },
-    {
-      "identity" : "swiftyupdatekit",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/HituziANDO/SwiftyUpdateKit.git",
-      "state" : {
-        "revision" : "0340ab0b70486e329312867ac074b114591c0ebb",
-        "version" : "1.5.0"
       }
     },
     {
