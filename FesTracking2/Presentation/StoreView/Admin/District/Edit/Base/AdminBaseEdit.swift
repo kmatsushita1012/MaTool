@@ -15,9 +15,12 @@ struct AdminBaseEdit {
     struct State: Equatable {
         var coordinate: Coordinate?
         var region: MKCoordinateRegion?
-        init(coordinate: Coordinate?){
-            self.coordinate = coordinate
-            self.region = makeRegion(base: coordinate, spanDelta: spanDelta)
+        init(base: Coordinate){
+            self.coordinate = base
+            self.region = makeRegion(origin: coordinate, spanDelta: spanDelta)
+        }
+        init(origin: Coordinate){
+            self.region = makeRegion(origin: origin, spanDelta: spanDelta)
         }
     }
     @CasePathable

@@ -46,6 +46,7 @@ struct AdminDistrictTop {
         case onRouteExport(RouteSummary)
         case getDistrictReceived(Result<PublicDistrict,ApiError>)
         case getRoutesReceived(Result<[RouteSummary],ApiError>)
+        case editPrepared(Result<DistrictTool,ApiError>)
         case routeEditPrepared(Result<PublicRoute,ApiError>,Result<DistrictTool,ApiError>)
         case routeCreatePrepared(Result<DistrictTool,ApiError>)
         case exportPrepared(Result<PublicRoute,ApiError>)
@@ -62,12 +63,15 @@ struct AdminDistrictTop {
         Reduce{ state, action in
             switch action {
             case .onEdit:
-                state.destination = .edit(AdminDistrictEdit.State(item: state.district.toModel()))
-                return .none
+                state.isDistrictLoading = true
+                return .run {[id = state.district.id] send in
+                    let result = await apiClient.getTool(id, authService.getAccessToken())
+                    await send(.editPrepared(result))
+                }
             case .onRouteAdd:
                 state.isRouteLoading = true
-                return .run {[districtId = state.district.id] send in
-                    let result = await apiClient.getTool(districtId, authService.getAccessToken())
+                return .run {[id = state.district.id] send in
+                    let result = await apiClient.getTool(id, authService.getAccessToken())
                     await send(.routeCreatePrepared(result))
                 }
             case .onRouteEdit(let route):
@@ -101,6 +105,20 @@ struct AdminDistrictTop {
                     state.alert = Alert.error("情報の取得に失敗しました。 \(error.localizedDescription)")
                 }
                 return .none
+            case .editPrepared(let result):
+                state.isDistrictLoading = false
+                switch result {
+                case .success(let tool):
+                    state.destination = .edit(
+                        AdminDistrictEdit.State(
+                            item: state.district.toModel(),
+                            tool: tool
+                        )
+                    )
+                case .failure(let error):
+                    state.alert = Alert.error("情報の取得に失敗しました。 \(error.localizedDescription)")
+                }
+                return .none
             case .routeEditPrepared(let routeResult, let toolResult):
                 state.isRouteLoading = false
                 if case let .success(route) = routeResult,
@@ -109,7 +127,8 @@ struct AdminDistrictTop {
                         AdminRouteInfo.State(
                             mode: .edit(route.toModel()),
                             milestones: tool.milestones,
-                            base: tool.base)
+                            origin: tool.base
+                        )
                     )
                 } else {
                     state.alert = Alert.error("情報の取得に失敗しました。")
@@ -126,13 +145,13 @@ struct AdminDistrictTop {
                                 tool.spans.first ?? Span.sample
                             ),
                             milestones: tool.milestones,
-                            base: tool.base)
+                            origin: tool.base
+                        )
                     )
                 case .failure(let error):
                     state.alert = Alert.error("情報の取得に失敗しました。 \(error.localizedDescription)")
                 }
                 return .none
-            
             case .exportPrepared(let result):
                 state.isExportLoading = false
                 switch result {

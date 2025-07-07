@@ -41,9 +41,16 @@ struct PublicMap{
         case onAppear
         case districtsReceived(Result<[PublicDistrict],ApiError>)
         case routesReceived(Result<[RouteSummary],ApiError>)
-        case routeReceived(route: Result<PublicRoute,ApiError>, location: Result<PublicLocation?,ApiError>)
-        case locationsReceived(Result<[PublicLocation],ApiError>)
-        case locationReceived(location: Result<PublicLocation,ApiError>)
+        case routeReceived(
+            route: Result<PublicRoute,ApiError>,
+            location: Result<PublicLocation?,ApiError>,
+            tool: Result<DistrictTool, ApiError>
+        )
+        case locationsReceived(
+            locations: Result<[PublicLocation],ApiError>,
+            region: Result<Region, ApiError>
+        )
+        case locationReceived(Result<PublicLocation,ApiError>)
         case homeTapped
     }
     
@@ -71,7 +78,6 @@ struct PublicMap{
                 switch result {
                 case .success(let districts):
                     let items = [Content.locations] + districts.map{ Content.route($0) }
-                    //TODO
                     if let districtId = userDefaultsClient.string(defaultDistrictKey),
                        let selected = districts.first(where: { $0.id == districtId }) {
                         state.districtPicker = PickerFeature.State(items: items, selected: Content.route(selected))
@@ -90,42 +96,49 @@ struct PublicMap{
                     state.error = error.localizedDescription
                 }
                 return .none
-            case let .routeReceived(routeResult, locationResult):
-                var route: PublicRoute?
-                var location: PublicLocation?
-                switch routeResult {
-                case .success(let value):
-                    route = value
-                case .failure(let error):
+            case let .routeReceived(routeResult, locationResult, toolResult):
+                switch (routeResult,locationResult,toolResult) {
+                case (.success(let route), .success(let location), .success(let tool)):
+                        state.map = .route(
+                            PublicRouteMap.State(
+                                route: route,
+                                location: location,
+                                origin: tool.base
+                            )
+                        )
+                      return .none
+                case (.failure(let error), _, _),
+                      (_, .failure(let error), _),
+                      (_, _, .failure(let error)):
                     state.error = error.localizedDescription
+                      return .none
                 }
-                switch locationResult {
-                case .success(let value):
-                    location = value
-                case .failure(let error):
+            case .locationsReceived(let locationsResult,let toolResult):
+                switch (locationsResult, toolResult) {
+                case (.success(let locations), .success(let tool)):
+                    state.map = .locations(
+                        PublicLocationsMap.State(
+                            locations: locations,
+                            origin: tool.base
+                        )
+                    )
+                    return .none
+                case (.failure(let error), _),
+                    (_, .failure(let error)):
                     state.error = error.localizedDescription
+                    return .none
                 }
-                state.map = .route(PublicRouteMap.State(route: route, location: location))
-                return .none
-            case .locationsReceived(locations: let result):
-                switch result {
-                case .success(let locations):
-                    state.map = .locations(PublicLocationsMap.State(locations: locations))
-                case .failure(let error):
-                    state.error = error.localizedDescription
-                }
-                return .none
             case .locationReceived(location: let result):
                 switch result {
                 case .success(let value):
                     if case let .route(routeState) = state.map{
-                        state.map = .route(PublicRouteMap.State(route: routeState.route, location: value))
+                        state.map = .route(PublicRouteMap.State(route: routeState.route, location: value, origin: routeState.origin))
                     }
                 case .failure(let error):
                     state.error = error.localizedDescription
                 }
                 return .none
-            case .binding(_):
+            case .binding:
                 return .none
             case .districtPicker(.selected(let content)):
                 state.routePicker = nil
@@ -160,8 +173,15 @@ struct PublicMap{
             let accessToken = await authService.getAccessToken()
             async let routeTask = apiClient.getCurrentRoute(id, accessToken)
             async let locationTask = apiClient.getLocation(id, accessToken)
-            let (routeResult, locationResult) = await (routeTask, locationTask)
-            await send(.routeReceived(route: routeResult, location: locationResult))
+            async let toolTask = apiClient.getTool(id, accessToken)
+            let (routeResult, locationResult, toolResult) = await (routeTask, locationTask, toolTask)
+            await send(
+                .routeReceived(
+                    route: routeResult,
+                    location: locationResult,
+                    tool: toolResult
+                )
+            )
         }
     }
     
@@ -170,8 +190,15 @@ struct PublicMap{
             let accessToken = await authService.getAccessToken()
             async let routeTask = apiClient.getRoute(summary.id, accessToken)
             async let locationTask = apiClient.getLocation(summary.districtId, accessToken)
-            let (routeResult, locationResult) = await (routeTask, locationTask)
-            await send(.routeReceived(route: routeResult, location: locationResult))
+            async let toolTask = apiClient.getTool(summary.districtId, accessToken)
+            let (routeResult, locationResult, toolResult) = await (routeTask, locationTask, toolTask)
+            await send(
+                .routeReceived(
+                    route: routeResult,
+                    location: locationResult,
+                    tool: toolResult
+                )
+            )
         }
     }
     
@@ -193,8 +220,10 @@ struct PublicMap{
     func locationsEffect(_ id: String) -> Effect<Action> {
         .run { send in
             let accessToken = await authService.getAccessToken()
-            let result = await apiClient.getLocations(id, accessToken);
-            await send(.locationsReceived(result))
+            async let locationsTask = apiClient.getLocations(id, accessToken)
+            async let regionTask = apiClient.getRegion(id)
+            let (locationsResult, regionResult) = await (locationsTask, regionTask)
+            await send(.locationsReceived(locations: locationsResult, region: regionResult))
         }
     }
 }

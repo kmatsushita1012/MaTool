@@ -39,13 +39,13 @@ struct AdminRouteMap{
         }
         
         
-        init(route: Route, milestones: [Information], base: Coordinate?){
+        init(route: Route, milestones: [Information], origin: Coordinate){
             self.manager = EditManager(route)
             self.milestones = milestones
             if !route.points.isEmpty{
                 self.region = makeRegion(route.points.map{ $0.coordinate })
-            }else if let base = base{
-                self.region = makeRegion(base: base, spanDelta: spanDelta)
+            }else{
+                self.region = makeRegion(origin: origin, spanDelta: spanDelta)
             }
         }
     }
@@ -142,6 +142,9 @@ struct AdminRouteMap{
                 case .point(.moveTapped):
                     if case let .point(pointState) = state.destination,
                        let index = state.route.points.firstIndex(where: { $0.id == pointState.item.id }){
+                        state.manager.apply {
+                            $0.points[index] = pointState.item
+                        }
                         state.operation = .move(index)
                     }
                     state.destination = nil
@@ -149,12 +152,14 @@ struct AdminRouteMap{
                 case .point(.insertTapped):
                     if case let .point(pointState) = state.destination,
                        let index = state.route.points.firstIndex(where: { $0.id == pointState.item.id }){
+                        state.manager.apply {
+                            $0.points[index] = pointState.item
+                        }
                         state.operation = .insert(index)
                     }
                     state.destination = nil
                     return .none
                 case .point(.deleteTapped):
-                    
                     if case let .point(pointState) = state.destination,
                        let index = state.route.points.firstIndex(where: { $0.id == pointState.item.id }){
                         state.manager.apply {
@@ -172,10 +177,9 @@ struct AdminRouteMap{
                     state.destination = nil
                     return .none
                 case .point(.doneTapped):
-                    if case let .point(pointState) = state.destination,
-                       let index = state.route.points.firstIndex(where: { $0.id == pointState.item.id }){
+                    if case let .point(pointState) = state.destination{
                         state.manager.apply {
-                            $0.points[index] = pointState.item
+                            $0.points.upsert(pointState.item)
                         }
                     }
                     state.destination = nil

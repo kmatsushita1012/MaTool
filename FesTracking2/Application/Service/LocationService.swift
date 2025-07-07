@@ -102,10 +102,6 @@ final class LocationService: Sendable {
             appendHistory(.apiError(Date()))
         }
     }
-
-    func getLocationHistory() -> [Status] {
-        locationHistory
-    }
 }
 
 extension LocationService: DependencyKey {
