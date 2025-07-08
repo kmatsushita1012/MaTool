@@ -68,7 +68,7 @@ struct AdminSpanEdit {
                 if state.mode == .create {
                     return .none
                 }
-                state.alert = Alert.delete("このデータを削除してもよろしいですか。元の画面で保存を押すと削除され、操作を取り戻すことはできません。")
+                state.alert = Alert.delete("このデータを削除してもよろしいですか。元の画面で保存を選択するとこのデータは削除され、操作を取り戻すことはできません。")
                 return .none
             //Parent Use
             case .alert(.presented(.okTapped)):
