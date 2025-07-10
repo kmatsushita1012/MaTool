@@ -9,8 +9,6 @@ import Foundation
 import SwiftUI
 
 
-
-
 func makeRegion(_ coordinates:[Coordinate], ratio :Double = 1.1) -> MKCoordinateRegion {
     let minLat = coordinates.map { $0.latitude }.min() ?? 0
     let maxLat = coordinates.map { $0.latitude }.max() ?? 0
@@ -23,18 +21,11 @@ func makeRegion(_ coordinates:[Coordinate], ratio :Double = 1.1) -> MKCoordinate
     )
     let latitudeDelta = (maxLat - minLat) * ratio
     let longitudeDelta = (maxLon - minLon) * ratio
-    var span: MKCoordinateSpan
-    if spanDelta > latitudeDelta || spanDelta > longitudeDelta {
-        span = MKCoordinateSpan(
-            latitudeDelta: spanDelta,
-            longitudeDelta: spanDelta
-        )
-    } else {
-        span = MKCoordinateSpan(
-            latitudeDelta: latitudeDelta,
-            longitudeDelta: longitudeDelta
-        )
-    }
+    let span = MKCoordinateSpan(
+        latitudeDelta: spanDelta > latitudeDelta ? spanDelta: latitudeDelta,
+        longitudeDelta: spanDelta > longitudeDelta ? spanDelta: longitudeDelta
+    )
+
     return MKCoordinateRegion(center: center, span: span)
 }
 

@@ -10,7 +10,7 @@ import ComposableArchitecture
 @Reducer
 struct AdminRegionTop {
     
-    @Dependency(\.apiClient) var apiClient
+    @Dependency(\.apiRepository) var apiRepository
     @Dependency(\.authService) var authService
     
     @Reducer
@@ -57,7 +57,7 @@ struct AdminRegionTop {
             case .onDistrictInfo(let district):
                 state.isApiLoading = true
                 return .run { send in
-                    let result = await apiClient.getRoutes(district.id, authService.getAccessToken())
+                    let result = await apiRepository.getRoutes(district.id, authService.getAccessToken())
                     await send(.districtInfoPrepared(district, result))
                 }
             case .onCreateDistrict:
@@ -113,7 +113,7 @@ struct AdminRegionTop {
                     state.destination = nil
                     state.alert = Alert.success("参加町の追加が完了しました。")
                     return .run {[regionId = state.region.id] send in
-                        let result  = await apiClient.getDistricts(regionId)
+                        let result  = await apiRepository.getDistricts(regionId)
                         await send(.districtsReceived(result))
                     }
                 case .districtCreate(.received(.failure(_))):
@@ -146,7 +146,7 @@ struct AdminRegionTop {
     
     func getRegionEffect(_ id: String) -> Effect<Action> {
         .run { send in
-            let result = await apiClient.getRegion(id)
+            let result = await apiRepository.getRegion(id)
             await send(.regionReceived(result))
         }
     }

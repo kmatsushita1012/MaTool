@@ -11,7 +11,7 @@ import Foundation
 @Reducer
 struct Settings {
     @Dependency(\.authService) var authService
-    @Dependency(\.apiClient) var apiClient
+    @Dependency(\.apiRepository) var apiRepository
     @Dependency(\.userDefaultsClient) var userDefaultsClient
     
     @ObservableState
@@ -54,7 +54,7 @@ struct Settings {
                 }
                 state.isLoading = true
                 return .run { send in
-                    let result = await apiClient.getDistricts(region.id)
+                    let result = await apiRepository.getDistricts(region.id)
                     await send(.districtsReceived(result))
                 }
             case .binding(\.selectedDistrict):

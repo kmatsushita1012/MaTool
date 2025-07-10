@@ -19,6 +19,7 @@ struct CardView: View {
                 .foregroundStyle(foregroundColor)
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .layoutPriority(1)
+                .multilineTextAlignment(.center)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .contentShape(Rectangle())

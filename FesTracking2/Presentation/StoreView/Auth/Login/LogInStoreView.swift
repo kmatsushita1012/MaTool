@@ -11,6 +11,13 @@ import ComposableArchitecture
 struct LoginStoreView: View {
     @Bindable var store: StoreOf<Login>
     
+    @FocusState private var focusedField: Field?
+
+    enum Field {
+        case identifier
+        case password
+    }
+    
     var body: some View {
         NavigationView{
             VStack {
@@ -18,11 +25,14 @@ struct LoginStoreView: View {
                     .font(.largeTitle)
                     .padding()
                 TextField("ID", text: $store.id)
+                    .textContentType(.none)
                     .textFieldStyle(RoundedBorderTextFieldStyle())
+                    .focused($focusedField, equals: .identifier)
                     .padding()
                     
                 SecureField("パスワード", text: $store.password)
                     .textFieldStyle(RoundedBorderTextFieldStyle())
+                    .focused($focusedField, equals: .password)
                     .padding()
                 
                 if let errorMessage = store.errorMessage {
@@ -33,6 +43,7 @@ struct LoginStoreView: View {
                 
                 Button(action: {
                     store.send(.signInTapped)
+                    focusedField = nil
                 }) {
                     Text("ログイン")
                         .frame(maxWidth: .infinity)
