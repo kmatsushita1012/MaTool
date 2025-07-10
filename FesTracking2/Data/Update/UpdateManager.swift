@@ -35,7 +35,6 @@ final class UpdateManager: UpdateManagerProtocol {
 
         self.appStoreVersion = storeVersion
         let skippedVersion = getSkippedVersion()
-        print("\(skippedVersion)")
         if isOlderVersion(currentVersion, than: storeVersion),
            storeVersion != skippedVersion {
             self.shouldShowUpdate = true
