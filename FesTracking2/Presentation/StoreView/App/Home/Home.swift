@@ -12,9 +12,10 @@ import Foundation
 @Reducer
 struct Home {
     
-    @Dependency(\.apiClient) var apiClient
+    @Dependency(\.apiRepository) var apiRepository
     @Dependency(\.authService) var authService
     @Dependency(\.userDefaultsClient) var userDefaultsClient
+    @Dependency(\.updateManager) var updateManager
     
     @Reducer
     enum Destination {
@@ -34,18 +35,21 @@ struct Home {
         var isLoading: Bool {
             isDestinationLoading
         }
+        var shouldShowUpdateModal: Bool = false
         @Presents var destination: Destination.State?
         @Presents var alert: Alert.State?
     }
     
 
     @CasePathable
-    enum Action: Equatable {
+    enum Action: Equatable,BindableAction {
+        case binding(BindingAction<Home.State>)
         case onAppear
         case mapTapped
         case infoTapped
         case adminTapped
         case settingsTapped
+        case updateReceived(Bool)
         case awsInitializeReceived(Result<UserRole, AuthError>)
         case adminDistrictPrepared(Result<PublicDistrict,ApiError>, Result<[RouteSummary],ApiError>)
         case adminRegionPrepared(Result<Region,ApiError>, Result<[PublicDistrict],ApiError>)
@@ -60,14 +64,26 @@ struct Home {
     }
 
     var body: some ReducerOf<Home> {
+        BindingReducer()
         Reduce { state, action in
             switch action {
+            case .binding:
+                return .none
             case .onAppear:
                 state.isAuthLoading = true
-                return .run { send in
-                    let result = await authService.initialize()
-                    await send(.awsInitializeReceived(result))
-                }
+                return .merge(
+                    .run { send in
+                        await updateManager.checkVersion()
+                        await send(.updateReceived(updateManager.shouldShowUpdate))
+                    },
+                    .run { send in
+                        let result = await authService.initialize()
+                        await send(.awsInitializeReceived(result))
+                    }
+                )
+            case .updateReceived(let value):
+                state.shouldShowUpdateModal = value
+                return .none
             case .adminDistrictPrepared(let districtResult, let routesResult):
                 if case let .success(district) = districtResult,
                    case let .success(routes) = routesResult{
@@ -78,7 +94,6 @@ struct Home {
                 state.isDestinationLoading = false
                 return .none
             case .adminRegionPrepared(let regionResult, let districtsResult):
-                
                 if case let .success(region) = regionResult,
                    case let .success(districts) = districtsResult{
                     state.destination = .adminRegion(AdminRegionTop.State(region: region, districts: districts))
@@ -187,8 +202,8 @@ struct Home {
     func adminDistrictEffect(_ id: String)-> Effect<Action> {
         .run { send in
             guard let accessToken = await authService.getAccessToken() else { return }
-            async let districtResult = apiClient.getDistrict(id)
-            async let routesResult =  apiClient.getRoutes(id,  accessToken)
+            async let districtResult = apiRepository.getDistrict(id)
+            async let routesResult =  apiRepository.getRoutes(id,  accessToken)
             let _ = await (districtResult, routesResult)
             await send(.adminDistrictPrepared(districtResult, routesResult))
         }
@@ -196,8 +211,8 @@ struct Home {
     
     func adminRegionEffect(_ id: String)-> Effect<Action> {
         .run { send in
-            async let regionResult = apiClient.getRegion(id)
-            async let districtsResult =  apiClient.getDistricts(id)
+            async let regionResult = apiRepository.getRegion(id)
+            async let districtsResult =  apiRepository.getDistricts(id)
             let _ = await (regionResult, districtsResult)
             await send(.adminRegionPrepared(regionResult, districtsResult))
         }
@@ -205,19 +220,19 @@ struct Home {
     
     func settingsEffect(regionId: String?, districtId: String?) -> Effect<Action> {
         .run { send in
-            async let regionsResult = apiClient.getRegions()
+            async let regionsResult = apiRepository.getRegions()
 
             async let regionResult: Result<Region?, ApiError> = {
                 guard let id = regionId else { return .success(nil) }
-                return await apiClient.getRegion(id).map { Optional($0) }
+                return await apiRepository.getRegion(id).map { Optional($0) }
             }()
             async let districtsResult: Result<[PublicDistrict], ApiError> = {
                 guard let id = regionId else { return .success([]) }
-                return await apiClient.getDistricts(id)
+                return await apiRepository.getDistricts(id)
             }()
             async let districtResult: Result<PublicDistrict?, ApiError> = {
                 guard let id = districtId else { return .success(nil) }
-                return await apiClient.getDistrict(id).map { Optional($0) }
+                return await apiRepository.getDistrict(id).map { Optional($0) }
             }()
 
             let regions = await regionsResult

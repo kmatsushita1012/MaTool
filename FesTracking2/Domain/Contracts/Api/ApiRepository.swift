@@ -30,7 +30,7 @@ struct ApiRepotiroy: Sendable {
 }
 
 extension DependencyValues {
-  var apiClient: ApiRepotiroy {
+  var apiRepository: ApiRepotiroy {
     get { self[ApiRepotiroy.self] }
     set { self[ApiRepotiroy.self] = newValue }
   }

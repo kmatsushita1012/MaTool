@@ -34,6 +34,10 @@
 		296795CF2DA4F7B1008D3CE1 /* Span.swift in Sources */ = {isa = PBXBuildFile; fileRef = 296795CE2DA4F7AF008D3CE1 /* Span.swift */; };
 		296795D12DA4F902008D3CE1 /* AdminRouteMapView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 296795D02DA4F8FB008D3CE1 /* AdminRouteMapView.swift */; };
 		296795D42DA4FF01008D3CE1 /* PresentationUtils.swift in Sources */ = {isa = PBXBuildFile; fileRef = 296795D32DA4FEFD008D3CE1 /* PresentationUtils.swift */; };
+		2967C9102E1F548D0080B8DA /* UpdateModal.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2967C90F2E1F54890080B8DA /* UpdateModal.swift */; };
+		2967C9122E1F54D10080B8DA /* UpdateManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2967C9112E1F54BC0080B8DA /* UpdateManager.swift */; };
+		2967C9162E1F57160080B8DA /* UpdateManagerProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2967C9152E1F57120080B8DA /* UpdateManagerProtocol.swift */; };
+		2967C9182E1F57D60080B8DA /* MockUpdateManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2967C9172E1F57D10080B8DA /* MockUpdateManager.swift */; };
 		2972017B2D9CFA50003424EF /* Async.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2972017A2D9CFA41003424EF /* Async.swift */; };
 		2978C4A92DCB3B5200D3F7CE /* PointFeature.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2978C4A82DCB3B4E00D3F7CE /* PointFeature.swift */; };
 		2978C4AB2DCB3BD300D3F7CE /* LocationFeature.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2978C4AA2DCB3BCE00D3F7CE /* LocationFeature.swift */; };
@@ -195,6 +199,10 @@
 		296795CE2DA4F7AF008D3CE1 /* Span.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Span.swift; sourceTree = "<group>"; };
 		296795D02DA4F8FB008D3CE1 /* AdminRouteMapView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdminRouteMapView.swift; sourceTree = "<group>"; };
 		296795D32DA4FEFD008D3CE1 /* PresentationUtils.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PresentationUtils.swift; sourceTree = "<group>"; };
+		2967C90F2E1F54890080B8DA /* UpdateModal.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UpdateModal.swift; sourceTree = "<group>"; };
+		2967C9112E1F54BC0080B8DA /* UpdateManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UpdateManager.swift; sourceTree = "<group>"; };
+		2967C9152E1F57120080B8DA /* UpdateManagerProtocol.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UpdateManagerProtocol.swift; sourceTree = "<group>"; };
+		2967C9172E1F57D10080B8DA /* MockUpdateManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockUpdateManager.swift; sourceTree = "<group>"; };
 		2972017A2D9CFA41003424EF /* Async.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Async.swift; sourceTree = "<group>"; };
 		2978C4A82DCB3B4E00D3F7CE /* PointFeature.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PointFeature.swift; sourceTree = "<group>"; };
 		2978C4AA2DCB3BCE00D3F7CE /* LocationFeature.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocationFeature.swift; sourceTree = "<group>"; };
@@ -424,6 +432,23 @@
 				2993C81F2DD0704B000D0E1A /* Bindings.swift */,
 			);
 			path = Utils;
+			sourceTree = "<group>";
+		};
+		2967C9132E1F563D0080B8DA /* Update */ = {
+			isa = PBXGroup;
+			children = (
+				2967C9112E1F54BC0080B8DA /* UpdateManager.swift */,
+				2967C9172E1F57D10080B8DA /* MockUpdateManager.swift */,
+			);
+			path = Update;
+			sourceTree = "<group>";
+		};
+		2967C9142E1F57050080B8DA /* Update */ = {
+			isa = PBXGroup;
+			children = (
+				2967C9152E1F57120080B8DA /* UpdateManagerProtocol.swift */,
+			);
+			path = Update;
 			sourceTree = "<group>";
 		};
 		2972017C2D9CFBF2003424EF /* Feature */ = {
@@ -662,6 +687,7 @@
 			isa = PBXGroup;
 			children = (
 				293F2C2C2DD77E9F002C056E /* LoadingOverlay.swift */,
+				2967C90F2E1F54890080B8DA /* UpdateModal.swift */,
 				29F8A7922DFD643C00331A7F /* TitleView.swift */,
 				295EA2D32DEE9E7E006CDE08 /* CardView.swift */,
 			);
@@ -1063,6 +1089,7 @@
 		29CF49032D74244500036D28 /* Data */ = {
 			isa = PBXGroup;
 			children = (
+				2967C9132E1F563D0080B8DA /* Update */,
 				29AD864C2DB2041200C3E8B2 /* Location */,
 				29DAB06E2DA16220005E94BA /* Auth */,
 				29CF49052D74248B00036D28 /* Api */,
@@ -1134,6 +1161,7 @@
 		29DAB05F2D9FC546005E94BA /* Contracts */ = {
 			isa = PBXGroup;
 			children = (
+				2967C9142E1F57050080B8DA /* Update */,
 				29CBB33B2E043640006687A3 /* Auth */,
 				29CBB33A2E043615006687A3 /* Location */,
 				29CBB3372E0435CF006687A3 /* Api */,
@@ -1453,6 +1481,7 @@
 				2948FCF02DC5C38100C73E99 /* PickerFeature.swift in Sources */,
 				292D108E2DCDDBCC0022D8A0 /* AdminRegionTop.swift in Sources */,
 				29F403062DAA95DF003527D1 /* Route.swift in Sources */,
+				2967C9182E1F57D60080B8DA /* MockUpdateManager.swift in Sources */,
 				296795D42DA4FF01008D3CE1 /* PresentationUtils.swift in Sources */,
 				29AB1B442DE1FD0C00AC37F3 /* Others.swift in Sources */,
 				29A043592D7DCFD200E77C91 /* District.swift in Sources */,
@@ -1471,6 +1500,7 @@
 				29CB077B2DAF86610009A47D /* AdminBaseEdit.swift in Sources */,
 				2914184C2DA2B8E9003D7C72 /* PublicMapStoreView.swift in Sources */,
 				292D0B8F2DB0D44100176E51 /* EditableListItemView.swift in Sources */,
+				2967C9102E1F548D0080B8DA /* UpdateModal.swift in Sources */,
 				2972017B2D9CFA50003424EF /* Async.swift in Sources */,
 				29A0434F2D7DC61500E77C91 /* SimpleDate.swift in Sources */,
 				292D0BA12DB0E0DC00176E51 /* AdminRegionEdit.swift in Sources */,
@@ -1529,6 +1559,7 @@
 				29CF49192D7440EB00036D28 /* Extension.swift in Sources */,
 				29DF09C82DCC9E5A00489DB8 /* InfoStoreView.swift in Sources */,
 				299A51622DA942CF00B24828 /* AdminRouteInfoStoreView.swift in Sources */,
+				2967C9162E1F57160080B8DA /* UpdateManagerProtocol.swift in Sources */,
 				29A688B62DCC4133004415BF /* Visibility.swift in Sources */,
 				296795D12DA4F902008D3CE1 /* AdminRouteMapView.swift in Sources */,
 				296795CF2DA4F7B1008D3CE1 /* Span.swift in Sources */,
@@ -1561,6 +1592,7 @@
 				29A043482D7DC36400E77C91 /* Point.swift in Sources */,
 				29A043462D7DC2B200E77C91 /* PublicRoute.swift in Sources */,
 				29CF490A2D74262300036D28 /* LiveApiRepository.swift in Sources */,
+				2967C9122E1F54D10080B8DA /* UpdateManager.swift in Sources */,
 				29550E542DE45CD800E9D9B6 /* MenuSelector.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -1728,11 +1760,13 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_IDENTITY = "Apple Development";
-				CODE_SIGN_STYLE = Automatic;
+				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Distribution";
+				CODE_SIGN_STYLE = Manual;
 				CURRENT_PROJECT_VERSION = 1;
 				DEPLOYMENT_POSTPROCESSING = NO;
 				DEVELOPMENT_ASSET_PATHS = "\"FesTracking2/Preview Content\"";
-				DEVELOPMENT_TEAM = SN9A65C32S;
+				DEVELOPMENT_TEAM = "";
+				"DEVELOPMENT_TEAM[sdk=iphoneos*]" = SN9A65C32S;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = FesTracking2/Info.plist;
@@ -1749,11 +1783,12 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 2.0.4;
+				MARKETING_VERSION = 2.0.5;
 				OTHER_SWIFT_FLAGS = "$(inherited) -D COCOAPODS";
 				PRODUCT_BUNDLE_IDENTIFIER = StudioMK.FesTracking;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
+				"PROVISIONING_PROFILE_SPECIFIER[sdk=iphoneos*]" = FesTracking;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
@@ -1767,11 +1802,13 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_IDENTITY = "Apple Development";
-				CODE_SIGN_STYLE = Automatic;
+				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Distribution";
+				CODE_SIGN_STYLE = Manual;
 				CURRENT_PROJECT_VERSION = 1;
 				DEPLOYMENT_POSTPROCESSING = NO;
 				DEVELOPMENT_ASSET_PATHS = "\"FesTracking2/Preview Content\"";
-				DEVELOPMENT_TEAM = SN9A65C32S;
+				DEVELOPMENT_TEAM = "";
+				"DEVELOPMENT_TEAM[sdk=iphoneos*]" = SN9A65C32S;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = FesTracking2/Info.plist;
@@ -1788,10 +1825,11 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 2.0.4;
+				MARKETING_VERSION = 2.0.5;
 				PRODUCT_BUNDLE_IDENTIFIER = StudioMK.FesTracking;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
+				"PROVISIONING_PROFILE_SPECIFIER[sdk=iphoneos*]" = FesTracking;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";

@@ -13,7 +13,7 @@ import _PhotosUI_SwiftUI
 @Reducer
 struct AdminDistrictEdit {
     
-    @Dependency(\.apiClient) var apiClient
+    @Dependency(\.apiRepository) var apiRepository
     @Dependency(\.authService) var authService
     
     @Reducer
@@ -58,7 +58,7 @@ struct AdminDistrictEdit {
                 state.isLoading = true
                 return .run{ [item = state.item] send in
                     if let token = await authService.getAccessToken(){
-                        let result = await apiClient.putDistrict(item, token)
+                        let result = await apiRepository.putDistrict(item, token)
                         await send(.postReceived(result))
                     }else{
                         await send(.postReceived(.failure(ApiError.unknown("認証に失敗しました。ログインし直してください"))))

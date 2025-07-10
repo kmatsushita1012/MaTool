@@ -20,10 +20,11 @@ struct OnboardingStoreView: View {
                     title: "祭典",
                     items: store.regions,
                     selection: $store.selectedRegion,
-                    textForItem: { region in
+                    label: { region in
                         region?.name ?? "未設定"
                     },
-                    isNullable: false
+                    isNullable: false,
+                    footer: "「テスト」アカウントは業務用です。選択しないでください。"
                 )
                 Spacer()
                 Menu {

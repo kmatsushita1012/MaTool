@@ -32,7 +32,7 @@ struct AdminLocation{
         case dismissTapped
     }
     
-    @Dependency(\.apiClient) var apiClient
+    @Dependency(\.apiRepository) var apiRepository
     @Dependency(\.locationClient) var locationClient
     @Dependency(\.locationService) var locationService
     
