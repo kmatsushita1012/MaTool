@@ -11,7 +11,7 @@ import Dependencies
 
 final class LocationService: Sendable {
 
-    @Dependency(\.apiClient) var apiClient
+    @Dependency(\.apiRepository) var apiRepository
     @Dependency(\.authService) var authService
     @Dependency(\.locationClient) var locationClient
 
@@ -83,7 +83,7 @@ final class LocationService: Sendable {
             appendHistory(.locationError(Date()))
         case .success(let cllocation):
             let location = Location(districtId: id, coordinate: Coordinate.fromCL(cllocation.coordinate), timestamp: Date())
-            let result = await apiClient.putLocation(location, accessToken)
+            let result = await apiRepository.putLocation(location, accessToken)
             switch result {
             case .success:
                 appendHistory(.update(location))
@@ -94,7 +94,7 @@ final class LocationService: Sendable {
     }
     
     private func deleteLocation(_ id: String, accessToken: String) async {
-        let result = await apiClient.deleteLocation(id, accessToken)
+        let result = await apiRepository.deleteLocation(id, accessToken)
         switch result {
         case .success:
             appendHistory(.delete(Date()))

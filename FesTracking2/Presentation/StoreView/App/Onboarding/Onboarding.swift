@@ -11,7 +11,7 @@ import Foundation
 @Reducer
 struct OnboardingFeature {
     
-    @Dependency(\.apiClient) var apiClient
+    @Dependency(\.apiRepository) var apiRepository
     @Dependency(\.userDefaultsClient) var userDefaultsClient
     
     @ObservableState
@@ -45,7 +45,7 @@ struct OnboardingFeature {
                     return .none
                 }
                 return .run { send in
-                    let result = await apiClient.getDistricts(region.id)
+                    let result = await apiRepository.getDistricts(region.id)
                     await send(.districtsReceived(result))
                 }
             case .binding:
@@ -53,7 +53,7 @@ struct OnboardingFeature {
             case .onAppear:
                 state.isRegionsLoading = true
                 return .run { send in
-                    let result = await apiClient.getRegions()
+                    let result = await apiRepository.getRegions()
                     await send(.regionsReceived(result))
                 }
             case .externalGuestTapped,
