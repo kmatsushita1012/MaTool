@@ -10,7 +10,7 @@ import ComposableArchitecture
 @Reducer
 struct AdminRegionDistrictCreate {
     
-    @Dependency(\.apiClient) var apiClient
+    @Dependency(\.apiRepository) var apiRepository
     @Dependency(\.authService) var authService
     
     @ObservableState
@@ -42,7 +42,7 @@ struct AdminRegionDistrictCreate {
                 state.isLoading = true
                 return .run { [region = state.region, name = state.name, email = state.email] send in
                     guard let accessToken = await authService.getAccessToken() else { return }
-                    let result = await apiClient.postDistrict(region.id, name, email, accessToken)
+                    let result = await apiRepository.postDistrict(region.id, name, email, accessToken)
                     await send(.received(result))
                 }
             case .cancelTapped:

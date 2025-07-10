@@ -8,10 +8,9 @@
 import SwiftUI
 import ComposableArchitecture
 
-struct AppView: View {
+struct HomeStoreView: View {
     @Bindable var store: StoreOf<Home>
     
-
     var body: some View {
         NavigationStack {
             VStack(spacing: 16) {
@@ -65,27 +64,30 @@ struct AppView: View {
             .navigationTitle(
                 "MaTool"
             )
-            .fullScreenCover(item: $store.scope(state: \.destination?.route, action: \.destination.route)) { store in
-                PublicMapStoreView(store: store)
-            }
-            .fullScreenCover(item: $store.scope(state: \.destination?.info, action: \.destination.info)) { store in
-                InfoStoreView(store: store)
-            }
-            .fullScreenCover(item: $store.scope(state: \.destination?.login, action: \.destination.login)) { store in
-                LoginStoreView(store: store)
-            }
-            .fullScreenCover(item: $store.scope(state: \.destination?.adminDistrict, action: \.destination.adminDistrict)) { store in
-                AdminDistrictView(store: store)
-            }
-            .fullScreenCover(item: $store.scope(state: \.destination?.adminRegion, action: \.destination.adminRegion)) { store in
-                AdminRegionView(store: store)
-            }
-            .fullScreenCover(item: $store.scope(state: \.destination?.settings, action: \.destination.settings)) { store in
-                SettingsStoreView(store: store)
-            }
-            .alert($store.scope(state: \.alert, action: \.alert))
-            .loadingOverlay(store.isLoading)
         }
+        .fullScreenCover(item: $store.scope(state: \.destination?.route, action: \.destination.route)) { store in
+            PublicMapStoreView(store: store)
+        }
+        .fullScreenCover(item: $store.scope(state: \.destination?.info, action: \.destination.info)) { store in
+            InfoStoreView(store: store)
+        }
+        .fullScreenCover(item: $store.scope(state: \.destination?.login, action: \.destination.login)) { store in
+            LoginStoreView(store: store)
+        }
+        .fullScreenCover(item: $store.scope(state: \.destination?.adminDistrict, action: \.destination.adminDistrict)) { store in
+            AdminDistrictView(store: store)
+        }
+        .fullScreenCover(item: $store.scope(state: \.destination?.adminRegion, action: \.destination.adminRegion)) { store in
+            AdminRegionView(store: store)
+        }
+        .fullScreenCover(item: $store.scope(state: \.destination?.settings, action: \.destination.settings)) { store in
+            SettingsStoreView(store: store)
+        }
+        .sheet(isPresented: $store.shouldShowUpdateModal) {
+            UpdateModalView()
+        }
+        .alert($store.scope(state: \.alert, action: \.alert))
+        .loadingOverlay(store.isLoading)
         .onAppear(){
             store.send(.onAppear)
         }

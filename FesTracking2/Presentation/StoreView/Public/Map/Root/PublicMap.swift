@@ -9,7 +9,7 @@ import ComposableArchitecture
 @Reducer
 struct PublicMap{
     
-    @Dependency(\.apiClient) var apiClient
+    @Dependency(\.apiRepository) var apiRepository
     @Dependency(\.authService) var authService
     @Dependency(\.userDefaultsClient) var userDefaultsClient
     
@@ -171,9 +171,9 @@ struct PublicMap{
     func routeEffect(_ id: String) -> Effect<Action> {
         .run { send in
             let accessToken = await authService.getAccessToken()
-            async let routeTask = apiClient.getCurrentRoute(id, accessToken)
-            async let locationTask = apiClient.getLocation(id, accessToken)
-            async let toolTask = apiClient.getTool(id, accessToken)
+            async let routeTask = apiRepository.getCurrentRoute(id, accessToken)
+            async let locationTask = apiRepository.getLocation(id, accessToken)
+            async let toolTask = apiRepository.getTool(id, accessToken)
             let (routeResult, locationResult, toolResult) = await (routeTask, locationTask, toolTask)
             await send(
                 .routeReceived(
@@ -188,9 +188,9 @@ struct PublicMap{
     func routeEffect(_ summary: RouteSummary) -> Effect<Action> {
         .run { send in
             let accessToken = await authService.getAccessToken()
-            async let routeTask = apiClient.getRoute(summary.id, accessToken)
-            async let locationTask = apiClient.getLocation(summary.districtId, accessToken)
-            async let toolTask = apiClient.getTool(summary.districtId, accessToken)
+            async let routeTask = apiRepository.getRoute(summary.id, accessToken)
+            async let locationTask = apiRepository.getLocation(summary.districtId, accessToken)
+            async let toolTask = apiRepository.getTool(summary.districtId, accessToken)
             let (routeResult, locationResult, toolResult) = await (routeTask, locationTask, toolTask)
             await send(
                 .routeReceived(
@@ -204,7 +204,7 @@ struct PublicMap{
     
     func districtsEffect(_ id: String) -> Effect<Action> {
         .run { send in
-            let result = await apiClient.getDistricts(id);
+            let result = await apiRepository.getDistricts(id);
             await send(.districtsReceived(result))
         }
     }
@@ -212,7 +212,7 @@ struct PublicMap{
     func routesEffect(_ id: String) -> Effect<Action> {
         .run { send in
             let accessToken = await authService.getAccessToken()
-            let result = await apiClient.getRoutes(id, accessToken);
+            let result = await apiRepository.getRoutes(id, accessToken);
             await send(.routesReceived(result))
         }
     }
@@ -220,8 +220,8 @@ struct PublicMap{
     func locationsEffect(_ id: String) -> Effect<Action> {
         .run { send in
             let accessToken = await authService.getAccessToken()
-            async let locationsTask = apiClient.getLocations(id, accessToken)
-            async let regionTask = apiClient.getRegion(id)
+            async let locationsTask = apiRepository.getLocations(id, accessToken)
+            async let regionTask = apiRepository.getRegion(id)
             let (locationsResult, regionResult) = await (locationsTask, regionTask)
             await send(.locationsReceived(locations: locationsResult, region: regionResult))
         }
