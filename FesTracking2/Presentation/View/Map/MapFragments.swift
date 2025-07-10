@@ -20,10 +20,7 @@ class PointAnnotation: MKPointAnnotation {
         case .simple:
             self.title = point.title
         case .time:
-            if let title = point.title,
-               let time = point.time?.text{
-                self.title = title + time
-            }
+            self.title = "\(point.title ?? "") \(point.time?.text ?? "")"
         }
         
     }

@@ -10,7 +10,7 @@ import ComposableArchitecture
 @Reducer
 struct AdminSegmentFeature{
     
-    @Dependency(\.apiClient) var apiClient
+    @Dependency(\.apiRepository) var apiRepository
     
     @ObservableState
     struct State: Equatable{
@@ -37,7 +37,7 @@ struct AdminSegmentFeature{
                     state.errorMessage = nil
                     state.isLoading = true
                     return .run {[] send in
-                        let result = await self.apiClient.getSegmentCoordinate(start, end)
+                        let result = await self.apiRepository.getSegmentCoordinate(start, end)
                         await send(.received(result))
                     }
                 }else{

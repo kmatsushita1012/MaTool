@@ -11,7 +11,7 @@ import ComposableArchitecture
 @Reducer
 struct AdminRegionEdit {
     
-    @Dependency(\.apiClient) var apiClient
+    @Dependency(\.apiRepository) var apiRepository
     @Dependency(\.authService) var authService
     
     @Reducer
@@ -51,7 +51,7 @@ struct AdminRegionEdit {
             case .saveTapped:
                 return .run { [region = state.item] send in
                     if let token = await authService.getAccessToken() {
-                        let result = await apiClient.putRegion(region, token)
+                        let result = await apiRepository.putRegion(region, token)
                         await send(.putReceived(result))
                     }else{
                         await send(.putReceived(.failure(ApiError.unauthorized("認証に失敗しました。ログインし直してください"))))

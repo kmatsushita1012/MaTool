@@ -68,7 +68,7 @@ struct AdminRouteInfo {
         case alert(PresentationAction<AlertDestination.Action>)
     }
     
-    @Dependency(\.apiClient) var apiClient
+    @Dependency(\.apiRepository) var apiRepository
     @Dependency(\.authService) var authService
     
     var body: some ReducerOf<AdminRouteInfo> {
@@ -103,7 +103,7 @@ struct AdminRouteInfo {
                 case .create:
                     return .run { [route = state.route] send in
                         if let token = await authService.getAccessToken() {
-                            let result = await apiClient.postRoute(route, token)
+                            let result = await apiRepository.postRoute(route, token)
                             await send(.postReceived(result))
                         }else{
                             await send(.postReceived(.failure(.unknown("認証に失敗しました。ログインし直してください。"))))
@@ -112,7 +112,7 @@ struct AdminRouteInfo {
                 case .edit:
                     return .run { [route = state.route] send in
                         if let token = await authService.getAccessToken(){
-                            let result = await apiClient.putRoute(route, token)
+                            let result = await apiRepository.putRoute(route, token)
                             await send(.postReceived(result))
                         }else{
                             await send(.postReceived(.failure(.unknown("認証に失敗しました。ログインし直してください。"))))
@@ -167,7 +167,7 @@ struct AdminRouteInfo {
                             await send(.postReceived(.failure(.unknown("認証に失敗しました。ログインし直してください。"))))
                             return
                         }
-                        let result = await apiClient.deleteRoute(route.id, token)
+                        let result = await apiRepository.deleteRoute(route.id, token)
                         await send(.postReceived(result))
                     }
                 }
