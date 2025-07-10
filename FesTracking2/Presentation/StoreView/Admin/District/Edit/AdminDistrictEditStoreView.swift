@@ -15,7 +15,10 @@ struct AdminDistrictEditView: View {
     var body: some View {
         NavigationView{
             Form {
-                Section(header: Text("町名")) {
+                Section(
+                    header: Text("町名"),
+                    footer: Text("IDは更新できません")
+                ) {
                     TextField("町名を入力",text: $store.item.name)
                 }
                 Section(header: Text("紹介文")) {

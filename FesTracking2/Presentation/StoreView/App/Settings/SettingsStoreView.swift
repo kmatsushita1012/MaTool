@@ -27,7 +27,7 @@ struct SettingsStoreView: View {
                     title: "祭典を変更",
                     items: store.regions,
                     selection: $store.selectedRegion,
-                    textForItem: { region in
+                    label: { region in
                         region?.name ?? "未設定"
                     },
                     isNullable: false
@@ -36,7 +36,7 @@ struct SettingsStoreView: View {
                     title: "参加町を変更",
                     items: store.districts,
                     selection: $store.selectedDistrict,
-                    textForItem: { district in
+                    label: { district in
                         district?.name ?? "未設定"
                     }
                 )

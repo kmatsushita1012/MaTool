@@ -10,7 +10,7 @@ import ComposableArchitecture
 @Reducer
 struct AdminDistrictTop {
     
-    @Dependency(\.apiClient) var apiClient
+    @Dependency(\.apiRepository) var apiRepository
     @Dependency(\.locationService) var locationService
     @Dependency(\.authService) var authService
     
@@ -65,26 +65,26 @@ struct AdminDistrictTop {
             case .onEdit:
                 state.isDistrictLoading = true
                 return .run {[id = state.district.id] send in
-                    let result = await apiClient.getTool(id, authService.getAccessToken())
+                    let result = await apiRepository.getTool(id, authService.getAccessToken())
                     await send(.editPrepared(result))
                 }
             case .onRouteAdd:
                 state.isRouteLoading = true
                 return .run {[id = state.district.id] send in
-                    let result = await apiClient.getTool(id, authService.getAccessToken())
+                    let result = await apiRepository.getTool(id, authService.getAccessToken())
                     await send(.routeCreatePrepared(result))
                 }
             case .onRouteEdit(let route):
                 state.isRouteLoading = true
                 return .run { send in
-                    let routeResult = await apiClient.getRoute(route.id, authService.getAccessToken())
-                    let toolResult = await apiClient.getTool(route.districtId, authService.getAccessToken())
+                    let routeResult = await apiRepository.getRoute(route.id, authService.getAccessToken())
+                    let toolResult = await apiRepository.getTool(route.districtId, authService.getAccessToken())
                     await send(.routeEditPrepared(routeResult, toolResult))
                 }
             case .onRouteExport(let route):
                 state.isExportLoading = true
                 return .run { send in
-                    let result = await apiClient.getRoute(route.id, authService.getAccessToken())
+                    let result = await apiRepository.getRoute(route.id, authService.getAccessToken())
                     await send(.exportPrepared(result))
                 }
             case .getDistrictReceived(let result):
@@ -186,11 +186,11 @@ struct AdminDistrictTop {
                     state.isRoutesLoading = true
                     return .merge(
                         .run {[id = state.district.id] send in
-                            let result = await apiClient.getDistrict(id)
+                            let result = await apiRepository.getDistrict(id)
                             await send(.getDistrictReceived(result))
                         },
                         .run {[id = state.district.id] send in
-                            let result = await apiClient.getRoutes(id, authService.getAccessToken())
+                            let result = await apiRepository.getRoutes(id, authService.getAccessToken())
                             await send(.getRoutesReceived(result))
                         }
                     )

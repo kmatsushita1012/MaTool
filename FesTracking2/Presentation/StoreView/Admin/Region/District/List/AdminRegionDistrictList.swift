@@ -10,7 +10,7 @@ import ComposableArchitecture
 @Reducer
 struct AdminRegionDistrictList {
     
-    @Dependency(\.apiClient) var apiClient
+    @Dependency(\.apiRepository) var apiRepository
     @Dependency(\.authService) var authService
     
     @ObservableState
@@ -37,7 +37,7 @@ struct AdminRegionDistrictList {
             case .exportTapped(let route):
                 state.isLoading = true
                 return .run{ send in
-                    let result = await apiClient.getRoute(route.id, authService.getAccessToken())
+                    let result = await apiRepository.getRoute(route.id, authService.getAccessToken())
                     await send(.exportPrepared(result))
                 }
             case .exportPrepared(.success(let route)):
