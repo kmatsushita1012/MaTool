@@ -173,15 +173,12 @@ struct AdminRouteExportMapView: UIViewRepresentable {
     
     private func drawPinsAndCaptions(on snapshot: MKMapSnapshotter.Snapshot) {
         var drawnRects: [CGRect] = []
+         guard let originalImage = UIImage(systemName: "circle.fill") else { continue }
 
         for (index, point) in points.enumerated() {
             let pointInSnapshot = snapshot.point(for: point.coordinate.toCL())
-
-            guard let originalImage = UIImage(systemName: "circle.fill") else { continue }
-
-            let smallSize = CGSize(width: 10, height: 10)
-
-            let pinImage = UIGraphicsImageRenderer(size: smallSize).image { _ in
+            
+            let pinImage = UIGraphicsImageRenderer(size: CGSize(width: 10, height: 10)).image { _ in
                 originalImage.withTintColor(.red, renderingMode: .alwaysOriginal)
                     .draw(in: CGRect(origin: .zero, size: smallSize))
             }
