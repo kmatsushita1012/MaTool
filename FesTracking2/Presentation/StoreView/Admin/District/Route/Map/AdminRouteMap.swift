@@ -163,12 +163,12 @@ struct AdminRouteMap{
                     if case let .point(pointState) = state.destination,
                        let index = state.route.points.firstIndex(where: { $0.id == pointState.item.id }){
                         state.manager.apply {
-                            if index < $0.segments.count {
+                            if index < $0.segments.count && index >= 0{
                                 $0.segments.remove(at: index)
                             }
-                            if index > 0 && index < $0.points.count-1{
+                            if index > 1 && index < $0.points.count-1{
                                 $0.segments[index-1] = Segment(id: UUID().uuidString, start: $0.points[index-1].coordinate, end: $0.points[index+1].coordinate)
-                            }else if index == $0.points.count-1 {
+                            }else if index == $0.points.count-1 && index > 1{
                                 $0.segments.remove(at: index-1)
                             }
                             $0.points.remove(at: index)
