@@ -35,8 +35,8 @@ struct AdminRouteExportMapView: UIViewRepresentable {
         mapView.removeOverlays(mapView.overlays)
 
         // アノテーション追加
-        for point in points {
-            let annotation = PointAnnotation(point, type: .time )
+        for (index, point) in points.enumerated() {
+            let annotation = PointAnnotation(point, type: .time(index) )
             annotation.coordinate = point.coordinate.toCL()
             mapView.addAnnotation(annotation)
         }
@@ -173,20 +173,19 @@ struct AdminRouteExportMapView: UIViewRepresentable {
     
     private func drawPinsAndCaptions(on snapshot: MKMapSnapshotter.Snapshot) {
         var drawnRects: [CGRect] = []
-         guard let originalImage = UIImage(systemName: "circle.fill") else { continue }
-
+        let originalImage = UIImage(systemName: "circle.fill")!
+        let smallSize = CGSize(width: 10, height: 10)
+        let pinImage = UIGraphicsImageRenderer(size: smallSize).image { _ in
+            originalImage.withTintColor(.red, renderingMode: .alwaysOriginal)
+                .draw(in: CGRect(origin: .zero, size: smallSize))
+        }
+        
         for (index, point) in points.enumerated() {
             let pointInSnapshot = snapshot.point(for: point.coordinate.toCL())
-            
-            let pinImage = UIGraphicsImageRenderer(size: CGSize(width: 10, height: 10)).image { _ in
-                originalImage.withTintColor(.red, renderingMode: .alwaysOriginal)
-                    .draw(in: CGRect(origin: .zero, size: smallSize))
-            }
             pinImage.draw(at:
                 CGPoint(x: pointInSnapshot.x - pinImage.size.width / 2,
                         y: pointInSnapshot.y - pinImage.size.height/2)
             )
-
             drawCaption(for: point, index: index, at: pointInSnapshot, pinImage: pinImage, drawnRects: &drawnRects)
         }
     }
