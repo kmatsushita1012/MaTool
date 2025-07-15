@@ -10,7 +10,7 @@ import MapKit
 class PointAnnotation: MKPointAnnotation {
     enum TitleType {
         case simple
-        case time
+        case time(Int)
     }
     let point: Point
     init(_ point: Point,type: TitleType) {
@@ -19,8 +19,8 @@ class PointAnnotation: MKPointAnnotation {
         switch type {
         case .simple:
             self.title = point.title
-        case .time:
-            self.title = "\(point.title ?? "") \(point.time?.text ?? "")"
+        case .time(let index):
+            self.title = "\(index):\(point.title ?? "") \(point.time?.text ?? "")"
         }
         
     }
