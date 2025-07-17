@@ -89,6 +89,14 @@ actor AuthService {
     func confirmUpdateEmail(code: String) async -> Result<Empty,AuthError> {
         return await authProvider.confirmUpdateEmail(code)
     }
+    func isValidPassword(_ password: String) -> Bool {
+        let lengthRule = password.count >= 8
+        let hasNumber = password.range(of: "[0-9]", options: .regularExpression) != nil
+        let hasUppercase = password.range(of: "[A-Z]", options: .regularExpression) != nil
+        let hasLowercase = password.range(of: "[a-z]", options: .regularExpression) != nil
+
+        return lengthRule && hasNumber && hasUppercase && hasLowercase
+    }
 }
 
 private enum AuthServiceKey: DependencyKey {
