@@ -41,7 +41,7 @@ struct ChangePasswordStoreView: View {
                     .textFieldStyle(RoundedBorderTextFieldStyle())
                     .focused($focusedField, equals: .new2)
                     .padding()
-                Button("変更") {
+                Button("パスワードを変更") {
                     store.send(.okTapped)
                     focusedField = nil
                 }
@@ -51,7 +51,7 @@ struct ChangePasswordStoreView: View {
             .padding()
         }
         .loadingOverlay(store.isLoading)
-        .alert(store: store.scope(state: \.alert, action: \.alert))
+        .alert($store.scope(state: \.alert, action: \.alert))
     }
 }
 

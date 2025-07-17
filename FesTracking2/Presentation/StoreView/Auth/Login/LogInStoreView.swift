@@ -12,7 +12,7 @@ struct LoginStoreView: View {
     @Bindable var store: StoreOf<Login>
     
     @FocusState private var focusedField: Field?
-
+    
     enum Field {
         case identifier
         case password
