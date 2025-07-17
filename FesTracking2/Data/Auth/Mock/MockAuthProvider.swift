@@ -43,7 +43,7 @@ extension AuthProvider {
             return .success(Empty())
         },
         updateEmail: { _ in
-            return .success(Empty())
+            return .verificationRequired(destination: "sample@email.com")
         },
         confirmUpdateEmail: { _ in
             return .success(Empty())
