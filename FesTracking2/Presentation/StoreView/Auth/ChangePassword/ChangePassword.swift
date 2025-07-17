@@ -52,8 +52,10 @@ struct ChangePassword {
             case .dismissTapped:
                 return .none
             case .received(.success):
+                state.isLoading = false
                 return .none
             case .received(.failure(let error)):
+                state.isLoading = false
                 state.alert = Alert.error("変更に失敗しました。\(error.localizedDescription)")
                 return .none
             case .alert(_):
