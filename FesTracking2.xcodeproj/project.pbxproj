@@ -92,6 +92,7 @@
 		29A1C2182E28C1360036F221 /* UpdateEmail.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29A1C2172E28C1320036F221 /* UpdateEmail.swift */; };
 		29A1C21A2E28CC6E0036F221 /* ChangePasswordStoreView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29A1C2192E28CC670036F221 /* ChangePasswordStoreView.swift */; };
 		29A1C21D2E28D50C0036F221 /* ResetPasswordStoreView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29A1C21C2E28D5050036F221 /* ResetPasswordStoreView.swift */; };
+		29A1C21F2E28D88E0036F221 /* UpdateEmailStoreView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29A1C21E2E28D8870036F221 /* UpdateEmailStoreView.swift */; };
 		29A385162DD1B521008A1D08 /* AdminRegionDistrictList.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29A385152DD1B517008A1D08 /* AdminRegionDistrictList.swift */; };
 		29A385182DD1B59E008A1D08 /* AdminRegionDistrictCreate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29A385172DD1B595008A1D08 /* AdminRegionDistrictCreate.swift */; };
 		29A3851A2DD1B781008A1D08 /* AdminRegionDistrictListStoreView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29A385192DD1B778008A1D08 /* AdminRegionDistrictListStoreView.swift */; };
@@ -265,6 +266,7 @@
 		29A1C2172E28C1320036F221 /* UpdateEmail.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UpdateEmail.swift; sourceTree = "<group>"; };
 		29A1C2192E28CC670036F221 /* ChangePasswordStoreView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChangePasswordStoreView.swift; sourceTree = "<group>"; };
 		29A1C21C2E28D5050036F221 /* ResetPasswordStoreView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ResetPasswordStoreView.swift; sourceTree = "<group>"; };
+		29A1C21E2E28D8870036F221 /* UpdateEmailStoreView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UpdateEmailStoreView.swift; sourceTree = "<group>"; };
 		29A385152DD1B517008A1D08 /* AdminRegionDistrictList.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdminRegionDistrictList.swift; sourceTree = "<group>"; };
 		29A385172DD1B595008A1D08 /* AdminRegionDistrictCreate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdminRegionDistrictCreate.swift; sourceTree = "<group>"; };
 		29A385192DD1B778008A1D08 /* AdminRegionDistrictListStoreView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdminRegionDistrictListStoreView.swift; sourceTree = "<group>"; };
@@ -676,6 +678,7 @@
 			isa = PBXGroup;
 			children = (
 				29A1C2172E28C1320036F221 /* UpdateEmail.swift */,
+				29A1C21E2E28D8870036F221 /* UpdateEmailStoreView.swift */,
 			);
 			path = UpdateEmail;
 			sourceTree = "<group>";
@@ -1516,6 +1519,7 @@
 				29A138CC2DB3CEFD00C95C31 /* NavigationItemView.swift in Sources */,
 				29A1C2122E28B0150036F221 /* ChangePassword.swift in Sources */,
 				299770202DA527FB00EEB5F4 /* DismissButton.swift in Sources */,
+				29A1C21F2E28D88E0036F221 /* UpdateEmailStoreView.swift in Sources */,
 				292D108A2DCDD6CA0022D8A0 /* UserRole.swift in Sources */,
 				29A0434A2D7DC43100E77C91 /* Segment.swift in Sources */,
 				2948FCF02DC5C38100C73E99 /* PickerFeature.swift in Sources */,
