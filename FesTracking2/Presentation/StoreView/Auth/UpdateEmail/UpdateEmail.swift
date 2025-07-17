@@ -11,6 +11,7 @@ import ComposableArchitecture
 struct UpdateEmail {
     
     @Dependency(\.authService) var authService
+    @Dependency(\.dismiss) var dismiss
     
     @ObservableState
     struct State: Equatable {
@@ -18,11 +19,12 @@ struct UpdateEmail {
         var code: String = ""
         var step: Step = .enterEmail
         var isLoading: Bool = false
-        @Presents var alert: Alert.State? = nil
+        @Presents var errorAlert: Alert.State? = nil
+        @Presents var completeAlert: Alert.State? = nil
         
         enum Step: Equatable {
             case enterEmail
-            case enterCode
+            case enterCode(destination: String)
         }
     }
     
@@ -39,9 +41,10 @@ struct UpdateEmail {
         }
         
         case resendTapped
-        case updateReceived(Result<Empty, AuthError>)
+        case updateReceived(UpdateEmailResult)
         case confirmUpdateReceived(Result<Empty, AuthError>)
-        case alert(PresentationAction<Alert.Action>)
+        case errorAlert(PresentationAction<Alert.Action>)
+        case completeAlert(PresentationAction<Alert.Action>)
     }
     
     var body: some ReducerOf<UpdateEmail> {
@@ -53,7 +56,6 @@ struct UpdateEmail {
             case .enterEmail(.okTapped),
                 .resendTapped:
                 state.isLoading = true
-                state.alert = Alert.success("入力したメールアドレスに6桁の確認コードを送信しました。次の画面で入力してください。")
                 return .run { [email = state.email] send in
                     let result = await authService.updateEmail(to: email)
                     await send(.updateReceived(result))
@@ -66,27 +68,40 @@ struct UpdateEmail {
                 }
             case .enterEmail(.dismissTapped),
                 .enterCode(.dismissTapped):
-                return .none
-            case .updateReceived(.success):
+                return .run { _ in
+                    await dismiss()
+                }
+            case .updateReceived(.completed):
                 state.isLoading = false
-                state.step = .enterCode
+                state.completeAlert = Alert.success("メールアドレスが変更されました")
+                return .none
+            case .updateReceived(.verificationRequired(destination: let destination)):
+                state.isLoading = false
+                state.step = .enterCode(destination: destination)
                 return .none
             case .updateReceived(.failure(let error)):
                 state.isLoading = false
-                state.alert = Alert.error("変更に失敗しました。\(error.localizedDescription)")
+                state.errorAlert = Alert.error("変更に失敗しました　\(error.localizedDescription)")
                 return .none
             case .confirmUpdateReceived(.success):
                 state.isLoading = false
+                state.completeAlert = Alert.success("メールアドレスが変更されました")
                 return .none
             case .confirmUpdateReceived(.failure(let error)):
                 state.isLoading = false
-                state.alert = Alert.error("変更に失敗しました。\(error.localizedDescription)")
+                state.errorAlert = Alert.error("変更に失敗しました　\(error.localizedDescription)")
                 return .none
-            case .alert:
-                state.alert = nil
+            case .errorAlert:
+                state.errorAlert = nil
                 return .none
+            case .completeAlert:
+                state.completeAlert = nil
+                return .run { _ in
+                    await dismiss()
+                }
             }
         }
-        .ifLet(\.$alert, action: \.alert)
+        .ifLet(\.$errorAlert, action: \.errorAlert)
+        .ifLet(\.$completeAlert, action: \.completeAlert)
     }
 }

@@ -83,7 +83,7 @@ struct AuthService: Sendable {
             code
         )
     }
-    func updateEmail(to newEmail: String) async -> Result<Empty,AuthError> {
+    func updateEmail(to newEmail: String) async -> UpdateEmailResult {
         return await authProvider.updateEmail(newEmail)
     }
     func confirmUpdateEmail(code: String) async -> Result<Empty,AuthError> {
