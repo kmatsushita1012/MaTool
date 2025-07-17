@@ -17,10 +17,10 @@ extension AuthProvider {
         initialize: {
             return .success(Empty())
         },
-        signIn: { username, password in
+        signIn: { _, _ in
             return .success
         },
-        confirmSignIn: { newPassword in
+        confirmSignIn: { _ in
             return .success(Empty())
         },
         getUserRole: {
@@ -32,20 +32,20 @@ extension AuthProvider {
         signOut: {
             return .success(Empty())
         },
-        changePassword: { current, new in
+        changePassword: { _, _ in
             return .success(Empty())
             
         },
-        resetPassword: { username in
+        resetPassword: { _ in
             return .success(Empty())
         },
-        confirmResetPassword: { username, newPassword, confirmationCode in
+        confirmResetPassword: { _, _, _ in
             return .success(Empty())
         },
-        updateEmail: { to in
+        updateEmail: { _ in
             return .success(Empty())
         },
-        confirmEmailChange: { to in
+        confirmUpdateEmail: { _ in
             return .success(Empty())
         }
     )
