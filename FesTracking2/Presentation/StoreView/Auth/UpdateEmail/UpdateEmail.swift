@@ -53,6 +53,7 @@ struct UpdateEmail {
             case .enterEmail(.okTapped),
                 .resendTapped:
                 state.isLoading = true
+                state.alert = Alert.success("入力したメールアドレスに6桁の確認コードを送信しました。次の画面で入力してください。")
                 return .run { [email = state.email] send in
                     let result = await authService.updateEmail(to: email)
                     await send(.updateReceived(result))
