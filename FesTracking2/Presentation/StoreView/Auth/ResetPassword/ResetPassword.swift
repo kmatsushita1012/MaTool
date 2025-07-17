@@ -23,7 +23,7 @@ struct ResetPassword {
         
         enum Step: Equatable {
             case enterUsername
-            case enterCodeAndNewPassword
+            case enterCode
         }
         
         @Presents var alert: Alert.State? = nil
@@ -33,7 +33,7 @@ struct ResetPassword {
     enum Action: Equatable, BindableAction {
         case binding(BindingAction<State>)
         case enterUsername(NavigationAction)
-        case enterCodeAndNewPassword(NavigationAction)
+        case enterCode(NavigationAction)
         case resetReceived(Result<Empty,AuthError>)
         case confirmResetReceived(Result<Empty,AuthError>)
         case resendTapped
@@ -58,7 +58,7 @@ struct ResetPassword {
                     let result = await authService.resetPassword(username: username)
                     await send(.resetReceived(result))
                 }
-            case .enterCodeAndNewPassword(.okTapped):
+            case .enterCode(.okTapped):
                 if state.newPassword1 != state.newPassword2 {
                     state.alert = Alert.error("パスワード（確認用）が一致しません")
                     return .none
@@ -81,11 +81,11 @@ struct ResetPassword {
                     await send(.confirmResetReceived(result))
                 }
             case .enterUsername(.dismissTapped),
-                .enterCodeAndNewPassword(.dismissTapped):
+                .enterCode(.dismissTapped):
                 return .none
             case .resetReceived(.success):
                 state.isLoading = false
-                state.step = .enterCodeAndNewPassword
+                state.step = .enterCode
                 return .none
             case .resetReceived(.failure(let error)):
                 state.isLoading = false
