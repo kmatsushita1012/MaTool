@@ -9,10 +9,9 @@ import ComposableArchitecture
 import SwiftUI
 
 struct ResetPasswordStoreView: View {
-    @Bindable let store: StoreOf<ResetPassword>
     
+    @Bindable var store: StoreOf<ResetPassword>
     @FocusState private var focusedField: Field?
-
     
     enum Field {
         case username
@@ -27,14 +26,14 @@ struct ResetPasswordStoreView: View {
                 imageName: "SettingsBackground",
                 titleText: "パスワード変更"
             ) {
-                switch state.step{
+                switch store.step{
                 case .enterUsername:
                     store.send(.enterUsername(.dismissTapped))
                 case .enterCode:
                     store.send(.enterCode(.dismissTapped))
                 }
             }
-            switch state.step{
+            switch store.step{
             case .enterUsername:
                 enterUsername
             case .enterCode:
@@ -46,20 +45,20 @@ struct ResetPasswordStoreView: View {
     @ViewBuilder
     var enterUsername: some View {
         VStack{
-            TextField("ID", text: $store.id)
+            TextField("ID", text: $store.username)
                 .textContentType(.none)
                 .textFieldStyle(RoundedBorderTextFieldStyle())
                 .focused($focusedField, equals: .username)
                 .padding()
             Button("認証コードを送信") {
-                store.send(.okTapped)
+                store.send(.enterUsername(.okTapped))
                 focusedField = nil
             }
             .buttonStyle(PrimaryButtonStyle())
             .padding()
         }
         .loadingOverlay(store.isLoading)
-        .alert(store: store.scope(state: \.alert, action: \.alert))
+        .alert($store.scope(state: \.alert, action: \.alert))
     }
     
     @ViewBuilder
@@ -74,7 +73,7 @@ struct ResetPasswordStoreView: View {
                 .focused($focusedField, equals: .newPassword2)
                 .padding()
             TextField("認証コード（6桁）", text: $store.code)
-                .textContentType(.oneTimeCode))
+                .textContentType(.oneTimeCode)
                 .textFieldStyle(RoundedBorderTextFieldStyle())
                 .focused($focusedField, equals: .code)
                 .padding()
@@ -86,7 +85,7 @@ struct ResetPasswordStoreView: View {
             .padding()
         }
         .loadingOverlay(store.isLoading)
-        .alert(store: store.scope(state: \.alert, action: \.alert))
+        .alert($store.scope(state: \.alert, action: \.alert))
         
     }
 }
