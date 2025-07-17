@@ -53,7 +53,7 @@ struct Login {
             case .homeTapped:
                 return .none
             case .resetPasswordTapped:
-                state.destination = .resetPassword(ResetPassword.State())
+                state.destination = .resetPassword(ResetPassword.State(username: state.id))
                 return .none
             case .received(.success(let userRole)):
                 state.errorMessage = nil

@@ -50,11 +50,19 @@ struct ResetPasswordStoreView: View {
     @ViewBuilder
     var enterUsername: some View {
         VStack{
-            TextField("ID", text: $store.username)
-                .textContentType(.none)
-                .textFieldStyle(RoundedBorderTextFieldStyle())
-                .focused($focusedField, equals: .username)
+            Text("パスワードをリセットするには、登録済みのメールアドレスに送信された認証コードが必要です。")
+                .foregroundStyle(.gray)
                 .padding()
+            VStack(alignment: .leading, spacing: 4) {
+                Text("ID")
+                    .font(.subheadline)
+                    .foregroundColor(.gray)
+                TextField("", text: $store.username)
+                    .textContentType(.none)
+                    .textFieldStyle(RoundedBorderTextFieldStyle())
+                    .focused($focusedField, equals: .username)
+            }
+            .padding()
             Button("認証コードを送信") {
                 store.send(.enterUsername(.okTapped))
                 focusedField = nil
