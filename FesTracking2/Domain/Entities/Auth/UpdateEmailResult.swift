@@ -5,7 +5,7 @@
 //  Created by 松下和也 on 2025/07/17.
 //
 
-enum UpdateEmailResult:Equatable {
+enum UpdateEmailResult: Equatable {
     case completed
     case verificationRequired(destination: String)
     case failure(AuthError)
