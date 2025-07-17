@@ -7,7 +7,7 @@
 
 import Dependencies
 
-actor AuthService {
+struct AuthService: Sendable {
     
     @Dependency(\.authProvider) var authProvider
     
@@ -20,7 +20,7 @@ actor AuthService {
         switch userRoleResult {
         case .success(let value):
             return .success(value)
-        case .failure(let _):
+        case .failure( _):
             let _ = await authProvider.signOut()
             return .success(.guest)
         }
@@ -37,7 +37,7 @@ actor AuthService {
         switch userRoleResult {
         case .success(let value):
             return .success(value)
-        case .failure(let _):
+        case .failure( _):
             let _ = await authProvider.signOut()
             return .success(.guest)
         }
@@ -71,10 +71,10 @@ actor AuthService {
     }
     
     func changePassword(current: String, new: String) async -> Result<Empty,AuthError> {
-        return await authProvider.changePassword(current: current, new: new)
+        return await authProvider.changePassword(current, new)
     }
     func resetPassword(username: String)  async -> Result<Empty,AuthError> {
-        return await authProvider.changePassword(current: current, new: new)
+        return await authProvider.resetPassword(username)
     }
     func confirmResetPassword(username: String, newPassword: String, code: String)  async -> Result<Empty,AuthError> {
         return await authProvider.confirmResetPassword(
