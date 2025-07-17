@@ -31,6 +31,22 @@ extension AuthProvider {
         },
         signOut: {
             return .success(Empty())
+        },
+        changePassword: { current, new in
+            return .success(Empty())
+            
+        },
+        resetPassword: { username in
+            return .success(Empty())
+        },
+        confirmResetPassword: { username, newPassword, confirmationCode in
+            return .success(Empty())
+        },
+        updateEmail: { to in
+            return .success(Empty())
+        },
+        confirmEmailChange: { to in
+            return .success(Empty())
         }
     )
 }
