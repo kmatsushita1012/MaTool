@@ -33,13 +33,18 @@ struct ResetPasswordStoreView: View {
                     store.send(.enterCode(.dismissTapped))
                 }
             }
+            .ignoresSafeArea(edges: .top)
+            Spacer()
             switch store.step{
             case .enterUsername:
                 enterUsername
             case .enterCode:
                 enterCode
             }
+            Spacer()
         }
+        .loadingOverlay(store.isLoading)
+        .alert($store.scope(state: \.alert, action: \.alert))
     }
     
     @ViewBuilder
@@ -57,8 +62,6 @@ struct ResetPasswordStoreView: View {
             .buttonStyle(PrimaryButtonStyle())
             .padding()
         }
-        .loadingOverlay(store.isLoading)
-        .alert($store.scope(state: \.alert, action: \.alert))
     }
     
     @ViewBuilder
@@ -84,8 +87,5 @@ struct ResetPasswordStoreView: View {
             .buttonStyle(PrimaryButtonStyle())
             .padding()
         }
-        .loadingOverlay(store.isLoading)
-        .alert($store.scope(state: \.alert, action: \.alert))
-        
     }
 }
