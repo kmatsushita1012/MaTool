@@ -47,6 +47,8 @@ struct AdminRegionView: View {
                     }) {
                         Text("メールアドレス変更")
                     }
+                }
+                Section {
                     Button(action: {
                         store.send(.signOutTapped)
                     }) {
