@@ -202,17 +202,12 @@ struct AdminDistrictTop {
                     state.destination = nil
                     state.alert = Alert.success("パスワードが変更されました")
                     return .none
-                case .updateEmail(.confirmUpdateReceived(.success)):
-                    state.destination = nil
-                    state.alert = Alert.success("メールアドレスが変更されました")
                     return .none
                 case .edit(.cancelTapped),
                     .route(.cancelTapped),
                     .location(.dismissTapped),
                     .export(.dismissTapped),
-                    .changePassword(.dismissTapped),
-                    .updateEmail(.enterEmail(.dismissTapped)),
-                    .updateEmail(.enterCode(.dismissTapped)):
+                    .changePassword(.dismissTapped):
                     state.destination = nil
                     return .none
                 case .edit,

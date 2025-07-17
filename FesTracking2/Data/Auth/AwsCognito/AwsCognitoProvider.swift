@@ -160,8 +160,19 @@ extension AuthProvider: DependencyKey {
                 AWSMobileClient.default().updateUserAttributes(attributeMap: ["email": newEmail]) { details, error in
                     if let error = error {
                         continuation.resume(returning: .failure(AuthError.unknown(error.localizedDescription)))
-                    } else {
-                        continuation.resume(returning: .success(Empty()))
+                        return
+                    }
+                    guard let details else { return }
+                    if details.isEmpty {
+                        continuation.resume(returning: .completed)
+                        return
+                    }
+                    let  detail = details[0]
+                    if let attribute = detail.attributeName,
+                     attribute == "email",
+                     case .email = detail.deliveryMedium,
+                     let destination = detail.destination{
+                        continuation.resume(returning: .verificationRequired(destination: destination))
                     }
                 }
             }
