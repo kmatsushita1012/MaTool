@@ -11,7 +11,9 @@ struct TitleView: View {
     let imageName: String
     let titleText: String
     var isDismissEnabled: Bool = true
+    var font: Font = .largeTitle
     let onDismiss: () -> Void
+    
 
     // UIImageから縦横比を計算（UIImageが取れなければデフォルト比率）
     private var aspectRatio: CGFloat {
@@ -37,7 +39,7 @@ struct TitleView: View {
                     Spacer()
                     ZStack {
                         Text(titleText)
-                            .font(.largeTitle)
+                            .font(font)
                             .bold()
                         HStack {
                             DismissButton(isEnabled: isDismissEnabled) {
