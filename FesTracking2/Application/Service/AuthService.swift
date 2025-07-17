@@ -70,6 +70,25 @@ actor AuthService {
         }
     }
     
+    func changePassword(current: String, new: String) async -> Result<Empty,AuthError> {
+        return await authProvider.changePassword(current: current, new: new)
+    }
+    func resetPassword(username: String)  async -> Result<Empty,AuthError> {
+        return await authProvider.changePassword(current: current, new: new)
+    }
+    func confirmResetPassword(username: String, newPassword: String, code: String)  async -> Result<Empty,AuthError> {
+        return await authProvider.confirmResetPassword(
+            username,
+            newPassword,
+            code
+        )
+    }
+    func updateEmail(to newEmail: String) async -> Result<Empty,AuthError> {
+        return await authProvider.updateEmail(newEmail)
+    }
+    func confirmUpdateEmail(code: String) async -> Result<Empty,AuthError> {
+        return await authProvider.confirmUpdateEmail(code)
+    }
 }
 
 private enum AuthServiceKey: DependencyKey {
