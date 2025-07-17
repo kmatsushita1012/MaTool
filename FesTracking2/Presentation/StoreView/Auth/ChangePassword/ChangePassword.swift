@@ -17,7 +17,7 @@ struct ChangePassword {
         var current: String = ""
         var new1: String = ""
         var new2: String = ""
-        var isLoading: Bool
+        var isLoading: Bool = false
         @Presents var alert: Alert.State?
     }
     
