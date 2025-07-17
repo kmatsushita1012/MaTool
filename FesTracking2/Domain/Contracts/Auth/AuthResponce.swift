@@ -10,3 +10,8 @@ enum SignInResponse {
     case newPasswordRequired
     case failure(AuthError)
 }
+
+enum UpdateEmailResponse {
+    case complete
+    case veri
+}
