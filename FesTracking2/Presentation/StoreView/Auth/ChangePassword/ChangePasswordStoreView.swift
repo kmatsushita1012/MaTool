@@ -28,6 +28,7 @@ struct ChangePasswordStoreView: View {
                 store.send(.dismissTapped)
             }
             .ignoresSafeArea(edges: .top)
+            Spacer()
             VStack {
                 SecureField("現在のパスワード", text: $store.current)
                     .textFieldStyle(RoundedBorderTextFieldStyle())
@@ -49,6 +50,7 @@ struct ChangePasswordStoreView: View {
                 .padding()
             }
             .padding()
+            Spacer()
         }
         .loadingOverlay(store.isLoading)
         .alert($store.scope(state: \.alert, action: \.alert))
