@@ -91,6 +91,7 @@
 		29A1C2152E28B66B0036F221 /* ResetPassword.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29A1C2142E28B6660036F221 /* ResetPassword.swift */; };
 		29A1C2182E28C1360036F221 /* UpdateEmail.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29A1C2172E28C1320036F221 /* UpdateEmail.swift */; };
 		29A1C21A2E28CC6E0036F221 /* ChangePasswordStoreView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29A1C2192E28CC670036F221 /* ChangePasswordStoreView.swift */; };
+		29A1C21D2E28D50C0036F221 /* ResetPasswordStoreView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29A1C21C2E28D5050036F221 /* ResetPasswordStoreView.swift */; };
 		29A385162DD1B521008A1D08 /* AdminRegionDistrictList.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29A385152DD1B517008A1D08 /* AdminRegionDistrictList.swift */; };
 		29A385182DD1B59E008A1D08 /* AdminRegionDistrictCreate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29A385172DD1B595008A1D08 /* AdminRegionDistrictCreate.swift */; };
 		29A3851A2DD1B781008A1D08 /* AdminRegionDistrictListStoreView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29A385192DD1B778008A1D08 /* AdminRegionDistrictListStoreView.swift */; };
@@ -263,6 +264,7 @@
 		29A1C2142E28B6660036F221 /* ResetPassword.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ResetPassword.swift; sourceTree = "<group>"; };
 		29A1C2172E28C1320036F221 /* UpdateEmail.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UpdateEmail.swift; sourceTree = "<group>"; };
 		29A1C2192E28CC670036F221 /* ChangePasswordStoreView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChangePasswordStoreView.swift; sourceTree = "<group>"; };
+		29A1C21C2E28D5050036F221 /* ResetPasswordStoreView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ResetPasswordStoreView.swift; sourceTree = "<group>"; };
 		29A385152DD1B517008A1D08 /* AdminRegionDistrictList.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdminRegionDistrictList.swift; sourceTree = "<group>"; };
 		29A385172DD1B595008A1D08 /* AdminRegionDistrictCreate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdminRegionDistrictCreate.swift; sourceTree = "<group>"; };
 		29A385192DD1B778008A1D08 /* AdminRegionDistrictListStoreView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdminRegionDistrictListStoreView.swift; sourceTree = "<group>"; };
@@ -665,6 +667,7 @@
 			isa = PBXGroup;
 			children = (
 				29A1C2142E28B6660036F221 /* ResetPassword.swift */,
+				29A1C21C2E28D5050036F221 /* ResetPasswordStoreView.swift */,
 			);
 			path = ResetPassword;
 			sourceTree = "<group>";
@@ -1548,6 +1551,7 @@
 				29DAB0722DA163E4005E94BA /* MockAuthProvider.swift in Sources */,
 				29460A0D2D8C29030097CAA1 /* LogInStoreView.swift in Sources */,
 				29BC19412DB6134900C6F918 /* Date.swift in Sources */,
+				29A1C21D2E28D50C0036F221 /* ResetPasswordStoreView.swift in Sources */,
 				29B638A72DB0E7E400DF8419 /* AdminSpanEdit.swift in Sources */,
 				29AB1B482DE2116F00AC37F3 /* OnboardingStoreView.swift in Sources */,
 				29AD86492DB2032300C3E8B2 /* LocationProvider.swift in Sources */,
