@@ -8,7 +8,7 @@
 import ComposableArchitecture
 import SwiftUI
 
-struct UpdateEmailtoreView: View {
+struct UpdateEmailStoreView: View {
     
     @Bindable var store: StoreOf<UpdateEmail>
     @FocusState private var focusedField: Field?
