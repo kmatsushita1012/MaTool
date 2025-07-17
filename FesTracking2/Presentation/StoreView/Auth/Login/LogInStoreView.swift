@@ -40,18 +40,17 @@ struct LoginStoreView: View {
                         .foregroundColor(.red)
                         .padding()
                 }
-                
-                Button(action: {
+                Button("ログイン") {
                     store.send(.signInTapped)
                     focusedField = nil
-                }) {
-                    Text("ログイン")
-                        .frame(maxWidth: .infinity)
-                        .padding()
-                        .background(Color.blue)
-                        .foregroundColor(.white)
-                        .cornerRadius(10)
                 }
+                .buttonStyle(PrimaryButtonStyle())
+                .padding()
+                Button("パスワードを忘れた場合") {
+                    store.send(.resetPasswordTapped)
+                    focusedField = nil
+                }
+                .buttonStyle(SecondaryButtonStyle())
                 .padding()
             }
             .padding()
@@ -66,8 +65,11 @@ struct LoginStoreView: View {
                     .padding(.horizontal, 8)
                 }
             }
-            .fullScreenCover(item: $store.scope(state: \.confirmSignIn, action: \.confirmSignIn)){ store in
+            .fullScreenCover(item: $store.scope(state: \.destination?.confirmSignIn, action: \.destination.confirmSignIn)){ store in
                 ConfirmSignInStoreView(store:store)
+            }
+            .fullScreenCover(item: $store.scope(state: \.destination?.resetPassword, action: \.destination.resetPassword)){ store in
+                ResetPasswordStoreView(store:store)
             }
             .loadingOverlay(store.isLoading)
         }
