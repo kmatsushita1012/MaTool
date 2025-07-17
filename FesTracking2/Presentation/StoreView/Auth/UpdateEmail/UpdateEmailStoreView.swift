@@ -13,6 +13,7 @@ struct UpdateEmailStoreView: View {
     @Bindable var store: StoreOf<UpdateEmail>
     @FocusState private var focusedField: Field?
     
+    
     enum Field {
         case email
         case code
@@ -22,7 +23,8 @@ struct UpdateEmailStoreView: View {
         VStack{
             TitleView(
                 imageName: "SettingsBackground",
-                titleText: "メールアドレス変更"
+                titleText: "メールアドレス変更",
+                font: .title
             ) {
                 switch store.step{
                 case .enterEmail:
@@ -31,32 +33,37 @@ struct UpdateEmailStoreView: View {
                     store.send(.enterCode(.dismissTapped))
                 }
             }
+            .ignoresSafeArea(edges: .top)
+            Spacer()
             switch store.step{
             case .enterEmail:
                 enterEmail
             case .enterCode:
                 enterCode
             }
+            Spacer()
+            Spacer()
         }
+        .loadingOverlay(store.isLoading)
+        .alert($store.scope(state: \.alert, action: \.alert))
     }
     
     @ViewBuilder
     var enterEmail: some View {
         VStack{
-            TextField("ID", text: $store.email)
+            TextField("新しいメールアドレス", text: $store.email)
                 .textContentType(.emailAddress)
                 .textFieldStyle(RoundedBorderTextFieldStyle())
                 .focused($focusedField, equals: .email)
                 .padding()
-            Button("認証コードを送信") {
+            Button("確認コードを送信") {
                 store.send(.enterEmail(.okTapped))
                 focusedField = nil
             }
             .buttonStyle(PrimaryButtonStyle())
             .padding()
         }
-        .loadingOverlay(store.isLoading)
-        .alert($store.scope(state: \.alert, action: \.alert))
+        
     }
     
     @ViewBuilder
@@ -74,7 +81,5 @@ struct UpdateEmailStoreView: View {
             .buttonStyle(PrimaryButtonStyle())
             .padding()
         }
-        .loadingOverlay(store.isLoading)
-        .alert($store.scope(state: \.alert, action: \.alert))
     }
 }
