@@ -152,7 +152,7 @@ struct Home {
             case .destination(.presented(let childAction)):
                 switch childAction {
                 case .login(.received(.success(let userRole))),
-                    .login(.confirmSignIn(.presented(.received(.success(let userRole))))):
+                    .login(.destination(.presented(.confirmSignIn(.received(.success(let userRole)))))):
                     state.userRole = userRole
                     switch state.userRole {
                     case .region(let id):
