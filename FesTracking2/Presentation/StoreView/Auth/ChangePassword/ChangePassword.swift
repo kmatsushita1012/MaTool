@@ -40,7 +40,7 @@ struct ChangePassword {
                 if state.new1 != state.new2 {
                     state.alert = Alert.error("パスワード（確認用）が一致しません")
                     return .none
-                } else if authService.isValidPassword(state.new1) {
+                } else if !authService.isValidPassword(state.new1) {
                     state.alert =  Alert.error("パスワードが条件を満たしていません。次の条件を満たしてください。\n 8文字以上 \n 少なくとも 1 つの数字を含む \n 少なくとも 1 つの大文字を含む \n 少なくとも 1 つの小文字を含む")
                     return .none
                 }
