@@ -10,7 +10,7 @@ import SwiftUI
 struct TitleView: View {
     let imageName: String
     let titleText: String
-    let isDismissEnabled: Bool
+    var isDismissEnabled: Bool = true
     let onDismiss: () -> Void
 
     // UIImageから縦横比を計算（UIImageが取れなければデフォルト比率）
