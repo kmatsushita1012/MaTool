@@ -38,6 +38,16 @@ struct AdminRegionView: View {
                 }
                 Section {
                     Button(action: {
+                        store.send(.changePasswordTapped)
+                    }) {
+                        Text("パスワード変更")
+                    }
+                    Button(action: {
+                        store.send(.updateEmailTapped)
+                    }) {
+                        Text("メールアドレス変更")
+                    }
+                    Button(action: {
                         store.send(.signOutTapped)
                     }) {
                         Text("ログアウト")
@@ -73,6 +83,16 @@ struct AdminRegionView: View {
                 item: $store.scope(state: \.destination?.districtCreate, action: \.destination.districtCreate)
             ) { store in
                 AdminRegionCreateDistrictView(store: store)
+            }
+            .fullScreenCover(
+                item: $store.scope(state: \.destination?.changePassword, action: \.destination.changePassword)
+            ) { store in
+                ChangePasswordStoreView(store: store)
+            }
+            .fullScreenCover(
+                item: $store.scope(state: \.destination?.updateEmail, action: \.destination.updateEmail)
+            ) { store in
+                UpdateEmailStoreView(store: store)
             }
             .alert($store.scope(state: \.alert, action: \.alert))
             .loadingOverlay(store.isLoading)
