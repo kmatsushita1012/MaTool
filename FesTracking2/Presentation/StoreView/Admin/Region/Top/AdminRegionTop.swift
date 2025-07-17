@@ -18,6 +18,8 @@ struct AdminRegionTop {
         case edit(AdminRegionEdit)
         case districtInfo(AdminRegionDistrictList)
         case districtCreate(AdminRegionDistrictCreate)
+        case changePassword(ChangePassword)
+        case updateEmail(UpdateEmail)
     }
     
     @ObservableState
@@ -39,6 +41,8 @@ struct AdminRegionTop {
         case onDistrictInfo(PublicDistrict)
         case onCreateDistrict
         case homeTapped
+        case changePasswordTapped
+        case updateEmailTapped
         case signOutTapped
         case regionReceived(Result<Region,ApiError>)
         case districtsReceived(Result<[PublicDistrict],ApiError>)
@@ -64,6 +68,12 @@ struct AdminRegionTop {
                 state.destination = .districtCreate(AdminRegionDistrictCreate.State(region: state.region))
                 return .none
             case .homeTapped:
+                return .none
+            case .changePasswordTapped:
+                state.destination = .changePassword(ChangePassword.State())
+                return .none
+            case .updateEmailTapped:
+                state.destination = .updateEmail(UpdateEmail.State())
                 return .none
             case .signOutTapped:
                 state.isAuthLoading = true
@@ -93,14 +103,14 @@ struct AdminRegionTop {
                 return .none
             case .districtInfoPrepared(_, .failure(let error)):
                 state.isApiLoading = false
-                state.alert = Alert.error("情報の取得に失敗しました。\(error.localizedDescription)")
+                state.alert = Alert.error("情報の取得に失敗しました \(error.localizedDescription)")
                 return .none
             case .signOutReceived(.success):
                 state.isAuthLoading = false
                 return .none
             case .signOutReceived(.failure(let error)):
                 state.isAuthLoading = false
-                state.alert = Alert.error("ログアウトに失敗しました。\(error.localizedDescription)")
+                state.alert = Alert.error("ログアウトに失敗しました　\(error.localizedDescription)")
                 return .none
             case .destination(.presented(let childAction)):
                 switch childAction{
@@ -111,23 +121,36 @@ struct AdminRegionTop {
                 case .districtCreate(.received(.success)):
                     state.isApiLoading = true
                     state.destination = nil
-                    state.alert = Alert.success("参加町の追加が完了しました。")
+                    state.alert = Alert.success("参加町の追加が完了しました")
                     return .run {[regionId = state.region.id] send in
                         let result  = await apiRepository.getDistricts(regionId)
                         await send(.districtsReceived(result))
                     }
                 case .districtCreate(.received(.failure(_))):
                     state.destination = nil
-                    state.alert = Alert.error("参加町の追加に失敗しました。")
+                    state.alert = Alert.error("参加町の追加に失敗しました")
+                    return .none
+                case .changePassword(.received(.success)):
+                    state.destination = nil
+                    state.alert = Alert.success("パスワードが変更されました")
+                    return .none
+                case .updateEmail(.confirmUpdateReceived(.success)):
+                    state.destination = nil
+                    state.alert = Alert.success("メールアドレスが変更されました")
                     return .none
                 case .edit(.cancelTapped),
                     .districtInfo(.dismissTapped),
-                    .districtCreate(.cancelTapped):
+                    .districtCreate(.cancelTapped),
+                    .changePassword(.dismissTapped),
+                    .updateEmail(.enterEmail(.dismissTapped)),
+                    .updateEmail(.enterCode(.dismissTapped)):
                     state.destination = nil
                     return .none
                 case .edit,
                     .districtInfo,
-                    .districtCreate:
+                    .districtCreate,
+                    .changePassword,
+                    .updateEmail:
                     return .none
                 }
             case .destination(.dismiss):
