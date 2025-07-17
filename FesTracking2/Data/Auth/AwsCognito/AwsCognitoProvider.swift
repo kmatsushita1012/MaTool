@@ -166,7 +166,7 @@ extension AuthProvider: DependencyKey {
                 }
             }
         },
-        confirmEmailChange: { code in
+        confirmUpdateEmail: { code in
             await withCheckedContinuation { continuation in
                 AWSMobileClient.default().confirmUpdateUserAttributes(attributeName: "email", code: code) { error  in
                     if let error = error {

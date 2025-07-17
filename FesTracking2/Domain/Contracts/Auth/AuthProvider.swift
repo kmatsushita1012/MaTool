@@ -19,7 +19,7 @@ struct AuthProvider: Sendable {
     var resetPassword: @Sendable (_ username: String) async -> Result<Empty,AuthError>
     var confirmResetPassword: @Sendable (_ username: String,_ newPassword: String, _ code: String) async -> Result<Empty,AuthError>
     var updateEmail: @Sendable (_ newEmail: String) async -> Result<Empty,AuthError>
-    var confirmEmailChange: @Sendable (_ code: String) async -> Result<Empty,AuthError>
+    var confirmUpdateEmail: @Sendable (_ code: String) async -> Result<Empty,AuthError>
 }
 
 extension DependencyValues {
