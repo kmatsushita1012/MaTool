@@ -115,6 +115,78 @@ extension AuthProvider: DependencyKey {
                     }
                 }
             }
+        },
+        changePassword: { current, new in
+            await withCheckedContinuation { continuation in
+                AWSMobileClient.default().changePassword(currentPassword: current, proposedPassword: new) { error in
+                    if let error = error {
+                        continuation.resume(returning: .failure(AuthError.unknown(error.localizedDescription)))
+                    } else {
+                        continuation.resume(returning: .success(Empty()))
+                    }
+                }
+            }
+        },
+        resetPassword: { username in
+            await withCheckedContinuation { continuation in
+                AWSMobileClient.default().forgotPassword(username: username) { result, error in
+                    if let error = error {
+                        continuation.resume(returning: .failure(AuthError.unknown(error.localizedDescription)))
+                    } else  {
+                        continuation.resume(returning: .success(Empty()))
+                    }
+                }
+            }
+        },
+        confirmResetPassword: { username, newPassword, code in
+            await withCheckedContinuation { continuation in
+                AWSMobileClient
+                    .default()
+                    .confirmForgotPassword(
+                        username: username,
+                        newPassword: newPassword,
+                        confirmationCode: code
+                    ) { result, error in
+                    if let error = error {
+                        continuation.resume(returning: .failure(AuthError.unknown(error.localizedDescription)))
+                    } else {
+                        continuation.resume(returning: .success(Empty()))
+                    }
+                }
+            }
+        },
+        updateEmail: { newEmail in
+            await withCheckedContinuation { continuation in
+                AWSMobileClient.default().updateUserAttributes(attributeMap: ["email": newEmail]) { details, error in
+                    if let error = error {
+                        continuation.resume(returning: .failure(AuthError.unknown(error.localizedDescription)))
+                        return
+                    }
+                    guard let details else { return }
+                    if details.isEmpty {
+                        continuation.resume(returning: .completed)
+                        return
+                    }
+                    let  detail = details[0]
+                    if let attribute = detail.attributeName,
+                     attribute == "email",
+                     case .email = detail.deliveryMedium,
+                     let destination = detail.destination{
+                        continuation.resume(returning: .verificationRequired(destination: destination))
+                    }
+                }
+            }
+        },
+        confirmUpdateEmail: { code in
+            await withCheckedContinuation { continuation in
+                AWSMobileClient.default().confirmUpdateUserAttributes(attributeName: "email", code: code) { error  in
+                    if let error = error {
+                        continuation.resume(returning: .failure(AuthError.unknown(error.localizedDescription)))
+                    } else {
+                        continuation.resume(returning: .success(Empty()))
+                    }
+                }
+            }
         }
     )
 }

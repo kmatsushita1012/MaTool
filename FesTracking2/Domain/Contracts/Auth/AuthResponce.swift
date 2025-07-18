@@ -10,3 +10,4 @@ enum SignInResponse {
     case newPasswordRequired
     case failure(AuthError)
 }
+
