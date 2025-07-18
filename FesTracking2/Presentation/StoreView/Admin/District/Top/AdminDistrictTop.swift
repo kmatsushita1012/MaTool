@@ -20,6 +20,8 @@ struct AdminDistrictTop {
         case route(AdminRouteInfo)
         case export(AdminRouteExport)
         case location(AdminLocation)
+        case changePassword(ChangePassword)
+        case updateEmail(UpdateEmail)
     }
     
     @ObservableState
@@ -44,6 +46,8 @@ struct AdminDistrictTop {
         case onRouteAdd
         case onRouteEdit(RouteSummary)
         case onRouteExport(RouteSummary)
+        case changePasswordTapped
+        case updateEmailTapped
         case getDistrictReceived(Result<PublicDistrict,ApiError>)
         case getRoutesReceived(Result<[RouteSummary],ApiError>)
         case editPrepared(Result<DistrictTool,ApiError>)
@@ -87,6 +91,12 @@ struct AdminDistrictTop {
                     let result = await apiRepository.getRoute(route.id, authService.getAccessToken())
                     await send(.exportPrepared(result))
                 }
+            case .changePasswordTapped:
+                state.destination = .changePassword(ChangePassword.State())
+                return .none
+            case .updateEmailTapped:
+                state.destination = .updateEmail(UpdateEmail.State())
+                return .none
             case .getDistrictReceived(let result):
                 state.isDistrictLoading = false
                 switch result {
@@ -172,12 +182,6 @@ struct AdminDistrictTop {
                 return .none
             case .destination(.presented(let childAction)):
                 switch childAction {
-                case .edit(.cancelTapped),
-                    .route(.cancelTapped),
-                    .location(.dismissTapped),
-                    .export(.dismissTapped):
-                    state.destination = nil
-                    return .none
                 case .edit(.postReceived(.success)),
                     .route(.postReceived(.success)),
                     .route(.deleteReceived(.success)):
@@ -194,10 +198,23 @@ struct AdminDistrictTop {
                             await send(.getRoutesReceived(result))
                         }
                     )
+                case .changePassword(.received(.success)):
+                    state.destination = nil
+                    state.alert = Alert.success("パスワードが変更されました")
+                    return .none
+                case .edit(.cancelTapped),
+                    .route(.cancelTapped),
+                    .location(.dismissTapped),
+                    .export(.dismissTapped),
+                    .changePassword(.dismissTapped):
+                    state.destination = nil
+                    return .none
                 case .edit,
                     .route,
                     .location,
-                    .export:
+                    .export,
+                    .changePassword,
+                    .updateEmail:
                     return .none
                 }
             case .destination(.dismiss):

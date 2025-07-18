@@ -7,7 +7,7 @@
 
 import Dependencies
 
-actor AuthService {
+struct AuthService: Sendable {
     
     @Dependency(\.authProvider) var authProvider
     
@@ -20,7 +20,7 @@ actor AuthService {
         switch userRoleResult {
         case .success(let value):
             return .success(value)
-        case .failure(let _):
+        case .failure( _):
             let _ = await authProvider.signOut()
             return .success(.guest)
         }
@@ -37,7 +37,7 @@ actor AuthService {
         switch userRoleResult {
         case .success(let value):
             return .success(value)
-        case .failure(let _):
+        case .failure( _):
             let _ = await authProvider.signOut()
             return .success(.guest)
         }
@@ -70,6 +70,33 @@ actor AuthService {
         }
     }
     
+    func changePassword(current: String, new: String) async -> Result<Empty,AuthError> {
+        return await authProvider.changePassword(current, new)
+    }
+    func resetPassword(username: String)  async -> Result<Empty,AuthError> {
+        return await authProvider.resetPassword(username)
+    }
+    func confirmResetPassword(username: String, newPassword: String, code: String)  async -> Result<Empty,AuthError> {
+        return await authProvider.confirmResetPassword(
+            username,
+            newPassword,
+            code
+        )
+    }
+    func updateEmail(to newEmail: String) async -> UpdateEmailResult {
+        return await authProvider.updateEmail(newEmail)
+    }
+    func confirmUpdateEmail(code: String) async -> Result<Empty,AuthError> {
+        return await authProvider.confirmUpdateEmail(code)
+    }
+    func isValidPassword(_ password: String) -> Bool {
+        let lengthRule = password.count >= 8
+        let hasNumber = password.range(of: "[0-9]", options: .regularExpression) != nil
+        let hasUppercase = password.range(of: "[A-Z]", options: .regularExpression) != nil
+        let hasLowercase = password.range(of: "[a-z]", options: .regularExpression) != nil
+
+        return lengthRule && hasNumber && hasUppercase && hasLowercase
+    }
 }
 
 private enum AuthServiceKey: DependencyKey {
