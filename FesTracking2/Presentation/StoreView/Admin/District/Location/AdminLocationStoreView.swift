@@ -18,7 +18,7 @@ struct LocationAdminView: View {
                     footer: Text("始めに短い間隔で試すことで、動作の安定性を確認しやすくなります。")
                 ) {
                     HStack {
-                        Toggle("配信", isOn: $store.isTracking.sending(\.toggleChanged))
+                        Toggle("配信", isOn: $store.isTracking)
                     }
                     Picker("間隔", selection: $store.selectedInterval) {
                         ForEach(store.intervals, id: \.self) { interval in
@@ -26,6 +26,7 @@ struct LocationAdminView: View {
                         }
                     }
                     .pickerStyle(.menu)
+                    .disabled(!store.isPickerEnabled)
                 }
                 AdminLocationMap(location: store.location)
                     .frame(height: UIScreen.main.bounds.height * 0.3)
