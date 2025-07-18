@@ -11,7 +11,3 @@ enum SignInResponse {
     case failure(AuthError)
 }
 
-enum UpdateEmailResponse {
-    case complete
-    case veri
-}
