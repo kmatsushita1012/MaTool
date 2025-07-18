@@ -202,7 +202,6 @@ struct AdminDistrictTop {
                     state.destination = nil
                     state.alert = Alert.success("パスワードが変更されました")
                     return .none
-                    return .none
                 case .edit(.cancelTapped),
                     .route(.cancelTapped),
                     .location(.dismissTapped),
