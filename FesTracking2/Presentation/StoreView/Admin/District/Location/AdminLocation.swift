@@ -20,14 +20,16 @@ struct AdminLocation{
         var history: [Status] = []
         var selectedInterval: Interval = Interval.sample
         let intervals = Interval.options
+        
+        var isPickerEnabled: Bool {
+            !isTracking
+        }
     }
     
     @CasePathable
     enum Action:BindableAction, Equatable{
         case onAppear
-        case onDisappear
         case binding(BindingAction<State>)
-        case toggleChanged(Bool)
         case historyUpdated([Status])
         case dismissTapped
     }
@@ -49,17 +51,14 @@ struct AdminLocation{
                     }
                 }
                 .cancellable(id: "HistoryStream", cancelInFlight: true)
-            case .onDisappear:
-                return .cancel(id: "HistoryStream")
-            case .binding:
-                return .none
-            case .toggleChanged(let value):
-                state.isTracking = value
-                if(value){
+            case .binding(\.isTracking):
+                if(state.isTracking){
                     locationService.startTracking(id: state.id, interval: state.selectedInterval)
                 }else{
                     locationService.stopTracking(id: state.id)
                 }
+                return .none
+            case .binding:
                 return .none
             case .historyUpdated(let history):
                 state.history = history
