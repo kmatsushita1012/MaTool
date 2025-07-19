@@ -76,6 +76,7 @@
 		299BBF2B2DC7AF070092C4D9 /* PublicRouteMap.swift in Sources */ = {isa = PBXBuildFile; fileRef = 299BBF2A2DC7AEF00092C4D9 /* PublicRouteMap.swift */; };
 		299BBF2D2DC7AF7D0092C4D9 /* PublicLocationsMap.swift in Sources */ = {isa = PBXBuildFile; fileRef = 299BBF2C2DC7AF770092C4D9 /* PublicLocationsMap.swift */; };
 		299BBF2F2DC7B7E40092C4D9 /* PublcLocationsMapStoreView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 299BBF2E2DC7B7CC0092C4D9 /* PublcLocationsMapStoreView.swift */; };
+		299E8EDA2E2B89A9009430A3 /* Kanit-Regular.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 299E8ED92E2B89A9009430A3 /* Kanit-Regular.ttf */; };
 		29A043442D7DC25800E77C91 /* RouteSummary.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29A043432D7DC24700E77C91 /* RouteSummary.swift */; };
 		29A043462D7DC2B200E77C91 /* PublicRoute.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29A043452D7DC2AF00E77C91 /* PublicRoute.swift */; };
 		29A043482D7DC36400E77C91 /* Point.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29A043472D7DC36200E77C91 /* Point.swift */; };
@@ -251,6 +252,7 @@
 		299BBF2A2DC7AEF00092C4D9 /* PublicRouteMap.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PublicRouteMap.swift; sourceTree = "<group>"; };
 		299BBF2C2DC7AF770092C4D9 /* PublicLocationsMap.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PublicLocationsMap.swift; sourceTree = "<group>"; };
 		299BBF2E2DC7B7CC0092C4D9 /* PublcLocationsMapStoreView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PublcLocationsMapStoreView.swift; sourceTree = "<group>"; };
+		299E8ED92E2B89A9009430A3 /* Kanit-Regular.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Kanit-Regular.ttf"; sourceTree = "<group>"; };
 		29A043432D7DC24700E77C91 /* RouteSummary.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RouteSummary.swift; sourceTree = "<group>"; };
 		29A043452D7DC2AF00E77C91 /* PublicRoute.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PublicRoute.swift; sourceTree = "<group>"; };
 		29A043472D7DC36200E77C91 /* Point.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Point.swift; sourceTree = "<group>"; };
@@ -534,6 +536,7 @@
 		298BD79C2D71E46600CB63F1 /* FesTracking2 */ = {
 			isa = PBXGroup;
 			children = (
+				299E8EDB2E2B89B4009430A3 /* SupportFiles */,
 				29AD86512DB212DB00C3E8B2 /* Info.plist */,
 				2983AB722D74152C002F6CB5 /* Domain */,
 				29CF49152D74315300036D28 /* Application */,
@@ -611,6 +614,14 @@
 				29A1C2202E291A320036F221 /* UpdateEmailResult.swift */,
 			);
 			path = Auth;
+			sourceTree = "<group>";
+		};
+		299E8EDB2E2B89B4009430A3 /* SupportFiles */ = {
+			isa = PBXGroup;
+			children = (
+				299E8ED92E2B89A9009430A3 /* Kanit-Regular.ttf */,
+			);
+			path = SupportFiles;
 			sourceTree = "<group>";
 		};
 		29A043422D7DC23300E77C91 /* Route */ = {
@@ -1371,6 +1382,7 @@
 			files = (
 				29460A1A2D8C32490097CAA1 /* awsconfiguration.json in Resources */,
 				2983AB882D741C19002F6CB5 /* Gemfile.lock in Resources */,
+				299E8EDA2E2B89A9009430A3 /* Kanit-Regular.ttf in Resources */,
 				2983AB862D741C19002F6CB5 /* Gemfile in Resources */,
 				2983AB852D741C19002F6CB5 /* README.md in Resources */,
 				2983AB872D741C19002F6CB5 /* GoogleService-Info.plist in Resources */,
