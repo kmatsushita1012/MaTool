@@ -41,10 +41,11 @@ struct AdminRegionDistrictListView: View {
                 }
             }
             .navigationBarTitleDisplayMode(.inline)
-            .fullScreenCover(
+            .navigationDestination(
                 item: $store.scope(state: \.export, action: \.export)
             ) { store in
                 AdminRouteExportView(store: store)
+                    .navigationBarBackButtonHidden(true)
             }
             .loadingOverlay(store.isLoading)
         }

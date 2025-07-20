@@ -86,15 +86,19 @@ struct AdminRegionEditView: View{
             }
             .navigationBarTitleDisplayMode(.inline)
         }
-        .fullScreenCover(
+        .navigationDestination(
             item: $store.scope(state: \.destination?.span, action: \.destination.span)
         ) { store in
             AdminSpanView(store: store)
+                .interactiveDismissDisabled(true)
+                .navigationBarBackButtonHidden(true)
         }
-        .fullScreenCover(
+        .navigationDestination(
             item: $store.scope(state: \.destination?.milestone, action:  \.destination.milestone)
         ) { store in
             InformationEditStoreView(store: store)
+                .interactiveDismissDisabled(true)
+                .navigationBarBackButtonHidden(true)
         }
     }
 }

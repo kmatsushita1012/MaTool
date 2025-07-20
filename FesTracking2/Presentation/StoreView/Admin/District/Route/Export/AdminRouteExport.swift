@@ -48,7 +48,7 @@ struct AdminRouteExport {
         BindingReducer()
         Reduce{ state, action in
             switch action {
-            case .binding(_):
+            case .binding:
                 return .none
             case .exportTapped:
                 return .none
