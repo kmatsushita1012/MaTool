@@ -85,10 +85,12 @@ struct AdminRouteInfoView: View{
             }
             .navigationBarTitleDisplayMode(.inline)
         }
-        .fullScreenCover(
+        .navigationDestination(
             item: $store.scope(state: \.destination?.map, action: \.destination.map)
         ) { store in
             AdminRouteMapStoreView(store: store)
+                .interactiveDismissDisabled(true)
+                .navigationBarBackButtonHidden(true)
         }
         .alert($store.scope(state: \.alert?.notice, action: \.alert.notice))
         .alert($store.scope(state: \.alert?.delete, action: \.alert.delete))

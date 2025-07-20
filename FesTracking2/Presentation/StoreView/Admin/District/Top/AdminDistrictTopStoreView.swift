@@ -79,27 +79,34 @@ struct AdminDistrictView: View{
                     .padding(.horizontal, 8)
                 }
             }
-            .fullScreenCover(item: $store.scope(state: \.destination?.edit, action: \.destination.edit)) { store in
+            .navigationDestination(item: $store.scope(state: \.destination?.edit, action: \.destination.edit)) { store in
                AdminDistrictEditView(store: store)
+                    .interactiveDismissDisabled(true)
             }
-            .fullScreenCover(item: $store.scope(state: \.destination?.location, action: \.destination.location)) { store in
+            .navigationDestination(item: $store.scope(state: \.destination?.location, action: \.destination.location)) { store in
                 LocationAdminView(store: store)
+                    .navigationBarBackButtonHidden(true)
             }
-            .fullScreenCover(item: $store.scope(state: \.destination?.route, action: \.destination.route)) { store in
+            .navigationDestination(item: $store.scope(state: \.destination?.route, action: \.destination.route)) { store in
                 AdminRouteInfoView(store: store)
+                    .interactiveDismissDisabled(true)
+                    .navigationBarBackButtonHidden(true)
             }
-            .fullScreenCover(item: $store.scope(state: \.destination?.export, action: \.destination.export)) { store in
+            .navigationDestination(item: $store.scope(state: \.destination?.export, action: \.destination.export)) { store in
                 AdminRouteExportView(store: store)
+                    .navigationBarBackButtonHidden(true)
             }
-            .fullScreenCover(
+            .navigationDestination(
                 item: $store.scope(state: \.destination?.changePassword, action: \.destination.changePassword)
             ) { store in
                 ChangePasswordStoreView(store: store)
+                    .navigationBarBackButtonHidden(true)
             }
-            .fullScreenCover(
+            .navigationDestination(
                 item: $store.scope(state: \.destination?.updateEmail, action: \.destination.updateEmail)
             ) { store in
                 UpdateEmailStoreView(store: store)
+                    .navigationBarBackButtonHidden(true)
             }
             .alert($store.scope(state: \.alert, action: \.alert))
             .loadingOverlay(store.isLoading)

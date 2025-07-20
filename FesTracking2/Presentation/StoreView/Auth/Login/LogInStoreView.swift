@@ -65,11 +65,14 @@ struct LoginStoreView: View {
                     .padding(.horizontal, 8)
                 }
             }
-            .fullScreenCover(item: $store.scope(state: \.destination?.confirmSignIn, action: \.destination.confirmSignIn)){ store in
+            .navigationDestination(item: $store.scope(state: \.destination?.confirmSignIn, action: \.destination.confirmSignIn)){ store in
                 ConfirmSignInStoreView(store:store)
+                    .interactiveDismissDisabled(true)
+                    .navigationBarBackButtonHidden(true)
             }
-            .fullScreenCover(item: $store.scope(state: \.destination?.resetPassword, action: \.destination.resetPassword)){ store in
+            .navigationDestination(item: $store.scope(state: \.destination?.resetPassword, action: \.destination.resetPassword)){ store in
                 ResetPasswordStoreView(store:store)
+                    .navigationBarBackButtonHidden(true)
             }
             .loadingOverlay(store.isLoading)
         }

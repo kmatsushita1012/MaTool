@@ -34,10 +34,9 @@ struct AdminRouteExportView: View{
                     Button(action: {
                         store.send(.dismissTapped)
                     }) {
-                        Image(systemName: "chevron.left")
+                        Image(systemName: "chevron.backward")
                         Text("戻る")
                     }
-                    .padding(.horizontal, 8)
                 }
                 ToolbarItem(placement: .principal) {
                     Text(store.title)

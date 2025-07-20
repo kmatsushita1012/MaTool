@@ -38,5 +38,3 @@ func makeRegion(origin: Coordinate?, spanDelta: CLLocationDegrees) -> MKCoordina
     }
     return nil
 }
-
-

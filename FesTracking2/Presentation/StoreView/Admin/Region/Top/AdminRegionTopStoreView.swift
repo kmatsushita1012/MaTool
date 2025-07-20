@@ -71,30 +71,35 @@ struct AdminRegionView: View {
                     .padding(.horizontal, 8)
                 }
             }
-            .fullScreenCover(
+            .navigationDestination(
                 item: $store.scope(state: \.destination?.edit, action: \.destination.edit)
             ) { store in
                 AdminRegionEditView(store: store)
+                    .interactiveDismissDisabled(true)
+                    .navigationBarBackButtonHidden(true)
             }
-            .fullScreenCover(
+            .navigationDestination(
                 item: $store.scope(state: \.destination?.districtInfo, action: \.destination.districtInfo)
             ) { store in
                 AdminRegionDistrictListView(store: store)
+                    .navigationBarBackButtonHidden(true)
             }
-            .fullScreenCover(
+            .navigationDestination(
                 item: $store.scope(state: \.destination?.districtCreate, action: \.destination.districtCreate)
             ) { store in
                 AdminRegionCreateDistrictView(store: store)
+                    .navigationBarBackButtonHidden(true)
             }
-            .fullScreenCover(
+            .navigationDestination(
                 item: $store.scope(state: \.destination?.changePassword, action: \.destination.changePassword)
             ) { store in
                 ChangePasswordStoreView(store: store)
             }
-            .fullScreenCover(
+            .navigationDestination(
                 item: $store.scope(state: \.destination?.updateEmail, action: \.destination.updateEmail)
             ) { store in
                 UpdateEmailStoreView(store: store)
+                    .navigationBarBackButtonHidden(true)
             }
             .alert($store.scope(state: \.alert, action: \.alert))
             .loadingOverlay(store.isLoading)

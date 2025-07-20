@@ -90,7 +90,7 @@ struct AdminRouteMapStoreView: View{
                     .presentationDetents([.fraction(0.3), .large], selection: $selectedDetent)
                     .interactiveDismissDisabled(true)
             }
-//            .fullScreenCover(item: $store.scope(state: \.destination?.segment, action: \.destination.segment)) { store in
+//            .navigationDestination(item: $store.scope(state: \.destination?.segment, action: \.destination.segment)) { store in
 //                AdminSegmentView(store: store)
 //                    .presentationDetents([.fraction(0.3), .large], selection: $selectedDetent)
 //                    .interactiveDismissDisabled(true)
