@@ -88,14 +88,17 @@ struct AdminDistrictEditView: View {
                 }
             }
             .navigationBarTitleDisplayMode(.inline)
-            .fullScreenCover(item: $store.scope(state: \.destination?.base, action: \.destination.base)) { store in
+            .navigationDestination(item: $store.scope(state: \.destination?.base, action: \.destination.base)) { store in
                 AdminBaseView(store: store)
+                    .navigationBarBackButtonHidden(true)
             }
-            .fullScreenCover(item: $store.scope(state: \.destination?.area, action: \.destination.area)) { store in
+            .navigationDestination(item: $store.scope(state: \.destination?.area, action: \.destination.area)) { store in
                 AdminAreaView(store: store)
+                    .navigationBarBackButtonHidden(true)
             }
-            .fullScreenCover(item: $store.scope(state: \.destination?.performance, action: \.destination.performance)) { store in
+            .navigationDestination(item: $store.scope(state: \.destination?.performance, action: \.destination.performance)) { store in
                 AdminPerformanceView(store: store)
+                    .navigationBarBackButtonHidden(true)
             }
             .alert($store.scope(state: \.alert, action: \.alert))
         }
