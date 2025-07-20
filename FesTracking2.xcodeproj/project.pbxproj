@@ -38,6 +38,7 @@
 		2967C9122E1F54D10080B8DA /* UpdateManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2967C9112E1F54BC0080B8DA /* UpdateManager.swift */; };
 		2967C9162E1F57160080B8DA /* UpdateManagerProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2967C9152E1F57120080B8DA /* UpdateManagerProtocol.swift */; };
 		2967C9182E1F57D60080B8DA /* MockUpdateManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2967C9172E1F57D10080B8DA /* MockUpdateManager.swift */; };
+		296C8C172E2BFD6200C00245 /* DestinationSwipeControl in Frameworks */ = {isa = PBXBuildFile; productRef = 296C8C162E2BFD6200C00245 /* DestinationSwipeControl */; };
 		2972017B2D9CFA50003424EF /* Async.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2972017A2D9CFA41003424EF /* Async.swift */; };
 		2978C4A92DCB3B5200D3F7CE /* PointFeature.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2978C4A82DCB3B4E00D3F7CE /* PointFeature.swift */; };
 		2978C4AB2DCB3BD300D3F7CE /* LocationFeature.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2978C4AA2DCB3BCE00D3F7CE /* LocationFeature.swift */; };
@@ -76,6 +77,7 @@
 		299BBF2B2DC7AF070092C4D9 /* PublicRouteMap.swift in Sources */ = {isa = PBXBuildFile; fileRef = 299BBF2A2DC7AEF00092C4D9 /* PublicRouteMap.swift */; };
 		299BBF2D2DC7AF7D0092C4D9 /* PublicLocationsMap.swift in Sources */ = {isa = PBXBuildFile; fileRef = 299BBF2C2DC7AF770092C4D9 /* PublicLocationsMap.swift */; };
 		299BBF2F2DC7B7E40092C4D9 /* PublcLocationsMapStoreView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 299BBF2E2DC7B7CC0092C4D9 /* PublcLocationsMapStoreView.swift */; };
+		299E8EDD2E2BAA7D009430A3 /* Navigation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 299E8EDC2E2BAA78009430A3 /* Navigation.swift */; };
 		29A043442D7DC25800E77C91 /* RouteSummary.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29A043432D7DC24700E77C91 /* RouteSummary.swift */; };
 		29A043462D7DC2B200E77C91 /* PublicRoute.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29A043452D7DC2AF00E77C91 /* PublicRoute.swift */; };
 		29A043482D7DC36400E77C91 /* Point.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29A043472D7DC36200E77C91 /* Point.swift */; };
@@ -251,6 +253,7 @@
 		299BBF2A2DC7AEF00092C4D9 /* PublicRouteMap.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PublicRouteMap.swift; sourceTree = "<group>"; };
 		299BBF2C2DC7AF770092C4D9 /* PublicLocationsMap.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PublicLocationsMap.swift; sourceTree = "<group>"; };
 		299BBF2E2DC7B7CC0092C4D9 /* PublcLocationsMapStoreView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PublcLocationsMapStoreView.swift; sourceTree = "<group>"; };
+		299E8EDC2E2BAA78009430A3 /* Navigation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Navigation.swift; sourceTree = "<group>"; };
 		29A043432D7DC24700E77C91 /* RouteSummary.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RouteSummary.swift; sourceTree = "<group>"; };
 		29A043452D7DC2AF00E77C91 /* PublicRoute.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PublicRoute.swift; sourceTree = "<group>"; };
 		29A043472D7DC36200E77C91 /* Point.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Point.swift; sourceTree = "<group>"; };
@@ -344,6 +347,7 @@
 			files = (
 				29F8A2BE2D9EF079001633B3 /* ComposableArchitecture in Frameworks */,
 				D78195157F20422B3B5A8EA3 /* Pods_FesTracking2.framework in Frameworks */,
+				296C8C172E2BFD6200C00245 /* DestinationSwipeControl in Frameworks */,
 				29F8A2C12D9EF13E001633B3 /* FirebaseAppDistribution-Beta in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -444,6 +448,7 @@
 			children = (
 				296795D32DA4FEFD008D3CE1 /* PresentationUtils.swift */,
 				2993C81F2DD0704B000D0E1A /* Bindings.swift */,
+				299E8EDC2E2BAA78009430A3 /* Navigation.swift */,
 			);
 			path = Utils;
 			sourceTree = "<group>";
@@ -1272,6 +1277,7 @@
 			packageProductDependencies = (
 				29F8A2BD2D9EF079001633B3 /* ComposableArchitecture */,
 				29F8A2C02D9EF13E001633B3 /* FirebaseAppDistribution-Beta */,
+				296C8C162E2BFD6200C00245 /* DestinationSwipeControl */,
 			);
 			productName = FesTracking2;
 			productReference = 298BD79A2D71E46600CB63F1 /* FesTracking2.app */;
@@ -1352,6 +1358,7 @@
 			packageReferences = (
 				29F8A2BC2D9EF078001633B3 /* XCRemoteSwiftPackageReference "swift-composable-architecture" */,
 				29F8A2BF2D9EF13E001633B3 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */,
+				296C8C152E2BFD6200C00245 /* XCRemoteSwiftPackageReference "DestinationSwipeControl" */,
 			);
 			productRefGroup = 298BD79B2D71E46600CB63F1 /* Products */;
 			projectDirPath = "";
@@ -1644,6 +1651,7 @@
 				29A043482D7DC36400E77C91 /* Point.swift in Sources */,
 				29A043462D7DC2B200E77C91 /* PublicRoute.swift in Sources */,
 				29CF490A2D74262300036D28 /* LiveApiRepository.swift in Sources */,
+				299E8EDD2E2BAA7D009430A3 /* Navigation.swift in Sources */,
 				2967C9122E1F54D10080B8DA /* UpdateManager.swift in Sources */,
 				29550E542DE45CD800E9D9B6 /* MenuSelector.swift in Sources */,
 			);
@@ -2006,6 +2014,14 @@
 /* End XCConfigurationList section */
 
 /* Begin XCRemoteSwiftPackageReference section */
+		296C8C152E2BFD6200C00245 /* XCRemoteSwiftPackageReference "DestinationSwipeControl" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/kmatsushita1012/DestinationSwipeControl";
+			requirement = {
+				kind = exactVersion;
+				version = 0.1.0;
+			};
+		};
 		29F8A2BC2D9EF078001633B3 /* XCRemoteSwiftPackageReference "swift-composable-architecture" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/pointfreeco/swift-composable-architecture";
@@ -2025,6 +2041,11 @@
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
+		296C8C162E2BFD6200C00245 /* DestinationSwipeControl */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 296C8C152E2BFD6200C00245 /* XCRemoteSwiftPackageReference "DestinationSwipeControl" */;
+			productName = DestinationSwipeControl;
+		};
 		29F8A2BD2D9EF079001633B3 /* ComposableArchitecture */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = 29F8A2BC2D9EF078001633B3 /* XCRemoteSwiftPackageReference "swift-composable-architecture" */;
