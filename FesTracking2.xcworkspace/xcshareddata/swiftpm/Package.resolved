@@ -1,5 +1,5 @@
 {
-  "originHash" : "e7018d1e834721edc743ecfa9f03432beab4d7a86939a9eb23573e302bf6a328",
+  "originHash" : "d0b87ab2bcea6e16fe7e2e88a9567a7e56c2d28a84591b3d1711a3d8da5849e6",
   "pins" : [
     {
       "identity" : "abseil-cpp-binary",
@@ -62,6 +62,15 @@
       "state" : {
         "revision" : "5928286acce13def418ec36d05a001a9641086f2",
         "version" : "1.0.3"
+      }
+    },
+    {
+      "identity" : "destinationswipecontrol",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/kmatsushita1012/DestinationSwipeControl",
+      "state" : {
+        "revision" : "916aecbcde3cd4cd7926474449b5d0a881857493",
+        "version" : "0.1.0"
       }
     },
     {
