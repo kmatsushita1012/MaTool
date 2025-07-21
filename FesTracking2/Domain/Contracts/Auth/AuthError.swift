@@ -10,17 +10,20 @@ enum AuthError: Error, Equatable {
     case encoding(String)
     case decoding(String)
     case unknown(String)
+    case auth(String)
     
     var localizedDescription: String {
         switch self {
         case .network(let message):
-            return "Network Error: \(message)"
+            return "ネットワークエラー \(message)"
         case .encoding(let message):
-            return "Encoding Error: \(message)"
+            return "送信失敗 \(message)"
         case .decoding(let message):
-            return "Decoding Error: \(message)"
+            return "解析失敗 \(message)"
         case .unknown(let message):
-            return "Unknown Error: \(message)"
+            return "予期しないエラー \(message)"
+        case .auth(let message):
+            return "認証エラー \(message) このエラーが繰り返し発生する場合は、設定画面からログアウトし、再度サインインしてください。"
         }
     }
 }
