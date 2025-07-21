@@ -1,0 +1,22 @@
+name: Build
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+    branches: ["main"]
+
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: macos-15
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      #project->workspaceに
+      - name: Build
+        run: |
+          xcodebuild archive -workspace FesTraking2.xcworkspace -scheme FesTracking2 -archivePath FesTracking2.xcarchive -sdk iphoneos -configuration Release CODE_SIGNING_ALLOWED=NO

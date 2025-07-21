@@ -1,0 +1,38 @@
+name: Build
+
+on:
+  push:
+    branches: ["release"]
+
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: macos-15
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      #project->workspaceに
+      - name: Archive
+        run: |
+          xcodebuild archive -workspace FesTraking2.xcworkspace -scheme FesTracking2 -archivePath FesTracking2.xcarchive -sdk iphoneos -configuration Release CODE_SIGNING_ALLOWED=NO
+
+      - name: Create ExportOptions.plist
+        run: |
+          echo '${{ secrets.EXPORT_OPTIONS }}' > ExportOptions.plist
+          cat ExportOptions.plist
+
+      - name: Create Private Key
+        run: |
+          mkdir private_keys
+          echo -n '${{ secrets.APPLE_API_KEY_BASE64 }}' | base64 --decode > ./private_keys/AuthKey_${{ secrets.APPLE_API_ISSUER_ID }}.p8
+
+      - name: Export IPA
+        run: |
+          xcodebuild -exportArchive -archivePath FesTracking2.xcarchive -exportOptionsPlist ExportOptions.plist -exportPath FesTracking2.ipa -allowProvisioningUpdates -authenticationKeyPath `pwd`/private_keys/AuthKey_${{ secrets.APPLE_API_ISSUER_ID }}.p8 -authenticationKeyID ${{ secrets.APPLE_API_KEY_ID }} -authenticationKeyIssuerID ${{ secrets.APPLE_API_ISSUER_ID }}
+
+      - name: Upload to App Store Connect
+        run: |
+          xcrun altool --upload-app -f FesTracking2.ipa/FesTracking2.ipa -t ios -u ${{ secrets.APPLE_ID }} -p ${{ secrets.APP_SPECIFIC_PASSWORD }} --type ios
