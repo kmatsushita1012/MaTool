@@ -1,4 +1,4 @@
-name: Build
+name: main
 
 on:
   push:
@@ -19,4 +19,4 @@ jobs:
       #project->workspaceに
       - name: Build
         run: |
-          xcodebuild archive -workspace FesTraking2.xcworkspace -scheme FesTracking2 -archivePath FesTracking2.xcarchive -sdk iphoneos -configuration Release CODE_SIGNING_ALLOWED=NO
+          xcodebuild archive -workspace FesTracking2.xcworkspace -scheme FesTracking2 -archivePath FesTracking2.xcarchive -sdk iphoneos -configuration Release CODE_SIGNING_ALLOWED=NO
