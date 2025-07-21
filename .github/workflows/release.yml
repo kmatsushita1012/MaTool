@@ -17,7 +17,14 @@ jobs:
       #project->workspaceに
       - name: Archive
         run: |
-          xcodebuild archive -workspace FesTracking2.xcworkspace -scheme FesTracking2 -archivePath FesTracking2.xcarchive -sdk iphoneos -configuration Release CODE_SIGNING_ALLOWED=NO
+          xcodebuild archive \
+            -workspace FesTracking2.xcworkspace
+            -scheme FesTracking2 \
+            -archivePath FesTracking2.xcarchive \
+            -sdk iphoneos \
+            -configuration Release \
+            -destination 'generic/platform=iOS' \
+            CODE_SIGNING_ALLOWED=NO
 
       - name: Create ExportOptions.plist
         run: |
