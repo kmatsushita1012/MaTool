@@ -7,6 +7,7 @@
 
 import ComposableArchitecture
 import SwiftUI
+import NavigationSwipeControl
 
 struct ResetPasswordStoreView: View {
     
@@ -43,6 +44,7 @@ struct ResetPasswordStoreView: View {
             }
             Spacer()
         }
+        .dismissible(backButton: false, edgeSwipe: false)
         .loadingOverlay(store.isLoading)
         .alert($store.scope(state: \.alert, action: \.alert))
     }

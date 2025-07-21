@@ -22,7 +22,7 @@ struct AdminRouteExport {
             route.segments
         }
         var title: String {
-            route.text(format: "D m/d T")
+            route.text(format: "m/d T")
         }
         var partialPath: String {
             "\(route.text(format: "D_y-m-d_T"))_part_\(Date().stamp).pdf"
