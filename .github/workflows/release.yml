@@ -46,11 +46,11 @@ jobs:
       - name: Create Private Key
         run: |
           mkdir private_keys
-          echo -n '${{ secrets.APPLE_API_KEY_BASE64 }}' | base64 --decode > ./private_keys/AuthKey_${{ secrets.APPLE_API_ISSUER_ID }}.p8
+          echo -n '${{ secrets.APPLE_API_KEY_BASE64 }}' | base64 --decode > ./private_keys/AuthKey_${{ secrets.APPLE_API_ISSUE_ID }}.p8
 
       - name: Export IPA
         run: |
-          xcodebuild -exportArchive -archivePath FesTracking2.xcarchive -exportOptionsPlist ExportOptions.plist -exportPath FesTracking2.ipa -allowProvisioningUpdates -authenticationKeyPath `pwd`/private_keys/AuthKey_${{ secrets.APPLE_API_ISSUER_ID }}.p8 -authenticationKeyID ${{ secrets.APPLE_API_KEY_ID }} -authenticationKeyIssuerID ${{ secrets.APPLE_API_ISSUER_ID }}
+          xcodebuild -exportArchive -archivePath FesTracking2.xcarchive -exportOptionsPlist ExportOptions.plist -exportPath FesTracking2.ipa -allowProvisioningUpdates -authenticationKeyPath `pwd`/private_keys/AuthKey_${{ secrets.APPLE_API_ISSUE_ID }}.p8 -authenticationKeyID ${{ secrets.APPLE_API_KEY_ID }} -authenticationKeyIssuerID ${{ secrets.APPLE_API_ISSUE_ID }}
 
       - name: Upload to App Store Connect
         run: |
