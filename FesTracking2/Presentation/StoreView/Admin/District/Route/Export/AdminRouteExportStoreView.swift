@@ -9,6 +9,7 @@ import SwiftUI
 import ComposableArchitecture
 import MapKit
 import UniformTypeIdentifiers
+import NavigationSwipeControl
 
 struct AdminRouteExportView: View{
     @Bindable var store: StoreOf<AdminRouteExport>
@@ -18,61 +19,47 @@ struct AdminRouteExportView: View{
     
     var body: some View{
         // 背景のMap
-        NavigationView{
-            ZStack {
-                AdminRouteExportMapView(
-                    points: store.points,
-                    segments: store.segments,
-                    region: $store.region,
-                    wholeSnapshot: $wholeSnapshot,
-                    partialSnapshot: $partialSnapshot
-                )
-                    .ignoresSafeArea(edges: .bottom)
+        ZStack {
+            AdminRouteExportMapView(
+                points: store.points,
+                segments: store.segments,
+                region: $store.region,
+                wholeSnapshot: $wholeSnapshot,
+                partialSnapshot: $partialSnapshot
+            )
+                .ignoresSafeArea(edges: .bottom)
+        }
+        .navigationTitle(store.title)
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            if let partialSnapshot = partialSnapshot,
+               let partialPdf = createPDF(with: partialSnapshot, path: store.partialPath){
+                ToolbarItem(placement: .topBarTrailing) {
+                    ShareLink(
+                        item: partialPdf,
+                        preview: SharePreview(
+                            "行動図",
+                            image: Image(systemName: "camera")
+                        )
+                    ){
+                        Image(systemName: "camera")
+                    }
+                }
             }
-            .toolbar {
-                ToolbarItem(placement: .topBarLeading) {
-                    Button(action: {
-                        store.send(.dismissTapped)
-                    }) {
-                        Image(systemName: "chevron.backward")
-                        Text("戻る")
+            if let wholeSnapshot = wholeSnapshot,
+               let wholePdf = createPDF(with: wholeSnapshot, path: store.wholePath){
+                ToolbarItem(placement: .topBarTrailing) {
+                    ShareLink(
+                       item: wholePdf,
+                       preview: SharePreview(
+                            "行動図（全体）",
+                            image: Image(systemName: "point.topright.arrow.triangle.backward.to.point.bottomleft.scurvepath")
+                       )
+                    ){
+                        Image(systemName: "point.topright.arrow.triangle.backward.to.point.bottomleft.scurvepath")
                     }
                 }
-                ToolbarItem(placement: .principal) {
-                    Text(store.title)
-                        .bold()
-                }
-                if let partialSnapshot = partialSnapshot,
-                   let partialPdf = createPDF(with: partialSnapshot, path: store.partialPath){
-                    ToolbarItem(placement: .topBarTrailing) {
-                        ShareLink(
-                            item: partialPdf,
-                            preview: SharePreview(
-                                "行動図",
-                                image: Image(systemName: "camera")
-                            )
-                        ){
-                            Image(systemName: "camera")
-                        }
-                    }
-                }
-                if let wholeSnapshot = wholeSnapshot,
-                   let wholePdf = createPDF(with: wholeSnapshot, path: store.wholePath){
-                    ToolbarItem(placement: .topBarTrailing) {
-                        ShareLink(
-                           item: wholePdf,
-                           preview: SharePreview(
-                                "行動図（全体）",
-                                image: Image(systemName: "point.topright.arrow.triangle.backward.to.point.bottomleft.scurvepath")
-                           )
-                        ){
-                            Image(systemName: "point.topright.arrow.triangle.backward.to.point.bottomleft.scurvepath")
-                        }
-                    }
-                }
-                
             }
-            .navigationBarTitleDisplayMode(.inline)
         }
     }
     

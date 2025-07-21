@@ -7,102 +7,98 @@
 
 import SwiftUI
 import ComposableArchitecture
+import NavigationSwipeControl
 
 struct AdminRegionView: View {
     @Bindable var store: StoreOf<AdminRegionTop>
     
     var body: some View {
-        NavigationView {
-            Form {
-                Section {
+        List {
+            Section {
+                NavigationItemView(
+                    title: "祭典情報",
+                    iconName: "info.circle" ,
+                    onTap: { store.send(.onEdit) })
+            }
+            Section(header: Text("参加町")){
+                ForEach(store.districts) { district in
                     NavigationItemView(
-                        title: "祭典情報",
-                        iconName: "info.circle" ,
-                        onTap: { store.send(.onEdit) })
+                        title: district.name,
+                        onTap: {
+                            store.send(.onDistrictInfo(district))
+                        }
+                    )
                 }
-                Section(header: Text("参加町")){
-                    List(store.districts) { district in
-                        NavigationItemView(
-                            title: district.name,
-                            onTap: {
-                                store.send(.onDistrictInfo(district))
-                            }
-                        )
-                    }
-                    Button(action: {
-                        store.send(.onCreateDistrict)
-                    }) {
-                        Label("追加", systemImage: "plus.circle")
-                            .frame(maxWidth: .infinity, alignment: .center)
-                    }
-                }
-                Section {
-                    Button(action: {
-                        store.send(.changePasswordTapped)
-                    }) {
-                        Text("パスワード変更")
-                    }
-                    Button(action: {
-                        store.send(.updateEmailTapped)
-                    }) {
-                        Text("メールアドレス変更")
-                    }
-                }
-                Section {
-                    Button(action: {
-                        store.send(.signOutTapped)
-                    }) {
-                        Text("ログアウト")
-                            .foregroundColor(.red)
-                    }
+                Button(action: {
+                    store.send(.onCreateDistrict)
+                }) {
+                    Label("追加", systemImage: "plus.circle")
+                        .frame(maxWidth: .infinity, alignment: .center)
                 }
             }
-            .navigationTitle(
-                "\(store.region.name) \(store.region.subname)"
-            )
-            .toolbar {
-                ToolbarItem(placement: .topBarLeading) {
-                    Button(action: {
-                        store.send(.homeTapped)
-                    }) {
-                        Image(systemName: "house")
-                            .foregroundColor(.black)
-                    }
-                    .padding(.horizontal, 8)
+            Section {
+                Button(action: {
+                    store.send(.changePasswordTapped)
+                }) {
+                    Text("パスワード変更")
+                }
+                Button(action: {
+                    store.send(.updateEmailTapped)
+                }) {
+                    Text("メールアドレス変更")
                 }
             }
-            .navigationDestination(
-                item: $store.scope(state: \.destination?.edit, action: \.destination.edit)
-            ) { store in
-                AdminRegionEditView(store: store)
-                    .interactiveDismissDisabled(true)
-                    .navigationBarBackButtonHidden(true)
+            Section {
+                Button(action: {
+                    store.send(.signOutTapped)
+                }) {
+                    Text("ログアウト")
+                        .foregroundColor(.red)
+                }
             }
-            .navigationDestination(
-                item: $store.scope(state: \.destination?.districtInfo, action: \.destination.districtInfo)
-            ) { store in
-                AdminRegionDistrictListView(store: store)
-                    .navigationBarBackButtonHidden(true)
-            }
-            .navigationDestination(
-                item: $store.scope(state: \.destination?.districtCreate, action: \.destination.districtCreate)
-            ) { store in
-                AdminRegionCreateDistrictView(store: store)
-                    .navigationBarBackButtonHidden(true)
-            }
-            .navigationDestination(
-                item: $store.scope(state: \.destination?.changePassword, action: \.destination.changePassword)
-            ) { store in
-                ChangePasswordStoreView(store: store)
-            }
-            .navigationDestination(
-                item: $store.scope(state: \.destination?.updateEmail, action: \.destination.updateEmail)
-            ) { store in
-                UpdateEmailStoreView(store: store)
-                    .navigationBarBackButtonHidden(true)
-            }
-            .alert($store.scope(state: \.alert, action: \.alert))
-            .loadingOverlay(store.isLoading)
         }
+        .navigationTitle(
+            "\(store.region.name) \(store.region.subname)"
+        )
+        .toolbar {
+            ToolbarItem(placement: .topBarLeading) {
+                Button(action: {
+                    store.send(.homeTapped)
+                }) {
+                    Image(systemName: "house")
+                        .foregroundColor(.black)
+                        .padding(.horizontal, 8)
+                }
+
+            }
+        }
+        .dismissible(backButton: false)
+        .navigationDestination(
+            item: $store.scope(state: \.destination?.edit, action: \.destination.edit)
+        ) { store in
+            AdminRegionEditView(store: store)
+        }
+        .navigationDestination(
+            item: $store.scope(state: \.destination?.districtInfo, action: \.destination.districtInfo)
+        ) { store in
+            AdminRegionDistrictListView(store: store)
+        }
+        .navigationDestination(
+            item: $store.scope(state: \.destination?.districtCreate, action: \.destination.districtCreate)
+        ) { store in
+            AdminRegionCreateDistrictView(store: store)
+        }
+        .navigationDestination(
+            item: $store.scope(state: \.destination?.changePassword, action: \.destination.changePassword)
+        ) { store in
+            ChangePasswordStoreView(store: store)
+        }
+        .navigationDestination(
+            item: $store.scope(state: \.destination?.updateEmail, action: \.destination.updateEmail)
+        ) { store in
+            UpdateEmailStoreView(store: store)
+        }
+        .alert($store.scope(state: \.alert, action: \.alert))
+        .loadingOverlay(store.isLoading)
     }
 }

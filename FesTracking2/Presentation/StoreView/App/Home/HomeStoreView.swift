@@ -66,26 +66,21 @@ struct HomeStoreView: View {
             )
             .navigationDestination(item: $store.scope(state: \.destination?.route, action: \.destination.route)) { store in
                 PublicMapStoreView(store: store)
-                    .navigationBarBackButtonHidden(true)
             }
             .navigationDestination(item: $store.scope(state: \.destination?.info, action: \.destination.info)) { store in
                 InfoStoreView(store: store)
             }
             .navigationDestination(item: $store.scope(state: \.destination?.login, action: \.destination.login)) { store in
                 LoginStoreView(store: store)
-                    .navigationBarBackButtonHidden(true)
             }
             .navigationDestination(item: $store.scope(state: \.destination?.adminDistrict, action: \.destination.adminDistrict)) { store in
                 AdminDistrictView(store: store)
-//                    .navigationBarBackButtonHidden(true)
             }
             .navigationDestination(item: $store.scope(state: \.destination?.adminRegion, action: \.destination.adminRegion)) { store in
                 AdminRegionView(store: store)
-//                    .navigationBarBackButtonHidden(true)
             }
             .navigationDestination(item: $store.scope(state: \.destination?.settings, action: \.destination.settings)) { store in
                 SettingsStoreView(store: store)
-                    .navigationBarBackButtonHidden(true)
             }
             .sheet(isPresented: $store.shouldShowUpdateModal) {
                 UpdateModalView()

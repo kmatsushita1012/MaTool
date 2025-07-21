@@ -7,46 +7,43 @@
 
 import SwiftUI
 import ComposableArchitecture
+import NavigationSwipeControl
 
 struct InformationEditStoreView: View {
     
     @Bindable var store: StoreOf<InformationEdit>
     
     var body: some View {
-        NavigationView{
-            Form{
-                Section(header: Text("名称")) {
-                    TextField("名称を入力", text: $store.item.name)
-                }
-                Section(header: Text("詳細")) {
-                    TextEditor(text: $store.item.description.nonOptional)
-                        .frame(height:60)
-                }
+        List {
+            Section(header: Text("名称")) {
+                TextField("名称を入力", text: $store.item.name)
             }
-            .toolbar {
-                ToolbarItem(placement: .topBarLeading) {
-                    Button{
-                        store.send(.cancelTapped)
-                    } label: {
-                        Text("キャンセル")
-                    }
-                    .padding(.horizontal, 8)
+            Section(header: Text("詳細")) {
+                TextEditor(text: $store.item.description.nonOptional)
+                    .frame(height:60)
+            }
+        }
+        .navigationTitle(store.title)
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .topBarLeading) {
+                Button{
+                    store.send(.cancelTapped)
+                } label: {
+                    Text("キャンセル")
                 }
-                ToolbarItem(placement: .principal) {
-                    Text(store.title)
+                .padding(.horizontal, 8)
+            }
+            ToolbarItem(placement: .topBarTrailing) {
+                Button{
+                    store.send(.doneTapped)
+                } label: {
+                    Text("完了")
                         .bold()
                 }
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button{
-                        store.send(.doneTapped)
-                    } label: {
-                        Text("完了")
-                            .bold()
-                    }
-                    .padding(.horizontal, 8)
-                }
+                .padding(.horizontal, 8)
             }
-            .navigationBarTitleDisplayMode(.inline)
         }
+        .dismissible(backButton: false, edgeSwipe: false)
     }
 }

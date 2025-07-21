@@ -1,5 +1,5 @@
 {
-  "originHash" : "4e0dac2cd85bd946d4a0b022cb09543765687b5fea40f78cc77076fd625f096d",
+  "originHash" : "4b7f499dccaca6181f33ba8754e0555caa4d45ec4f22acc470d99bb1b7bbdc9d",
   "pins" : [
     {
       "identity" : "abseil-cpp-binary",
@@ -107,6 +107,15 @@
       "state" : {
         "revision" : "b7e1104502eca3a213b46303391ca4d3bc8ddec1",
         "version" : "2.30910.0"
+      }
+    },
+    {
+      "identity" : "navigationswipecontrol",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/kmatsushita1012/NavigationSwipeControl",
+      "state" : {
+        "revision" : "3f0348c7fc4923dc3daf433d61562338e3703c23",
+        "version" : "0.2.1"
       }
     },
     {
