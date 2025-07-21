@@ -21,21 +21,34 @@ jobs:
         with:
           xcode-version: "16.4"
 
-      - uses: actions/cache@v3
-        name: "Cache: SPM"
+      - name: Cache SPM
+        uses: actions/cache@v3
         with:
-          path: ~/Library/Developer/Xcode/DerivedData/FesTracking2*/SourcePackages/
-          key: ${{ runner.os }}-spm-${{ hashFiles('FesTracking2.xcworkspace/xcshareddata/swiftpm/Package.resolved') }}
+          path: |
+            ~/Library/Developer/Xcode/DerivedData/FesTracking2*/SourcePackages
+            ~/Library/Caches/org.swift.swiftpm
+          key: ${{ runner.os }}-spm-${{ hashFiles('**/Package.resolved') }}
           restore-keys: |
             ${{ runner.os }}-spm-
 
-      - name: Cache CocoaPods
+      - name: Cache Pods
         uses: actions/cache@v3
         with:
-          path: Pods
-          key: ${{ runner.os }}-pods-${{ hashFiles('Podfile.lock') }}
+          path: |
+            Pods
+            ~/Library/Caches/CocoaPods
+            ~/.cocoapods
+          key: ${{ runner.os }}-pods-${{ hashFiles('**/Podfile.lock') }}
           restore-keys: |
             ${{ runner.os }}-pods-
+
+      - name: Cache DerivedData
+        uses: actions/cache@v3
+        with:
+          path: .derivedData
+          key: ${{ runner.os }}-derived-${{ hashFiles('**/Podfile.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-derived-
 
       - name: Install CocoaPods
         run: |
@@ -51,6 +64,7 @@ jobs:
             -sdk iphoneos \
             -configuration Release \
             -destination 'generic/platform=iOS' \
+            -derivedDataPath .derivedData \
             -skipMacroValidation \
             CODE_SIGNING_ALLOWED=NO \
             ENABLE_SWIFT_MACROS=YES
