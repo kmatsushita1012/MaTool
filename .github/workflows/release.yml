@@ -61,6 +61,7 @@ jobs:
             -sdk iphoneos \
             -configuration Release \
             -destination 'generic/platform=iOS' \
+            -derivedDataPath .derivedData \
             -skipMacroValidation \
             CODE_SIGNING_ALLOWED=NO \
             ENABLE_SWIFT_MACROS=YES
