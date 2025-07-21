@@ -36,4 +36,5 @@ jobs:
             -sdk iphoneos \
             -configuration Release \
             -destination 'generic/platform=iOS' \
-            CODE_SIGNING_ALLOWED=NO
+            CODE_SIGNING_ALLOWED=NO \
+            ENABLE_SWIFT_MACROS=YES
