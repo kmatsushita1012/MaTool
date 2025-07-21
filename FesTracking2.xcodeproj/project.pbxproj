@@ -39,6 +39,7 @@
 		2967C9162E1F57160080B8DA /* UpdateManagerProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2967C9152E1F57120080B8DA /* UpdateManagerProtocol.swift */; };
 		2967C9182E1F57D60080B8DA /* MockUpdateManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2967C9172E1F57D10080B8DA /* MockUpdateManager.swift */; };
 		2972017B2D9CFA50003424EF /* Async.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2972017A2D9CFA41003424EF /* Async.swift */; };
+		2976942F2E2CEFE8007B1D69 /* AWSMobileClientError.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2976942E2E2CEFE3007B1D69 /* AWSMobileClientError.swift */; };
 		2978C4A92DCB3B5200D3F7CE /* PointFeature.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2978C4A82DCB3B4E00D3F7CE /* PointFeature.swift */; };
 		2978C4AB2DCB3BD300D3F7CE /* LocationFeature.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2978C4AA2DCB3BCE00D3F7CE /* LocationFeature.swift */; };
 		2978C4AD2DCB3C9D00D3F7CE /* PointView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2978C4AC2DCB3C9A00D3F7CE /* PointView.swift */; };
@@ -70,7 +71,7 @@
 		299A51622DA942CF00B24828 /* AdminRouteInfoStoreView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 299A51612DA942C100B24828 /* AdminRouteInfoStoreView.swift */; };
 		299A51642DA944DB00B24828 /* AdminRouteInfo.swift in Sources */ = {isa = PBXBuildFile; fileRef = 299A51632DA944D400B24828 /* AdminRouteInfo.swift */; };
 		299AD5942E04F6AE007ACBC4 /* SignInResult.swift in Sources */ = {isa = PBXBuildFile; fileRef = 299AD5932E04F6AA007ACBC4 /* SignInResult.swift */; };
-		299AD5962E04F9A3007ACBC4 /* SignInResponce.swift in Sources */ = {isa = PBXBuildFile; fileRef = 299AD5952E04F994007ACBC4 /* SignInResponce.swift */; };
+		299AD5962E04F9A3007ACBC4 /* AuthResponce.swift in Sources */ = {isa = PBXBuildFile; fileRef = 299AD5952E04F994007ACBC4 /* AuthResponce.swift */; };
 		299BBF272DC60C480092C4D9 /* ToggleItemView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 299BBF262DC60C450092C4D9 /* ToggleItemView.swift */; };
 		299BBF292DC611310092C4D9 /* PublicRouteMapStoreView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 299BBF282DC6112B0092C4D9 /* PublicRouteMapStoreView.swift */; };
 		299BBF2B2DC7AF070092C4D9 /* PublicRouteMap.swift in Sources */ = {isa = PBXBuildFile; fileRef = 299BBF2A2DC7AEF00092C4D9 /* PublicRouteMap.swift */; };
@@ -87,6 +88,13 @@
 		29A043572D7DCE0C00E77C91 /* Region.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29A043562D7DCE0900E77C91 /* Region.swift */; };
 		29A043592D7DCFD200E77C91 /* District.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29A043582D7DCFCF00E77C91 /* District.swift */; };
 		29A138CC2DB3CEFD00C95C31 /* NavigationItemView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29A138CB2DB3CE9500C95C31 /* NavigationItemView.swift */; };
+		29A1C2122E28B0150036F221 /* ChangePassword.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29A1C2112E28B00F0036F221 /* ChangePassword.swift */; };
+		29A1C2152E28B66B0036F221 /* ResetPassword.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29A1C2142E28B6660036F221 /* ResetPassword.swift */; };
+		29A1C2182E28C1360036F221 /* UpdateEmail.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29A1C2172E28C1320036F221 /* UpdateEmail.swift */; };
+		29A1C21A2E28CC6E0036F221 /* ChangePasswordStoreView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29A1C2192E28CC670036F221 /* ChangePasswordStoreView.swift */; };
+		29A1C21D2E28D50C0036F221 /* ResetPasswordStoreView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29A1C21C2E28D5050036F221 /* ResetPasswordStoreView.swift */; };
+		29A1C21F2E28D88E0036F221 /* UpdateEmailStoreView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29A1C21E2E28D8870036F221 /* UpdateEmailStoreView.swift */; };
+		29A1C2212E291A470036F221 /* UpdateEmailResult.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29A1C2202E291A320036F221 /* UpdateEmailResult.swift */; };
 		29A385162DD1B521008A1D08 /* AdminRegionDistrictList.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29A385152DD1B517008A1D08 /* AdminRegionDistrictList.swift */; };
 		29A385182DD1B59E008A1D08 /* AdminRegionDistrictCreate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29A385172DD1B595008A1D08 /* AdminRegionDistrictCreate.swift */; };
 		29A3851A2DD1B781008A1D08 /* AdminRegionDistrictListStoreView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29A385192DD1B778008A1D08 /* AdminRegionDistrictListStoreView.swift */; };
@@ -103,7 +111,7 @@
 		29AB1B482DE2116F00AC37F3 /* OnboardingStoreView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29AB1B472DE2116700AC37F3 /* OnboardingStoreView.swift */; };
 		29AB1B4A2DE2124600AC37F3 /* Onboarding.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29AB1B492DE2124100AC37F3 /* Onboarding.swift */; };
 		29AD86492DB2032300C3E8B2 /* LocationProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29AD86482DB2032000C3E8B2 /* LocationProvider.swift */; };
-		29AD864B2DB2040E00C3E8B2 /* LocationClientLive.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29AD864A2DB2040A00C3E8B2 /* LocationClientLive.swift */; };
+		29AD864B2DB2040E00C3E8B2 /* LiveLocationProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29AD864A2DB2040A00C3E8B2 /* LiveLocationProvider.swift */; };
 		29AD86502DB210F500C3E8B2 /* AdminLocationMapView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29AD864F2DB210F000C3E8B2 /* AdminLocationMapView.swift */; };
 		29B1599A2DF1888900F469A9 /* DistrictTool.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29B159992DF1888300F469A9 /* DistrictTool.swift */; };
 		29B2D0942DF0788E008592F8 /* EditManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29B2D0932DF07843008592F8 /* EditManager.swift */; };
@@ -137,7 +145,7 @@
 		29CF49192D7440EB00036D28 /* Extension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29CF49182D7440EB00036D28 /* Extension.swift */; };
 		29DAB0612DA15CD1005E94BA /* AdminRouteMap.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29DAB0602DA15CCF005E94BA /* AdminRouteMap.swift */; };
 		29DAB0642DA15CFC005E94BA /* AdminLocation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29DAB0632DA15CF0005E94BA /* AdminLocation.swift */; };
-		29DAB0702DA1623C005E94BA /* AwsCognitoProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29DAB06F2DA16235005E94BA /* AwsCognitoProvider.swift */; };
+		29DAB0702DA1623C005E94BA /* AWSAuthProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29DAB06F2DA16235005E94BA /* AWSAuthProvider.swift */; };
 		29DAB0722DA163E4005E94BA /* MockAuthProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29DAB0712DA163DE005E94BA /* MockAuthProvider.swift */; };
 		29DF09C62DCC9DFB00489DB8 /* Info.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29DF09C52DCC9DF600489DB8 /* Info.swift */; };
 		29DF09C82DCC9E5A00489DB8 /* InfoStoreView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29DF09C72DCC9E5700489DB8 /* InfoStoreView.swift */; };
@@ -204,6 +212,7 @@
 		2967C9152E1F57120080B8DA /* UpdateManagerProtocol.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UpdateManagerProtocol.swift; sourceTree = "<group>"; };
 		2967C9172E1F57D10080B8DA /* MockUpdateManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockUpdateManager.swift; sourceTree = "<group>"; };
 		2972017A2D9CFA41003424EF /* Async.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Async.swift; sourceTree = "<group>"; };
+		2976942E2E2CEFE3007B1D69 /* AWSMobileClientError.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AWSMobileClientError.swift; sourceTree = "<group>"; };
 		2978C4A82DCB3B4E00D3F7CE /* PointFeature.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PointFeature.swift; sourceTree = "<group>"; };
 		2978C4AA2DCB3BCE00D3F7CE /* LocationFeature.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocationFeature.swift; sourceTree = "<group>"; };
 		2978C4AC2DCB3C9A00D3F7CE /* PointView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PointView.swift; sourceTree = "<group>"; };
@@ -238,7 +247,7 @@
 		299A51612DA942C100B24828 /* AdminRouteInfoStoreView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdminRouteInfoStoreView.swift; sourceTree = "<group>"; };
 		299A51632DA944D400B24828 /* AdminRouteInfo.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdminRouteInfo.swift; sourceTree = "<group>"; };
 		299AD5932E04F6AA007ACBC4 /* SignInResult.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SignInResult.swift; sourceTree = "<group>"; };
-		299AD5952E04F994007ACBC4 /* SignInResponce.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SignInResponce.swift; sourceTree = "<group>"; };
+		299AD5952E04F994007ACBC4 /* AuthResponce.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthResponce.swift; sourceTree = "<group>"; };
 		299BBF262DC60C450092C4D9 /* ToggleItemView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ToggleItemView.swift; sourceTree = "<group>"; };
 		299BBF282DC6112B0092C4D9 /* PublicRouteMapStoreView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PublicRouteMapStoreView.swift; sourceTree = "<group>"; };
 		299BBF2A2DC7AEF00092C4D9 /* PublicRouteMap.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PublicRouteMap.swift; sourceTree = "<group>"; };
@@ -255,6 +264,13 @@
 		29A043562D7DCE0900E77C91 /* Region.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Region.swift; sourceTree = "<group>"; };
 		29A043582D7DCFCF00E77C91 /* District.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = District.swift; sourceTree = "<group>"; };
 		29A138CB2DB3CE9500C95C31 /* NavigationItemView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NavigationItemView.swift; sourceTree = "<group>"; };
+		29A1C2112E28B00F0036F221 /* ChangePassword.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChangePassword.swift; sourceTree = "<group>"; };
+		29A1C2142E28B6660036F221 /* ResetPassword.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ResetPassword.swift; sourceTree = "<group>"; };
+		29A1C2172E28C1320036F221 /* UpdateEmail.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UpdateEmail.swift; sourceTree = "<group>"; };
+		29A1C2192E28CC670036F221 /* ChangePasswordStoreView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChangePasswordStoreView.swift; sourceTree = "<group>"; };
+		29A1C21C2E28D5050036F221 /* ResetPasswordStoreView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ResetPasswordStoreView.swift; sourceTree = "<group>"; };
+		29A1C21E2E28D8870036F221 /* UpdateEmailStoreView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UpdateEmailStoreView.swift; sourceTree = "<group>"; };
+		29A1C2202E291A320036F221 /* UpdateEmailResult.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UpdateEmailResult.swift; sourceTree = "<group>"; };
 		29A385152DD1B517008A1D08 /* AdminRegionDistrictList.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdminRegionDistrictList.swift; sourceTree = "<group>"; };
 		29A385172DD1B595008A1D08 /* AdminRegionDistrictCreate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdminRegionDistrictCreate.swift; sourceTree = "<group>"; };
 		29A385192DD1B778008A1D08 /* AdminRegionDistrictListStoreView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdminRegionDistrictListStoreView.swift; sourceTree = "<group>"; };
@@ -271,7 +287,7 @@
 		29AB1B472DE2116700AC37F3 /* OnboardingStoreView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingStoreView.swift; sourceTree = "<group>"; };
 		29AB1B492DE2124100AC37F3 /* Onboarding.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Onboarding.swift; sourceTree = "<group>"; };
 		29AD86482DB2032000C3E8B2 /* LocationProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocationProvider.swift; sourceTree = "<group>"; };
-		29AD864A2DB2040A00C3E8B2 /* LocationClientLive.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocationClientLive.swift; sourceTree = "<group>"; };
+		29AD864A2DB2040A00C3E8B2 /* LiveLocationProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveLocationProvider.swift; sourceTree = "<group>"; };
 		29AD864F2DB210F000C3E8B2 /* AdminLocationMapView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdminLocationMapView.swift; sourceTree = "<group>"; };
 		29AD86512DB212DB00C3E8B2 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		29B159992DF1888300F469A9 /* DistrictTool.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DistrictTool.swift; sourceTree = "<group>"; };
@@ -306,7 +322,7 @@
 		29CF49182D7440EB00036D28 /* Extension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Extension.swift; sourceTree = "<group>"; };
 		29DAB0602DA15CCF005E94BA /* AdminRouteMap.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdminRouteMap.swift; sourceTree = "<group>"; };
 		29DAB0632DA15CF0005E94BA /* AdminLocation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdminLocation.swift; sourceTree = "<group>"; };
-		29DAB06F2DA16235005E94BA /* AwsCognitoProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AwsCognitoProvider.swift; sourceTree = "<group>"; };
+		29DAB06F2DA16235005E94BA /* AWSAuthProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AWSAuthProvider.swift; sourceTree = "<group>"; };
 		29DAB0712DA163DE005E94BA /* MockAuthProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockAuthProvider.swift; sourceTree = "<group>"; };
 		29DF09C52DCC9DF600489DB8 /* Info.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Info.swift; sourceTree = "<group>"; };
 		29DF09C72DCC9E5700489DB8 /* InfoStoreView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InfoStoreView.swift; sourceTree = "<group>"; };
@@ -594,6 +610,7 @@
 			children = (
 				292D10892DCDD6C50022D8A0 /* UserRole.swift */,
 				299AD5932E04F6AA007ACBC4 /* SignInResult.swift */,
+				29A1C2202E291A320036F221 /* UpdateEmailResult.swift */,
 			);
 			path = Auth;
 			sourceTree = "<group>";
@@ -637,8 +654,38 @@
 			children = (
 				29C550482DF7D11100547F51 /* Login */,
 				29C550492DF7D11C00547F51 /* CorfirmSignIn */,
+				29A1C2102E28AFF10036F221 /* ChangePassword */,
+				29A1C2132E28B6570036F221 /* ResetPassword */,
+				29A1C2162E28C1240036F221 /* UpdateEmail */,
 			);
 			path = Auth;
+			sourceTree = "<group>";
+		};
+		29A1C2102E28AFF10036F221 /* ChangePassword */ = {
+			isa = PBXGroup;
+			children = (
+				29A1C2112E28B00F0036F221 /* ChangePassword.swift */,
+				29A1C2192E28CC670036F221 /* ChangePasswordStoreView.swift */,
+			);
+			path = ChangePassword;
+			sourceTree = "<group>";
+		};
+		29A1C2132E28B6570036F221 /* ResetPassword */ = {
+			isa = PBXGroup;
+			children = (
+				29A1C2142E28B6660036F221 /* ResetPassword.swift */,
+				29A1C21C2E28D5050036F221 /* ResetPasswordStoreView.swift */,
+			);
+			path = ResetPassword;
+			sourceTree = "<group>";
+		};
+		29A1C2162E28C1240036F221 /* UpdateEmail */ = {
+			isa = PBXGroup;
+			children = (
+				29A1C2172E28C1320036F221 /* UpdateEmail.swift */,
+				29A1C21E2E28D8870036F221 /* UpdateEmailStoreView.swift */,
+			);
+			path = UpdateEmail;
 			sourceTree = "<group>";
 		};
 		29A64AE22DB4AD77007C3859 /* Location */ = {
@@ -665,7 +712,7 @@
 		29AD864C2DB2041200C3E8B2 /* Location */ = {
 			isa = PBXGroup;
 			children = (
-				29AD864A2DB2040A00C3E8B2 /* LocationClientLive.swift */,
+				29AD864A2DB2040A00C3E8B2 /* LiveLocationProvider.swift */,
 			);
 			path = Location;
 			sourceTree = "<group>";
@@ -1049,17 +1096,18 @@
 			children = (
 				29CBB33C2E04365A006687A3 /* AuthProvider.swift */,
 				29CBB33E2E04376B006687A3 /* AuthError.swift */,
-				299AD5952E04F994007ACBC4 /* SignInResponce.swift */,
+				299AD5952E04F994007ACBC4 /* AuthResponce.swift */,
 			);
 			path = Auth;
 			sourceTree = "<group>";
 		};
-		29CBB3422E043B61006687A3 /* AwsCognito */ = {
+		29CBB3422E043B61006687A3 /* AWS */ = {
 			isa = PBXGroup;
 			children = (
-				29DAB06F2DA16235005E94BA /* AwsCognitoProvider.swift */,
+				29DAB06F2DA16235005E94BA /* AWSAuthProvider.swift */,
+				2976942E2E2CEFE3007B1D69 /* AWSMobileClientError.swift */,
 			);
-			path = AwsCognito;
+			path = AWS;
 			sourceTree = "<group>";
 		};
 		29CBB3432E043B8F006687A3 /* Mock */ = {
@@ -1190,7 +1238,7 @@
 		29DAB06E2DA16220005E94BA /* Auth */ = {
 			isa = PBXGroup;
 			children = (
-				29CBB3422E043B61006687A3 /* AwsCognito */,
+				29CBB3422E043B61006687A3 /* AWS */,
 				29CBB3432E043B8F006687A3 /* Mock */,
 			);
 			path = Auth;
@@ -1475,7 +1523,9 @@
 				29BC19442DB6236700C6F918 /* HomeStoreView.swift in Sources */,
 				293F2C2F2DD78559002C056E /* Alert.swift in Sources */,
 				29A138CC2DB3CEFD00C95C31 /* NavigationItemView.swift in Sources */,
+				29A1C2122E28B0150036F221 /* ChangePassword.swift in Sources */,
 				299770202DA527FB00EEB5F4 /* DismissButton.swift in Sources */,
+				29A1C21F2E28D88E0036F221 /* UpdateEmailStoreView.swift in Sources */,
 				292D108A2DCDD6CA0022D8A0 /* UserRole.swift in Sources */,
 				29A0434A2D7DC43100E77C91 /* Segment.swift in Sources */,
 				2948FCF02DC5C38100C73E99 /* PickerFeature.swift in Sources */,
@@ -1488,6 +1538,7 @@
 				299A06A82DB13B3E00E76898 /* AdminDistrictTopStoreView.swift in Sources */,
 				299BBF2D2DC7AF7D0092C4D9 /* PublicLocationsMap.swift in Sources */,
 				29A043512D7DC67500E77C91 /* Coordinate.swift in Sources */,
+				29A1C21A2E28CC6E0036F221 /* ChangePasswordStoreView.swift in Sources */,
 				299BBF2F2DC7B7E40092C4D9 /* PublcLocationsMapStoreView.swift in Sources */,
 				29A3851C2DD1B7E1008A1D08 /* AdminRegionDistrictCreateStoreView.swift in Sources */,
 				291D919B2DCDAD71007E5A80 /* MapFragments.swift in Sources */,
@@ -1510,6 +1561,7 @@
 				29DAB0722DA163E4005E94BA /* MockAuthProvider.swift in Sources */,
 				29460A0D2D8C29030097CAA1 /* LogInStoreView.swift in Sources */,
 				29BC19412DB6134900C6F918 /* Date.swift in Sources */,
+				29A1C21D2E28D50C0036F221 /* ResetPasswordStoreView.swift in Sources */,
 				29B638A72DB0E7E400DF8419 /* AdminSpanEdit.swift in Sources */,
 				29AB1B482DE2116F00AC37F3 /* OnboardingStoreView.swift in Sources */,
 				29AD86492DB2032300C3E8B2 /* LocationProvider.swift in Sources */,
@@ -1522,7 +1574,7 @@
 				29DF09C62DCC9DFB00489DB8 /* Info.swift in Sources */,
 				299AD5942E04F6AE007ACBC4 /* SignInResult.swift in Sources */,
 				299A06AA2DB13BAC00E76898 /* AdminDistrictTop.swift in Sources */,
-				29DAB0702DA1623C005E94BA /* AwsCognitoProvider.swift in Sources */,
+				29DAB0702DA1623C005E94BA /* AWSAuthProvider.swift in Sources */,
 				2997C2ED2D79CA4B0032566B /* AdminDistrictEdit.swift in Sources */,
 				29DAB0642DA15CFC005E94BA /* AdminLocation.swift in Sources */,
 				29C550612DF7D6A300547F51 /* PublicMap.swift in Sources */,
@@ -1533,6 +1585,7 @@
 				29A688C02DCC4BEE004415BF /* AdminRouteExportStoreView.swift in Sources */,
 				298C68332E0C2D29009570A5 /* InformationEditStoreView.swift in Sources */,
 				298C68312E0C2D16009570A5 /* InformationEdit.swift in Sources */,
+				2976942F2E2CEFE8007B1D69 /* AWSMobileClientError.swift in Sources */,
 				298BD79E2D71E46600CB63F1 /* FesTracking2App.swift in Sources */,
 				29A64AE42DB4AD7F007C3859 /* Status.swift in Sources */,
 				299936AB2D7AD499009D651E /* UserDefaultsLiveClient.swift in Sources */,
@@ -1543,6 +1596,7 @@
 				29460A0B2D8C28AC0097CAA1 /* LogIn.swift in Sources */,
 				291D91992DCDAD45007E5A80 /* AdminExportableMapView.swift in Sources */,
 				29CB077D2DAF8B970009A47D /* AdminBaseEditStoreView.swift in Sources */,
+				29A1C2212E291A470036F221 /* UpdateEmailResult.swift in Sources */,
 				29AD86502DB210F500C3E8B2 /* AdminLocationMapView.swift in Sources */,
 				299BBF272DC60C480092C4D9 /* ToggleItemView.swift in Sources */,
 				295EA2D42DEE9E81006CDE08 /* CardView.swift in Sources */,
@@ -1559,6 +1613,7 @@
 				29CF49192D7440EB00036D28 /* Extension.swift in Sources */,
 				29DF09C82DCC9E5A00489DB8 /* InfoStoreView.swift in Sources */,
 				299A51622DA942CF00B24828 /* AdminRouteInfoStoreView.swift in Sources */,
+				29A1C2152E28B66B0036F221 /* ResetPassword.swift in Sources */,
 				2967C9162E1F57160080B8DA /* UpdateManagerProtocol.swift in Sources */,
 				29A688B62DCC4133004415BF /* Visibility.swift in Sources */,
 				296795D12DA4F902008D3CE1 /* AdminRouteMapView.swift in Sources */,
@@ -1571,7 +1626,7 @@
 				29BC19462DB6258100C6F918 /* Settings.swift in Sources */,
 				29DAB0612DA15CD1005E94BA /* AdminRouteMap.swift in Sources */,
 				29CF49112D74269A00036D28 /* ApiRepository.swift in Sources */,
-				299AD5962E04F9A3007ACBC4 /* SignInResponce.swift in Sources */,
+				299AD5962E04F9A3007ACBC4 /* AuthResponce.swift in Sources */,
 				29CBB33D2E04365F006687A3 /* AuthProvider.swift in Sources */,
 				29CF490C2D74263400036D28 /* MockApiRepository.swift in Sources */,
 				29BC19482DB625C700C6F918 /* SettingsStoreView.swift in Sources */,
@@ -1586,8 +1641,9 @@
 				29A043572D7DCE0C00E77C91 /* Region.swift in Sources */,
 				29CB07752DAF7D1E0009A47D /* AdminDistrictEditStoreView.swift in Sources */,
 				29B638A92DB0E89600DF8419 /* AdminSpanEditStoreView.swift in Sources */,
-				29AD864B2DB2040E00C3E8B2 /* LocationClientLive.swift in Sources */,
+				29AD864B2DB2040E00C3E8B2 /* LiveLocationProvider.swift in Sources */,
 				29C5505A2DF7D40300547F51 /* AdminPointEditStoreView.swift in Sources */,
+				29A1C2182E28C1360036F221 /* UpdateEmail.swift in Sources */,
 				29C5505B2DF7D40300547F51 /* AdminRouteMapStoreView.swift in Sources */,
 				29A043482D7DC36400E77C91 /* Point.swift in Sources */,
 				29A043462D7DC2B200E77C91 /* PublicRoute.swift in Sources */,
