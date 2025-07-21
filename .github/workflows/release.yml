@@ -2,7 +2,7 @@ name: release
 
 on:
   push:
-    branches: ["release", "feature/CI-CD"]
+    branches: ["release"]
 
   workflow_dispatch:
 
