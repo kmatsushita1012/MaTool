@@ -1,0 +1,6 @@
+${PODS_ROOT}/Target Support Files/Pods-FesTracking2/Pods-FesTracking2-resources.sh
+${PODS_CONFIGURATION_BUILD_DIR}/AWSAuthCore/AWSAuthCore.bundle
+${PODS_CONFIGURATION_BUILD_DIR}/AWSCognitoIdentityProvider/AWSCognitoIdentityProvider.bundle
+${PODS_CONFIGURATION_BUILD_DIR}/AWSCognitoIdentityProviderASF/AWSCognitoIdentityProviderASF.bundle
+${PODS_CONFIGURATION_BUILD_DIR}/AWSCore/AWSCore.bundle
+${PODS_CONFIGURATION_BUILD_DIR}/AWSMobileClient/AWSMobileClient.bundle

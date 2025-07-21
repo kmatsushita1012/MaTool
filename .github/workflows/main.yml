@@ -25,7 +25,6 @@ jobs:
         uses: actions/cache@v3
         with:
           path: |
-            ~/Library/Developer/Xcode/DerivedData/FesTracking2*/SourcePackages
             ~/Library/Caches/org.swift.swiftpm
           key: ${{ runner.os }}-spm-${{ hashFiles('**/Package.resolved') }}
           restore-keys: |
