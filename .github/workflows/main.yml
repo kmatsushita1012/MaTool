@@ -2,7 +2,7 @@ name: main
 
 on:
   push:
-    branches: ["main","feature/CI-CD"]
+    branches: ["main", "feature/CI-CD"]
   pull_request:
     branches: ["main"]
 
@@ -15,6 +15,16 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: "3.3.8" # GitHub macOSランナーのRubyバージョンに合わせる
+
+      - name: Install CocoaPods
+        run: |
+          gem install cocoapods
+          pod install
 
       #project->workspaceに
       - name: Build
