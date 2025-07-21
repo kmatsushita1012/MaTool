@@ -46,7 +46,7 @@ jobs:
         uses: actions/cache@v3
         with:
           path: .derivedData
-          key: ${{ runner.os }}-derived-${{ hashFiles('**/Podfile.lock') }}
+          key: ${{ runner.os }}-derived-${{ hashFiles('FesTracking2.xcodeproj/project.pbxproj', '**/*.swift', '**/*.h') }}
           restore-keys: |
             ${{ runner.os }}-derived-
 
@@ -57,10 +57,9 @@ jobs:
 
       - name: Build
         run: |
-          xcodebuild archive \
+          xcodebuild build \
             -workspace FesTracking2.xcworkspace \
             -scheme FesTracking2 \
-            -archivePath FesTracking2.xcarchive \
             -sdk iphoneos \
             -configuration Release \
             -destination 'generic/platform=iOS' \
