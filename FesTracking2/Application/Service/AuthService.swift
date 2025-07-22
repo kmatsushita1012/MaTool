@@ -13,7 +13,10 @@ struct AuthService: Sendable {
     
     func initialize() async -> Result<UserRole,AuthError> {
         let initializeResult = await authProvider.initialize()
-        if case .failure(let error) = initializeResult {
+        if case .failure(.timeout(let message)) = initializeResult{
+            let _ = await authProvider.signOut()
+            return .failure(.timeout(message))
+        }else if case .failure(let error) = initializeResult {
             return .failure(error)
         }
         let userRoleResult = await authProvider.getUserRole()
