@@ -35,8 +35,8 @@ struct AdminLocation{
     }
     
     @Dependency(\.apiRepository) var apiRepository
-    @Dependency(\.locationClient) var locationClient
     @Dependency(\.locationService) var locationService
+    @Dependency(\.dismiss) var dismiss
     
     var body: some ReducerOf<AdminLocation> {
         BindingReducer()
@@ -64,7 +64,9 @@ struct AdminLocation{
                 state.history = history
                 return .none
             case .dismissTapped:
-                return .none
+                return .run{ _ in
+                    await dismiss()
+                }
             }
         }
     }

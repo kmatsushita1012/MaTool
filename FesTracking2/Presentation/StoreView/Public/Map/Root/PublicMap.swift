@@ -9,10 +9,6 @@ import ComposableArchitecture
 @Reducer
 struct PublicMap{
     
-    @Dependency(\.apiRepository) var apiRepository
-    @Dependency(\.authService) var authService
-    @Dependency(\.userDefaultsClient) var userDefaultsClient
-    
     enum Content: Equatable{
         case locations
         case route(PublicDistrict)
@@ -31,6 +27,10 @@ struct PublicMap{
         var routePicker: PickerFeature<RouteSummary>.State?
         @Presents var map: Destination.State?
     }
+    
+    @Dependency(\.apiRepository) var apiRepository
+    @Dependency(\.authService) var authService
+    @Dependency(\.userDefaultsClient) var userDefaultsClient
     
     @CasePathable
     enum Action: BindableAction, Equatable {
@@ -54,6 +54,8 @@ struct PublicMap{
         case homeTapped
     }
     
+    @Dependency(\.dismiss) var dismiss
+    
     var body: some ReducerOf<PublicMap> {
         Reduce{ state, action in
             switch action {
@@ -73,6 +75,10 @@ struct PublicMap{
                         locationsEffect(regionId),
                         districtsEffect(regionId)
                     )
+                }
+            case .homeTapped:
+                return .run{ _ in
+                    await dismiss()
                 }
             case .districtsReceived(let result):
                 switch result {
@@ -154,7 +160,9 @@ struct PublicMap{
                 }
             case .routePicker(.selected(let route)):
                 return routeEffect(route)
-            case .districtPicker(_),.routePicker(_), .map(_), .homeTapped:
+            case .districtPicker,
+                .routePicker,
+                .map:
                 return .none
             }
         }

@@ -11,9 +11,6 @@ import ComposableArchitecture
 @Reducer
 struct AdminRegionEdit {
     
-    @Dependency(\.apiRepository) var apiRepository
-    @Dependency(\.authService) var authService
-    
     @Reducer
     enum Destination {
         case span(AdminSpanEdit)
@@ -42,6 +39,10 @@ struct AdminRegionEdit {
         case alert(PresentationAction<Alert.Action>)
     }
     
+    @Dependency(\.apiRepository) var apiRepository
+    @Dependency(\.authService) var authService
+    @Dependency(\.dismiss) var dismiss
+    
     var body: some ReducerOf<AdminRegionEdit> {
         BindingReducer()
         Reduce{ state, action in
@@ -58,8 +59,10 @@ struct AdminRegionEdit {
                     }
                 }
             case .cancelTapped:
-                return .none
-            case .putReceived(.success(_)):
+                return .run { _ in
+                    await dismiss()
+                }
+            case .putReceived(.success):
                 return .none
             case .putReceived(.failure(let error)):
                 state.alert = Alert.error("保存に失敗しました。\(error.localizedDescription)")
@@ -122,7 +125,7 @@ struct AdminRegionEdit {
                         .milestone:
                         return .none
                 }
-            case .destination:
+            case .destination(.dismiss):
                 state.destination = nil
                 return .none
             case .alert(.presented(.okTapped)):

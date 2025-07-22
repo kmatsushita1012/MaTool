@@ -32,6 +32,8 @@ struct AdminBaseEdit {
         case clearTapped
     }
     
+    @Dependency(\.dismiss) var dismiss
+    
     var body: some ReducerOf<AdminBaseEdit>{
         BindingReducer()
         Reduce { state, action in
@@ -42,7 +44,9 @@ struct AdminBaseEdit {
                 state.coordinate = coordinate
                 return .none
             case .dismissTapped:
-                return .none
+                return .run { _ in
+                    await dismiss()
+                }
             case .doneTapped:
                 return .none
             case .clearTapped:

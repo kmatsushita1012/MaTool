@@ -8,7 +8,7 @@ import ComposableArchitecture
 
 
 @Reducer
-struct AdminSegmentFeature{
+struct AdminSegmentEdit{
     
     @Dependency(\.apiRepository) var apiRepository
     
@@ -27,7 +27,9 @@ struct AdminSegmentFeature{
         case cancelTapped
     }
     
-    var body:some ReducerOf<AdminSegmentFeature>{
+    @Dependency(\.dismiss) var dismiss
+    
+    var body:some ReducerOf<AdminSegmentEdit>{
         Reduce{ state, action in
             switch action{
             case .switchCurve(let value):
@@ -36,7 +38,7 @@ struct AdminSegmentFeature{
                 if(value){
                     state.errorMessage = nil
                     state.isLoading = true
-                    return .run {[] send in
+                    return .run { send in
                         let result = await self.apiRepository.getSegmentCoordinate(start, end)
                         await send(.received(result))
                     }
@@ -55,7 +57,9 @@ struct AdminSegmentFeature{
             case .doneTapped:
                 return .none
             case .cancelTapped:
-                return .none
+                return .run{ _ in
+                    await dismiss()
+                }
             }
         
         }

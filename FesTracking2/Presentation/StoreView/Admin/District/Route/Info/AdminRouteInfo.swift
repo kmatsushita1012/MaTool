@@ -70,6 +70,7 @@ struct AdminRouteInfo {
     
     @Dependency(\.apiRepository) var apiRepository
     @Dependency(\.authService) var authService
+    @Dependency(\.dismiss) var dismiss
     
     var body: some ReducerOf<AdminRouteInfo> {
         BindingReducer()
@@ -120,7 +121,9 @@ struct AdminRouteInfo {
                     }
                 }
             case .cancelTapped:
-                return .none
+                return .run { _ in
+                    await dismiss()
+                }
             case .deleteTapped:
                 state.alert = .delete(Alert.delete())
                 return .none
@@ -144,14 +147,10 @@ struct AdminRouteInfo {
                     }
                     state.destination = nil
                     return .none
-                case .map(.cancelTapped):
-                    state.destination = nil
-                    return .none
                 case .map:
                     return .none
                 }
             case .destination(.dismiss):
-                state.destination = nil
                 return .none
             case .alert(.presented(let destination)):
                 switch destination {

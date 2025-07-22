@@ -13,7 +13,7 @@ struct AdminPointView: View {
     @Bindable var store: StoreOf<AdminPointEdit>
     
     var body: some View {
-        List {
+        Form {
             Section(header: Text("イベント")) {
                 HStack{
                     TextField("イベントを入力", text: $store.item.title.nonOptional)
@@ -105,8 +105,7 @@ struct AdminPointView: View {
                 .padding(.horizontal, 8)
             }
         }
-        .toolbarBackground(.visible, for: .navigationBar)
-        .dismissible(backButton: false, edgeSwipe: false)
+        
     }
 }
 

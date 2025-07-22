@@ -81,7 +81,8 @@ struct AdminRegionEditView: View{
                 .padding(8)
             }
         }
-        .navigationBarTitleDisplayMode(.inline)
+        .navigationBarTitleDisplayMode(.inline)x
+        .loadingOverlay(store.isLoading)
         .dismissible(backButton: false, edgeSwipe: false)
         .navigationDestination(
             item: $store.scope(state: \.destination?.span, action: \.destination.span)

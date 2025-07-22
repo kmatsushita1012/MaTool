@@ -10,9 +10,6 @@ import ComposableArchitecture
 @Reducer
 struct AdminRegionDistrictCreate {
     
-    @Dependency(\.apiRepository) var apiRepository
-    @Dependency(\.authService) var authService
-    
     @ObservableState
     struct State: Equatable {
         let region: Region
@@ -29,6 +26,11 @@ struct AdminRegionDistrictCreate {
         case received(Result<String,ApiError>)
         case alert(PresentationAction<Alert.Action>)
     }
+    
+    @Dependency(\.apiRepository) var apiRepository
+    @Dependency(\.authService) var authService
+    @Dependency(\.dismiss) var dismiss
+    
     var body: some ReducerOf<AdminRegionDistrictCreate> {
         BindingReducer()
         Reduce{ state, action in
@@ -46,7 +48,9 @@ struct AdminRegionDistrictCreate {
                     await send(.received(result))
                 }
             case .cancelTapped:
-                return .none
+                return .run { _ in
+                    await dismiss()
+                }
             case .received(.success(_)):
                 state.isLoading = false
                 return .none
@@ -54,10 +58,8 @@ struct AdminRegionDistrictCreate {
                 state.isLoading = false
                 state.alert = Alert.error("作成に失敗しました。\n\(error.localizedDescription)")
                 return .none
-            case .alert(.presented(.okTapped)):
-                state.alert = nil
-                return .none
             case .alert:
+                state.alert = nil
                 return .none
             }
         }

@@ -29,6 +29,8 @@ struct AdminAreaEdit{
         case undoTapped
     }
     
+    @Dependency(\.dismiss) var dismiss
+    
     var body: some ReducerOf<AdminAreaEdit>{
         BindingReducer()
         Reduce { state, action in
@@ -41,7 +43,9 @@ struct AdminAreaEdit{
             case .doneTapped:
                 return .none
             case .dismissTapped:
-                return .none
+                return .run{ _ in
+                    await dismiss()
+                }
             case .undoTapped:
                 if(!state.coordinates.isEmpty){
                     state.coordinates.removeLast()
