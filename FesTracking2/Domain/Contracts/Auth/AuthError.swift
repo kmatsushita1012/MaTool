@@ -11,6 +11,7 @@ enum AuthError: Error, Equatable {
     case decoding(String)
     case unknown(String)
     case auth(String)
+    case timeout(String)
     
     var localizedDescription: String {
         switch self {
@@ -24,6 +25,8 @@ enum AuthError: Error, Equatable {
             return "予期しないエラー \(message)"
         case .auth(let message):
             return "認証エラー \(message) このエラーが繰り返し発生する場合は、設定画面からログアウトし、再度サインインしてください。"
+        case .timeout(let message):
+            return "タイムアウト \(message) このエラーが繰り返し発生する場合は、設定画面からログアウトし、再度サインインしてください。"
         }
     }
 }
