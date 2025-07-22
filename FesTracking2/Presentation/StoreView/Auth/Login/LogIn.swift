@@ -80,7 +80,7 @@ struct Login {
                 return .none
             case .received(.failure(let error)):
                 state.isLoading = false
-                state.errorMessage = "ログインに失敗しました。\(error.localizedDescription)"
+                state.errorMessage = error.localizedDescription
                 return .none
             case .destination(.presented(let childAction)):
                 switch childAction {
