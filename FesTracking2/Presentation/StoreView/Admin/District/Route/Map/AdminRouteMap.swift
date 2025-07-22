@@ -15,7 +15,7 @@ struct AdminRouteMap{
     @Reducer
     enum Destination {
         case point(AdminPointEdit)
-        case segment(AdminSegmentFeature)
+        case segment(AdminSegmentEdit)
     }
     
     enum Operation: Equatable{
@@ -63,6 +63,8 @@ struct AdminRouteMap{
         case destination(PresentationAction<Destination.Action>)
         case alert(PresentationAction<Alert.Action>)
     }
+    
+    @Dependency(\.dismiss) var dismiss
     
     var body: some ReducerOf<AdminRouteMap> {
         BindingReducer()
@@ -122,7 +124,7 @@ struct AdminRouteMap{
                 state.operation = .add
                 return .none
             case .polylineTapped(let segment):
-                state.destination = .segment(AdminSegmentFeature.State(item: segment))
+                state.destination = .segment(AdminSegmentEdit.State(item: segment))
                 state.operation = .add
                 return .none
             case .undoTapped:
@@ -136,7 +138,9 @@ struct AdminRouteMap{
             case .doneTapped:
                 return .none
             case .cancelTapped:
-                return .none
+                return .run { _ in
+                    await dismiss()
+                }
             case .destination(.presented(let childAction)):
                 switch childAction {
                 case .point(.moveTapped):
@@ -193,21 +197,14 @@ struct AdminRouteMap{
                     }
                     state.destination = nil
                     return .none
-                case .point(.cancelTapped),
-                    .segment(.cancelTapped):
-                    state.destination = nil
-                    return .none
                 case .point,
                     .segment:
                     return .none
                 }
             case .destination(.dismiss):
-                state.destination = nil
-                return .none
-            case .alert(.presented(.okTapped)):
-                state.alert = nil
                 return .none
             case .alert:
+                state.alert = nil
                 return .none
             }
         }

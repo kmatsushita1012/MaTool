@@ -10,8 +10,6 @@ import ComposableArchitecture
 @Reducer
 struct ChangePassword {
     
-    @Dependency(\.authService) var authService
-    
     @ObservableState
     struct State: Equatable {
         var current: String = ""
@@ -29,6 +27,9 @@ struct ChangePassword {
         case received(Result<Empty, AuthError>)
         case alert(PresentationAction<Alert.Action>)
     }
+    
+    @Dependency(\.authService) var authService
+    @Dependency(\.dismiss) var dismiss
     
     var body: some ReducerOf<ChangePassword> {
         BindingReducer()
@@ -50,7 +51,9 @@ struct ChangePassword {
                     await send(.received(result))
                 }
             case .dismissTapped:
-                return .none
+                return .run { _ in
+                    await dismiss()
+                }
             case .received(.success):
                 state.isLoading = false
                 return .none
@@ -58,7 +61,7 @@ struct ChangePassword {
                 state.isLoading = false
                 state.alert = Alert.error("変更に失敗しました。\(error.localizedDescription)")
                 return .none
-            case .alert(_):
+            case .alert:
                 state.alert = nil
                 return .none
             }

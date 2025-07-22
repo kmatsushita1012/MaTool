@@ -10,9 +10,6 @@ import ComposableArchitecture
 @Reducer
 struct AdminRegionDistrictList {
     
-    @Dependency(\.apiRepository) var apiRepository
-    @Dependency(\.authService) var authService
-    
     @ObservableState
     struct State: Equatable {
         let district: PublicDistrict
@@ -30,6 +27,10 @@ struct AdminRegionDistrictList {
         case export(PresentationAction<AdminRouteExport.Action>)
         case alert(PresentationAction<Alert.Action>)
     }
+    
+    @Dependency(\.apiRepository) var apiRepository
+    @Dependency(\.authService) var authService
+    @Dependency(\.dismiss) var dismiss
     
     var body: some ReducerOf<AdminRegionDistrictList> {
         Reduce{ state, action in
@@ -49,17 +50,17 @@ struct AdminRegionDistrictList {
                 state.alert = Alert.error("情報の取得に失敗しました。\n\(error.localizedDescription)")
                 return .none
             case .dismissTapped:
-                return .none
+                return .run { _ in
+                    await dismiss()
+                }
             case .export(.presented(.dismissTapped)),
                 .export(.dismiss):
                 state.export = nil
                 return .none
             case .export:
                 return .none
-            case .alert(.presented(.okTapped)):
-                state.alert = nil
-                return .none
             case .alert:
+                state.alert = nil
                 return .none
             }
         }

@@ -11,9 +11,6 @@ import ComposableArchitecture
 @Reducer
 struct AdminRegionEdit {
     
-    @Dependency(\.apiRepository) var apiRepository
-    @Dependency(\.authService) var authService
-    
     @Reducer
     enum Destination {
         case span(AdminSpanEdit)
@@ -23,6 +20,7 @@ struct AdminRegionEdit {
     @ObservableState
     struct State: Equatable {
         var item: Region
+        var isLoading: Bool = false
         @Presents var destination: Destination.State?
         @Presents var alert: Alert.State?
     }
@@ -42,6 +40,10 @@ struct AdminRegionEdit {
         case alert(PresentationAction<Alert.Action>)
     }
     
+    @Dependency(\.apiRepository) var apiRepository
+    @Dependency(\.authService) var authService
+    @Dependency(\.dismiss) var dismiss
+    
     var body: some ReducerOf<AdminRegionEdit> {
         BindingReducer()
         Reduce{ state, action in
@@ -49,6 +51,7 @@ struct AdminRegionEdit {
             case .binding:
                 return .none
             case .saveTapped:
+                state.isLoading = true
                 return .run { [region = state.item] send in
                     if let token = await authService.getAccessToken() {
                         let result = await apiRepository.putRegion(region, token)
@@ -58,10 +61,14 @@ struct AdminRegionEdit {
                     }
                 }
             case .cancelTapped:
-                return .none
-            case .putReceived(.success(_)):
+                return .run { _ in
+                    await dismiss()
+                }
+            case .putReceived(.success):
+                state.isLoading = false
                 return .none
             case .putReceived(.failure(let error)):
+                state.isLoading = false
                 state.alert = Alert.error("保存に失敗しました。\(error.localizedDescription)")
                 return .none
             case .onSpanEdit(let item):
@@ -122,7 +129,7 @@ struct AdminRegionEdit {
                         .milestone:
                         return .none
                 }
-            case .destination:
+            case .destination(.dismiss):
                 state.destination = nil
                 return .none
             case .alert(.presented(.okTapped)):
