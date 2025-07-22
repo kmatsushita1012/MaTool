@@ -7,30 +7,29 @@
 
 import SwiftUI
 import ComposableArchitecture
+import NavigationSwipeControl
 
 struct InfoStoreView: View {
     let store: StoreOf<Info>
     var body: some View {
-        NavigationView{
-            VStack{
-                Text("info")
+        VStack{
+            Text("info")
+        }
+        .toolbar {
+            ToolbarItem(placement: .topBarLeading) {
+                Button(action: {
+                    store.send(.homeTapped)
+                }) {
+                    Image(systemName: "house")
+                        .foregroundColor(.black)
+                }
+                .padding(.horizontal, 8)
             }
-            .toolbar {
-                ToolbarItem(placement: .topBarLeading) {
-                    Button(action: {
-                        store.send(.homeTapped)
-                    }) {
-                        Image(systemName: "house")
-                            .foregroundColor(.black)
-                    }
-                    .padding(.horizontal, 8)
-                }
-                ToolbarItem(placement: .principal) {
-                    Text("紹介")
-                        .bold()
-                }
+            ToolbarItem(placement: .principal) {
+                Text("紹介")
+                    .bold()
             }
         }
-        
+        .dismissible(backButton: false)
     }
 }

@@ -7,6 +7,7 @@
 
 import ComposableArchitecture
 import SwiftUI
+import NavigationSwipeControl
 
 struct UpdateEmailStoreView: View {
     
@@ -44,6 +45,7 @@ struct UpdateEmailStoreView: View {
             Spacer()
             Spacer()
         }
+        .dismissible(backButton: false, edgeSwipe: false)
         .loadingOverlay(store.isLoading)
         .alert($store.scope(state: \.errorAlert, action: \.errorAlert))
         .alert($store.scope(state: \.completeAlert, action: \.completeAlert))

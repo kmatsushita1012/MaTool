@@ -10,9 +10,6 @@ import ComposableArchitecture
 @Reducer
 struct UpdateEmail {
     
-    @Dependency(\.authService) var authService
-    @Dependency(\.dismiss) var dismiss
-    
     @ObservableState
     struct State: Equatable {
         var email: String = ""
@@ -46,6 +43,9 @@ struct UpdateEmail {
         case errorAlert(PresentationAction<Alert.Action>)
         case completeAlert(PresentationAction<Alert.Action>)
     }
+    
+    @Dependency(\.authService) var authService
+    @Dependency(\.dismiss) var dismiss
     
     var body: some ReducerOf<UpdateEmail> {
         BindingReducer()

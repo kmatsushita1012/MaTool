@@ -37,6 +37,8 @@ struct AdminPerformanceEdit{
         case alert(PresentationAction<Alert.Action>)
     }
     
+    @Dependency(\.dismiss) var dismiss
+    
     var body: some ReducerOf<AdminPerformanceEdit>{
         BindingReducer()
         Reduce{ state, action in
@@ -46,7 +48,9 @@ struct AdminPerformanceEdit{
             case .doneTapped:
                 return .none
             case .cancelTapped:
-                return .none
+                return .run{ _ in
+                    await dismiss()
+                }
             case .deleteTapped:
                 if state.mode == .create {
                     return .none
@@ -54,9 +58,6 @@ struct AdminPerformanceEdit{
                 state.alert = Alert.delete("このデータを削除してもよろしいですか。元の画面で保存を選択するとこのデータは削除され、操作を取り戻すことはできません。")
                 return .none
             //Parent Use
-            case .alert(.presented(.okTapped)):
-                state.alert = nil
-                return .none
             case .alert:
                 state.alert = nil
                 return .none

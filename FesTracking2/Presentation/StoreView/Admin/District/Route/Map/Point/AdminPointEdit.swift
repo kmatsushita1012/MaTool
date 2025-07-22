@@ -11,7 +11,6 @@ import ComposableArchitecture
 @Reducer
 struct AdminPointEdit{
     
-    
     @ObservableState
     struct State: Equatable{
         var item: Point
@@ -31,6 +30,8 @@ struct AdminPointEdit{
         case titleOptionSelected(Information)
     }
     
+    @Dependency(\.dismiss) var dismiss
+    
     var body: some ReducerOf<AdminPointEdit> {
         BindingReducer()
         Reduce { state, action in
@@ -40,7 +41,9 @@ struct AdminPointEdit{
             case .doneTapped:
                 return .none
             case .cancelTapped:
-                return .none
+                return .run { _ in
+                    await dismiss()
+                }
             case .moveTapped:
                return .none
            case .insertTapped:

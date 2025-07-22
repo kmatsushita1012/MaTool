@@ -12,11 +12,6 @@ import Foundation
 @Reducer
 struct Home {
     
-    @Dependency(\.apiRepository) var apiRepository
-    @Dependency(\.authService) var authService
-    @Dependency(\.userDefaultsClient) var userDefaultsClient
-    @Dependency(\.updateManager) var updateManager
-    
     @Reducer
     enum Destination {
         case route(PublicMap)
@@ -62,7 +57,12 @@ struct Home {
         case destination(PresentationAction<Destination.Action>)
         case alert(PresentationAction<Alert.Action>)
     }
-
+    
+    @Dependency(\.apiRepository) var apiRepository
+    @Dependency(\.authService) var authService
+    @Dependency(\.userDefaultsClient) var userDefaultsClient
+    @Dependency(\.updateManager) var updateManager
+    
     var body: some ReducerOf<Home> {
         BindingReducer()
         Reduce { state, action in
@@ -174,24 +174,13 @@ struct Home {
                 case .settings(.signOutReceived(.success(let userRole))):
                     state.userRole = userRole
                     return .none
-                case .route(.homeTapped),
-                    .info(.homeTapped),
-                    .adminDistrict(.homeTapped),
-                    .adminRegion(.homeTapped),
-                    .login(.homeTapped),
-                    .settings(.dismissTapped):
-                    state.destination = nil
-                    return .none
                 default:
                     return .none
                 }
             case .destination(.dismiss):
-                state.destination = nil
                 return .none
-            case .alert(.presented(.okTapped)):
+            case .alert:
                 state.alert = nil
-                return .none
-            case .alert(_):
                 return .none
             }
         }
