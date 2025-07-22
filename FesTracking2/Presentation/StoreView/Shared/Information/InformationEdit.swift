@@ -23,6 +23,8 @@ struct InformationEdit {
         case doneTapped
     }
     
+    @Dependency(\.dismiss) var dismiss
+    
     var body: some ReducerOf<InformationEdit>{
         BindingReducer()
         Reduce { state, action in
@@ -30,7 +32,9 @@ struct InformationEdit {
             case .binding:
                 return .none
             case .cancelTapped:
-                return .none
+                return .run { _ in
+                    await dismiss()
+                }
             case .doneTapped:
                 return .none
             }

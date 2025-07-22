@@ -7,6 +7,7 @@
 
 import ComposableArchitecture
 import SwiftUI
+import NavigationSwipeControl
 
 struct SettingsStoreView: View {
     @Bindable var store: StoreOf<Settings>
@@ -80,6 +81,7 @@ struct SettingsStoreView: View {
                 .font(.footnote)
                 .foregroundColor(.gray)
         }
+        .dismissible(backButton: false)
         .alert($store.scope(state: \.alert, action: \.alert))
         .loadingOverlay(store.isLoading)
         .ignoresSafeArea(edges: .top)

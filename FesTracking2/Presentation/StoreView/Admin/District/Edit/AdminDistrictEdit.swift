@@ -13,9 +13,6 @@ import _PhotosUI_SwiftUI
 @Reducer
 struct AdminDistrictEdit {
     
-    @Dependency(\.apiRepository) var apiRepository
-    @Dependency(\.authService) var authService
-    
     @Reducer
     enum Destination {
         case base(AdminBaseEdit)
@@ -46,6 +43,10 @@ struct AdminDistrictEdit {
         case alert(PresentationAction<Alert.Action>)
     }
     
+    @Dependency(\.apiRepository) var apiRepository
+    @Dependency(\.authService) var authService
+    @Dependency(\.dismiss) var dismiss
+    
     var body: some ReducerOf<AdminDistrictEdit>{
         BindingReducer()
         Reduce{ state, action in
@@ -53,7 +54,9 @@ struct AdminDistrictEdit {
             case .binding:
                 return .none
             case .cancelTapped:
-                return .none
+                return .run { _ in
+                    await dismiss()
+                }
             case .saveTapped:
                 state.isLoading = true
                 return .run{ [item = state.item] send in
@@ -105,35 +108,28 @@ struct AdminDistrictEdit {
                     }
                     state.destination = nil
                     return .none
-                case .base(.dismissTapped),
-                        .area(.dismissTapped):
-                    state.destination = nil
-                    return .none
                 case .performance(.doneTapped):
                     if case let .performance(performanceState) = state.destination {
                         state.item.performances.upsert(performanceState.item)
                     }
                     state.destination = nil
                     return .none
-                case .performance(.cancelTapped):
-                    state.destination = nil
-                    return .none
-                case .performance(.alert(.presented(.okTapped))):
+
+                case .performance(.deleteTapped):
                     if case let .performance(performanceState) = state.destination {
                         state.item.performances.removeAll(where: { $0.id == performanceState.item.id })
                     }
                     state.destination = nil
                     return .none
-                default:
+                case .base,
+                    .area,
+                    .performance:
                     return .none
                 }
             case .destination(.dismiss):
-                state.destination = nil
                 return .none
-            case .alert(.presented(.okTapped)):
+            case .alert:
                 state.alert = nil
-                return .none
-            case .alert(_):
                 return .none
             }
         }
