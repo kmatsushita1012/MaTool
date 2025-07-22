@@ -154,6 +154,7 @@ struct Home {
                 case .login(.received(.success(let userRole))),
                     .login(.destination(.presented(.confirmSignIn(.received(.success(let userRole)))))):
                     state.userRole = userRole
+                    state.destination = nil
                     switch state.userRole {
                     case .region(let id):
                         state.isDestinationLoading = true
