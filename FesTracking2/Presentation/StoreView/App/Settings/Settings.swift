@@ -10,9 +10,6 @@ import Foundation
 
 @Reducer
 struct Settings {
-    @Dependency(\.authService) var authService
-    @Dependency(\.apiRepository) var apiRepository
-    @Dependency(\.userDefaultsClient) var userDefaultsClient
     
     @ObservableState
     struct State: Equatable {
@@ -39,7 +36,12 @@ struct Settings {
         case districtsReceived(Result<[PublicDistrict], ApiError>)
         case alert(PresentationAction<Alert.Action>)
     }
-
+    
+    @Dependency(\.dismiss) var dismiss
+    @Dependency(\.authService) var authService
+    @Dependency(\.apiRepository) var apiRepository
+    @Dependency(\.userDefaultsClient) var userDefaultsClient
+    
     var body: some ReducerOf<Settings> {
         BindingReducer()
         Reduce{ state, action in
@@ -81,13 +83,13 @@ struct Settings {
                 state.isLoading = false
                 state.alert = Alert.error("情報の取得に失敗しました \(error.localizedDescription)")
                 return .none
-            case .alert(.presented(.okTapped)):
+            case .alert:
                 state.alert = nil
                 return .none
-            case .alert:
-                return .none
             case .dismissTapped:
-                return .none
+                return .run {_ in
+                    await dismiss()
+                }
             }
         }
     }

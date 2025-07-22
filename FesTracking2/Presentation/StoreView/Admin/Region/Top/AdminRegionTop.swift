@@ -10,9 +10,6 @@ import ComposableArchitecture
 @Reducer
 struct AdminRegionTop {
     
-    @Dependency(\.apiRepository) var apiRepository
-    @Dependency(\.authService) var authService
-    
     @Reducer
     enum Destination {
         case edit(AdminRegionEdit)
@@ -52,6 +49,10 @@ struct AdminRegionTop {
         case alert(PresentationAction<Alert.Action>)
     }
     
+    @Dependency(\.apiRepository) var apiRepository
+    @Dependency(\.authService) var authService
+    @Dependency(\.dismiss) var dismiss
+    
     var body: some ReducerOf<AdminRegionTop> {
         Reduce { state, action in
             switch action {
@@ -68,7 +69,9 @@ struct AdminRegionTop {
                 state.destination = .districtCreate(AdminRegionDistrictCreate.State(region: state.region))
                 return .none
             case .homeTapped:
-                return .none
+                return .run { _ in
+                    await dismiss()
+                }
             case .changePasswordTapped:
                 state.destination = .changePassword(ChangePassword.State())
                 return .none
@@ -117,6 +120,7 @@ struct AdminRegionTop {
                 case .edit(.putReceived(.success)):
                     state.isApiLoading = true
                     state.destination = nil
+                    state.alert = Alert.success("保存しました")
                     return getRegionEffect(state.region.id)
                 case .districtCreate(.received(.success)):
                     state.isApiLoading = true
@@ -126,20 +130,9 @@ struct AdminRegionTop {
                         let result  = await apiRepository.getDistricts(regionId)
                         await send(.districtsReceived(result))
                     }
-                case .districtCreate(.received(.failure(_))):
-                    state.destination = nil
-                    state.alert = Alert.error("参加町の追加に失敗しました")
-                    return .none
                 case .changePassword(.received(.success)):
                     state.destination = nil
                     state.alert = Alert.success("パスワードが変更されました")
-                    return .none
-                    return .none
-                case .edit(.cancelTapped),
-                    .districtInfo(.dismissTapped),
-                    .districtCreate(.cancelTapped),
-                    .changePassword(.dismissTapped):
-                    state.destination = nil
                     return .none
                 case .edit,
                     .districtInfo,
@@ -149,12 +142,9 @@ struct AdminRegionTop {
                     return .none
                 }
             case .destination(.dismiss):
-                state.destination = nil
-                return .none
-            case .alert(.presented):
-                state.alert = nil
                 return .none
             case .alert:
+                state.alert = nil
                 return .none
             }
         }
