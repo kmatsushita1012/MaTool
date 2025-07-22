@@ -35,14 +35,15 @@ struct AdminRouteExport {
             self.route = route
             region = makeRegion(route.points.map{ $0.coordinate })
         }
-        
     }
+    
     @CasePathable
     enum Action: Equatable, BindableAction {
         case binding(BindingAction<State>)
-        case exportTapped
         case dismissTapped
     }
+    
+    @Dependency(\.dismiss) var dismiss
     
     var body: some ReducerOf<AdminRouteExport> {
         BindingReducer()
@@ -50,10 +51,10 @@ struct AdminRouteExport {
             switch action {
             case .binding:
                 return .none
-            case .exportTapped:
-                return .none
             case .dismissTapped:
-                return .none
+                return .run{ _ in
+                    await dismiss()
+                }
             }
         }
     }

@@ -11,9 +11,6 @@ import ComposableArchitecture
 @Reducer
 struct Login {
     
-    @Dependency(\.authService) var authService
-    @Dependency(\.userDefaultsClient) var userDefaultsClient
-    
     @Reducer
     enum Destination {
         case confirmSignIn(ConfirmSignIn)
@@ -38,6 +35,10 @@ struct Login {
         case destination(PresentationAction<Destination.Action>)
     }
     
+    @Dependency(\.authService) var authService
+    @Dependency(\.userDefaultsClient) var userDefaultsClient
+    @Dependency(\.dismiss) var dismiss
+    
     var body: some ReducerOf<Login> {
         BindingReducer()
         Reduce{ state, action in
@@ -51,7 +52,9 @@ struct Login {
                     await send(.received(result))
                 }
             case .homeTapped:
-                return .none
+                return .run { _ in
+                    await dismiss()
+                }
             case .resetPasswordTapped:
                 state.destination = .resetPassword(ResetPassword.State(username: state.id))
                 return .none
@@ -84,17 +87,11 @@ struct Login {
                 case .resetPassword(.confirmResetReceived(.success)):
                     state.destination = nil
                     return .none
-                case .confirmSignIn(.dismissTapped),
-                    .resetPassword(.enterUsername(.dismissTapped)),
-                    .resetPassword(.enterCode(.dismissTapped)):
-                    state.destination = nil
-                    return .none
                 case .confirmSignIn,
                     .resetPassword:
                     return .none
                 }
             case .destination(.dismiss):
-                state.destination = nil
                 return .none
             }
         }

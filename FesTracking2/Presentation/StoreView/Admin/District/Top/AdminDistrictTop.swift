@@ -10,10 +10,6 @@ import ComposableArchitecture
 @Reducer
 struct AdminDistrictTop {
     
-    @Dependency(\.apiRepository) var apiRepository
-    @Dependency(\.locationService) var locationService
-    @Dependency(\.authService) var authService
-    
     @Reducer
     enum Destination {
         case edit(AdminDistrictEdit)
@@ -62,6 +58,10 @@ struct AdminDistrictTop {
         case alert(PresentationAction<Alert.Action>)
     }
     
+    @Dependency(\.apiRepository) var apiRepository
+    @Dependency(\.locationService) var locationService
+    @Dependency(\.authService) var authService
+    @Dependency(\.dismiss) var dismiss
     
     var body: some ReducerOf<AdminDistrictTop> {
         Reduce{ state, action in
@@ -202,13 +202,6 @@ struct AdminDistrictTop {
                     state.destination = nil
                     state.alert = Alert.success("パスワードが変更されました")
                     return .none
-                case .edit(.cancelTapped),
-                    .route(.cancelTapped),
-                    .location(.dismissTapped),
-                    .export(.dismissTapped),
-                    .changePassword(.dismissTapped):
-                    state.destination = nil
-                    return .none
                 case .edit,
                     .route,
                     .location,
@@ -218,7 +211,6 @@ struct AdminDistrictTop {
                     return .none
                 }
             case .destination(.dismiss):
-                state.destination = nil
                 return .none
             case .signOutTapped:
                 state.isAWSLoading = true
@@ -233,7 +225,9 @@ struct AdminDistrictTop {
                 }
                 return .none
             case .homeTapped:
-                return .none
+                return .run { _ in
+                    await dismiss()
+                }
             case .alert(.presented(.okTapped)):
                 state.alert = nil
                 return .none

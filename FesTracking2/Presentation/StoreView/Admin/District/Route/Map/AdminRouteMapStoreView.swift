@@ -8,6 +8,7 @@
 import SwiftUI
 import MapKit
 import ComposableArchitecture
+import NavigationSwipeControl
 
 struct AdminRouteMapStoreView: View{
     @Bindable var store: StoreOf<AdminRouteMap>
@@ -80,10 +81,14 @@ struct AdminRouteMapStoreView: View{
                 .padding(8)
             }
         }
+        .dismissible(backButton: false, edgeSwipe: false)
         .sheet(item: $store.scope(state: \.destination?.point, action: \.destination.point)) { store in
-            AdminPointView(store: store)
-                .presentationDetents([.fraction(0.3), .large], selection: $selectedDetent)
-                .interactiveDismissDisabled(true)
+            NavigationStack{
+                AdminPointView(store: store)
+                    .presentationDetents([.fraction(0.3), .large], selection: $selectedDetent)
+                    .interactiveDismissDisabled()
+                    .navigationBarBackButtonHidden()
+            }
         }
 //            .navigationDestination(item: $store.scope(state: \.destination?.segment, action: \.destination.segment)) { store in
 //                AdminSegmentView(store: store)
