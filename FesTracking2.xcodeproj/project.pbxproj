@@ -40,6 +40,7 @@
 		2967C9182E1F57D60080B8DA /* MockUpdateManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2967C9172E1F57D10080B8DA /* MockUpdateManager.swift */; };
 		2972017B2D9CFA50003424EF /* Async.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2972017A2D9CFA41003424EF /* Async.swift */; };
 		2976942F2E2CEFE8007B1D69 /* AWSMobileClientError.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2976942E2E2CEFE3007B1D69 /* AWSMobileClientError.swift */; };
+		2972EF2B2E2DFED0003A4F1C /* NavigationSwipeControl in Frameworks */ = {isa = PBXBuildFile; productRef = 2972EF2A2E2DFED0003A4F1C /* NavigationSwipeControl */; };
 		2978C4A92DCB3B5200D3F7CE /* PointFeature.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2978C4A82DCB3B4E00D3F7CE /* PointFeature.swift */; };
 		2978C4AB2DCB3BD300D3F7CE /* LocationFeature.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2978C4AA2DCB3BCE00D3F7CE /* LocationFeature.swift */; };
 		2978C4AD2DCB3C9D00D3F7CE /* PointView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2978C4AC2DCB3C9A00D3F7CE /* PointView.swift */; };
@@ -339,6 +340,7 @@
 			files = (
 				29F8A2BE2D9EF079001633B3 /* ComposableArchitecture in Frameworks */,
 				669224E9583394F966E1C953 /* Pods_FesTracking2.framework in Frameworks */,
+				2972EF2B2E2DFED0003A4F1C /* NavigationSwipeControl in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1263,6 +1265,7 @@
 			name = FesTracking2;
 			packageProductDependencies = (
 				29F8A2BD2D9EF079001633B3 /* ComposableArchitecture */,
+				2972EF2A2E2DFED0003A4F1C /* NavigationSwipeControl */,
 			);
 			productName = FesTracking2;
 			productReference = 298BD79A2D71E46600CB63F1 /* FesTracking2.app */;
@@ -1342,6 +1345,7 @@
 			mainGroup = 298BD7912D71E46600CB63F1;
 			packageReferences = (
 				29F8A2BC2D9EF078001633B3 /* XCRemoteSwiftPackageReference "swift-composable-architecture" */,
+				2972EF292E2DFED0003A4F1C /* XCRemoteSwiftPackageReference "NavigationSwipeControl" */,
 			);
 			productRefGroup = 298BD79B2D71E46600CB63F1 /* Products */;
 			projectDirPath = "";
@@ -1994,6 +1998,14 @@
 /* End XCConfigurationList section */
 
 /* Begin XCRemoteSwiftPackageReference section */
+		2972EF292E2DFED0003A4F1C /* XCRemoteSwiftPackageReference "NavigationSwipeControl" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/kmatsushita1012/NavigationSwipeControl";
+			requirement = {
+				kind = exactVersion;
+				version = 0.2.1;
+			};
+		};
 		29F8A2BC2D9EF078001633B3 /* XCRemoteSwiftPackageReference "swift-composable-architecture" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/pointfreeco/swift-composable-architecture";
@@ -2005,6 +2017,11 @@
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
+		2972EF2A2E2DFED0003A4F1C /* NavigationSwipeControl */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 2972EF292E2DFED0003A4F1C /* XCRemoteSwiftPackageReference "NavigationSwipeControl" */;
+			productName = NavigationSwipeControl;
+		};
 		29F8A2BD2D9EF079001633B3 /* ComposableArchitecture */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = 29F8A2BC2D9EF078001633B3 /* XCRemoteSwiftPackageReference "swift-composable-architecture" */;

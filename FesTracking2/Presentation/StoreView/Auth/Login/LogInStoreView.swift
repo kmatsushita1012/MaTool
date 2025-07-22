@@ -7,6 +7,7 @@
 
 import SwiftUI
 import ComposableArchitecture
+import NavigationSwipeControl
 
 struct LoginStoreView: View {
     @Bindable var store: StoreOf<Login>
@@ -19,59 +20,58 @@ struct LoginStoreView: View {
     }
     
     var body: some View {
-        NavigationView{
-            VStack {
-                Text("ログイン")
-                    .font(.largeTitle)
-                    .padding()
-                TextField("ID", text: $store.id)
-                    .textContentType(.none)
-                    .textFieldStyle(RoundedBorderTextFieldStyle())
-                    .focused($focusedField, equals: .identifier)
-                    .padding()
-                    
-                SecureField("パスワード", text: $store.password)
-                    .textFieldStyle(RoundedBorderTextFieldStyle())
-                    .focused($focusedField, equals: .password)
-                    .padding()
+        VStack {
+            Text("ログイン")
+                .font(.largeTitle)
+                .padding()
+            TextField("ID", text: $store.id)
+                .textContentType(.none)
+                .textFieldStyle(RoundedBorderTextFieldStyle())
+                .focused($focusedField, equals: .identifier)
+                .padding()
                 
-                if let errorMessage = store.errorMessage {
-                    Text(errorMessage)
-                        .foregroundColor(.red)
-                        .padding()
-                }
-                Button("ログイン") {
-                    store.send(.signInTapped)
-                    focusedField = nil
-                }
-                .buttonStyle(PrimaryButtonStyle())
+            SecureField("パスワード", text: $store.password)
+                .textFieldStyle(RoundedBorderTextFieldStyle())
+                .focused($focusedField, equals: .password)
                 .padding()
-                Button("パスワードを忘れた場合") {
-                    store.send(.resetPasswordTapped)
-                    focusedField = nil
-                }
-                .buttonStyle(SecondaryButtonStyle())
-                .padding()
+            
+            if let errorMessage = store.errorMessage {
+                Text(errorMessage)
+                    .foregroundColor(.red)
+                    .padding()
             }
+            Button("ログイン") {
+                store.send(.signInTapped)
+                focusedField = nil
+            }
+            .buttonStyle(PrimaryButtonStyle())
             .padding()
-            .toolbar {
-                ToolbarItem(placement: .topBarLeading) {
-                    Button(action: {
-                        store.send(.homeTapped)
-                    }) {
-                        Image(systemName: "house")
-                            .foregroundColor(.black)
-                    }
-                    .padding(.horizontal, 8)
-                }
+            Button("パスワードを忘れた場合") {
+                store.send(.resetPasswordTapped)
+                focusedField = nil
             }
-            .fullScreenCover(item: $store.scope(state: \.destination?.confirmSignIn, action: \.destination.confirmSignIn)){ store in
-                ConfirmSignInStoreView(store:store)
-            }
-            .fullScreenCover(item: $store.scope(state: \.destination?.resetPassword, action: \.destination.resetPassword)){ store in
-                ResetPasswordStoreView(store:store)
-            }
-            .loadingOverlay(store.isLoading)
+            .buttonStyle(SecondaryButtonStyle())
+            .padding()
         }
+        .padding()
+        .toolbar {
+            ToolbarItem(placement: .topBarLeading) {
+                Button(action: {
+                    store.send(.homeTapped)
+                }) {
+                    Image(systemName: "house")
+                        .foregroundColor(.black)
+                }
+                .padding(.horizontal, 8)
+            }
+        }
+        .dismissible(backButton: false)
+        .navigationDestination(item: $store.scope(state: \.destination?.confirmSignIn, action: \.destination.confirmSignIn)){ store in
+            ConfirmSignInStoreView(store:store)
+        }
+        .navigationDestination(item: $store.scope(state: \.destination?.resetPassword, action: \.destination.resetPassword)){ store in
+            ResetPasswordStoreView(store:store)
+        }
+        .loadingOverlay(store.isLoading)
     }
 }
