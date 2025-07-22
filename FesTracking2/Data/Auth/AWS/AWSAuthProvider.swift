@@ -12,15 +12,29 @@ import Dependencies
 extension AuthProvider: DependencyKey {
     static let liveValue = Self(
         initialize: {
-            await withCheckedContinuation { continuation in
-                AWSMobileClient.default().initialize { userState, error in
-                    if let error = error {
-                        continuation.resume(returning: .failure(error.toAuthError()))
-                        return
+            guard let result = try? await withThrowingTaskGroup(of: Result<Empty, AuthError>.self, body: { group in
+                group.addTask {
+                    await withCheckedContinuation { continuation in
+                        AWSMobileClient.default().initialize { userState, error in
+                            if let error = error {
+                                continuation.resume(returning: .failure(error.toAuthError()))
+                            } else {
+                                continuation.resume(returning: .success(Empty()))
+                            }
+                        }
                     }
-                    continuation.resume(returning: .success(Empty()))
                 }
+                group.addTask {
+                    try await Task.sleep(nanoseconds: 5 * 1_000_000_000)
+                    return .failure(.timeout(""))
+                }
+                let result = try await group.next()!
+                group.cancelAll()
+                return result
+            }) else {
+                return .failure(.unknown(""))
             }
+            return result
         },
         signIn: { username, password in
             await withCheckedContinuation { continuation in

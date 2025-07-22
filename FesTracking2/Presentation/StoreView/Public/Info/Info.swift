@@ -17,9 +17,17 @@ struct Info {
     enum Action: Equatable {
         case homeTapped
     }
+    
+    @Dependency(\.dismiss) var dismiss
+    
     var body: some ReducerOf<Info> {
         Reduce { state,action in
-            return .none
+            switch action {
+            case .homeTapped:
+                return .run { _ in
+                    await dismiss()
+                }
+            }
         }
     }
 }

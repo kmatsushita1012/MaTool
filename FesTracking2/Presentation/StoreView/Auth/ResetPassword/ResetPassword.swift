@@ -10,8 +10,6 @@ import ComposableArchitecture
 @Reducer
 struct ResetPassword {
     
-    @Dependency(\.authService) var authService
-    
     @ObservableState
     struct State: Equatable {
         var username: String = ""
@@ -45,6 +43,9 @@ struct ResetPassword {
             case dismissTapped
         }
     }
+    
+    @Dependency(\.authService) var authService
+    @Dependency(\.dismiss) var dismiss
     
     var body: some ReducerOf<ResetPassword> {
         BindingReducer()
@@ -82,7 +83,9 @@ struct ResetPassword {
                 }
             case .enterUsername(.dismissTapped),
                 .enterCode(.dismissTapped):
-                return .none
+                return .run { _ in
+                    await dismiss()
+                }
             case .resetReceived(.success):
                 state.isLoading = false
                 state.step = .enterCode

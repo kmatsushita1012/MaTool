@@ -22,7 +22,7 @@ struct AdminRouteExport {
             route.segments
         }
         var title: String {
-            route.text(format: "D m/d T")
+            route.text(format: "m/d T")
         }
         var partialPath: String {
             "\(route.text(format: "D_y-m-d_T"))_part_\(Date().stamp).pdf"
@@ -35,25 +35,26 @@ struct AdminRouteExport {
             self.route = route
             region = makeRegion(route.points.map{ $0.coordinate })
         }
-        
     }
+    
     @CasePathable
     enum Action: Equatable, BindableAction {
         case binding(BindingAction<State>)
-        case exportTapped
         case dismissTapped
     }
+    
+    @Dependency(\.dismiss) var dismiss
     
     var body: some ReducerOf<AdminRouteExport> {
         BindingReducer()
         Reduce{ state, action in
             switch action {
-            case .binding(_):
-                return .none
-            case .exportTapped:
+            case .binding:
                 return .none
             case .dismissTapped:
-                return .none
+                return .run{ _ in
+                    await dismiss()
+                }
             }
         }
     }

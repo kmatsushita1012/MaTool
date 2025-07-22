@@ -7,7 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		255E9767B36B35B5699F4165 /* Pods_FesTracking2Tests.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 17A70AED86F1CA931E10BF8A /* Pods_FesTracking2Tests.framework */; };
+		27424699F68A56768788B40C /* Pods_FesTracking2Tests.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = AEBE114D12C288BBBF847107 /* Pods_FesTracking2Tests.framework */; };
 		2914184C2DA2B8E9003D7C72 /* PublicMapStoreView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2914184B2DA2B8E9003D7C72 /* PublicMapStoreView.swift */; };
 		291D91992DCDAD45007E5A80 /* AdminExportableMapView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 291D91982DCDAD3C007E5A80 /* AdminExportableMapView.swift */; };
 		291D919B2DCDAD71007E5A80 /* MapFragments.swift in Sources */ = {isa = PBXBuildFile; fileRef = 291D919A2DCDAD68007E5A80 /* MapFragments.swift */; };
@@ -40,15 +40,13 @@
 		2967C9182E1F57D60080B8DA /* MockUpdateManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2967C9172E1F57D10080B8DA /* MockUpdateManager.swift */; };
 		2972017B2D9CFA50003424EF /* Async.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2972017A2D9CFA41003424EF /* Async.swift */; };
 		2976942F2E2CEFE8007B1D69 /* AWSMobileClientError.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2976942E2E2CEFE3007B1D69 /* AWSMobileClientError.swift */; };
+		2972EF2B2E2DFED0003A4F1C /* NavigationSwipeControl in Frameworks */ = {isa = PBXBuildFile; productRef = 2972EF2A2E2DFED0003A4F1C /* NavigationSwipeControl */; };
 		2978C4A92DCB3B5200D3F7CE /* PointFeature.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2978C4A82DCB3B4E00D3F7CE /* PointFeature.swift */; };
 		2978C4AB2DCB3BD300D3F7CE /* LocationFeature.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2978C4AA2DCB3BCE00D3F7CE /* LocationFeature.swift */; };
 		2978C4AD2DCB3C9D00D3F7CE /* PointView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2978C4AC2DCB3C9A00D3F7CE /* PointView.swift */; };
 		2978C4AF2DCB3DAE00D3F7CE /* BulletItemView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2978C4AE2DCB3D8B00D3F7CE /* BulletItemView.swift */; };
 		2978C4B12DCB4A8600D3F7CE /* LocationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2978C4B02DCB4A8300D3F7CE /* LocationView.swift */; };
 		2983AB852D741C19002F6CB5 /* README.md in Resources */ = {isa = PBXBuildFile; fileRef = 2983AB802D741C18002F6CB5 /* README.md */; };
-		2983AB862D741C19002F6CB5 /* Gemfile in Resources */ = {isa = PBXBuildFile; fileRef = 2983AB812D741C18002F6CB5 /* Gemfile */; };
-		2983AB872D741C19002F6CB5 /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = 2983AB822D741C19002F6CB5 /* GoogleService-Info.plist */; };
-		2983AB882D741C19002F6CB5 /* Gemfile.lock in Resources */ = {isa = PBXBuildFile; fileRef = 2983AB832D741C19002F6CB5 /* Gemfile.lock */; };
 		2983AB892D741C19002F6CB5 /* Podfile in Resources */ = {isa = PBXBuildFile; fileRef = 2983AB842D741C19002F6CB5 /* Podfile */; };
 		298BD79E2D71E46600CB63F1 /* FesTracking2App.swift in Sources */ = {isa = PBXBuildFile; fileRef = 298BD79D2D71E46600CB63F1 /* FesTracking2App.swift */; };
 		298BD7A42D71E46800CB63F1 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 298BD7A32D71E46800CB63F1 /* Assets.xcassets */; };
@@ -154,10 +152,9 @@
 		29E8C3322DBB41010086F6BB /* PublicLocation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29E8C3312DBB40FC0086F6BB /* PublicLocation.swift */; };
 		29F403062DAA95DF003527D1 /* Route.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29F403052DAA95DA003527D1 /* Route.swift */; };
 		29F8A2BE2D9EF079001633B3 /* ComposableArchitecture in Frameworks */ = {isa = PBXBuildFile; productRef = 29F8A2BD2D9EF079001633B3 /* ComposableArchitecture */; };
-		29F8A2C12D9EF13E001633B3 /* FirebaseAppDistribution-Beta in Frameworks */ = {isa = PBXBuildFile; productRef = 29F8A2C02D9EF13E001633B3 /* FirebaseAppDistribution-Beta */; };
 		29F8A7932DFD645000331A7F /* TitleView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29F8A7922DFD643C00331A7F /* TitleView.swift */; };
-		59414DD9ADD88C0A71E94FE3 /* Pods_FesTracking2_FesTracking2UITests.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A8F61DA4134BD89A5D2377A2 /* Pods_FesTracking2_FesTracking2UITests.framework */; };
-		D78195157F20422B3B5A8EA3 /* Pods_FesTracking2.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = EF51269A5D5AB06C2B7C01CD /* Pods_FesTracking2.framework */; };
+		669224E9583394F966E1C953 /* Pods_FesTracking2.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A618585B10BC13EF80425258 /* Pods_FesTracking2.framework */; };
+		BDC150D136794E0D80F535CD /* Pods_FesTracking2_FesTracking2UITests.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A449D00CF487FFFF67AD9A67 /* Pods_FesTracking2_FesTracking2UITests.framework */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -178,9 +175,6 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
-		17A70AED86F1CA931E10BF8A /* Pods_FesTracking2Tests.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_FesTracking2Tests.framework; sourceTree = BUILT_PRODUCTS_DIR; };
-		231FDE1DF1A39C005D053084 /* Pods-FesTracking2-FesTracking2UITests.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-FesTracking2-FesTracking2UITests.release.xcconfig"; path = "Target Support Files/Pods-FesTracking2-FesTracking2UITests/Pods-FesTracking2-FesTracking2UITests.release.xcconfig"; sourceTree = "<group>"; };
-		269836BF39E1F2EAD3C8133A /* Pods-FesTracking2Tests.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-FesTracking2Tests.release.xcconfig"; path = "Target Support Files/Pods-FesTracking2Tests/Pods-FesTracking2Tests.release.xcconfig"; sourceTree = "<group>"; };
 		2914184B2DA2B8E9003D7C72 /* PublicMapStoreView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PublicMapStoreView.swift; sourceTree = "<group>"; };
 		291D91982DCDAD3C007E5A80 /* AdminExportableMapView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdminExportableMapView.swift; sourceTree = "<group>"; };
 		291D919A2DCDAD68007E5A80 /* MapFragments.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MapFragments.swift; sourceTree = "<group>"; };
@@ -219,9 +213,6 @@
 		2978C4AE2DCB3D8B00D3F7CE /* BulletItemView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BulletItemView.swift; sourceTree = "<group>"; };
 		2978C4B02DCB4A8300D3F7CE /* LocationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocationView.swift; sourceTree = "<group>"; };
 		2983AB802D741C18002F6CB5 /* README.md */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
-		2983AB812D741C18002F6CB5 /* Gemfile */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = Gemfile; sourceTree = "<group>"; };
-		2983AB822D741C19002F6CB5 /* GoogleService-Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = "GoogleService-Info.plist"; sourceTree = "<group>"; };
-		2983AB832D741C19002F6CB5 /* Gemfile.lock */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = Gemfile.lock; sourceTree = "<group>"; };
 		2983AB842D741C19002F6CB5 /* Podfile */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = Podfile; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.ruby; };
 		298BD79A2D71E46600CB63F1 /* FesTracking2.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = FesTracking2.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		298BD79D2D71E46600CB63F1 /* FesTracking2App.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FesTracking2App.swift; sourceTree = "<group>"; };
@@ -331,12 +322,15 @@
 		29E8C3312DBB40FC0086F6BB /* PublicLocation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PublicLocation.swift; sourceTree = "<group>"; };
 		29F403052DAA95DA003527D1 /* Route.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Route.swift; sourceTree = "<group>"; };
 		29F8A7922DFD643C00331A7F /* TitleView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TitleView.swift; sourceTree = "<group>"; };
-		2ED28BC68D7C76B5AD0147C2 /* Pods-FesTracking2.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-FesTracking2.debug.xcconfig"; path = "Target Support Files/Pods-FesTracking2/Pods-FesTracking2.debug.xcconfig"; sourceTree = "<group>"; };
-		853A27735A6145CF5C6B1C0B /* Pods-FesTracking2-FesTracking2UITests.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-FesTracking2-FesTracking2UITests.debug.xcconfig"; path = "Target Support Files/Pods-FesTracking2-FesTracking2UITests/Pods-FesTracking2-FesTracking2UITests.debug.xcconfig"; sourceTree = "<group>"; };
-		A8F61DA4134BD89A5D2377A2 /* Pods_FesTracking2_FesTracking2UITests.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_FesTracking2_FesTracking2UITests.framework; sourceTree = BUILT_PRODUCTS_DIR; };
-		BD6BB794D49DA18CACED2CCF /* Pods-FesTracking2Tests.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-FesTracking2Tests.debug.xcconfig"; path = "Target Support Files/Pods-FesTracking2Tests/Pods-FesTracking2Tests.debug.xcconfig"; sourceTree = "<group>"; };
-		C2452BC5E866C14D5C7C3887 /* Pods-FesTracking2.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-FesTracking2.release.xcconfig"; path = "Target Support Files/Pods-FesTracking2/Pods-FesTracking2.release.xcconfig"; sourceTree = "<group>"; };
-		EF51269A5D5AB06C2B7C01CD /* Pods_FesTracking2.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_FesTracking2.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		2CDEE490E4876E0D065223C1 /* Pods-FesTracking2.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-FesTracking2.release.xcconfig"; path = "Target Support Files/Pods-FesTracking2/Pods-FesTracking2.release.xcconfig"; sourceTree = "<group>"; };
+		3FBBCEBD209B644B9165205A /* Pods-FesTracking2Tests.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-FesTracking2Tests.debug.xcconfig"; path = "Target Support Files/Pods-FesTracking2Tests/Pods-FesTracking2Tests.debug.xcconfig"; sourceTree = "<group>"; };
+		44B8059399223D8FCF78D97F /* Pods-FesTracking2-FesTracking2UITests.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-FesTracking2-FesTracking2UITests.release.xcconfig"; path = "Target Support Files/Pods-FesTracking2-FesTracking2UITests/Pods-FesTracking2-FesTracking2UITests.release.xcconfig"; sourceTree = "<group>"; };
+		5B6161D34F173327F85EE8B9 /* Pods-FesTracking2Tests.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-FesTracking2Tests.release.xcconfig"; path = "Target Support Files/Pods-FesTracking2Tests/Pods-FesTracking2Tests.release.xcconfig"; sourceTree = "<group>"; };
+		9EB2AE354D3409031F605D84 /* Pods-FesTracking2.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-FesTracking2.debug.xcconfig"; path = "Target Support Files/Pods-FesTracking2/Pods-FesTracking2.debug.xcconfig"; sourceTree = "<group>"; };
+		A449D00CF487FFFF67AD9A67 /* Pods_FesTracking2_FesTracking2UITests.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_FesTracking2_FesTracking2UITests.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		A5B59E198B886CB25A478303 /* Pods-FesTracking2-FesTracking2UITests.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-FesTracking2-FesTracking2UITests.debug.xcconfig"; path = "Target Support Files/Pods-FesTracking2-FesTracking2UITests/Pods-FesTracking2-FesTracking2UITests.debug.xcconfig"; sourceTree = "<group>"; };
+		A618585B10BC13EF80425258 /* Pods_FesTracking2.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_FesTracking2.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		AEBE114D12C288BBBF847107 /* Pods_FesTracking2Tests.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_FesTracking2Tests.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -345,8 +339,8 @@
 			buildActionMask = 2147483647;
 			files = (
 				29F8A2BE2D9EF079001633B3 /* ComposableArchitecture in Frameworks */,
-				D78195157F20422B3B5A8EA3 /* Pods_FesTracking2.framework in Frameworks */,
-				29F8A2C12D9EF13E001633B3 /* FirebaseAppDistribution-Beta in Frameworks */,
+				669224E9583394F966E1C953 /* Pods_FesTracking2.framework in Frameworks */,
+				2972EF2B2E2DFED0003A4F1C /* NavigationSwipeControl in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -354,7 +348,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				255E9767B36B35B5699F4165 /* Pods_FesTracking2Tests.framework in Frameworks */,
+				27424699F68A56768788B40C /* Pods_FesTracking2Tests.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -362,7 +356,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				59414DD9ADD88C0A71E94FE3 /* Pods_FesTracking2_FesTracking2UITests.framework in Frameworks */,
+				BDC150D136794E0D80F535CD /* Pods_FesTracking2_FesTracking2UITests.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -372,12 +366,12 @@
 		1523B4F9B78B63D347CE5EFD /* Pods */ = {
 			isa = PBXGroup;
 			children = (
-				2ED28BC68D7C76B5AD0147C2 /* Pods-FesTracking2.debug.xcconfig */,
-				C2452BC5E866C14D5C7C3887 /* Pods-FesTracking2.release.xcconfig */,
-				853A27735A6145CF5C6B1C0B /* Pods-FesTracking2-FesTracking2UITests.debug.xcconfig */,
-				231FDE1DF1A39C005D053084 /* Pods-FesTracking2-FesTracking2UITests.release.xcconfig */,
-				BD6BB794D49DA18CACED2CCF /* Pods-FesTracking2Tests.debug.xcconfig */,
-				269836BF39E1F2EAD3C8133A /* Pods-FesTracking2Tests.release.xcconfig */,
+				9EB2AE354D3409031F605D84 /* Pods-FesTracking2.debug.xcconfig */,
+				2CDEE490E4876E0D065223C1 /* Pods-FesTracking2.release.xcconfig */,
+				A5B59E198B886CB25A478303 /* Pods-FesTracking2-FesTracking2UITests.debug.xcconfig */,
+				44B8059399223D8FCF78D97F /* Pods-FesTracking2-FesTracking2UITests.release.xcconfig */,
+				3FBBCEBD209B644B9165205A /* Pods-FesTracking2Tests.debug.xcconfig */,
+				5B6161D34F173327F85EE8B9 /* Pods-FesTracking2Tests.release.xcconfig */,
 			);
 			path = Pods;
 			sourceTree = "<group>";
@@ -509,9 +503,6 @@
 			isa = PBXGroup;
 			children = (
 				29460A162D8C314F0097CAA1 /* awsconfiguration.json */,
-				2983AB812D741C18002F6CB5 /* Gemfile */,
-				2983AB832D741C19002F6CB5 /* Gemfile.lock */,
-				2983AB822D741C19002F6CB5 /* GoogleService-Info.plist */,
 				2983AB842D741C19002F6CB5 /* Podfile */,
 				2983AB802D741C18002F6CB5 /* README.md */,
 				298BD79C2D71E46600CB63F1 /* FesTracking2 */,
@@ -519,7 +510,7 @@
 				298BD7B92D71E46900CB63F1 /* FesTracking2UITests */,
 				298BD79B2D71E46600CB63F1 /* Products */,
 				1523B4F9B78B63D347CE5EFD /* Pods */,
-				D2B77F2FCB1569E5BDDFA692 /* Frameworks */,
+				301EBB7653C0DF6665EAAFF3 /* Frameworks */,
 			);
 			sourceTree = "<group>";
 		};
@@ -1244,12 +1235,12 @@
 			path = Auth;
 			sourceTree = "<group>";
 		};
-		D2B77F2FCB1569E5BDDFA692 /* Frameworks */ = {
+		301EBB7653C0DF6665EAAFF3 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
-				EF51269A5D5AB06C2B7C01CD /* Pods_FesTracking2.framework */,
-				A8F61DA4134BD89A5D2377A2 /* Pods_FesTracking2_FesTracking2UITests.framework */,
-				17A70AED86F1CA931E10BF8A /* Pods_FesTracking2Tests.framework */,
+				A618585B10BC13EF80425258 /* Pods_FesTracking2.framework */,
+				A449D00CF487FFFF67AD9A67 /* Pods_FesTracking2_FesTracking2UITests.framework */,
+				AEBE114D12C288BBBF847107 /* Pods_FesTracking2Tests.framework */,
 			);
 			name = Frameworks;
 			sourceTree = "<group>";
@@ -1261,11 +1252,11 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = 298BD7C02D71E46900CB63F1 /* Build configuration list for PBXNativeTarget "FesTracking2" */;
 			buildPhases = (
-				676953983233A634BDC26E02 /* [CP] Check Pods Manifest.lock */,
+				A059BF55138D2ABF93A4F7E6 /* [CP] Check Pods Manifest.lock */,
 				298BD7962D71E46600CB63F1 /* Sources */,
 				298BD7972D71E46600CB63F1 /* Frameworks */,
 				298BD7982D71E46600CB63F1 /* Resources */,
-				1D04B61A2EE0F032841C4904 /* [CP] Embed Pods Frameworks */,
+				2E602B76E071C1FB47E8D7FF /* [CP] Copy Pods Resources */,
 			);
 			buildRules = (
 			);
@@ -1274,7 +1265,7 @@
 			name = FesTracking2;
 			packageProductDependencies = (
 				29F8A2BD2D9EF079001633B3 /* ComposableArchitecture */,
-				29F8A2C02D9EF13E001633B3 /* FirebaseAppDistribution-Beta */,
+				2972EF2A2E2DFED0003A4F1C /* NavigationSwipeControl */,
 			);
 			productName = FesTracking2;
 			productReference = 298BD79A2D71E46600CB63F1 /* FesTracking2.app */;
@@ -1284,7 +1275,7 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = 298BD7C32D71E46900CB63F1 /* Build configuration list for PBXNativeTarget "FesTracking2Tests" */;
 			buildPhases = (
-				0546FAEAD6C440478EBC9035 /* [CP] Check Pods Manifest.lock */,
+				FED43AC7FBA8042DEE5D568B /* [CP] Check Pods Manifest.lock */,
 				298BD7A82D71E46900CB63F1 /* Sources */,
 				298BD7A92D71E46900CB63F1 /* Frameworks */,
 				298BD7AA2D71E46900CB63F1 /* Resources */,
@@ -1303,11 +1294,11 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = 298BD7C62D71E46900CB63F1 /* Build configuration list for PBXNativeTarget "FesTracking2UITests" */;
 			buildPhases = (
-				28CE1DC2E45394D5841A774B /* [CP] Check Pods Manifest.lock */,
+				44563593E4E9001D064CF60C /* [CP] Check Pods Manifest.lock */,
 				298BD7B22D71E46900CB63F1 /* Sources */,
 				298BD7B32D71E46900CB63F1 /* Frameworks */,
 				298BD7B42D71E46900CB63F1 /* Resources */,
-				BDBAC005F7E4CD9B7E491206 /* [CP] Embed Pods Frameworks */,
+				09B7B4075DD4A2AA19982CC2 /* [CP] Copy Pods Resources */,
 			);
 			buildRules = (
 			);
@@ -1354,7 +1345,7 @@
 			mainGroup = 298BD7912D71E46600CB63F1;
 			packageReferences = (
 				29F8A2BC2D9EF078001633B3 /* XCRemoteSwiftPackageReference "swift-composable-architecture" */,
-				29F8A2BF2D9EF13E001633B3 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */,
+				2972EF292E2DFED0003A4F1C /* XCRemoteSwiftPackageReference "NavigationSwipeControl" */,
 			);
 			productRefGroup = 298BD79B2D71E46600CB63F1 /* Products */;
 			projectDirPath = "";
@@ -1373,10 +1364,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				29460A1A2D8C32490097CAA1 /* awsconfiguration.json in Resources */,
-				2983AB882D741C19002F6CB5 /* Gemfile.lock in Resources */,
-				2983AB862D741C19002F6CB5 /* Gemfile in Resources */,
 				2983AB852D741C19002F6CB5 /* README.md in Resources */,
-				2983AB872D741C19002F6CB5 /* GoogleService-Info.plist in Resources */,
 				298BD7A72D71E46800CB63F1 /* Preview Assets.xcassets in Resources */,
 				2983AB892D741C19002F6CB5 /* Podfile in Resources */,
 				298BD7A42D71E46800CB63F1 /* Assets.xcassets in Resources */,
@@ -1400,50 +1388,49 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXShellScriptBuildPhase section */
-		0546FAEAD6C440478EBC9035 /* [CP] Check Pods Manifest.lock */ = {
+		09B7B4075DD4A2AA19982CC2 /* [CP] Copy Pods Resources */ = {
 			isa = PBXShellScriptBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
 			);
 			inputFileListPaths = (
+				"${PODS_ROOT}/Target Support Files/Pods-FesTracking2-FesTracking2UITests/Pods-FesTracking2-FesTracking2UITests-resources-${CONFIGURATION}-input-files.xcfilelist",
 			);
 			inputPaths = (
-				"${PODS_PODFILE_DIR_PATH}/Podfile.lock",
-				"${PODS_ROOT}/Manifest.lock",
 			);
-			name = "[CP] Check Pods Manifest.lock";
+			name = "[CP] Copy Pods Resources";
 			outputFileListPaths = (
+				"${PODS_ROOT}/Target Support Files/Pods-FesTracking2-FesTracking2UITests/Pods-FesTracking2-FesTracking2UITests-resources-${CONFIGURATION}-output-files.xcfilelist",
 			);
 			outputPaths = (
-				"$(DERIVED_FILE_DIR)/Pods-FesTracking2Tests-checkManifestLockResult.txt",
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "diff \"${PODS_PODFILE_DIR_PATH}/Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [ $? != 0 ] ; then\n    # print error to STDERR\n    echo \"error: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\" >&2\n    exit 1\nfi\n# This output is used by Xcode 'outputs' to avoid re-running this script phase.\necho \"SUCCESS\" > \"${SCRIPT_OUTPUT_FILE_0}\"\n";
+			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-FesTracking2-FesTracking2UITests/Pods-FesTracking2-FesTracking2UITests-resources.sh\"\n";
 			showEnvVarsInLog = 0;
 		};
-		1D04B61A2EE0F032841C4904 /* [CP] Embed Pods Frameworks */ = {
+		2E602B76E071C1FB47E8D7FF /* [CP] Copy Pods Resources */ = {
 			isa = PBXShellScriptBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
 			);
 			inputFileListPaths = (
-				"${PODS_ROOT}/Target Support Files/Pods-FesTracking2/Pods-FesTracking2-frameworks-${CONFIGURATION}-input-files.xcfilelist",
+				"${PODS_ROOT}/Target Support Files/Pods-FesTracking2/Pods-FesTracking2-resources-${CONFIGURATION}-input-files.xcfilelist",
 			);
 			inputPaths = (
 			);
-			name = "[CP] Embed Pods Frameworks";
+			name = "[CP] Copy Pods Resources";
 			outputFileListPaths = (
-				"${PODS_ROOT}/Target Support Files/Pods-FesTracking2/Pods-FesTracking2-frameworks-${CONFIGURATION}-output-files.xcfilelist",
+				"${PODS_ROOT}/Target Support Files/Pods-FesTracking2/Pods-FesTracking2-resources-${CONFIGURATION}-output-files.xcfilelist",
 			);
 			outputPaths = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-FesTracking2/Pods-FesTracking2-frameworks.sh\"\n";
+			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-FesTracking2/Pods-FesTracking2-resources.sh\"\n";
 			showEnvVarsInLog = 0;
 		};
-		28CE1DC2E45394D5841A774B /* [CP] Check Pods Manifest.lock */ = {
+		44563593E4E9001D064CF60C /* [CP] Check Pods Manifest.lock */ = {
 			isa = PBXShellScriptBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -1465,7 +1452,7 @@
 			shellScript = "diff \"${PODS_PODFILE_DIR_PATH}/Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [ $? != 0 ] ; then\n    # print error to STDERR\n    echo \"error: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\" >&2\n    exit 1\nfi\n# This output is used by Xcode 'outputs' to avoid re-running this script phase.\necho \"SUCCESS\" > \"${SCRIPT_OUTPUT_FILE_0}\"\n";
 			showEnvVarsInLog = 0;
 		};
-		676953983233A634BDC26E02 /* [CP] Check Pods Manifest.lock */ = {
+		A059BF55138D2ABF93A4F7E6 /* [CP] Check Pods Manifest.lock */ = {
 			isa = PBXShellScriptBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -1487,25 +1474,26 @@
 			shellScript = "diff \"${PODS_PODFILE_DIR_PATH}/Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [ $? != 0 ] ; then\n    # print error to STDERR\n    echo \"error: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\" >&2\n    exit 1\nfi\n# This output is used by Xcode 'outputs' to avoid re-running this script phase.\necho \"SUCCESS\" > \"${SCRIPT_OUTPUT_FILE_0}\"\n";
 			showEnvVarsInLog = 0;
 		};
-		BDBAC005F7E4CD9B7E491206 /* [CP] Embed Pods Frameworks */ = {
+		FED43AC7FBA8042DEE5D568B /* [CP] Check Pods Manifest.lock */ = {
 			isa = PBXShellScriptBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
 			);
 			inputFileListPaths = (
-				"${PODS_ROOT}/Target Support Files/Pods-FesTracking2-FesTracking2UITests/Pods-FesTracking2-FesTracking2UITests-frameworks-${CONFIGURATION}-input-files.xcfilelist",
 			);
 			inputPaths = (
+				"${PODS_PODFILE_DIR_PATH}/Podfile.lock",
+				"${PODS_ROOT}/Manifest.lock",
 			);
-			name = "[CP] Embed Pods Frameworks";
+			name = "[CP] Check Pods Manifest.lock";
 			outputFileListPaths = (
-				"${PODS_ROOT}/Target Support Files/Pods-FesTracking2-FesTracking2UITests/Pods-FesTracking2-FesTracking2UITests-frameworks-${CONFIGURATION}-output-files.xcfilelist",
 			);
 			outputPaths = (
+				"$(DERIVED_FILE_DIR)/Pods-FesTracking2Tests-checkManifestLockResult.txt",
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-FesTracking2-FesTracking2UITests/Pods-FesTracking2-FesTracking2UITests-frameworks.sh\"\n";
+			shellScript = "diff \"${PODS_PODFILE_DIR_PATH}/Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [ $? != 0 ] ; then\n    # print error to STDERR\n    echo \"error: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\" >&2\n    exit 1\nfi\n# This output is used by Xcode 'outputs' to avoid re-running this script phase.\necho \"SUCCESS\" > \"${SCRIPT_OUTPUT_FILE_0}\"\n";
 			showEnvVarsInLog = 0;
 		};
 /* End PBXShellScriptBuildPhase section */
@@ -1811,7 +1799,7 @@
 		};
 		298BD7C12D71E46900CB63F1 /* Debug */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 2ED28BC68D7C76B5AD0147C2 /* Pods-FesTracking2.debug.xcconfig */;
+			baseConfigurationReference = 9EB2AE354D3409031F605D84 /* Pods-FesTracking2.debug.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
@@ -1839,7 +1827,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 2.0.6;
+				MARKETING_VERSION = 2.0.8;
 				OTHER_SWIFT_FLAGS = "$(inherited) -D COCOAPODS";
 				PRODUCT_BUNDLE_IDENTIFIER = StudioMK.FesTracking;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -1853,7 +1841,7 @@
 		};
 		298BD7C22D71E46900CB63F1 /* Release */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = C2452BC5E866C14D5C7C3887 /* Pods-FesTracking2.release.xcconfig */;
+			baseConfigurationReference = 2CDEE490E4876E0D065223C1 /* Pods-FesTracking2.release.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
@@ -1881,7 +1869,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 2.0.6;
+				MARKETING_VERSION = 2.0.8;
 				PRODUCT_BUNDLE_IDENTIFIER = StudioMK.FesTracking;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
@@ -1894,7 +1882,7 @@
 		};
 		298BD7C42D71E46900CB63F1 /* Debug */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = BD6BB794D49DA18CACED2CCF /* Pods-FesTracking2Tests.debug.xcconfig */;
+			baseConfigurationReference = 3FBBCEBD209B644B9165205A /* Pods-FesTracking2Tests.debug.xcconfig */;
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_STYLE = Automatic;
@@ -1914,7 +1902,7 @@
 		};
 		298BD7C52D71E46900CB63F1 /* Release */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 269836BF39E1F2EAD3C8133A /* Pods-FesTracking2Tests.release.xcconfig */;
+			baseConfigurationReference = 5B6161D34F173327F85EE8B9 /* Pods-FesTracking2Tests.release.xcconfig */;
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_STYLE = Automatic;
@@ -1934,7 +1922,7 @@
 		};
 		298BD7C72D71E46900CB63F1 /* Debug */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 853A27735A6145CF5C6B1C0B /* Pods-FesTracking2-FesTracking2UITests.debug.xcconfig */;
+			baseConfigurationReference = A5B59E198B886CB25A478303 /* Pods-FesTracking2-FesTracking2UITests.debug.xcconfig */;
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
@@ -1952,7 +1940,7 @@
 		};
 		298BD7C82D71E46900CB63F1 /* Release */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 231FDE1DF1A39C005D053084 /* Pods-FesTracking2-FesTracking2UITests.release.xcconfig */;
+			baseConfigurationReference = 44B8059399223D8FCF78D97F /* Pods-FesTracking2-FesTracking2UITests.release.xcconfig */;
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
@@ -2010,6 +1998,14 @@
 /* End XCConfigurationList section */
 
 /* Begin XCRemoteSwiftPackageReference section */
+		2972EF292E2DFED0003A4F1C /* XCRemoteSwiftPackageReference "NavigationSwipeControl" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/kmatsushita1012/NavigationSwipeControl";
+			requirement = {
+				kind = exactVersion;
+				version = 0.2.1;
+			};
+		};
 		29F8A2BC2D9EF078001633B3 /* XCRemoteSwiftPackageReference "swift-composable-architecture" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/pointfreeco/swift-composable-architecture";
@@ -2018,26 +2014,18 @@
 				minimumVersion = 1.19.0;
 			};
 		};
-		29F8A2BF2D9EF13E001633B3 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/firebase/firebase-ios-sdk";
-			requirement = {
-				kind = upToNextMajorVersion;
-				minimumVersion = 11.11.0;
-			};
-		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
+		2972EF2A2E2DFED0003A4F1C /* NavigationSwipeControl */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 2972EF292E2DFED0003A4F1C /* XCRemoteSwiftPackageReference "NavigationSwipeControl" */;
+			productName = NavigationSwipeControl;
+		};
 		29F8A2BD2D9EF079001633B3 /* ComposableArchitecture */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = 29F8A2BC2D9EF078001633B3 /* XCRemoteSwiftPackageReference "swift-composable-architecture" */;
 			productName = ComposableArchitecture;
-		};
-		29F8A2C02D9EF13E001633B3 /* FirebaseAppDistribution-Beta */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 29F8A2BF2D9EF13E001633B3 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
-			productName = "FirebaseAppDistribution-Beta";
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

@@ -7,6 +7,7 @@
 
 import SwiftUI
 import ComposableArchitecture
+import NavigationSwipeControl
 
 struct ChangePasswordStoreView: View {
     
@@ -52,6 +53,7 @@ struct ChangePasswordStoreView: View {
             .padding()
             Spacer()
         }
+        .dismissible(backButton: false, edgeSwipe: false)
         .loadingOverlay(store.isLoading)
         .alert($store.scope(state: \.alert, action: \.alert))
     }

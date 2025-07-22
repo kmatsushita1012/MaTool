@@ -9,8 +9,6 @@ import ComposableArchitecture
 
 @Reducer
 struct ConfirmSignIn {
-    @Dependency(\.authService) var authService
-    @Dependency(\.userDefaultsClient) var userDefaultsClient
     
     @ObservableState
     struct State: Equatable {
@@ -28,6 +26,10 @@ struct ConfirmSignIn {
         case received(Result<UserRole, AuthError>)
         case alert(PresentationAction<Alert.Action>)
     }
+    
+    @Dependency(\.authService) var authService
+    @Dependency(\.userDefaultsClient) var userDefaultsClient
+    @Dependency(\.dismiss) var dismiss
     
     var body: some ReducerOf<ConfirmSignIn> {
         BindingReducer()
@@ -49,7 +51,9 @@ struct ConfirmSignIn {
                     await send(.received(result))
                 }
             case .dismissTapped:
-                return .none
+                return .run { _ in
+                    await dismiss()
+                }
             case .received(.success(let userRole)):
                 switch userRole {
                 case .region(let id):
@@ -68,10 +72,8 @@ struct ConfirmSignIn {
                 state.isLoading = false
                 state.alert = Alert.error("送信に失敗しました。\(error.localizedDescription)")
                 return .none
-            case .alert(.presented(.okTapped)):
-                state.alert = nil
-                return .none
             case .alert:
+                state.alert = nil
                 return .none
             }
         }

@@ -11,9 +11,6 @@ import Foundation
 @Reducer
 struct OnboardingFeature {
     
-    @Dependency(\.apiRepository) var apiRepository
-    @Dependency(\.userDefaultsClient) var userDefaultsClient
-    
     @ObservableState
     struct State: Equatable {
         var regions: [Region]?
@@ -33,6 +30,9 @@ struct OnboardingFeature {
         case regionsReceived(Result<[Region], ApiError>)
         case districtsReceived(Result<[PublicDistrict], ApiError>)
     }
+    
+    @Dependency(\.apiRepository) var apiRepository
+    @Dependency(\.userDefaultsClient) var userDefaultsClient
     
     var body: some ReducerOf<OnboardingFeature> {
         BindingReducer()
