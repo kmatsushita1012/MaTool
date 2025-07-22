@@ -33,7 +33,6 @@ struct AdminRegionEditView: View{
                             store.send(.onSpanEdit(span))
                         }
                     )
-                    .padding(0)
                 }
                 Button(action: {
                     store.send(.onSpanAdd)
