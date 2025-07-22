@@ -81,7 +81,7 @@ struct AdminRegionEditView: View{
                 .padding(8)
             }
         }
-        .navigationBarTitleDisplayMode(.inline)x
+        .navigationBarTitleDisplayMode(.inline)
         .loadingOverlay(store.isLoading)
         .dismissible(backButton: false, edgeSwipe: false)
         .navigationDestination(
