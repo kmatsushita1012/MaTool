@@ -7,7 +7,6 @@
 
 import SwiftUI
 import SwiftData
-import FirebaseCore
 import ComposableArchitecture
 import AWSMobileClient
 
@@ -16,12 +15,6 @@ struct FesTracking2App: App {
     //    @UIApplicationDelegateAdaptor(AppDelegate.self) var delegate
     @AppStorage(hasLaunchedBeforePath, store: UserDefaults(suiteName: "matool")) var hasLaunchedBefore: Bool = false
     
-    @State private var shouldShowUpdate = false
-
-    
-    init(){
-        FirebaseApp.configure()
-    }
     var body: some Scene {
         WindowGroup {
             if hasLaunchedBefore {
