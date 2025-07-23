@@ -2,7 +2,7 @@ name: release
 
 on:
   push:
-    branches: ["release", "fix/fix/CI-CD-AWS"]
+    branches: ["release", "fix/CI-CD-AWS"]
 
   workflow_dispatch:
 
