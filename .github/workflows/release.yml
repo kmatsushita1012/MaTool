@@ -47,6 +47,21 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-derived-
 
+      - name: Create awsconfiguration.json
+        run: |
+          cat <<EOF > awsconfiguration.json
+          {
+            "CognitoUserPool": {
+              "Default": {
+                "PoolId": "${{ secrets.AWS_AMPLIFY_POOL_ID }}",
+                "AppClientId": "${{ secrets.AWS_AMPLIFY_APP_CLIENT_ID }}",
+                "Region": "${{ secrets.AWS_AMPLIFY_REGION }}"
+              }
+            }
+          }
+          EOF
+          cat awsconfiguration.json
+
       - name: Install CocoaPods
         run: |
           gem install cocoapods
