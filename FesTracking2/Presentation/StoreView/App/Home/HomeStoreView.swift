@@ -11,58 +11,48 @@ import ComposableArchitecture
 struct HomeStoreView: View {
     @Bindable var store: StoreOf<Home>
     
-    var body: some View  {
+    var body: some View {
         NavigationStack {
-            VStack(spacing: 16) {
-                CardView(
-                    title: "地図",
-                    foregroundColor: .white,
-                    backgroundColor: .red
-                )
-                .onTapGesture {
-                    store.send(.mapTapped)
-                }
-                HStack(spacing: 16)  {
-                    VStack(spacing: 16)  {
-                        CardView(
-                            title: "準備中",
-                            foregroundColor: .white,
-                            backgroundColor: .blue
-                        )
-                        .onTapGesture{
-                            store.send(.infoTapped)
-                        }
-                        CardView(
-                            title: "管理者用\nページ",
-                            foregroundColor: .white,
-                            backgroundColor: .orange
-                        )
-                        .onTapGesture {
-                            store.send(.adminTapped)
-                        }
-                        .loadingOverlay(store.isAuthLoading)
+            VStack(spacing: 32) {
+                card("MapCard")
+                    .onTapGesture {
+                        store.send(.mapTapped)
                     }
-                    VStack(spacing: 16)  {
-                        CardView(
-                            title: "設定",
-                            foregroundColor: .black,
-                            backgroundColor: .yellow
-                        )
-                        .onTapGesture {
-                            store.send(.settingsTapped)
-                        }
-                        CardView(
-                            title: "準備中",
-                            foregroundColor: .black,
-                            backgroundColor: .green
-                        )
-                        .onTapGesture{}
+                HStack(spacing: 32)  {
+                    VStack(spacing: 32)  {
+                        card("InfoCard", priority: 2)
+                            .onTapGesture{
+                                store.send(.infoTapped)
+                            }
+                        card("ShopCard", priority: 1)
+                            .onTapGesture{}
+                        
+                    }
+                    VStack(spacing: 32)  {
+                        card("SettingsCard", priority: 1)
+                            .onTapGesture {
+                                store.send(.settingsTapped)
+                            }
+                        card("AdminCard", priority: 2)
+                            .onTapGesture {
+                                store.send(.adminTapped)
+                            }
+                            .loadingOverlay(store.isAuthLoading)
                     }
                 }
             }
-            .padding()
-            .navigationTitle(
-                "MaTool"
+            .padding(32)
+            .toolbar {
+               ToolbarItem(placement: .principal) {
+                   Text("MaTool")
+                       .font(.custom("Kanit", size: 34))
+                       .padding()
+               }
+            }
+            .background(
+                Image("HomeBackground")
+                    .resizable()
+                    .scaledToFill()
             )
             .navigationDestination(item: $store.scope(state: \.destination?.route, action: \.destination.route)) { store in
                 PublicMapStoreView(store: store)
@@ -85,12 +75,22 @@ struct HomeStoreView: View {
             .sheet(isPresented: $store.shouldShowUpdateModal) {
                 UpdateModalView()
             }
+            .alert($store.scope(state: \.alert, action: \.alert))
+            .loadingOverlay(store.isLoading)
         }
-        .alert($store.scope(state: \.alert, action: \.alert))
-        .loadingOverlay(store.isLoading)
         .onAppear(){
             store.send(.onAppear)
         }
+    }
+    
+    @ViewBuilder
+    func card(_ imageName: String, priority: Double = 0) -> some View {
+        Image(imageName)
+            .resizable()
+            .scaledToFill()
+            .clipped()
+            .cornerRadius(8)
+            .layoutPriority(priority)
     }
 }
 
