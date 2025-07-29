@@ -19,7 +19,40 @@ extension Array where Element: Identifiable & Equatable {
             append(element)
         }
     }
+    
+    func prioritizing<Value: Equatable>(
+        by keyPath: KeyPath<Element, Value>,
+        match value: Value
+    ) -> [Element] {
+        guard let matchedIndex = firstIndex(where: { $0[keyPath: keyPath] == value }) else {
+            return self // 該当IDがなければそのまま返す
+        }
+        var reordered = self
+        let matched = reordered.remove(at: matchedIndex)
+        reordered.insert(matched, at: 0)
+        return reordered
+    }
 }
+
+extension Sequence {
+    func first<Value: Equatable>(where keyPath: KeyPath<Element, Value>, equals value: Value) -> Element? {
+        first { $0[keyPath: keyPath] == value }
+    }
+
+    func filter<Value: Equatable>(where keyPath: KeyPath<Element, Value>, equals value: Value) -> [Element] {
+        filter { $0[keyPath: keyPath] == value }
+    }
+
+    func contains<Value: Equatable>(where keyPath: KeyPath<Element, Value>, equals value: Value) -> Bool {
+        contains { $0[keyPath: keyPath] == value }
+    }
+
+    func map<Value>(keyPath: KeyPath<Element, Value>) -> [Value] {
+        map { $0[keyPath: keyPath] }
+    }
+}
+
+
 
 
 extension Color {
