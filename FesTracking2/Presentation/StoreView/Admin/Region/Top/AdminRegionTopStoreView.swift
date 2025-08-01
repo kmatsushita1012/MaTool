@@ -38,6 +38,13 @@ struct AdminRegionView: View {
             }
             Section {
                 Button(action: {
+                    store.send(.batchExportTapped)
+                }) {
+                    Text("経路図一括出力")
+                }
+            }
+            Section {
+                Button(action: {
                     store.send(.changePasswordTapped)
                 }) {
                     Text("パスワード変更")
@@ -73,6 +80,9 @@ struct AdminRegionView: View {
             }
         }
         .dismissible(backButton: false)
+        .sheet(item: $store.folder){ folder in
+            ShareSheet(folder.files)
+        }
         .navigationDestination(
             item: $store.scope(state: \.destination?.edit, action: \.destination.edit)
         ) { store in
