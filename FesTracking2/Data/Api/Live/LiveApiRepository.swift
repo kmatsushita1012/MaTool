@@ -122,6 +122,14 @@ extension ApiRepotiroy: DependencyKey {
             )
             return decodeResponse(PublicRoute.self, from: response)
         },
+        getRouteIds: { accessToken in
+            let response = await performGetRequest(
+                base: base,
+                path: "/routes",
+                accessToken: accessToken
+            )
+            return decodeResponse([String].self, from: response)
+        },
         postRoute: { route, accessToken in
             let body = encodeRequest(route)
             switch body {
