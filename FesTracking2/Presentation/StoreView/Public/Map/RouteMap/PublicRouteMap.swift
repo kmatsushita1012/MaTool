@@ -25,11 +25,8 @@ struct PublicRouteMap {
         var region: MKCoordinateRegion?
         @Presents var sheet: Destination.State?
         var points: [Point]? {
-            if let route = route{
-                filterPoints(route)
-            }else{
-                nil
-            }
+            guard let route else { return nil }
+            return PointFilter.pub.apply(to: route)
         }
         var segments: [Segment]? {
             route?.segments
@@ -81,21 +78,3 @@ struct PublicRouteMap {
 extension PublicRouteMap.Destination.State: Equatable {}
 extension PublicRouteMap.Destination.Action: Equatable {}
 
-extension PublicRouteMap.State {
-    private func filterPoints(_ route: PublicRoute)-> [Point] {
-        var newPoints:[Point] = []
-        if let firstPoint = route.points.first,
-           firstPoint.title == nil {
-            let tempFirst = Point(id: firstPoint.id, coordinate: firstPoint.coordinate, title: "出発", time: route.start, shouldExport: true)
-            newPoints.append(tempFirst)
-        }
-        newPoints.append(contentsOf: route.points.filter{ $0.title != nil })
-        if route.points.count >= 2,
-           let lastPoint = route.points.last,
-           lastPoint.title == nil {
-            let tempLast = Point(id: lastPoint.id, coordinate: lastPoint.coordinate, title: "到着", time: route.goal, shouldExport: true)
-            newPoints.append(tempLast)
-        }
-        return newPoints
-    }
-}
