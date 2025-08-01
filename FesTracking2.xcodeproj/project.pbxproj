@@ -39,8 +39,8 @@
 		2967C9162E1F57160080B8DA /* UpdateManagerProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2967C9152E1F57120080B8DA /* UpdateManagerProtocol.swift */; };
 		2967C9182E1F57D60080B8DA /* MockUpdateManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2967C9172E1F57D10080B8DA /* MockUpdateManager.swift */; };
 		2972017B2D9CFA50003424EF /* Async.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2972017A2D9CFA41003424EF /* Async.swift */; };
-		2976942F2E2CEFE8007B1D69 /* AWSMobileClientError.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2976942E2E2CEFE3007B1D69 /* AWSMobileClientError.swift */; };
 		2972EF2B2E2DFED0003A4F1C /* NavigationSwipeControl in Frameworks */ = {isa = PBXBuildFile; productRef = 2972EF2A2E2DFED0003A4F1C /* NavigationSwipeControl */; };
+		2976942F2E2CEFE8007B1D69 /* AWSMobileClientError.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2976942E2E2CEFE3007B1D69 /* AWSMobileClientError.swift */; };
 		2978C4A92DCB3B5200D3F7CE /* PointFeature.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2978C4A82DCB3B4E00D3F7CE /* PointFeature.swift */; };
 		2978C4AB2DCB3BD300D3F7CE /* LocationFeature.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2978C4AA2DCB3BCE00D3F7CE /* LocationFeature.swift */; };
 		2978C4AD2DCB3C9D00D3F7CE /* PointView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2978C4AC2DCB3C9A00D3F7CE /* PointView.swift */; };
@@ -153,6 +153,8 @@
 		29F403062DAA95DF003527D1 /* Route.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29F403052DAA95DA003527D1 /* Route.swift */; };
 		29F8A2BE2D9EF079001633B3 /* ComposableArchitecture in Frameworks */ = {isa = PBXBuildFile; productRef = 29F8A2BD2D9EF079001633B3 /* ComposableArchitecture */; };
 		29F8A7932DFD645000331A7F /* TitleView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29F8A7922DFD643C00331A7F /* TitleView.swift */; };
+		29FBA84B2E3B31FF00F6E33C /* RouteSnapshotter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29FBA84A2E3B31FE00F6E33C /* RouteSnapshotter.swift */; };
+		29FBA84D2E3B34A900F6E33C /* ShareSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29FBA84C2E3B34A300F6E33C /* ShareSheet.swift */; };
 		669224E9583394F966E1C953 /* Pods_FesTracking2.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A618585B10BC13EF80425258 /* Pods_FesTracking2.framework */; };
 		BDC150D136794E0D80F535CD /* Pods_FesTracking2_FesTracking2UITests.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A449D00CF487FFFF67AD9A67 /* Pods_FesTracking2_FesTracking2UITests.framework */; };
 /* End PBXBuildFile section */
@@ -322,6 +324,8 @@
 		29E8C3312DBB40FC0086F6BB /* PublicLocation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PublicLocation.swift; sourceTree = "<group>"; };
 		29F403052DAA95DA003527D1 /* Route.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Route.swift; sourceTree = "<group>"; };
 		29F8A7922DFD643C00331A7F /* TitleView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TitleView.swift; sourceTree = "<group>"; };
+		29FBA84A2E3B31FE00F6E33C /* RouteSnapshotter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RouteSnapshotter.swift; sourceTree = "<group>"; };
+		29FBA84C2E3B34A300F6E33C /* ShareSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShareSheet.swift; sourceTree = "<group>"; };
 		2CDEE490E4876E0D065223C1 /* Pods-FesTracking2.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-FesTracking2.release.xcconfig"; path = "Target Support Files/Pods-FesTracking2/Pods-FesTracking2.release.xcconfig"; sourceTree = "<group>"; };
 		3FBBCEBD209B644B9165205A /* Pods-FesTracking2Tests.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-FesTracking2Tests.debug.xcconfig"; path = "Target Support Files/Pods-FesTracking2Tests/Pods-FesTracking2Tests.debug.xcconfig"; sourceTree = "<group>"; };
 		44B8059399223D8FCF78D97F /* Pods-FesTracking2-FesTracking2UITests.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-FesTracking2-FesTracking2UITests.release.xcconfig"; path = "Target Support Files/Pods-FesTracking2-FesTracking2UITests/Pods-FesTracking2-FesTracking2UITests.release.xcconfig"; sourceTree = "<group>"; };
@@ -379,8 +383,8 @@
 		29039CF52DF830AD0018BA1A /* List */ = {
 			isa = PBXGroup;
 			children = (
-				29A385192DD1B778008A1D08 /* AdminRegionDistrictListStoreView.swift */,
 				29A385152DD1B517008A1D08 /* AdminRegionDistrictList.swift */,
+				29A385192DD1B778008A1D08 /* AdminRegionDistrictListStoreView.swift */,
 			);
 			path = List;
 			sourceTree = "<group>";
@@ -725,6 +729,7 @@
 			isa = PBXGroup;
 			children = (
 				293F2C2C2DD77E9F002C056E /* LoadingOverlay.swift */,
+				29FBA84C2E3B34A300F6E33C /* ShareSheet.swift */,
 				2967C90F2E1F54890080B8DA /* UpdateModal.swift */,
 				29F8A7922DFD643C00331A7F /* TitleView.swift */,
 				295EA2D32DEE9E7E006CDE08 /* CardView.swift */,
@@ -1163,6 +1168,7 @@
 				2972017A2D9CFA41003424EF /* Async.swift */,
 				29CF49182D7440EB00036D28 /* Extension.swift */,
 				29B2D0932DF07843008592F8 /* EditManager.swift */,
+				29FBA84A2E3B31FE00F6E33C /* RouteSnapshotter.swift */,
 			);
 			path = Utils;
 			sourceTree = "<group>";
@@ -1504,6 +1510,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				293F2C2D2DD77EA4002C056E /* LoadingOverlay.swift in Sources */,
+				29FBA84D2E3B34A900F6E33C /* ShareSheet.swift in Sources */,
 				2978C4AF2DCB3DAE00D3F7CE /* BulletItemView.swift in Sources */,
 				2948FCF22DC5CAB000C73E99 /* PublicRoutePickerView.swift in Sources */,
 				29AB1B4A2DE2124600AC37F3 /* Onboarding.swift in Sources */,
@@ -1514,6 +1521,7 @@
 				29A1C2122E28B0150036F221 /* ChangePassword.swift in Sources */,
 				299770202DA527FB00EEB5F4 /* DismissButton.swift in Sources */,
 				29A1C21F2E28D88E0036F221 /* UpdateEmailStoreView.swift in Sources */,
+				29FBA84B2E3B31FF00F6E33C /* RouteSnapshotter.swift in Sources */,
 				292D108A2DCDD6CA0022D8A0 /* UserRole.swift in Sources */,
 				29A0434A2D7DC43100E77C91 /* Segment.swift in Sources */,
 				2948FCF02DC5C38100C73E99 /* PickerFeature.swift in Sources */,
