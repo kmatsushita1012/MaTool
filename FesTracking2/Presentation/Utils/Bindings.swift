@@ -7,6 +7,19 @@
 
 import SwiftUI
 
+extension Binding {
+    /// 読み取り専用バインディング
+    var readonly: Binding<Value> {
+        Binding(
+            get: { self.wrappedValue },
+            set: { _ in
+                assertionFailure("Attempted to write to a read-only Binding.")
+            }
+        )
+    }
+}
+
+
 extension Binding where Value == String? {
     /// nil を "" に変換し、"" を nil に変換する Binding<String> を作成
     var nonOptional: Binding<String> {
