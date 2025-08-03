@@ -84,7 +84,7 @@ struct AdminRouteMapStoreView: View{
         .dismissible(backButton: false, edgeSwipe: false)
         .sheet(item: $store.scope(state: \.destination?.point, action: \.destination.point)) { store in
             NavigationStack{
-                AdminPointView(store: store)
+                AdminPointEditStoreView(store: store)
                     .presentationDetents([.fraction(0.3), .large], selection: $selectedDetent)
                     .interactiveDismissDisabled()
                     .navigationBarBackButtonHidden()
