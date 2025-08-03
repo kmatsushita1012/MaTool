@@ -115,7 +115,13 @@ struct AdminRegionTop {
                 return .none
             case .districtInfoPrepared(let district, .success(let routes)):
                 state.isApiLoading = false
-                state.destination = .districtInfo(AdminRegionDistrictList.State(district: district, routes: routes.sorted()))
+                state.destination = .districtInfo(
+                    AdminRegionDistrictList.State(
+                        region: state.region,
+                        district: district,
+                        routes: routes.sorted()
+                    )
+                )
                 return .none
             case .districtInfoPrepared(_, .failure(let error)):
                 state.isApiLoading = false
