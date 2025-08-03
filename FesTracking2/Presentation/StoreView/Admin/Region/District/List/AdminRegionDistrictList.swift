@@ -13,12 +13,13 @@ struct AdminRegionDistrictList {
     
     @ObservableState
     struct State: Equatable {
+        let region: Region
         let district: PublicDistrict
         let routes: [RouteSummary]
         var isApiLoading: Bool = false
         var isExportLoading: Bool = false
         var folder: ExportedFolder? = nil
-        @Presents var export: AdminRouteExport.State?
+        @Presents var export: AdminRouteEditV2.State?
         @Presents var alert: Alert.State?
         var isLoading: Bool {
             isApiLoading || isExportLoading
@@ -33,7 +34,7 @@ struct AdminRegionDistrictList {
         case dismissTapped
         case batchExportTapped
         case batchExportPrepared(Result<[URL], ApiError>)
-        case export(PresentationAction<AdminRouteExport.Action>)
+        case export(PresentationAction<AdminRouteEditV2.Action>)
         case alert(PresentationAction<Alert.Action>)
     }
     
@@ -55,7 +56,13 @@ struct AdminRegionDistrictList {
                 }
             case .exportPrepared(.success(let route)):
                 state.isApiLoading = false
-                state.export = .init(route: route)
+                state.export = AdminRouteEditV2.State(
+                    mode: .preview,
+                    route: route.toModel(),
+                    districtName: state.district.name,
+                    milestones: state.region.milestones,
+                    origin: Coordinate.sample
+                )
                 return .none
             case .exportPrepared(.failure(let error)):
                 state.isApiLoading = false
@@ -75,10 +82,6 @@ struct AdminRegionDistrictList {
             case .batchExportPrepared(.failure(let error)):
                 state.alert = Alert.error("出力に失敗しました。\n\(error.localizedDescription)")
                 return .none
-            case .export(.presented(.dismissTapped)),
-                .export(.dismiss):
-                state.export = nil
-                return .none
             case .export:
                 return .none
             case .alert:
@@ -87,7 +90,7 @@ struct AdminRegionDistrictList {
             }
         }
         .ifLet(\.$export, action: \.export){
-            AdminRouteExport()
+            AdminRouteEditV2()
         }
         .ifLet(\.$alert, action: \.alert)
     }
