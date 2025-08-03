@@ -20,7 +20,12 @@ class PointAnnotation: MKPointAnnotation {
         case .simple:
             self.title = point.title
         case .time(let index):
-            self.title = "\(index):\(point.title ?? "") \(point.time?.text ?? "")"
+            let hasSuffix = (point.title?.isEmpty == false) || (point.time != nil)
+            let titleText = [point.title, point.time?.text]
+                .compactMap { $0 }
+                .joined(separator: " ")
+
+            self.title = hasSuffix ? "\(index): \(titleText)" : "\(index)"
         }
         
     }
