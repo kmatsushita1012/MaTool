@@ -10,11 +10,16 @@ import UIKit
 
 struct RouteSnapshotter: Equatable {
 
-    let route: PublicRoute
+    let route: Route
     let filter: PointFilter
     
-    init(_ route: PublicRoute, filter: PointFilter = .export){
+    init(_ route: Route, filter: PointFilter = .export){
         self.route = route
+        self.filter = filter
+    }
+    
+    init(_ route: PublicRoute, filter: PointFilter = .export){
+        self.route = route.toModel()
         self.filter = filter
     }
     
@@ -169,7 +174,7 @@ struct RouteSnapshotter: Equatable {
         }
     }
     
-    func createPDF(with image: UIImage,path: String) -> URL? {
+    func createPDF(with image: UIImage, path: String) -> URL? {
        let pdfData = NSMutableData()
        let pdfRect = CGRect(origin: .zero, size: image.size)
        UIGraphicsBeginPDFContextToData(pdfData, pdfRect, nil)
