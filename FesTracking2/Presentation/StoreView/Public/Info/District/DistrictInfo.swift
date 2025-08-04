@@ -30,6 +30,8 @@ struct DistrictInfo {
     enum Action: Equatable, BindableAction {
         case binding(BindingAction<State>)
         case dismissTapped
+        case mapTapped
+        case showMap(PublicMap.Content)
     }
     
     @Dependency(\.dismiss) var dismiss
@@ -44,6 +46,12 @@ struct DistrictInfo {
                 return .run { _ in
                     await dismiss()
                 }
+            case .mapTapped:
+                return .run { send in
+                    await send(.showMap(.route()))
+                }
+            case .showMap:
+                return .none
             }
         }
     }
