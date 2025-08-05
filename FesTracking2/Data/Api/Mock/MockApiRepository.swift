@@ -41,16 +41,16 @@ extension ApiRepotiroy {
             return Result.success(DistrictTool.sample)
         },
         getRoutes: { _,_ in
-            let summaries = routes.map{ RouteSummary(from: PublicRoute(from: $0, name: "城北町")) }
+            let summaries = routes.map{ RouteSummary(from: RouteInfo(from: $0, name: "城北町")) }
             return Result.success(summaries)
         },
         getRoute: { id, _  in
             let route = routes.filter{ $0.id == id }.first ?? Route.sample
-            return Result.success( PublicRoute(from: route, name: "城北町") )
+            return Result.success( RouteInfo(from: route, name: "城北町") )
         },
         getCurrentRoute: { _,_ in
             let route = routes.first ?? Route.sample
-            return Result.success(PublicRoute(from: route, name: "城北町"))
+            return Result.success(RouteInfo(from: route, name: "城北町"))
         },
         getRouteIds: {_ in
             return Result.success(["id"])
@@ -72,10 +72,10 @@ extension ApiRepotiroy {
             return Result.success("Success")
         },
         getLocation: { _,_ in
-            return Result.success(PublicLocation.sample)
+            return Result.success(LocationInfo.sample)
         },
         getLocations: { _,_ in
-            return Result.success([PublicLocation.sample])
+            return Result.success([LocationInfo.sample])
         },
         putLocation: { _,_ in
             return Result.success("Success")
