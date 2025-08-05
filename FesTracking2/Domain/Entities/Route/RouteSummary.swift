@@ -28,7 +28,7 @@ extension RouteSummary: Comparable {
 
 
 extension RouteSummary{
-    init(from route: PublicRoute) {
+    init(from route: RouteInfo) {
         self.id = route.id
         self.districtId = route.districtId
         self.districtName = route.districtName

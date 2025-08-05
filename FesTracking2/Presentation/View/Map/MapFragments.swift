@@ -36,9 +36,9 @@ class SegmentPolyline: MKPolyline {
 }
 
 class LocationAnnotation: MKPointAnnotation {
-    let location: PublicLocation
+    let location: LocationInfo
     
-    init(location: PublicLocation) {
+    init(location: LocationInfo) {
         self.location = location
         super.init()
         self.title = location.districtId

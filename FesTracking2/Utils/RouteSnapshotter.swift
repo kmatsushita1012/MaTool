@@ -18,7 +18,7 @@ struct RouteSnapshotter: Equatable {
         self.filter = filter
     }
     
-    init(_ route: PublicRoute, filter: PointFilter = .export){
+    init(_ route: RouteInfo, filter: PointFilter = .export){
         self.route = route.toModel()
         self.filter = filter
     }
