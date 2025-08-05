@@ -24,9 +24,9 @@ struct PublicMap{
     @ObservableState
     struct State: Equatable{
         let contents: [Content]
-        var selectedContent: Content?
+        var selectedContent: Content
         @Presents var destination: Destination.State?
-        @Shared var mapRegion: MKCoordinateRegion?
+        @Shared var mapRegion: MKCoordinateRegion
         @Presents var alert: Alert.State?
     }
     
@@ -67,10 +67,8 @@ struct PublicMap{
                 switch value {
                 //TODO　mapRegionの変更ができてない
                 case .locations(let id, _ , let origin):
-                    state.$mapRegion.withLock{ $0 = makeRegion(origin: origin, spanDelta: spanDelta) }
                     return locationsEffect(id)
                 case .route(let id, _ , let origin):
-                    state.$mapRegion.withLock{ $0 = makeRegion(origin: origin, spanDelta: spanDelta) }
                     return routeEffect(id)
                 }
             case let .routePrepared(
@@ -79,6 +77,8 @@ struct PublicMap{
                 currentResult,
                 locationResult,
             ):
+                let mapRegion = makeRegion(route: currentResult.value, location: locationResult.value, origin: state.selectedContent.origin, spanDelta: spanDelta)
+                state.$mapRegion.withLock{ $0 = mapRegion }
                 state.destination = .route(
                     PublicRoute.State(
                         id: id,
@@ -198,19 +198,13 @@ extension PublicMap.State {
         current: RouteInfo?,
         location: LocationInfo?
     ) {
-        let contents = [PublicMap.Content.from(region: region)]
+        let locations = PublicMap.Content.from(region: region)
+        let contents = [locations]
             + districts.map{ PublicMap.Content.from(district: $0, origin: region.base) }
-        let selected = contents.first(where: \.id, equals: id)
+        let selected = contents.first(where: \.id, equals: id) ?? locations
         self.contents = contents
         self.selectedContent = selected
-        let mapRegion: Shared<MKCoordinateRegion?>
-        if let location {
-            mapRegion = Shared(value: makeRegion(origin: location.coordinate, spanDelta: spanDelta))
-        } else if let current {
-            mapRegion = Shared(value: makeRegion(current.points.map { $0.coordinate }))
-        } else {
-            mapRegion = Shared(value: makeRegion(origin: selected?.origin ?? region.base, spanDelta: spanDelta))
-        }
+        let mapRegion = Shared(value: makeRegion(route: current, location: location, origin: selected.origin, spanDelta: spanDelta))
         self._mapRegion = mapRegion
         self.destination = .route(
             PublicRoute.State(
@@ -234,15 +228,8 @@ extension PublicMap.State {
         self.contents = contents
         self.selectedContent = selected
         
-        let mapRegion: Shared<MKCoordinateRegion?>
-        if !locations.isEmpty {
-            mapRegion = Shared(value: makeRegion(locations.map { $0.coordinate }))
-        } else {
-            mapRegion = Shared(value: makeRegion(origin: region.base, spanDelta: spanDelta))
-        }
-        
+        let mapRegion = Shared(value: makeRegion(locations: locations, origin: region.base))
         self._mapRegion = mapRegion
-        
         self.destination = .locations(
             PublicLocations.State(
                 regionId: region.id,
