@@ -43,13 +43,19 @@ struct DistrictInfoStoreView: View {
                     }
                     // 横スクロール（上で修正したもの）
                     if !store.item.performances.isEmpty{
-                        ScrollView(.horizontal, showsIndicators: false) {
-                            HStack(spacing: 16) {
-                                ForEach(store.item.performances) { item in
-                                    performance(item)
+                        VStack(alignment: .leading){
+                            Text("余興")
+                                .font(.headline)
+                                .foregroundColor(.primary)
+                                .padding(.horizontal)
+                            ScrollView(.horizontal, showsIndicators: false) {
+                                HStack(spacing: 16) {
+                                    ForEach(store.item.performances) { item in
+                                        performance(item)
+                                    }
                                 }
+                                .padding(.horizontal)
                             }
-                            .padding(.horizontal)
                         }
                     }
                     VStack{
