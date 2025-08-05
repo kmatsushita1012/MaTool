@@ -13,10 +13,6 @@ struct PublicRouteMapStoreView: View {
     
     var body: some View {
         ZStack{
-            VStack{
-                menu()
-                Spacer()
-            }
             PublicRouteMap(
                 points: store.points,
                 segments: store.segments,
@@ -25,17 +21,27 @@ struct PublicRouteMapStoreView: View {
                 locationTapped: { store.send(.locationTapped) },
                 region: $store.mapRegion
             )
-            .sheet(item: $store.detail) { detail in
-                switch detail{
-                case .point(let item):
-                    PointView(item: item)
-                        .presentationDetents([.fraction(0.3)])
-                case .location(let item):
-                    LocationView(item: item)
-                        .presentationDetents([.fraction(0.3)])
+            VStack{
+                menu()
+                    .padding()
+                Spacer()
+                HStack{
+                    Spacer()
+                    operationButtons()
+                        .padding()
                 }
-                
             }
+        }
+        .sheet(item: $store.detail) { detail in
+            switch detail{
+            case .point(let item):
+                PointView(item: item)
+                    .presentationDetents([.fraction(0.3)])
+            case .location(let item):
+                LocationView(item: item)
+                    .presentationDetents([.fraction(0.3)])
+            }
+            
         }
     }
     
