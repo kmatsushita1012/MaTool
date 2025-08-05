@@ -52,6 +52,7 @@ struct PublicRoute {
         }
         
         init(id: String, routes: [RouteSummary]? = nil, selectedRoute: RouteInfo? = nil, location: LocationInfo? = nil, mapRegion: Shared<MKCoordinateRegion?>){
+            self.id = id
             self.items = routes
             if let selectedRoute {
                 self.selectedItem = RouteSummary(from: selectedRoute)
