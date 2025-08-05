@@ -97,14 +97,15 @@ struct Home {
                 )
                 return .none
             case .mapTapped:
-                let districtId = userDefaultsClient.string(defaultDistrictKey)
-                if let districtId {
-                    return routeEffect(districtId)
-                }
                 let regionId = userDefaultsClient.string(defaultRegionKey)
-                if let regionId {
+                let districtId = userDefaultsClient.string(defaultDistrictKey)
+                
+                if let regionId, let districtId {
+                    return routeEffect(regionId: regionId, districtId: districtId)
+                } else if let regionId {
                     return locationsEffect(regionId)
                 }
+                
                 state.alert = Alert.error("設定画面で参加する祭典を選択してください")
                 return .none
             case .infoTapped:
@@ -214,6 +215,7 @@ struct Home {
                     state.alert = Alert.error("情報の取得に失敗しました")
                 }
                 state.isDestinationLoading = false
+                return .none
             case let .settingsPrepared(regionsResult, regionResult, districtsResult, districtResult):
                 state.isDestinationLoading = false
                 state.destination = .settings(
@@ -267,12 +269,12 @@ struct Home {
     }
     
     
-    func routeEffect(_ id: String) -> Effect<Action> {
+    func routeEffect(regionId: String, districtId id: String) -> Effect<Action> {
         .run { send in
             let accessToken = await authService.getAccessToken()
-            
-            async let regionTask = apiRepository.getRegion(id)
-            async let districtsTask = apiRepository.getDistricts(id)
+            print("\(regionId) \(id)")
+            async let regionTask = apiRepository.getRegion(regionId)
+            async let districtsTask = apiRepository.getDistricts(regionId)
             async let routesTask = apiRepository.getRoutes(id, accessToken)
             async let currentTask = apiRepository.getCurrentRoute(id, accessToken)
             async let locationTask = apiRepository.getLocation(id, accessToken)

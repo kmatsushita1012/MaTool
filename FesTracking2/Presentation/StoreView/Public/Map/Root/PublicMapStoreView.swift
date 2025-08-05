@@ -15,7 +15,6 @@ struct PublicMapStoreView: View {
     var body: some View {
         VStack{
             picker()
-                .padding
             if let store = store.scope(state: \.destination?.route, action: \.destination.route) {
                 PublicRouteMapStoreView(store: store)
                     .ignoresSafeArea(edges: .bottom)
@@ -26,20 +25,21 @@ struct PublicMapStoreView: View {
                 Spacer()
             }
         }
+        .background(Color.customLightRed)
         .navigationTitle("地図")
         .navigationBarTitleDisplayMode(.inline)
         .ignoresSafeArea(edges: .bottom)
-//        .toolbar {
-//            ToolbarItem(placement: .navigationBarLeading) {
-//                Button(action: {
-//                    store.send(.homeTapped)
-//                }) {
-//                    Image(systemName: "house")
-//                        .foregroundColor(.black)
-//                }
-//                .padding(.horizontal, 8)
-//            }
-//        }
+        .toolbar {
+            ToolbarItem(placement: .navigationBarLeading) {
+                Button(action: {
+                    store.send(.homeTapped)
+                }) {
+                    Image(systemName: "house")
+                        .foregroundColor(.black)
+                }
+                .padding(.horizontal, 8)
+            }
+        }
         .dismissible(backButton: false)
     }
     
