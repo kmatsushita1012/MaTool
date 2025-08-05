@@ -47,8 +47,8 @@ struct DistrictInfo {
                     await dismiss()
                 }
             case .mapTapped:
-                return .run { send in
-                    await send(.showMap(.route()))
+                return .run { [item = state.item] send in
+                    await send(.showMap(.route(item)))
                 }
             case .showMap:
                 return .none
