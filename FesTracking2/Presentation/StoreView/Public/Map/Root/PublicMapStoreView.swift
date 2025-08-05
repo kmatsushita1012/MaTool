@@ -13,52 +13,73 @@ struct PublicMapStoreView: View {
     @Bindable var store: StoreOf<PublicMap>
     
     var body: some View {
-        VStack(spacing: 0){
-            if let store = store.scope(state: \.districtPicker, action: \.districtPicker) {
-                DistrictPickerView(store: store)
-            }
-            ZStack {
-                if let store = store.scope(state: \.map?.route, action: \.map.route) {
-                    PublicRouteMapStoreView(store: store)
-                        .ignoresSafeArea(edges: .bottom)
-                } else if let store = store.scope(state: \.map?.locations, action: \.map.locations) {
-                    LocationsMapStoreView(store: store)
-                        .ignoresSafeArea(edges: .bottom)
-                }else {
-                    Spacer()
-                }
-                if let store = store.scope(state: \.routePicker, action: \.routePicker) {
-                    VStack{
-                        RoutePickerView(store: store)
-                        Spacer()
-                    }
-                }
+        VStack{
+            picker()
+                .padding
+            if let store = store.scope(state: \.destination?.route, action: \.destination.route) {
+                PublicRouteMapStoreView(store: store)
+                    .ignoresSafeArea(edges: .bottom)
+            } else if let store = store.scope(state: \.destination?.locations, action: \.destination.locations) {
+                PublicLocationsMapStoreView(store: store)
+                    .ignoresSafeArea(edges: .bottom)
+            } else {
+                Spacer()
             }
         }
-        .ignoresSafeArea(edges: .bottom)
-        .toolbar {
-            ToolbarItem(placement: .topBarLeading) {
-                Button(action: {
-                    store.send(.homeTapped)
-                }) {
-                    Image(systemName: "house")
-                        .foregroundColor(.black)
-                }
-                .padding(.horizontal, 8)
-            }
-            ToolbarItem(placement: .principal) {
-                Text("地図")
-                    .bold()
-            }
-        }
+        .navigationTitle("地図")
         .navigationBarTitleDisplayMode(.inline)
+        .ignoresSafeArea(edges: .bottom)
+//        .toolbar {
+//            ToolbarItem(placement: .navigationBarLeading) {
+//                Button(action: {
+//                    store.send(.homeTapped)
+//                }) {
+//                    Image(systemName: "house")
+//                        .foregroundColor(.black)
+//                }
+//                .padding(.horizontal, 8)
+//            }
+//        }
         .dismissible(backButton: false)
-        .onAppear() {
-            //TODO
-            store.send(.onAppear)
-        }
     }
     
+    @ViewBuilder
+    private func picker() -> some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing:8){
+                ForEach(store.contents, id: \.self) { item in
+                    menuButton(for: item)
+                }
+            }
+        }
+        .background(Color.customLightRed)
+    }
+    
+    @ViewBuilder
+    private func menuButton(for item: PublicMap.Content) -> some View {
+        let isSelected = item == store.selectedContent
+        
+        Button(action: {
+            if !isSelected {
+                store.send(.contentSelected(item))
+            }
+        }) {
+            Text(item.text)
+                .foregroundColor(.primary)
+                .padding(.vertical, 8)
+                .padding(.horizontal, 16)
+                .frame(minWidth: 48)
+                .background(isSelected ? Color.white : .clear)
+                .clipShape(
+                    isSelected
+                    ? .rect(
+                        topLeadingRadius: 16,
+                        bottomLeadingRadius: 0,
+                        bottomTrailingRadius: 0,
+                        topTrailingRadius: 16
+                    )
+                    : .rect()
+                )
+        }
+    }
 }
-
-
