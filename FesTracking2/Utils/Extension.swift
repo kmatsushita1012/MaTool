@@ -34,6 +34,8 @@ extension Array where Element: Identifiable & Equatable {
     }
 }
 
+// MARK: - Sequence Extension
+
 extension Sequence {
     func first<Value: Equatable>(where keyPath: KeyPath<Element, Value>, equals value: Value) -> Element? {
         first { $0[keyPath: keyPath] == value }
@@ -57,6 +59,8 @@ extension Collection {
         first { $0[keyPath: keyPath] == value }
     }
 }
+
+// MARK: - Collection + Identifiable
 
 extension Collection where Element: Identifiable {
     func first(matching id: Element.ID) -> Element? {
