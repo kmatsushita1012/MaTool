@@ -64,7 +64,7 @@ struct HomeStoreView: View {
             .navigationTitle(
                 "MaTool"
             )
-            .navigationDestination(item: $store.scope(state: \.destination?.route, action: \.destination.route)) { store in
+            .navigationDestination(item: $store.scope(state: \.destination?.map, action: \.destination.map)) { store in
                 PublicMapStoreView(store: store)
             }
             .navigationDestination(item: $store.scope(state: \.destination?.info, action: \.destination.info)) { store in
