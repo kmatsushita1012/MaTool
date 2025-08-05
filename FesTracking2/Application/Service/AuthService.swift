@@ -7,7 +7,9 @@
 
 import Dependencies
 
-struct AuthService: Sendable {
+actor AuthService {
+    
+    var userRole: UserRole = .guest
     
     @Dependency(\.authProvider) var authProvider
     
@@ -22,6 +24,7 @@ struct AuthService: Sendable {
         let userRoleResult = await authProvider.getUserRole()
         switch userRoleResult {
         case .success(let value):
+            userRole = value
             return .success(value)
         case .failure( _):
             let _ = await authProvider.signOut()
@@ -39,6 +42,7 @@ struct AuthService: Sendable {
         let userRoleResult = await authProvider.getUserRole()
         switch userRoleResult {
         case .success(let value):
+            userRole = value
             return .success(value)
         case .failure( _):
             let _ = await authProvider.signOut()
@@ -60,10 +64,14 @@ struct AuthService: Sendable {
         if case .failure(let error) = signOutResult{
             return .failure(error)
         }
-        return .success(.guest)
+        userRole = .guest
+        return .success(userRole)
     }
     
     func getAccessToken() async -> String? {
+        if userRole == .guest {
+            return nil
+        }
         let result = await authProvider.getTokens()
         switch result {
         case .success(let value):
@@ -89,10 +97,12 @@ struct AuthService: Sendable {
     func updateEmail(to newEmail: String) async -> UpdateEmailResult {
         return await authProvider.updateEmail(newEmail)
     }
+    
     func confirmUpdateEmail(code: String) async -> Result<Empty,AuthError> {
         return await authProvider.confirmUpdateEmail(code)
     }
-    func isValidPassword(_ password: String) -> Bool {
+    
+    nonisolated func isValidPassword(_ password: String) -> Bool {
         let lengthRule = password.count >= 8
         let hasNumber = password.range(of: "[0-9]", options: .regularExpression) != nil
         let hasUppercase = password.range(of: "[A-Z]", options: .regularExpression) != nil
