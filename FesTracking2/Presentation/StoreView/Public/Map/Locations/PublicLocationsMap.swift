@@ -12,12 +12,12 @@ import SwiftUI
 struct PublicLocationsMap: UIViewRepresentable {
     var items: [LocationInfo]
     var onTap: (LocationInfo)->Void
-    @Binding var region: MKCoordinateRegion?
+    @Binding var region: MKCoordinateRegion
     
     init(
         items: [LocationInfo],
         onTap: @escaping (LocationInfo) -> Void,
-        region: Binding<MKCoordinateRegion?>
+        region: Binding<MKCoordinateRegion>
     ) {
         self.items = items
         self.onTap = onTap
@@ -31,9 +31,7 @@ struct PublicLocationsMap: UIViewRepresentable {
     func makeUIView(context: Context) -> MKMapView {
         let mapView = MKMapView()
         mapView.delegate = context.coordinator
-        if let region = region {
-            mapView.setRegion(region, animated: false)
-        }
+        mapView.setRegion(region, animated: false)
         return mapView
     }
 
@@ -47,8 +45,7 @@ struct PublicLocationsMap: UIViewRepresentable {
             mapView.addAnnotation(annotation)
         }
         
-        if let region = region,
-            region.center.latitude != mapView.region.center.latitude
+        if region.center.latitude != mapView.region.center.latitude
             || region.center.longitude != mapView.region.center.longitude {
             mapView.setRegion(region, animated: true)
         }

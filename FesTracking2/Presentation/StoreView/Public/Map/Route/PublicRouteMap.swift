@@ -15,7 +15,7 @@ struct PublicRouteMap: UIViewRepresentable {
     var location: LocationInfo?
     var pointTapped: (Point)->Void
     var locationTapped: ()->Void
-    @Binding var region: MKCoordinateRegion?
+    @Binding var region: MKCoordinateRegion
     
     func makeCoordinator() -> Coordinator {
         Coordinator(self)
@@ -24,9 +24,7 @@ struct PublicRouteMap: UIViewRepresentable {
     func makeUIView(context: Context) -> MKMapView {
         let mapView = MKMapView()
         mapView.delegate = context.coordinator
-        if let region = region {
-            mapView.setRegion(region, animated: false)
-        }
+        mapView.setRegion(region, animated: false)
         return mapView
     }
 
@@ -59,8 +57,7 @@ struct PublicRouteMap: UIViewRepresentable {
             mapView.addAnnotation(annotation)
         }
         
-        if let region = region,
-            region.center.latitude != mapView.region.center.latitude
+        if region.center.latitude != mapView.region.center.latitude
             || region.center.longitude != mapView.region.center.longitude {
             mapView.setRegion(region, animated: true)
         }

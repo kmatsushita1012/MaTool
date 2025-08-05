@@ -26,7 +26,7 @@ struct PublicRoute {
         var route: RouteInfo?
         var location: LocationInfo?
         var isMenuExpanded: Bool = false
-        @Shared var mapRegion: MKCoordinateRegion?
+        @Shared var mapRegion: MKCoordinateRegion
         var detail: Detail?
         
         var points: [Point]? {
@@ -51,7 +51,7 @@ struct PublicRoute {
             }
         }
         
-        init(id: String, routes: [RouteSummary]? = nil, selectedRoute: RouteInfo? = nil, location: LocationInfo? = nil, mapRegion: Shared<MKCoordinateRegion?>){
+        init(id: String, routes: [RouteSummary]? = nil, selectedRoute: RouteInfo? = nil, location: LocationInfo? = nil, mapRegion: Shared<MKCoordinateRegion>){
             self.id = id
             self.items = routes
             if let selectedRoute {
@@ -93,6 +93,7 @@ struct PublicRoute {
                 return .run { send in
                     let accessToken = await authService.getAccessToken()
                     let result = await apiRepository.getRoute(value.id, accessToken)
+                    await send(.routeReceived(result))
                 }
             case .pointTapped(let value):
                 state.detail = .point(value)
@@ -105,6 +106,7 @@ struct PublicRoute {
                 return .run {[id = state.id] send in
                     let accessToken = await authService.getAccessToken()
                     let result = await apiRepository.getLocation(id, accessToken)
+                    await send(.locationReceived(result))
                 }
             case .routeReceived(.success(let value)):
                 state.route = value

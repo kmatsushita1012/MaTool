@@ -14,7 +14,7 @@ struct PublicLocations {
     struct State:Equatable {
         let regionId: String
         var locations: [LocationInfo]
-        @Shared var mapRegion: MKCoordinateRegion?
+        @Shared var mapRegion: MKCoordinateRegion
         var detail: LocationInfo?
     }
     
