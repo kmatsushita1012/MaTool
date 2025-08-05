@@ -70,4 +70,44 @@ struct PublicRouteMapStoreView: View {
             }
         }
     }
+    
+    @ViewBuilder
+    func operationButtons() -> some View {
+        HStack {
+            FloatingIconButton(icon: "pencil"){
+                
+            }
+            FloatingIconButton(icon: "photo"){
+                
+            }
+            FloatingIconButton(icon: "mic"){
+                
+            }
+            FloatingIconButton(icon: "doc.text"){
+                
+            }
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 8)
+        .background(
+            RoundedRectangle(cornerRadius: 30)
+                .fill(Color.white)
+        )
+        .shadow(radius: 4)
+    }
+}
+
+struct FloatingIconButton: View {
+    let icon: String
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: {
+            print("\(icon) tapped")
+        }) {
+            Image(systemName: icon)
+                .frame(width: 32, height: 32)
+                .padding()
+        }
+    }
 }
