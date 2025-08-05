@@ -28,7 +28,7 @@ struct PublicRouteMapStoreView: View {
                 HStack{
                     Spacer()
                     operationButtons()
-                        .padding()
+                        .padding(32)
                 }
             }
         }
@@ -77,23 +77,25 @@ struct PublicRouteMapStoreView: View {
             FloatingIconButton(icon: "pencil"){
                 
             }
+            Divider()
             FloatingIconButton(icon: "photo"){
                 
             }
+            Divider()
             FloatingIconButton(icon: "mic"){
                 
             }
+            Divider()
             FloatingIconButton(icon: "doc.text"){
                 
             }
         }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 8)
+        .fixedSize()
         .background(
-            RoundedRectangle(cornerRadius: 30)
+            RoundedRectangle(cornerRadius: 8)
                 .fill(Color.white)
+                .shadow(radius: 8)
         )
-        .shadow(radius: 4)
     }
 }
 
@@ -106,7 +108,7 @@ struct FloatingIconButton: View {
             print("\(icon) tapped")
         }) {
             Image(systemName: icon)
-                .frame(width: 32, height: 32)
+                .font(.title3)
                 .padding()
         }
     }
