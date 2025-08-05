@@ -77,13 +77,12 @@ struct DistrictInfoStoreView: View {
                     .frame(height: 384)
                     .padding(.horizontal)
                 }
-                .padding(.bottom, 64)
+                .padding(.bottom, 88)
             }
             VStack{
                 Spacer()
                 mapButton()
-                    .padding()
-                    .frame(maxWidth: 256 ,maxHeight: 64)
+                    .padding(32)
             }
         }
         .ignoresSafeArea()
@@ -123,9 +122,8 @@ struct DistrictInfoStoreView: View {
                     .font(.title3)
                 Image(systemName: "paperplane.fill")
             }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
             .foregroundColor(.white)
-            .padding(.horizontal, 16)
+            .padding(.horizontal, 32)
             .padding(.vertical, 8)
             .background(
                 Capsule()
