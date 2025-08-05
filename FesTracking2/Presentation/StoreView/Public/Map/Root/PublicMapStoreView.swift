@@ -13,7 +13,7 @@ struct PublicMapStoreView: View {
     @Bindable var store: StoreOf<PublicMap>
     
     var body: some View {
-        VStack{
+        VStack(spacing: 0){
             picker()
             if let store = store.scope(state: \.destination?.route, action: \.destination.route) {
                 PublicRouteMapStoreView(store: store)
