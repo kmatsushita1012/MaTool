@@ -45,14 +45,27 @@ struct PublicMapStoreView: View {
     
     @ViewBuilder
     private func picker() -> some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing:8){
-                ForEach(store.contents, id: \.self) { item in
-                    menuButton(for: item)
+        ScrollViewReader { proxy in
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 8) {
+                    ForEach(store.contents, id: \.self) { item in
+                        menuButton(for: item)
+                            .id(item)
+                    }
+                }
+            }
+            .background(Color.customLightRed)
+            .onAppear{
+                withAnimation {
+                    proxy.scrollTo(store.selectedContent, anchor: .center)
+                }
+            }
+            .onChange(of: store.selectedContent) {
+                withAnimation {
+                    proxy.scrollTo(store.selectedContent, anchor: .center)
                 }
             }
         }
-        .background(Color.customLightRed)
     }
     
     @ViewBuilder
