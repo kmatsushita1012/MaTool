@@ -69,8 +69,9 @@ struct PublicRoute {
         case menuTapped
         case itemSelected(RouteSummary)
         case pointTapped(Point)
-        case reloadTapped
         case locationTapped
+        case userFocusTapped
+        case floatFocusTapped
         case routeReceived(Result<RouteInfo, ApiError>)
         case locationReceived(Result<LocationInfo, ApiError>)
     }
@@ -82,7 +83,7 @@ struct PublicRoute {
         BindingReducer()
         Reduce{ state, action in
             switch action {
-            case .binding(_):
+            case .binding:
                 return .none
             case .menuTapped:
                 state.isMenuExpanded = true
@@ -102,7 +103,9 @@ struct PublicRoute {
                 guard let location = state.location else { return .none }
                 state.detail = .location(location)
                 return .none
-            case .reloadTapped:
+            case .userFocusTapped:
+                return .none
+            case .floatFocusTapped:
                 return .run {[id = state.id] send in
                     let accessToken = await authService.getAccessToken()
                     let result = await apiRepository.getLocation(id, accessToken)
@@ -116,6 +119,7 @@ struct PublicRoute {
                 return .none
             case .locationReceived(.success(let value)):
                 state.location = value
+                state.$mapRegion.withLock { $0 = makeRegion(origin: value.coordinate, spanDelta: spanDelta)}
                 return .none
             case .locationReceived(.failure(let error)):
                 return .none
