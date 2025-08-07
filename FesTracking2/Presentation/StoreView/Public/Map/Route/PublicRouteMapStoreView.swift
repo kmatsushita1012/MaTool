@@ -22,31 +22,35 @@ struct PublicRouteMapStoreView: View {
                 region: $store.mapRegion
             )
             VStack{
-                menu()
-                    .padding()
                 Spacer()
                 HStack{
                     Spacer()
-                    operationButtons()
-                        .padding(32)
+                    buttons()
+                        .padding()
                 }
             }
+            VStack{
+                menu()
+                    .padding()
+                Spacer()
+            }
+            .tapOutside(isShown: $store.isMenuExpanded)
         }
         .sheet(item: $store.detail) { detail in
             switch detail{
             case .point(let item):
                 PointView(item: item)
-                    .presentationDetents([.fraction(0.3)])
+                    .presentationDetents([.fraction(0.2)])
             case .location(let item):
                 LocationView(item: item)
-                    .presentationDetents([.fraction(0.3)])
+                    .presentationDetents([.fraction(0.2)])
             }
             
         }
     }
     
     @ViewBuilder
-    func menu()->some View {
+    func menu()-> some View {
         VStack(spacing: 8)  {
             if let selected = store.selectedItem {
                 ToggleSelectedItem(title: selected.text(format:"m/d T"), isExpanded: $store.isMenuExpanded)
@@ -62,54 +66,38 @@ struct PublicRouteMapStoreView: View {
                         title: route.text(format:"m/d T"),
                         onTap: { store.send(.itemSelected(route)) }
                     )
-                        .padding(8)
-                        .background(Color(UIColor.systemGray5))
-                        .cornerRadius(8)
-                        .shadow(radius: 3)
+                    .padding(8)
+                    .background(Color(UIColor.systemGray5))
+                    .cornerRadius(8)
+                    .shadow(radius: 3)
                 }
             }
         }
     }
     
     @ViewBuilder
-    func operationButtons() -> some View {
+    func buttons() -> some View {
         HStack {
-            FloatingIconButton(icon: "pencil"){
-                
+            FloatingIconButton(icon: "location.fill"){
+                store.send(.userFocusTapped)
             }
             Divider()
-            FloatingIconButton(icon: "photo"){
-                
+            FloatingIconButton(icon: "mappin.and.ellipse"){
+                store.send(.floatFocusTapped)
             }
             Divider()
-            FloatingIconButton(icon: "mic"){
+            FloatingIconButton(icon: "point.bottomleft.forward.to.arrow.triangle.scurvepath.fill"){
                 
             }
-            Divider()
-            FloatingIconButton(icon: "doc.text"){
-                
-            }
+            .disabled(true)
         }
+        .padding(8)
         .fixedSize()
         .background(
-            RoundedRectangle(cornerRadius: 8)
+            RoundedRectangle(cornerRadius: 16)
                 .fill(Color.white)
                 .shadow(radius: 8)
         )
     }
 }
 
-struct FloatingIconButton: View {
-    let icon: String
-    let action: () -> Void
-
-    var body: some View {
-        Button(action: {
-            print("\(icon) tapped")
-        }) {
-            Image(systemName: icon)
-                .font(.title3)
-                .padding()
-        }
-    }
-}
