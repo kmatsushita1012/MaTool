@@ -32,6 +32,7 @@ struct PublicMap{
     
     @CasePathable
     enum Action: BindableAction, Equatable {
+        case onAppear
         case binding(BindingAction<State>)
         case homeTapped
         case contentSelected(Content)
@@ -45,17 +46,23 @@ struct PublicMap{
             id: String,
             locationsResult: Result<[LocationInfo],ApiError>
         )
+        case userLocationReceived(Coordinate)
         case destination(PresentationAction<Destination.Action>)
         case alert(PresentationAction<Alert.Action>)
     }
     
     @Dependency(\.apiRepository) var apiRepository
     @Dependency(\.authService) var authService
+    @Dependency(\.locationClient) var locationClient
     @Dependency(\.dismiss) var dismiss
     
     var body: some ReducerOf<PublicMap> {
         Reduce{ state, action in
             switch action {
+            case .onAppear:
+                return .run{ send in
+                    locationClient.startTracking()
+                }
             case .binding:
                 return .none
             case .homeTapped:
@@ -66,9 +73,9 @@ struct PublicMap{
                 state.selectedContent = value
                 switch value {
                 //TODO　mapRegionの変更ができてない
-                case .locations(let id, _ , let origin):
+                case .locations(let id, _ , _):
                     return locationsEffect(id)
-                case .route(let id, _ , let origin):
+                case .route(let id, _ , _):
                     return routeEffect(id)
                 }
             case let .routePrepared(
@@ -100,6 +107,16 @@ struct PublicMap{
                 return .none
             case .locationsReceived(_, .failure(let error)):
                 return .none
+            case .userLocationReceived(let value):
+                state.$mapRegion.withLock { $0 = makeRegion(origin: value, spanDelta: spanDelta)}
+                return .none
+            case .destination(.presented(.route(.userFocusTapped))),
+                .destination(.presented(.locations(.userFocusTapped))):
+                return .run{ send in
+                    let result = locationClient.getLocation()
+                    guard let coordinate = result.value?.coordinate  else { return }
+                    await send(.userLocationReceived(Coordinate.fromCL(coordinate)))
+                }
             case .destination:
                 return .none
             case .alert:
