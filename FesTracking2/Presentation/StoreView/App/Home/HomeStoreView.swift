@@ -13,35 +13,46 @@ struct HomeStoreView: View {
     
     var body: some View {
         NavigationStack {
-            VStack(spacing: 32) {
+            VStack(spacing: 16) {
                 card("MapCard")
                     .onTapGesture {
                         store.send(.mapTapped)
                     }
-                HStack(spacing: 32)  {
-                    VStack(spacing: 32)  {
-                        card("InfoCard", priority: 2)
-                            .onTapGesture{
-                                store.send(.infoTapped)
-                            }
-                        card("ShopCard", priority: 1)
-                            .onTapGesture{}
-                        
+                HStack(spacing: 16)  {
+                    GeometryReader { geometry in
+                        VStack(spacing: 16) {
+                            card("InfoCard", priority: 2)
+                                .frame(height: geometry.size.height * 3 / 5)
+                                .onTapGesture{
+                                    store.send(.infoTapped)
+                                }
+
+                            card("ShopCard", priority: 1)
+                                .onTapGesture{}
+                                .frame(height: geometry.size.height * 2 / 5)
+                        }
                     }
-                    VStack(spacing: 32)  {
-                        card("SettingsCard", priority: 1)
-                            .onTapGesture {
-                                store.send(.settingsTapped)
-                            }
-                        card("AdminCard", priority: 2)
-                            .onTapGesture {
-                                store.send(.adminTapped)
-                            }
-                            .loadingOverlay(store.isAuthLoading)
+                    
+                    GeometryReader { geometry in
+                        VStack(spacing: 16) {
+                            card("SettingsCard")
+                                .frame(height: geometry.size.height * 2 / 5)
+                                .onTapGesture {
+                                    store.send(.settingsTapped)
+                                }
+
+                            card("AdminCard")
+                                .frame(height: geometry.size.height * 3 / 5 )
+                                .onTapGesture {
+                                    store.send(.adminTapped)
+                                }
+                                .loadingOverlay(store.isAuthLoading)
+                        }
                     }
                 }
+                Spacer()
             }
-            .padding(32)
+            .padding()
             .toolbar {
                ToolbarItem(placement: .principal) {
                    Text("MaTool")
@@ -49,6 +60,7 @@ struct HomeStoreView: View {
                        .padding()
                }
             }
+            .navigationBarTitleDisplayMode(.inline)
             .background(
                 Image("HomeBackground")
                     .resizable()
@@ -85,12 +97,14 @@ struct HomeStoreView: View {
     
     @ViewBuilder
     func card(_ imageName: String, priority: Double = 0) -> some View {
-        Image(imageName)
-            .resizable()
-            .scaledToFill()
-            .clipped()
-            .cornerRadius(8)
-            .layoutPriority(priority)
+        GeometryReader { geometry in
+           Image(imageName)
+               .resizable()
+               .scaledToFill()
+               .frame(width: geometry.size.width, height: geometry.size.height)
+               .clipped()
+               .cornerRadius(8)
+       }
     }
 }
 
