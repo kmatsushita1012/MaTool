@@ -14,7 +14,7 @@ struct LocationInfo: Equatable, Codable{
     let timestamp: Date
 }
 
-extension LocationInfo: Identifiable {
+extension LocationInfo: Identifiable, Hashable {
     var id: String {
         districtId
     }
