@@ -41,7 +41,7 @@ struct PublicLocationsMap: UIViewRepresentable {
         
         //ロケーション追加
         for location in items {
-            let annotation = LocationAnnotation(location: location)
+            let annotation = FloatAnnotation(location: location)
             annotation.coordinate = location.coordinate.toCL()
             mapView.addAnnotation(annotation)
         }
@@ -61,29 +61,18 @@ struct PublicLocationsMap: UIViewRepresentable {
         
         func mapView(_ mapView: MKMapView, viewFor annotation: MKAnnotation) -> MKAnnotationView? {
             if annotation is MKUserLocation {
-                return nil // 現在地はデフォルトのまま
+                return nil
             }
-            let identifier = "AnnotationView"
+            
+            if let floatAnnotation = annotation as? FloatAnnotation {
+                return FloatAnnotationView.view(for: mapView, annotation: floatAnnotation)
+            }
 
-            var annotationView = mapView.dequeueReusableAnnotationView(withIdentifier: identifier)
-            if annotationView == nil {
-                annotationView = MKMarkerAnnotationView(annotation: annotation, reuseIdentifier: identifier)
-            } else {
-                annotationView?.annotation = annotation
-            }
-            annotationView?.displayPriority = .required
-            if #available(iOS 11.0, *) {
-                (annotationView as? MKMarkerAnnotationView)?.clusteringIdentifier = nil
-            }
-            if let markerView = annotationView as? MKMarkerAnnotationView {
-                markerView.markerTintColor = .red
-                markerView.canShowCallout = true
-            }
-            return annotationView
+            return nil
         }
         
         func mapView(_ mapView: MKMapView, didSelect view: MKAnnotationView) {
-            if let  annotation = view.annotation as? LocationAnnotation {
+            if let  annotation = view.annotation as? FloatAnnotation {
                 parent.onTap(annotation.location)
             }
         }
