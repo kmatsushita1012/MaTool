@@ -53,13 +53,16 @@ struct PublicRouteMap: UIViewRepresentable {
         
         //ロケーション追加
         if let location {
-            let annotation = LocationAnnotation(location: location)
+            let annotation = FloatAnnotation(location: location)
             annotation.coordinate = location.coordinate.toCL()
             mapView.addAnnotation(annotation)
         }
         
-        if region.center.latitude != mapView.region.center.latitude
-            || region.center.longitude != mapView.region.center.longitude {
+        let epsilon: CLLocationDegrees = 0.00001
+        let latDiff = abs(region.center.latitude - mapView.region.center.latitude)
+        let lonDiff = abs(region.center.longitude - mapView.region.center.longitude)
+
+        if latDiff > epsilon || lonDiff > epsilon {
             mapView.setRegion(region, animated: true)
         }
     }
@@ -73,30 +76,25 @@ struct PublicRouteMap: UIViewRepresentable {
         
         func mapView(_ mapView: MKMapView, viewFor annotation: MKAnnotation) -> MKAnnotationView? {
             if annotation is MKUserLocation {
-                return nil // 現在地はデフォルトのまま
+                return nil
             }
-            let identifier = "AnnotationView"
 
-            var annotationView = mapView.dequeueReusableAnnotationView(withIdentifier: identifier)
-            if annotationView == nil {
-                annotationView = MKMarkerAnnotationView(annotation: annotation, reuseIdentifier: identifier)
-            } else {
-                annotationView?.annotation = annotation
+            if let pointAnnotation = annotation as? PointAnnotation {
+                return PointAnnotationView.view(for: mapView, annotation: pointAnnotation)
             }
-            annotationView?.displayPriority = .required
-            if #available(iOS 11.0, *) {
-                (annotationView as? MKMarkerAnnotationView)?.clusteringIdentifier = nil
+
+            if let floatAnnotation = annotation as? FloatAnnotation {
+                return FloatAnnotationView.view(for: mapView, annotation: floatAnnotation)
             }
-            if let markerView = annotationView as? MKMarkerAnnotationView {
-                markerView.markerTintColor = .red
-            }
-            return annotationView
+
+            return nil
         }
+
         
         func mapView(_ mapView: MKMapView, didSelect view: MKAnnotationView) {
             if let annotation = view.annotation as? PointAnnotation {
                 parent.pointTapped(annotation.point)
-            } else if let  annotation = view.annotation as? LocationAnnotation {
+            } else if view.annotation is FloatAnnotation {
                 parent.locationTapped()
             }
         }
