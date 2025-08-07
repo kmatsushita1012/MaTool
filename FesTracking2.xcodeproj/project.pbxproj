@@ -155,6 +155,7 @@
 		29E8C3302DBB3F090086F6BB /* PublicDistrict.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29E8C32F2DBB3F020086F6BB /* PublicDistrict.swift */; };
 		29E8C3322DBB41010086F6BB /* PublicLocation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29E8C3312DBB40FC0086F6BB /* PublicLocation.swift */; };
 		29F403062DAA95DF003527D1 /* Route.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29F403052DAA95DA003527D1 /* Route.swift */; };
+		29F47F6F2E3638EC00191273 /* Kanit-Regular.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 29F47F6E2E3638EC00191273 /* Kanit-Regular.ttf */; };
 		29F8A2BE2D9EF079001633B3 /* ComposableArchitecture in Frameworks */ = {isa = PBXBuildFile; productRef = 29F8A2BD2D9EF079001633B3 /* ComposableArchitecture */; };
 		29F8A7932DFD645000331A7F /* TitleView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29F8A7922DFD643C00331A7F /* TitleView.swift */; };
 		29FBA84B2E3B31FF00F6E33C /* RouteSnapshotter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29FBA84A2E3B31FE00F6E33C /* RouteSnapshotter.swift */; };
@@ -331,6 +332,7 @@
 		29E8C32F2DBB3F020086F6BB /* PublicDistrict.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PublicDistrict.swift; sourceTree = "<group>"; };
 		29E8C3312DBB40FC0086F6BB /* PublicLocation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PublicLocation.swift; sourceTree = "<group>"; };
 		29F403052DAA95DA003527D1 /* Route.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Route.swift; sourceTree = "<group>"; };
+		29F47F6E2E3638EC00191273 /* Kanit-Regular.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Kanit-Regular.ttf"; sourceTree = "<group>"; };
 		29F8A7922DFD643C00331A7F /* TitleView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TitleView.swift; sourceTree = "<group>"; };
 		29FBA84A2E3B31FE00F6E33C /* RouteSnapshotter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RouteSnapshotter.swift; sourceTree = "<group>"; };
 		29FBA84C2E3B34A300F6E33C /* ShareSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShareSheet.swift; sourceTree = "<group>"; };
@@ -547,6 +549,7 @@
 				2983AB772D741534002F6CB5 /* Presentation */,
 				298BD79D2D71E46600CB63F1 /* FesTracking2App.swift */,
 				298BD7A32D71E46800CB63F1 /* Assets.xcassets */,
+				29F47F6D2E3638D500191273 /* SupportFiles */,
 				298BD7A52D71E46800CB63F1 /* Preview Content */,
 			);
 			path = FesTracking2;
@@ -1261,6 +1264,14 @@
 			path = Auth;
 			sourceTree = "<group>";
 		};
+		29F47F6D2E3638D500191273 /* SupportFiles */ = {
+			isa = PBXGroup;
+			children = (
+				29F47F6E2E3638EC00191273 /* Kanit-Regular.ttf */,
+			);
+			path = SupportFiles;
+			sourceTree = "<group>";
+		};
 		301EBB7653C0DF6665EAAFF3 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
@@ -1394,6 +1405,7 @@
 				298BD7A72D71E46800CB63F1 /* Preview Assets.xcassets in Resources */,
 				2983AB892D741C19002F6CB5 /* Podfile in Resources */,
 				298BD7A42D71E46800CB63F1 /* Assets.xcassets in Resources */,
+				29F47F6F2E3638EC00191273 /* Kanit-Regular.ttf in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
