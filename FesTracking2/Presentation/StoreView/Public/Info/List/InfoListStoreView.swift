@@ -29,7 +29,9 @@ struct InfoStoreView: View {
             VStack{
                 mainItem(store.region.name)
                     .onTapGesture{
-                        store.send(.regionTapped)
+                        #if DEBUG
+                            store.send(.regionTapped)
+                        #endif
                     }
             }
             .padding(.horizontal, 96)
