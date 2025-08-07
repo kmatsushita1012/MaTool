@@ -6,6 +6,7 @@
 //
 
 import ComposableArchitecture
+import Foundation
 
 @Reducer
 struct AdminRegionTop {
@@ -25,15 +26,19 @@ struct AdminRegionTop {
         var districts: [PublicDistrict]
         var isApiLoading: Bool = false
         var isAuthLoading: Bool = false
+        var isExportLoading: Bool = false
+        var folder: ExportedFolder? = nil
+        
         @Presents var destination: Destination.State? = nil
         @Presents var alert: Alert.State? = nil
         var isLoading: Bool {
-            isApiLoading || isAuthLoading
+            isApiLoading || isAuthLoading || isExportLoading
         }
     }
     
     @CasePathable
-    enum Action: Equatable {
+    enum Action: Equatable, BindableAction {
+        case binding(BindingAction<State>)
         case onEdit
         case onDistrictInfo(PublicDistrict)
         case onCreateDistrict
@@ -41,10 +46,12 @@ struct AdminRegionTop {
         case changePasswordTapped
         case updateEmailTapped
         case signOutTapped
+        case batchExportTapped
         case regionReceived(Result<Region,ApiError>)
         case districtsReceived(Result<[PublicDistrict],ApiError>)
         case districtInfoPrepared(PublicDistrict, Result<[RouteSummary],ApiError>)
         case signOutReceived(Result<UserRole,AuthError>)
+        case batchExportPrepared(Result<[URL], ApiError>)
         case destination(PresentationAction<Destination.Action>)
         case alert(PresentationAction<Alert.Action>)
     }
@@ -54,8 +61,11 @@ struct AdminRegionTop {
     @Dependency(\.dismiss) var dismiss
     
     var body: some ReducerOf<AdminRegionTop> {
+        BindingReducer()
         Reduce { state, action in
             switch action {
+            case .binding:
+                return .none
             case .onEdit:
                 state.destination = .edit(AdminRegionEdit.State(item: state.region))
                 return .none
@@ -84,6 +94,9 @@ struct AdminRegionTop {
                     let result = await authService.signOut()
                     await send(.signOutReceived(result))
                 }
+            case .batchExportTapped:
+                state.isExportLoading = true
+                return batchExportEffect()
             case .regionReceived(.success(let value)):
                 state.isApiLoading = false
                 state.region = value
@@ -102,7 +115,13 @@ struct AdminRegionTop {
                 return .none
             case .districtInfoPrepared(let district, .success(let routes)):
                 state.isApiLoading = false
-                state.destination = .districtInfo(AdminRegionDistrictList.State(district: district, routes: routes.sorted()))
+                state.destination = .districtInfo(
+                    AdminRegionDistrictList.State(
+                        region: state.region,
+                        district: district,
+                        routes: routes.sorted()
+                    )
+                )
                 return .none
             case .districtInfoPrepared(_, .failure(let error)):
                 state.isApiLoading = false
@@ -114,6 +133,14 @@ struct AdminRegionTop {
             case .signOutReceived(.failure(let error)):
                 state.isAuthLoading = false
                 state.alert = Alert.error("ログアウトに失敗しました　\(error.localizedDescription)")
+                return .none
+            case .batchExportPrepared(.success(let value)):
+                state.isExportLoading = false
+                state.folder = ExportedFolder(value)
+                return .none
+            case .batchExportPrepared(.failure(let error)):
+                state.isExportLoading = false
+                state.alert = Alert.error("出力に失敗しました　\(error.localizedDescription)")
                 return .none
             case .destination(.presented(let childAction)):
                 switch childAction{
@@ -158,7 +185,30 @@ struct AdminRegionTop {
             await send(.regionReceived(result))
         }
     }
+    
+    func batchExportEffect() -> Effect<Action> {
+        .run { send in
+            let accessToken = await authService.getAccessToken()
+            let idsResult = await apiRepository.getRouteIds(accessToken)
+            guard let ids = idsResult.value else{
+                await send(.batchExportPrepared(.failure(idsResult.error!)))
+                return
+            }
+            var urls: [URL] = []
+            //非同期並列にするとBEでアクセス過多
+            for id in ids {
+                let routeResult = await apiRepository.getRoute(id, accessToken)
+                guard let route = routeResult.value else { continue }
+                let snapshotter = RouteSnapshotter(route)
+                guard let image = try? await snapshotter.take() else { continue }
+                guard let url = snapshotter.createPDF(with: image, path: "\(route.text(format: "D_y-m-d_T"))_full.pdf") else { continue }
+                urls.append(url)
+            }
+            await send(.batchExportPrepared(.success(urls)))
+        }
+    }
 }
 
 extension AdminRegionTop.Destination.State: Equatable {}
 extension AdminRegionTop.Destination.Action: Equatable {}
+

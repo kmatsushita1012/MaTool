@@ -24,13 +24,24 @@ struct AdminRegionDistrictListView: View {
                     )
                 }
             }
+            Section {
+                Button(action: {
+                    store.send(.batchExportTapped)
+                }) {
+                    Text("経路図一括出力")
+                }
+            }
         }
         .navigationTitle(store.district.name)
         .navigationBarTitleDisplayMode(.inline)
+        .sheet(item: $store.folder)
+        { folder in
+            ShareSheet(folder.files)
+        }
         .navigationDestination(
             item: $store.scope(state: \.export, action: \.export)
         ) { store in
-            AdminRouteExportView(store: store)
+            AdminRouteEditStoreViewV2(store: store)
         }
         .loadingOverlay(store.isLoading)
     }
