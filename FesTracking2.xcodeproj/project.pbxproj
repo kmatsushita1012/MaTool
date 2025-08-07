@@ -126,6 +126,12 @@
 		29C5505A2DF7D40300547F51 /* AdminPointEditStoreView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29C550562DF7D40300547F51 /* AdminPointEditStoreView.swift */; };
 		29C5505B2DF7D40300547F51 /* AdminRouteMapStoreView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29C550582DF7D40300547F51 /* AdminRouteMapStoreView.swift */; };
 		29C550612DF7D6A300547F51 /* PublicMap.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29C550602DF7D6A200547F51 /* PublicMap.swift */; };
+		29C74AC62E388A4900417533 /* DistrictInfoStoreView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29C74AC52E388A4300417533 /* DistrictInfoStoreView.swift */; };
+		29C74AC82E388A5300417533 /* RegionInfoStoreView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29C74AC72E388A4E00417533 /* RegionInfoStoreView.swift */; };
+		29C74ACA2E388B8D00417533 /* ScrollableDescription.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29C74AC92E388B8000417533 /* ScrollableDescription.swift */; };
+		29C74ACC2E388EA700417533 /* WebImageView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29C74ACB2E388E9F00417533 /* WebImageView.swift */; };
+		29C74ACF2E388FC800417533 /* Kingfisher in Frameworks */ = {isa = PBXBuildFile; productRef = 29C74ACE2E388FC800417533 /* Kingfisher */; };
+		29C74AD12E38BCCA00417533 /* PublicDistrictMapView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29C74AD02E38BCC300417533 /* PublicDistrictMapView.swift */; };
 		29CB07752DAF7D1E0009A47D /* AdminDistrictEditStoreView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29CB07742DAF7D150009A47D /* AdminDistrictEditStoreView.swift */; };
 		29CB07792DAF80850009A47D /* AdminAreaEdit.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29CB07782DAF807F0009A47D /* AdminAreaEdit.swift */; };
 		29CB077B2DAF86610009A47D /* AdminBaseEdit.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29CB077A2DAF865C0009A47D /* AdminBaseEdit.swift */; };
@@ -149,13 +155,16 @@
 		29DAB0642DA15CFC005E94BA /* AdminLocation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29DAB0632DA15CF0005E94BA /* AdminLocation.swift */; };
 		29DAB0702DA1623C005E94BA /* AWSAuthProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29DAB06F2DA16235005E94BA /* AWSAuthProvider.swift */; };
 		29DAB0722DA163E4005E94BA /* MockAuthProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29DAB0712DA163DE005E94BA /* MockAuthProvider.swift */; };
-		29DF09C62DCC9DFB00489DB8 /* Info.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29DF09C52DCC9DF600489DB8 /* Info.swift */; };
-		29DF09C82DCC9E5A00489DB8 /* InfoStoreView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29DF09C72DCC9E5700489DB8 /* InfoStoreView.swift */; };
+		29DF09C62DCC9DFB00489DB8 /* InfoList.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29DF09C52DCC9DF600489DB8 /* InfoList.swift */; };
+		29DF09C82DCC9E5A00489DB8 /* InfoListStoreView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29DF09C72DCC9E5700489DB8 /* InfoListStoreView.swift */; };
 		29E4FB4C2DDCD105008C89CF /* ConfirmSignIn.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29E4FB4B2DDCD086008C89CF /* ConfirmSignIn.swift */; };
 		29E8C3302DBB3F090086F6BB /* PublicDistrict.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29E8C32F2DBB3F020086F6BB /* PublicDistrict.swift */; };
 		29E8C3322DBB41010086F6BB /* PublicLocation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29E8C3312DBB40FC0086F6BB /* PublicLocation.swift */; };
 		29F403062DAA95DF003527D1 /* Route.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29F403052DAA95DA003527D1 /* Route.swift */; };
 		29F47F6F2E3638EC00191273 /* Kanit-Regular.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 29F47F6E2E3638EC00191273 /* Kanit-Regular.ttf */; };
+    29F47F712E36474100191273 /* Modifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29F47F702E36473E00191273 /* Modifier.swift */; };
+		29F47F752E36577B00191273 /* RegionInfo.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29F47F742E36577500191273 /* RegionInfo.swift */; };
+		29F47F792E36579100191273 /* DistrictInfo.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29F47F782E36578D00191273 /* DistrictInfo.swift */; };
 		29F8A2BE2D9EF079001633B3 /* ComposableArchitecture in Frameworks */ = {isa = PBXBuildFile; productRef = 29F8A2BD2D9EF079001633B3 /* ComposableArchitecture */; };
 		29F8A7932DFD645000331A7F /* TitleView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29F8A7922DFD643C00331A7F /* TitleView.swift */; };
 		29FBA84B2E3B31FF00F6E33C /* RouteSnapshotter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29FBA84A2E3B31FE00F6E33C /* RouteSnapshotter.swift */; };
@@ -303,6 +312,11 @@
 		29C550562DF7D40300547F51 /* AdminPointEditStoreView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdminPointEditStoreView.swift; sourceTree = "<group>"; };
 		29C550582DF7D40300547F51 /* AdminRouteMapStoreView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdminRouteMapStoreView.swift; sourceTree = "<group>"; };
 		29C550602DF7D6A200547F51 /* PublicMap.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PublicMap.swift; sourceTree = "<group>"; };
+		29C74AC52E388A4300417533 /* DistrictInfoStoreView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DistrictInfoStoreView.swift; sourceTree = "<group>"; };
+		29C74AC72E388A4E00417533 /* RegionInfoStoreView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RegionInfoStoreView.swift; sourceTree = "<group>"; };
+		29C74AC92E388B8000417533 /* ScrollableDescription.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScrollableDescription.swift; sourceTree = "<group>"; };
+		29C74ACB2E388E9F00417533 /* WebImageView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebImageView.swift; sourceTree = "<group>"; };
+		29C74AD02E38BCC300417533 /* PublicDistrictMapView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PublicDistrictMapView.swift; sourceTree = "<group>"; };
 		29CB07742DAF7D150009A47D /* AdminDistrictEditStoreView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdminDistrictEditStoreView.swift; sourceTree = "<group>"; };
 		29CB07782DAF807F0009A47D /* AdminAreaEdit.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdminAreaEdit.swift; sourceTree = "<group>"; };
 		29CB077A2DAF865C0009A47D /* AdminBaseEdit.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdminBaseEdit.swift; sourceTree = "<group>"; };
@@ -326,13 +340,16 @@
 		29DAB0632DA15CF0005E94BA /* AdminLocation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdminLocation.swift; sourceTree = "<group>"; };
 		29DAB06F2DA16235005E94BA /* AWSAuthProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AWSAuthProvider.swift; sourceTree = "<group>"; };
 		29DAB0712DA163DE005E94BA /* MockAuthProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockAuthProvider.swift; sourceTree = "<group>"; };
-		29DF09C52DCC9DF600489DB8 /* Info.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Info.swift; sourceTree = "<group>"; };
-		29DF09C72DCC9E5700489DB8 /* InfoStoreView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InfoStoreView.swift; sourceTree = "<group>"; };
+		29DF09C52DCC9DF600489DB8 /* InfoList.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InfoList.swift; sourceTree = "<group>"; };
+		29DF09C72DCC9E5700489DB8 /* InfoListStoreView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InfoListStoreView.swift; sourceTree = "<group>"; };
 		29E4FB4B2DDCD086008C89CF /* ConfirmSignIn.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConfirmSignIn.swift; sourceTree = "<group>"; };
 		29E8C32F2DBB3F020086F6BB /* PublicDistrict.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PublicDistrict.swift; sourceTree = "<group>"; };
 		29E8C3312DBB40FC0086F6BB /* PublicLocation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PublicLocation.swift; sourceTree = "<group>"; };
 		29F403052DAA95DA003527D1 /* Route.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Route.swift; sourceTree = "<group>"; };
-		29F47F6E2E3638EC00191273 /* Kanit-Regular.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Kanit-Regular.ttf"; sourceTree = "<group>"; };
+    29F47F6E2E3638EC00191273 /* Kanit-Regular.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Kanit-Regular.ttf"; sourceTree = "<group>"; };
+		29F47F702E36473E00191273 /* Modifier.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Modifier.swift; sourceTree = "<group>"; };
+		29F47F742E36577500191273 /* RegionInfo.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RegionInfo.swift; sourceTree = "<group>"; };
+		29F47F782E36578D00191273 /* DistrictInfo.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DistrictInfo.swift; sourceTree = "<group>"; };
 		29F8A7922DFD643C00331A7F /* TitleView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TitleView.swift; sourceTree = "<group>"; };
 		29FBA84A2E3B31FE00F6E33C /* RouteSnapshotter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RouteSnapshotter.swift; sourceTree = "<group>"; };
 		29FBA84C2E3B34A300F6E33C /* ShareSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShareSheet.swift; sourceTree = "<group>"; };
@@ -352,6 +369,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				29C74ACF2E388FC800417533 /* Kingfisher in Frameworks */,
 				29F8A2BE2D9EF079001633B3 /* ComposableArchitecture in Frameworks */,
 				669224E9583394F966E1C953 /* Pods_FesTracking2.framework in Frameworks */,
 				2972EF2B2E2DFED0003A4F1C /* NavigationSwipeControl in Frameworks */,
@@ -445,6 +463,7 @@
 			isa = PBXGroup;
 			children = (
 				29550E512DE4553A00E9D9B6 /* ButtonStyle.swift */,
+				29F47F702E36473E00191273 /* Modifier.swift */,
 			);
 			path = Style;
 			sourceTree = "<group>";
@@ -731,6 +750,7 @@
 				29BC19492DB626F300C6F918 /* PublicMapView.swift */,
 				29CB077E2DAF8C500009A47D /* AdminDistrictMapView.swift */,
 				29AD864F2DB210F000C3E8B2 /* AdminLocationMapView.swift */,
+				29C74AD02E38BCC300417533 /* PublicDistrictMapView.swift */,
 				291D919A2DCDAD68007E5A80 /* MapFragments.swift */,
 			);
 			path = Map;
@@ -739,6 +759,7 @@
 		29AD864E2DB20EC200C3E8B2 /* Others */ = {
 			isa = PBXGroup;
 			children = (
+				29C74ACB2E388E9F00417533 /* WebImageView.swift */,
 				293F2C2C2DD77E9F002C056E /* LoadingOverlay.swift */,
 				29FBA84C2E3B34A300F6E33C /* ShareSheet.swift */,
 				2967C90F2E1F54890080B8DA /* UpdateModal.swift */,
@@ -940,8 +961,9 @@
 		29C550452DF7D0C800547F51 /* Info */ = {
 			isa = PBXGroup;
 			children = (
-				29DF09C52DCC9DF600489DB8 /* Info.swift */,
-				29DF09C72DCC9E5700489DB8 /* InfoStoreView.swift */,
+				29F47F762E36578000191273 /* District */,
+				29F47F732E36577000191273 /* Region */,
+				29F47F722E36576700191273 /* List */,
 			);
 			path = Info;
 			sourceTree = "<group>";
@@ -1071,6 +1093,7 @@
 			children = (
 				2978C4AC2DCB3C9A00D3F7CE /* PointView.swift */,
 				2978C4B02DCB4A8300D3F7CE /* LocationView.swift */,
+				29C74AC92E388B8000417533 /* ScrollableDescription.swift */,
 			);
 			path = Detail;
 			sourceTree = "<group>";
@@ -1264,13 +1287,40 @@
 			path = Auth;
 			sourceTree = "<group>";
 		};
-		29F47F6D2E3638D500191273 /* SupportFiles */ = {
+    29F47F6D2E3638D500191273 /* SupportFiles */ = {
 			isa = PBXGroup;
 			children = (
 				29F47F6E2E3638EC00191273 /* Kanit-Regular.ttf */,
 			);
 			path = SupportFiles;
 			sourceTree = "<group>";
+		};
+		29F47F722E36576700191273 /* List */ = {
+			isa = PBXGroup;
+			children = (
+				29DF09C52DCC9DF600489DB8 /* InfoList.swift */,
+				29DF09C72DCC9E5700489DB8 /* InfoListStoreView.swift */,
+			);
+			path = List;
+			sourceTree = "<group>";
+		};
+		29F47F732E36577000191273 /* Region */ = {
+			isa = PBXGroup;
+			children = (
+				29F47F742E36577500191273 /* RegionInfo.swift */,
+				29C74AC72E388A4E00417533 /* RegionInfoStoreView.swift */,
+			);
+			path = Region;
+			sourceTree = "<group>";
+		};
+		29F47F762E36578000191273 /* District */ = {
+			isa = PBXGroup;
+			children = (
+				29F47F782E36578D00191273 /* DistrictInfo.swift */,
+				29C74AC52E388A4300417533 /* DistrictInfoStoreView.swift */,
+			);
+			path = District;
+      sourceTree = "<group>";
 		};
 		301EBB7653C0DF6665EAAFF3 /* Frameworks */ = {
 			isa = PBXGroup;
@@ -1303,6 +1353,7 @@
 			packageProductDependencies = (
 				29F8A2BD2D9EF079001633B3 /* ComposableArchitecture */,
 				2972EF2A2E2DFED0003A4F1C /* NavigationSwipeControl */,
+				29C74ACE2E388FC800417533 /* Kingfisher */,
 			);
 			productName = FesTracking2;
 			productReference = 298BD79A2D71E46600CB63F1 /* FesTracking2.app */;
@@ -1383,6 +1434,7 @@
 			packageReferences = (
 				29F8A2BC2D9EF078001633B3 /* XCRemoteSwiftPackageReference "swift-composable-architecture" */,
 				2972EF292E2DFED0003A4F1C /* XCRemoteSwiftPackageReference "NavigationSwipeControl" */,
+				29C74ACD2E388FC800417533 /* XCRemoteSwiftPackageReference "Kingfisher" */,
 			);
 			productRefGroup = 298BD79B2D71E46600CB63F1 /* Products */;
 			projectDirPath = "";
@@ -1582,6 +1634,7 @@
 				292D0B8F2DB0D44100176E51 /* EditableListItemView.swift in Sources */,
 				2967C9102E1F548D0080B8DA /* UpdateModal.swift in Sources */,
 				2972017B2D9CFA50003424EF /* Async.swift in Sources */,
+				29F47F752E36577B00191273 /* RegionInfo.swift in Sources */,
 				29A0434F2D7DC61500E77C91 /* SimpleDate.swift in Sources */,
 				292D0BA12DB0E0DC00176E51 /* AdminRegionEdit.swift in Sources */,
 				29F8A7932DFD645000331A7F /* TitleView.swift in Sources */,
@@ -1599,10 +1652,11 @@
 				29CBB3392E043608006687A3 /* ApiError.swift in Sources */,
 				29A043532D7DC83B00E77C91 /* SimpleTime.swift in Sources */,
 				29CF49082D7425F600036D28 /* Http.swift in Sources */,
+				29C74AD12E38BCCA00417533 /* PublicDistrictMapView.swift in Sources */,
 				29CBB3412E04388D006687A3 /* AuthService.swift in Sources */,
 				292D0B8D2DB0CB2700176E51 /* AdminPerformanceEdit.swift in Sources */,
 				29B1599A2DF1888900F469A9 /* DistrictTool.swift in Sources */,
-				29DF09C62DCC9DFB00489DB8 /* Info.swift in Sources */,
+				29DF09C62DCC9DFB00489DB8 /* InfoList.swift in Sources */,
 				299AD5942E04F6AE007ACBC4 /* SignInResult.swift in Sources */,
 				299A06AA2DB13BAC00E76898 /* AdminDistrictTop.swift in Sources */,
 				29DAB0702DA1623C005E94BA /* AWSAuthProvider.swift in Sources */,
@@ -1612,18 +1666,22 @@
 				299A06AD2DB142A200E76898 /* AdminLocationStoreView.swift in Sources */,
 				29A0434C2D7DC54B00E77C91 /* Location.swift in Sources */,
 				2948FCEE2DC5C32400C73E99 /* PublicDistrictPickerStoreView.swift in Sources */,
+				29F47F792E36579100191273 /* DistrictInfo.swift in Sources */,
 				29CB077F2DAF8C510009A47D /* AdminDistrictMapView.swift in Sources */,
 				29A688C02DCC4BEE004415BF /* AdminRouteExportStoreView.swift in Sources */,
+				29C74ACA2E388B8D00417533 /* ScrollableDescription.swift in Sources */,
 				298C68332E0C2D29009570A5 /* InformationEditStoreView.swift in Sources */,
 				298C68312E0C2D16009570A5 /* InformationEdit.swift in Sources */,
 				2976942F2E2CEFE8007B1D69 /* AWSMobileClientError.swift in Sources */,
 				298BD79E2D71E46600CB63F1 /* FesTracking2App.swift in Sources */,
 				29A64AE42DB4AD7F007C3859 /* Status.swift in Sources */,
+				29C74ACC2E388EA700417533 /* WebImageView.swift in Sources */,
 				299936AB2D7AD499009D651E /* UserDefaultsLiveClient.swift in Sources */,
 				2978C4A92DCB3B5200D3F7CE /* PointFeature.swift in Sources */,
 				2997C2F32D79E1130032566B /* AdminSegmentFeature.swift in Sources */,
 				29B2D0942DF0788E008592F8 /* EditManager.swift in Sources */,
 				29A043442D7DC25800E77C91 /* RouteSummary.swift in Sources */,
+				29C74AC82E388A5300417533 /* RegionInfoStoreView.swift in Sources */,
 				29460A0B2D8C28AC0097CAA1 /* LogIn.swift in Sources */,
 				291D91992DCDAD45007E5A80 /* AdminExportableMapView.swift in Sources */,
 				29CB077D2DAF8B970009A47D /* AdminBaseEditStoreView.swift in Sources */,
@@ -1642,7 +1700,7 @@
 				29CBB33F2E04376E006687A3 /* AuthError.swift in Sources */,
 				29AB1B462DE1FFE500AC37F3 /* ConfirmSignInStoreView.swift in Sources */,
 				29CF49192D7440EB00036D28 /* Extension.swift in Sources */,
-				29DF09C82DCC9E5A00489DB8 /* InfoStoreView.swift in Sources */,
+				29DF09C82DCC9E5A00489DB8 /* InfoListStoreView.swift in Sources */,
 				299A51622DA942CF00B24828 /* AdminRouteInfoStoreView.swift in Sources */,
 				29A1C2152E28B66B0036F221 /* ResetPassword.swift in Sources */,
 				2967C9162E1F57160080B8DA /* UpdateManagerProtocol.swift in Sources */,
@@ -1650,6 +1708,7 @@
 				296795D12DA4F902008D3CE1 /* AdminRouteMapView.swift in Sources */,
 				296795CF2DA4F7B1008D3CE1 /* Span.swift in Sources */,
 				29A3851A2DD1B781008A1D08 /* AdminRegionDistrictListStoreView.swift in Sources */,
+				29F47F712E36474100191273 /* Modifier.swift in Sources */,
 				29BBDC832E0D862400CA03EE /* Json.swift in Sources */,
 				299BBF2B2DC7AF070092C4D9 /* PublicRouteMap.swift in Sources */,
 				29A688C22DCC4E38004415BF /* AdminRouteItemView.swift in Sources */,
@@ -1678,6 +1737,7 @@
 				29A1C2182E28C1360036F221 /* UpdateEmail.swift in Sources */,
 				29C5505B2DF7D40300547F51 /* AdminRouteMapStoreView.swift in Sources */,
 				29A043482D7DC36400E77C91 /* Point.swift in Sources */,
+				29C74AC62E388A4900417533 /* DistrictInfoStoreView.swift in Sources */,
 				29A043462D7DC2B200E77C91 /* PublicRoute.swift in Sources */,
 				29CF490A2D74262300036D28 /* LiveApiRepository.swift in Sources */,
 				2967C9122E1F54D10080B8DA /* UpdateManager.swift in Sources */,
@@ -2050,6 +2110,14 @@
 				version = 0.2.1;
 			};
 		};
+		29C74ACD2E388FC800417533 /* XCRemoteSwiftPackageReference "Kingfisher" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/onevcat/Kingfisher.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 8.5.0;
+			};
+		};
 		29F8A2BC2D9EF078001633B3 /* XCRemoteSwiftPackageReference "swift-composable-architecture" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/pointfreeco/swift-composable-architecture";
@@ -2065,6 +2133,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 2972EF292E2DFED0003A4F1C /* XCRemoteSwiftPackageReference "NavigationSwipeControl" */;
 			productName = NavigationSwipeControl;
+		};
+		29C74ACE2E388FC800417533 /* Kingfisher */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 29C74ACD2E388FC800417533 /* XCRemoteSwiftPackageReference "Kingfisher" */;
+			productName = Kingfisher;
 		};
 		29F8A2BD2D9EF079001633B3 /* ComposableArchitecture */ = {
 			isa = XCSwiftPackageProductDependency;

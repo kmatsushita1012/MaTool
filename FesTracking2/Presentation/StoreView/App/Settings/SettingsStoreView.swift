@@ -15,8 +15,8 @@ struct SettingsStoreView: View {
     var body: some View {
         VStack{
             TitleView(
-                imageName: "SettingsBackground",
-                titleText: "MaTool",
+                text: "MaTool",
+                image: "SettingsBackground",
                 isDismissEnabled: store.isDismissEnabled
             ) {
                 store.send(.dismissTapped)
