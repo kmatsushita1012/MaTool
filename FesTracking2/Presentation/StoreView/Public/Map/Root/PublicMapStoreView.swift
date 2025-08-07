@@ -40,6 +40,7 @@ struct PublicMapStoreView: View {
                 .padding(.horizontal, 8)
             }
         }
+        .alert($store.scope(state: \.alert, action: \.alert))
         .dismissible(backButton: false)
     }
     
