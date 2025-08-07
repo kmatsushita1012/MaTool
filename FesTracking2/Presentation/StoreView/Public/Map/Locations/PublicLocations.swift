@@ -22,7 +22,9 @@ struct PublicLocations {
     enum Action: Equatable, BindableAction {
         case binding(BindingAction<State>)
         case locationTapped(LocationInfo)
-        case updateTapped
+        case floatFocusSelected(LocationInfo)
+        case userFocusTapped
+        case reloadTapped
         case locationsReceived(Result<[LocationInfo], ApiError>)
     }
     
@@ -37,14 +39,20 @@ struct PublicLocations {
             case .locationTapped(let value):
                 state.detail = value
                 return .none
-            case .updateTapped:
+            case .floatFocusSelected(let value):
+                state.$mapRegion.withLock { $0 = makeRegion(origin: value.coordinate, spanDelta: spanDelta)}
                 return .none
-            case .locationsReceived(.success(let value)):
-                state.locations = value
-                return .run{ [id = state.regionId]send in
+            //PublicMapが担当
+            case .userFocusTapped:
+                return .none
+            case .reloadTapped:
+                return .run{ [id = state.regionId ]send in
                     let result = await apiRepository.getLocations(id, "")
                     await send(.locationsReceived(result))
                 }
+            case .locationsReceived(.success(let value)):
+                state.locations = value
+                return .none
             case .locationsReceived(.failure(let error)):
                 return .none
             }
