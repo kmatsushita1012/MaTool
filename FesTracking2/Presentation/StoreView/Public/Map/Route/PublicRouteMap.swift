@@ -25,6 +25,7 @@ struct PublicRouteMap: UIViewRepresentable {
         let mapView = MKMapView()
         mapView.delegate = context.coordinator
         mapView.setRegion(region, animated: false)
+        mapView.showsUserLocation = true
         return mapView
     }
 
@@ -88,7 +89,6 @@ struct PublicRouteMap: UIViewRepresentable {
             }
             if let markerView = annotationView as? MKMarkerAnnotationView {
                 markerView.markerTintColor = .red
-                markerView.canShowCallout = true
             }
             return annotationView
         }
