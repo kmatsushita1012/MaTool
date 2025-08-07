@@ -42,7 +42,7 @@ struct PublicMap{
             currentResult: Result<RouteInfo, ApiError>,
             locationResult: Result<LocationInfo, ApiError>
         )
-        case locationsReceived(
+        case locationsPrepared(
             id: String,
             locationsResult: Result<[LocationInfo],ApiError>
         )
@@ -60,6 +60,7 @@ struct PublicMap{
         Reduce{ state, action in
             switch action {
             case .onAppear:
+                
                 return .run{ send in
                     locationClient.startTracking()
                 }
@@ -84,19 +85,33 @@ struct PublicMap{
                 currentResult,
                 locationResult,
             ):
-                let mapRegion = makeRegion(route: currentResult.value, location: locationResult.value, origin: state.selectedContent.origin, spanDelta: spanDelta)
+                let routes = routesResult.value
+                let current = currentResult.value
+                let location = locationResult.value
+                if routes == nil && current == nil && location == nil {
+                    state.alert = Alert.notice("配信停止中です。")
+                }
+                let mapRegion = makeRegion(
+                    route: current,
+                    location: location,
+                    origin: state.selectedContent.origin,
+                    spanDelta: spanDelta
+                )
                 state.$mapRegion.withLock{ $0 = mapRegion }
                 state.destination = .route(
                     PublicRoute.State(
                         id: id,
-                        routes: routesResult.value,
-                        selectedRoute: currentResult.value,
-                        location: locationResult.value,
+                        routes: routes,
+                        selectedRoute: current,
+                        location: location,
                         mapRegion: state.$mapRegion
                     )
                 )
                 return .none
-            case .locationsReceived(let id, .success(let value)):
+            case .locationsPrepared(let id, .success(let value)):
+                if value.isEmpty {
+                    state.alert = Alert.notice("配信停止中です。")
+                }
                 state.destination = .locations(
                     PublicLocations.State(
                         regionId: id,
@@ -105,7 +120,8 @@ struct PublicMap{
                     )
                 )
                 return .none
-            case .locationsReceived(_, .failure(let error)):
+            case .locationsPrepared(_, .failure(let error)):
+                state.alert = Alert.error(error.localizedDescription)
                 return .none
             case .userLocationReceived(let value):
                 state.$mapRegion.withLock { $0 = makeRegion(origin: value, spanDelta: spanDelta)}
@@ -154,7 +170,7 @@ struct PublicMap{
             
             let locationsResult = await apiRepository.getLocations(id, accessToken)
             
-            await send(.locationsReceived(id: id, locationsResult: locationsResult))
+            await send(.locationsPrepared(id: id, locationsResult: locationsResult))
         }
     }
 }
