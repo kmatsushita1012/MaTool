@@ -1,5 +1,5 @@
 //
-//  AdminPointView.swift
+//  AdminPointEditStoreView.swift
 //  FesTracking2
 //
 //  Created by 松下和也 on 2025/04/08.
@@ -9,7 +9,7 @@ import SwiftUI
 import ComposableArchitecture
 import NavigationSwipeControl
 
-struct AdminPointView: View {
+struct AdminPointEditStoreView: View {
     @Bindable var store: StoreOf<AdminPointEdit>
     
     var body: some View {
