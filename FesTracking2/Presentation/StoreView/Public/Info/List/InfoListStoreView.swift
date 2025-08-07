@@ -21,7 +21,7 @@ struct InfoStoreView: View {
             // タイトル＿」
             TitleView(
                 text: "町を見てみよう",
-                image: "SettingsBackground"
+                image: "InfoBackground"
             ) {
                 store.send(.homeTapped)
             }
@@ -72,7 +72,7 @@ struct InfoStoreView: View {
             .foregroundColor(.white)
             .frame(maxWidth: .infinity)
             .padding(.vertical, 8)
-            .background(Color.orange)
+            .background(Color.info)
             .cornerRadius(8)
     }
     
@@ -84,7 +84,7 @@ struct InfoStoreView: View {
             .frame(maxWidth: .infinity)
             .padding(.vertical, 8)
             .padding(.horizontal, 16)
-            .background(Color.orange.opacity(0.6))
+            .background(Color.info.opacity(0.6))
             .cornerRadius(8)
     }
         
