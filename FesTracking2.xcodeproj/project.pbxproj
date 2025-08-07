@@ -116,6 +116,7 @@
 		29B638A72DB0E7E400DF8419 /* AdminSpanEdit.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29B638A62DB0E7DF00DF8419 /* AdminSpanEdit.swift */; };
 		29B638A92DB0E89600DF8419 /* AdminSpanEditStoreView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29B638A82DB0E89000DF8419 /* AdminSpanEditStoreView.swift */; };
 		29B781F32E43A05D00F0FD1A /* TapOutside.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29B781F22E43A05900F0FD1A /* TapOutside.swift */; };
+		29B781F52E43AF5100F0FD1A /* FloatingButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29B781F42E43AF4D00F0FD1A /* FloatingButton.swift */; };
 		29BBDC832E0D862400CA03EE /* Json.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29BBDC822E0D862400CA03EE /* Json.swift */; };
 		29BC19412DB6134900C6F918 /* Date.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29BC19402DB6134700C6F918 /* Date.swift */; };
 		29BC19442DB6236700C6F918 /* HomeStoreView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29BC19432DB6235D00C6F918 /* HomeStoreView.swift */; };
@@ -290,6 +291,7 @@
 		29B638A62DB0E7DF00DF8419 /* AdminSpanEdit.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdminSpanEdit.swift; sourceTree = "<group>"; };
 		29B638A82DB0E89000DF8419 /* AdminSpanEditStoreView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdminSpanEditStoreView.swift; sourceTree = "<group>"; };
 		29B781F22E43A05900F0FD1A /* TapOutside.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TapOutside.swift; sourceTree = "<group>"; };
+		29B781F42E43AF4D00F0FD1A /* FloatingButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FloatingButton.swift; sourceTree = "<group>"; };
 		29BBDC822E0D862400CA03EE /* Json.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Json.swift; sourceTree = "<group>"; };
 		29BC19402DB6134700C6F918 /* Date.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Date.swift; sourceTree = "<group>"; };
 		29BC19432DB6235D00C6F918 /* HomeStoreView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeStoreView.swift; sourceTree = "<group>"; };
@@ -586,6 +588,7 @@
 				29C5505F2DF7D5D400547F51 /* Toggle */,
 				29550E532DE45CD100E9D9B6 /* MenuSelector.swift */,
 				2997701F2DA527F800EEB5F4 /* DismissButton.swift */,
+				29B781F42E43AF4D00F0FD1A /* FloatingButton.swift */,
 			);
 			path = Input;
 			sourceTree = "<group>";
@@ -1606,6 +1609,7 @@
 				296795D12DA4F902008D3CE1 /* AdminRouteMapView.swift in Sources */,
 				296795CF2DA4F7B1008D3CE1 /* Span.swift in Sources */,
 				29A3851A2DD1B781008A1D08 /* AdminRegionDistrictListStoreView.swift in Sources */,
+				29B781F52E43AF5100F0FD1A /* FloatingButton.swift in Sources */,
 				29BBDC832E0D862400CA03EE /* Json.swift in Sources */,
 				299BBF2B2DC7AF070092C4D9 /* PublicRoute.swift in Sources */,
 				29A688C22DCC4E38004415BF /* AdminRouteItemView.swift in Sources */,
