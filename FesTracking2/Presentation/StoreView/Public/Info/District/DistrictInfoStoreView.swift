@@ -18,7 +18,7 @@ struct DistrictInfoStoreView: View {
                 VStack(spacing: 16) {
                     TitleView(
                         text: store.item.name,
-                        image: "SettingsBackground"
+                        image: "InfoBackground"
                     ) {
                         store.send(.dismissTapped)
                     }
@@ -37,7 +37,7 @@ struct DistrictInfoStoreView: View {
                             ScrollableTextView(description, maxHeight: 192)
                                 .padding()
                         }
-                        .background(Color.orange.opacity(0.3))
+                        .background(Color.info.opacity(0.3))
                         .cornerRadius(8)
                         .padding(.horizontal)
                     }
@@ -108,7 +108,7 @@ struct DistrictInfoStoreView: View {
         }
         .padding()
         .frame(width: 256, height: 192, alignment: .topLeading)
-        .background(Color.orange.opacity(0.3))
+        .background(Color.info.opacity(0.3))
         .cornerRadius(8)
     }
     
@@ -127,7 +127,7 @@ struct DistrictInfoStoreView: View {
             .padding(.vertical, 8)
             .background(
                 Capsule()
-                    .fill(Color.orange)
+                    .fill(Color.info)
             )
         }
     }

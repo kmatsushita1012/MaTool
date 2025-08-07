@@ -74,6 +74,7 @@ extension Collection where Element: Identifiable {
 
 extension Color {
     static let customLightRed = Color(red: 255/255, green: 183/255, blue: 167/255)
+    static let info = Color(red: 254 / 255, green: 177 / 255, blue: 143 / 255)
 }
 
 extension MKCoordinateRegion: @retroactive Equatable {
