@@ -11,12 +11,13 @@ struct BulletItem: View {
     let text: String
     
     var body: some View {
-        HStack {
+        HStack(spacing: 8) {
             Image(systemName: "circle.circle")
+                .font(.title3)
                 .foregroundColor(.gray)
                 .padding(.leading, 8)
             Text(text)
-            Spacer()
+                .font(.title3)
         }
     }
 }

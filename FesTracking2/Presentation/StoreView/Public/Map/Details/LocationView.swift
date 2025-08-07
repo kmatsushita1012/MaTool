@@ -16,7 +16,7 @@ struct LocationView: View {
             BulletItem(text: item.timestamp.text())
             Spacer()
         }
-        .frame(maxWidth: .infinity)
+        .frame(maxWidth: .infinity, alignment: .leading)
         .padding()
     }
 }
