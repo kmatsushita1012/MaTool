@@ -80,7 +80,7 @@ struct InfoStoreView: View {
     func listItem(_ text: String) -> some View {
         Text(text)
             .font(.title2)
-            .foregroundColor(.white)
+            .foregroundColor(.black)
             .frame(maxWidth: .infinity)
             .padding(.vertical, 8)
             .padding(.horizontal, 16)
