@@ -97,6 +97,7 @@
 		29A385182DD1B59E008A1D08 /* AdminRegionDistrictCreate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29A385172DD1B595008A1D08 /* AdminRegionDistrictCreate.swift */; };
 		29A3851A2DD1B781008A1D08 /* AdminRegionDistrictListStoreView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29A385192DD1B778008A1D08 /* AdminRegionDistrictListStoreView.swift */; };
 		29A3851C2DD1B7E1008A1D08 /* AdminRegionDistrictCreateStoreView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29A3851B2DD1B7D8008A1D08 /* AdminRegionDistrictCreateStoreView.swift */; };
+		29A401342E3F46C60007D8AB /* ZoomableImage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29A401332E3F46C50007D8AB /* ZoomableImage.swift */; };
 		29A64ADD2DB4A29A007C3859 /* Home.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29A64ADC2DB4A295007C3859 /* Home.swift */; };
 		29A64ADF2DB4A65B007C3859 /* LocationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29A64ADE2DB4A654007C3859 /* LocationService.swift */; };
 		29A64AE42DB4AD7F007C3859 /* Status.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29A64AE32DB4AD7D007C3859 /* Status.swift */; };
@@ -147,6 +148,9 @@
 		29CF49112D74269A00036D28 /* ApiRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29CF49102D74269A00036D28 /* ApiRepository.swift */; };
 		29CF49132D7426A400036D28 /* UserDefaultsClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29CF49122D7426A400036D28 /* UserDefaultsClient.swift */; };
 		29CF49192D7440EB00036D28 /* Extension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29CF49182D7440EB00036D28 /* Extension.swift */; };
+		29D33A5B2E3C74F600D285DC /* AdminRouteEditV2.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29D33A5A2E3C74EF00D285DC /* AdminRouteEditV2.swift */; };
+		29D33A5D2E3C750500D285DC /* AdminRouteEditStoreViewV2.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29D33A5C2E3C74FA00D285DC /* AdminRouteEditStoreViewV2.swift */; };
+		29D33A5F2E3C89A200D285DC /* AdminRouteMapViewV2.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29D33A5E2E3C899800D285DC /* AdminRouteMapViewV2.swift */; };
 		29DAB0612DA15CD1005E94BA /* AdminRouteMap.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29DAB0602DA15CCF005E94BA /* AdminRouteMap.swift */; };
 		29DAB0642DA15CFC005E94BA /* AdminLocation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29DAB0632DA15CF0005E94BA /* AdminLocation.swift */; };
 		29DAB0702DA1623C005E94BA /* AWSAuthProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29DAB06F2DA16235005E94BA /* AWSAuthProvider.swift */; };
@@ -157,11 +161,14 @@
 		29E8C3302DBB3F090086F6BB /* PublicDistrict.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29E8C32F2DBB3F020086F6BB /* PublicDistrict.swift */; };
 		29E8C3322DBB41010086F6BB /* PublicLocation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29E8C3312DBB40FC0086F6BB /* PublicLocation.swift */; };
 		29F403062DAA95DF003527D1 /* Route.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29F403052DAA95DA003527D1 /* Route.swift */; };
-		29F47F712E36474100191273 /* Modifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29F47F702E36473E00191273 /* Modifier.swift */; };
+		29F47F6F2E3638EC00191273 /* Kanit-Regular.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 29F47F6E2E3638EC00191273 /* Kanit-Regular.ttf */; };
+    29F47F712E36474100191273 /* Modifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29F47F702E36473E00191273 /* Modifier.swift */; };
 		29F47F752E36577B00191273 /* RegionInfo.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29F47F742E36577500191273 /* RegionInfo.swift */; };
 		29F47F792E36579100191273 /* DistrictInfo.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29F47F782E36578D00191273 /* DistrictInfo.swift */; };
 		29F8A2BE2D9EF079001633B3 /* ComposableArchitecture in Frameworks */ = {isa = PBXBuildFile; productRef = 29F8A2BD2D9EF079001633B3 /* ComposableArchitecture */; };
 		29F8A7932DFD645000331A7F /* TitleView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29F8A7922DFD643C00331A7F /* TitleView.swift */; };
+		29FBA84B2E3B31FF00F6E33C /* RouteSnapshotter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29FBA84A2E3B31FE00F6E33C /* RouteSnapshotter.swift */; };
+		29FBA84D2E3B34A900F6E33C /* ShareSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29FBA84C2E3B34A300F6E33C /* ShareSheet.swift */; };
 		669224E9583394F966E1C953 /* Pods_FesTracking2.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A618585B10BC13EF80425258 /* Pods_FesTracking2.framework */; };
 		BDC150D136794E0D80F535CD /* Pods_FesTracking2_FesTracking2UITests.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A449D00CF487FFFF67AD9A67 /* Pods_FesTracking2_FesTracking2UITests.framework */; };
 /* End PBXBuildFile section */
@@ -275,6 +282,7 @@
 		29A385172DD1B595008A1D08 /* AdminRegionDistrictCreate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdminRegionDistrictCreate.swift; sourceTree = "<group>"; };
 		29A385192DD1B778008A1D08 /* AdminRegionDistrictListStoreView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdminRegionDistrictListStoreView.swift; sourceTree = "<group>"; };
 		29A3851B2DD1B7D8008A1D08 /* AdminRegionDistrictCreateStoreView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdminRegionDistrictCreateStoreView.swift; sourceTree = "<group>"; };
+		29A401332E3F46C50007D8AB /* ZoomableImage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ZoomableImage.swift; sourceTree = "<group>"; };
 		29A64ADC2DB4A295007C3859 /* Home.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Home.swift; sourceTree = "<group>"; };
 		29A64ADE2DB4A654007C3859 /* LocationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocationService.swift; sourceTree = "<group>"; };
 		29A64AE32DB4AD7D007C3859 /* Status.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Status.swift; sourceTree = "<group>"; };
@@ -325,6 +333,9 @@
 		29CF49102D74269A00036D28 /* ApiRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ApiRepository.swift; sourceTree = "<group>"; };
 		29CF49122D7426A400036D28 /* UserDefaultsClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserDefaultsClient.swift; sourceTree = "<group>"; };
 		29CF49182D7440EB00036D28 /* Extension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Extension.swift; sourceTree = "<group>"; };
+		29D33A5A2E3C74EF00D285DC /* AdminRouteEditV2.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdminRouteEditV2.swift; sourceTree = "<group>"; };
+		29D33A5C2E3C74FA00D285DC /* AdminRouteEditStoreViewV2.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdminRouteEditStoreViewV2.swift; sourceTree = "<group>"; };
+		29D33A5E2E3C899800D285DC /* AdminRouteMapViewV2.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdminRouteMapViewV2.swift; sourceTree = "<group>"; };
 		29DAB0602DA15CCF005E94BA /* AdminRouteMap.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdminRouteMap.swift; sourceTree = "<group>"; };
 		29DAB0632DA15CF0005E94BA /* AdminLocation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdminLocation.swift; sourceTree = "<group>"; };
 		29DAB06F2DA16235005E94BA /* AWSAuthProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AWSAuthProvider.swift; sourceTree = "<group>"; };
@@ -335,10 +346,13 @@
 		29E8C32F2DBB3F020086F6BB /* PublicDistrict.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PublicDistrict.swift; sourceTree = "<group>"; };
 		29E8C3312DBB40FC0086F6BB /* PublicLocation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PublicLocation.swift; sourceTree = "<group>"; };
 		29F403052DAA95DA003527D1 /* Route.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Route.swift; sourceTree = "<group>"; };
+    29F47F6E2E3638EC00191273 /* Kanit-Regular.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Kanit-Regular.ttf"; sourceTree = "<group>"; };
 		29F47F702E36473E00191273 /* Modifier.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Modifier.swift; sourceTree = "<group>"; };
 		29F47F742E36577500191273 /* RegionInfo.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RegionInfo.swift; sourceTree = "<group>"; };
 		29F47F782E36578D00191273 /* DistrictInfo.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DistrictInfo.swift; sourceTree = "<group>"; };
 		29F8A7922DFD643C00331A7F /* TitleView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TitleView.swift; sourceTree = "<group>"; };
+		29FBA84A2E3B31FE00F6E33C /* RouteSnapshotter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RouteSnapshotter.swift; sourceTree = "<group>"; };
+		29FBA84C2E3B34A300F6E33C /* ShareSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShareSheet.swift; sourceTree = "<group>"; };
 		2CDEE490E4876E0D065223C1 /* Pods-FesTracking2.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-FesTracking2.release.xcconfig"; path = "Target Support Files/Pods-FesTracking2/Pods-FesTracking2.release.xcconfig"; sourceTree = "<group>"; };
 		3FBBCEBD209B644B9165205A /* Pods-FesTracking2Tests.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-FesTracking2Tests.debug.xcconfig"; path = "Target Support Files/Pods-FesTracking2Tests/Pods-FesTracking2Tests.debug.xcconfig"; sourceTree = "<group>"; };
 		44B8059399223D8FCF78D97F /* Pods-FesTracking2-FesTracking2UITests.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-FesTracking2-FesTracking2UITests.release.xcconfig"; path = "Target Support Files/Pods-FesTracking2-FesTracking2UITests/Pods-FesTracking2-FesTracking2UITests.release.xcconfig"; sourceTree = "<group>"; };
@@ -397,8 +411,8 @@
 		29039CF52DF830AD0018BA1A /* List */ = {
 			isa = PBXGroup;
 			children = (
-				29A385192DD1B778008A1D08 /* AdminRegionDistrictListStoreView.swift */,
 				29A385152DD1B517008A1D08 /* AdminRegionDistrictList.swift */,
+				29A385192DD1B778008A1D08 /* AdminRegionDistrictListStoreView.swift */,
 			);
 			path = List;
 			sourceTree = "<group>";
@@ -554,6 +568,7 @@
 				2983AB772D741534002F6CB5 /* Presentation */,
 				298BD79D2D71E46600CB63F1 /* FesTracking2App.swift */,
 				298BD7A32D71E46800CB63F1 /* Assets.xcassets */,
+				29F47F6D2E3638D500191273 /* SupportFiles */,
 				298BD7A52D71E46800CB63F1 /* Preview Content */,
 			);
 			path = FesTracking2;
@@ -746,9 +761,11 @@
 			children = (
 				29C74ACB2E388E9F00417533 /* WebImageView.swift */,
 				293F2C2C2DD77E9F002C056E /* LoadingOverlay.swift */,
+				29FBA84C2E3B34A300F6E33C /* ShareSheet.swift */,
 				2967C90F2E1F54890080B8DA /* UpdateModal.swift */,
 				29F8A7922DFD643C00331A7F /* TitleView.swift */,
 				295EA2D32DEE9E7E006CDE08 /* CardView.swift */,
+				29A401332E3F46C50007D8AB /* ZoomableImage.swift */,
 			);
 			path = Others;
 			sourceTree = "<group>";
@@ -775,6 +792,7 @@
 		29C5502C2DF7CDC800547F51 /* Admin */ = {
 			isa = PBXGroup;
 			children = (
+				29D33A592E3C74E300D285DC /* Shared */,
 				29C550352DF7CED700547F51 /* Region */,
 				29C550342DF7CECB00547F51 /* District */,
 			);
@@ -1186,6 +1204,7 @@
 				2972017A2D9CFA41003424EF /* Async.swift */,
 				29CF49182D7440EB00036D28 /* Extension.swift */,
 				29B2D0932DF07843008592F8 /* EditManager.swift */,
+				29FBA84A2E3B31FE00F6E33C /* RouteSnapshotter.swift */,
 			);
 			path = Utils;
 			sourceTree = "<group>";
@@ -1218,6 +1237,16 @@
 				2972017C2D9CFBF2003424EF /* Feature */,
 			);
 			path = Application;
+			sourceTree = "<group>";
+		};
+		29D33A592E3C74E300D285DC /* Shared */ = {
+			isa = PBXGroup;
+			children = (
+				29D33A5A2E3C74EF00D285DC /* AdminRouteEditV2.swift */,
+				29D33A5C2E3C74FA00D285DC /* AdminRouteEditStoreViewV2.swift */,
+				29D33A5E2E3C899800D285DC /* AdminRouteMapViewV2.swift */,
+			);
+			path = Shared;
 			sourceTree = "<group>";
 		};
 		29DAB05F2D9FC546005E94BA /* Contracts */ = {
@@ -1258,6 +1287,14 @@
 			path = Auth;
 			sourceTree = "<group>";
 		};
+    29F47F6D2E3638D500191273 /* SupportFiles */ = {
+			isa = PBXGroup;
+			children = (
+				29F47F6E2E3638EC00191273 /* Kanit-Regular.ttf */,
+			);
+			path = SupportFiles;
+			sourceTree = "<group>";
+		};
 		29F47F722E36576700191273 /* List */ = {
 			isa = PBXGroup;
 			children = (
@@ -1283,7 +1320,7 @@
 				29C74AC52E388A4300417533 /* DistrictInfoStoreView.swift */,
 			);
 			path = District;
-			sourceTree = "<group>";
+      sourceTree = "<group>";
 		};
 		301EBB7653C0DF6665EAAFF3 /* Frameworks */ = {
 			isa = PBXGroup;
@@ -1420,6 +1457,7 @@
 				298BD7A72D71E46800CB63F1 /* Preview Assets.xcassets in Resources */,
 				2983AB892D741C19002F6CB5 /* Podfile in Resources */,
 				298BD7A42D71E46800CB63F1 /* Assets.xcassets in Resources */,
+				29F47F6F2E3638EC00191273 /* Kanit-Regular.ttf in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1556,7 +1594,9 @@
 			buildActionMask = 2147483647;
 			files = (
 				293F2C2D2DD77EA4002C056E /* LoadingOverlay.swift in Sources */,
+				29FBA84D2E3B34A900F6E33C /* ShareSheet.swift in Sources */,
 				2978C4AF2DCB3DAE00D3F7CE /* BulletItemView.swift in Sources */,
+				29D33A5D2E3C750500D285DC /* AdminRouteEditStoreViewV2.swift in Sources */,
 				2948FCF22DC5CAB000C73E99 /* PublicRoutePickerView.swift in Sources */,
 				29AB1B4A2DE2124600AC37F3 /* Onboarding.swift in Sources */,
 				29A385182DD1B59E008A1D08 /* AdminRegionDistrictCreate.swift in Sources */,
@@ -1566,6 +1606,7 @@
 				29A1C2122E28B0150036F221 /* ChangePassword.swift in Sources */,
 				299770202DA527FB00EEB5F4 /* DismissButton.swift in Sources */,
 				29A1C21F2E28D88E0036F221 /* UpdateEmailStoreView.swift in Sources */,
+				29FBA84B2E3B31FF00F6E33C /* RouteSnapshotter.swift in Sources */,
 				292D108A2DCDD6CA0022D8A0 /* UserRole.swift in Sources */,
 				29A0434A2D7DC43100E77C91 /* Segment.swift in Sources */,
 				2948FCF02DC5C38100C73E99 /* PickerFeature.swift in Sources */,
@@ -1599,8 +1640,10 @@
 				29F8A7932DFD645000331A7F /* TitleView.swift in Sources */,
 				29CF49132D7426A400036D28 /* UserDefaultsClient.swift in Sources */,
 				292D0BAA2DB0E31300176E51 /* AdminRegionEditStoreView.swift in Sources */,
+				29D33A5B2E3C74F600D285DC /* AdminRouteEditV2.swift in Sources */,
 				29DAB0722DA163E4005E94BA /* MockAuthProvider.swift in Sources */,
 				29460A0D2D8C29030097CAA1 /* LogInStoreView.swift in Sources */,
+				29D33A5F2E3C89A200D285DC /* AdminRouteMapViewV2.swift in Sources */,
 				29BC19412DB6134900C6F918 /* Date.swift in Sources */,
 				29A1C21D2E28D50C0036F221 /* ResetPasswordStoreView.swift in Sources */,
 				29B638A72DB0E7E400DF8419 /* AdminSpanEdit.swift in Sources */,
@@ -1687,6 +1730,7 @@
 				29E4FB4C2DDCD105008C89CF /* ConfirmSignIn.swift in Sources */,
 				29A043572D7DCE0C00E77C91 /* Region.swift in Sources */,
 				29CB07752DAF7D1E0009A47D /* AdminDistrictEditStoreView.swift in Sources */,
+				29A401342E3F46C60007D8AB /* ZoomableImage.swift in Sources */,
 				29B638A92DB0E89600DF8419 /* AdminSpanEditStoreView.swift in Sources */,
 				29AD864B2DB2040E00C3E8B2 /* LiveLocationProvider.swift in Sources */,
 				29C5505A2DF7D40300547F51 /* AdminPointEditStoreView.swift in Sources */,
@@ -1887,7 +1931,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 2.0.8;
+				MARKETING_VERSION = 2.0.9;
 				OTHER_SWIFT_FLAGS = "$(inherited) -D COCOAPODS";
 				PRODUCT_BUNDLE_IDENTIFIER = StudioMK.FesTracking;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -1929,7 +1973,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 2.0.8;
+				MARKETING_VERSION = 2.0.9;
 				PRODUCT_BUNDLE_IDENTIFIER = StudioMK.FesTracking;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";

@@ -19,6 +19,7 @@ struct ApiRepotiroy: Sendable {
     var getRoutes: @Sendable (_ districtId: String, _ accessToken: String?) async -> Result<[RouteSummary], ApiError>
     var getRoute: @Sendable (_ id: String, _ accessToken: String?) async -> Result<PublicRoute, ApiError>
     var getCurrentRoute: @Sendable (_ districtId: String,_ accessToken: String?) async -> Result<PublicRoute, ApiError>
+    var getRouteIds: @Sendable (_ accessToken: String?) async -> Result<[String], ApiError>
     var postRoute: @Sendable (_ route: Route, _ accessToken: String) async -> Result<String, ApiError>
     var putRoute: @Sendable (_ route: Route, _ accessToken: String) async -> Result<String, ApiError>
     var deleteRoute: @Sendable (_ id: String, _ accessToken: String) async -> Result<String, ApiError>

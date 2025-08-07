@@ -52,6 +52,9 @@ extension ApiRepotiroy {
             let route = routes.first ?? Route.sample
             return Result.success(PublicRoute(from: route, name: "城北町"))
         },
+        getRouteIds: {_ in
+            return Result.success(["id"])
+        },
         postRoute: { route,_ in
             routes.append(route)
             return Result.success("Success")
