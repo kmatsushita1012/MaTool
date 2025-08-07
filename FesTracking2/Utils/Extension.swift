@@ -21,6 +21,19 @@ extension Array where Element: Identifiable & Equatable {
     }
 }
 
+extension Collection {
+    func first<Value: Equatable>(where keyPath: KeyPath<Element, Value>, equals value: Value) -> Element? {
+        first { $0[keyPath: keyPath] == value }
+    }
+}
+
+extension Collection where Element: Identifiable {
+    func first(matching id: Element.ID) -> Element? {
+        first(where: \.id, equals: id)
+    }
+}
+
+
 
 extension Color {
     static let customLightRed = Color(red: 255/255, green: 183/255, blue: 167/255)
