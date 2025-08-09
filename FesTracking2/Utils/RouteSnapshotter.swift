@@ -69,6 +69,15 @@ struct RouteSnapshotter: Equatable {
                     
                     //FIXME: v3.0.0
                     drawSlopePoint(on: snapshot, drawnRects: &drawnRects)
+                    
+                    let titleText = """
+                    \(districtName)
+                    \(route.date.text(format: "m月d日")) \(route.title)
+                    開始時刻 \(route.start.text)
+                    終了時刻 \(route.goal.text)
+                    """
+                    drawTitleTextBlock(text: titleText, in: options)
+                    
                     let image = UIGraphicsGetImageFromCurrentImageContext()
                     UIGraphicsEndImageContext()
                     
@@ -188,6 +197,48 @@ struct RouteSnapshotter: Equatable {
             }
         }
     }
+    
+    private func drawTitleTextBlock(text: String, in options: MKMapSnapshotter.Options) {
+        let paragraphStyle = NSMutableParagraphStyle()
+        paragraphStyle.lineBreakMode = .byWordWrapping
+        paragraphStyle.alignment = .left
+
+        let font = UIFont.systemFont(ofSize: 10, weight: .bold)
+        let attributes: [NSAttributedString.Key: Any] = [
+            .font: font,
+            .paragraphStyle: paragraphStyle,
+            .foregroundColor: UIColor.black // 黒文字
+        ]
+        
+        // パディングとサイズ計算
+        let padding: CGFloat = 8
+        let maxTextWidth = options.size.width * 0.9
+        let textRect = CGRect(x: padding, y: padding, width: maxTextWidth - padding * 2, height: .greatestFiniteMagnitude)
+        let boundingRect = (text as NSString).boundingRect(with: textRect.size, options: .usesLineFragmentOrigin, attributes: attributes, context: nil)
+
+        let backgroundRect = CGRect(x: padding,
+                                    y: padding,
+                                    width: boundingRect.width + padding * 2,
+                                    height: boundingRect.height + padding * 2)
+
+        // 背景を白で塗る
+        UIColor.white.setFill()
+        let backgroundPath = UIBezierPath(roundedRect: backgroundRect, cornerRadius: 6)
+        backgroundPath.fill()
+
+        // 黒い枠線を描く
+        UIColor.black.setStroke()
+        backgroundPath.lineWidth = 2
+        backgroundPath.stroke()
+
+        // テキスト描画
+        let textDrawRect = CGRect(x: backgroundRect.origin.x + padding,
+                                  y: backgroundRect.origin.y + padding,
+                                  width: boundingRect.width,
+                                  height: boundingRect.height)
+        (text as NSString).draw(in: textDrawRect, withAttributes: attributes)
+    }
+
     
     func createPDF(with image: UIImage, path: String) -> URL? {
        let pdfData = NSMutableData()
