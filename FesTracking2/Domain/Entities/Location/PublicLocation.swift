@@ -1,5 +1,5 @@
 //
-//  PublicLocation.swift
+//  LocationInfo.swift
 //  FesTracking2
 //
 //  Created by 松下和也 on 2025/04/25.
@@ -7,15 +7,19 @@
 
 import Foundation
 
-struct PublicLocation: Codable{
+struct LocationInfo: Equatable, Codable{
     let districtId: String
     let districtName: String
     let coordinate: Coordinate
     let timestamp: Date
 }
 
-extension PublicLocation: Equatable {}
+extension LocationInfo: Identifiable, Hashable {
+    var id: String {
+        districtId
+    }
+}
 
-extension PublicLocation {
+extension LocationInfo {
     static let sample = Self(districtId: "掛川祭_城北町",districtName: "城北町", coordinate: Coordinate.sample, timestamp: Date.sample)
 }

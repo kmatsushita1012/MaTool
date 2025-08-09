@@ -13,6 +13,12 @@ struct Location: Codable, Equatable, Hashable{
     let timestamp: Date
 }
 
+extension Location: Identifiable {
+    var id: String {
+        districtId
+    }
+}
+
 extension Location {
     static let sample = Self(districtId: "掛川祭_城北町", coordinate: Coordinate.sample, timestamp: Date.sample)
 }

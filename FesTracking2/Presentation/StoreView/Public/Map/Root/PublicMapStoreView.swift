@@ -14,30 +14,23 @@ struct PublicMapStoreView: View {
     
     var body: some View {
         VStack(spacing: 0){
-            if let store = store.scope(state: \.districtPicker, action: \.districtPicker) {
-                DistrictPickerView(store: store)
-            }
-            ZStack {
-                if let store = store.scope(state: \.map?.route, action: \.map.route) {
-                    PublicRouteMapStoreView(store: store)
-                        .ignoresSafeArea(edges: .bottom)
-                } else if let store = store.scope(state: \.map?.locations, action: \.map.locations) {
-                    LocationsMapStoreView(store: store)
-                        .ignoresSafeArea(edges: .bottom)
-                }else {
-                    Spacer()
-                }
-                if let store = store.scope(state: \.routePicker, action: \.routePicker) {
-                    VStack{
-                        RoutePickerView(store: store)
-                        Spacer()
-                    }
-                }
+            picker()
+            if let store = store.scope(state: \.destination?.route, action: \.destination.route) {
+                PublicRouteMapStoreView(store: store)
+                    .ignoresSafeArea(edges: .bottom)
+            } else if let store = store.scope(state: \.destination?.locations, action: \.destination.locations) {
+                PublicLocationsMapStoreView(store: store)
+                    .ignoresSafeArea(edges: .bottom)
+            } else {
+                Spacer()
             }
         }
+        .background(Color.customLightRed)
+        .navigationTitle("地図")
+        .navigationBarTitleDisplayMode(.inline)
         .ignoresSafeArea(edges: .bottom)
         .toolbar {
-            ToolbarItem(placement: .topBarLeading) {
+            ToolbarItem(placement: .navigationBarLeading) {
                 Button(action: {
                     store.send(.homeTapped)
                 }) {
@@ -46,19 +39,61 @@ struct PublicMapStoreView: View {
                 }
                 .padding(.horizontal, 8)
             }
-            ToolbarItem(placement: .principal) {
-                Text("地図")
-                    .bold()
-            }
         }
-        .navigationBarTitleDisplayMode(.inline)
+        .alert($store.scope(state: \.alert, action: \.alert))
         .dismissible(backButton: false)
-        .onAppear() {
-            //TODO
-            store.send(.onAppear)
+    }
+    
+    @ViewBuilder
+    private func picker() -> some View {
+        ScrollViewReader { proxy in
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 8) {
+                    ForEach(store.contents, id: \.self) { item in
+                        menuButton(for: item)
+                            .id(item)
+                    }
+                }
+            }
+            .background(Color.customLightRed)
+            .onAppear{
+                withAnimation {
+                    proxy.scrollTo(store.selectedContent, anchor: .center)
+                }
+            }
+            .onChange(of: store.selectedContent) {
+                withAnimation {
+                    proxy.scrollTo(store.selectedContent, anchor: .center)
+                }
+            }
         }
     }
     
+    @ViewBuilder
+    private func menuButton(for item: PublicMap.Content) -> some View {
+        let isSelected = item == store.selectedContent
+        
+        Button(action: {
+            if !isSelected {
+                store.send(.contentSelected(item))
+            }
+        }) {
+            Text(item.text)
+                .foregroundColor(.primary)
+                .padding(.vertical, 8)
+                .padding(.horizontal, 16)
+                .frame(minWidth: 48)
+                .background(isSelected ? Color.white : .clear)
+                .clipShape(
+                    isSelected
+                    ? .rect(
+                        topLeadingRadius: 16,
+                        bottomLeadingRadius: 0,
+                        bottomTrailingRadius: 0,
+                        topTrailingRadius: 16
+                    )
+                    : .rect()
+                )
+        }
+    }
 }
-
-

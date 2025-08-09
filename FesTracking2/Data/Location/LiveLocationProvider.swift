@@ -29,13 +29,13 @@ extension LocationProvider {
         let manager = CLLocationManager()
         let delegate = LocationManagerDelegate()
         manager.delegate = delegate
-        manager.requestWhenInUseAuthorization()
-        manager.requestAlwaysAuthorization()
         manager.allowsBackgroundLocationUpdates = true
         var isTracking = false
         
         return LocationProvider(
             startTracking: {
+                manager.requestWhenInUseAuthorization()
+                manager.requestAlwaysAuthorization()
                 manager.startUpdatingLocation()
                 isTracking = true
             },
