@@ -9,17 +9,19 @@ import UIKit
 @preconcurrency import MapKit
 
 struct RouteSnapshotter: Equatable {
-
+    let districtName: String
     let route: Route
     let filter: PointFilter
     
-    init(_ route: Route, filter: PointFilter = .export){
+    init(_ route: Route, districtName : String, filter: PointFilter = .export){
         self.route = route
+        self.districtName = districtName
         self.filter = filter
     }
     
     init(_ route: PublicRoute, filter: PointFilter = .export){
         self.route = route.toModel()
+        self.districtName = route.districtName
         self.filter = filter
     }
     
@@ -56,6 +58,7 @@ struct RouteSnapshotter: Equatable {
                         return
                     }
                     
+                    var drawnRects: [CGRect] = []
                     UIGraphicsBeginImageContextWithOptions(options.size, true, 0)
                     snapshot.image.draw(at: .zero)
                     drawPolylines(on: snapshot, color: UIColor.white, lineWidth: 4)
@@ -69,32 +72,35 @@ struct RouteSnapshotter: Equatable {
             }
         } ?? nil
     }
-
     
     private func drawPolylines(on snapshot: MKMapSnapshotter.Snapshot, color: UIColor, lineWidth: CGFloat ) {
         for segment in segments {
-            guard segment.coordinates.count > 1 else { continue }
-
-            let path = UIBezierPath()
-            let start = snapshot.point(for: segment.coordinates[0].toCL())
-            path.move(to: start)
-
-            for coord in segment.coordinates.dropFirst() {
-                let point = snapshot.point(for: coord.toCL())
-                path.addLine(to: point)
-            }
-            color.setStroke()
-            path.lineWidth = lineWidth
-            path.stroke()
+            drawPolyline(on: snapshot, coordinates: segment.coordinates, color: color, lineWidth: lineWidth)
         }
     }
     
-    private func drawPinsAndCaptions(on snapshot: MKMapSnapshotter.Snapshot) {
-        var drawnRects: [CGRect] = []
+    private func drawPolyline(on snapshot: MKMapSnapshotter.Snapshot, coordinates: [Coordinate], color: UIColor, lineWidth: CGFloat ) {
+        guard coordinates.count > 1 else { return }
+
+        let path = UIBezierPath()
+        let start = snapshot.point(for: coordinates[0].toCL())
+        path.move(to: start)
+
+        for coord in coordinates.dropFirst() {
+            let point = snapshot.point(for: coord.toCL())
+            path.addLine(to: point)
+        }
+        color.setStroke()
+        path.lineWidth = lineWidth
+        path.stroke()
+    }
+    
+    private func drawPinsAndCaptions(on snapshot: MKMapSnapshotter.Snapshot, drawnRects: inout [CGRect]) {
         let originalImage = UIImage(systemName: "circle.fill")!
         let smallSize = CGSize(width: 10, height: 10)
         let pinImage = UIGraphicsImageRenderer(size: smallSize).image { _ in
-            originalImage.withTintColor(.red, renderingMode: .alwaysOriginal)
+            originalImage
+                .withTintColor(.red, renderingMode: .alwaysOriginal)
                 .draw(in: CGRect(origin: .zero, size: smallSize))
         }
         
@@ -104,18 +110,23 @@ struct RouteSnapshotter: Equatable {
                 CGPoint(x: pointInSnapshot.x - pinImage.size.width / 2,
                         y: pointInSnapshot.y - pinImage.size.height/2)
             )
-            drawCaption(for: point, index: index, at: pointInSnapshot, pinImage: pinImage, drawnRects: &drawnRects)
+            let caption: String = {
+                var caption = "\(index + 1)"
+                if let title = point.title {
+                    caption += ":\(title)"
+                }
+                if let time = point.time?.text {
+                    caption += "\n\(time)"
+                }
+                return caption
+            }()
+
+            drawCaption(for: caption, at: pointInSnapshot, pinImage: pinImage, drawnRects: &drawnRects)
         }
     }
 
-    private func drawCaption(for point: Point,index: Int, at location: CGPoint, pinImage: UIImage, drawnRects: inout [CGRect]) {
-        var caption = "\(index + 1)"
-        if let title = point.title{
-            caption += ":\(title)"
-        }
-        if let time = point.time?.text{
-            caption += "\n\(time)"
-        }
+    private func drawCaption(for text: String, at location: CGPoint, pinImage: UIImage, drawnRects: inout [CGRect]) {
+        
         
         let font = UIFont.boldSystemFont(ofSize: 8)
         let attributes: [NSAttributedString.Key: Any] = [
@@ -123,7 +134,7 @@ struct RouteSnapshotter: Equatable {
             .foregroundColor: UIColor.black
         ]
 
-        let textSize = caption.size(withAttributes: attributes)
+        let textSize = text.size(withAttributes: attributes)
         let padding: CGFloat = 2
         let margin: CGFloat = 5
         let context = UIGraphicsGetCurrentContext()
@@ -138,7 +149,6 @@ struct RouteSnapshotter: Equatable {
                 x: location.x + direction.dx * (margin + halfWidth),
                 y: location.y + direction.dy * (margin + halfHeight)
             )
-            // TODO: 調整
             let rect = CGRect(
                 x: center.x - halfWidth ,
                 y: center.y - halfHeight,
@@ -158,14 +168,14 @@ struct RouteSnapshotter: Equatable {
                 )
                 context?.addLine(to: point)
                 context?.strokePath()
-                //背景
-                context?.setFillColor(UIColor(white: 1.0, alpha: 0.7).cgColor)
+                // 背景
+                context?.setFillColor(UIColor(white: 1.0, alpha: 0.8).cgColor)
                 context?.fill(rect)
                 context?.setStrokeColor(UIColor.red.cgColor)
                 context?.setLineWidth(0.5)
                 context?.stroke(rect)
-                //キャプション
-                caption.draw(at: CGPoint(x: rect.origin.x + padding,
+                // キャプション
+                text.draw(at: CGPoint(x: rect.origin.x + padding,
                                          y: rect.origin.y + padding),
                              withAttributes: attributes)
                 drawnRects.append(rect)
