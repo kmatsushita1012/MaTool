@@ -45,6 +45,7 @@ struct DistrictInfo {
                 return .run { _ in
                     await dismiss()
                 }
+                //　MARK: Homeに移譲
             case .mapTapped:
                 return .none
             }
