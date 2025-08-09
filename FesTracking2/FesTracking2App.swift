@@ -17,7 +17,7 @@ struct FesTracking2App: App {
     
     var body: some Scene {
         WindowGroup {
-            if hasLaunchedBefore {
+            if hasLaunchedBefore && false  {
                 HomeStoreView(
                     store: Store(
                         initialState:Home.State()
