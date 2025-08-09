@@ -86,6 +86,6 @@ struct OnboardingStoreView: View {
                 .scaledToFill()
                 .ignoresSafeArea()
         )
-        .loadingOverlay(store.isRegionsLoading)
+        .loadingOverlay(store.isLoading)
     }
 }
