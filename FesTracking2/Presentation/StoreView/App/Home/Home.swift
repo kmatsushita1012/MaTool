@@ -106,7 +106,6 @@ struct Home {
                 } else if let regionId {
                     return locationsEffect(regionId)
                 }
-                
                 state.alert = Alert.error("設定画面で参加する祭典を選択してください")
                 return .none
             case .infoTapped:
@@ -219,6 +218,7 @@ struct Home {
                     state.alert = Alert.error("情報の取得に失敗しました")
                 }
                 state.isDestinationLoading = false
+                return .none
             case let .infoPrepared(regionResult, districtsResult):
                 switch (regionResult, districtsResult) {
                 case (.success(let region), .success(let districts)):
@@ -256,7 +256,7 @@ struct Home {
             case .destination(.presented(let childAction)):
                 switch childAction {
                 case .login(.received(.success(let userRole))),
-                    .login(.destination(.presented(.confirmSignIn(.received(.success(let userRole)))))):
+                        .login(.destination(.presented(.confirmSignIn(.received(.success(let userRole)))))):
                     state.userRole = userRole
                     state.destination = nil
                     switch state.userRole {
@@ -271,6 +271,12 @@ struct Home {
                     }
                 case .login(.received(.failure(_))):
                     return .none
+                case .info(.destination(.presented(.district(.mapTapped)))):
+                    guard let districtId = state.destination?.info?.destination?.district?.item.id,
+                        let regionId = userDefaultsClient.string(defaultRegionKey)  else {
+                        return .none
+                    }
+                    return routeEffect(regionId: regionId, districtId: districtId)
                 case .adminDistrict(.signOutReceived(.success(let userRole))),
                     .adminRegion(.signOutReceived(.success(let userRole))):
                     state.userRole = userRole
