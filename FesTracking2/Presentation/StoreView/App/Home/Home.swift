@@ -297,7 +297,7 @@ struct Home {
     func routeEffect(regionId: String, districtId id: String) -> Effect<Action> {
         .run { send in
             let accessToken = await authService.getAccessToken()
-            print("\(regionId) \(id)")
+            
             async let regionTask = apiRepository.getRegion(regionId)
             async let districtsTask = apiRepository.getDistricts(regionId)
             async let routesTask = apiRepository.getRoutes(id, accessToken)

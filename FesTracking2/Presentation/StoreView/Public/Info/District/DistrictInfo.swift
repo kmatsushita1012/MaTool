@@ -31,7 +31,6 @@ struct DistrictInfo {
         case binding(BindingAction<State>)
         case dismissTapped
         case mapTapped
-        case showMap(PublicMap.Content)
     }
     
     @Dependency(\.dismiss) var dismiss
@@ -47,10 +46,6 @@ struct DistrictInfo {
                     await dismiss()
                 }
             case .mapTapped:
-                return .run { [item = state.item] send in
-                    await send(.showMap(.route(item)))
-                }
-            case .showMap:
                 return .none
             }
         }
