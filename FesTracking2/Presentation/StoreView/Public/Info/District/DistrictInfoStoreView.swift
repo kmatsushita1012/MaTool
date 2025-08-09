@@ -86,6 +86,7 @@ struct DistrictInfoStoreView: View {
             }
         }
         .ignoresSafeArea()
+        .loadingOverlay(store.isLoading)
         .dismissible(backButton: false)
     }
     
