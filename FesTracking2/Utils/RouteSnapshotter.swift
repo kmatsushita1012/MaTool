@@ -61,9 +61,14 @@ struct RouteSnapshotter: Equatable {
                     var drawnRects: [CGRect] = []
                     UIGraphicsBeginImageContextWithOptions(options.size, true, 0)
                     snapshot.image.draw(at: .zero)
+                    //FIXME: v3.0.0
+                    drawSlopePolyline(on: snapshot)
                     drawPolylines(on: snapshot, color: UIColor.white, lineWidth: 4)
                     drawPolylines(on: snapshot, color: UIColor.blue, lineWidth: 3)
-                    drawPinsAndCaptions(on: snapshot)
+                    drawPinsAndCaptions(on: snapshot, drawnRects: &drawnRects)
+                    
+                    //FIXME: v3.0.0
+                    drawSlopePoint(on: snapshot, drawnRects: &drawnRects)
                     let image = UIGraphicsGetImageFromCurrentImageContext()
                     UIGraphicsEndImageContext()
                     
@@ -199,5 +204,42 @@ struct RouteSnapshotter: Equatable {
        } catch {
            return nil
        }
+    }
+    
+    //FIXME: v3.0.0
+    private func drawSlopePoint(on snapshot: MKMapSnapshotter.Snapshot, drawnRects: inout [CGRect]) {
+        let toshokan = snapshot.point(for: Coordinate(latitude: 34.774803,longitude: 138.015110).toCL())
+        drawCaption(
+            for: "斜度5.8%",
+            at: toshokan,
+            pinImage: UIImage(systemName: "circle.fill")!,
+            drawnRects: &drawnRects
+        )
+        let shinmei = snapshot.point(
+            for: CLLocationCoordinate2D(
+                latitude: 34.776993,
+                longitude: 138.018933)
+        )
+        drawCaption(
+            for: "斜度1.4%",
+            at: shinmei,
+            pinImage: UIImage(systemName: "circle.fill")!,
+            drawnRects: &drawnRects
+        )
+    }
+    private func drawSlopePolyline(on snapshot: MKMapSnapshotter.Snapshot) {
+        let toshokanCoordinates = [
+            Coordinate(latitude: 34.774471, longitude: 138.015110),
+            Coordinate(latitude: 34.775118, longitude: 138.015131)
+        ]
+        drawPolyline(on: snapshot, coordinates: toshokanCoordinates, color: .orange, lineWidth: 8)
+        let shinmeiCoordinates = [
+            Coordinate(latitude: 34.775140, longitude: 138.018356),
+            Coordinate(latitude: 34.775942, longitude: 138.018427),
+            Coordinate(latitude: 34.777033, longitude: 138.018906),
+            Coordinate(latitude: 34.777707, longitude: 138.019524),
+            Coordinate(latitude: 34.778608, longitude: 138.019802)
+        ]
+        drawPolyline(on: snapshot, coordinates: shinmeiCoordinates, color: .orange, lineWidth: 8)
     }
 }
