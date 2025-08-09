@@ -227,7 +227,7 @@ struct Home {
                 state.isDestinationLoading = false
                 switch (regionResult, districtsResult) {
                 case (.success(let region), .success(let districts)):
-                    if let districtId = userDefaultsClient.string(defaultRegionKey) {
+                    if let districtId = userDefaultsClient.string(defaultDistrictKey) {
                         state.destination = .info(
                             InfoList.State(
                                 region: region,

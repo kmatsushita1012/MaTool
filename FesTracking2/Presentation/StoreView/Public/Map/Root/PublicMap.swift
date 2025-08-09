@@ -233,7 +233,9 @@ extension PublicMap.State {
     ) {
         let locations = PublicMap.Content.from(region: region)
         let contents = [locations]
-            + districts.map{ PublicMap.Content.from(district: $0, origin: region.base) }
+            + districts
+            .map{ PublicMap.Content.from(district: $0, origin: region.base) }
+            .prioritizing(by: \.id, match: id)
         let selected = contents.first(where: \.id, equals: id) ?? locations
         self.contents = contents
         self.selectedContent = selected
