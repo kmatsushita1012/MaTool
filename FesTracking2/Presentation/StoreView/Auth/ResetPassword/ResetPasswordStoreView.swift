@@ -25,7 +25,7 @@ struct ResetPasswordStoreView: View {
         VStack{
             TitleView(
                 text: "パスワード変更",
-                image: "SettingsBackground"
+                image: "AdminBackground"
             ) {
                 switch store.step{
                 case .enterUsername:
