@@ -96,6 +96,7 @@
 		29A401392E4110C20007D8AB /* LocationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29A401382E4110BF0007D8AB /* LocationView.swift */; };
 		29A4013B2E41126B0007D8AB /* PublicRouteMap.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29A4013A2E4112660007D8AB /* PublicRouteMap.swift */; };
 		29A4013F2E4113720007D8AB /* PublicLocationsMap.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29A4013E2E41136D0007D8AB /* PublicLocationsMap.swift */; };
+		29A60A4E2E471A9D000EA96B /* ScrollableTextView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29A60A4D2E471A98000EA96B /* ScrollableTextView.swift */; };
 		29A64ADD2DB4A29A007C3859 /* Home.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29A64ADC2DB4A295007C3859 /* Home.swift */; };
 		29A64ADF2DB4A65B007C3859 /* LocationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29A64ADE2DB4A654007C3859 /* LocationService.swift */; };
 		29A64AE42DB4AD7F007C3859 /* Status.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29A64AE32DB4AD7D007C3859 /* Status.swift */; };
@@ -127,7 +128,6 @@
 		29C550612DF7D6A300547F51 /* PublicMap.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29C550602DF7D6A200547F51 /* PublicMap.swift */; };
 		29C74AC62E388A4900417533 /* DistrictInfoStoreView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29C74AC52E388A4300417533 /* DistrictInfoStoreView.swift */; };
 		29C74AC82E388A5300417533 /* RegionInfoStoreView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29C74AC72E388A4E00417533 /* RegionInfoStoreView.swift */; };
-		29C74ACA2E388B8D00417533 /* ScrollableDescription.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29C74AC92E388B8000417533 /* ScrollableDescription.swift */; };
 		29C74ACC2E388EA700417533 /* WebImageView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29C74ACB2E388E9F00417533 /* WebImageView.swift */; };
 		29C74ACF2E388FC800417533 /* Kingfisher in Frameworks */ = {isa = PBXBuildFile; productRef = 29C74ACE2E388FC800417533 /* Kingfisher */; };
 		29C74AD12E38BCCA00417533 /* PublicDistrictMapView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29C74AD02E38BCC300417533 /* PublicDistrictMapView.swift */; };
@@ -161,7 +161,7 @@
 		29E8C3322DBB41010086F6BB /* PublicLocation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29E8C3312DBB40FC0086F6BB /* PublicLocation.swift */; };
 		29F403062DAA95DF003527D1 /* Route.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29F403052DAA95DA003527D1 /* Route.swift */; };
 		29F47F6F2E3638EC00191273 /* Kanit-Regular.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 29F47F6E2E3638EC00191273 /* Kanit-Regular.ttf */; };
-    29F47F712E36474100191273 /* Modifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29F47F702E36473E00191273 /* Modifier.swift */; };
+		29F47F712E36474100191273 /* Modifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29F47F702E36473E00191273 /* Modifier.swift */; };
 		29F47F752E36577B00191273 /* RegionInfo.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29F47F742E36577500191273 /* RegionInfo.swift */; };
 		29F47F792E36579100191273 /* DistrictInfo.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29F47F782E36578D00191273 /* DistrictInfo.swift */; };
 		29F8A2BE2D9EF079001633B3 /* ComposableArchitecture in Frameworks */ = {isa = PBXBuildFile; productRef = 29F8A2BD2D9EF079001633B3 /* ComposableArchitecture */; };
@@ -280,6 +280,7 @@
 		29A401382E4110BF0007D8AB /* LocationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocationView.swift; sourceTree = "<group>"; };
 		29A4013A2E4112660007D8AB /* PublicRouteMap.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PublicRouteMap.swift; sourceTree = "<group>"; };
 		29A4013E2E41136D0007D8AB /* PublicLocationsMap.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PublicLocationsMap.swift; sourceTree = "<group>"; };
+		29A60A4D2E471A98000EA96B /* ScrollableTextView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScrollableTextView.swift; sourceTree = "<group>"; };
 		29A64ADC2DB4A295007C3859 /* Home.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Home.swift; sourceTree = "<group>"; };
 		29A64ADE2DB4A654007C3859 /* LocationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocationService.swift; sourceTree = "<group>"; };
 		29A64AE32DB4AD7D007C3859 /* Status.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Status.swift; sourceTree = "<group>"; };
@@ -312,7 +313,6 @@
 		29C550602DF7D6A200547F51 /* PublicMap.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PublicMap.swift; sourceTree = "<group>"; };
 		29C74AC52E388A4300417533 /* DistrictInfoStoreView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DistrictInfoStoreView.swift; sourceTree = "<group>"; };
 		29C74AC72E388A4E00417533 /* RegionInfoStoreView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RegionInfoStoreView.swift; sourceTree = "<group>"; };
-		29C74AC92E388B8000417533 /* ScrollableDescription.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScrollableDescription.swift; sourceTree = "<group>"; };
 		29C74ACB2E388E9F00417533 /* WebImageView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebImageView.swift; sourceTree = "<group>"; };
 		29C74AD02E38BCC300417533 /* PublicDistrictMapView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PublicDistrictMapView.swift; sourceTree = "<group>"; };
 		29CB07742DAF7D150009A47D /* AdminDistrictEditStoreView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdminDistrictEditStoreView.swift; sourceTree = "<group>"; };
@@ -344,7 +344,7 @@
 		29E8C32F2DBB3F020086F6BB /* PublicDistrict.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PublicDistrict.swift; sourceTree = "<group>"; };
 		29E8C3312DBB40FC0086F6BB /* PublicLocation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PublicLocation.swift; sourceTree = "<group>"; };
 		29F403052DAA95DA003527D1 /* Route.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Route.swift; sourceTree = "<group>"; };
-    29F47F6E2E3638EC00191273 /* Kanit-Regular.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Kanit-Regular.ttf"; sourceTree = "<group>"; };
+		29F47F6E2E3638EC00191273 /* Kanit-Regular.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Kanit-Regular.ttf"; sourceTree = "<group>"; };
 		29F47F702E36473E00191273 /* Modifier.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Modifier.swift; sourceTree = "<group>"; };
 		29F47F742E36577500191273 /* RegionInfo.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RegionInfo.swift; sourceTree = "<group>"; };
 		29F47F782E36578D00191273 /* DistrictInfo.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DistrictInfo.swift; sourceTree = "<group>"; };
@@ -772,6 +772,7 @@
 				29F8A7922DFD643C00331A7F /* TitleView.swift */,
 				295EA2D32DEE9E7E006CDE08 /* CardView.swift */,
 				29A401332E3F46C50007D8AB /* ZoomableImage.swift */,
+				29A60A4D2E471A98000EA96B /* ScrollableTextView.swift */,
 			);
 			path = Others;
 			sourceTree = "<group>";
@@ -1079,16 +1080,6 @@
 			path = District;
 			sourceTree = "<group>";
 		};
-		29C5505E2DF7D59600547F51 /* Detail */ = {
-			isa = PBXGroup;
-			children = (
-				2978C4AC2DCB3C9A00D3F7CE /* PointView.swift */,
-				2978C4B02DCB4A8300D3F7CE /* LocationView.swift */,
-				29C74AC92E388B8000417533 /* ScrollableDescription.swift */,
-			);
-			path = Detail;
-			sourceTree = "<group>";
-		};
 		29C5505F2DF7D5D400547F51 /* Toggle */ = {
 			isa = PBXGroup;
 			children = (
@@ -1269,7 +1260,7 @@
 			path = Auth;
 			sourceTree = "<group>";
 		};
-    29F47F6D2E3638D500191273 /* SupportFiles */ = {
+		29F47F6D2E3638D500191273 /* SupportFiles */ = {
 			isa = PBXGroup;
 			children = (
 				29F47F6E2E3638EC00191273 /* Kanit-Regular.ttf */,
@@ -1302,7 +1293,7 @@
 				29C74AC52E388A4300417533 /* DistrictInfoStoreView.swift */,
 			);
 			path = District;
-      sourceTree = "<group>";
+			sourceTree = "<group>";
 		};
 		301EBB7653C0DF6665EAAFF3 /* Frameworks */ = {
 			isa = PBXGroup;
@@ -1623,6 +1614,7 @@
 				292D0BA12DB0E0DC00176E51 /* AdminRegionEdit.swift in Sources */,
 				29F8A7932DFD645000331A7F /* TitleView.swift in Sources */,
 				29CF49132D7426A400036D28 /* UserDefaultsClient.swift in Sources */,
+				29A60A4E2E471A9D000EA96B /* ScrollableTextView.swift in Sources */,
 				292D0BAA2DB0E31300176E51 /* AdminRegionEditStoreView.swift in Sources */,
 				29D33A5B2E3C74F600D285DC /* AdminRouteEditV2.swift in Sources */,
 				29DAB0722DA163E4005E94BA /* MockAuthProvider.swift in Sources */,
@@ -1649,11 +1641,9 @@
 				29C550612DF7D6A300547F51 /* PublicMap.swift in Sources */,
 				299A06AD2DB142A200E76898 /* AdminLocationStoreView.swift in Sources */,
 				29A0434C2D7DC54B00E77C91 /* Location.swift in Sources */,
-				2948FCEE2DC5C32400C73E99 /* PublicDistrictPickerStoreView.swift in Sources */,
 				29F47F792E36579100191273 /* DistrictInfo.swift in Sources */,
 				29CB077F2DAF8C510009A47D /* AdminDistrictMapView.swift in Sources */,
 				29A688C02DCC4BEE004415BF /* AdminRouteExportStoreView.swift in Sources */,
-				29C74ACA2E388B8D00417533 /* ScrollableDescription.swift in Sources */,
 				298C68332E0C2D29009570A5 /* InformationEditStoreView.swift in Sources */,
 				298C68312E0C2D16009570A5 /* InformationEdit.swift in Sources */,
 				2976942F2E2CEFE8007B1D69 /* AWSMobileClientError.swift in Sources */,
@@ -1721,7 +1711,7 @@
 				29A043482D7DC36400E77C91 /* Point.swift in Sources */,
 				29A043462D7DC2B200E77C91 /* RouteInfo.swift in Sources */,
 				29C74AC62E388A4900417533 /* DistrictInfoStoreView.swift in Sources */,
-				29A043462D7DC2B200E77C91 /* PublicRoute.swift in Sources */,
+				29A043462D7DC2B200E77C91 /* RouteInfo.swift in Sources */,
 				29CF490A2D74262300036D28 /* LiveApiRepository.swift in Sources */,
 				2967C9122E1F54D10080B8DA /* UpdateManager.swift in Sources */,
 				29550E542DE45CD800E9D9B6 /* MenuSelector.swift in Sources */,
