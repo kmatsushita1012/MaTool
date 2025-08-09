@@ -71,7 +71,8 @@ struct InfoStoreView: View {
     func mainItem(_ text: String) -> some View{
         Text(text)
             .font(.title)
-            .foregroundColor(.white)
+            .foregroundColor(.black)
+            .stroke(color: .white, width: 2)
             .frame(maxWidth: .infinity)
             .padding(.vertical, 8)
             .background(Color.info)
@@ -83,6 +84,7 @@ struct InfoStoreView: View {
         Text(text)
             .font(.title2)
             .foregroundColor(.black)
+            .stroke(color: .white, width: 1)
             .frame(maxWidth: .infinity)
             .padding(.vertical, 8)
             .padding(.horizontal, 16)

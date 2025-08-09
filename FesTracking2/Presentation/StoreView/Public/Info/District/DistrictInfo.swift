@@ -15,6 +15,7 @@ struct DistrictInfo {
     struct State: Equatable {
         let item: PublicDistrict
         var region: MKCoordinateRegion?
+        var isLoading: Bool = false
         
         init(item: PublicDistrict){
             self.item = item
@@ -31,7 +32,6 @@ struct DistrictInfo {
         case binding(BindingAction<State>)
         case dismissTapped
         case mapTapped
-        case showMap(PublicMap.Content)
     }
     
     @Dependency(\.dismiss) var dismiss
@@ -46,11 +46,9 @@ struct DistrictInfo {
                 return .run { _ in
                     await dismiss()
                 }
+            //　MARK: Homeに移譲
             case .mapTapped:
-                return .run { [item = state.item] send in
-                    await send(.showMap(.route(item)))
-                }
-            case .showMap:
+                state.isLoading = true
                 return .none
             }
         }

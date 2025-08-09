@@ -60,13 +60,13 @@ struct HomeStoreView: View {
                        .padding()
                }
             }
-            .navigationBarTitleDisplayMode(.inline)
             .background(
                 Image("HomeBackground")
                     .resizable()
                     .scaledToFill()
+                    .ignoresSafeArea(edges: [.top])
             )
-            .navigationDestination(item: $store.scope(state: \.destination?.route, action: \.destination.route)) { store in
+            .navigationDestination(item: $store.scope(state: \.destination?.map, action: \.destination.map)) { store in
                 PublicMapStoreView(store: store)
             }
             .navigationDestination(item: $store.scope(state: \.destination?.info, action: \.destination.info)) { store in

@@ -15,7 +15,7 @@ struct SettingsStoreView: View {
     var body: some View {
         VStack{
             TitleView(
-                text: "MaTool",
+                text: "設定",
                 image: "SettingsBackground",
                 isDismissEnabled: store.isDismissEnabled
             ) {

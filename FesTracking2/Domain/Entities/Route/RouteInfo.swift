@@ -7,7 +7,7 @@
 
 import Foundation
 
-struct PublicRoute: Codable, Equatable, Identifiable{
+struct RouteInfo: Codable, Equatable, Identifiable{
     let id: String
     let districtId: String
     let districtName: String
@@ -20,7 +20,7 @@ struct PublicRoute: Codable, Equatable, Identifiable{
     let goal: SimpleTime
 }
 
-extension PublicRoute {
+extension RouteInfo {
     func text(format: String) -> String {
         var result = ""
         var i = format.startIndex
@@ -93,7 +93,7 @@ extension PublicRoute {
 }
 
 
-extension PublicRoute {
+extension RouteInfo {
     static let sample = Self(
         id: UUID().uuidString,
         districtId: "Johoku",
