@@ -1,8 +1,8 @@
 //
-//  ScrollableDescription.swift
+//  ScrollableTextView.swift
 //  FesTracking2
 //
-//  Created by 松下和也 on 2025/07/29.
+//  Created by 松下和也 on 2025/08/09.
 //
 
 import SwiftUI
