@@ -96,14 +96,15 @@ struct Home {
                         await send(.awsInitializeReceived(result))
                     }
                 )
-                return .none
             case .mapTapped:
                 let regionId = userDefaultsClient.string(defaultRegionKey)
                 let districtId = userDefaultsClient.string(defaultDistrictKey)
                 
                 if let regionId, let districtId {
+                    state.isDestinationLoading = true
                     return routeEffect(regionId: regionId, districtId: districtId)
                 } else if let regionId {
+                    state.isDestinationLoading = true
                     return locationsEffect(regionId)
                 }
                 state.alert = Alert.error("設定画面で参加する祭典を選択してください")
@@ -113,6 +114,7 @@ struct Home {
                     state.alert = Alert.error("設定画面から祭典を選択してください。")
                     return .none
                 }
+                state.isDestinationLoading = true
                 return infoEffect(regionId: regionId)
             case .adminTapped:
                 if state.isAuthLoading {
@@ -151,6 +153,7 @@ struct Home {
                 let currentResult,
                 let locationResult
             ):
+                state.isDestinationLoading = false
                 switch (
                     regionResult,
                     districtsResult,
@@ -179,6 +182,7 @@ struct Home {
                 let districtsResult,
                 let locationsResult
             ):
+                state.isDestinationLoading = false
                 switch (
                     regionResult,
                     districtsResult,
@@ -220,6 +224,7 @@ struct Home {
                 state.isDestinationLoading = false
                 return .none
             case let .infoPrepared(regionResult, districtsResult):
+                state.isDestinationLoading = false
                 switch (regionResult, districtsResult) {
                 case (.success(let region), .success(let districts)):
                     if let districtId = userDefaultsClient.string(defaultRegionKey) {
