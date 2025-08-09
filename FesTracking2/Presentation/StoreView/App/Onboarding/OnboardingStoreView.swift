@@ -19,7 +19,13 @@ struct OnboardingStoreView: View {
                 .multilineTextAlignment(.center)
                 .lineLimit(nil)
                 .fixedSize(horizontal: false, vertical: true)
-            Image("LaunchImage")
+            GeometryReader { proxy in
+                Image("LaunchImage")
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: proxy.size.width, height: proxy.size.height)
+                    .clipped()
+            }
             MenuSelector(
                 title: "祭典",
                 items: store.regions,
