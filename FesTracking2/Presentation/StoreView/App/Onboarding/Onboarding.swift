@@ -19,6 +19,7 @@ struct OnboardingFeature {
         var regionErrorMessaage: String?
         var isRegionsLoading: Bool = false
         var isDistrictsLoading: Bool = false
+        var isLoading: Bool { isRegionsLoading || isDistrictsLoading }
     }
     
     @CasePathable
