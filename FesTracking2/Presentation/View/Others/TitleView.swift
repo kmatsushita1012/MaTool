@@ -8,8 +8,8 @@
 import SwiftUI
 
 struct TitleView: View {
-    let imageName: String
-    let titleText: String
+    let text: String
+    let image: String
     var isDismissEnabled: Bool = true
     var font: Font = .largeTitle
     let onDismiss: () -> Void
@@ -17,7 +17,7 @@ struct TitleView: View {
 
     // UIImageから縦横比を計算（UIImageが取れなければデフォルト比率）
     private var aspectRatio: CGFloat {
-        if let uiImage = UIImage(named: imageName) {
+        if let uiImage = UIImage(named: image) {
             return uiImage.size.height / uiImage.size.width
         } else {
             return 297.0 / 397.0  // デフォルト比率
@@ -30,7 +30,7 @@ struct TitleView: View {
             let height = width * aspectRatio
 
             ZStack(alignment: .topLeading) {
-                Image(imageName)
+                Image(image)
                     .resizable()
                     .scaledToFill()
                     .frame(width: width, height: height)
@@ -38,7 +38,7 @@ struct TitleView: View {
                 VStack {
                     Spacer()
                     ZStack {
-                        Text(titleText)
+                        Text(text)
                             .font(font)
                             .bold()
                         HStack {
