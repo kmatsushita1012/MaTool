@@ -13,62 +13,73 @@ struct OnboardingStoreView: View {
     @Bindable var store: StoreOf<OnboardingFeature>
     
     var body: some View {
-        ZStack{
-            VStack {
-                Spacer()
-                MenuSelector(
-                    title: "祭典",
-                    items: store.regions,
-                    selection: $store.selectedRegion,
-                    label: { region in
-                        region?.name ?? "未設定"
-                    },
-                    isNullable: false,
-                    footer: "「テスト」アカウントは業務用です。選択しないでください。"
-                )
-                Spacer()
-                Menu {
-                    if let districts = store.districts{
-                        ForEach(districts, id: \.self) { district in
-                            Button(district.name) {
-                                store.send(.districtSelected(district))
-                            }
+        VStack(spacing: 16) {
+            Text("MaToolへ\nようこそ")
+                .font(.custom("Kanit", size: 34))
+                .multilineTextAlignment(.center)
+                .lineLimit(nil)
+                .fixedSize(horizontal: false, vertical: true)
+            Image("LaunchImage")
+            MenuSelector(
+                title: "祭典",
+                items: store.regions,
+                selection: $store.selectedRegion,
+                label: { region in
+                    region?.name ?? "未設定"
+                },
+                isNullable: false,
+                errorMessage: store.regionErrorMessaage,
+                footer: "「テスト」は業務用です。選択しないでください。",
+                borderColor : .onboarding
+            )
+            .padding(.horizontal)
+            Menu {
+                if let districts = store.districts{
+                    ForEach(districts, id: \.self) { district in
+                        Button(district.name) {
+                            store.send(.districtSelected(district))
                         }
                     }
-                } label: {
-                    Text("参加町の方")
-                        .fontWeight(.semibold)
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 16)
-                        .background(.blue)
-                        .foregroundColor(.white)
-                        .cornerRadius(8)
                 }
-                .padding()
-                
-                Button(action: {
-                    store.send(.externalGuestTapped)
-                }) {
-                    Text("参加町以外からお越しの方")
-                    
-                }
-                .buttonStyle(SecondaryButtonStyle())
-                .padding()
-                
-                Button(action: {
-                    store.send(.adminTapped)
-                }) {
-                    Text("参加町代表者、管理者の方")
-                    
-                }
-                .buttonStyle(SecondaryButtonStyle())
-                .padding()
+            } label: {
+                Text("参加町の方")
+                    .fontWeight(.semibold)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 16)
+                    .foregroundColor(.white)
+                    .background(Color.onboarding)
+                    .cornerRadius(8)
             }
-            .padding()
-            .onAppear(){
-                store.send(.onAppear)
+            .padding(.horizontal)
+            
+            Button(action: {
+                store.send(.externalGuestTapped)
+            }) {
+                Text("参加町以外からお越しの方")
+                
             }
-            .loadingOverlay(store.isRegionsLoading)
+            .buttonStyle(SecondaryButtonStyle(.onboarding))
+            .padding(.horizontal)
+            
+            Button(action: {
+                store.send(.adminTapped)
+            }) {
+                Text("参加町代表者、管理者の方")
+                
+            }
+            .buttonStyle(SecondaryButtonStyle(.onboarding))
+            .padding(.horizontal)
         }
+        .padding()
+        .onAppear(){
+            store.send(.onAppear)
+        }
+        .background(
+            Image("OnboardingBackground")
+                .resizable()
+                .scaledToFill()
+                .ignoresSafeArea()
+        )
+        .loadingOverlay(store.isRegionsLoading)
     }
 }
