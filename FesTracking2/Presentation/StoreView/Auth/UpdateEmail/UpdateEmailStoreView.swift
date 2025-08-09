@@ -24,7 +24,7 @@ struct UpdateEmailStoreView: View {
         VStack{
             TitleView(
                 text: "メールアドレス変更",
-                image: "SettingsBackground",
+                image: "AdminBackground",
                 font: .title
             ) {
                 switch store.step{

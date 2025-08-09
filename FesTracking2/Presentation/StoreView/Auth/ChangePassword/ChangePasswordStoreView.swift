@@ -24,7 +24,7 @@ struct ChangePasswordStoreView: View {
         VStack {
             TitleView(
                 text: "パスワード変更",
-                image: "SettingsBackground"
+                image: "AdminBackground"
             ) {
                 store.send(.dismissTapped)
             }
