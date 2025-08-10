@@ -255,7 +255,7 @@ struct AdminRouteEditV2{
                     route = state.route,
                     districtName = state.districtName
                 ] send in
-                    let snapshotter = RouteSnapshotter(route)
+                    let snapshotter = RouteSnapshotter(route, districtName: districtName)
                     if let image = try? await snapshotter.take(),
                        let pdf = snapshotter.createPDF(
                         with: image,
@@ -275,7 +275,7 @@ struct AdminRouteEditV2{
                     districtName = state.districtName,
                     route = state.route
                 ] send in
-                    let snapshotter = RouteSnapshotter(route)
+                    let snapshotter = RouteSnapshotter(route, districtName: districtName)
                     if let image = try? await snapshotter.take(of: region, size: size),
                        let pdf = snapshotter.createPDF(with: image, path: "\(districtName)_\(route.text(format: "y-m-d_T"))_part_\(Date().stamp).pdf") {
                         await send(.partialPrepared(ExportedItem(image: image, pdf: pdf)))

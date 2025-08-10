@@ -36,6 +36,7 @@ struct AdminRegionView: View {
                         .frame(maxWidth: .infinity, alignment: .center)
                 }
             }
+            #if DEBUG
             Section {
                 Button(action: {
                     store.send(.batchExportTapped)
@@ -43,6 +44,7 @@ struct AdminRegionView: View {
                     Text("経路図一括出力")
                 }
             }
+            #endif
             Section {
                 Button(action: {
                     store.send(.changePasswordTapped)
