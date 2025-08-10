@@ -25,7 +25,7 @@ class PointAnnotation: MKPointAnnotation {
                 .compactMap { $0 }
                 .joined(separator: " ")
 
-            self.title = hasSuffix ? "\(index): \(titleText)" : "\(index)"
+            self.title = hasSuffix ? "\(index+1): \(titleText)" : "\(index+1)"
         }
         
     }
