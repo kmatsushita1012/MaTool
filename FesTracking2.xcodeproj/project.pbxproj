@@ -34,10 +34,8 @@
 		296795CF2DA4F7B1008D3CE1 /* Span.swift in Sources */ = {isa = PBXBuildFile; fileRef = 296795CE2DA4F7AF008D3CE1 /* Span.swift */; };
 		296795D12DA4F902008D3CE1 /* AdminRouteMapView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 296795D02DA4F8FB008D3CE1 /* AdminRouteMapView.swift */; };
 		296795D42DA4FF01008D3CE1 /* PresentationUtils.swift in Sources */ = {isa = PBXBuildFile; fileRef = 296795D32DA4FEFD008D3CE1 /* PresentationUtils.swift */; };
-		2967C9102E1F548D0080B8DA /* UpdateModal.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2967C90F2E1F54890080B8DA /* UpdateModal.swift */; };
-		2967C9122E1F54D10080B8DA /* UpdateManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2967C9112E1F54BC0080B8DA /* UpdateManager.swift */; };
-		2967C9162E1F57160080B8DA /* UpdateManagerProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2967C9152E1F57120080B8DA /* UpdateManagerProtocol.swift */; };
-		2967C9182E1F57D60080B8DA /* MockUpdateManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2967C9172E1F57D10080B8DA /* MockUpdateManager.swift */; };
+		2967C9102E1F548D0080B8DA /* AppStatusModal.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2967C90F2E1F54890080B8DA /* AppStatusModal.swift */; };
+		2967C9162E1F57160080B8DA /* AppStatusCheckerProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2967C9152E1F57120080B8DA /* AppStatusCheckerProtocol.swift */; };
 		2972017B2D9CFA50003424EF /* Async.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2972017A2D9CFA41003424EF /* Async.swift */; };
 		2972EF2B2E2DFED0003A4F1C /* NavigationSwipeControl in Frameworks */ = {isa = PBXBuildFile; productRef = 2972EF2A2E2DFED0003A4F1C /* NavigationSwipeControl */; };
 		2976942F2E2CEFE8007B1D69 /* AWSMobileClientError.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2976942E2E2CEFE3007B1D69 /* AWSMobileClientError.swift */; };
@@ -46,6 +44,8 @@
 		2978C4AD2DCB3C9D00D3F7CE /* PointView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2978C4AC2DCB3C9A00D3F7CE /* PointView.swift */; };
 		2978C4AF2DCB3DAE00D3F7CE /* BulletItemView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2978C4AE2DCB3D8B00D3F7CE /* BulletItemView.swift */; };
 		2978C4B12DCB4A8600D3F7CE /* LocationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2978C4B02DCB4A8300D3F7CE /* LocationView.swift */; };
+		2981E7032E4A7A2300061D1F /* AppStatus.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2981E7022E4A7A1C00061D1F /* AppStatus.swift */; };
+		2981E7052E4A7A9500061D1F /* AppStatusChecker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2981E7042E4A7A9200061D1F /* AppStatusChecker.swift */; };
 		2983AB852D741C19002F6CB5 /* README.md in Resources */ = {isa = PBXBuildFile; fileRef = 2983AB802D741C18002F6CB5 /* README.md */; };
 		2983AB892D741C19002F6CB5 /* Podfile in Resources */ = {isa = PBXBuildFile; fileRef = 2983AB842D741C19002F6CB5 /* Podfile */; };
 		298BD79E2D71E46600CB63F1 /* FesTracking2App.swift in Sources */ = {isa = PBXBuildFile; fileRef = 298BD79D2D71E46600CB63F1 /* FesTracking2App.swift */; };
@@ -207,10 +207,8 @@
 		296795CE2DA4F7AF008D3CE1 /* Span.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Span.swift; sourceTree = "<group>"; };
 		296795D02DA4F8FB008D3CE1 /* AdminRouteMapView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdminRouteMapView.swift; sourceTree = "<group>"; };
 		296795D32DA4FEFD008D3CE1 /* PresentationUtils.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PresentationUtils.swift; sourceTree = "<group>"; };
-		2967C90F2E1F54890080B8DA /* UpdateModal.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UpdateModal.swift; sourceTree = "<group>"; };
-		2967C9112E1F54BC0080B8DA /* UpdateManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UpdateManager.swift; sourceTree = "<group>"; };
-		2967C9152E1F57120080B8DA /* UpdateManagerProtocol.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UpdateManagerProtocol.swift; sourceTree = "<group>"; };
-		2967C9172E1F57D10080B8DA /* MockUpdateManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockUpdateManager.swift; sourceTree = "<group>"; };
+		2967C90F2E1F54890080B8DA /* AppStatusModal.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppStatusModal.swift; sourceTree = "<group>"; };
+		2967C9152E1F57120080B8DA /* AppStatusCheckerProtocol.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppStatusCheckerProtocol.swift; sourceTree = "<group>"; };
 		2972017A2D9CFA41003424EF /* Async.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Async.swift; sourceTree = "<group>"; };
 		2976942E2E2CEFE3007B1D69 /* AWSMobileClientError.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AWSMobileClientError.swift; sourceTree = "<group>"; };
 		2978C4A82DCB3B4E00D3F7CE /* PointFeature.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PointFeature.swift; sourceTree = "<group>"; };
@@ -218,6 +216,8 @@
 		2978C4AC2DCB3C9A00D3F7CE /* PointView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PointView.swift; sourceTree = "<group>"; };
 		2978C4AE2DCB3D8B00D3F7CE /* BulletItemView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BulletItemView.swift; sourceTree = "<group>"; };
 		2978C4B02DCB4A8300D3F7CE /* LocationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocationView.swift; sourceTree = "<group>"; };
+		2981E7022E4A7A1C00061D1F /* AppStatus.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppStatus.swift; sourceTree = "<group>"; };
+		2981E7042E4A7A9200061D1F /* AppStatusChecker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppStatusChecker.swift; sourceTree = "<group>"; };
 		2983AB802D741C18002F6CB5 /* README.md */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
 		2983AB842D741C19002F6CB5 /* Podfile */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = Podfile; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.ruby; };
 		298BD79A2D71E46600CB63F1 /* FesTracking2.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = FesTracking2.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -456,21 +456,20 @@
 			path = Utils;
 			sourceTree = "<group>";
 		};
-		2967C9132E1F563D0080B8DA /* Update */ = {
+		2967C9132E1F563D0080B8DA /* AppStatus */ = {
 			isa = PBXGroup;
 			children = (
-				2967C9112E1F54BC0080B8DA /* UpdateManager.swift */,
-				2967C9172E1F57D10080B8DA /* MockUpdateManager.swift */,
+				2981E7042E4A7A9200061D1F /* AppStatusChecker.swift */,
 			);
-			path = Update;
+			path = AppStatus;
 			sourceTree = "<group>";
 		};
-		2967C9142E1F57050080B8DA /* Update */ = {
+		2967C9142E1F57050080B8DA /* AppStatus */ = {
 			isa = PBXGroup;
 			children = (
-				2967C9152E1F57120080B8DA /* UpdateManagerProtocol.swift */,
+				2967C9152E1F57120080B8DA /* AppStatusCheckerProtocol.swift */,
 			);
-			path = Update;
+			path = AppStatus;
 			sourceTree = "<group>";
 		};
 		2972017C2D9CFBF2003424EF /* Feature */ = {
@@ -640,6 +639,7 @@
 				296795CE2DA4F7AF008D3CE1 /* Span.swift */,
 				29A043522D7DC83800E77C91 /* SimpleTime.swift */,
 				29A043502D7DC67300E77C91 /* Coordinate.swift */,
+				2981E7022E4A7A1C00061D1F /* AppStatus.swift */,
 			);
 			path = Share;
 			sourceTree = "<group>";
@@ -738,7 +738,7 @@
 			children = (
 				293F2C2C2DD77E9F002C056E /* LoadingOverlay.swift */,
 				29FBA84C2E3B34A300F6E33C /* ShareSheet.swift */,
-				2967C90F2E1F54890080B8DA /* UpdateModal.swift */,
+				2967C90F2E1F54890080B8DA /* AppStatusModal.swift */,
 				29F8A7922DFD643C00331A7F /* TitleView.swift */,
 				295EA2D32DEE9E7E006CDE08 /* CardView.swift */,
 				29A401332E3F46C50007D8AB /* ZoomableImage.swift */,
@@ -1143,7 +1143,7 @@
 		29CF49032D74244500036D28 /* Data */ = {
 			isa = PBXGroup;
 			children = (
-				2967C9132E1F563D0080B8DA /* Update */,
+				2967C9132E1F563D0080B8DA /* AppStatus */,
 				29AD864C2DB2041200C3E8B2 /* Location */,
 				29DAB06E2DA16220005E94BA /* Auth */,
 				29CF49052D74248B00036D28 /* Api */,
@@ -1226,7 +1226,7 @@
 		29DAB05F2D9FC546005E94BA /* Contracts */ = {
 			isa = PBXGroup;
 			children = (
-				2967C9142E1F57050080B8DA /* Update */,
+				2967C9142E1F57050080B8DA /* AppStatus */,
 				29CBB33B2E043640006687A3 /* Auth */,
 				29CBB33A2E043615006687A3 /* Location */,
 				29CBB3372E0435CF006687A3 /* Api */,
@@ -1548,7 +1548,6 @@
 				2948FCF02DC5C38100C73E99 /* PickerFeature.swift in Sources */,
 				292D108E2DCDDBCC0022D8A0 /* AdminRegionTop.swift in Sources */,
 				29F403062DAA95DF003527D1 /* Route.swift in Sources */,
-				2967C9182E1F57D60080B8DA /* MockUpdateManager.swift in Sources */,
 				296795D42DA4FF01008D3CE1 /* PresentationUtils.swift in Sources */,
 				29AB1B442DE1FD0C00AC37F3 /* Others.swift in Sources */,
 				29A043592D7DCFD200E77C91 /* District.swift in Sources */,
@@ -1568,7 +1567,7 @@
 				29CB077B2DAF86610009A47D /* AdminBaseEdit.swift in Sources */,
 				2914184C2DA2B8E9003D7C72 /* PublicMapStoreView.swift in Sources */,
 				292D0B8F2DB0D44100176E51 /* EditableListItemView.swift in Sources */,
-				2967C9102E1F548D0080B8DA /* UpdateModal.swift in Sources */,
+				2967C9102E1F548D0080B8DA /* AppStatusModal.swift in Sources */,
 				2972017B2D9CFA50003424EF /* Async.swift in Sources */,
 				29A0434F2D7DC61500E77C91 /* SimpleDate.swift in Sources */,
 				292D0BA12DB0E0DC00176E51 /* AdminRegionEdit.swift in Sources */,
@@ -1633,7 +1632,7 @@
 				29DF09C82DCC9E5A00489DB8 /* InfoStoreView.swift in Sources */,
 				299A51622DA942CF00B24828 /* AdminRouteInfoStoreView.swift in Sources */,
 				29A1C2152E28B66B0036F221 /* ResetPassword.swift in Sources */,
-				2967C9162E1F57160080B8DA /* UpdateManagerProtocol.swift in Sources */,
+				2967C9162E1F57160080B8DA /* AppStatusCheckerProtocol.swift in Sources */,
 				29A688B62DCC4133004415BF /* Visibility.swift in Sources */,
 				296795D12DA4F902008D3CE1 /* AdminRouteMapView.swift in Sources */,
 				296795CF2DA4F7B1008D3CE1 /* Span.swift in Sources */,
@@ -1648,6 +1647,7 @@
 				299AD5962E04F9A3007ACBC4 /* AuthResponce.swift in Sources */,
 				29CBB33D2E04365F006687A3 /* AuthProvider.swift in Sources */,
 				29CF490C2D74263400036D28 /* MockApiRepository.swift in Sources */,
+				2981E7032E4A7A2300061D1F /* AppStatus.swift in Sources */,
 				29BC19482DB625C700C6F918 /* SettingsStoreView.swift in Sources */,
 				2978C4AB2DCB3BD300D3F7CE /* LocationFeature.swift in Sources */,
 				292D0B8B2DB0CADD00176E51 /* AdminPerformanceEditStoreView.swift in Sources */,
@@ -1655,6 +1655,7 @@
 				29A64ADD2DB4A29A007C3859 /* Home.swift in Sources */,
 				29B5FD632D80877D008838BB /* DistrictSummary.swift in Sources */,
 				29E8C3302DBB3F090086F6BB /* PublicDistrict.swift in Sources */,
+				2981E7052E4A7A9500061D1F /* AppStatusChecker.swift in Sources */,
 				292D108C2DCDDB9F0022D8A0 /* AdminRegionTopStoreView.swift in Sources */,
 				29E4FB4C2DDCD105008C89CF /* ConfirmSignIn.swift in Sources */,
 				29A043572D7DCE0C00E77C91 /* Region.swift in Sources */,
@@ -1668,7 +1669,6 @@
 				29A043482D7DC36400E77C91 /* Point.swift in Sources */,
 				29A043462D7DC2B200E77C91 /* PublicRoute.swift in Sources */,
 				29CF490A2D74262300036D28 /* LiveApiRepository.swift in Sources */,
-				2967C9122E1F54D10080B8DA /* UpdateManager.swift in Sources */,
 				29550E542DE45CD800E9D9B6 /* MenuSelector.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
