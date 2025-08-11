@@ -25,7 +25,7 @@ struct PublicMapStoreView: View {
                 Spacer()
             }
         }
-        .background(Color.customLightRed)
+        .background(Color.map)
         .navigationTitle("地図")
         .navigationBarTitleDisplayMode(.inline)
         .ignoresSafeArea(edges: .bottom)
@@ -55,7 +55,7 @@ struct PublicMapStoreView: View {
                     }
                 }
             }
-            .background(Color.customLightRed)
+            .background(Color.map)
             .onAppear{
                 withAnimation {
                     proxy.scrollTo(store.selectedContent, anchor: .center)
