@@ -18,6 +18,7 @@ protocol AppStatusClientProtocol {
     
     func checkStatus(currentVersion: String) async -> StatusCheckResult?
     
+    static func getCurrentVersion() -> String
 }
 
 enum AppStatusClientKey: DependencyKey {
