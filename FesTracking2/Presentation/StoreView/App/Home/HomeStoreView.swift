@@ -64,6 +64,9 @@ struct HomeStoreView: View {
             .navigationTitle(
                 "MaTool"
             )
+            .sheet(item: $store.status) { status in
+                AppStatusModal(status)
+            }
             .navigationDestination(item: $store.scope(state: \.destination?.route, action: \.destination.route)) { store in
                 PublicMapStoreView(store: store)
             }
@@ -81,9 +84,6 @@ struct HomeStoreView: View {
             }
             .navigationDestination(item: $store.scope(state: \.destination?.settings, action: \.destination.settings)) { store in
                 SettingsStoreView(store: store)
-            }
-            .sheet(isPresented: $store.shouldShowUpdateModal) {
-                UpdateModalView()
             }
         }
         .alert($store.scope(state: \.alert, action: \.alert))
