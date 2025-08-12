@@ -94,13 +94,13 @@ extension AsyncValue: Equatable where T: Equatable {
     }
 }
 
-func withTimeout<T>(seconds: UInt64, operation: @escaping () async throws -> T) async throws -> T {
+func withTimeout<T>(seconds: Int, operation: @escaping () async throws -> T) async throws -> T {
     try await withThrowingTaskGroup(of: T.self) { group in
         group.addTask {
             return try await operation()
         }
         group.addTask {
-            try await Task.sleep(nanoseconds: seconds * 1_000_000_000)
+            try await Task.sleep(nanoseconds: UInt64(seconds) * 1_000_000_000)
             throw AuthError.timeout("Operation timed out")
         }
         let result = try await group.next()!
