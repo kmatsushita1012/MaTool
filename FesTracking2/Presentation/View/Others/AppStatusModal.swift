@@ -20,14 +20,16 @@ struct AppStatusModal: View {
     var body: some View {
         VStack(spacing: 24) {
             switch result {
-            case .maintenance(let message):
+            case .maintenance(let message, let until):
                 Text("メンテナンス中")
                     .font(.largeTitle)
                     .bold()
                 Text(message)
                     .font(.body)
                     .padding()
-
+                Text("\(until.text(year: false)) まで")
+                    .font(.body)
+                    .padding()
             case .updateRequired(let storeURL):
                 Text("アップデートが必要です")
                     .font(.largeTitle)
