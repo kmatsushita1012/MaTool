@@ -10,10 +10,6 @@ import Dependencies
 
 protocol AppStatusClientProtocol {
 
-    func isMaintenanceActive() async -> Bool
-
-    func maintenanceMessage() async -> String?
-
     func checkStatus() async -> StatusCheckResult?
     
     func checkStatus(currentVersion: String) async -> StatusCheckResult?
