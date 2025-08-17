@@ -17,18 +17,19 @@ actor AppStatusClient: AppStatusClientProtocol {
     init(urlString: String) {
         self.urlString = urlString
     }
-
+    
     func checkStatus() async -> StatusCheckResult? {
         let currentVersion = Self.getCurrentVersion()
         return await checkStatus(currentVersion: currentVersion)
     }
 
     func checkStatus(currentVersion: String) async -> StatusCheckResult? {
-        let status = await fetchIfNeeded()
+        guard  let status = await fetchIfNeeded() else { return nil}
         let version = currentVersion
 
-        if status.maintenance.isActive && (status.maintenance.until > Date()) {
-            return .maintenance(message: status.maintenance.message)
+        if let maintenance = status.maintenance,
+            maintenance.until > Date() {
+            return .maintenance(message: maintenance.message, until: maintenance.until)
         }
         if !version.isVersion(greaterThanOrEqualTo: status.update.ios.requiredVersion) {
             return .updateRequired(storeURL: status.update.ios.storeUrl)
@@ -36,20 +37,14 @@ actor AppStatusClient: AppStatusClientProtocol {
         return nil
     }
 
-    private func fetchIfNeeded() async -> AppStatus {
+    private func fetchIfNeeded() async -> AppStatus? {
         if let cached = status {
             return cached
         }
-        do {
-            let fetchedStatus = try await fetch()
-            status = fetchedStatus
-            return fetchedStatus
-        } catch {
-            fatalError("AppStatus fetch failed: \(error)")
-        }
+        return try? await fetch()
     }
 
-    func fetch() async throws -> AppStatus {
+    private func fetch() async throws -> AppStatus {
         guard let url = URL(string: urlString) else {
             throw URLError(.badURL)
         }
@@ -66,7 +61,7 @@ actor AppStatusClient: AppStatusClientProtocol {
 
     static func getCurrentVersion() -> String {
         #if DEBUG
-        "9.9.9"
+        Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "0.0.0"
         #else
         Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "0.0.0"
         #endif
