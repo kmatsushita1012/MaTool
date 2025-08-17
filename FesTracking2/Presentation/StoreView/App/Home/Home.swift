@@ -30,7 +30,7 @@ struct Home {
         var isLoading: Bool {
             isDestinationLoading
         }
-        var shouldShowUpdateModal: Bool = false
+        var status: StatusCheckResult? = nil
         @Presents var destination: Destination.State?
         @Presents var alert: Alert.State?
     }
@@ -44,7 +44,7 @@ struct Home {
         case infoTapped
         case adminTapped
         case settingsTapped
-        case updateReceived(Bool)
+        case statusReceived(StatusCheckResult?)
         case awsInitializeReceived(Result<UserRole, AuthError>)
         case adminDistrictPrepared(Result<PublicDistrict,ApiError>, Result<[RouteSummary],ApiError>)
         case adminRegionPrepared(Result<Region,ApiError>, Result<[PublicDistrict],ApiError>)
@@ -61,7 +61,7 @@ struct Home {
     @Dependency(\.apiRepository) var apiRepository
     @Dependency(\.authService) var authService
     @Dependency(\.userDefaultsClient) var userDefaultsClient
-    @Dependency(\.updateManager) var updateManager
+    @Dependency(\.appStatusClient) var appStatusClient
     
     var body: some ReducerOf<Home> {
         BindingReducer()
@@ -73,16 +73,16 @@ struct Home {
                 state.isAuthLoading = true
                 return .merge(
                     .run { send in
-                        await updateManager.checkVersion()
-                        await send(.updateReceived(updateManager.shouldShowUpdate))
+                        let result = await appStatusClient.checkStatus()
+                        await send(.statusReceived(result))
                     },
                     .run { send in
                         let result = await authService.initialize()
                         await send(.awsInitializeReceived(result))
                     }
                 )
-            case .updateReceived(let value):
-                state.shouldShowUpdateModal = value
+            case .statusReceived(let value):
+                state.status = value
                 return .none
             case .adminDistrictPrepared(let districtResult, let routesResult):
                 if case let .success(district) = districtResult,
