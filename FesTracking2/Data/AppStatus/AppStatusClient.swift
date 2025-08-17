@@ -18,16 +18,6 @@ actor AppStatusClient: AppStatusClientProtocol {
         self.urlString = urlString
     }
 
-    func isMaintenanceActive() async -> Bool {
-        let status = await fetchIfNeeded()
-        return status.maintenance.isActive && (status.maintenance.until > Date())
-    }
-
-    func maintenanceMessage() async -> String? {
-        let status = await fetchIfNeeded()
-        return (status.maintenance.isActive && (status.maintenance.until > Date())) ? status.maintenance.message : nil
-    }
-    
     func checkStatus() async -> StatusCheckResult? {
         let currentVersion = Self.getCurrentVersion()
         return await checkStatus(currentVersion: currentVersion)
