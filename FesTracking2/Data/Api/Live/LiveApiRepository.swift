@@ -112,7 +112,7 @@ extension ApiRepotiroy: DependencyKey {
                 path: "/routes/\(id)",
                 accessToken: accessToken
             )
-            return decodeResponse(PublicRoute.self, from: response)
+            return decodeResponse(RouteInfo.self, from: response)
         },
         getCurrentRoute: { districtId, accessToken in
             let response = await performGetRequest(
@@ -120,7 +120,7 @@ extension ApiRepotiroy: DependencyKey {
                 path: "/districts/\(districtId)/routes/current",
                 accessToken: accessToken
             )
-            return decodeResponse(PublicRoute.self, from: response)
+            return decodeResponse(RouteInfo.self, from: response)
         },
         getRouteIds: { accessToken in
             let response = await performGetRequest(
@@ -174,7 +174,7 @@ extension ApiRepotiroy: DependencyKey {
                 path: "/districts/\(districtId)/locations",
                 accessToken: accessToken
             )
-            return decodeResponse(PublicLocation?.self, from: response)
+            return decodeResponse(LocationInfo.self, from: response)
         },
         getLocations: { regionId, accessToken in
             let response = await performGetRequest(
@@ -182,7 +182,7 @@ extension ApiRepotiroy: DependencyKey {
                 path: "/regions/\(regionId)/locations",
                 accessToken: accessToken
             )
-            return decodeResponse([PublicLocation].self, from: response)
+            return decodeResponse([LocationInfo].self, from: response)
         },
         putLocation: { location, accessToken in
             let body = encodeRequest(location)

@@ -14,8 +14,8 @@ struct Home {
     
     @Reducer
     enum Destination {
-        case route(PublicMap)
-        case info(Info)
+        case map(PublicMap)
+        case info(InfoList)
         case login(Login)
         case adminDistrict(AdminDistrictTop)
         case adminRegion(AdminRegionTop)
@@ -46,8 +46,23 @@ struct Home {
         case settingsTapped
         case statusReceived(StatusCheckResult?)
         case awsInitializeReceived(Result<UserRole, AuthError>)
+        case routePrepared(
+            regionResult: Result<Region, ApiError>,
+            districtsResult: Result<[PublicDistrict], ApiError>,
+            id: String,
+            routesResult: Result<[RouteSummary], ApiError>,
+            currentResult: Result<RouteInfo, ApiError>,
+            locationResult: Result<LocationInfo, ApiError>
+        )
+        case locationsPrepared(
+            regionResult: Result<Region, ApiError>,
+            districtsResult: Result<[PublicDistrict], ApiError>,
+            locationsResult: Result<[LocationInfo], ApiError>
+        )
+        case infoPrepared(Result<Region, ApiError>, Result<[PublicDistrict], ApiError>)
         case adminDistrictPrepared(Result<PublicDistrict,ApiError>, Result<[RouteSummary],ApiError>)
         case adminRegionPrepared(Result<Region,ApiError>, Result<[PublicDistrict],ApiError>)
+        
         case settingsPrepared(
             Result<[Region],ApiError>,
             Result<Region?,ApiError>,
@@ -84,30 +99,26 @@ struct Home {
             case .statusReceived(let value):
                 state.status = value
                 return .none
-            case .adminDistrictPrepared(let districtResult, let routesResult):
-                if case let .success(district) = districtResult,
-                   case let .success(routes) = routesResult{
-                    state.destination = .adminDistrict(AdminDistrictTop.State(district: district,  routes: routes.sorted()))
-                }else{
-                    state.alert = Alert.error("情報の取得に失敗しました")
-                }
-                state.isDestinationLoading = false
-                return .none
-            case .adminRegionPrepared(let regionResult, let districtsResult):
-                if case let .success(region) = regionResult,
-                   case let .success(districts) = districtsResult{
-                    state.destination = .adminRegion(AdminRegionTop.State(region: region, districts: districts))
-                }else{
-                    state.alert = Alert.error("情報の取得に失敗しました")
-                }
-                state.isDestinationLoading = false
-                return .none
             case .mapTapped:
-                state.destination = .route(PublicMap.State())
+                let regionId = userDefaultsClient.string(defaultRegionKey)
+                let districtId = userDefaultsClient.string(defaultDistrictKey)
+                
+                if let regionId, let districtId {
+                    state.isDestinationLoading = true
+                    return routeEffect(regionId: regionId, districtId: districtId)
+                } else if let regionId {
+                    state.isDestinationLoading = true
+                    return locationsEffect(regionId)
+                }
+                state.alert = Alert.error("設定画面で参加する祭典を選択してください")
                 return .none
             case .infoTapped:
-                state.destination = .info(Info.State())
-                return .none
+                guard let regionId = userDefaultsClient.string(defaultRegionKey) else {
+                    state.alert = Alert.error("設定画面から祭典を選択してください。")
+                    return .none
+                }
+                state.isDestinationLoading = true
+                return infoEffect(regionId: regionId)
             case .adminTapped:
                 if state.isAuthLoading {
                     state.alert = Alert.error("認証中です。もう一度お試しください。再度このエラーが出る場合は設定画面から強制ログアウトをお試しください。")
@@ -137,6 +148,104 @@ struct Home {
             case .awsInitializeReceived(.failure(_)):
                 state.isAuthLoading = false
                 return .none
+            case .routePrepared(
+                let regionResult,
+                let districtsResult,
+                let id,
+                let routesResult,
+                let currentResult,
+                let locationResult
+            ):
+                state.isDestinationLoading = false
+                switch (
+                    regionResult,
+                    districtsResult,
+                    routesResult,
+                    currentResult,
+                    locationResult
+                ){
+                case (.success(let region), .success(let districts), _, _, _ ):
+                    state.destination = .map(
+                        PublicMap.State(
+                            region: region,
+                            districts: districts,
+                            id: id,
+                            routes: routesResult.value,
+                            current: currentResult.value,
+                            location: locationResult.value
+                        )
+                    )
+                case (.failure(let error), _, _, _, _),
+                    (_, .failure(let error), _, _, _):
+                    state.alert = Alert.error("情報の取得に失敗しました \(error.localizedDescription)")
+                }
+                return .none
+            case .locationsPrepared(
+                let regionResult,
+                let districtsResult,
+                let locationsResult
+            ):
+                state.isDestinationLoading = false
+                switch (
+                    regionResult,
+                    districtsResult,
+                    locationsResult
+                ){
+                case (.success(let region), .success(let districts), .success(let locations)):
+                    state.destination = .map(
+                        PublicMap.State(
+                            region: region,
+                            districts: districts,
+                            locations: locations
+                        )
+                    )
+                case (.failure(let error), _, _),
+                    (_, .failure(let error), _),
+                    (_, _, .failure(let error)):
+                    state.alert = Alert.error("情報の取得に失敗しました \(error.localizedDescription)")
+                }
+                return .none
+            case .adminDistrictPrepared(let districtResult, let routesResult):
+                if case let .success(district) = districtResult,
+                   case let .success(routes) = routesResult{
+                    state.destination = .adminDistrict(AdminDistrictTop.State(district: district,  routes: routes.sorted()))
+                }else{
+                    state.alert = Alert.error("情報の取得に失敗しました")
+                }
+                state.isDestinationLoading = false
+                return .none
+            case .adminRegionPrepared(let regionResult, let districtsResult):
+                if case let .success(region) = regionResult,
+                   case let .success(districts) = districtsResult{
+                    state.destination = .adminRegion(AdminRegionTop.State(region: region, districts: districts))
+                }else{
+                    state.alert = Alert.error("情報の取得に失敗しました")
+                }
+                state.isDestinationLoading = false
+                return .none
+            case let .infoPrepared(regionResult, districtsResult):
+                state.isDestinationLoading = false
+                switch (regionResult, districtsResult) {
+                case (.success(let region), .success(let districts)):
+                    if let districtId = userDefaultsClient.string(defaultDistrictKey) {
+                        state.destination = .info(
+                            InfoList.State(
+                                region: region,
+                                districts: districts.prioritizing(by: \.id, match: districtId)
+                            )
+                        )
+                    } else {
+                        state.destination = .info(
+                            InfoList.State(
+                                region: region,
+                                districts: districts
+                            )
+                        )
+                    }
+                case (_, _):
+                    state.alert = Alert.error("情報の取得に失敗しました")
+                }
+                return .none
             case let .settingsPrepared(regionsResult, regionResult, districtsResult, districtResult):
                 state.isDestinationLoading = false
                 state.destination = .settings(
@@ -152,7 +261,7 @@ struct Home {
             case .destination(.presented(let childAction)):
                 switch childAction {
                 case .login(.received(.success(let userRole))),
-                    .login(.destination(.presented(.confirmSignIn(.received(.success(let userRole)))))):
+                        .login(.destination(.presented(.confirmSignIn(.received(.success(let userRole)))))):
                     state.userRole = userRole
                     state.destination = nil
                     switch state.userRole {
@@ -167,6 +276,12 @@ struct Home {
                     }
                 case .login(.received(.failure(_))):
                     return .none
+                case .info(.destination(.presented(.district(.mapTapped)))):
+                    guard let districtId = state.destination?.info?.destination?.district?.item.id,
+                        let regionId = userDefaultsClient.string(defaultRegionKey)  else {
+                        return .none
+                    }
+                    return routeEffect(regionId: regionId, districtId: districtId)
                 case .adminDistrict(.signOutReceived(.success(let userRole))),
                     .adminRegion(.signOutReceived(.success(let userRole))):
                     state.userRole = userRole
@@ -187,6 +302,71 @@ struct Home {
         }
         .ifLet(\.$destination, action: \.destination)
         .ifLet(\.$alert, action: \.alert)
+    }
+    
+    
+    func routeEffect(regionId: String, districtId id: String) -> Effect<Action> {
+        .run { send in
+            let accessToken = await authService.getAccessToken()
+            
+            async let regionTask = apiRepository.getRegion(regionId)
+            async let districtsTask = apiRepository.getDistricts(regionId)
+            async let routesTask = apiRepository.getRoutes(id, accessToken)
+            async let currentTask = apiRepository.getCurrentRoute(id, accessToken)
+            async let locationTask = apiRepository.getLocation(id, accessToken)
+            
+            let (
+                regionResult,
+                districtsResult,
+                routesResult,
+                currentResult,
+                locationResult
+            ) = await (
+                regionTask,
+                districtsTask,
+                routesTask,
+                currentTask,
+                locationTask
+            )
+            
+            await send(
+                .routePrepared(
+                    regionResult: regionResult,
+                    districtsResult: districtsResult,
+                    id: id,
+                    routesResult: routesResult,
+                    currentResult: currentResult,
+                    locationResult: locationResult,
+                )
+            )
+        }
+    }
+    
+    
+    func locationsEffect(_ id: String) -> Effect<Action> {
+        .run { send in
+            let accessToken = await authService.getAccessToken()
+            
+            async let regionTask = apiRepository.getRegion(id)
+            async let districtsTask = apiRepository.getDistricts(id)
+            async let locationsTask = apiRepository.getLocations(id, accessToken)
+            
+            let (
+                regionResult,
+                districtsResult,
+                locationsResult
+            ) = await (
+                regionTask,
+                districtsTask,
+                locationsTask
+            )
+            
+            await send(.locationsPrepared(
+                regionResult: regionResult,
+                districtsResult: districtsResult,
+                locationsResult: locationsResult
+            ))
+        }
     }
     
     func adminDistrictEffect(_ id: String)-> Effect<Action> {
@@ -211,29 +391,49 @@ struct Home {
     func settingsEffect(regionId: String?, districtId: String?) -> Effect<Action> {
         .run { send in
             async let regionsResult = apiRepository.getRegions()
-
-            async let regionResult: Result<Region?, ApiError> = {
-                guard let id = regionId else { return .success(nil) }
-                return await apiRepository.getRegion(id).map { Optional($0) }
-            }()
             async let districtsResult: Result<[PublicDistrict], ApiError> = {
                 guard let id = regionId else { return .success([]) }
                 return await apiRepository.getDistricts(id)
             }()
-            async let districtResult: Result<PublicDistrict?, ApiError> = {
-                guard let id = districtId else { return .success(nil) }
-                return await apiRepository.getDistrict(id).map { Optional($0) }
-            }()
 
             let regions = await regionsResult
-            let region = await regionResult
             let districts = await districtsResult
-            let district = await districtResult
-            
+
+            let region: Result<Region?, ApiError> = {
+                switch regions {
+                case .success(let list):
+                    guard let id = regionId else { return .success(nil) }
+                    return .success(list.first { $0.id == id })
+                case .failure(let error):
+                    return .failure(error)
+                }
+            }()
+
+            let district: Result<PublicDistrict?, ApiError> = {
+                switch districts {
+                case .success(let list):
+                    guard let id = districtId else { return .success(nil) }
+                    return .success(list.first { $0.id == id })
+                case .failure(let error):
+                    return .failure(error)
+                }
+            }()
+
             await send(.settingsPrepared(regions, region, districts, district))
         }
     }
-    
+
+    func infoEffect(regionId: String) -> Effect<Action> {
+        .run { send in
+            async let regionResult = apiRepository.getRegion(regionId)
+            async let districtsResult = apiRepository.getDistricts(regionId)
+            
+            let region = await regionResult
+            let districts = await districtsResult
+            
+            await send(.infoPrepared(region, districts))
+        }
+    }
 }
 
 extension Home.Destination.State: Equatable {}

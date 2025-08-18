@@ -30,7 +30,7 @@ struct AdminRegionDistrictList {
     enum Action: Equatable, BindableAction {
         case binding(BindingAction<State>)
         case exportTapped(RouteSummary)
-        case exportPrepared(Result<PublicRoute,ApiError>)
+        case exportPrepared(Result<RouteInfo,ApiError>)
         case dismissTapped
         case batchExportTapped
         case batchExportPrepared(Result<[URL], ApiError>)
