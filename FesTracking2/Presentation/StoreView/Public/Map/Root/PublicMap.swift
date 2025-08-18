@@ -5,233 +5,172 @@
 //  Created by 松下和也 on 2025/04/02.
 //
 import ComposableArchitecture
+import MapKit
 
 @Reducer
 struct PublicMap{
     
     enum Content: Equatable{
-        case locations
-        case route(PublicDistrict)
+        case locations(id: String, name: String, origin: Coordinate)
+        case route(id: String, name: String, origin: Coordinate)
     }
     
     @Reducer
     enum Destination {
-        case route(PublicRouteMap)
-        case locations(PublicLocationsMap)
+        case locations(PublicLocations)
+        case route(PublicRoute)
     }
     
     @ObservableState
     struct State: Equatable{
-        var error: String?
-        var districtPicker: PickerFeature<Content>.State?
-        var routePicker: PickerFeature<RouteSummary>.State?
-        @Presents var map: Destination.State?
+        let contents: [Content]
+        var selectedContent: Content
+        @Presents var destination: Destination.State?
+        @Shared var mapRegion: MKCoordinateRegion
+        @Presents var alert: Alert.State?
+    }
+    
+    @CasePathable
+    enum Action: BindableAction, Equatable {
+        case onAppear
+        case binding(BindingAction<State>)
+        case homeTapped
+        case contentSelected(Content)
+        case routePrepared(
+            id: String,
+            routesResult: Result<[RouteSummary], ApiError>,
+            currentResult: Result<RouteInfo, ApiError>,
+            locationResult: Result<LocationInfo, ApiError>
+        )
+        case locationsPrepared(
+            id: String,
+            locationsResult: Result<[LocationInfo],ApiError>
+        )
+        case userLocationReceived(Coordinate)
+        case destination(PresentationAction<Destination.Action>)
+        case alert(PresentationAction<Alert.Action>)
     }
     
     @Dependency(\.apiRepository) var apiRepository
     @Dependency(\.authService) var authService
-    @Dependency(\.userDefaultsClient) var userDefaultsClient
-    
-    @CasePathable
-    enum Action: BindableAction, Equatable {
-        case binding(BindingAction<State>)
-        case districtPicker(PickerFeature<Content>.Action)
-        case routePicker(PickerFeature<RouteSummary>.Action)
-        case map(PresentationAction<Destination.Action>)
-        case onAppear
-        case districtsReceived(Result<[PublicDistrict],ApiError>)
-        case routesReceived(Result<[RouteSummary],ApiError>)
-        case routeReceived(
-            route: Result<PublicRoute,ApiError>,
-            location: Result<PublicLocation?,ApiError>,
-            tool: Result<DistrictTool, ApiError>
-        )
-        case locationsReceived(
-            locations: Result<[PublicLocation],ApiError>,
-            region: Result<Region, ApiError>
-        )
-        case locationReceived(Result<PublicLocation,ApiError>)
-        case homeTapped
-    }
-    
+    @Dependency(\.locationClient) var locationClient
     @Dependency(\.dismiss) var dismiss
     
     var body: some ReducerOf<PublicMap> {
         Reduce{ state, action in
             switch action {
             case .onAppear:
-                //TODO
-                guard let regionId = userDefaultsClient.string(defaultRegionKey) else {
-                    return .none
+                
+                return .run{ send in
+                    locationClient.startTracking()
                 }
-                if let districtId = userDefaultsClient.string(defaultDistrictKey){
-                    return .merge(
-                        routeEffect(districtId),
-                        routesEffect(districtId),
-                        districtsEffect(regionId)
-                    )
-                }else{
-                    return .merge(
-                        locationsEffect(regionId),
-                        districtsEffect(regionId)
-                    )
-                }
+            case .binding:
+                return .none
             case .homeTapped:
                 return .run{ _ in
                     await dismiss()
                 }
-            case .districtsReceived(let result):
-                switch result {
-                case .success(let districts):
-                    let items = [Content.locations] + districts.map{ Content.route($0) }
-                    if let districtId = userDefaultsClient.string(defaultDistrictKey),
-                       let selected = districts.first(where: { $0.id == districtId }) {
-                        state.districtPicker = PickerFeature.State(items: items, selected: Content.route(selected))
-                    }else{
-                        state.districtPicker = PickerFeature.State(items: items, selected: Content.locations)
-                    }
-                case .failure(let error):
-                    state.error = error.localizedDescription
+            case .contentSelected(let value):
+                state.selectedContent = value
+                switch value {
+                //TODO　mapRegionの変更ができてない
+                case .locations(let id, _ , _):
+                    return locationsEffect(id)
+                case .route(let id, _ , _):
+                    return routeEffect(id)
                 }
-                return .none
-            case .routesReceived(let result):
-                switch result {
-                case .success(let routes):
-                    state.routePicker = PickerFeature.State(items: routes.sorted())
-                case .failure(let error):
-                    state.error = error.localizedDescription
+            case let .routePrepared(
+                id,
+                routesResult,
+                currentResult,
+                locationResult,
+            ):
+                let routes = routesResult.value
+                let current = currentResult.value
+                let location = locationResult.value
+                if routes == nil && current == nil && location == nil {
+                    state.alert = Alert.notice("配信停止中です。")
                 }
-                return .none
-            case let .routeReceived(routeResult, locationResult, toolResult):
-                switch (routeResult,locationResult,toolResult) {
-                case (.success(let route), .success(let location), .success(let tool)):
-                        state.map = .route(
-                            PublicRouteMap.State(
-                                route: route,
-                                location: location,
-                                origin: tool.base
-                            )
-                        )
-                      return .none
-                case (.failure(let error), _, _),
-                      (_, .failure(let error), _),
-                      (_, _, .failure(let error)):
-                    state.error = error.localizedDescription
-                      return .none
-                }
-            case .locationsReceived(let locationsResult,let toolResult):
-                switch (locationsResult, toolResult) {
-                case (.success(let locations), .success(let tool)):
-                    state.map = .locations(
-                        PublicLocationsMap.State(
-                            locations: locations,
-                            origin: tool.base
-                        )
+                let mapRegion = makeRegion(
+                    route: current,
+                    location: location,
+                    origin: state.selectedContent.origin,
+                    spanDelta: spanDelta
+                )
+                state.$mapRegion.withLock{ $0 = mapRegion }
+                state.destination = .route(
+                    PublicRoute.State(
+                        id: id,
+                        routes: routes,
+                        selectedRoute: current,
+                        location: location,
+                        mapRegion: state.$mapRegion
                     )
-                    return .none
-                case (.failure(let error), _),
-                    (_, .failure(let error)):
-                    state.error = error.localizedDescription
-                    return .none
-                }
-            case .locationReceived(location: let result):
-                switch result {
-                case .success(let value):
-                    if case let .route(routeState) = state.map{
-                        state.map = .route(PublicRouteMap.State(route: routeState.route, location: value, origin: routeState.origin))
-                    }
-                case .failure(let error):
-                    state.error = error.localizedDescription
-                }
+                )
                 return .none
-            case .binding:
-                return .none
-            case .districtPicker(.selected(let content)):
-                state.routePicker = nil
-                switch content {
-                case .locations:
-                    //TODO
-                    return locationsEffect(Region.sample.id)
-                case .route(let district):
-                    return .merge(
-                        routeEffect(district.id),
-                        routesEffect(district.id)
+            case .locationsPrepared(let id, .success(let value)):
+                if value.isEmpty {
+                    state.alert = Alert.notice("配信停止中です。")
+                }
+                state.destination = .locations(
+                    PublicLocations.State(
+                        regionId: id,
+                        locations: value,
+                        mapRegion: state.$mapRegion
                     )
+                )
+                return .none
+            case .locationsPrepared(_, .failure(let error)):
+                state.alert = Alert.error(error.localizedDescription)
+                return .none
+            case .userLocationReceived(let value):
+                state.$mapRegion.withLock { $0 = makeRegion(origin: value, spanDelta: spanDelta)}
+                return .none
+            case .destination(.presented(.route(.userFocusTapped))),
+                .destination(.presented(.locations(.userFocusTapped))):
+                return .run{ send in
+                    let result = locationClient.getLocation()
+                    guard let coordinate = result.value?.coordinate  else { return }
+                    await send(.userLocationReceived(Coordinate.fromCL(coordinate)))
                 }
-            case .routePicker(.selected(let route)):
-                return routeEffect(route)
-            case .districtPicker,
-                .routePicker,
-                .map:
+            case .destination:
+                return .none
+            case .alert:
+                state.alert = nil
                 return .none
             }
         }
-        .ifLet(\.$map, action: \.map)
-        .ifLet(\.districtPicker, action: \.districtPicker) {
-            PickerFeature<Content>()
-        }
-        .ifLet(\.routePicker, action: \.routePicker) {
-            PickerFeature<RouteSummary>()
-        }
-        
+        .ifLet(\.$destination, action: \.destination)
     }
     
     func routeEffect(_ id: String) -> Effect<Action> {
         .run { send in
             let accessToken = await authService.getAccessToken()
-            async let routeTask = apiRepository.getCurrentRoute(id, accessToken)
+            
+            async let routesTask = apiRepository.getRoutes(id, accessToken)
+            async let currentTask = apiRepository.getCurrentRoute(id, accessToken)
             async let locationTask = apiRepository.getLocation(id, accessToken)
-            async let toolTask = apiRepository.getTool(id, accessToken)
-            let (routeResult, locationResult, toolResult) = await (routeTask, locationTask, toolTask)
+            
+            let (routesResult, currentResult, locationResult) = await (routesTask, currentTask, locationTask)
             await send(
-                .routeReceived(
-                    route: routeResult,
-                    location: locationResult,
-                    tool: toolResult
+                .routePrepared(
+                    id: id,
+                    routesResult: routesResult,
+                    currentResult: currentResult,
+                    locationResult: locationResult,
                 )
             )
         }
     }
     
-    func routeEffect(_ summary: RouteSummary) -> Effect<Action> {
-        .run { send in
-            let accessToken = await authService.getAccessToken()
-            async let routeTask = apiRepository.getRoute(summary.id, accessToken)
-            async let locationTask = apiRepository.getLocation(summary.districtId, accessToken)
-            async let toolTask = apiRepository.getTool(summary.districtId, accessToken)
-            let (routeResult, locationResult, toolResult) = await (routeTask, locationTask, toolTask)
-            await send(
-                .routeReceived(
-                    route: routeResult,
-                    location: locationResult,
-                    tool: toolResult
-                )
-            )
-        }
-    }
-    
-    func districtsEffect(_ id: String) -> Effect<Action> {
-        .run { send in
-            let result = await apiRepository.getDistricts(id);
-            await send(.districtsReceived(result))
-        }
-    }
-    
-    func routesEffect(_ id: String) -> Effect<Action> {
-        .run { send in
-            let accessToken = await authService.getAccessToken()
-            let result = await apiRepository.getRoutes(id, accessToken);
-            await send(.routesReceived(result))
-        }
-    }
     
     func locationsEffect(_ id: String) -> Effect<Action> {
         .run { send in
             let accessToken = await authService.getAccessToken()
-            async let locationsTask = apiRepository.getLocations(id, accessToken)
-            async let regionTask = apiRepository.getRegion(id)
-            let (locationsResult, regionResult) = await (locationsTask, regionTask)
-            await send(.locationsReceived(locations: locationsResult, region: regionResult))
+            
+            let locationsResult = await apiRepository.getLocations(id, accessToken)
+            
+            await send(.locationsPrepared(id: id, locationsResult: locationsResult))
         }
     }
 }
@@ -242,19 +181,96 @@ extension PublicMap.Destination.Action: Equatable {}
 extension PublicMap.Content: Identifiable,Hashable  {
     var id:String {
         switch self {
-        case .locations:
-            return "location"
-        case .route(let district):
-            return "route-\(district.id)"
+        case .locations(let id, _, _):
+            return id
+        case .route(let id, _, _):
+            return id
         }
     }
     
     var text: String {
         switch self {
         case .locations:
-            return "全体"
-        case .route(let district):
-            return district.name
+            return "現在地一覧"
+        case .route(_,let name , _):
+            return name
         }
+    }
+    
+    var origin: Coordinate {
+        switch self {
+        case .locations(_, _, let origin):
+            return origin
+        case .route(_,_, let origin):
+            return origin
+        }
+    }
+    
+    static func from(region: Region) -> Self {
+        return .locations(
+            id: region.id,
+            name: region.name,
+            origin: region.base
+        )
+    }
+    static func from(district: PublicDistrict, origin: Coordinate) -> Self{
+        return .route(
+            id: district.id,
+            name: district.name,
+            origin: district.base ?? origin
+        )
+    }
+}
+
+extension PublicMap.State {
+    init(
+        region: Region,
+        districts: [PublicDistrict],
+        id: String,
+        routes: [RouteSummary]?,
+        current: RouteInfo?,
+        location: LocationInfo?
+    ) {
+        let locations = PublicMap.Content.from(region: region)
+        let contents = [locations]
+            + districts
+            .map{ PublicMap.Content.from(district: $0, origin: region.base) }
+            .prioritizing(by: \.id, match: id)
+        let selected = contents.first(where: \.id, equals: id) ?? locations
+        self.contents = contents
+        self.selectedContent = selected
+        let mapRegion = Shared(value: makeRegion(route: current, location: location, origin: selected.origin, spanDelta: spanDelta))
+        self._mapRegion = mapRegion
+        self.destination = .route(
+            PublicRoute.State(
+                id: id,
+                routes: routes,
+                selectedRoute: current,
+                location: location,
+                mapRegion: mapRegion
+            )
+        )
+    }
+    
+    init(
+        region: Region,
+        districts: [PublicDistrict],
+        locations: [LocationInfo]
+    ){
+        let selected = PublicMap.Content.from(region: region)
+        let contents = [selected] + districts.map{ PublicMap.Content.from(district: $0, origin: region.base) }
+        
+        self.contents = contents
+        self.selectedContent = selected
+        
+        let mapRegion = Shared(value: makeRegion(locations: locations, origin: region.base))
+        self._mapRegion = mapRegion
+        self.destination = .locations(
+            PublicLocations.State(
+                regionId: region.id,
+                locations: locations,
+                mapRegion: mapRegion
+            )
+        )
     }
 }

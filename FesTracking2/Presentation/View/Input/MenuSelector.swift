@@ -15,6 +15,7 @@ struct MenuSelector<T: Hashable>: View {
     var isNullable: Bool = true
     var errorMessage: String?
     var footer: String?
+    var borderColor: Color = .blue
     
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
@@ -46,7 +47,7 @@ struct MenuSelector<T: Hashable>: View {
                 .padding(.vertical, 16)
                 .background(
                     RoundedRectangle(cornerRadius: 8)
-                        .stroke(errorMessage != nil ? Color.red : Color.blue, lineWidth: 1.5)
+                        .stroke(errorMessage != nil ? Color.red : borderColor, lineWidth: 1.5)
                 )
             }
             if let errorMessage = errorMessage {

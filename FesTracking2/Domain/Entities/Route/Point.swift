@@ -37,7 +37,7 @@ enum PointFilter: Equatable {
     case pub
     case export
     
-    func apply(to route: PublicRoute) -> [Point] {
+    func apply(to route: RouteInfo) -> [Point] {
         return apply(to: route.toModel())
     }
 

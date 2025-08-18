@@ -47,9 +47,9 @@ struct AdminDistrictTop {
         case getDistrictReceived(Result<PublicDistrict,ApiError>)
         case getRoutesReceived(Result<[RouteSummary],ApiError>)
         case editPrepared(Result<DistrictTool,ApiError>)
-        case routeEditPrepared(Result<PublicRoute,ApiError>,Result<DistrictTool,ApiError>)
+        case routeEditPrepared(Result<RouteInfo,ApiError>,Result<DistrictTool,ApiError>)
         case routeCreatePrepared(Result<DistrictTool,ApiError>)
-        case exportPrepared(Result<PublicRoute,ApiError>)
+        case exportPrepared(Result<RouteInfo,ApiError>)
         case onLocation
         case destination(PresentationAction<Destination.Action>)
         case signOutTapped
