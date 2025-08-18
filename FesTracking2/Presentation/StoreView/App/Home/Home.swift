@@ -99,24 +99,6 @@ struct Home {
             case .statusReceived(let value):
                 state.status = value
                 return .none
-            case .adminDistrictPrepared(let districtResult, let routesResult):
-                if case let .success(district) = districtResult,
-                   case let .success(routes) = routesResult{
-                    state.destination = .adminDistrict(AdminDistrictTop.State(district: district,  routes: routes.sorted()))
-                }else{
-                    state.alert = Alert.error("情報の取得に失敗しました")
-                }
-                state.isDestinationLoading = false
-                return .none
-            case .adminRegionPrepared(let regionResult, let districtsResult):
-                if case let .success(region) = regionResult,
-                   case let .success(districts) = districtsResult{
-                    state.destination = .adminRegion(AdminRegionTop.State(region: region, districts: districts))
-                }else{
-                    state.alert = Alert.error("情報の取得に失敗しました")
-                }
-                state.isDestinationLoading = false
-                return .none
             case .mapTapped:
                 let regionId = userDefaultsClient.string(defaultRegionKey)
                 let districtId = userDefaultsClient.string(defaultDistrictKey)
@@ -222,9 +204,6 @@ struct Home {
                     (_, _, .failure(let error)):
                     state.alert = Alert.error("情報の取得に失敗しました \(error.localizedDescription)")
                 }
-                return .none
-            case .updateReceived(let value):
-                state.shouldShowUpdateModal = value
                 return .none
             case .adminDistrictPrepared(let districtResult, let routesResult):
                 if case let .success(district) = districtResult,
