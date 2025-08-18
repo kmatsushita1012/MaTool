@@ -28,7 +28,7 @@ struct Alert {
             TextState(title)
         } actions: {
             ButtonState(action: .okTapped) {
-                TextState("確認")
+                TextState("OK")
             }
         } message: {
             TextState(text)
@@ -40,7 +40,19 @@ struct Alert {
             TextState(title)
         } actions: {
             ButtonState(action: .okTapped) {
-                TextState("確認")
+                TextState("OK")
+            }
+        } message: {
+            TextState(text)
+        }
+    }
+    
+    static func notice(_ text: String, title: String = " お知らせ") -> State {
+        State {
+            TextState(title)
+        } actions: {
+            ButtonState(action: .okTapped) {
+                TextState("OK")
             }
         } message: {
             TextState(text)

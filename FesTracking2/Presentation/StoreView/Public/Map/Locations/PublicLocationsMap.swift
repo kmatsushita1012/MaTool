@@ -1,0 +1,87 @@
+//
+//  PublicLocationsMap.swift
+//  FesTracking2
+//
+//  Created by 松下和也 on 2025/08/05.
+//
+
+import UIKit
+import MapKit
+import SwiftUI
+
+struct PublicLocationsMap: UIViewRepresentable {
+    var items: [LocationInfo]
+    var onTap: (LocationInfo)->Void
+    @Binding var region: MKCoordinateRegion
+    
+    init(
+        items: [LocationInfo],
+        onTap: @escaping (LocationInfo) -> Void,
+        region: Binding<MKCoordinateRegion>
+    ) {
+        self.items = items
+        self.onTap = onTap
+        self._region = region
+    }
+    
+    func makeCoordinator() -> Coordinator {
+        Coordinator(self)
+    }
+
+    func makeUIView(context: Context) -> MKMapView {
+        let mapView = MKMapView()
+        mapView.delegate = context.coordinator
+        mapView.setRegion(region, animated: false)
+        mapView.showsUserLocation = true
+        return mapView
+    }
+
+    func updateUIView(_ mapView: MKMapView, context: Context) {
+        mapView.removeAnnotations(mapView.annotations)
+        
+        //ロケーション追加
+        for location in items {
+            let annotation = FloatAnnotation(location: location)
+            annotation.coordinate = location.coordinate.toCL()
+            mapView.addAnnotation(annotation)
+        }
+        
+        if region.center.latitude != mapView.region.center.latitude
+            || region.center.longitude != mapView.region.center.longitude {
+            mapView.setRegion(region, animated: true)
+        }
+    }
+
+    class Coordinator: NSObject, MKMapViewDelegate {
+        var parent: PublicLocationsMap
+        
+        init(_ parent: PublicLocationsMap) {
+            self.parent = parent
+        }
+        
+        func mapView(_ mapView: MKMapView, viewFor annotation: MKAnnotation) -> MKAnnotationView? {
+            if annotation is MKUserLocation {
+                return nil
+            }
+            
+            if let floatAnnotation = annotation as? FloatAnnotation {
+                return FloatAnnotationView.view(for: mapView, annotation: floatAnnotation)
+            }
+
+            return nil
+        }
+        
+        func mapView(_ mapView: MKMapView, didSelect view: MKAnnotationView) {
+            if let  annotation = view.annotation as? FloatAnnotation {
+                parent.onTap(annotation.location)
+            }
+        }
+        
+        func mapView(_ mapView: MKMapView, regionDidChangeAnimated animated: Bool) {
+            parent.region = mapView.region
+        }
+    }
+}
+
+
+

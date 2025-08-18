@@ -8,8 +8,18 @@
 import SwiftUI
 
 struct PrimaryButtonStyle: ButtonStyle {
-    var backgroundColor: Color = .blue
-    var foregroundColor: Color = .white
+    let backgroundColor: Color
+    let foregroundColor: Color
+    
+    init(backgroundColor: Color = .blue, foregroundColor: Color = .white) {
+        self.backgroundColor = backgroundColor
+        self.foregroundColor = foregroundColor
+    }
+    
+    init(_ color: Color = .blue) {
+        self.backgroundColor = color
+        self.foregroundColor = .white
+    }
 
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
@@ -24,8 +34,18 @@ struct PrimaryButtonStyle: ButtonStyle {
 }
 
 struct SecondaryButtonStyle: ButtonStyle {
-    var borderColor: Color = .blue
-    var foregroundColor: Color = .blue
+    let foregroundColor: Color
+    let borderColor: Color
+    
+    init(foregroundColor: Color = .blue, borderColor: Color = .blue) {
+        self.foregroundColor = foregroundColor
+        self.borderColor = borderColor
+    }
+    
+    init(_ color: Color = .blue) {
+        self.foregroundColor = color
+        self.borderColor = color
+    }
 
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
