@@ -38,7 +38,6 @@
 		2972EF2B2E2DFED0003A4F1C /* NavigationSwipeControl in Frameworks */ = {isa = PBXBuildFile; productRef = 2972EF2A2E2DFED0003A4F1C /* NavigationSwipeControl */; };
 		2976942F2E2CEFE8007B1D69 /* AWSMobileClientError.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2976942E2E2CEFE3007B1D69 /* AWSMobileClientError.swift */; };
 		2978C4AF2DCB3DAE00D3F7CE /* BulletItemView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2978C4AE2DCB3D8B00D3F7CE /* BulletItemView.swift */; };
-		2978C4B12DCB4A8600D3F7CE /* LocationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2978C4B02DCB4A8300D3F7CE /* LocationView.swift */; };
 		2981E7032E4A7A2300061D1F /* AppStatus.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2981E7022E4A7A1C00061D1F /* AppStatus.swift */; };
 		2981E7052E4A7A9500061D1F /* AppStatusClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2981E7042E4A7A9200061D1F /* AppStatusClient.swift */; };
 		2983AB852D741C19002F6CB5 /* README.md in Resources */ = {isa = PBXBuildFile; fileRef = 2983AB802D741C18002F6CB5 /* README.md */; };
@@ -220,7 +219,6 @@
 		2972017A2D9CFA41003424EF /* Async.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Async.swift; sourceTree = "<group>"; };
 		2976942E2E2CEFE3007B1D69 /* AWSMobileClientError.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AWSMobileClientError.swift; sourceTree = "<group>"; };
 		2978C4AE2DCB3D8B00D3F7CE /* BulletItemView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BulletItemView.swift; sourceTree = "<group>"; };
-		2978C4B02DCB4A8300D3F7CE /* LocationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocationView.swift; sourceTree = "<group>"; };
 		2981E7022E4A7A1C00061D1F /* AppStatus.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppStatus.swift; sourceTree = "<group>"; };
 		2981E7042E4A7A9200061D1F /* AppStatusClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppStatusClient.swift; sourceTree = "<group>"; };
 		2983AB802D741C18002F6CB5 /* README.md */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
@@ -1908,7 +1906,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 2.0.10;
+				MARKETING_VERSION = 2.1.0;
 				OTHER_SWIFT_FLAGS = "$(inherited) -D COCOAPODS";
 				PRODUCT_BUNDLE_IDENTIFIER = StudioMK.FesTracking;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -1951,7 +1949,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 2.0.10;
+				MARKETING_VERSION = 2.1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = StudioMK.FesTracking;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
