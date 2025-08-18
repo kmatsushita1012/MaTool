@@ -66,9 +66,6 @@ struct HomeStoreView: View {
                     .scaledToFill()
                     .ignoresSafeArea(edges: [.top])
             )
-            .sheet(item: $store.status) { status in
-                AppStatusModal(status)
-            }
             .navigationDestination(item: $store.scope(state: \.destination?.map, action: \.destination.map)) { store in
                 PublicMapStoreView(store: store)
             }
@@ -89,6 +86,9 @@ struct HomeStoreView: View {
             }
             .alert($store.scope(state: \.alert, action: \.alert))
             .loadingOverlay(store.isLoading)
+        }
+        .sheet(item: $store.status) { status in
+            AppStatusModal(status)
         }
         .onAppear(){
             store.send(.onAppear)

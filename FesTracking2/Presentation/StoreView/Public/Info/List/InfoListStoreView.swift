@@ -18,7 +18,7 @@ struct InfoStoreView: View {
     
     var body: some View {
         VStack {
-            // タイトル＿」
+            // タイトル
             TitleView(
                 text: "町を見てみよう",
                 image: "InfoBackground"
