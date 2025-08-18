@@ -17,14 +17,14 @@ struct ApiRepotiroy: Sendable {
     var putDistrict: @Sendable (_ district: District, _ accessToken: String) async -> Result<String, ApiError>
     var getTool: @Sendable (_ districtId: String, _ accessToken: String?) async -> Result<DistrictTool, ApiError>
     var getRoutes: @Sendable (_ districtId: String, _ accessToken: String?) async -> Result<[RouteSummary], ApiError>
-    var getRoute: @Sendable (_ id: String, _ accessToken: String?) async -> Result<PublicRoute, ApiError>
-    var getCurrentRoute: @Sendable (_ districtId: String,_ accessToken: String?) async -> Result<PublicRoute, ApiError>
+    var getRoute: @Sendable (_ id: String, _ accessToken: String?) async -> Result<RouteInfo, ApiError>
+    var getCurrentRoute: @Sendable (_ districtId: String,_ accessToken: String?) async -> Result<RouteInfo, ApiError>
     var getRouteIds: @Sendable (_ accessToken: String?) async -> Result<[String], ApiError>
     var postRoute: @Sendable (_ route: Route, _ accessToken: String) async -> Result<String, ApiError>
     var putRoute: @Sendable (_ route: Route, _ accessToken: String) async -> Result<String, ApiError>
     var deleteRoute: @Sendable (_ id: String, _ accessToken: String) async -> Result<String, ApiError>
-    var getLocation: @Sendable (_ districtId: String, _ accessToken: String?) async -> Result<PublicLocation?, ApiError>
-    var getLocations: @Sendable (_ regionId: String, _ accessToken: String?) async -> Result<[PublicLocation], ApiError>
+    var getLocation: @Sendable (_ districtId: String, _ accessToken: String?) async -> Result<LocationInfo, ApiError>
+    var getLocations: @Sendable (_ regionId: String, _ accessToken: String?) async -> Result<[LocationInfo], ApiError>
     var putLocation: @Sendable (_ location: Location,_ accessToken: String) async -> Result<String, ApiError>
     var deleteLocation: @Sendable (_ districtId: String,_ accessToken: String) async -> Result<String, ApiError>
     var getSegmentCoordinate: @Sendable (_ start: Coordinate, _ end: Coordinate) async -> Result<[Coordinate],ApiError>

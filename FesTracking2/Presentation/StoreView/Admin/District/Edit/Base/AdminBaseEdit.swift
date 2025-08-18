@@ -17,7 +17,7 @@ struct AdminBaseEdit {
         var region: MKCoordinateRegion?
         init(base: Coordinate){
             self.coordinate = base
-            self.region = makeRegion(origin: coordinate, spanDelta: spanDelta)
+            self.region = makeRegion(origin: base, spanDelta: spanDelta)
         }
         init(origin: Coordinate){
             self.region = makeRegion(origin: origin, spanDelta: spanDelta)

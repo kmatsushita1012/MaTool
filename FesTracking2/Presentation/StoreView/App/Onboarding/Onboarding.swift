@@ -16,8 +16,10 @@ struct OnboardingFeature {
         var regions: [Region]?
         var selectedRegion: Region?
         var districts: [PublicDistrict]?
+        var regionErrorMessaage: String?
         var isRegionsLoading: Bool = false
         var isDistrictsLoading: Bool = false
+        var isLoading: Bool { isRegionsLoading || isDistrictsLoading }
     }
     
     @CasePathable
@@ -59,6 +61,7 @@ struct OnboardingFeature {
             case .externalGuestTapped,
                 .adminTapped:
                 guard let region = state.selectedRegion else {
+                    state.regionErrorMessaage = "祭典を選択してください。"
                     return .none
                 }
                 userDefaultsClient.setString(region.id, defaultRegionKey)
@@ -66,7 +69,7 @@ struct OnboardingFeature {
                 return .none
             case .districtSelected(let district):
                 guard let region = state.selectedRegion else {
-                    //TODOエラーハンドル
+                    state.regionErrorMessaage = "祭典を選択してください。"
                     return .none
                 }
                 userDefaultsClient.setString(region.id, defaultRegionKey)

@@ -14,7 +14,7 @@ struct AdminRouteExport {
     
     @ObservableState
     struct State: Equatable {
-        let route: PublicRoute
+        let route: RouteInfo
         let snapshotter: RouteSnapshotter
         
         var region: MKCoordinateRegion?
@@ -45,7 +45,7 @@ struct AdminRouteExport {
             route.text(format: "m/d T")
         }
         
-        init(route: PublicRoute){
+        init(route: RouteInfo){
             self.route = route
             region = makeRegion(route.points.map{ $0.coordinate })
             snapshotter = RouteSnapshotter(route)
