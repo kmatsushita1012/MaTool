@@ -42,6 +42,9 @@ struct PublicMapStoreView: View {
         }
         .alert($store.scope(state: \.alert, action: \.alert))
         .dismissible(backButton: false)
+        .onAppear{
+            store.send(.onAppear)
+        }
     }
     
     @ViewBuilder
