@@ -35,7 +35,7 @@ enum StatusCheckResult: Equatable {
 extension StatusCheckResult: Identifiable {
     var id: String {
         switch self {
-        case .maintenance(message: let message, until: let until):
+        case .maintenance(message: let message, until: _):
             return message
         case .updateRequired(storeURL: let storeURL):
             return storeURL.absoluteString
