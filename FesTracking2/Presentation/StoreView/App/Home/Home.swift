@@ -30,7 +30,7 @@ struct Home {
         var isLoading: Bool {
             isDestinationLoading
         }
-        var shouldShowUpdateModal: Bool = false
+        var status: StatusCheckResult? = nil
         @Presents var destination: Destination.State?
         @Presents var alert: Alert.State?
     }
@@ -44,7 +44,7 @@ struct Home {
         case infoTapped
         case adminTapped
         case settingsTapped
-        case updateReceived(Bool)
+        case statusReceived(StatusCheckResult?)
         case awsInitializeReceived(Result<UserRole, AuthError>)
         case routePrepared(
             regionResult: Result<Region, ApiError>,
@@ -76,7 +76,7 @@ struct Home {
     @Dependency(\.apiRepository) var apiRepository
     @Dependency(\.authService) var authService
     @Dependency(\.userDefaultsClient) var userDefaultsClient
-    @Dependency(\.updateManager) var updateManager
+    @Dependency(\.appStatusClient) var appStatusClient
     
     var body: some ReducerOf<Home> {
         BindingReducer()
@@ -88,14 +88,35 @@ struct Home {
                 state.isAuthLoading = true
                 return .merge(
                     .run { send in
-                        await updateManager.checkVersion()
-                        await send(.updateReceived(updateManager.shouldShowUpdate))
+                        let result = await appStatusClient.checkStatus()
+                        await send(.statusReceived(result))
                     },
                     .run { send in
                         let result = await authService.initialize()
                         await send(.awsInitializeReceived(result))
                     }
                 )
+            case .statusReceived(let value):
+                state.status = value
+                return .none
+            case .adminDistrictPrepared(let districtResult, let routesResult):
+                if case let .success(district) = districtResult,
+                   case let .success(routes) = routesResult{
+                    state.destination = .adminDistrict(AdminDistrictTop.State(district: district,  routes: routes.sorted()))
+                }else{
+                    state.alert = Alert.error("情報の取得に失敗しました")
+                }
+                state.isDestinationLoading = false
+                return .none
+            case .adminRegionPrepared(let regionResult, let districtsResult):
+                if case let .success(region) = regionResult,
+                   case let .success(districts) = districtsResult{
+                    state.destination = .adminRegion(AdminRegionTop.State(region: region, districts: districts))
+                }else{
+                    state.alert = Alert.error("情報の取得に失敗しました")
+                }
+                state.isDestinationLoading = false
+                return .none
             case .mapTapped:
                 let regionId = userDefaultsClient.string(defaultRegionKey)
                 let districtId = userDefaultsClient.string(defaultDistrictKey)
