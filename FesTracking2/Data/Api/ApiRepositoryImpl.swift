@@ -1,5 +1,5 @@
 //
-//  LiveRepository.swift
+//  APIRepositoryImpl.swift
 //  FesTracking2
 //
 //  Created by 松下和也 on 2025/03/02.
@@ -10,7 +10,7 @@ import Dependencies
 
 let base = "https://eqp8rvam4h.execute-api.ap-northeast-1.amazonaws.com"
 
-extension ApiRepotiroy: DependencyKey {
+extension APIRepotiroy: DependencyKey {
     static let liveValue = Self(
         getRegions: {
             let response = await performGetRequest(
