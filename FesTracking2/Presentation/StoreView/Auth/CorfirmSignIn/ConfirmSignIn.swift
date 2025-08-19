@@ -27,8 +27,8 @@ struct ConfirmSignIn {
         case alert(PresentationAction<Alert.Action>)
     }
     
-    @Dependency(\.authService) var authService
     @Dependency(\.userDefaultsClient) var userDefaultsClient
+    @Dependency(\.authService) var authService
     @Dependency(\.dismiss) var dismiss
     
     var body: some ReducerOf<ConfirmSignIn> {

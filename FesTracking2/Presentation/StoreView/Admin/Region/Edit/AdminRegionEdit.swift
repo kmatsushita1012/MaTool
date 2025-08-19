@@ -30,7 +30,7 @@ struct AdminRegionEdit {
         case binding(BindingAction<State>)
         case saveTapped
         case cancelTapped
-        case putReceived(Result<String, ApiError>)
+        case putReceived(Result<String, APIError>)
         case onSpanEdit(Span)
         case onSpanAdd
         case onMilestoneEdit(Information)
@@ -41,7 +41,6 @@ struct AdminRegionEdit {
     }
     
     @Dependency(\.apiRepository) var apiRepository
-    @Dependency(\.authService) var authService
     @Dependency(\.dismiss) var dismiss
     
     var body: some ReducerOf<AdminRegionEdit> {
@@ -53,12 +52,8 @@ struct AdminRegionEdit {
             case .saveTapped:
                 state.isLoading = true
                 return .run { [region = state.item] send in
-                    if let token = await authService.getAccessToken() {
-                        let result = await apiRepository.putRegion(region, token)
-                        await send(.putReceived(result))
-                    }else{
-                        await send(.putReceived(.failure(ApiError.unauthorized("認証に失敗しました。ログインし直してください"))))
-                    }
+                    let result = await apiRepository.putRegion(region)
+                    await send(.putReceived(result))
                 }
             case .cancelTapped:
                 return .run { _ in

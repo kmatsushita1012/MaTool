@@ -38,13 +38,13 @@ struct PublicMap{
         case contentSelected(Content)
         case routePrepared(
             id: String,
-            routesResult: Result<[RouteSummary], ApiError>,
-            currentResult: Result<RouteInfo, ApiError>,
-            locationResult: Result<LocationInfo, ApiError>
+            routesResult: Result<[RouteSummary], APIError>,
+            currentResult: Result<RouteInfo, APIError>,
+            locationResult: Result<LocationInfo, APIError>
         )
         case locationsPrepared(
             id: String,
-            locationsResult: Result<[LocationInfo],ApiError>
+            locationsResult: Result<[LocationInfo],APIError>
         )
         case userLocationReceived(Coordinate)
         case destination(PresentationAction<Destination.Action>)
@@ -52,7 +52,6 @@ struct PublicMap{
     }
     
     @Dependency(\.apiRepository) var apiRepository
-    @Dependency(\.authService) var authService
     @Dependency(\.locationClient) var locationClient
     @Dependency(\.dismiss) var dismiss
     
@@ -145,11 +144,11 @@ struct PublicMap{
     
     func routeEffect(_ id: String) -> Effect<Action> {
         .run { send in
-            let accessToken = await authService.getAccessToken()
             
-            async let routesTask = apiRepository.getRoutes(id, accessToken)
-            async let currentTask = apiRepository.getCurrentRoute(id, accessToken)
-            async let locationTask = apiRepository.getLocation(id, accessToken)
+            
+            async let routesTask = apiRepository.getRoutes(id)
+            async let currentTask = apiRepository.getCurrentRoute(id)
+            async let locationTask = apiRepository.getLocation(id)
             
             let (routesResult, currentResult, locationResult) = await (routesTask, currentTask, locationTask)
             await send(
@@ -166,9 +165,9 @@ struct PublicMap{
     
     func locationsEffect(_ id: String) -> Effect<Action> {
         .run { send in
-            let accessToken = await authService.getAccessToken()
             
-            let locationsResult = await apiRepository.getLocations(id, accessToken)
+            
+            let locationsResult = await apiRepository.getLocations(id)
             
             await send(.locationsPrepared(id: id, locationsResult: locationsResult))
         }

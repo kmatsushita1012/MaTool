@@ -129,8 +129,8 @@ struct AdminRouteEditV2{
         case deleteTapped
         case wholeTapped
         case partialTapped
-        case postReceived(Result<String, ApiError>)
-        case deleteReceived(Result<String, ApiError>)
+        case postReceived(Result<String, APIError>)
+        case deleteReceived(Result<String, APIError>)
         case wholePrepared(ExportedItem?)
         case partialPrepared(ExportedItem?)
         case point(PresentationAction<AdminPointEdit.Action>)
@@ -138,7 +138,6 @@ struct AdminRouteEditV2{
     }
     
     @Dependency(\.apiRepository) var apiRepository
-    @Dependency(\.authService) var authService
     @Dependency(\.dismiss) var dismiss
     
     var body: some ReducerOf<AdminRouteEditV2> {
@@ -224,16 +223,12 @@ struct AdminRouteEditV2{
                     route = state.route,
                     mode = state.mode
                 ] send in
-                    guard let token = await authService.getAccessToken() else {
-                        await send(.postReceived(.failure(.unknown("認証に失敗しました。ログインし直してください。"))))
-                        return
-                    }
                     switch mode {
                     case .create:
-                        let result = await apiRepository.postRoute(route, token)
+                        let result = await apiRepository.postRoute(route)
                         await send(.postReceived(result))
                     case .update:
-                        let result = await apiRepository.putRoute(route, token)
+                        let result = await apiRepository.putRoute(route)
                         await send(.postReceived(result))
                     case .preview:
                         break
@@ -362,12 +357,7 @@ struct AdminRouteEditV2{
                     state.alert = nil
                     state.isLoading = true
                     return .run { [route = state.route] send in
-                        //TODO
-                        guard let token = await authService.getAccessToken() else {
-                            await send(.postReceived(.failure(.unknown("認証に失敗しました。ログインし直してください。"))))
-                            return
-                        }
-                        let result = await apiRepository.deleteRoute(route.id, token)
+                        let result = await apiRepository.deleteRoute(route.id)
                         await send(.postReceived(result))
                     }
                 }

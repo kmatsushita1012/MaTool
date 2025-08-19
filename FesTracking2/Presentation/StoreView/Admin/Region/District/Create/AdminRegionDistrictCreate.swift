@@ -23,12 +23,11 @@ struct AdminRegionDistrictCreate {
         case binding(BindingAction<State>)
         case createTapped
         case cancelTapped
-        case received(Result<String,ApiError>)
+        case received(Result<String,APIError>)
         case alert(PresentationAction<Alert.Action>)
     }
     
     @Dependency(\.apiRepository) var apiRepository
-    @Dependency(\.authService) var authService
     @Dependency(\.dismiss) var dismiss
     
     var body: some ReducerOf<AdminRegionDistrictCreate> {
@@ -43,8 +42,7 @@ struct AdminRegionDistrictCreate {
                 }
                 state.isLoading = true
                 return .run { [region = state.region, name = state.name, email = state.email] send in
-                    guard let accessToken = await authService.getAccessToken() else { return }
-                    let result = await apiRepository.postDistrict(region.id, name, email, accessToken)
+                    let result = await apiRepository.postDistrict(region.id, name, email)
                     await send(.received(result))
                 }
             case .cancelTapped:
