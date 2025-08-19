@@ -7,7 +7,7 @@
 
 import Dependencies
 
-struct ApiRepotiroy: Sendable {
+struct APIRepotiroy: Sendable {
     var getRegions: @Sendable () async  -> Result<[Region], ApiError>
     var getRegion: @Sendable (_ regionId: String) async -> Result<Region, ApiError>
     var putRegion: @Sendable (_ district: Region, _ accessToken: String) async -> Result<String, ApiError>
@@ -31,9 +31,9 @@ struct ApiRepotiroy: Sendable {
 }
 
 extension DependencyValues {
-  var apiRepository: ApiRepotiroy {
-    get { self[ApiRepotiroy.self] }
-    set { self[ApiRepotiroy.self] = newValue }
+  var apiRepository: APIRepotiroy {
+    get { self[APIRepotiroy.self] }
+    set { self[APIRepotiroy.self] = newValue }
   }
 }
 

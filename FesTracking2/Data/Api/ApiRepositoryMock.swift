@@ -1,5 +1,5 @@
 //
-//  MockRepository.swift
+//  APIRepositoryMock.swift
 //  FesTracking2
 //
 //  Created by 松下和也 on 2025/03/02.
@@ -7,14 +7,14 @@
 
 import Dependencies
 
-extension ApiRepotiroy: TestDependencyKey {
+extension APIRepotiroy: TestDependencyKey {
     internal static let testValue = Self.noop
     internal static let previewValue = Self.noop
 }
 
 var routes: [Route] = [Route.sample]
 
-extension ApiRepotiroy {
+extension APIRepotiroy {
     public static let noop = Self(
         getRegions: {
             return Result.success([Region.sample])
