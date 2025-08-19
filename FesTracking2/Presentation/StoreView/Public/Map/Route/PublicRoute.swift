@@ -48,7 +48,7 @@ struct PublicRoute {
                 } else {
                     false
                 }
-            }
+            }.sorted()
         }
         
         init(id: String, routes: [RouteSummary]? = nil, selectedRoute: RouteInfo? = nil, location: LocationInfo? = nil, mapRegion: Shared<MKCoordinateRegion>){
