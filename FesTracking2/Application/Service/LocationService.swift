@@ -84,7 +84,7 @@ final class LocationService: Sendable {
             case .success:
                 appendHistory(.update(location))
             case .failure:
-                appendHistory(.APIError(Date()))
+                appendHistory(.apiError(Date()))
             }
         }
     }
@@ -95,7 +95,7 @@ final class LocationService: Sendable {
         case .success:
             appendHistory(.delete(Date()))
         case .failure:
-            appendHistory(.APIError(Date()))
+            appendHistory(.apiError(Date()))
         }
     }
 }
