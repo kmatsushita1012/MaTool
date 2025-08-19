@@ -137,7 +137,7 @@
 		29CB077D2DAF8B970009A47D /* AdminBaseEditStoreView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29CB077C2DAF8B940009A47D /* AdminBaseEditStoreView.swift */; };
 		29CB077F2DAF8C510009A47D /* AdminDistrictMapView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29CB077E2DAF8C500009A47D /* AdminDistrictMapView.swift */; };
 		29CB07812DAF933A0009A47D /* AdminAreaEditStoreView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29CB07802DAF93350009A47D /* AdminAreaEditStoreView.swift */; };
-		29CBB3392E043608006687A3 /* ApiError.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29CBB3382E043606006687A3 /* ApiError.swift */; };
+		29CBB3392E043608006687A3 /* APIError.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29CBB3382E043606006687A3 /* APIError.swift */; };
 		29CBB33D2E04365F006687A3 /* AuthProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29CBB33C2E04365A006687A3 /* AuthProvider.swift */; };
 		29CBB33F2E04376E006687A3 /* AuthError.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29CBB33E2E04376B006687A3 /* AuthError.swift */; };
 		29CBB3412E04388D006687A3 /* AuthService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29CBB3402E043889006687A3 /* AuthService.swift */; };
@@ -164,7 +164,8 @@
 		29F47F712E36474100191273 /* Modifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29F47F702E36473E00191273 /* Modifier.swift */; };
 		29F47F752E36577B00191273 /* RegionInfo.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29F47F742E36577500191273 /* RegionInfo.swift */; };
 		29F47F792E36579100191273 /* DistrictInfo.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29F47F782E36578D00191273 /* DistrictInfo.swift */; };
-		29F5318A2E544263003BA416 /* APIService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29F531892E54425F003BA416 /* APIService.swift */; };
+		29F531902E545F50003BA416 /* APIClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29F5318F2E545F4E003BA416 /* APIClient.swift */; };
+		29F531922E545FD7003BA416 /* APIClientImpl.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29F531912E545FD1003BA416 /* APIClientImpl.swift */; };
 		29F8A2BE2D9EF079001633B3 /* ComposableArchitecture in Frameworks */ = {isa = PBXBuildFile; productRef = 29F8A2BD2D9EF079001633B3 /* ComposableArchitecture */; };
 		29F8A7932DFD645000331A7F /* TitleView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29F8A7922DFD643C00331A7F /* TitleView.swift */; };
 		29FBA84B2E3B31FF00F6E33C /* RouteSnapshotter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29FBA84A2E3B31FE00F6E33C /* RouteSnapshotter.swift */; };
@@ -322,7 +323,7 @@
 		29CB077C2DAF8B940009A47D /* AdminBaseEditStoreView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdminBaseEditStoreView.swift; sourceTree = "<group>"; };
 		29CB077E2DAF8C500009A47D /* AdminDistrictMapView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdminDistrictMapView.swift; sourceTree = "<group>"; };
 		29CB07802DAF93350009A47D /* AdminAreaEditStoreView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdminAreaEditStoreView.swift; sourceTree = "<group>"; };
-		29CBB3382E043606006687A3 /* ApiError.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ApiError.swift; sourceTree = "<group>"; };
+		29CBB3382E043606006687A3 /* APIError.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIError.swift; sourceTree = "<group>"; };
 		29CBB33C2E04365A006687A3 /* AuthProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthProvider.swift; sourceTree = "<group>"; };
 		29CBB33E2E04376B006687A3 /* AuthError.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthError.swift; sourceTree = "<group>"; };
 		29CBB3402E043889006687A3 /* AuthService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthService.swift; sourceTree = "<group>"; };
@@ -349,7 +350,8 @@
 		29F47F702E36473E00191273 /* Modifier.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Modifier.swift; sourceTree = "<group>"; };
 		29F47F742E36577500191273 /* RegionInfo.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RegionInfo.swift; sourceTree = "<group>"; };
 		29F47F782E36578D00191273 /* DistrictInfo.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DistrictInfo.swift; sourceTree = "<group>"; };
-		29F531892E54425F003BA416 /* APIService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIService.swift; sourceTree = "<group>"; };
+		29F5318F2E545F4E003BA416 /* APIClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIClient.swift; sourceTree = "<group>"; };
+		29F531912E545FD1003BA416 /* APIClientImpl.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIClientImpl.swift; sourceTree = "<group>"; };
 		29F8A7922DFD643C00331A7F /* TitleView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TitleView.swift; sourceTree = "<group>"; };
 		29FBA84A2E3B31FE00F6E33C /* RouteSnapshotter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RouteSnapshotter.swift; sourceTree = "<group>"; };
 		29FBA84C2E3B34A300F6E33C /* ShareSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShareSheet.swift; sourceTree = "<group>"; };
@@ -782,7 +784,6 @@
 		29BC193F2DB605FF00C6F918 /* Service */ = {
 			isa = PBXGroup;
 			children = (
-				29F531892E54425F003BA416 /* APIService.swift */,
 				29A64ADE2DB4A654007C3859 /* LocationService.swift */,
 				29CBB3402E043889006687A3 /* AuthService.swift */,
 			);
@@ -1095,7 +1096,8 @@
 			isa = PBXGroup;
 			children = (
 				29CF49102D74269A00036D28 /* APIRepository.swift */,
-				29CBB3382E043606006687A3 /* ApiError.swift */,
+				29F5318F2E545F4E003BA416 /* APIClient.swift */,
+				29CBB3382E043606006687A3 /* APIError.swift */,
 			);
 			path = API;
 			sourceTree = "<group>";
@@ -1161,6 +1163,7 @@
 			children = (
 				29CF49092D74262300036D28 /* ApiRepositoryImpl.swift */,
 				29CF490B2D74263400036D28 /* ApiRepositoryMock.swift */,
+				29F531912E545FD1003BA416 /* APIClientImpl.swift */,
 			);
 			path = Api;
 			sourceTree = "<group>";
@@ -1611,11 +1614,12 @@
 				29B638A72DB0E7E400DF8419 /* AdminSpanEdit.swift in Sources */,
 				29AB1B482DE2116F00AC37F3 /* OnboardingStoreView.swift in Sources */,
 				29AD86492DB2032300C3E8B2 /* LocationProvider.swift in Sources */,
-				29CBB3392E043608006687A3 /* ApiError.swift in Sources */,
+				29CBB3392E043608006687A3 /* APIError.swift in Sources */,
 				29A043532D7DC83B00E77C91 /* SimpleTime.swift in Sources */,
 				29CF49082D7425F600036D28 /* Http.swift in Sources */,
 				29C74AD12E38BCCA00417533 /* PublicDistrictMapView.swift in Sources */,
 				29CBB3412E04388D006687A3 /* AuthService.swift in Sources */,
+				29F531902E545F50003BA416 /* APIClient.swift in Sources */,
 				292D0B8D2DB0CB2700176E51 /* AdminPerformanceEdit.swift in Sources */,
 				29B1599A2DF1888900F469A9 /* DistrictTool.swift in Sources */,
 				29DF09C62DCC9DFB00489DB8 /* InfoList.swift in Sources */,
@@ -1669,7 +1673,6 @@
 				29F47F712E36474100191273 /* Modifier.swift in Sources */,
 				29BBDC832E0D862400CA03EE /* Json.swift in Sources */,
 				299BBF2B2DC7AF070092C4D9 /* PublicRoute.swift in Sources */,
-				29F5318A2E544263003BA416 /* APIService.swift in Sources */,
 				29A688C22DCC4E38004415BF /* AdminRouteItemView.swift in Sources */,
 				299BBF292DC611310092C4D9 /* PublicRouteMapStoreView.swift in Sources */,
 				29BC19462DB6258100C6F918 /* Settings.swift in Sources */,
@@ -1683,6 +1686,7 @@
 				29BC19482DB625C700C6F918 /* SettingsStoreView.swift in Sources */,
 				292D0B8B2DB0CADD00176E51 /* AdminPerformanceEditStoreView.swift in Sources */,
 				29A64ADF2DB4A65B007C3859 /* LocationService.swift in Sources */,
+				29F531922E545FD7003BA416 /* APIClientImpl.swift in Sources */,
 				29A64ADD2DB4A29A007C3859 /* Home.swift in Sources */,
 				29B5FD632D80877D008838BB /* DistrictSummary.swift in Sources */,
 				29E8C3302DBB3F090086F6BB /* PublicDistrict.swift in Sources */,
