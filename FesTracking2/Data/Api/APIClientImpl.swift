@@ -55,32 +55,23 @@ struct APIClient: APIClientProtocol {
         await request(path: path, method: "GET", query: query, accessToken: accessToken, isCache: isCache)
     }
 
-    func get(path: String, accessToken: String? = nil, isCache: Bool = false) async -> Result<Data, APIError> {
-        await get(path: path, query: [:], accessToken: accessToken, isCache: isCache)
-    }
-
     func post(path: String, body: Data, query: [String: Any] = [:], accessToken: String? = nil) async -> Result<Data, APIError> {
-        await request(path: path, method: "POST", query: query, body: body, accessToken: accessToken)
+        let responce = await request(path: path, method: "POST", query: query, body: body, accessToken: accessToken)
+        cache.removeAllObjects()
+        return responce
     }
 
-    func post(path: String, body: Data, accessToken: String? = nil) async -> Result<Data, APIError> {
-        await post(path: path, body: body, query: [:], accessToken: accessToken)
-    }
 
     func put(path: String, body: Data, query: [String: Any] = [:], accessToken: String? = nil) async -> Result<Data, APIError> {
-        await request(path: path, method: "PUT", query: query, body: body, accessToken: accessToken)
-    }
-
-    func put(path: String, body: Data, accessToken: String? = nil) async -> Result<Data, APIError> {
-        await put(path: path, body: body, query: [:], accessToken: accessToken)
+        let responce = await request(path: path, method: "PUT", query: query, body: body, accessToken: accessToken)
+        cache.removeAllObjects()
+        return responce
     }
 
     func delete(path: String, query: [String: Any] = [:], accessToken: String? = nil) async -> Result<Data, APIError> {
-        await request(path: path, method: "DELETE", query: query, accessToken: accessToken)
-    }
-
-    func delete(path: String, accessToken: String? = nil) async -> Result<Data, APIError> {
-        await delete(path: path, query: [:], accessToken: accessToken)
+        let responce = await request(path: path, method: "DELETE", query: query, accessToken: accessToken)
+        cache.removeAllObjects()
+        return responce
     }
 
     private func makeURL(path: String, query: [String: Any]) throws -> URL {
