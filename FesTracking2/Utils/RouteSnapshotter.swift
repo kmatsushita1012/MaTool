@@ -76,7 +76,7 @@ struct RouteSnapshotter: Equatable {
                     開始時刻 \(route.start.text)
                     終了時刻 \(route.goal.text)
                     """
-                    drawTitleTextBlock(text: titleText, in: options)
+                    drawTitleTextBlock(text: titleText, in: options, drawnRects: &drawnRects)
                     
                     let image = UIGraphicsGetImageFromCurrentImageContext()
                     UIGraphicsEndImageContext()
@@ -198,7 +198,7 @@ struct RouteSnapshotter: Equatable {
         }
     }
     
-    private func drawTitleTextBlock(text: String, in options: MKMapSnapshotter.Options) {
+    private func drawTitleTextBlock(text: String, in options: MKMapSnapshotter.Options, drawnRects: inout [CGRect]) {
         let paragraphStyle = NSMutableParagraphStyle()
         paragraphStyle.lineBreakMode = .byWordWrapping
         paragraphStyle.alignment = .left
@@ -207,38 +207,52 @@ struct RouteSnapshotter: Equatable {
         let attributes: [NSAttributedString.Key: Any] = [
             .font: font,
             .paragraphStyle: paragraphStyle,
-            .foregroundColor: UIColor.black // 黒文字
+            .foregroundColor: UIColor.black
         ]
         
-        // パディングとサイズ計算
         let padding: CGFloat = 8
         let maxTextWidth = options.size.width * 0.9
-        let textRect = CGRect(x: padding, y: padding, width: maxTextWidth - padding * 2, height: .greatestFiniteMagnitude)
+        let textRect = CGRect(x: 0, y: 0, width: maxTextWidth - padding * 2, height: .greatestFiniteMagnitude)
         let boundingRect = (text as NSString).boundingRect(with: textRect.size, options: .usesLineFragmentOrigin, attributes: attributes, context: nil)
 
-        let backgroundRect = CGRect(x: padding,
-                                    y: padding,
-                                    width: boundingRect.width + padding * 2,
+        let backgroundSize = CGSize(width: boundingRect.width + padding * 2,
                                     height: boundingRect.height + padding * 2)
+        
+        let candidates: [CGPoint] = [
+            CGPoint(x: padding, y: padding),
+            CGPoint(x: padding, y: options.size.height - backgroundSize.height - padding),
+            CGPoint(x: options.size.width - backgroundSize.width - padding, y: padding),
+            CGPoint(x: options.size.width - backgroundSize.width - padding, y: options.size.height - backgroundSize.height - padding)
+        ]
 
+        var finalBackgroundRect: CGRect?
+        for point in candidates {
+            let candidateRect = CGRect(origin: point, size: backgroundSize)
+            if !drawnRects.contains(where: { $0.intersects(candidateRect) }) {
+                finalBackgroundRect = candidateRect
+                drawnRects.append(candidateRect)
+                break
+            }
+        }
+
+        
+        let backgroundRect = finalBackgroundRect ?? CGRect(origin: CGPoint(x: padding, y: padding), size: backgroundSize)
+        
         // 背景を白で塗る
         UIColor.white.setFill()
         let backgroundPath = UIBezierPath(roundedRect: backgroundRect, cornerRadius: 6)
         backgroundPath.fill()
-
-        // 黒い枠線を描く
+        
         UIColor.black.setStroke()
         backgroundPath.lineWidth = 2
         backgroundPath.stroke()
-
-        // テキスト描画
+        
         let textDrawRect = CGRect(x: backgroundRect.origin.x + padding,
                                   y: backgroundRect.origin.y + padding,
                                   width: boundingRect.width,
                                   height: boundingRect.height)
         (text as NSString).draw(in: textDrawRect, withAttributes: attributes)
     }
-
     
     func createPDF(with image: UIImage, path: String) -> URL? {
        let pdfData = NSMutableData()
