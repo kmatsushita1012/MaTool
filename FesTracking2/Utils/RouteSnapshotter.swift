@@ -238,8 +238,7 @@ struct RouteSnapshotter: Equatable {
         
         let backgroundRect = finalBackgroundRect ?? CGRect(origin: CGPoint(x: padding, y: padding), size: backgroundSize)
         
-        // 背景を白で塗る
-        UIColor.white.setFill()
+        UIColor(white: 1.0, alpha: 0.8).setFill()
         let backgroundPath = UIBezierPath(roundedRect: backgroundRect, cornerRadius: 6)
         backgroundPath.fill()
         
