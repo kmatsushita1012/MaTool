@@ -141,7 +141,6 @@
 		29CBB33D2E04365F006687A3 /* AuthProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29CBB33C2E04365A006687A3 /* AuthProvider.swift */; };
 		29CBB33F2E04376E006687A3 /* AuthError.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29CBB33E2E04376B006687A3 /* AuthError.swift */; };
 		29CBB3412E04388D006687A3 /* AuthService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29CBB3402E043889006687A3 /* AuthService.swift */; };
-		29CF49082D7425F600036D28 /* Http.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29CF49072D7425F600036D28 /* Http.swift */; };
 		29CF490A2D74262300036D28 /* ApiRepositoryImpl.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29CF49092D74262300036D28 /* ApiRepositoryImpl.swift */; };
 		29CF490C2D74263400036D28 /* ApiRepositoryMock.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29CF490B2D74263400036D28 /* ApiRepositoryMock.swift */; };
 		29CF49112D74269A00036D28 /* APIRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29CF49102D74269A00036D28 /* APIRepository.swift */; };
@@ -327,7 +326,6 @@
 		29CBB33C2E04365A006687A3 /* AuthProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthProvider.swift; sourceTree = "<group>"; };
 		29CBB33E2E04376B006687A3 /* AuthError.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthError.swift; sourceTree = "<group>"; };
 		29CBB3402E043889006687A3 /* AuthService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthService.swift; sourceTree = "<group>"; };
-		29CF49072D7425F600036D28 /* Http.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Http.swift; sourceTree = "<group>"; };
 		29CF49092D74262300036D28 /* ApiRepositoryImpl.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ApiRepositoryImpl.swift; sourceTree = "<group>"; };
 		29CF490B2D74263400036D28 /* ApiRepositoryMock.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ApiRepositoryMock.swift; sourceTree = "<group>"; };
 		29CF49102D74269A00036D28 /* APIRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIRepository.swift; sourceTree = "<group>"; };
@@ -1171,7 +1169,6 @@
 		29CF49062D7425D600036D28 /* Utils */ = {
 			isa = PBXGroup;
 			children = (
-				29CF49072D7425F600036D28 /* Http.swift */,
 				29BBDC822E0D862400CA03EE /* Json.swift */,
 				2972017A2D9CFA41003424EF /* Async.swift */,
 				29CF49182D7440EB00036D28 /* Extension.swift */,
@@ -1616,7 +1613,6 @@
 				29AD86492DB2032300C3E8B2 /* LocationProvider.swift in Sources */,
 				29CBB3392E043608006687A3 /* APIError.swift in Sources */,
 				29A043532D7DC83B00E77C91 /* SimpleTime.swift in Sources */,
-				29CF49082D7425F600036D28 /* Http.swift in Sources */,
 				29C74AD12E38BCCA00417533 /* PublicDistrictMapView.swift in Sources */,
 				29CBB3412E04388D006687A3 /* AuthService.swift in Sources */,
 				29F531902E545F50003BA416 /* APIClient.swift in Sources */,
