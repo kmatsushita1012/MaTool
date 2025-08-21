@@ -25,9 +25,8 @@ struct DistrictInfoStoreView: View {
                     
                     if let imagePath = store.item.imagePath {
                         VStack{
-                            WebImageView(imagePath: imagePath)
+                            WebImageView(imagePath: imagePath, contentMode: .fit)
                         }
-                        .aspectRatio(0.75 ,contentMode: .fill)
                         .cornerRadius(8)
                         .padding(.horizontal)
                     }
