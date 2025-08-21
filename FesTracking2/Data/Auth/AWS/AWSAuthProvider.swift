@@ -35,7 +35,7 @@ extension AuthProvider: DependencyKey {
             },
             signIn: { username, password in
                 do {
-                    let result = try await withTimeout(seconds: 1) {
+                    let result = try await withTimeout(seconds: timeout) {
                         await withCheckedContinuation { continuation in
                             AWSMobileClient.default().signIn(username: username, password: password) { result, error in
                                 if let error {
