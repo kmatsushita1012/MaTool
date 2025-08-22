@@ -40,10 +40,10 @@ struct PublicRouteMapStoreView: View {
             switch detail{
             case .point(let item):
                 PointView(item: item)
-                    .presentationDetents([.fraction(0.2)])
+                    .presentationDetents([.fraction(0.3), .medium, .large])
             case .location(let item):
                 LocationView(item: item)
-                    .presentationDetents([.fraction(0.2)])
+                    .presentationDetents([.fraction(0.3), .medium, .large])
             }
             
         }
