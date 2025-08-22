@@ -44,12 +44,12 @@ struct AdminDistrictTop {
         case onRouteExport(RouteSummary)
         case changePasswordTapped
         case updateEmailTapped
-        case getDistrictReceived(Result<PublicDistrict,ApiError>)
-        case getRoutesReceived(Result<[RouteSummary],ApiError>)
-        case editPrepared(Result<DistrictTool,ApiError>)
-        case routeEditPrepared(Result<RouteInfo,ApiError>,Result<DistrictTool,ApiError>)
-        case routeCreatePrepared(Result<DistrictTool,ApiError>)
-        case exportPrepared(Result<RouteInfo,ApiError>)
+        case getDistrictReceived(Result<PublicDistrict,APIError>)
+        case getRoutesReceived(Result<[RouteSummary],APIError>)
+        case editPrepared(Result<DistrictTool,APIError>)
+        case routeEditPrepared(Result<RouteInfo,APIError>,Result<DistrictTool,APIError>)
+        case routeCreatePrepared(Result<DistrictTool,APIError>)
+        case exportPrepared(Result<RouteInfo,APIError>)
         case onLocation
         case destination(PresentationAction<Destination.Action>)
         case signOutTapped
@@ -69,26 +69,26 @@ struct AdminDistrictTop {
             case .onEdit:
                 state.isDistrictLoading = true
                 return .run {[id = state.district.id] send in
-                    let result = await apiRepository.getTool(id, authService.getAccessToken())
+                    let result = await apiRepository.getTool(id)
                     await send(.editPrepared(result))
                 }
             case .onRouteAdd:
                 state.isRouteLoading = true
                 return .run {[id = state.district.id] send in
-                    let result = await apiRepository.getTool(id, authService.getAccessToken())
+                    let result = await apiRepository.getTool(id)
                     await send(.routeCreatePrepared(result))
                 }
             case .onRouteEdit(let route):
                 state.isRouteLoading = true
                 return .run { send in
-                    let routeResult = await apiRepository.getRoute(route.id, authService.getAccessToken())
-                    let toolResult = await apiRepository.getTool(route.districtId, authService.getAccessToken())
+                    let routeResult = await apiRepository.getRoute(route.id)
+                    let toolResult = await apiRepository.getTool(route.districtId)
                     await send(.routeEditPrepared(routeResult, toolResult))
                 }
             case .onRouteExport(let route):
                 state.isExportLoading = true
                 return .run { send in
-                    let result = await apiRepository.getRoute(route.id, authService.getAccessToken())
+                    let result = await apiRepository.getRoute(route.id)
                     await send(.exportPrepared(result))
                 }
             case .changePasswordTapped:
@@ -194,7 +194,7 @@ struct AdminDistrictTop {
                             await send(.getDistrictReceived(result))
                         },
                         .run {[id = state.district.id] send in
-                            let result = await apiRepository.getRoutes(id, authService.getAccessToken())
+                            let result = await apiRepository.getRoutes(id)
                             await send(.getRoutesReceived(result))
                         }
                     )
