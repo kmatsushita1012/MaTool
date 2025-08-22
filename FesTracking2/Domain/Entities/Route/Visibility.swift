@@ -26,4 +26,13 @@ extension Visibility {
             return "全て公開"
         }
     }
+    
+    var isTimeHidden: Bool {
+        switch self {
+        case .admin, .route:
+            return true
+        case .all:
+            return false
+        }
+    }
 }
