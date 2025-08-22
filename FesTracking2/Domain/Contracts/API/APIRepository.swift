@@ -20,7 +20,7 @@ struct APIRepotiroy: Sendable {
     var getTool: @Sendable (_ districtId: String) async -> Result<DistrictTool, APIError>
     var getRoutes: @Sendable (_ districtId: String) async -> Result<[RouteSummary], APIError>
     var getRoute: @Sendable (_ id: String) async -> Result<RouteInfo, APIError>
-    var getCurrentRoute: @Sendable (_ districtId: String) async -> Result<RouteInfo, APIError>
+    var getCurrentRoute: @Sendable (_ districtId: String) async -> Result<CurrentResponce, APIError>
     var getRouteIds: @Sendable () async -> Result<[String], APIError>
     var postRoute: @Sendable (_ route: Route) async -> Result<String, APIError>
     var putRoute: @Sendable (_ route: Route) async -> Result<String, APIError>
