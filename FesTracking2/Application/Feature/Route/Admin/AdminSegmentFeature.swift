@@ -22,7 +22,7 @@ struct AdminSegmentEdit{
     @CasePathable
     enum Action: Equatable{
         case switchCurve(Bool)
-        case received(Result<[Coordinate],ApiError>)
+        case received(Result<[Coordinate],APIError>)
         case doneTapped
         case cancelTapped
     }
@@ -38,10 +38,7 @@ struct AdminSegmentEdit{
                 if(value){
                     state.errorMessage = nil
                     state.isLoading = true
-                    return .run { send in
-                        let result = await self.apiRepository.getSegmentCoordinate(start, end)
-                        await send(.received(result))
-                    }
+                    return .none
                 }else{
                     state.item.coordinates = [start, end]
                     return .none

@@ -33,7 +33,7 @@ struct Settings {
         case dismissTapped
         case signOutTapped
         case signOutReceived(Result<UserRole,AuthError>)
-        case districtsReceived(Result<[PublicDistrict], ApiError>)
+        case districtsReceived(Result<[PublicDistrict], APIError>)
         case alert(PresentationAction<Alert.Action>)
     }
     

@@ -30,16 +30,15 @@ struct AdminRegionDistrictList {
     enum Action: Equatable, BindableAction {
         case binding(BindingAction<State>)
         case exportTapped(RouteSummary)
-        case exportPrepared(Result<RouteInfo,ApiError>)
+        case exportPrepared(Result<RouteInfo,APIError>)
         case dismissTapped
         case batchExportTapped
-        case batchExportPrepared(Result<[URL], ApiError>)
+        case batchExportPrepared(Result<[URL], APIError>)
         case export(PresentationAction<AdminRouteEditV2.Action>)
         case alert(PresentationAction<Alert.Action>)
     }
     
     @Dependency(\.apiRepository) var apiRepository
-    @Dependency(\.authService) var authService
     @Dependency(\.dismiss) var dismiss
     
     var body: some ReducerOf<AdminRegionDistrictList> {
@@ -51,7 +50,7 @@ struct AdminRegionDistrictList {
             case .exportTapped(let route):
                 state.isApiLoading = true
                 return .run{ send in
-                    let result = await apiRepository.getRoute(route.id, authService.getAccessToken())
+                    let result = await apiRepository.getRoute(route.id)
                     await send(.exportPrepared(result))
                 }
             case .exportPrepared(.success(let route)):
@@ -97,11 +96,11 @@ struct AdminRegionDistrictList {
     
     func batchExportEffect(_ items: [RouteSummary]) -> Effect<Action> {
         .run { send in
-            let accessToken = await authService.getAccessToken()
+            
             var urls: [URL] = []
             //非同期並列にするとBEでアクセス過多
             for item in items {
-                let routeResult = await apiRepository.getRoute(item.id, accessToken)
+                let routeResult = await apiRepository.getRoute(item.id)
                 guard let route = routeResult.value else { continue }
                 let snapshotter = RouteSnapshotter(route)
                 guard let image = try? await snapshotter.take() else { continue }

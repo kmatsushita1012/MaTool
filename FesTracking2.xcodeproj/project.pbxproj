@@ -137,16 +137,16 @@
 		29CB077D2DAF8B970009A47D /* AdminBaseEditStoreView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29CB077C2DAF8B940009A47D /* AdminBaseEditStoreView.swift */; };
 		29CB077F2DAF8C510009A47D /* AdminDistrictMapView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29CB077E2DAF8C500009A47D /* AdminDistrictMapView.swift */; };
 		29CB07812DAF933A0009A47D /* AdminAreaEditStoreView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29CB07802DAF93350009A47D /* AdminAreaEditStoreView.swift */; };
-		29CBB3392E043608006687A3 /* ApiError.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29CBB3382E043606006687A3 /* ApiError.swift */; };
+		29CBB3392E043608006687A3 /* APIError.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29CBB3382E043606006687A3 /* APIError.swift */; };
 		29CBB33D2E04365F006687A3 /* AuthProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29CBB33C2E04365A006687A3 /* AuthProvider.swift */; };
 		29CBB33F2E04376E006687A3 /* AuthError.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29CBB33E2E04376B006687A3 /* AuthError.swift */; };
 		29CBB3412E04388D006687A3 /* AuthService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29CBB3402E043889006687A3 /* AuthService.swift */; };
-		29CF49082D7425F600036D28 /* Http.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29CF49072D7425F600036D28 /* Http.swift */; };
-		29CF490A2D74262300036D28 /* LiveApiRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29CF49092D74262300036D28 /* LiveApiRepository.swift */; };
-		29CF490C2D74263400036D28 /* MockApiRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29CF490B2D74263400036D28 /* MockApiRepository.swift */; };
-		29CF49112D74269A00036D28 /* ApiRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29CF49102D74269A00036D28 /* ApiRepository.swift */; };
+		29CF490A2D74262300036D28 /* ApiRepositoryImpl.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29CF49092D74262300036D28 /* ApiRepositoryImpl.swift */; };
+		29CF490C2D74263400036D28 /* ApiRepositoryMock.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29CF490B2D74263400036D28 /* ApiRepositoryMock.swift */; };
+		29CF49112D74269A00036D28 /* APIRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29CF49102D74269A00036D28 /* APIRepository.swift */; };
 		29CF49132D7426A400036D28 /* UserDefaultsClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29CF49122D7426A400036D28 /* UserDefaultsClient.swift */; };
 		29CF49192D7440EB00036D28 /* Extension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29CF49182D7440EB00036D28 /* Extension.swift */; };
+		29D1D1692E57537F00D77F16 /* CurrentResponce.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29D1D1682E57537B00D77F16 /* CurrentResponce.swift */; };
 		29D33A5B2E3C74F600D285DC /* AdminRouteEditV2.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29D33A5A2E3C74EF00D285DC /* AdminRouteEditV2.swift */; };
 		29D33A5D2E3C750500D285DC /* AdminRouteEditStoreViewV2.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29D33A5C2E3C74FA00D285DC /* AdminRouteEditStoreViewV2.swift */; };
 		29D33A5F2E3C89A200D285DC /* AdminRouteMapViewV2.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29D33A5E2E3C899800D285DC /* AdminRouteMapViewV2.swift */; };
@@ -164,6 +164,8 @@
 		29F47F712E36474100191273 /* Modifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29F47F702E36473E00191273 /* Modifier.swift */; };
 		29F47F752E36577B00191273 /* RegionInfo.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29F47F742E36577500191273 /* RegionInfo.swift */; };
 		29F47F792E36579100191273 /* DistrictInfo.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29F47F782E36578D00191273 /* DistrictInfo.swift */; };
+		29F531902E545F50003BA416 /* APIClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29F5318F2E545F4E003BA416 /* APIClient.swift */; };
+		29F531922E545FD7003BA416 /* APIClientImpl.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29F531912E545FD1003BA416 /* APIClientImpl.swift */; };
 		29F8A2BE2D9EF079001633B3 /* ComposableArchitecture in Frameworks */ = {isa = PBXBuildFile; productRef = 29F8A2BD2D9EF079001633B3 /* ComposableArchitecture */; };
 		29F8A7932DFD645000331A7F /* TitleView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29F8A7922DFD643C00331A7F /* TitleView.swift */; };
 		29FBA84B2E3B31FF00F6E33C /* RouteSnapshotter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29FBA84A2E3B31FE00F6E33C /* RouteSnapshotter.swift */; };
@@ -321,16 +323,16 @@
 		29CB077C2DAF8B940009A47D /* AdminBaseEditStoreView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdminBaseEditStoreView.swift; sourceTree = "<group>"; };
 		29CB077E2DAF8C500009A47D /* AdminDistrictMapView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdminDistrictMapView.swift; sourceTree = "<group>"; };
 		29CB07802DAF93350009A47D /* AdminAreaEditStoreView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdminAreaEditStoreView.swift; sourceTree = "<group>"; };
-		29CBB3382E043606006687A3 /* ApiError.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ApiError.swift; sourceTree = "<group>"; };
+		29CBB3382E043606006687A3 /* APIError.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIError.swift; sourceTree = "<group>"; };
 		29CBB33C2E04365A006687A3 /* AuthProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthProvider.swift; sourceTree = "<group>"; };
 		29CBB33E2E04376B006687A3 /* AuthError.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthError.swift; sourceTree = "<group>"; };
 		29CBB3402E043889006687A3 /* AuthService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthService.swift; sourceTree = "<group>"; };
-		29CF49072D7425F600036D28 /* Http.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Http.swift; sourceTree = "<group>"; };
-		29CF49092D74262300036D28 /* LiveApiRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveApiRepository.swift; sourceTree = "<group>"; };
-		29CF490B2D74263400036D28 /* MockApiRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockApiRepository.swift; sourceTree = "<group>"; };
-		29CF49102D74269A00036D28 /* ApiRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ApiRepository.swift; sourceTree = "<group>"; };
+		29CF49092D74262300036D28 /* ApiRepositoryImpl.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ApiRepositoryImpl.swift; sourceTree = "<group>"; };
+		29CF490B2D74263400036D28 /* ApiRepositoryMock.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ApiRepositoryMock.swift; sourceTree = "<group>"; };
+		29CF49102D74269A00036D28 /* APIRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIRepository.swift; sourceTree = "<group>"; };
 		29CF49122D7426A400036D28 /* UserDefaultsClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserDefaultsClient.swift; sourceTree = "<group>"; };
 		29CF49182D7440EB00036D28 /* Extension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Extension.swift; sourceTree = "<group>"; };
+		29D1D1682E57537B00D77F16 /* CurrentResponce.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CurrentResponce.swift; sourceTree = "<group>"; };
 		29D33A5A2E3C74EF00D285DC /* AdminRouteEditV2.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdminRouteEditV2.swift; sourceTree = "<group>"; };
 		29D33A5C2E3C74FA00D285DC /* AdminRouteEditStoreViewV2.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdminRouteEditStoreViewV2.swift; sourceTree = "<group>"; };
 		29D33A5E2E3C899800D285DC /* AdminRouteMapViewV2.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdminRouteMapViewV2.swift; sourceTree = "<group>"; };
@@ -348,6 +350,8 @@
 		29F47F702E36473E00191273 /* Modifier.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Modifier.swift; sourceTree = "<group>"; };
 		29F47F742E36577500191273 /* RegionInfo.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RegionInfo.swift; sourceTree = "<group>"; };
 		29F47F782E36578D00191273 /* DistrictInfo.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DistrictInfo.swift; sourceTree = "<group>"; };
+		29F5318F2E545F4E003BA416 /* APIClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIClient.swift; sourceTree = "<group>"; };
+		29F531912E545FD1003BA416 /* APIClientImpl.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIClientImpl.swift; sourceTree = "<group>"; };
 		29F8A7922DFD643C00331A7F /* TitleView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TitleView.swift; sourceTree = "<group>"; };
 		29FBA84A2E3B31FE00F6E33C /* RouteSnapshotter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RouteSnapshotter.swift; sourceTree = "<group>"; };
 		29FBA84C2E3B34A300F6E33C /* ShareSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShareSheet.swift; sourceTree = "<group>"; };
@@ -640,6 +644,7 @@
 			isa = PBXGroup;
 			children = (
 				29A043432D7DC24700E77C91 /* RouteSummary.swift */,
+				29D1D1682E57537B00D77F16 /* CurrentResponce.swift */,
 				29A043492D7DC42C00E77C91 /* Segment.swift */,
 				29A043472D7DC36200E77C91 /* Point.swift */,
 				29A043452D7DC2AF00E77C91 /* RouteInfo.swift */,
@@ -1088,13 +1093,14 @@
 			path = Toggle;
 			sourceTree = "<group>";
 		};
-		29CBB3372E0435CF006687A3 /* Api */ = {
+		29CBB3372E0435CF006687A3 /* API */ = {
 			isa = PBXGroup;
 			children = (
-				29CF49102D74269A00036D28 /* ApiRepository.swift */,
-				29CBB3382E043606006687A3 /* ApiError.swift */,
+				29CF49102D74269A00036D28 /* APIRepository.swift */,
+				29F5318F2E545F4E003BA416 /* APIClient.swift */,
+				29CBB3382E043606006687A3 /* APIError.swift */,
 			);
-			path = Api;
+			path = API;
 			sourceTree = "<group>";
 		};
 		29CBB33A2E043615006687A3 /* Location */ = {
@@ -1132,22 +1138,6 @@
 			path = Mock;
 			sourceTree = "<group>";
 		};
-		29CBB3442E043BBD006687A3 /* Live */ = {
-			isa = PBXGroup;
-			children = (
-				29CF49092D74262300036D28 /* LiveApiRepository.swift */,
-			);
-			path = Live;
-			sourceTree = "<group>";
-		};
-		29CBB3452E043BDB006687A3 /* Mock */ = {
-			isa = PBXGroup;
-			children = (
-				29CF490B2D74263400036D28 /* MockApiRepository.swift */,
-			);
-			path = Mock;
-			sourceTree = "<group>";
-		};
 		29CF49032D74244500036D28 /* Data */ = {
 			isa = PBXGroup;
 			children = (
@@ -1172,8 +1162,9 @@
 		29CF49052D74248B00036D28 /* Api */ = {
 			isa = PBXGroup;
 			children = (
-				29CBB3442E043BBD006687A3 /* Live */,
-				29CBB3452E043BDB006687A3 /* Mock */,
+				29CF49092D74262300036D28 /* ApiRepositoryImpl.swift */,
+				29CF490B2D74263400036D28 /* ApiRepositoryMock.swift */,
+				29F531912E545FD1003BA416 /* APIClientImpl.swift */,
 			);
 			path = Api;
 			sourceTree = "<group>";
@@ -1181,7 +1172,6 @@
 		29CF49062D7425D600036D28 /* Utils */ = {
 			isa = PBXGroup;
 			children = (
-				29CF49072D7425F600036D28 /* Http.swift */,
 				29BBDC822E0D862400CA03EE /* Json.swift */,
 				2972017A2D9CFA41003424EF /* Async.swift */,
 				29CF49182D7440EB00036D28 /* Extension.swift */,
@@ -1237,7 +1227,7 @@
 				2967C9142E1F57050080B8DA /* AppStatus */,
 				29CBB33B2E043640006687A3 /* Auth */,
 				29CBB33A2E043615006687A3 /* Location */,
-				29CBB3372E0435CF006687A3 /* Api */,
+				29CBB3372E0435CF006687A3 /* API */,
 				29CF490E2D74266F00036D28 /* Client */,
 			);
 			path = Contracts;
@@ -1624,11 +1614,11 @@
 				29B638A72DB0E7E400DF8419 /* AdminSpanEdit.swift in Sources */,
 				29AB1B482DE2116F00AC37F3 /* OnboardingStoreView.swift in Sources */,
 				29AD86492DB2032300C3E8B2 /* LocationProvider.swift in Sources */,
-				29CBB3392E043608006687A3 /* ApiError.swift in Sources */,
+				29CBB3392E043608006687A3 /* APIError.swift in Sources */,
 				29A043532D7DC83B00E77C91 /* SimpleTime.swift in Sources */,
-				29CF49082D7425F600036D28 /* Http.swift in Sources */,
 				29C74AD12E38BCCA00417533 /* PublicDistrictMapView.swift in Sources */,
 				29CBB3412E04388D006687A3 /* AuthService.swift in Sources */,
+				29F531902E545F50003BA416 /* APIClient.swift in Sources */,
 				292D0B8D2DB0CB2700176E51 /* AdminPerformanceEdit.swift in Sources */,
 				29B1599A2DF1888900F469A9 /* DistrictTool.swift in Sources */,
 				29DF09C62DCC9DFB00489DB8 /* InfoList.swift in Sources */,
@@ -1684,17 +1674,19 @@
 				299BBF2B2DC7AF070092C4D9 /* PublicRoute.swift in Sources */,
 				29A688C22DCC4E38004415BF /* AdminRouteItemView.swift in Sources */,
 				299BBF292DC611310092C4D9 /* PublicRouteMapStoreView.swift in Sources */,
+				29D1D1692E57537F00D77F16 /* CurrentResponce.swift in Sources */,
 				29BC19462DB6258100C6F918 /* Settings.swift in Sources */,
 				29A4013F2E4113720007D8AB /* PublicLocationsMap.swift in Sources */,
 				29DAB0612DA15CD1005E94BA /* AdminRouteMap.swift in Sources */,
-				29CF49112D74269A00036D28 /* ApiRepository.swift in Sources */,
+				29CF49112D74269A00036D28 /* APIRepository.swift in Sources */,
 				299AD5962E04F9A3007ACBC4 /* AuthResponce.swift in Sources */,
 				29CBB33D2E04365F006687A3 /* AuthProvider.swift in Sources */,
-				29CF490C2D74263400036D28 /* MockApiRepository.swift in Sources */,
+				29CF490C2D74263400036D28 /* ApiRepositoryMock.swift in Sources */,
 				2981E7032E4A7A2300061D1F /* AppStatus.swift in Sources */,
 				29BC19482DB625C700C6F918 /* SettingsStoreView.swift in Sources */,
 				292D0B8B2DB0CADD00176E51 /* AdminPerformanceEditStoreView.swift in Sources */,
 				29A64ADF2DB4A65B007C3859 /* LocationService.swift in Sources */,
+				29F531922E545FD7003BA416 /* APIClientImpl.swift in Sources */,
 				29A64ADD2DB4A29A007C3859 /* Home.swift in Sources */,
 				29B5FD632D80877D008838BB /* DistrictSummary.swift in Sources */,
 				29E8C3302DBB3F090086F6BB /* PublicDistrict.swift in Sources */,
@@ -1713,7 +1705,7 @@
 				29A043462D7DC2B200E77C91 /* RouteInfo.swift in Sources */,
 				29C74AC62E388A4900417533 /* DistrictInfoStoreView.swift in Sources */,
 				29A043462D7DC2B200E77C91 /* RouteInfo.swift in Sources */,
-				29CF490A2D74262300036D28 /* LiveApiRepository.swift in Sources */,
+				29CF490A2D74262300036D28 /* ApiRepositoryImpl.swift in Sources */,
 				29550E542DE45CD800E9D9B6 /* MenuSelector.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
