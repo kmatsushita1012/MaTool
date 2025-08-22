@@ -25,7 +25,7 @@ struct PublicLocations {
         case floatFocusSelected(LocationInfo)
         case userFocusTapped
         case reloadTapped
-        case locationsReceived(Result<[LocationInfo], ApiError>)
+        case locationsReceived(Result<[LocationInfo], APIError>)
     }
     
     @Dependency(\.apiRepository) var apiRepository
@@ -47,7 +47,7 @@ struct PublicLocations {
                 return .none
             case .reloadTapped:
                 return .run{ [id = state.regionId ]send in
-                    let result = await apiRepository.getLocations(id, "")
+                    let result = await apiRepository.getLocations(id)
                     await send(.locationsReceived(result))
                 }
             case .locationsReceived(.success(let value)):
