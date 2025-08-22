@@ -49,10 +49,7 @@ struct Home {
         case routePrepared(
             regionResult: Result<Region, APIError>,
             districtsResult: Result<[PublicDistrict], APIError>,
-            id: String,
-            routesResult: Result<[RouteSummary], APIError>,
-            currentResult: Result<RouteInfo, APIError>,
-            locationResult: Result<LocationInfo, APIError>
+            currentResult: Result<CurrentResponce, APIError>
         )
         case locationsPrepared(
             regionResult: Result<Region, APIError>,
@@ -151,32 +148,43 @@ struct Home {
             case .routePrepared(
                 let regionResult,
                 let districtsResult,
-                let id,
-                let routesResult,
                 let currentResult,
-                let locationResult
             ):
                 state.isDestinationLoading = false
                 switch (
                     regionResult,
                     districtsResult,
-                    routesResult,
                     currentResult,
-                    locationResult
                 ){
-                case (.success(let region), .success(let districts), _, _, _ ):
+                case (.success(let region), .success(let districts), .success(let currentResponse)):
+                    state.destination = .map(
+                        PublicMap.State(
+                            region: region,
+                            districts: districts,
+                            id: currentResponse.districtId,
+                            routes: currentResponse.routes,
+                            current: currentResponse.current,
+                            location: currentResponse.location
+                        )
+                    )
+                    return .none
+                case (.success(let region), .success(let districts), .failure(let error)):
+                    guard let id = userDefaultsClient.string(defaultDistrictKey) else {
+                        state.alert = Alert.error("情報の取得に失敗しました \(error.localizedDescription)")
+                        return .none
+                    }
                     state.destination = .map(
                         PublicMap.State(
                             region: region,
                             districts: districts,
                             id: id,
-                            routes: routesResult.value,
-                            current: currentResult.value,
-                            location: locationResult.value
+                            routes: nil,
+                            current: nil,
+                            location: nil
                         )
                     )
-                case (.failure(let error), _, _, _, _),
-                    (_, .failure(let error), _, _, _):
+                case (.failure(let error), _, _),
+                    (_, .failure(let error), _):
                     state.alert = Alert.error("情報の取得に失敗しました \(error.localizedDescription)")
                 }
                 return .none
@@ -307,36 +315,25 @@ struct Home {
     
     func routeEffect(regionId: String, districtId id: String) -> Effect<Action> {
         .run { send in
-            
-            
             async let regionTask = apiRepository.getRegion(regionId)
             async let districtsTask = apiRepository.getDistricts(regionId)
-            async let routesTask = apiRepository.getRoutes(id)
             async let currentTask = apiRepository.getCurrentRoute(id)
-            async let locationTask = apiRepository.getLocation(id)
             
             let (
                 regionResult,
                 districtsResult,
-                routesResult,
                 currentResult,
-                locationResult
             ) = await (
                 regionTask,
                 districtsTask,
-                routesTask,
                 currentTask,
-                locationTask
             )
             
             await send(
                 .routePrepared(
                     regionResult: regionResult,
                     districtsResult: districtsResult,
-                    id: id,
-                    routesResult: routesResult,
                     currentResult: currentResult,
-                    locationResult: locationResult,
                 )
             )
         }
@@ -345,7 +342,6 @@ struct Home {
     
     func locationsEffect(_ id: String) -> Effect<Action> {
         .run { send in
-            
             
             async let regionTask = apiRepository.getRegion(id)
             async let districtsTask = apiRepository.getDistricts(id)
