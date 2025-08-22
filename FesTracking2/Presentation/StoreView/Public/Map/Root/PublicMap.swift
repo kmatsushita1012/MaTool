@@ -36,12 +36,7 @@ struct PublicMap{
         case binding(BindingAction<State>)
         case homeTapped
         case contentSelected(Content)
-        case routePrepared(
-            id: String,
-            routesResult: Result<[RouteSummary], APIError>,
-            currentResult: Result<RouteInfo, APIError>,
-            locationResult: Result<LocationInfo, APIError>
-        )
+        case routePrepared(Result<CurrentResponce, APIError>)
         case locationsPrepared(
             id: String,
             locationsResult: Result<[LocationInfo],APIError>
@@ -59,7 +54,15 @@ struct PublicMap{
         Reduce{ state, action in
             switch action {
             case .onAppear:
-                
+                if case .route(let routeState) = state.destination,
+                    routeState.items == nil,
+                    routeState.route == nil,
+                    routeState.location == nil {
+                    state.alert = Alert.notice("配信停止中です。")
+                } else if case .locations(let locationState) = state.destination,
+                          locationState.locations.isEmpty {
+                state.alert = Alert.notice("配信停止中です。")
+            }
                 return .run{ send in
                     locationClient.startTracking()
                 }
@@ -78,15 +81,11 @@ struct PublicMap{
                 case .route(let id, _ , _):
                     return routeEffect(id)
                 }
-            case let .routePrepared(
-                id,
-                routesResult,
-                currentResult,
-                locationResult,
-            ):
-                let routes = routesResult.value
-                let current = currentResult.value
-                let location = locationResult.value
+            case .routePrepared(.success(let value)):
+                let id = value.districtId
+                let routes = value.routes
+                let current = value.current
+                let location = value.location
                 if routes == nil && current == nil && location == nil {
                     state.alert = Alert.notice("配信停止中です。")
                 }
@@ -103,6 +102,24 @@ struct PublicMap{
                         routes: routes,
                         selectedRoute: current,
                         location: location,
+                        mapRegion: state.$mapRegion
+                    )
+                )
+                return .none
+            case .routePrepared(.failure( .forbidden(message: _))):
+                state.alert = Alert.error("配信停止中です。")
+                state.destination = .route(
+                    PublicRoute.State(
+                        id: state.selectedContent.id,
+                        mapRegion: state.$mapRegion
+                    )
+                )
+                return .none
+            case .routePrepared(.failure(let error)):
+                state.alert = Alert.error(error.localizedDescription)
+                state.destination = .route(
+                    PublicRoute.State(
+                        id: state.selectedContent.id,
                         mapRegion: state.$mapRegion
                     )
                 )
@@ -144,21 +161,8 @@ struct PublicMap{
     
     func routeEffect(_ id: String) -> Effect<Action> {
         .run { send in
-            
-            
-            async let routesTask = apiRepository.getRoutes(id)
-            async let currentTask = apiRepository.getCurrentRoute(id)
-            async let locationTask = apiRepository.getLocation(id)
-            
-            let (routesResult, currentResult, locationResult) = await (routesTask, currentTask, locationTask)
-            await send(
-                .routePrepared(
-                    id: id,
-                    routesResult: routesResult,
-                    currentResult: currentResult,
-                    locationResult: locationResult,
-                )
-            )
+            let currentResult = await apiRepository.getCurrentRoute(id)
+            await send(.routePrepared(currentResult))
         }
     }
     

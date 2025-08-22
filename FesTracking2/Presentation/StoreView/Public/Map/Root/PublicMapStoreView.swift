@@ -28,7 +28,6 @@ struct PublicMapStoreView: View {
         .background(Color.map)
         .navigationTitle("地図")
         .navigationBarTitleDisplayMode(.inline)
-        .ignoresSafeArea(edges: .bottom)
         .toolbar {
             ToolbarItem(placement: .navigationBarLeading) {
                 Button(action: {
@@ -42,6 +41,7 @@ struct PublicMapStoreView: View {
         }
         .alert($store.scope(state: \.alert, action: \.alert))
         .dismissible(backButton: false)
+        .ignoresSafeArea(edges: .bottom)
         .onAppear{
             store.send(.onAppear)
         }
