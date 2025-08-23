@@ -47,11 +47,11 @@ struct AdminRegionTop {
         case updateEmailTapped
         case signOutTapped
         case batchExportTapped
-        case regionReceived(Result<Region,ApiError>)
-        case districtsReceived(Result<[PublicDistrict],ApiError>)
-        case districtInfoPrepared(PublicDistrict, Result<[RouteSummary],ApiError>)
+        case regionReceived(Result<Region,APIError>)
+        case districtsReceived(Result<[PublicDistrict],APIError>)
+        case districtInfoPrepared(PublicDistrict, Result<[RouteSummary],APIError>)
         case signOutReceived(Result<UserRole,AuthError>)
-        case batchExportPrepared(Result<[URL], ApiError>)
+        case batchExportPrepared(Result<[URL], APIError>)
         case destination(PresentationAction<Destination.Action>)
         case alert(PresentationAction<Alert.Action>)
     }
@@ -72,7 +72,7 @@ struct AdminRegionTop {
             case .onDistrictInfo(let district):
                 state.isApiLoading = true
                 return .run { send in
-                    let result = await apiRepository.getRoutes(district.id, authService.getAccessToken())
+                    let result = await apiRepository.getRoutes(district.id)
                     await send(.districtInfoPrepared(district, result))
                 }
             case .onCreateDistrict:
@@ -188,8 +188,8 @@ struct AdminRegionTop {
     
     func batchExportEffect() -> Effect<Action> {
         .run { send in
-            let accessToken = await authService.getAccessToken()
-            let idsResult = await apiRepository.getRouteIds(accessToken)
+            
+            let idsResult = await apiRepository.getRouteIds()
             guard let ids = idsResult.value else{
                 await send(.batchExportPrepared(.failure(idsResult.error!)))
                 return
@@ -197,7 +197,7 @@ struct AdminRegionTop {
             var urls: [URL] = []
             //非同期並列にするとBEでアクセス過多
             for id in ids {
-                let routeResult = await apiRepository.getRoute(id, accessToken)
+                let routeResult = await apiRepository.getRoute(id)
                 guard let route = routeResult.value else { continue }
                 let snapshotter = RouteSnapshotter(route)
                 guard let image = try? await snapshotter.take() else { continue }

@@ -12,7 +12,6 @@ import Dependencies
 final class LocationService: Sendable {
 
     @Dependency(\.apiRepository) var apiRepository
-    @Dependency(\.authService) var authService
     @Dependency(\.locationClient) var locationClient
 
     private var timer: Timer?
@@ -44,8 +43,7 @@ final class LocationService: Sendable {
         isTracking = false
        
         Task {
-            guard let token = await authService.getAccessToken() else { return }
-            await deleteLocation(id, accessToken: token)
+            await deleteLocation(id)
         }
     }
 
@@ -54,13 +52,11 @@ final class LocationService: Sendable {
         timer = Timer.scheduledTimer(withTimeInterval: interval, repeats: true) { [weak self] _ in
             guard let self else { return }
             Task {
-                guard let token = await self.authService.getAccessToken() else { return }
-                await self.fetchLocationAndSend(id, accessToken: token)
+                await self.fetchLocationAndSend(id)
             }
         }
         Task {
-            guard let token = await authService.getAccessToken() else { return }
-            await self.fetchLocationAndSend(id, accessToken: token)
+            await self.fetchLocationAndSend(id)
         }
     }
 
@@ -74,7 +70,7 @@ final class LocationService: Sendable {
         continuation.yield(locationHistory)
     }
 
-    private func fetchLocationAndSend(_ id: String, accessToken: String) async {
+    private func fetchLocationAndSend(_ id: String) async {
         let locationResult = locationClient.getLocation()
         switch locationResult {
         case .loading:
@@ -83,7 +79,7 @@ final class LocationService: Sendable {
             appendHistory(.locationError(Date()))
         case .success(let cllocation):
             let location = Location(districtId: id, coordinate: Coordinate.fromCL(cllocation.coordinate), timestamp: Date())
-            let result = await apiRepository.putLocation(location, accessToken)
+            let result = await apiRepository.putLocation(location)
             switch result {
             case .success:
                 appendHistory(.update(location))
@@ -93,8 +89,8 @@ final class LocationService: Sendable {
         }
     }
     
-    private func deleteLocation(_ id: String, accessToken: String) async {
-        let result = await apiRepository.deleteLocation(id, accessToken)
+    private func deleteLocation(_ id: String) async {
+        let result = await apiRepository.deleteLocation(id)
         switch result {
         case .success:
             appendHistory(.delete(Date()))

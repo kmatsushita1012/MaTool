@@ -35,8 +35,8 @@ struct Login {
         case destination(PresentationAction<Destination.Action>)
     }
     
-    @Dependency(\.authService) var authService
     @Dependency(\.userDefaultsClient) var userDefaultsClient
+    @Dependency(\.authService) var authService
     @Dependency(\.dismiss) var dismiss
     
     var body: some ReducerOf<Login> {

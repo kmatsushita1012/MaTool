@@ -72,12 +72,11 @@ struct PublicRoute {
         case locationTapped
         case userFocusTapped
         case floatFocusTapped
-        case routeReceived(Result<RouteInfo, ApiError>)
-        case locationReceived(Result<LocationInfo, ApiError>)
+        case routeReceived(Result<RouteInfo, APIError>)
+        case locationReceived(Result<LocationInfo, APIError>)
     }
     
     @Dependency(\.apiRepository) var apiRepository
-    @Dependency(\.authService) var authService
     
     var body: some ReducerOf<PublicRoute> {
         BindingReducer()
@@ -92,8 +91,8 @@ struct PublicRoute {
                 state.isMenuExpanded = false
                 state.selectedItem = value
                 return .run { send in
-                    let accessToken = await authService.getAccessToken()
-                    let result = await apiRepository.getRoute(value.id, accessToken)
+                    
+                    let result = await apiRepository.getRoute(value.id)
                     await send(.routeReceived(result))
                 }
             case .pointTapped(let value):
@@ -107,8 +106,8 @@ struct PublicRoute {
                 return .none
             case .floatFocusTapped:
                 return .run {[id = state.id] send in
-                    let accessToken = await authService.getAccessToken()
-                    let result = await apiRepository.getLocation(id, accessToken)
+                    
+                    let result = await apiRepository.getLocation(id)
                     await send(.locationReceived(result))
                 }
             case .routeReceived(.success(let value)):
