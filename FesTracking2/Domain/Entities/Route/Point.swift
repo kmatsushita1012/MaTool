@@ -38,10 +38,10 @@ enum PointFilter: Equatable {
     case export
     
     func apply(to route: RouteInfo) -> [Point] {
-        return apply(to: route.toModel())
+        return apply(to: route.toModel(), visibility: route.visibility)
     }
 
-    func apply(to route: Route) -> [Point] {
+    func apply(to route: Route, visibility: Visibility = .all) -> [Point] {
         switch self {
         case .none:
             return route.points
@@ -53,12 +53,23 @@ enum PointFilter: Equatable {
                     id: firstPoint.id,
                     coordinate: firstPoint.coordinate,
                     title: "出発",
-                    time: route.start,
+                    time: visibility.isTimeHidden ? nil : route.start,
                     shouldExport: true
                 )
                 newPoints.append(tempFirst)
             }
-            newPoints.append(contentsOf: route.points.filter{ $0.title != nil })
+            newPoints.append(
+                contentsOf: route.points.compactMap{
+                    if $0.title == nil {
+                        return nil
+                    }
+                    var newPoint = $0
+                    if visibility.isTimeHidden{
+                        newPoint.time = nil
+                    }
+                    return newPoint
+                }
+            )
             if route.points.count >= 2,
                let lastPoint = route.points.last,
                lastPoint.title == nil {
@@ -66,7 +77,7 @@ enum PointFilter: Equatable {
                     id: lastPoint.id,
                     coordinate: lastPoint.coordinate,
                     title: "到着",
-                    time: route.goal,
+                    time: visibility.isTimeHidden ? nil : route.goal,
                     shouldExport: true
                 )
                 newPoints.append(tempLast)

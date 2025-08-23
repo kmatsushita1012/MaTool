@@ -38,13 +38,13 @@ struct AdminDistrictEdit {
         case areaTapped
         case performanceAddTapped
         case performanceEditTapped(Performance)
-        case postReceived(Result<String,ApiError>)
+        case postReceived(Result<String,APIError>)
         case destination(PresentationAction<Destination.Action>)
         case alert(PresentationAction<Alert.Action>)
     }
     
-    @Dependency(\.apiRepository) var apiRepository
     @Dependency(\.authService) var authService
+    @Dependency(\.apiRepository) var apiRepository
     @Dependency(\.dismiss) var dismiss
     
     var body: some ReducerOf<AdminDistrictEdit>{
@@ -60,12 +60,8 @@ struct AdminDistrictEdit {
             case .saveTapped:
                 state.isLoading = true
                 return .run{ [item = state.item] send in
-                    if let token = await authService.getAccessToken(){
-                        let result = await apiRepository.putDistrict(item, token)
-                        await send(.postReceived(result))
-                    }else{
-                        await send(.postReceived(.failure(ApiError.unknown("認証に失敗しました。ログインし直してください"))))
-                    }
+                    let result = await apiRepository.putDistrict(item)
+                    await send(.postReceived(result))
                 }
             case .baseTapped:
                 if let base = state.item.base{

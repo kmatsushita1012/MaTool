@@ -95,4 +95,13 @@ extension Result {
             return error
         }
     }
+    
+    func asyncFlatMap<T>(_ transform: @escaping (Success) async -> Result<T, Failure>) async -> Result<T, Failure> {
+        switch self {
+        case .success(let value):
+            return await transform(value)
+        case .failure(let error):
+            return .failure(error)
+        }
+    }
 }

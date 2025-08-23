@@ -11,6 +11,7 @@ struct RouteInfo: Codable, Equatable, Identifiable{
     let id: String
     let districtId: String
     let districtName: String
+    let visibility: Visibility
     let date: SimpleDate
     let title: String
     let description: String?
@@ -78,10 +79,11 @@ extension RouteInfo {
         )
     }
     
-    init(from route: Route, name: String) {
+    init(from route: Route, name: String, visibility: Visibility = .admin) {
         id = route.id
         districtId = route.districtId
         districtName = name
+        self.visibility = visibility
         date = route.date
         title = route.title
         description = route.description
@@ -98,6 +100,7 @@ extension RouteInfo {
         id: UUID().uuidString,
         districtId: "Johoku",
         districtName: "城北町",
+        visibility: .all,
         date: SimpleDate.sample,
         title: "午後",
         description: "省略",

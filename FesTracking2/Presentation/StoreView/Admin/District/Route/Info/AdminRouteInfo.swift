@@ -62,14 +62,13 @@ struct AdminRouteInfo {
         case saveTapped
         case cancelTapped
         case deleteTapped
-        case postReceived(Result<String, ApiError>)
-        case deleteReceived(Result<String, ApiError>)
+        case postReceived(Result<String, APIError>)
+        case deleteReceived(Result<String, APIError>)
         case destination(PresentationAction<Destination.Action>)
         case alert(PresentationAction<AlertDestination.Action>)
     }
     
     @Dependency(\.apiRepository) var apiRepository
-    @Dependency(\.authService) var authService
     @Dependency(\.dismiss) var dismiss
     
     var body: some ReducerOf<AdminRouteInfo> {
@@ -103,21 +102,13 @@ struct AdminRouteInfo {
                 switch state.mode {
                 case .create:
                     return .run { [route = state.route] send in
-                        if let token = await authService.getAccessToken() {
-                            let result = await apiRepository.postRoute(route, token)
-                            await send(.postReceived(result))
-                        }else{
-                            await send(.postReceived(.failure(.unknown("認証に失敗しました。ログインし直してください。"))))
-                        }
+                        let result = await apiRepository.postRoute(route)
+                        await send(.postReceived(result))
                     }
                 case .edit:
                     return .run { [route = state.route] send in
-                        if let token = await authService.getAccessToken(){
-                            let result = await apiRepository.putRoute(route, token)
-                            await send(.postReceived(result))
-                        }else{
-                            await send(.postReceived(.failure(.unknown("認証に失敗しました。ログインし直してください。"))))
-                        }
+                        let result = await apiRepository.putRoute(route)
+                        await send(.postReceived(result))
                     }
                 }
             case .cancelTapped:
@@ -161,12 +152,7 @@ struct AdminRouteInfo {
                     state.alert = nil
                     state.isLoading = true
                     return .run { [route = state.route] send in
-                        //TODO
-                        guard let token = await authService.getAccessToken() else {
-                            await send(.postReceived(.failure(.unknown("認証に失敗しました。ログインし直してください。"))))
-                            return
-                        }
-                        let result = await apiRepository.deleteRoute(route.id, token)
+                        let result = await apiRepository.deleteRoute(route.id)
                         await send(.postReceived(result))
                     }
                 }

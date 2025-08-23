@@ -35,6 +35,7 @@ actor AuthService {
     func signIn(_ username: String, password: String) async -> SignInResult {
         let signInResult = await authProvider.signIn(username, password)
         if case .failure(let error) = signInResult {
+            let _ = await authProvider.signOut()
             return .failure(error)
         }else if case .newPasswordRequired = signInResult{
             return .newPasswordRequired
@@ -53,6 +54,7 @@ actor AuthService {
     func confirmSignIn(password: String) async-> Result<UserRole,AuthError> {
         let confirmSignInResult = await authProvider.confirmSignIn(password)
         if case .failure(let error) = confirmSignInResult {
+            let _ = await authProvider.signOut()
             return .failure(error)
         }
         let userRoleResult = await authProvider.getUserRole()
@@ -77,6 +79,7 @@ actor AuthService {
         case .success(let value):
             return value.accessToken?.tokenString
         case .failure:
+            let _ = await authProvider.signOut()
             return nil
         }
     }

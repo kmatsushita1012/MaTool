@@ -1,5 +1,5 @@
 //
-//  MockRepository.swift
+//  APIRepositoryMock.swift
 //  FesTracking2
 //
 //  Created by 松下和也 on 2025/03/02.
@@ -7,14 +7,14 @@
 
 import Dependencies
 
-extension ApiRepotiroy: TestDependencyKey {
+extension APIRepotiroy: TestDependencyKey {
     internal static let testValue = Self.noop
     internal static let previewValue = Self.noop
 }
 
 var routes: [Route] = [Route.sample]
 
-extension ApiRepotiroy {
+extension APIRepotiroy {
     public static let noop = Self(
         getRegions: {
             return Result.success([Region.sample])
@@ -22,7 +22,7 @@ extension ApiRepotiroy {
         getRegion:{ _ in
             return Result.success(Region.sample)
         },
-        putRegion: { _,_ in
+        putRegion: { _ in
             return Result.success("Success")
         },
         getDistricts: { _ in
@@ -31,61 +31,57 @@ extension ApiRepotiroy {
         getDistrict: { _ in
             return Result.success(PublicDistrict.sample)
         },
-        postDistrict: { _,_,_,_ in
+        postDistrict: { _,_,_ in
             return Result.success("Success")
         },
-        putDistrict: { _,_ in
+        putDistrict: { _ in
             return Result.success("Success")
         },
-        getTool: { _,_ in
+        getTool: { _ in
             return Result.success(DistrictTool.sample)
         },
-        getRoutes: { _,_ in
+        getRoutes: { _ in
             let summaries = routes.map{ RouteSummary(from: RouteInfo(from: $0, name: "城北町")) }
             return Result.success(summaries)
         },
-        getRoute: { id, _  in
+        getRoute: { id  in
             let route = routes.filter{ $0.id == id }.first ?? Route.sample
             return Result.success( RouteInfo(from: route, name: "城北町") )
         },
-        getCurrentRoute: { _,_ in
+        getCurrentRoute: { _ in
             let route = routes.first ?? Route.sample
-            return Result.success(RouteInfo(from: route, name: "城北町"))
+            return Result.success(CurrentResponce(districtId: "ID", districtName: "Name", routes: [RouteSummary.sample], current: RouteInfo.sample, location: LocationInfo.sample))
         },
-        getRouteIds: {_ in
+        getRouteIds: {
             return Result.success(["id"])
         },
-        postRoute: { route,_ in
+        postRoute: { route in
             routes.append(route)
             return Result.success("Success")
         },
-        putRoute: { route,_ in
+        putRoute: { route in
             if let index = routes.firstIndex(where: { $0.id == route.id }) {
                 routes[index] = route
             }
             return Result.success("Success")
         },
-        deleteRoute: { id, _  in
+        deleteRoute: { id  in
             if let index = routes.firstIndex(where: { $0.id == id }) {
                 routes.remove(at: index)
             }
             return Result.success("Success")
         },
-        getLocation: { _,_ in
+        getLocation: { _ in
             return Result.success(LocationInfo.sample)
         },
-        getLocations: { _,_ in
+        getLocations: { _ in
             return Result.success([LocationInfo.sample])
         },
-        putLocation: { _,_ in
+        putLocation: { _ in
             return Result.success("Success")
         },
-        deleteLocation: { _,_ in
+        deleteLocation: { _ in
             return Result.success("Success")
-        },
-        getSegmentCoordinate: { start, end in
-            let mid = Coordinate(latitude: (start.latitude + end.latitude)/2, longitude: (start.latitude + end.latitude)/2)
-            return Result.success([start, mid, end])
         }
     )
 }

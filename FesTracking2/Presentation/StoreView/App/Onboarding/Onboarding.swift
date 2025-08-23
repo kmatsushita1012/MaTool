@@ -29,8 +29,8 @@ struct OnboardingFeature {
         case externalGuestTapped
         case adminTapped
         case districtSelected(PublicDistrict)
-        case regionsReceived(Result<[Region], ApiError>)
-        case districtsReceived(Result<[PublicDistrict], ApiError>)
+        case regionsReceived(Result<[Region], APIError>)
+        case districtsReceived(Result<[PublicDistrict], APIError>)
     }
     
     @Dependency(\.apiRepository) var apiRepository
