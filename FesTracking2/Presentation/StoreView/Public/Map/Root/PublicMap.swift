@@ -83,6 +83,7 @@ struct PublicMap{
                 }
             case .routePrepared(.success(let value)):
                 let id = value.districtId
+                let name = value.districtName
                 let routes = value.routes
                 let current = value.current
                 let location = value.location
@@ -99,6 +100,7 @@ struct PublicMap{
                 state.destination = .route(
                     PublicRoute.State(
                         id: id,
+                        name: name,
                         routes: routes,
                         selectedRoute: current,
                         location: location,
@@ -111,6 +113,7 @@ struct PublicMap{
                 state.destination = .route(
                     PublicRoute.State(
                         id: state.selectedContent.id,
+                        name: state.selectedContent.name,
                         mapRegion: state.$mapRegion
                     )
                 )
@@ -120,6 +123,7 @@ struct PublicMap{
                 state.destination = .route(
                     PublicRoute.State(
                         id: state.selectedContent.id,
+                        name: state.selectedContent.name,
                         mapRegion: state.$mapRegion
                     )
                 )
@@ -191,6 +195,15 @@ extension PublicMap.Content: Identifiable,Hashable  {
         }
     }
     
+    var name: String {
+        switch self {
+        case .locations(_, let name, _):
+            return id
+        case .route(_, let name, _):
+            return name
+        }
+    }
+    
     var text: String {
         switch self {
         case .locations:
@@ -247,6 +260,7 @@ extension PublicMap.State {
         self.destination = .route(
             PublicRoute.State(
                 id: id,
+                name: selected.name,
                 routes: routes,
                 selectedRoute: current,
                 location: location,
