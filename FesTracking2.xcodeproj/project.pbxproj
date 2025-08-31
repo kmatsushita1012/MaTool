@@ -87,6 +87,7 @@
 		29A1C21D2E28D50C0036F221 /* ResetPasswordStoreView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29A1C21C2E28D5050036F221 /* ResetPasswordStoreView.swift */; };
 		29A1C21F2E28D88E0036F221 /* UpdateEmailStoreView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29A1C21E2E28D8870036F221 /* UpdateEmailStoreView.swift */; };
 		29A1C2212E291A470036F221 /* UpdateEmailResult.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29A1C2202E291A320036F221 /* UpdateEmailResult.swift */; };
+		29A2E5752E5D68F40012D944 /* Entity+.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29A2E5742E5D68F00012D944 /* Entity+.swift */; };
 		29A385162DD1B521008A1D08 /* AdminRegionDistrictList.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29A385152DD1B517008A1D08 /* AdminRegionDistrictList.swift */; };
 		29A385182DD1B59E008A1D08 /* AdminRegionDistrictCreate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29A385172DD1B595008A1D08 /* AdminRegionDistrictCreate.swift */; };
 		29A3851A2DD1B781008A1D08 /* AdminRegionDistrictListStoreView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29A385192DD1B778008A1D08 /* AdminRegionDistrictListStoreView.swift */; };
@@ -273,6 +274,7 @@
 		29A1C21C2E28D5050036F221 /* ResetPasswordStoreView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ResetPasswordStoreView.swift; sourceTree = "<group>"; };
 		29A1C21E2E28D8870036F221 /* UpdateEmailStoreView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UpdateEmailStoreView.swift; sourceTree = "<group>"; };
 		29A1C2202E291A320036F221 /* UpdateEmailResult.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UpdateEmailResult.swift; sourceTree = "<group>"; };
+		29A2E5742E5D68F00012D944 /* Entity+.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Entity+.swift"; sourceTree = "<group>"; };
 		29A385152DD1B517008A1D08 /* AdminRegionDistrictList.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdminRegionDistrictList.swift; sourceTree = "<group>"; };
 		29A385172DD1B595008A1D08 /* AdminRegionDistrictCreate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdminRegionDistrictCreate.swift; sourceTree = "<group>"; };
 		29A385192DD1B778008A1D08 /* AdminRegionDistrictListStoreView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdminRegionDistrictListStoreView.swift; sourceTree = "<group>"; };
@@ -474,6 +476,7 @@
 			children = (
 				296795D32DA4FEFD008D3CE1 /* PresentationUtils.swift */,
 				2993C81F2DD0704B000D0E1A /* Bindings.swift */,
+				29A2E5742E5D68F00012D944 /* Entity+.swift */,
 			);
 			path = Utils;
 			sourceTree = "<group>";
@@ -1620,6 +1623,7 @@
 				29CBB3412E04388D006687A3 /* AuthService.swift in Sources */,
 				29F531902E545F50003BA416 /* APIClient.swift in Sources */,
 				292D0B8D2DB0CB2700176E51 /* AdminPerformanceEdit.swift in Sources */,
+				29A2E5752E5D68F40012D944 /* Entity+.swift in Sources */,
 				29B1599A2DF1888900F469A9 /* DistrictTool.swift in Sources */,
 				29DF09C62DCC9DFB00489DB8 /* InfoList.swift in Sources */,
 				299AD5942E04F6AE007ACBC4 /* SignInResult.swift in Sources */,
