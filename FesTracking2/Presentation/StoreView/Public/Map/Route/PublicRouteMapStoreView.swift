@@ -10,24 +10,54 @@ import ComposableArchitecture
 
 struct PublicRouteMapStoreView: View {
     @Bindable var store: StoreOf<PublicRoute>
+    @StateObject var replayController: ReplayController
+    
+    init(store: StoreOf<PublicRoute>) {
+        self.store = store
+        _replayController = StateObject(
+            wrappedValue: ReplayController(
+                name: store.name,
+                stepDistance: 10,
+                interval: 0.1,
+                onEnd: { store.send(.replayEnded) }
+            )
+        )
+    }
+    
+    var float: FloatAnnotationProtocol? {
+        if store.replay.isRunning {
+            return replayController.annotation
+        } else if let location = store.location {
+            return FloatAnnotation(location: location)
+        } else {
+            return nil
+        }
+    }
+    
     
     var body: some View {
         ZStack{
             PublicRouteMap(
-                points: store.points,
-                segments: store.segments,
-                location: store.location,
+                points: store.pinPoints,
+                polylines: store.points?.pair,
+                float: float,
+                region: $store.mapRegion,
                 pointTapped: { store.send(.pointTapped($0))},
-                locationTapped: { store.send(.locationTapped) },
-                region: $store.mapRegion
+                locationTapped: { store.send(.locationTapped) }
             )
+            .equatable()
+            .ignoresSafeArea(edges: .bottom)
             VStack{
                 Spacer()
-                HStack{
-                    Spacer()
+                HStack(spacing: 16){
+                    if store.replay.isRunning {
+                        slider()
+                    }else{
+                        Spacer()
+                    }
                     buttons()
-                        .padding()
                 }
+                .padding()
             }
             VStack{
                 menu()
@@ -36,6 +66,7 @@ struct PublicRouteMapStoreView: View {
             }
             .tapOutside(isShown: $store.isMenuExpanded)
         }
+        .alert($store.scope(state: \.alert, action: \.alert))
         .sheet(item: $store.detail) { detail in
             switch detail{
             case .point(let item):
@@ -45,8 +76,10 @@ struct PublicRouteMapStoreView: View {
                 LocationView(item: item)
                     .presentationDetents([.fraction(0.3), .medium, .large])
             }
-            
         }
+        .onAppear{ updateReplay() }
+        .onChange(of: store.route) { updateReplay() }
+        .onChange(of: store.replay) { updateReplay() }
     }
     
     @ViewBuilder
@@ -86,10 +119,13 @@ struct PublicRouteMapStoreView: View {
                 store.send(.floatFocusTapped)
             }
             Divider()
-            FloatingIconButton(icon: "point.bottomleft.forward.to.arrow.triangle.scurvepath.fill"){
-                
+            FloatingIconButton(
+                icon: store.replay.isRunning
+                ? "stop.circle"
+                : "point.bottomleft.forward.to.arrow.triangle.scurvepath.fill"
+            ){
+                store.send(.replayTapped)
             }
-            .disabled(true)
         }
         .padding(8)
         .fixedSize()
@@ -99,5 +135,32 @@ struct PublicRouteMapStoreView: View {
                 .shadow(radius: 8)
         )
     }
+    
+    @ViewBuilder
+    func slider() -> some View {
+        Slider(
+            value: Binding(
+                get: { replayController.seekValue },
+                set: { store.send(.didSeek($0)) }
+            )
+        )
+        .padding(.horizontal, 16)
+        .background(
+            RoundedRectangle(cornerRadius: 32)
+                .fill(Color.white.opacity(0.8))
+        )
+    }
+    
+    func updateReplay() {
+        switch store.replay {
+        case .initial:
+            replayController.prepare(coordinates: store.points?.map{ $0.coordinate })
+        case .start:
+            replayController.start()
+        case let .seek(progress):
+            replayController.seek(to: progress)
+        case .stop:
+            replayController.stop()
+        }
+    }
 }
-
