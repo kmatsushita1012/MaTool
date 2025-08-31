@@ -1,6 +1,0 @@
-framework module Pods_FesTracking2Tests {
-  umbrella header "Pods-FesTracking2Tests-umbrella.h"
-
-  export *
-  module * { export * }
-}
