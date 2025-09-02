@@ -18,6 +18,7 @@ struct PublicLocationsMapStoreView: View {
                 onTap: { store.send(.locationTapped($0)) },
                 region: $store.mapRegion
             )
+            .ignoresSafeArea(edges: .bottom)
             VStack{
                 Spacer()
                 HStack{
