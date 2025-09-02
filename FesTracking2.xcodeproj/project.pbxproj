@@ -62,7 +62,7 @@
 		299A06AD2DB142A200E76898 /* AdminLocationStoreView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 299A06AC2DB1429E00E76898 /* AdminLocationStoreView.swift */; };
 		299A51622DA942CF00B24828 /* AdminRouteInfoStoreView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 299A51612DA942C100B24828 /* AdminRouteInfoStoreView.swift */; };
 		299A51642DA944DB00B24828 /* AdminRouteInfo.swift in Sources */ = {isa = PBXBuildFile; fileRef = 299A51632DA944D400B24828 /* AdminRouteInfo.swift */; };
-		299AD5942E04F6AE007ACBC4 /* SignInResult.swift in Sources */ = {isa = PBXBuildFile; fileRef = 299AD5932E04F6AA007ACBC4 /* SignInResult.swift */; };
+		299AD5942E04F6AE007ACBC4 /* Result.swift in Sources */ = {isa = PBXBuildFile; fileRef = 299AD5932E04F6AA007ACBC4 /* Result.swift */; };
 		299AD5962E04F9A3007ACBC4 /* AuthResponce.swift in Sources */ = {isa = PBXBuildFile; fileRef = 299AD5952E04F994007ACBC4 /* AuthResponce.swift */; };
 		299BBF272DC60C480092C4D9 /* ToggleItemView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 299BBF262DC60C450092C4D9 /* ToggleItemView.swift */; };
 		299BBF292DC611310092C4D9 /* PublicRouteMapStoreView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 299BBF282DC6112B0092C4D9 /* PublicRouteMapStoreView.swift */; };
@@ -86,7 +86,6 @@
 		29A1C21A2E28CC6E0036F221 /* ChangePasswordStoreView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29A1C2192E28CC670036F221 /* ChangePasswordStoreView.swift */; };
 		29A1C21D2E28D50C0036F221 /* ResetPasswordStoreView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29A1C21C2E28D5050036F221 /* ResetPasswordStoreView.swift */; };
 		29A1C21F2E28D88E0036F221 /* UpdateEmailStoreView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29A1C21E2E28D8870036F221 /* UpdateEmailStoreView.swift */; };
-		29A1C2212E291A470036F221 /* UpdateEmailResult.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29A1C2202E291A320036F221 /* UpdateEmailResult.swift */; };
 		29A2E5752E5D68F40012D944 /* Entity+.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29A2E5742E5D68F00012D944 /* Entity+.swift */; };
 		29A2E5772E5D6CAD0012D944 /* ReplayController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29A2E5762E5D6CA80012D944 /* ReplayController.swift */; };
 		29A385162DD1B521008A1D08 /* AdminRegionDistrictList.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29A385152DD1B517008A1D08 /* AdminRegionDistrictList.swift */; };
@@ -250,7 +249,7 @@
 		299A06AC2DB1429E00E76898 /* AdminLocationStoreView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdminLocationStoreView.swift; sourceTree = "<group>"; };
 		299A51612DA942C100B24828 /* AdminRouteInfoStoreView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdminRouteInfoStoreView.swift; sourceTree = "<group>"; };
 		299A51632DA944D400B24828 /* AdminRouteInfo.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdminRouteInfo.swift; sourceTree = "<group>"; };
-		299AD5932E04F6AA007ACBC4 /* SignInResult.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SignInResult.swift; sourceTree = "<group>"; };
+		299AD5932E04F6AA007ACBC4 /* Result.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Result.swift; sourceTree = "<group>"; };
 		299AD5952E04F994007ACBC4 /* AuthResponce.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthResponce.swift; sourceTree = "<group>"; };
 		299BBF262DC60C450092C4D9 /* ToggleItemView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ToggleItemView.swift; sourceTree = "<group>"; };
 		299BBF282DC6112B0092C4D9 /* PublicRouteMapStoreView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PublicRouteMapStoreView.swift; sourceTree = "<group>"; };
@@ -274,7 +273,6 @@
 		29A1C2192E28CC670036F221 /* ChangePasswordStoreView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChangePasswordStoreView.swift; sourceTree = "<group>"; };
 		29A1C21C2E28D5050036F221 /* ResetPasswordStoreView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ResetPasswordStoreView.swift; sourceTree = "<group>"; };
 		29A1C21E2E28D8870036F221 /* UpdateEmailStoreView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UpdateEmailStoreView.swift; sourceTree = "<group>"; };
-		29A1C2202E291A320036F221 /* UpdateEmailResult.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UpdateEmailResult.swift; sourceTree = "<group>"; };
 		29A2E5742E5D68F00012D944 /* Entity+.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Entity+.swift"; sourceTree = "<group>"; };
 		29A2E5762E5D6CA80012D944 /* ReplayController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReplayController.swift; sourceTree = "<group>"; };
 		29A385152DD1B517008A1D08 /* AdminRegionDistrictList.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdminRegionDistrictList.swift; sourceTree = "<group>"; };
@@ -639,8 +637,7 @@
 			isa = PBXGroup;
 			children = (
 				292D10892DCDD6C50022D8A0 /* UserRole.swift */,
-				299AD5932E04F6AA007ACBC4 /* SignInResult.swift */,
-				29A1C2202E291A320036F221 /* UpdateEmailResult.swift */,
+				299AD5932E04F6AA007ACBC4 /* Result.swift */,
 			);
 			path = Auth;
 			sourceTree = "<group>";
@@ -1629,7 +1626,7 @@
 				29A2E5752E5D68F40012D944 /* Entity+.swift in Sources */,
 				29B1599A2DF1888900F469A9 /* DistrictTool.swift in Sources */,
 				29DF09C62DCC9DFB00489DB8 /* InfoList.swift in Sources */,
-				299AD5942E04F6AE007ACBC4 /* SignInResult.swift in Sources */,
+				299AD5942E04F6AE007ACBC4 /* Result.swift in Sources */,
 				299A06AA2DB13BAC00E76898 /* AdminDistrictTop.swift in Sources */,
 				29DAB0702DA1623C005E94BA /* AWSAuthProvider.swift in Sources */,
 				2997C2ED2D79CA4B0032566B /* AdminDistrictEdit.swift in Sources */,
@@ -1654,7 +1651,6 @@
 				29460A0B2D8C28AC0097CAA1 /* LogIn.swift in Sources */,
 				291D91992DCDAD45007E5A80 /* AdminExportableMapView.swift in Sources */,
 				29CB077D2DAF8B970009A47D /* AdminBaseEditStoreView.swift in Sources */,
-				29A1C2212E291A470036F221 /* UpdateEmailResult.swift in Sources */,
 				29AD86502DB210F500C3E8B2 /* AdminLocationMapView.swift in Sources */,
 				299BBF272DC60C480092C4D9 /* ToggleItemView.swift in Sources */,
 				295EA2D42DEE9E81006CDE08 /* CardView.swift in Sources */,
