@@ -14,24 +14,27 @@ extension AuthProvider: DependencyKey {
         let timeout = 5
         return Self(
             initialize: {
-                do {
-                    let result = try await withTimeout(seconds: timeout) {
-                        await withCheckedContinuation { continuation in
-                            AWSMobileClient.default().initialize { userState, error in
-                                if let error = error {
-                                    continuation.resume(returning: Result<Empty, AuthError>.failure(error.toAuthError()))
-                                } else {
-                                    continuation.resume(returning: Result<Empty, AuthError>.success(Empty()))
-                                }
+                guard let result = (try? await withTimeout(seconds: timeout) {
+                    await withCheckedContinuation { continuation in
+                        AWSMobileClient.default().initialize { userState, error in
+                            if let error = error {
+                                continuation.resume(returning: Result<InitializeResult, AuthError>.failure(error.toAuthError()))
+                                return
+                            }
+                            switch userState {
+                            case .signedIn:
+                                continuation.resume(returning: Result<InitializeResult, AuthError>.success(.signedIn))
+                                return
+                            default:
+                                continuation.resume(returning: Result<InitializeResult, AuthError>.success(.signedOut))
+                                return
                             }
                         }
                     }
-                    return result
-                } catch let error as AuthError {
-                    return .failure(error)
-                } catch {
+                }) else {
                     return .failure(.timeout("initialize timeout"))
                 }
+                return result
             },
             signIn: { username, password in
                 do {
@@ -109,10 +112,13 @@ extension AuthProvider: DependencyKey {
                                 switch role {
                                 case "region":
                                     continuation.resume(returning: Result<UserRole, AuthError>.success(.region(username)))
+                                    return
                                 case "district":
                                     continuation.resume(returning: Result<UserRole, AuthError>.success(.district(username)))
+                                    return
                                 default:
                                     continuation.resume(returning: Result<UserRole, AuthError>.success(.guest))
+                                    return
                                 }
                             }
                         }
