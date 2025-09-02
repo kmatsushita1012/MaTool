@@ -90,9 +90,6 @@ struct HomeStoreView: View {
         .sheet(item: $store.status) { status in
             AppStatusModal(status)
         }
-        .onAppear(){
-            store.send(.onAppear)
-        }
     }
     
     @ViewBuilder

@@ -25,7 +25,7 @@ struct Home {
     @ObservableState
     struct State: Equatable {
         var userRole: UserRole = .guest
-        var isAuthLoading: Bool = true
+        var isAuthLoading: Bool = false
         var isDestinationLoading: Bool = false
         var isLoading: Bool {
             isDestinationLoading
@@ -39,7 +39,7 @@ struct Home {
     @CasePathable
     enum Action: Equatable,BindableAction {
         case binding(BindingAction<Home.State>)
-        case onAppear
+        case initialize
         case mapTapped
         case infoTapped
         case adminTapped
@@ -81,7 +81,7 @@ struct Home {
             switch action {
             case .binding:
                 return .none
-            case .onAppear:
+            case .initialize:
                 state.isAuthLoading = true
                 return .merge(
                     .run { send in
