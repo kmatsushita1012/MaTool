@@ -5,7 +5,6 @@
 //  Created by 松下和也 on 2025/06/19.
 //
 
-import AWSMobileClient
 import Dependencies
 
 struct AuthProvider: Sendable {
@@ -13,7 +12,7 @@ struct AuthProvider: Sendable {
     var signIn: @Sendable (_ username: String, _ password: String) async -> SignInResponse
     var confirmSignIn: @Sendable (_ newPassword: String) async -> Result<Empty, AuthError>
     var getUserRole: @Sendable () async -> Result<UserRole, AuthError>
-    var getTokens: @Sendable () async -> Result<Tokens, AuthError>
+    var getTokens: @Sendable () async -> Result<String, AuthError>
     var signOut: @Sendable () async -> Result<Empty, AuthError>
     var changePassword: @Sendable (_ current: String, _ new: String) async -> Result<Empty,AuthError>
     var resetPassword: @Sendable (_ username: String) async -> Result<Empty,AuthError>
