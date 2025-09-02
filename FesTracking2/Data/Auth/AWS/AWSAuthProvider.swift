@@ -14,24 +14,24 @@ extension AuthProvider: DependencyKey {
         let timeout = 5
         return Self(
             initialize: {
-                guard let result = try? await withTimeout(seconds: timeout) {
-                        await withCheckedContinuation { continuation in
-                            AWSMobileClient.default().initialize { userState, error in
-                                if let error = error {
-                                    continuation.resume(returning: Result<InitializeResult, AuthError>.failure(error.toAuthError()))
-                                    return
-                                }
-                                switch userState {
-                                case .signedIn:
-                                    continuation.resume(returning: Result<InitializeResult, AuthError>.success(.signedIn))
-                                    return
-                                default:
-                                    continuation.resume(returning: Result<InitializeResult, AuthError>.success(.signedOut))
-                                    return
-                                }
+                guard let result = (try? await withTimeout(seconds: timeout) {
+                    await withCheckedContinuation { continuation in
+                        AWSMobileClient.default().initialize { userState, error in
+                            if let error = error {
+                                continuation.resume(returning: Result<InitializeResult, AuthError>.failure(error.toAuthError()))
+                                return
+                            }
+                            switch userState {
+                            case .signedIn:
+                                continuation.resume(returning: Result<InitializeResult, AuthError>.success(.signedIn))
+                                return
+                            default:
+                                continuation.resume(returning: Result<InitializeResult, AuthError>.success(.signedOut))
+                                return
                             }
                         }
-                } else {
+                    }
+                }) else {
                     return .failure(.timeout("initialize timeout"))
                 }
                 return result
