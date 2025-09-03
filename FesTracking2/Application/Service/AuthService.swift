@@ -73,7 +73,6 @@ actor AuthService {
         case .success(let value):
             return value.accessToken?.tokenString
         case .failure:
-            let _ = await authProvider.signOut()
             return nil
         }
     }
