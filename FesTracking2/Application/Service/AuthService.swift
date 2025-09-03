@@ -14,40 +14,34 @@ actor AuthService {
     @Dependency(\.authProvider) var authProvider
     
     func initialize() async -> Result<UserRole,AuthError> {
-        let initializeResult = await authProvider.initialize()
-        if case .failure(.timeout(let message)) = initializeResult{
+        let result = await authProvider.initialize()
+        switch result {
+        case .failure(let error):
             let _ = await authProvider.signOut()
-            return .failure(.timeout(message))
-        }else if case .failure(let error) = initializeResult {
             return .failure(error)
-        }
-        let userRoleResult = await authProvider.getUserRole()
-        switch userRoleResult {
-        case .success(let value):
-            userRole = value
-            return .success(value)
-        case .failure( _):
-            let _ = await authProvider.signOut()
+        case .success(.signedOut):
             return .success(.guest)
+        case .success(.signedIn):
+            return await getUserRole()
         }
     }
     
     func signIn(_ username: String, password: String) async -> SignInResult {
-        let signInResult = await authProvider.signIn(username, password)
-        if case .failure(let error) = signInResult {
-            let _ = await authProvider.signOut()
+        let _ = await authProvider.signOut()
+        let result = await authProvider.signIn(username, password)
+        switch result {
+        case .failure(let error):
             return .failure(error)
-        }else if case .newPasswordRequired = signInResult{
+        case .newPasswordRequired:
             return .newPasswordRequired
-        }
-        let userRoleResult = await authProvider.getUserRole()
-        switch userRoleResult {
-        case .success(let value):
-            userRole = value
-            return .success(value)
-        case .failure( _):
-            let _ = await authProvider.signOut()
-            return .success(.guest)
+        case .success:
+            let userRoleResult = await getUserRole()
+            switch userRoleResult{
+            case .success(let userRole):
+                return .success(userRole)
+            case .failure(let error):
+                return .failure(error)
+            }
         }
     }
     
@@ -79,7 +73,6 @@ actor AuthService {
         case .success(let value):
             return value.accessToken?.tokenString
         case .failure:
-            let _ = await authProvider.signOut()
             return nil
         }
     }
@@ -112,6 +105,18 @@ actor AuthService {
         let hasLowercase = password.range(of: "[a-z]", options: .regularExpression) != nil
 
         return lengthRule && hasNumber && hasUppercase && hasLowercase
+    }
+    
+    private func getUserRole() async -> Result<UserRole, AuthError> {
+        let userRoleResult = await authProvider.getUserRole()
+        switch userRoleResult {
+        case .success(let value):
+            userRole = value
+            return .success(value)
+        case .failure( _):
+            let _ = await authProvider.signOut()
+            return .success(.guest)
+        }
     }
 }
 
