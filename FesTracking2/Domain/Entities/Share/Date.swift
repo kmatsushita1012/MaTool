@@ -16,10 +16,18 @@ extension Date {
             return formatter.date(from: "2025/10/12 12:00:00")!
         }()
     
-    func text (year:Bool = true) -> String {
+    func text (year:Bool) -> String {
         let formatter = DateFormatter()
         // 年を含めるかどうかでフォーマットを切り替える
         formatter.dateFormat = year ? "yyyy/MM/dd HH:mm:ss" : "MM/dd HH:mm:ss"
+        formatter.locale = Locale(identifier: "ja_JP")
+        return formatter.string(from: self)
+    }
+    
+    func text(of format: String = "yyyy/MM/dd HH:mm:ss") -> String {
+        let formatter = DateFormatter()
+        // 年を含めるかどうかでフォーマットを切り替える
+        formatter.dateFormat = format
         formatter.locale = Locale(identifier: "ja_JP")
         return formatter.string(from: self)
     }
