@@ -16,10 +16,8 @@ actor AuthService {
     func initialize() async -> Result<UserRole,AuthError> {
         let result = await authProvider.initialize()
         switch result {
-        case .failure(.timeout(let message)):
-            let _ = await authProvider.signOut()
-            return .failure(.timeout(message))
         case .failure(let error):
+            let _ = await authProvider.signOut()
             return .failure(error)
         case .success(.signedOut):
             return .success(.guest)
