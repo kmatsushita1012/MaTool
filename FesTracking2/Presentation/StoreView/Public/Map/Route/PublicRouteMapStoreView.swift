@@ -116,7 +116,6 @@ struct PublicRouteMapStoreView: View {
             FloatingIconButton(icon: "mappin.and.ellipse"){
                 store.send(.floatFocusTapped)
             }
-            .disabled(!store.isFloatFocusEnable)
             Divider()
             FloatingIconButton(
                 icon: store.replay.isRunning

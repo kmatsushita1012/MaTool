@@ -55,14 +55,14 @@ struct PublicMap{
             switch action {
             case .onAppear:
                 if case .route(let routeState) = state.destination,
-                    routeState.items == nil,
+                   routeState.items?.isEmpty ?? true,
                     routeState.route == nil,
                     routeState.location == nil {
                     state.alert = Alert.notice("配信停止中です。")
                 } else if case .locations(let locationState) = state.destination,
                           locationState.locations.isEmpty {
                 state.alert = Alert.notice("配信停止中です。")
-            }
+                }
                 return .run{ send in
                     locationClient.startTracking()
                 }
@@ -87,7 +87,7 @@ struct PublicMap{
                 let routes = value.routes
                 let current = value.current
                 let location = value.location
-                if routes == nil && current == nil && location == nil {
+                if  routes?.isEmpty ?? true && current == nil && location == nil {
                     state.alert = Alert.notice("配信停止中です。")
                 }
                 let mapRegion = makeRegion(
