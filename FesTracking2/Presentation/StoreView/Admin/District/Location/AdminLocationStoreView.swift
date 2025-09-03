@@ -40,7 +40,10 @@ struct LocationAdminView: View {
                 )
                 .padding(0)
             if !store.history.isEmpty{
-                Section(header: Text("履歴")) {
+                Section(
+                    header: Text("履歴"),
+                    footer: Text("送信失敗が続く場合は、アプリの再起動や再ログインをお試しください。")
+                ) {
                     ForEach(store.history.suffix(10).reversed(), id: \.self) { history in
                         Text(history.text)
                             .font(.body)
