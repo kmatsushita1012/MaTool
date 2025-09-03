@@ -27,10 +27,10 @@ actor AuthService {
     }
     
     func signIn(_ username: String, password: String) async -> SignInResult {
+        let _ = await authProvider.signOut()
         let result = await authProvider.signIn(username, password)
         switch result {
         case .failure(let error):
-            let _ = await authProvider.signOut()
             return .failure(error)
         case .newPasswordRequired:
             return .newPasswordRequired
