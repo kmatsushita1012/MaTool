@@ -41,8 +41,7 @@ struct PublicLocationsMap: UIViewRepresentable {
         
         //ロケーション追加
         for location in items {
-            let annotation = FloatAnnotation(location: location)
-            annotation.coordinate = location.coordinate.toCL()
+            let annotation = FloatCurrentAnnotation(location: location)
             mapView.addAnnotation(annotation)
         }
         
@@ -64,15 +63,15 @@ struct PublicLocationsMap: UIViewRepresentable {
                 return nil
             }
             
-            if let floatAnnotation = annotation as? FloatAnnotation {
-                return FloatAnnotationView.view(for: mapView, annotation: floatAnnotation)
+            if let FloatCurrentAnnotation = annotation as? FloatCurrentAnnotation {
+                return FloatAnnotationView.view(for: mapView, annotation: FloatCurrentAnnotation)
             }
 
             return nil
         }
         
         func mapView(_ mapView: MKMapView, didSelect view: MKAnnotationView) {
-            if let  annotation = view.annotation as? FloatAnnotation {
+            if let  annotation = view.annotation as? FloatCurrentAnnotation {
                 parent.onTap(annotation.location)
             }
         }
