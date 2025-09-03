@@ -33,7 +33,16 @@ struct PublicRoute {
         let items: [RouteSummary]?
         var selectedItem: RouteSummary?
         var route: RouteInfo?
-        var location: LocationInfo?
+        var location: LocationInfo? {
+            didSet {
+                if let location {
+                    floatAnnotation = FloatCurrentAnnotation(location: location)
+                } else {
+                    floatAnnotation = nil
+                }
+            }
+        }
+        var floatAnnotation: FloatCurrentAnnotation?
         var isMenuExpanded: Bool = false
         @Shared var mapRegion: MKCoordinateRegion
         var detail: Detail?
@@ -56,6 +65,9 @@ struct PublicRoute {
             }
             self.route = selectedRoute
             self.location = location
+            if let location {
+                floatAnnotation = FloatCurrentAnnotation(location: location)
+            }
             self._mapRegion = mapRegion
         }
     }
@@ -107,7 +119,6 @@ struct PublicRoute {
                 return .none
             case .floatFocusTapped:
                 return .run {[id = state.id] send in
-                    
                     let result = await apiRepository.getLocation(id)
                     await send(.locationReceived(result))
                 }
@@ -180,8 +191,8 @@ extension PublicRoute.State {
         }.sorted()
     }
     
-    var floatFocusEnable: Bool {
-        location != nil
+    var isReplayEnable: Bool {
+        route != nil
     }
 }
 

@@ -13,7 +13,7 @@ struct PublicRouteMap: UIViewRepresentable {
     
     let points: [Point]?
     let polylines: [Pair<Point>]?
-    let float: FloatAnnotationProtocol?
+    let float: FloatAnnotation?
     @Binding var region: MKCoordinateRegion
     let pointTapped: (Point)->Void
     let locationTapped: ()->Void
@@ -32,16 +32,16 @@ struct PublicRouteMap: UIViewRepresentable {
     }
 
     func updateUIView(_ mapView: MKMapView, context: Context) {
+        updatePointAnnotations(mapView: mapView, points: points?.map{ $0.annotation() })
+        updatePolyline(mapView: mapView, polylines: polylines?.map{ $0.polyline })
+        updateFloatAnnotation(mapView: mapView, float: float)
+        
         let epsilon: CLLocationDegrees = 0.00001
         let latDiff = abs(region.center.latitude - mapView.region.center.latitude)
         let lonDiff = abs(region.center.longitude - mapView.region.center.longitude)
         if latDiff > epsilon || lonDiff > epsilon {
             mapView.setRegion(region, animated: true)
         }
-        
-        updatePointAnnotations(mapView: mapView, points: points?.map{ $0.annotation() })
-        updatePolyline(mapView: mapView, polylines: polylines?.map{ $0.polyline })
-        updateFloatAnnotation(mapView: mapView, float: float)
     }
     
     //MARK: - Update
@@ -68,13 +68,15 @@ struct PublicRouteMap: UIViewRepresentable {
         mapView.removeOverlays(toRemovePoly)
     }
     
-    func updateFloatAnnotation(mapView: MKMapView, float: FloatAnnotationProtocol?) {
-        let old = mapView.annotations.compactMap { $0 as? FloatAnnotationProtocol }
-        if let float, !old.contains(where: { $0 === float }) {
+    func updateFloatAnnotation(mapView: MKMapView, float: FloatAnnotation?) {
+        let old = mapView.annotations.compactMap { $0 as? FloatAnnotation }
+        let toRemove = old.filter { $0 != float }
+        if let float, !old.contains(where: { $0 == float }) {
+            mapView.removeAnnotations(toRemove)
             mapView.addAnnotation(float)
+        } else {
+            mapView.removeAnnotations(toRemove)
         }
-        let toRemove = old.filter { $0 !== float }
-        mapView.removeAnnotations(toRemove)
     }
 
 
@@ -93,8 +95,8 @@ struct PublicRouteMap: UIViewRepresentable {
             if let pointAnnotation = annotation as? PointAnnotation {
                 return PointAnnotationView.view(for: mapView, annotation: pointAnnotation)
             }
-            if let floatAnnotation = annotation as? FloatAnnotationProtocol {
-                return FloatAnnotationView.view(for: mapView, annotation: floatAnnotation)
+            if let FloatCurrentAnnotation = annotation as? FloatAnnotation {
+                return FloatAnnotationView.view(for: mapView, annotation: FloatCurrentAnnotation)
             }
             return nil
         }
@@ -107,7 +109,7 @@ struct PublicRouteMap: UIViewRepresentable {
             
             if let annotation = view.annotation as? PointAnnotation {
                 parent.pointTapped(annotation.point)
-            } else if view.annotation is FloatAnnotation {
+            } else if view.annotation is FloatCurrentAnnotation {
                 parent.locationTapped()
             }
         }

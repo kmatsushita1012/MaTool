@@ -207,6 +207,16 @@ struct Home {
                             locations: locations
                         )
                     )
+                case (.success(let region),
+                    .success(let districts),
+                    .failure(.forbidden(message: let message))):
+                    state.destination = .map(
+                        PublicMap.State(
+                            region: region,
+                            districts: districts,
+                            locations: []
+                        )
+                    )
                 case (.failure(let error), _, _),
                     (_, .failure(let error), _),
                     (_, _, .failure(let error)):
