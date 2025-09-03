@@ -191,10 +191,6 @@ extension PublicRoute.State {
         }.sorted()
     }
     
-    var isFloatFocusEnable: Bool {
-        location != nil
-    }
-    
     var isReplayEnable: Bool {
         route != nil
     }
