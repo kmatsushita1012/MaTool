@@ -17,6 +17,14 @@ struct APIClient: APIClientProtocol {
         self.base = base
         self.session = session
     }
+    
+    init(base: String, timeoutIntervalForRequest: TimeInterval = 10, timeoutIntervalForResource: TimeInterval = 30) {
+        self.base = base
+        let config = URLSessionConfiguration.default
+        config.timeoutIntervalForRequest = 10
+        config.timeoutIntervalForResource = 30
+        self.session = URLSession(configuration: config)
+    }
 
     func request(
         path: String,
@@ -115,6 +123,7 @@ struct APIClient: APIClientProtocol {
                 if (200...299).contains(http.statusCode) {
                     return .success(data)
                 } else {
+                    print("HTTP error: \(http.statusCode) - \(String(data: data, encoding: .utf8) ?? "No data")")
                     return .failure(NSError(domain: "HTTP Error", code: http.statusCode))
                 }
             }
@@ -122,5 +131,12 @@ struct APIClient: APIClientProtocol {
         } catch {
             return .failure(error)
         }
+    }
+    
+    static func withDefaultTimeout(base: String) -> APIClient {
+        let config = URLSessionConfiguration.default
+        config.timeoutIntervalForRequest = 10
+        config.timeoutIntervalForResource = 30
+        return APIClient(base: base, session: URLSession(configuration: config))
     }
 }

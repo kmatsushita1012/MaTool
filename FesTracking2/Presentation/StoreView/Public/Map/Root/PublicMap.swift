@@ -55,14 +55,14 @@ struct PublicMap{
             switch action {
             case .onAppear:
                 if case .route(let routeState) = state.destination,
-                    routeState.items == nil,
+                   routeState.items?.isEmpty ?? true,
                     routeState.route == nil,
                     routeState.location == nil {
                     state.alert = Alert.notice("配信停止中です。")
                 } else if case .locations(let locationState) = state.destination,
                           locationState.locations.isEmpty {
                 state.alert = Alert.notice("配信停止中です。")
-            }
+                }
                 return .run{ send in
                     locationClient.startTracking()
                 }
@@ -83,10 +83,11 @@ struct PublicMap{
                 }
             case .routePrepared(.success(let value)):
                 let id = value.districtId
+                let name = value.districtName
                 let routes = value.routes
                 let current = value.current
                 let location = value.location
-                if routes == nil && current == nil && location == nil {
+                if  routes?.isEmpty ?? true && current == nil && location == nil {
                     state.alert = Alert.notice("配信停止中です。")
                 }
                 let mapRegion = makeRegion(
@@ -99,6 +100,7 @@ struct PublicMap{
                 state.destination = .route(
                     PublicRoute.State(
                         id: id,
+                        name: name,
                         routes: routes,
                         selectedRoute: current,
                         location: location,
@@ -111,6 +113,7 @@ struct PublicMap{
                 state.destination = .route(
                     PublicRoute.State(
                         id: state.selectedContent.id,
+                        name: state.selectedContent.name,
                         mapRegion: state.$mapRegion
                     )
                 )
@@ -120,6 +123,7 @@ struct PublicMap{
                 state.destination = .route(
                     PublicRoute.State(
                         id: state.selectedContent.id,
+                        name: state.selectedContent.name,
                         mapRegion: state.$mapRegion
                     )
                 )
@@ -191,6 +195,15 @@ extension PublicMap.Content: Identifiable,Hashable  {
         }
     }
     
+    var name: String {
+        switch self {
+        case .locations(_, let name, _):
+            return id
+        case .route(_, let name, _):
+            return name
+        }
+    }
+    
     var text: String {
         switch self {
         case .locations:
@@ -247,6 +260,7 @@ extension PublicMap.State {
         self.destination = .route(
             PublicRoute.State(
                 id: id,
+                name: selected.name,
                 routes: routes,
                 selectedRoute: current,
                 location: location,
