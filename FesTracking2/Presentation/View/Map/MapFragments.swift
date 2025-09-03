@@ -72,20 +72,21 @@ extension PointAnnotationView {
     }
 }
 
-class FloatAnnotationProtocol: MKPointAnnotation {}
+class FloatAnnotation: MKPointAnnotation {
+}
 
-final class FloatAnnotation: FloatAnnotationProtocol {
+final class FloatCurrentAnnotation: FloatAnnotation {
     let location: LocationInfo
     
     init(location: LocationInfo) {
         self.location = location
         super.init()
         self.title = location.districtName
+        self.coordinate = location.coordinate.toCL()
     }
 }
 
-final class FloatReplayAnnotation: FloatAnnotationProtocol {
-    
+final class FloatReplayAnnotation: FloatAnnotation {
     init(name: String, coordinate: Coordinate) {
         super.init()
         self.title = name
@@ -101,50 +102,61 @@ final class FloatAnnotationView: MKMarkerAnnotationView {
     static let identifier = "FloatAnnotationView"
     override var annotation: MKAnnotation? {
         willSet {
-            canShowCallout = false
-            guard let baseImage = UIImage(systemName: "circle.circle.fill") else { return }
-
-            // サイズ拡大
-            let scale: CGFloat = 2
-            let newSize = CGSize(width: baseImage.size.width * scale,
-                                 height: baseImage.size.height * scale)
-
-            let imageView = UIImageView(image: baseImage)
-            imageView.bounds = CGRect(origin: .zero, size: newSize)
-            imageView.backgroundColor = .clear
-            imageView.tintColor = .red
-            
-            imageView.layer.shadowColor = UIColor.white.cgColor
-            imageView.layer.shadowOpacity = 0.8
-            imageView.layer.shadowOffset = CGSize(width: 0, height: 2)
-            imageView.layer.shadowRadius = 4
-            imageView.layer.masksToBounds = false
-            imageView.layer.shadowPath = UIBezierPath(ovalIn: imageView.bounds).cgPath
-
-            // レンダリング
-            let renderer = UIGraphicsImageRenderer(size: newSize)
-            let renderedImage = renderer.image { _ in
-                imageView.drawHierarchy(in: CGRect(origin: .zero, size: newSize), afterScreenUpdates: true)
-            }
-
-            image = renderedImage
-            
-            displayPriority = .required
-            zPriority = .max
-            canShowCallout = false
-            markerTintColor = .clear
-            glyphTintColor = .clear
-            glyphImage = nil
+            setUp()
         }
+    }
+    
+    init(_ annotation: FloatAnnotation?){
+        super.init(annotation: annotation, reuseIdentifier: Self.identifier)
+        setUp()
+    }
+    
+    @MainActor required init?(coder aDecoder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+    
+    private func setUp() {
+        guard let baseImage = UIImage(systemName: "circle.circle.fill") else { return }
+        let tintedImage = baseImage.withTintColor(.red, renderingMode: .alwaysOriginal)
+        
+        let shadowColor = UIColor.white.cgColor
+        let shadowOffset = CGSize(width: 0, height: 2)
+        let shadowRadius: CGFloat = 4
+
+        // サイズ拡大
+        let scale: CGFloat = 2
+        let newSize = CGSize(width: tintedImage.size.width * scale,
+                             height: tintedImage.size.height * scale)
+        // レンダリング
+        let renderer = UIGraphicsImageRenderer(size: newSize)
+        let renderedImage = renderer.image { context in
+            let cgContext = context.cgContext
+
+            cgContext.setShadow(
+                offset: shadowOffset,
+                blur: shadowRadius,
+                color: shadowColor
+            )
+            cgContext.scaleBy(x: 1, y: 1)
+            tintedImage.draw(in: CGRect(origin: .zero, size: newSize))
+        }
+
+        image = renderedImage
+        displayPriority = .required
+        zPriority = .max
+        canShowCallout = false
+        markerTintColor = .clear
+        glyphTintColor = .clear
+        glyphImage = nil
     }
 }
 
 extension FloatAnnotationView {
-    static func view(for mapView: MKMapView, annotation: FloatAnnotationProtocol) -> MKAnnotationView {
+    static func view(for mapView: MKMapView, annotation: FloatAnnotation) -> MKAnnotationView {
         var annotationView = mapView.dequeueReusableAnnotationView(withIdentifier: identifier) as? FloatAnnotationView
 
         if annotationView == nil {
-            annotationView = FloatAnnotationView(annotation: annotation, reuseIdentifier: identifier)
+            annotationView = FloatAnnotationView(annotation)
         } else {
             annotationView?.annotation = annotation
         }
@@ -173,3 +185,32 @@ final class PathPolyline: MKPolyline {
 }
 
 
+fileprivate extension UIImage {
+    /// 元の画像に指定されたシャドウを描画して imageWithShadow を返す
+    func imageWithShadow(
+        shadowColor: UIColor = .white,
+        shadowOffset: CGSize = CGSize(width: 0, height: 2),
+        shadowBlur: CGFloat = 4
+    ) -> UIImage? {
+        let scale = self.scale
+        let size = CGSize(width: self.size.width * scale, height: self.size.height * scale)
+        let format = UIGraphicsImageRendererFormat()
+        format.scale = scale
+        format.opaque = false
+
+        let renderer = UIGraphicsImageRenderer(size: size, format: format)
+        return renderer.image { context in
+            let cgContext = context.cgContext
+
+            cgContext.setShadow(
+                offset: shadowOffset,
+                blur: shadowBlur,
+                color: shadowColor.cgColor
+            )
+
+            // ピクセルスケールを反映した描画
+            cgContext.scaleBy(x: scale, y: scale)
+            self.draw(at: .zero)
+        }
+    }
+}
