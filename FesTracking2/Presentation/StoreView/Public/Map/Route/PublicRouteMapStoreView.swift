@@ -24,13 +24,11 @@ struct PublicRouteMapStoreView: View {
         )
     }
     
-    var float: FloatAnnotationProtocol? {
+    var floatAnnotation: FloatAnnotation? {
         if store.replay.isRunning {
             return replayController.annotation
-        } else if let location = store.location {
-            return FloatAnnotation(location: location)
-        } else {
-            return nil
+        } else  {
+            return store.floatAnnotation
         }
     }
     
@@ -40,7 +38,7 @@ struct PublicRouteMapStoreView: View {
             PublicRouteMap(
                 points: store.pinPoints,
                 polylines: store.points?.pair,
-                float: float,
+                float: floatAnnotation,
                 region: $store.mapRegion,
                 pointTapped: { store.send(.pointTapped($0))},
                 locationTapped: { store.send(.locationTapped) }
@@ -126,6 +124,7 @@ struct PublicRouteMapStoreView: View {
             ){
                 store.send(.replayTapped)
             }
+            .disabled(!store.isReplayEnable)
         }
         .padding(8)
         .fixedSize()
@@ -164,3 +163,4 @@ struct PublicRouteMapStoreView: View {
         }
     }
 }
+
