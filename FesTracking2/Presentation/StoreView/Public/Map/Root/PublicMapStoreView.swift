@@ -24,6 +24,7 @@ struct PublicMapStoreView: View {
                 Spacer()
             }
         }
+        .loadingOverlay(store.isLoading)
         .background(Color.map)
         .navigationTitle("地図")
         .navigationBarTitleDisplayMode(.inline)
