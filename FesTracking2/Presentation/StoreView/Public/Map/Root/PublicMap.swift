@@ -25,6 +25,7 @@ struct PublicMap{
     struct State: Equatable{
         let contents: [Content]
         var selectedContent: Content
+        var isLoading: Bool = false
         @Presents var destination: Destination.State?
         @Shared var mapRegion: MKCoordinateRegion
         @Presents var alert: Alert.State?
@@ -74,14 +75,15 @@ struct PublicMap{
                 }
             case .contentSelected(let value):
                 state.selectedContent = value
+                state.isLoading = true
                 switch value {
-                //TODO　mapRegionの変更ができてない
                 case .locations(let id, _ , _):
                     return locationsEffect(id)
                 case .route(let id, _ , _):
                     return routeEffect(id)
                 }
             case .routePrepared(.success(let value)):
+                state.isLoading = false
                 let id = value.districtId
                 let name = value.districtName
                 let routes = value.routes
@@ -108,18 +110,13 @@ struct PublicMap{
                     )
                 )
                 return .none
-            case .routePrepared(.failure( .forbidden(message: _))):
-                state.alert = Alert.error("配信停止中です。")
-                state.destination = .route(
-                    PublicRoute.State(
-                        id: state.selectedContent.id,
-                        name: state.selectedContent.name,
-                        mapRegion: state.$mapRegion
-                    )
-                )
-                return .none
             case .routePrepared(.failure(let error)):
-                state.alert = Alert.error(error.localizedDescription)
+                state.isLoading = false
+                if case .forbidden = error {
+                    state.alert = Alert.error("配信停止中です。")
+                } else {
+                    state.alert = Alert.error(error.localizedDescription)
+                }
                 state.destination = .route(
                     PublicRoute.State(
                         id: state.selectedContent.id,
@@ -129,6 +126,7 @@ struct PublicMap{
                 )
                 return .none
             case .locationsPrepared(let id, .success(let value)):
+                state.isLoading = false
                 if value.isEmpty {
                     state.alert = Alert.notice("配信停止中です。")
                 }
@@ -141,6 +139,7 @@ struct PublicMap{
                 )
                 return .none
             case .locationsPrepared(_, .failure(let error)):
+                state.isLoading = false
                 state.alert = Alert.error(error.localizedDescription)
                 return .none
             case .userLocationReceived(let value):
