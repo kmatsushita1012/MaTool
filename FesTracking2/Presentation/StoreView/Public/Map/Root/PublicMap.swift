@@ -101,7 +101,7 @@ struct PublicMap{
                 state.$mapRegion.withLock{ $0 = mapRegion }
                 state.destination = .route(
                     PublicRoute.State(
-                        id: id,
+                        districtId: id,
                         name: name,
                         routes: routes,
                         selectedRoute: current,
@@ -119,7 +119,7 @@ struct PublicMap{
                 }
                 state.destination = .route(
                     PublicRoute.State(
-                        id: state.selectedContent.id,
+                        districtId: state.selectedContent.id,
                         name: state.selectedContent.name,
                         mapRegion: state.$mapRegion
                     )
@@ -258,7 +258,7 @@ extension PublicMap.State {
         self._mapRegion = mapRegion
         self.destination = .route(
             PublicRoute.State(
-                id: id,
+                districtId: id,
                 name: selected.name,
                 routes: routes,
                 selectedRoute: current,
