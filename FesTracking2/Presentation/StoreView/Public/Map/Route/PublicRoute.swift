@@ -28,7 +28,7 @@ struct PublicRoute {
     
     @ObservableState
     struct State: Equatable {
-        let id: String
+        let districtId: String
         let name: String
         let items: [RouteSummary]?
         var selectedItem: RouteSummary?
@@ -50,14 +50,14 @@ struct PublicRoute {
         @Presents var alert: Alert.State?
         
         init(
-            id: String,
+            districtId: String,
             name: String,
             routes: [RouteSummary]? = nil,
             selectedRoute: RouteInfo? = nil,
             location: LocationInfo? = nil,
             mapRegion: Shared<MKCoordinateRegion>
         ){
-            self.id = id
+            self.districtId = districtId
             self.name = name
             self.items = routes
             if let selectedRoute {
@@ -105,7 +105,7 @@ struct PublicRoute {
                 state.selectedItem = value
                 return .run { send in
                     
-                    let result = await apiRepository.getRoute(value.id)
+                    let result = await apiRepository.getRoute(value.districtId)
                     await send(.routeReceived(result))
                 }
             case .pointTapped(let value):
@@ -118,8 +118,8 @@ struct PublicRoute {
             case .userFocusTapped:
                 return .none
             case .floatFocusTapped:
-                return .run {[id = state.id] send in
-                    let result = await apiRepository.getLocation(id)
+                return .run {[districtId = state.districtId] send in
+                    let result = await apiRepository.getLocation(districtId)
                     await send(.locationReceived(result))
                 }
             case .routeReceived(.success(let value)):
@@ -184,7 +184,7 @@ extension PublicRoute.State {
     var others: [RouteSummary]? {
         items?.filter {
             if let selectedItem {
-                $0.id != selectedItem.id
+                $0.districtId != selectedItem.districtId
             } else {
                 false
             }
