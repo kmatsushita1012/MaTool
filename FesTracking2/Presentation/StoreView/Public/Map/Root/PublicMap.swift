@@ -25,6 +25,7 @@ struct PublicMap{
     struct State: Equatable{
         let contents: [Content]
         var selectedContent: Content
+        var isLoading: Bool = false
         @Presents var destination: Destination.State?
         @Shared var mapRegion: MKCoordinateRegion
         @Presents var alert: Alert.State?
@@ -47,7 +48,7 @@ struct PublicMap{
     }
     
     @Dependency(\.apiRepository) var apiRepository
-    @Dependency(\.locationClient) var locationClient
+    @Dependency(\.locationProvider) var locationProvider
     @Dependency(\.dismiss) var dismiss
     
     var body: some ReducerOf<PublicMap> {
@@ -64,7 +65,8 @@ struct PublicMap{
                 state.alert = Alert.notice("配信停止中です。")
                 }
                 return .run{ send in
-                    locationClient.startTracking()
+                    await locationProvider.requestPermission()
+                    await locationProvider.startTracking()
                 }
             case .binding:
                 return .none
@@ -74,14 +76,15 @@ struct PublicMap{
                 }
             case .contentSelected(let value):
                 state.selectedContent = value
+                state.isLoading = true
                 switch value {
-                //TODO　mapRegionの変更ができてない
                 case .locations(let id, _ , _):
                     return locationsEffect(id)
                 case .route(let id, _ , _):
                     return routeEffect(id)
                 }
             case .routePrepared(.success(let value)):
+                state.isLoading = false
                 let id = value.districtId
                 let name = value.districtName
                 let routes = value.routes
@@ -99,7 +102,7 @@ struct PublicMap{
                 state.$mapRegion.withLock{ $0 = mapRegion }
                 state.destination = .route(
                     PublicRoute.State(
-                        id: id,
+                        districtId: id,
                         name: name,
                         routes: routes,
                         selectedRoute: current,
@@ -108,27 +111,23 @@ struct PublicMap{
                     )
                 )
                 return .none
-            case .routePrepared(.failure( .forbidden(message: _))):
-                state.alert = Alert.error("配信停止中です。")
-                state.destination = .route(
-                    PublicRoute.State(
-                        id: state.selectedContent.id,
-                        name: state.selectedContent.name,
-                        mapRegion: state.$mapRegion
-                    )
-                )
-                return .none
             case .routePrepared(.failure(let error)):
-                state.alert = Alert.error(error.localizedDescription)
+                state.isLoading = false
+                if case .forbidden = error {
+                    state.alert = Alert.error("配信停止中です。")
+                } else {
+                    state.alert = Alert.error(error.localizedDescription)
+                }
                 state.destination = .route(
                     PublicRoute.State(
-                        id: state.selectedContent.id,
+                        districtId: state.selectedContent.id,
                         name: state.selectedContent.name,
                         mapRegion: state.$mapRegion
                     )
                 )
                 return .none
             case .locationsPrepared(let id, .success(let value)):
+                state.isLoading = false
                 if value.isEmpty {
                     state.alert = Alert.notice("配信停止中です。")
                 }
@@ -141,6 +140,7 @@ struct PublicMap{
                 )
                 return .none
             case .locationsPrepared(_, .failure(let error)):
+                state.isLoading = false
                 state.alert = Alert.error(error.localizedDescription)
                 return .none
             case .userLocationReceived(let value):
@@ -149,7 +149,7 @@ struct PublicMap{
             case .destination(.presented(.route(.userFocusTapped))),
                 .destination(.presented(.locations(.userFocusTapped))):
                 return .run{ send in
-                    let result = locationClient.getLocation()
+                    let result = await locationProvider.getLocation()
                     guard let coordinate = result.value?.coordinate  else { return }
                     await send(.userLocationReceived(Coordinate.fromCL(coordinate)))
                 }
@@ -259,7 +259,7 @@ extension PublicMap.State {
         self._mapRegion = mapRegion
         self.destination = .route(
             PublicRoute.State(
-                id: id,
+                districtId: id,
                 name: selected.name,
                 routes: routes,
                 selectedRoute: current,

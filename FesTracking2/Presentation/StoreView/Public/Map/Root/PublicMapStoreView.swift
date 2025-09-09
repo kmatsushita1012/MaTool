@@ -15,15 +15,16 @@ struct PublicMapStoreView: View {
     var body: some View {
         VStack(spacing: 0){
             picker()
-            if let store = store.scope(state: \.destination?.route, action: \.destination.route) {
-                PublicRouteMapStoreView(store: store)
-                    .id(store.id)
+            if let routeStore = store.scope(state: \.destination?.route, action: \.destination.route) {
+                PublicRouteMapStoreView(store: routeStore)
+                    .id(routeStore.districtId)
             } else if let store = store.scope(state: \.destination?.locations, action: \.destination.locations) {
                 PublicLocationsMapStoreView(store: store)
             } else {
                 Spacer()
             }
         }
+        .loadingOverlay(store.isLoading)
         .background(Color.map)
         .navigationTitle("地図")
         .navigationBarTitleDisplayMode(.inline)
