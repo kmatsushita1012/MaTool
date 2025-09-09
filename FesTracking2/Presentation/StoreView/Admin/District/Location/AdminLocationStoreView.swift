@@ -44,7 +44,8 @@ struct LocationAdminView: View {
                     header: Text("履歴"),
                     footer: Text("送信失敗が続く場合は、アプリの再起動や再ログインをお試しください。")
                 ) {
-                    ForEach(store.history.suffix(10).reversed(), id: \.self) { history in
+                    // FIXME: .suffix(10)を一時的に解除
+                    ForEach(store.history.reversed(), id: \.self) { history in
                         Text(history.text)
                             .font(.body)
                             .padding(.vertical, 2)
