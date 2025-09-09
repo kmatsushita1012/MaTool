@@ -149,7 +149,7 @@ struct PublicMap{
             case .destination(.presented(.route(.userFocusTapped))),
                 .destination(.presented(.locations(.userFocusTapped))):
                 return .run{ send in
-                    let result = await locationService.getLocation()
+                    let result = await locationProvider.getLocation()
                     guard let coordinate = result.value?.coordinate  else { return }
                     await send(.userLocationReceived(Coordinate.fromCL(coordinate)))
                 }
