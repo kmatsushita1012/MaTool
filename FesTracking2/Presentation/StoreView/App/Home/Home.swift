@@ -44,6 +44,7 @@ struct Home {
         case infoTapped
         case adminTapped
         case settingsTapped
+        case skipTapped
         case statusReceived(StatusCheckResult?)
         case awsInitializeReceived(Result<UserRole, AuthError>)
         case routePrepared(
@@ -92,6 +93,7 @@ struct Home {
                         let result = await authService.initialize()
                         await send(.awsInitializeReceived(result))
                     }
+                        .cancellable(id: "AuthInitialize")
                 )
             case .statusReceived(let value):
                 state.status = value
@@ -117,30 +119,22 @@ struct Home {
                 state.isDestinationLoading = true
                 return infoEffect(regionId: regionId)
             case .adminTapped:
-                if state.isAuthLoading {
-                    state.alert = Alert.error("認証中です。もう一度お試しください。再度このエラーが出る場合は設定画面から強制ログアウトをお試しください。")
-                    return .none
-                }
-                switch state.userRole {
-                case .region(let id):
-                    state.isDestinationLoading = true
-                    return adminRegionEffect(id)
-                case .district(let id):
-                    state.isDestinationLoading = true
-                    return adminDistrictEffect(id)
-                case .guest:
-                    let id = userDefaultsClient.string(loginIdKey) ?? ""
-                    state.destination = .login(Login.State(id: id))
-                    return .none
-                }
+                return adminTapped(state: &state, action: action)
             case .settingsTapped:
                 state.isDestinationLoading = true
                 let regionId = userDefaultsClient.string(defaultRegionKey)
                 let districtId = userDefaultsClient.string(defaultDistrictKey)
                 return settingsEffect(regionId: regionId, districtId: districtId)
+            case .skipTapped:
+                state.isAuthLoading = false
+                let effect = adminTapped(state: &state, action: action)
+                return .merge(
+                    .cancel(id: "AuthInitialize"),
+                    effect
+                )
             case .awsInitializeReceived(.success(let userRole)):
                 state.userRole = userRole
-                state.isAuthLoading = false
+//                state.isAuthLoading = false
                 return .none
             case .awsInitializeReceived(.failure(_)):
                 state.isAuthLoading = false
@@ -322,6 +316,24 @@ struct Home {
         .ifLet(\.$alert, action: \.alert)
     }
     
+    func adminTapped(state: inout State, action: Action) -> Effect<Action> {
+        if state.isAuthLoading {
+            state.alert = Alert.error("認証中です。もう一度お試しください。再度このエラーが出る場合は設定画面から強制ログアウトをお試しください。")
+            return .none
+        }
+        switch state.userRole {
+        case .region(let id):
+            state.isDestinationLoading = true
+            return adminRegionEffect(id)
+        case .district(let id):
+            state.isDestinationLoading = true
+            return adminDistrictEffect(id)
+        case .guest:
+            let id = userDefaultsClient.string(loginIdKey) ?? ""
+            state.destination = .login(Login.State(id: id))
+            return .none
+        }
+    }
     
     func routeEffect(regionId: String, districtId id: String) -> Effect<Action> {
         .run { send in

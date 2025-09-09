@@ -46,7 +46,12 @@ struct HomeStoreView: View {
                                 .onTapGesture {
                                     store.send(.adminTapped)
                                 }
-                                .loadingOverlay(store.isAuthLoading)
+                                .loadingOverlay(
+                                    store.isAuthLoading,
+                                    message: "スキップ"
+                                ) {
+                                    store.send(.skipTapped)
+                                }
                         }
                     }
                 }
