@@ -50,6 +50,7 @@ struct AdminDistrictTop {
         case routeEditPrepared(Result<RouteInfo,APIError>,Result<DistrictTool,APIError>)
         case routeCreatePrepared(Result<DistrictTool,APIError>)
         case exportPrepared(Result<RouteInfo,APIError>)
+        case locationPrepared(isTracking: Bool, Interval: Interval?)
         case onLocation
         case destination(PresentationAction<Destination.Action>)
         case signOutTapped
@@ -173,13 +174,21 @@ struct AdminDistrictTop {
                     state.alert = Alert.error("情報の取得に失敗しました。 \(error.localizedDescription)")
                 }
                 return .none
-            case .onLocation:
+            case .locationPrepared(isTracking: let isTracking, Interval: let interval):
                 state.destination = .location(
                     AdminLocation.State(
                         id: state.district.id,
-                        isTracking: locationService.isTracking)
+                        isTracking: isTracking,
+                        selectedInterval: interval ?? Interval.sample
+                    )
                 )
                 return .none
+            case .onLocation:
+                return .run { send in
+                    let isTracking = await locationService.isTracking
+                    let interval = await locationService.interval
+                    await send(.locationPrepared(isTracking: isTracking, Interval: interval))
+                }
             case .destination(.presented(let childAction)):
                 switch childAction {
                 case .edit(.postReceived(.success)),
