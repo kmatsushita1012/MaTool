@@ -5,31 +5,35 @@
 //  Created by 松下和也 on 2025/04/18.
 //
 
-import Combine
-import ComposableArchitecture
+import Dependencies
 import CoreLocation
 
-struct LocationProvider {
-    var startTracking: () -> Void
-    var getLocation:() -> AsyncValue<CLLocation>
-    var isTracking:() ->Bool
-    var stopTracking: () -> Void
+protocol LocationProviderProtocol: Sendable {
+    func requestPermission() async -> Void
+    func startTracking() async -> Void
+    func stopTracking() async -> Void
+    func getLocation() async -> AsyncValue<CLLocation>
+    func isPermissionAllowed() async -> Bool
+    var isTracking: Bool { get async }
 }
 
+struct LocationProviderKey{}
 
+extension LocationProviderKey: DependencyKey{
+    static let liveValue: LocationProviderProtocol = LocationProvider()
+}
+
+extension LocationProviderKey: TestDependencyKey {
+    static let testValue: LocationProviderProtocol = LocationProvider() // 仮
+}
 
 extension DependencyValues {
-    var locationClient: LocationProvider {
+    var locationProvider: LocationProviderProtocol {
         get { self[LocationProviderKey.self] }
         set { self[LocationProviderKey.self] = newValue }
     }
-
-    private enum LocationProviderKey: DependencyKey {
-        static var liveValue: LocationProvider {
-            .live()
-        }
-    }
 }
+
 enum LocationError: Error {
     case authorizationDenied
     case servicesDisabled
