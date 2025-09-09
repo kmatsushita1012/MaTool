@@ -9,78 +9,76 @@ import CoreLocation
 import Combine
 import ComposableArchitecture
 
-final class LocationManagerDelegate: NSObject, CLLocationManagerDelegate {
-    var value: AsyncValue<CLLocation> = .loading
+actor LocationProvider: NSObject, LocationProviderProtocol {
+    private let manager: CLLocationManager
+    private var delegateProxy: DelegateProxy?
+    private(set) var isTracking = false
+    private(set) var value: AsyncValue<CLLocation> = .loading
 
-    func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
-        if let location = locations.last {
-            value = .success(location)
-        }
+    override init() {
+        self.manager = CLLocationManager()
+        super.init()
+        self.delegateProxy = DelegateProxy(owner: self)
+        self.manager.delegate = delegateProxy
+        self.manager.allowsBackgroundLocationUpdates = true
     }
 
-    func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) {
-        value = .failure(error)
+    // 権限リクエスト
+    func requestPermission() {
+        manager.requestWhenInUseAuthorization()
+        manager.requestAlwaysAuthorization()
     }
-}
 
-
-extension LocationProvider {
-    static func live() -> LocationProvider {
-        let manager = CLLocationManager()
-        let delegate = LocationManagerDelegate()
-        manager.delegate = delegate
-        manager.allowsBackgroundLocationUpdates = true
-        var isTracking = false
+    // トラッキング開始
+    func startTracking() {
+        manager.startUpdatingLocation()
+        isTracking = true
         
-        return LocationProvider(
-            startTracking: {
-                manager.requestWhenInUseAuthorization()
-                manager.requestAlwaysAuthorization()
-                manager.startUpdatingLocation()
-                isTracking = true
-            },
-            getLocation: {
-                if CLLocationManager.authorizationStatus() == .denied {
-                    manager.requestWhenInUseAuthorization()
-                    manager.requestAlwaysAuthorization()
-                    return .failure(LocationError.authorizationDenied)
-                }
-                if !CLLocationManager.locationServicesEnabled() {
-                    return .failure(LocationError.servicesDisabled)
-                }
-                if let location = manager.location {
-                    return .success(location)
-                } else {
-                    return .loading
-                }
-            },
-            isTracking: {
-                return isTracking
-            },
-            stopTracking: {
-                manager.stopUpdatingLocation()
-                isTracking = false
-            }
-        )
-    }
-}
-
-struct AsyncTimerSequence: AsyncSequence {
-    typealias Element = Void
-
-    let interval: TimeInterval
-
-    struct AsyncIterator: AsyncIteratorProtocol {
-        let interval: TimeInterval
-
-        mutating func next() async -> Void? {
-            try? await Task.sleep(nanoseconds: UInt64(interval * 1_000_000_000))
-            return ()
+        if let cached = manager.location {
+            value = .success(cached)
         }
     }
 
-    func makeAsyncIterator() -> AsyncIterator {
-        .init(interval: interval)
+    // トラッキング停止
+    func stopTracking() {
+        manager.stopUpdatingLocation()
+        isTracking = false
+    }
+
+    // 最新の状態を返す
+    func getLocation() -> AsyncValue<CLLocation> {
+        if manager.authorizationStatus == .denied {
+            return .failure(LocationError.authorizationDenied)
+        }
+        if !CLLocationManager.locationServicesEnabled() {
+            return .failure(LocationError.servicesDisabled)
+        }
+        
+        return value
+    }
+
+    func isPermissionAllowed() -> Bool {
+        return manager.authorizationStatus != .denied
+    }
+    
+    private final class DelegateProxy: NSObject, CLLocationManagerDelegate {
+        weak var owner: LocationProvider?
+
+        init(owner: LocationProvider) {
+            self.owner = owner
+        }
+
+        func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
+            guard let location = locations.last else { return }
+            Task { await owner?.updateValue(.success(location)) }
+        }
+
+        func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) {
+            Task { await owner?.updateValue(.failure(error)) }
+        }
+    }
+
+    private func updateValue(_ newValue: AsyncValue<CLLocation>) {
+        self.value = newValue
     }
 }
-
