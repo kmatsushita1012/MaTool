@@ -48,7 +48,7 @@ struct PublicMap{
     }
     
     @Dependency(\.apiRepository) var apiRepository
-    @Dependency(\.locationClient) var locationClient
+    @Dependency(\.locationProvider) var locationProvider
     @Dependency(\.dismiss) var dismiss
     
     var body: some ReducerOf<PublicMap> {
@@ -65,7 +65,8 @@ struct PublicMap{
                 state.alert = Alert.notice("配信停止中です。")
                 }
                 return .run{ send in
-                    locationClient.startTracking()
+                    await locationProvider.requestPermission()
+                    await locationProvider.startTracking()
                 }
             case .binding:
                 return .none
@@ -148,7 +149,7 @@ struct PublicMap{
             case .destination(.presented(.route(.userFocusTapped))),
                 .destination(.presented(.locations(.userFocusTapped))):
                 return .run{ send in
-                    let result = locationClient.getLocation()
+                    let result = await locationService.getLocation()
                     guard let coordinate = result.value?.coordinate  else { return }
                     await send(.userLocationReceived(Coordinate.fromCL(coordinate)))
                 }
