@@ -8,7 +8,7 @@
 import Dependencies
 import CoreLocation
 
-protocol LocationProviderProtocol: Sendable {
+protocol LocationProviderProtocol {
     func requestPermission() async -> Void
     func startTracking() async -> Void
     func stopTracking() async -> Void
