@@ -134,7 +134,7 @@ struct Home {
                 )
             case .awsInitializeReceived(.success(let userRole)):
                 state.userRole = userRole
-//                state.isAuthLoading = false
+                state.isAuthLoading = false
                 return .none
             case .awsInitializeReceived(.failure(_)):
                 state.isAuthLoading = false
