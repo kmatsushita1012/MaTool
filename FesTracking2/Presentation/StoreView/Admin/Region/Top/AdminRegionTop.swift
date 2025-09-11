@@ -147,7 +147,6 @@ struct AdminRegionTop {
                 case .edit(.putReceived(.success)):
                     state.destination = nil
                     state.isApiLoading = true
-                    state.alert = Alert.success("保存しました")
                     return getRegionEffect(state.region.id)
                 case .districtCreate(.received(.success)):
                     state.isApiLoading = true
