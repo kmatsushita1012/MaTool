@@ -50,7 +50,7 @@ struct Home {
         case routePrepared(
             regionResult: Result<Region, APIError>,
             districtsResult: Result<[PublicDistrict], APIError>,
-            currentResult: Result<CurrentResponce, APIError>
+            currentResult: Result<CurrentResponse, APIError>
         )
         case locationsPrepared(
             regionResult: Result<Region, APIError>,
