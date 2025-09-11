@@ -113,7 +113,7 @@ extension APIRepotiroy: DependencyKey {
                     accessToken: accessToken,
                     isCache: false
                 )
-                return decodeResponse(CurrentResponce.self, from: response)
+                return decodeResponse(CurrentResponse.self, from: response)
             },
             getRouteIds: {
                 let accessToken = await authService.getAccessToken()
