@@ -59,7 +59,7 @@ struct AdminRegionEdit {
                 return .run { _ in
                     await dismiss()
                 }
-            case .postReceived(let result):
+            case .putReceived(let result):
                 state.isLoading = false
                 if case let .failure(error) = result {
                     state.alert = Alert.error("保存に失敗しました。\(error.localizedDescription)")
