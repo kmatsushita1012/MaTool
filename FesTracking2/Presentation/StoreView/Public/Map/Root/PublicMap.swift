@@ -37,7 +37,7 @@ struct PublicMap{
         case binding(BindingAction<State>)
         case homeTapped
         case contentSelected(Content)
-        case routePrepared(Result<CurrentResponce, APIError>)
+        case routePrepared(Result<CurrentResponse, APIError>)
         case locationsPrepared(
             id: String,
             locationsResult: Result<[LocationInfo],APIError>

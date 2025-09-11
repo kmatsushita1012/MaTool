@@ -147,7 +147,7 @@
 		29CF49112D74269A00036D28 /* APIRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29CF49102D74269A00036D28 /* APIRepository.swift */; };
 		29CF49132D7426A400036D28 /* UserDefaultsClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29CF49122D7426A400036D28 /* UserDefaultsClient.swift */; };
 		29CF49192D7440EB00036D28 /* Extension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29CF49182D7440EB00036D28 /* Extension.swift */; };
-		29D1D1692E57537F00D77F16 /* CurrentResponce.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29D1D1682E57537B00D77F16 /* CurrentResponce.swift */; };
+		29D1D1692E57537F00D77F16 /* CurrentResponse.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29D1D1682E57537B00D77F16 /* CurrentResponse.swift */; };
 		29D33A5B2E3C74F600D285DC /* AdminRouteEditV2.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29D33A5A2E3C74EF00D285DC /* AdminRouteEditV2.swift */; };
 		29D33A5D2E3C750500D285DC /* AdminRouteEditStoreViewV2.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29D33A5C2E3C74FA00D285DC /* AdminRouteEditStoreViewV2.swift */; };
 		29D33A5F2E3C89A200D285DC /* AdminRouteMapViewV2.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29D33A5E2E3C899800D285DC /* AdminRouteMapViewV2.swift */; };
@@ -334,7 +334,7 @@
 		29CF49102D74269A00036D28 /* APIRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIRepository.swift; sourceTree = "<group>"; };
 		29CF49122D7426A400036D28 /* UserDefaultsClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserDefaultsClient.swift; sourceTree = "<group>"; };
 		29CF49182D7440EB00036D28 /* Extension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Extension.swift; sourceTree = "<group>"; };
-		29D1D1682E57537B00D77F16 /* CurrentResponce.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CurrentResponce.swift; sourceTree = "<group>"; };
+		29D1D1682E57537B00D77F16 /* CurrentResponse.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CurrentResponse.swift; sourceTree = "<group>"; };
 		29D33A5A2E3C74EF00D285DC /* AdminRouteEditV2.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdminRouteEditV2.swift; sourceTree = "<group>"; };
 		29D33A5C2E3C74FA00D285DC /* AdminRouteEditStoreViewV2.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdminRouteEditStoreViewV2.swift; sourceTree = "<group>"; };
 		29D33A5E2E3C899800D285DC /* AdminRouteMapViewV2.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdminRouteMapViewV2.swift; sourceTree = "<group>"; };
@@ -646,7 +646,7 @@
 			isa = PBXGroup;
 			children = (
 				29A043432D7DC24700E77C91 /* RouteSummary.swift */,
-				29D1D1682E57537B00D77F16 /* CurrentResponce.swift */,
+				29D1D1682E57537B00D77F16 /* CurrentResponse.swift */,
 				29A043492D7DC42C00E77C91 /* Segment.swift */,
 				29A043472D7DC36200E77C91 /* Point.swift */,
 				29A043452D7DC2AF00E77C91 /* RouteInfo.swift */,
@@ -1677,7 +1677,7 @@
 				299BBF2B2DC7AF070092C4D9 /* PublicRoute.swift in Sources */,
 				29A688C22DCC4E38004415BF /* AdminRouteItemView.swift in Sources */,
 				299BBF292DC611310092C4D9 /* PublicRouteMapStoreView.swift in Sources */,
-				29D1D1692E57537F00D77F16 /* CurrentResponce.swift in Sources */,
+				29D1D1692E57537F00D77F16 /* CurrentResponse.swift in Sources */,
 				29BC19462DB6258100C6F918 /* Settings.swift in Sources */,
 				29A4013F2E4113720007D8AB /* PublicLocationsMap.swift in Sources */,
 				29DAB0612DA15CD1005E94BA /* AdminRouteMap.swift in Sources */,
@@ -1902,7 +1902,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 2.2.2;
+				MARKETING_VERSION = 2.2.3;
 				OTHER_SWIFT_FLAGS = "$(inherited) -D COCOAPODS";
 				PRODUCT_BUNDLE_IDENTIFIER = StudioMK.FesTracking;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -1945,7 +1945,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 2.2.2;
+				MARKETING_VERSION = 2.2.3;
 				PRODUCT_BUNDLE_IDENTIFIER = StudioMK.FesTracking;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
