@@ -50,7 +50,7 @@ extension APIRepotiroy {
         },
         getCurrentRoute: { _ in
             let route = routes.first ?? Route.sample
-            return Result.success(CurrentResponce(districtId: "ID", districtName: "Name", routes: [RouteSummary.sample], current: RouteInfo.sample, location: LocationInfo.sample))
+            return Result.success(CurrentResponse(districtId: "ID", districtName: "Name", routes: [RouteSummary.sample], current: RouteInfo.sample, location: LocationInfo.sample))
         },
         getRouteIds: {
             return Result.success(["id"])
