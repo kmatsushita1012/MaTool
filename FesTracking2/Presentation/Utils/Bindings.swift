@@ -6,6 +6,19 @@
 //
 
 import SwiftUI
+import ComposableArchitecture
+
+//FIXME: iOS16サポート終了時に削除
+public typealias Bindable = Perception.Bindable
+
+extension View {
+    @ViewBuilder
+    public func withPerceptionTracking() -> some View {
+        WithPerceptionTracking{
+            self
+        }
+    }
+}
 
 extension Binding {
     /// 読み取り専用バインディング
