@@ -18,10 +18,17 @@ struct AdminPointEditStoreView: View {
                 HStack{
                     TextField("イベントを入力", text: $store.item.title.nonOptional)
                         .popover(isPresented: $store.showPopover, content: {
-                            Popover(items: store.milestones, textClosure: { $0.name }, onTapGesture: { option in
-                                store.send(.titleOptionSelected(option))
-                                
-                            }).presentationCompactAdaptation(PresentationAdaptation.popover)
+                            if #available(iOS 16.4, *) {
+                                Popover(items: store.milestones, textClosure: { $0.name }, onTapGesture: { option in
+                                    store.send(.titleOptionSelected(option))
+                                    
+                                }).presentationCompactAdaptation(PresentationAdaptation.popover)
+                            } else {
+                                Popover(items: store.milestones, textClosure: { $0.name }, onTapGesture: { option in
+                                    store.send(.titleOptionSelected(option))
+                                    
+                                })
+                            }
                         })
                     Button(action: {
                         store.send(.titleFieldFocused)
