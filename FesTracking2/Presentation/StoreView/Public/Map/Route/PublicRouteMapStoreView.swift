@@ -76,8 +76,8 @@ struct PublicRouteMapStoreView: View {
             }
         }
         .onAppear{ updateReplay() }
-        .onChange(of: store.route) { updateReplay() }
-        .onChange(of: store.replay) { updateReplay() }
+        .onChange(of: store.route) { _ in updateReplay() }
+        .onChange(of: store.replay) { _ in updateReplay() }
     }
     
     @ViewBuilder

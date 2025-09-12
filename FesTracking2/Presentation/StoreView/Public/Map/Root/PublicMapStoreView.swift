@@ -63,7 +63,7 @@ struct PublicMapStoreView: View {
                     proxy.scrollTo(store.selectedContent, anchor: .center)
                 }
             }
-            .onChange(of: store.selectedContent) {
+            .onChange(of: store.selectedContent) { newValue in
                 withAnimation {
                     proxy.scrollTo(store.selectedContent, anchor: .center)
                 }
