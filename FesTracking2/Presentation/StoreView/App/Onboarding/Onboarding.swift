@@ -41,11 +41,11 @@ struct OnboardingFeature {
         Reduce { state, action in
             switch action {
             case .binding(\.selectedRegion):
-                state.isDistrictsLoading = true
                 guard let region = state.selectedRegion else {
                     state.districts = nil
                     return .none
                 }
+                state.isDistrictsLoading = true
                 return .run { send in
                     let result = await apiRepository.getDistricts(region.id)
                     await send(.districtsReceived(result))
