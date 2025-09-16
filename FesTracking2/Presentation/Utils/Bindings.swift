@@ -13,7 +13,7 @@ public typealias Bindable = Perception.Bindable
 
 extension View {
     @ViewBuilder
-    public func withPerceptionTracking() -> some View {
+    public func tracked() -> some View {
         WithPerceptionTracking{
             self
         }
