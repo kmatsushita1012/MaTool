@@ -17,5 +17,7 @@
 		<key>UIImageName</key>
 		<string>LaunchImage</string>
 	</dict>
+    <key>UIDesignRequiresCompatibility</key>
+    <true/>
 </dict>
 </plist>
