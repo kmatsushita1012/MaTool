@@ -64,6 +64,7 @@ struct OnboardingStoreView: View {
                         .background(Color.onboarding)
                         .cornerRadius(8)
                 }
+                .id(store.districts)
                 .padding(.horizontal)
                 
                 Button(action: {
