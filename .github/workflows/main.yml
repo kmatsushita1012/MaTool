@@ -2,7 +2,7 @@ name: main
 
 on:
   push:
-    branches: ["main", "feature/xcode26"]
+    branches: ["main"]
   pull_request:
     branches: ["main", "release"]
 
