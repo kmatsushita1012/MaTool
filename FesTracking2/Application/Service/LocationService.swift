@@ -49,7 +49,7 @@ actor LocationService {
     }
 
     func start(id: String, interval: Interval) async {
-        await locationProvider.startTracking()
+        await locationProvider.startTracking(backgroundUpdatesAllowed: true)
         guard trackingTask == nil else { return }
 
         self.interval = interval

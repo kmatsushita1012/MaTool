@@ -27,7 +27,7 @@ actor LocationProvider: NSObject, LocationProviderProtocol {
             let manager = CLLocationManager()
             manager.delegate = self
             manager.desiredAccuracy = kCLLocationAccuracyBest
-            manager.allowsBackgroundLocationUpdates = true
+            manager.pausesLocationUpdatesAutomatically = true
             return manager
         }
         if self.manager == nil {
@@ -44,7 +44,10 @@ actor LocationProvider: NSObject, LocationProviderProtocol {
     }
 
     // トラッキング開始
-    func startTracking() {
+    func startTracking(backgroundUpdatesAllowed: Bool) {
+        if backgroundUpdatesAllowed {
+            manager?.allowsBackgroundLocationUpdates = true
+        }
         manager?.startUpdatingLocation()
         isTracking = true
         
