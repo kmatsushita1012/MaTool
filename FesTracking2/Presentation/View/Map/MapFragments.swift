@@ -98,57 +98,109 @@ final class FloatReplayAnnotation: FloatAnnotation {
     }
 }
 
-final class FloatAnnotationView: MKMarkerAnnotationView {
+final class FloatAnnotationView: MKAnnotationView {
     static let identifier = "FloatAnnotationView"
+
     override var annotation: MKAnnotation? {
-        willSet {
-            setUp()
+        didSet {
+            configure()
         }
     }
     
     init(_ annotation: FloatAnnotation?){
         super.init(annotation: annotation, reuseIdentifier: Self.identifier)
-        setUp()
+        configure()
     }
     
     @MainActor required init?(coder aDecoder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
     
-    private func setUp() {
+    private func configure() {
+        guard let annotation else { return }
+        guard let title = annotation.title else { return }
+        
+        // ベース画像（赤い丸）
         guard let baseImage = UIImage(systemName: "circle.circle.fill") else { return }
         let tintedImage = baseImage.withTintColor(.red, renderingMode: .alwaysOriginal)
+
+        // スケールアップ
+        let scale: CGFloat = 2
+        let baseSize = CGSize(width: tintedImage.size.width * scale,
+                              height: tintedImage.size.height * scale)
         
+        //影
         let shadowColor = UIColor.white.cgColor
         let shadowOffset = CGSize(width: 0, height: 2)
         let shadowRadius: CGFloat = 4
 
-        // サイズ拡大
-        let scale: CGFloat = 2
-        let newSize = CGSize(width: tintedImage.size.width * scale,
-                             height: tintedImage.size.height * scale)
+        // テキスト
+        let outlineFontSize = 14
+        let textColor = UIColor.black
+        let outlineColor = UIColor.white
+        
+        let font = UIFont.systemFont(ofSize: CGFloat(outlineFontSize), weight: .bold)
+        let outlineFont = UIFont.systemFont(ofSize: font.pointSize,
+                                            weight: .black)
+        // テキストサイズを計算
+        let attributes: [NSAttributedString.Key: Any] = [.font: font]
+        let textSize = (title! as NSString).size(withAttributes: attributes)
+
+        // 全体サイズ（画像の下にテキスト分スペースを確保）
+        let newSize = CGSize(
+            width: max(baseSize.width, textSize.width),
+            height: baseSize.height + textSize.height + 4
+        )
+        
+        // テキストの位置
+        let textCenter = CGPoint(
+            x: newSize.width / 2,
+            y: baseSize.height + textSize.height / 2 + 2
+        )
+        let textOrigin = CGPoint(
+            x: textCenter.x - textSize.width / 2,
+            y: textCenter.y - textSize.height / 2
+        )
+
         // レンダリング
         let renderer = UIGraphicsImageRenderer(size: newSize)
         let renderedImage = renderer.image { context in
+            //影
             let cgContext = context.cgContext
-
-            cgContext.setShadow(
-                offset: shadowOffset,
-                blur: shadowRadius,
-                color: shadowColor
+            cgContext.setShadow(offset: shadowOffset,
+                                    blur: shadowRadius,
+                                    color: shadowColor)
+            // ベース画像を上に描画
+            let baseOrigin = CGPoint(
+                x: (newSize.width - baseSize.width) / 2,
+                y: 0
             )
-            cgContext.scaleBy(x: 1, y: 1)
-            tintedImage.draw(in: CGRect(origin: .zero, size: newSize))
+            tintedImage.draw(in: CGRect(origin: baseOrigin, size: baseSize))
+            
+            // 1. アウトライン用（少し大きめフォント、白）
+            (title! as NSString).draw(at: textOrigin, withAttributes: [
+                .font: outlineFont,
+                .foregroundColor: outlineColor
+            ])
+
+            // 2. 本体文字（黒）
+            (title! as NSString).draw(at: textOrigin, withAttributes: [
+                .font: font,
+                .foregroundColor: textColor
+            ])
         }
 
-        image = renderedImage
+        self.image = renderedImage
+
+        // 座標を画像の中心に合わせる
+        let offsetY = textSize.height / 2 
+        self.centerOffset = CGPoint(x: 0, y: Int(offsetY))
+        
         displayPriority = .required
         zPriority = .max
         canShowCallout = false
-        markerTintColor = .clear
-        glyphTintColor = .clear
-        glyphImage = nil
     }
+    
 }
 
 extension FloatAnnotationView {
