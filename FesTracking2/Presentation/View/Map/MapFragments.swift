@@ -135,37 +135,31 @@ final class FloatAnnotationView: MKAnnotationView {
         let shadowRadius: CGFloat = 4
 
         // テキスト
+        let outlineFontSize = 14
         let textColor = UIColor.black
-        let outlineColor = UIColor.red
-        let outlineWidth: CGFloat = 2
-        let font = UIFont.monospacedSystemFont(ofSize: 12, weight: .black)
-        let outlineFont = UIFont.monospacedSystemFont(ofSize: font.pointSize + outlineWidth,
+        let outlineColor = UIColor.white
+        
+        let font = UIFont.systemFont(ofSize: CGFloat(outlineFontSize), weight: .bold)
+        let outlineFont = UIFont.systemFont(ofSize: font.pointSize,
                                             weight: .black)
         // テキストサイズを計算
         let attributes: [NSAttributedString.Key: Any] = [.font: font]
         let textSize = (title! as NSString).size(withAttributes: attributes)
-        
-        let outlineAttributes: [NSAttributedString.Key: Any] = [.font: outlineFont]
-        let outlineTextSize = (title! as NSString).size(withAttributes: outlineAttributes)
 
         // 全体サイズ（画像の下にテキスト分スペースを確保）
         let newSize = CGSize(
-            width: max(baseSize.width, outlineTextSize.width),
-            height: baseSize.height + outlineTextSize.height + 4
+            width: max(baseSize.width, textSize.width),
+            height: baseSize.height + textSize.height + 4
         )
         
         // テキストの位置
         let textCenter = CGPoint(
             x: newSize.width / 2,
-            y: baseSize.height + outlineTextSize.height / 2 + 2
+            y: baseSize.height + textSize.height / 2 + 2
         )
         let textOrigin = CGPoint(
             x: textCenter.x - textSize.width / 2,
             y: textCenter.y - textSize.height / 2
-        )
-        let outlineTextOrigin = CGPoint(
-            x: textCenter.x - outlineTextSize.width / 2,
-            y: textCenter.y - outlineTextSize.height / 2
         )
 
         // レンダリング
@@ -184,7 +178,7 @@ final class FloatAnnotationView: MKAnnotationView {
             tintedImage.draw(in: CGRect(origin: baseOrigin, size: baseSize))
             
             // 1. アウトライン用（少し大きめフォント、白）
-            (title! as NSString).draw(at: outlineTextOrigin, withAttributes: [
+            (title! as NSString).draw(at: textOrigin, withAttributes: [
                 .font: outlineFont,
                 .foregroundColor: outlineColor
             ])
@@ -199,12 +193,15 @@ final class FloatAnnotationView: MKAnnotationView {
         self.image = renderedImage
 
         // 座標を画像の中心に合わせる
-        let offsetY = textSize.height / 2
-        self.centerOffset = CGPoint(x: 0, y: Int(-offsetY))
+        let offsetY = textSize.height / 2 
+        self.centerOffset = CGPoint(x: 0, y: Int(offsetY))
+        
+        displayPriority = .required
+        zPriority = .max
+        canShowCallout = false
     }
     
 }
-
 
 extension FloatAnnotationView {
     static func view(for mapView: MKMapView, annotation: FloatAnnotation) -> MKAnnotationView {
