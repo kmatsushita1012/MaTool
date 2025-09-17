@@ -66,7 +66,7 @@ struct PublicMap{
                 }
                 return .run{ send in
                     await locationProvider.requestPermission()
-                    await locationProvider.startTracking()
+                    await locationProvider.startTracking(backgroundUpdatesAllowed: false)
                 }
             case .binding:
                 return .none
