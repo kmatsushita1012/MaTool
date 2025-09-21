@@ -59,6 +59,7 @@ actor LocationProvider: NSObject, LocationProviderProtocol {
     // トラッキング停止
     func stopTracking() {
         manager?.stopUpdatingLocation()
+        manager?.allowsBackgroundLocationUpdates = false
         isTracking = false
     }
 
