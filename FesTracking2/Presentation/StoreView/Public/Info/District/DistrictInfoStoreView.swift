@@ -51,7 +51,9 @@ struct DistrictInfoStoreView: View {
                                 ScrollView(.horizontal, showsIndicators: false) {
                                     HStack(spacing: 16) {
                                         ForEach(store.item.performances) { item in
-                                            performance(item)
+                                            WithPerceptionTracking {
+                                                performance(item)
+                                            }
                                         }
                                     }
                                     .padding(.horizontal)

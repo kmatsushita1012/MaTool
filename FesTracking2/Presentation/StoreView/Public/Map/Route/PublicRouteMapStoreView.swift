@@ -122,9 +122,17 @@ struct PublicRouteMapStoreView: View {
             }
             Divider()
             FloatingIconButton(
-                icon: store.replay.isRunning
-                ? "stop.circle"
-                : "point.bottomleft.forward.to.arrow.triangle.scurvepath.fill"
+                icon: {
+                    if store.replay.isRunning {
+                        return "stop.circle"
+                    } else {
+                        if #available(iOS 17.0, *) {
+                            return "point.bottomleft.forward.to.arrow.triangle.scurvepath.fill"
+                        } else {
+                            return "play.circle"
+                        }
+                    }
+                }()
             ){
                 store.send(.replayTapped)
             }
