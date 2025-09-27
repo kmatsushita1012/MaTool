@@ -9,8 +9,9 @@ import SwiftUI
 import ComposableArchitecture
 import NavigationSwipeControl
 
+@available(iOS 17.0, *)
 struct LoginStoreView: View {
-    @Bindable var store: StoreOf<Login>
+    @SwiftUI.Bindable var store: StoreOf<Login>
     
     @FocusState private var focusedField: Field?
     

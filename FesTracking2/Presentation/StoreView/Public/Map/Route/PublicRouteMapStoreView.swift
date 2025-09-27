@@ -9,7 +9,7 @@ import SwiftUI
 import ComposableArchitecture
 
 struct PublicRouteMapStoreView: View {
-    @Bindable var store: StoreOf<PublicRoute>
+    @Perception.Bindable var store: StoreOf<PublicRoute>
     @StateObject var replayController: ReplayController
     
     init(store: StoreOf<PublicRoute>) {
@@ -34,50 +34,52 @@ struct PublicRouteMapStoreView: View {
     
     
     var body: some View {
-        ZStack{
-            PublicRouteMap(
-                points: store.pinPoints,
-                polylines: store.points?.pair,
-                float: floatAnnotation,
-                region: $store.mapRegion,
-                pointTapped: { store.send(.pointTapped($0))},
-                locationTapped: { store.send(.locationTapped) }
-            )
-            .equatable()
-            .ignoresSafeArea(edges: .bottom)
-            VStack{
-                Spacer()
-                HStack(spacing: 16){
-                    if store.replay.isRunning {
-                        slider()
-                    }else{
-                        Spacer()
+        WithPerceptionTracking{
+            ZStack{
+                PublicRouteMap(
+                    points: store.pinPoints,
+                    polylines: store.points?.pair,
+                    float: floatAnnotation,
+                    region: $store.mapRegion,
+                    pointTapped: { store.send(.pointTapped($0))},
+                    locationTapped: { store.send(.locationTapped) }
+                )
+                .equatable()
+                .ignoresSafeArea(edges: .bottom)
+                VStack{
+                    Spacer()
+                    HStack(spacing: 16){
+                        if store.replay.isRunning {
+                            slider()
+                        }else{
+                            Spacer()
+                        }
+                        buttons()
                     }
-                    buttons()
-                }
-                .padding()
-            }
-            VStack{
-                menu()
                     .padding()
-                Spacer()
+                }
+                VStack{
+                    menu()
+                        .padding()
+                    Spacer()
+                }
+                .tapOutside(isShown: $store.isMenuExpanded)
             }
-            .tapOutside(isShown: $store.isMenuExpanded)
-        }
-        .alert($store.scope(state: \.alert, action: \.alert))
-        .sheet(item: $store.detail) { detail in
-            switch detail{
-            case .point(let item):
-                PointView(item: item)
-                    .presentationDetents([.fraction(0.3), .medium, .large])
-            case .location(let item):
-                LocationView(item: item)
-                    .presentationDetents([.fraction(0.3), .medium, .large])
+            .alert($store.scope(state: \.alert, action: \.alert))
+            .sheet(item: $store.detail) { detail in
+                switch detail{
+                case .point(let item):
+                    PointView(item: item)
+                        .presentationDetents([.fraction(0.3), .medium, .large])
+                case .location(let item):
+                    LocationView(item: item)
+                        .presentationDetents([.fraction(0.3), .medium, .large])
+                }
             }
+            .onAppear{ updateReplay() }
+            .onChange(of: store.route) { _ in updateReplay() }
+            .onChange(of: store.replay) { _ in updateReplay() }
         }
-        .onAppear{ updateReplay() }
-        .onChange(of: store.route) { _ in updateReplay() }
-        .onChange(of: store.replay) { _ in updateReplay() }
     }
     
     @ViewBuilder
@@ -91,16 +93,18 @@ struct PublicRouteMapStoreView: View {
                     .shadow(radius: 3)
             }
             if store.isMenuExpanded,
-               let others = store.others{
+               let others = store.others {
                 ForEach(others) { route in
-                    ToggleOptionItem(
-                        title: route.text(format:"m/d T"),
-                        onTap: { store.send(.itemSelected(route)) }
-                    )
-                    .padding(8)
-                    .background(Color(UIColor.systemGray5))
-                    .cornerRadius(8)
-                    .shadow(radius: 3)
+                    WithPerceptionTracking{
+                        ToggleOptionItem(
+                            title: route.text(format:"m/d T"),
+                            onTap: { store.send(.itemSelected(route)) }
+                        )
+                        .padding(8)
+                        .background(Color(UIColor.systemGray5))
+                        .cornerRadius(8)
+                        .shadow(radius: 3)
+                    }
                 }
             }
         }
