@@ -9,8 +9,9 @@ import SwiftUI
 import ComposableArchitecture
 import NavigationSwipeControl
 
+@available(iOS 17.0, *)
 struct AdminSpanView:View{
-    @Bindable var store:StoreOf<AdminSpanEdit>
+    @SwiftUI.Bindable var store:StoreOf<AdminSpanEdit>
     
     var body: some View {
         List {

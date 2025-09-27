@@ -9,8 +9,9 @@ import SwiftUI
 import ComposableArchitecture
 import NavigationSwipeControl
 
+@available(iOS 17.0, *)
 struct ConfirmSignInStoreView: View {
-    @Bindable var store: StoreOf<ConfirmSignIn>
+    @SwiftUI.Bindable var store: StoreOf<ConfirmSignIn>
     
     var body: some View {
         VStack {
