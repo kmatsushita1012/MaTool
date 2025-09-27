@@ -31,7 +31,8 @@ struct LoginStoreView: View {
                 .focused($focusedField, equals: .identifier)
                 .padding()
                 
-            SecureField("パスワード", text: $store.password)
+            TextField("パスワード", text: $store.password)
+                .textContentType(.password)
                 .textFieldStyle(RoundedBorderTextFieldStyle())
                 .focused($focusedField, equals: .password)
                 .padding()
