@@ -2,7 +2,7 @@ name: release
 
 on:
   push:
-    branches: ["release", "feature/xcode26"]
+    branches: ["release", "feature/ios-16"]
 
   workflow_dispatch:
 
