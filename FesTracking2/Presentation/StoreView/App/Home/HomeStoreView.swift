@@ -44,18 +44,22 @@ struct HomeStoreView: View {
                                         .onTapGesture {
                                             store.send(.settingsTapped)
                                         }
-                                    
-                                    card("AdminCard")
-                                        .frame(height: geometry.size.height * 3 / 5 )
-                                        .onTapGesture {
-                                            store.send(.adminTapped)
-                                        }
-                                        .loadingOverlay(
-                                            store.isAuthLoading,
-                                            message: "スキップ"
-                                        ) {
-                                            store.send(.skipTapped)
-                                        }
+                                    if #available(iOS 17.0, *){
+                                        card("AdminCard")
+                                            .frame(height: geometry.size.height * 3 / 5 )
+                                            .onTapGesture {
+                                                store.send(.adminTapped)
+                                            }
+                                            .loadingOverlay(
+                                                store.isAuthLoading,
+                                                message: "スキップ"
+                                            ) {
+                                                store.send(.skipTapped)
+                                            }
+                                    } else {
+                                        disabledCard("管理者用ページはお使いの端末（iOS 16）では利用できません")
+                                            .frame(height: geometry.size.height * 3 / 5 )
+                                    }
                                 }
                             }
                         }
@@ -69,21 +73,17 @@ struct HomeStoreView: View {
                                 .padding()
                         }
                     }
-                    .background(
+                    .background (
                         Image("HomeBackground")
                             .resizable()
                             .scaledToFill()
                             .ignoresSafeArea(edges: [.top])
                     )
                     .navigationDestination(item: $store.scope(state: \.destination?.map, action: \.destination.map)) { store in
-                        WithPerceptionTracking{
-                            PublicMapStoreView(store: store)
-                        }
+                        PublicMapStoreView(store: store)
                     }
                     .navigationDestination(item: $store.scope(state: \.destination?.info, action: \.destination.info)) { store in
-                        WithPerceptionTracking{
-                            InfoStoreView(store: store)
-                        }
+                        InfoStoreView(store: store)
                     }
                     .navigationDestination(item: $store.scope(state: \.destination?.login, action: \.destination.login)) { store in
                         if #available(iOS 17.0, *){
@@ -91,7 +91,6 @@ struct HomeStoreView: View {
                         } else {
                             EmptyView()
                         }
-
                     }
                     .navigationDestination(item: $store.scope(state: \.destination?.adminDistrict, action: \.destination.adminDistrict)) { store in
                         if #available(iOS 17.0, *){
@@ -99,7 +98,6 @@ struct HomeStoreView: View {
                         } else {
                             EmptyView()
                         }
-
                     }
                     .navigationDestination(item: $store.scope(state: \.destination?.adminRegion, action: \.destination.adminRegion)) { store in
                         if #available(iOS 17.0, *){
@@ -107,19 +105,18 @@ struct HomeStoreView: View {
                         } else {
                             EmptyView()
                         }
-
                     }
                     .navigationDestination(item: $store.scope(state: \.destination?.settings, action: \.destination.settings)) { store in
-                        WithPerceptionTracking {
-                            SettingsStoreView(store: store)
-                        }
+                        SettingsStoreView(store: store)
                     }
                     .alert($store.scope(state: \.alert, action: \.alert))
                     .loadingOverlay(store.isLoading)
                 )
-            }
-            .sheet(item: $store.status) { status in
-                AppStatusModal(status)
+                .sheet(item: $store.status) { status in
+                    WithPerceptionTracking {
+                        AppStatusModal(status)
+                    }
+                }
             }
         }
     }
@@ -127,13 +124,30 @@ struct HomeStoreView: View {
     @ViewBuilder
     func card(_ imageName: String, priority: Double = 0) -> some View {
         GeometryReader { geometry in
-           Image(imageName)
-               .resizable()
-               .scaledToFill()
-               .frame(width: geometry.size.width, height: geometry.size.height)
-               .clipped()
-               .cornerRadius(8)
-       }
+            WithPerceptionTracking{
+                Image(imageName)
+                    .resizable()
+                    .scaledToFill()
+                    .frame(width: geometry.size.width, height: geometry.size.height)
+                    .clipped()
+                    .cornerRadius(8)
+            }
+        }
+    }
+    
+    @ViewBuilder
+    func disabledCard(_ message: String, priority: Double = 0) -> some View {
+        GeometryReader { geometry in
+            WithPerceptionTracking{
+                Text(message)
+                    .font(.headline)
+                    .foregroundColor(.gray)
+                    .padding()
+                    .frame(width: geometry.size.width, height: geometry.size.height)
+                    .background(Color(.systemGray6))
+                    .cornerRadius(8)
+            }
+        }
     }
 }
 
