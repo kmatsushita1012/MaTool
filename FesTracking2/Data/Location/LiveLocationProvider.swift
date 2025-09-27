@@ -16,7 +16,7 @@ actor LocationProvider: NSObject, LocationProviderProtocol {
 
     override init() {
         super.init()
-        
+        manager?.pausesLocationUpdatesAutomatically = false
         Task{
             await setupLocationManagerIfNeeded()
         }
