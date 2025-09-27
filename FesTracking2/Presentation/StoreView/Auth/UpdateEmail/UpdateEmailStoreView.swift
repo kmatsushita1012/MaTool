@@ -9,9 +9,10 @@ import ComposableArchitecture
 import SwiftUI
 import NavigationSwipeControl
 
+@available(iOS 17.0, *)
 struct UpdateEmailStoreView: View {
     
-    @Bindable var store: StoreOf<UpdateEmail>
+    @SwiftUI.Bindable var store: StoreOf<UpdateEmail>
     @FocusState private var focusedField: Field?
     
     

@@ -9,28 +9,30 @@ import SwiftUI
 import ComposableArchitecture
 
 struct PublicLocationsMapStoreView: View {
-    @Bindable var store: StoreOf<PublicLocations>
+    @Perception.Bindable var store: StoreOf<PublicLocations>
     
     var body: some View {
-        ZStack{
-            PublicLocationsMap(
-                items: store.locations,
-                onTap: { store.send(.locationTapped($0)) },
-                region: $store.mapRegion
-            )
-            .ignoresSafeArea(edges: .bottom)
-            VStack{
-                Spacer()
-                HStack{
+        WithPerceptionTracking{
+            ZStack{
+                PublicLocationsMap(
+                    items: store.locations,
+                    onTap: { store.send(.locationTapped($0)) },
+                    region: $store.mapRegion
+                )
+                .ignoresSafeArea(edges: .bottom)
+                VStack{
                     Spacer()
-                    buttons()
-                        .padding()
+                    HStack{
+                        Spacer()
+                        buttons()
+                            .padding()
+                    }
                 }
             }
-        }
-        .sheet(item: $store.detail){ item in
-            LocationView(item: item)
-                .presentationDetents([.fraction(0.3)])
+            .sheet(item: $store.detail){ item in
+                LocationView(item: item)
+                    .presentationDetents([.fraction(0.3)])
+            }
         }
     }
     

@@ -8,8 +8,9 @@
 import SwiftUI
 import ComposableArchitecture
 
+@available(iOS 17.0, *)
 struct LocationAdminView: View {
-    @Bindable var store: StoreOf<AdminLocation>
+    @SwiftUI.Bindable var store: StoreOf<AdminLocation>
     
     var body: some View {
         List {
