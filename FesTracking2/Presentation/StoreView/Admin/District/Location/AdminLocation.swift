@@ -84,8 +84,10 @@ struct AdminLocation{
 struct Interval: Equatable, Hashable {
     let label: String
     let value: Int
-    
-    static let sample = Interval(label: "5分", value: 300)
+}
+
+extension Interval {
+    static let sample = Interval(label: "1分", value: 60)
     static let options = [
         Interval(label: "5秒（確認用）", value: 5),
         Interval(label: "1分", value: 60),

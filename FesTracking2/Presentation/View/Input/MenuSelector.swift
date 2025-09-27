@@ -8,7 +8,7 @@
 import SwiftUI
 
 struct MenuSelector<T: Hashable>: View {
-    let title: String
+    var title: String? = nil
     let items: [T]?
     @Binding var selection: T?
     let label: (T?) -> String
@@ -19,9 +19,11 @@ struct MenuSelector<T: Hashable>: View {
     
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
-            Text(title)
-                .font(.subheadline)
-                .foregroundColor(.primary)
+            if let title {
+                Text(title)
+                    .font(.subheadline)
+                    .foregroundColor(.primary)
+            }
             Menu {
                 if let items = items {
                     ForEach(items, id: \.self) { item in

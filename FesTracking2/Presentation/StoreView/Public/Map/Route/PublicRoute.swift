@@ -105,7 +105,7 @@ struct PublicRoute {
                 state.selectedItem = value
                 return .run { send in
                     
-                    let result = await apiRepository.getRoute(value.districtId)
+                    let result = await apiRepository.getRoute(value.id)
                     await send(.routeReceived(result))
                 }
             case .pointTapped(let value):
@@ -184,7 +184,7 @@ extension PublicRoute.State {
     var others: [RouteSummary]? {
         items?.filter {
             if let selectedItem {
-                $0.districtId != selectedItem.districtId
+                $0.id != selectedItem.id
             } else {
                 false
             }
