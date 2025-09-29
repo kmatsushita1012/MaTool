@@ -16,6 +16,7 @@ struct DistrictInfo {
         let item: PublicDistrict
         var region: MKCoordinateRegion?
         var isLoading: Bool = false
+        var isDismissed:Bool = false
         
         init(item: PublicDistrict){
             self.item = item
@@ -43,8 +44,13 @@ struct DistrictInfo {
             case .binding:
                 return .none
             case .dismissTapped:
-                return .run { _ in
-                    await dismiss()
+                if #available(iOS 17.0, *) {
+                    return .run { _ in
+                        await dismiss()
+                    }
+                } else {
+                    state.isDismissed = true
+                    return .none
                 }
             //　MARK: Homeに移譲
             case .mapTapped:
