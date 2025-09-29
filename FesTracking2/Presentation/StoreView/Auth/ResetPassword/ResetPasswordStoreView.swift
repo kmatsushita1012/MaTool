@@ -9,9 +9,10 @@ import ComposableArchitecture
 import SwiftUI
 import NavigationSwipeControl
 
+@available(iOS 17.0, *)
 struct ResetPasswordStoreView: View {
     
-    @Bindable var store: StoreOf<ResetPassword>
+    @SwiftUI.Bindable var store: StoreOf<ResetPassword>
     @FocusState private var focusedField: Field?
     
     enum Field {

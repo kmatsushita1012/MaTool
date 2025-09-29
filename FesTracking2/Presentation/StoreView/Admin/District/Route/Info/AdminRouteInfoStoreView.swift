@@ -9,8 +9,9 @@ import SwiftUI
 import ComposableArchitecture
 import NavigationSwipeControl
 
+@available(iOS 17.0, *)
 struct AdminRouteInfoView: View{
-    @Bindable var store: StoreOf<AdminRouteInfo>
+    @SwiftUI.Bindable var store: StoreOf<AdminRouteInfo>
     
     var body: some View{
         List{

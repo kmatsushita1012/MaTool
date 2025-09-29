@@ -10,83 +10,88 @@ import SwiftUI
 import NavigationSwipeControl
 
 struct DistrictInfoStoreView: View {
-    @Bindable var store: StoreOf<DistrictInfo>
+    @Perception.Bindable var store: StoreOf<DistrictInfo>
     
     var body: some View {
-        ZStack{
-            ScrollView {
-                VStack(spacing: 16) {
-                    TitleView(
-                        text: store.item.name,
-                        image: "InfoBackground"
-                    ) {
-                        store.send(.dismissTapped)
-                    }
-                    
-                    if let imagePath = store.item.imagePath {
-                        VStack{
-                            WebImageView(imagePath: imagePath, contentMode: .fit)
+        WithPerceptionTracking{
+            ZStack{
+                ScrollView {
+                    VStack(spacing: 16) {
+                        TitleView(
+                            text: store.item.name,
+                            image: "InfoBackground"
+                        ) {
+                            store.send(.dismissTapped)
                         }
-                        .cornerRadius(8)
-                        .padding(.horizontal)
-                    }
-                    
-                    if let description = store.item.description {
-                        VStack{
-                            ScrollableTextView(description, maxHeight: 192)
-                                .padding()
+                        
+                        if let imagePath = store.item.imagePath {
+                            VStack{
+                                WebImageView(imagePath: imagePath, contentMode: .fit)
+                            }
+                            .cornerRadius(8)
+                            .padding(.horizontal)
                         }
-                        .background(Color.info.opacity(0.3))
-                        .cornerRadius(8)
-                        .padding(.horizontal)
-                    }
-                    // 横スクロール（上で修正したもの）
-                    if !store.item.performances.isEmpty{
-                        VStack(alignment: .leading){
-                            Text("余興")
-                                .font(.headline)
-                                .foregroundColor(.primary)
-                                .padding(.horizontal)
-                            ScrollView(.horizontal, showsIndicators: false) {
-                                HStack(spacing: 16) {
-                                    ForEach(store.item.performances) { item in
-                                        performance(item)
+                        
+                        if let description = store.item.description {
+                            VStack{
+                                ScrollableTextView(description, maxHeight: 192)
+                                    .padding()
+                            }
+                            .background(Color.info.opacity(0.3))
+                            .cornerRadius(8)
+                            .padding(.horizontal)
+                        }
+                        // 横スクロール（上で修正したもの）
+                        if !store.item.performances.isEmpty{
+                            VStack(alignment: .leading){
+                                Text("余興")
+                                    .font(.headline)
+                                    .foregroundColor(.primary)
+                                    .padding(.horizontal)
+                                ScrollView(.horizontal, showsIndicators: false) {
+                                    HStack(spacing: 16) {
+                                        ForEach(store.item.performances) { item in
+                                            WithPerceptionTracking {
+                                                performance(item)
+                                            }
+                                        }
                                     }
+                                    .padding(.horizontal)
                                 }
-                                .padding(.horizontal)
                             }
                         }
+                        VStack{
+                            PublicDistrictMapView(
+                                base: store.item.base,
+                                area: store.item.area,
+                                region: $store.region
+                            )
+                            .clipShape(RoundedRectangle(cornerRadius: 12))
+                            .background(
+                                RoundedRectangle(cornerRadius: 12)
+                                    .fill(Color(UIColor.secondarySystemGroupedBackground))
+                            )
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 12)
+                                    .stroke(Color(UIColor.separator), lineWidth: 0.5)
+                            )
+                        }
+                        .frame(height: 384)
+                        .padding(.horizontal)
                     }
-                    VStack{
-                        PublicDistrictMapView(
-                            base: store.item.base,
-                            area: store.item.area,
-                            region: $store.region
-                        )
-                        .clipShape(RoundedRectangle(cornerRadius: 12))
-                        .background(
-                            RoundedRectangle(cornerRadius: 12)
-                                .fill(Color(UIColor.secondarySystemGroupedBackground))
-                        )
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 12)
-                                .stroke(Color(UIColor.separator), lineWidth: 0.5)
-                        )
-                    }
-                    .frame(height: 384)
-                    .padding(.horizontal)
+                    .padding(.bottom, 88)
                 }
-                .padding(.bottom, 88)
+                VStack{
+                    Spacer()
+                    mapButton()
+                        .padding(32)
+                }
             }
-            VStack{
-                Spacer()
-                mapButton()
-                    .padding(32)
-            }
+            .ignoresSafeArea()
+            .loadingOverlay(store.isLoading)
+            .dismissible(backButton: false)
+            .dismissOnChange(of: store.isDismissed)
         }
-        .ignoresSafeArea()
-        .loadingOverlay(store.isLoading)
-        .dismissible(backButton: false)
     }
     
     @ViewBuilder

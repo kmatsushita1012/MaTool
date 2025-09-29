@@ -114,6 +114,7 @@
 		29AD86502DB210F500C3E8B2 /* AdminLocationMapView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29AD864F2DB210F000C3E8B2 /* AdminLocationMapView.swift */; };
 		29B1599A2DF1888900F469A9 /* DistrictTool.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29B159992DF1888300F469A9 /* DistrictTool.swift */; };
 		29B2D0942DF0788E008592F8 /* EditManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29B2D0932DF07843008592F8 /* EditManager.swift */; };
+		29B3E82E2E87C1F900A94663 /* Perception.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29B3E82D2E87C1F500A94663 /* Perception.swift */; };
 		29B5FD632D80877D008838BB /* DistrictSummary.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29B5FD622D808776008838BB /* DistrictSummary.swift */; };
 		29B638A72DB0E7E400DF8419 /* AdminSpanEdit.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29B638A62DB0E7DF00DF8419 /* AdminSpanEdit.swift */; };
 		29B638A92DB0E89600DF8419 /* AdminSpanEditStoreView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29B638A82DB0E89000DF8419 /* AdminSpanEditStoreView.swift */; };
@@ -302,6 +303,7 @@
 		29AD86512DB212DB00C3E8B2 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		29B159992DF1888300F469A9 /* DistrictTool.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DistrictTool.swift; sourceTree = "<group>"; };
 		29B2D0932DF07843008592F8 /* EditManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditManager.swift; sourceTree = "<group>"; };
+		29B3E82D2E87C1F500A94663 /* Perception.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Perception.swift; sourceTree = "<group>"; };
 		29B5FD622D808776008838BB /* DistrictSummary.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DistrictSummary.swift; sourceTree = "<group>"; };
 		29B638A62DB0E7DF00DF8419 /* AdminSpanEdit.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdminSpanEdit.swift; sourceTree = "<group>"; };
 		29B638A82DB0E89000DF8419 /* AdminSpanEditStoreView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdminSpanEditStoreView.swift; sourceTree = "<group>"; };
@@ -476,6 +478,7 @@
 			children = (
 				296795D32DA4FEFD008D3CE1 /* PresentationUtils.swift */,
 				2993C81F2DD0704B000D0E1A /* Bindings.swift */,
+				29B3E82D2E87C1F500A94663 /* Perception.swift */,
 				29A2E5742E5D68F00012D944 /* Entity+.swift */,
 			);
 			path = Utils;
@@ -1685,6 +1688,7 @@
 				299AD5962E04F9A3007ACBC4 /* AuthResponce.swift in Sources */,
 				29CBB33D2E04365F006687A3 /* AuthProvider.swift in Sources */,
 				29CF490C2D74263400036D28 /* ApiRepositoryMock.swift in Sources */,
+				29B3E82E2E87C1F900A94663 /* Perception.swift in Sources */,
 				2981E7032E4A7A2300061D1F /* AppStatus.swift in Sources */,
 				29BC19482DB625C700C6F918 /* SettingsStoreView.swift in Sources */,
 				292D0B8B2DB0CADD00176E51 /* AdminPerformanceEditStoreView.swift in Sources */,
@@ -1897,12 +1901,12 @@
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UIUserInterfaceStyle = Light;
-				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 2.2.7;
+				MARKETING_VERSION = 2.2.8;
 				OTHER_SWIFT_FLAGS = "$(inherited) -D COCOAPODS";
 				PRODUCT_BUNDLE_IDENTIFIER = StudioMK.FesTracking;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -1940,12 +1944,12 @@
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UIUserInterfaceStyle = Light;
-				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 2.2.7;
+				MARKETING_VERSION = 2.2.8;
 				PRODUCT_BUNDLE_IDENTIFIER = StudioMK.FesTracking;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
