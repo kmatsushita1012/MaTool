@@ -11,8 +11,9 @@ import MapKit
 import UniformTypeIdentifiers
 import NavigationSwipeControl
 
+@available(iOS 17.0, *)
 struct AdminRouteExportView: View{
-    @Bindable var store: StoreOf<AdminRouteExport>
+    @SwiftUI.Bindable var store: StoreOf<AdminRouteExport>
     
     var body: some View{
         // 背景のMap

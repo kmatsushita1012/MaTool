@@ -293,7 +293,13 @@ struct Home {
                         let regionId = userDefaultsClient.string(defaultRegionKey)  else {
                         return .none
                     }
-                    return routeEffect(regionId: regionId, districtId: districtId)
+                    if #available(iOS 17, *) {
+                        return routeEffect(regionId: regionId, districtId: districtId)
+                    }else{
+                        state.isDestinationLoading = true
+                        state.destination = nil
+                        return routeEffect(regionId: regionId, districtId: districtId)
+                    }
                 case .adminDistrict(.signOutReceived(.success(let userRole))),
                     .adminRegion(.signOutReceived(.success(let userRole))):
                     state.userRole = userRole

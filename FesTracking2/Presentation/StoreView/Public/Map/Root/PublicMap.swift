@@ -26,6 +26,7 @@ struct PublicMap{
         let contents: [Content]
         var selectedContent: Content
         var isLoading: Bool = false
+        var isDismissed: Bool = false
         @Presents var destination: Destination.State?
         @Shared var mapRegion: MKCoordinateRegion
         @Presents var alert: Alert.State?
@@ -71,8 +72,13 @@ struct PublicMap{
             case .binding:
                 return .none
             case .homeTapped:
-                return .run{ _ in
-                    await dismiss()
+                if #available(iOS 17.0, *) {
+                    return .run { _ in
+                        await dismiss()
+                    }
+                } else {
+                    state.isDismissed = true
+                    return .none
                 }
             case .contentSelected(let value):
                 state.selectedContent = value

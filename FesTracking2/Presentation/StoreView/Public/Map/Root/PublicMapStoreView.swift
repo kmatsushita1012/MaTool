@@ -10,39 +10,42 @@ import SwiftUI
 import NavigationSwipeControl
 
 struct PublicMapStoreView: View {
-    @Bindable var store: StoreOf<PublicMap>
+    @Perception.Bindable var store: StoreOf<PublicMap>
     
     var body: some View {
-        VStack(spacing: 0){
-            picker()
-            if let routeStore = store.scope(state: \.destination?.route, action: \.destination.route) {
-                PublicRouteMapStoreView(store: routeStore)
-                    .id(routeStore.districtId)
-            } else if let store = store.scope(state: \.destination?.locations, action: \.destination.locations) {
-                PublicLocationsMapStoreView(store: store)
-            } else {
-                Spacer()
-            }
-        }
-        .loadingOverlay(store.isLoading)
-        .background(Color.map)
-        .navigationTitle("地図")
-        .navigationBarTitleDisplayMode(.inline)
-        .toolbar {
-            ToolbarItem(placement: .navigationBarLeading) {
-                Button(action: {
-                    store.send(.homeTapped)
-                }) {
-                    Image(systemName: "house")
-                        .foregroundColor(.black)
+        WithPerceptionTracking{
+            VStack(spacing: 0){
+                picker()
+                if let routeStore = store.scope(state: \.destination?.route, action: \.destination.route) {
+                    PublicRouteMapStoreView(store: routeStore)
+                        .id(routeStore.districtId)
+                } else if let store = store.scope(state: \.destination?.locations, action: \.destination.locations) {
+                    PublicLocationsMapStoreView(store: store)
+                } else {
+                    Spacer()
                 }
-                .padding(.horizontal, 8)
             }
-        }
-        .alert($store.scope(state: \.alert, action: \.alert))
-        .dismissible(backButton: false)
-        .onAppear{
-            store.send(.onAppear)
+            .loadingOverlay(store.isLoading)
+            .background(Color.map)
+            .navigationTitle("地図")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarLeading) {
+                    Button(action: {
+                        store.send(.homeTapped)
+                    }) {
+                        Image(systemName: "house")
+                            .foregroundColor(.black)
+                    }
+                    .padding(.horizontal, 8)
+                }
+            }
+            .alert($store.scope(state: \.alert, action: \.alert))
+            .dismissible(backButton: false)
+            .onAppear{
+                store.send(.onAppear)
+            }
+            .dismissOnChange(of: store.isDismissed)
         }
     }
     
@@ -52,8 +55,10 @@ struct PublicMapStoreView: View {
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 8) {
                     ForEach(store.contents, id: \.self) { item in
-                        menuButton(for: item)
-                            .id(item)
+                        WithPerceptionTracking{
+                            menuButton(for: item)
+                                .id(item)
+                        }
                     }
                 }
             }
@@ -63,7 +68,7 @@ struct PublicMapStoreView: View {
                     proxy.scrollTo(store.selectedContent, anchor: .center)
                 }
             }
-            .onChange(of: store.selectedContent) {
+            .onChange(of: store.selectedContent) { newValue in
                 withAnimation {
                     proxy.scrollTo(store.selectedContent, anchor: .center)
                 }

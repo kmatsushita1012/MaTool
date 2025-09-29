@@ -31,6 +31,9 @@ struct FesTracking2App: App {
             }
             .task{
                 store.send(.initialize)
+                if #available(iOS 17.0, *){
+                    isPerceptionCheckingEnabled = false
+                }
             }
         }
     }

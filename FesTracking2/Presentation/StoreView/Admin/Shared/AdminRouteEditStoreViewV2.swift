@@ -9,11 +9,12 @@ import ComposableArchitecture
 import SwiftUI
 import NavigationSwipeControl
 
+@available(iOS 17.0, *)
 struct AdminRouteEditStoreViewV2: View {
     
     typealias Tab = AdminRouteEditV2.Tab
     
-    @Bindable var store: StoreOf<AdminRouteEditV2>
+    @SwiftUI.Bindable var store: StoreOf<AdminRouteEditV2>
     @State private var selectedDetent: PresentationDetent = .large
     
     var body: some View {

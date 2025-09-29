@@ -9,9 +9,10 @@ import SwiftUI
 import ComposableArchitecture
 import NavigationSwipeControl
 
+@available(iOS 17.0, *)
 struct ChangePasswordStoreView: View {
     
-    @Bindable var store: StoreOf<ChangePassword>
+    @SwiftUI.Bindable var store: StoreOf<ChangePassword>
     @FocusState private var focusedField: Field?
     
     enum Field: Hashable {
@@ -59,12 +60,4 @@ struct ChangePasswordStoreView: View {
     }
 }
 
-#Preview {
-    ChangePasswordStoreView(
-        store: Store(
-            initialState: ChangePassword.State()
-        ){
-            ChangePassword()
-        }
-    )
-}
+

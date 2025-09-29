@@ -7,6 +7,7 @@
 
 import SwiftUI
 import Kingfisher
+import Perception
 
 typealias ContentMode = SwiftUI.ContentMode
 
@@ -23,7 +24,9 @@ struct WebImageView: View {
         if let url = URL(string: imagePath) {
             KFImage(url)
                 .placeholder {
-                    ProgressView()
+                    WithPerceptionTracking{
+                        ProgressView()
+                    }
                 }
                 .cacheOriginalImage()
                 .resizable()

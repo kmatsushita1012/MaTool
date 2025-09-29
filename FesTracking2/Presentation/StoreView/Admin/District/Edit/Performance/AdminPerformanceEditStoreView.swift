@@ -9,9 +9,10 @@ import SwiftUI
 import ComposableArchitecture
 import NavigationSwipeControl
 
+@available(iOS 17.0, *)
 struct AdminPerformanceView:View {
     
-    @Bindable var store: StoreOf<AdminPerformanceEdit>
+    @SwiftUI.Bindable var store: StoreOf<AdminPerformanceEdit>
     
     var body: some View {
         List {

@@ -9,61 +9,59 @@ import SwiftUI
 import ComposableArchitecture
 import NavigationSwipeControl
 
-import SwiftUI
-import ComposableArchitecture
-import NavigationSwipeControl
-
 struct InfoStoreView: View {
-    @Bindable var store: StoreOf<InfoList>
+    @Perception.Bindable var store: StoreOf<InfoList>
     
     var body: some View {
-        VStack {
-            // タイトル
-            TitleView(
-                text: "町を見てみよう",
-                image: "InfoBackground"
-            ) {
-                store.send(.homeTapped)
-            }
-            .ignoresSafeArea(edges: .top)
-            VStack{
-                mainItem(store.region.name)
-                    .onTapGesture{
-                        #if DEBUG
-                            store.send(.regionTapped)
-                        #endif
-                    }
-            }
-            .padding(.horizontal, 96)
-            // スクロールする町名リスト
-            ScrollView {
-                VStack(spacing: 8) {
-                    ForEach(store.districts) { district in
-                        listItem(district.name)
-                            .onTapGesture{
-                                store.send(.districtTapped(district))
-                            }
-                    }
+        WithPerceptionTracking{
+            VStack {
+                // タイトル
+                TitleView(
+                    text: "町を見てみよう",
+                    image: "InfoBackground"
+                ) {
+                    store.send(.homeTapped)
                 }
-                .padding(.horizontal, 64)
-                .padding(.vertical, 24)
-                .frame(maxWidth: .infinity)
+                .ignoresSafeArea(edges: .top)
+                VStack{
+                    mainItem(store.region.name)
+                        .onTapGesture{
+                            #if DEBUG
+                            store.send(.regionTapped)
+                            #endif
+                        }
+                }
+                .padding(.horizontal, 96)
+                // スクロールする町名リスト
+                ScrollView {
+                    VStack(spacing: 8) {
+                        ForEach(store.districts) { district in
+                            listItem(district.name)
+                                .onTapGesture{
+                                    store.send(.districtTapped(district))
+                                }
+                        }
+                    }
+                    .padding(.horizontal, 64)
+                    .padding(.vertical, 24)
+                    .frame(maxWidth: .infinity)
+                }
+                .frame(maxHeight: .infinity)
+                .mask(mask())
+                VStack{
+                    mainItem("　")
+                }
+                .padding(.horizontal, 96)
             }
-            .frame(maxHeight: .infinity)
-            .mask(mask())
-            VStack{
-                mainItem("　")
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .background(Color.white)
+            .dismissible(backButton: false)
+            .navigationDestination(item: $store.scope(state: \.destination?.district, action: \.destination.district)) { store in
+                WithPerceptionTracking{
+                    DistrictInfoStoreView(store: store)
+                }
             }
-            .padding(.horizontal, 96)
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(Color.white)
-        .dismissible(backButton: false)
-        .navigationDestination(item: $store.scope(state: \.destination?.district, action: \.destination.district)) { store in
-            DistrictInfoStoreView(store: store)
-        }
-        .navigationDestination(item: $store.scope(state: \.destination?.region, action: \.destination.region)) { store in
-            RegionInfoStoreView(store: store)
+            .dismissOnChange(of: store.isDismissed)
         }
     }
     

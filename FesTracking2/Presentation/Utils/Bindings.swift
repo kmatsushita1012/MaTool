@@ -6,6 +6,8 @@
 //
 
 import SwiftUI
+import ComposableArchitecture
+
 
 extension Binding {
     /// 読み取り専用バインディング
