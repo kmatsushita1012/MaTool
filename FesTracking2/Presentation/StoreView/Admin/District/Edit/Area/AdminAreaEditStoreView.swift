@@ -9,8 +9,9 @@ import SwiftUI
 import ComposableArchitecture
 import NavigationSwipeControl
 
+@available(iOS 17.0, *)
 struct AdminAreaView:View {
-    @Bindable var store: StoreOf<AdminAreaEdit>
+    @SwiftUI.Bindable var store: StoreOf<AdminAreaEdit>
     
     var body: some View {
         ZStack {

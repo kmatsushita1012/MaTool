@@ -27,7 +27,7 @@ struct TapOutsideModifier: ViewModifier {
             }
             content
         }
-        .onChange(of: isShown) {
+        .onChange(of: isShown) { isShown in
             withAnimation(.easeInOut(duration: 0.1)) {
                 isVisible = isShown
             }
