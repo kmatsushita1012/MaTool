@@ -83,12 +83,14 @@ struct PublicRoute {
         case floatFocusTapped
         case routeReceived(Result<RouteInfo, APIError>)
         case locationReceived(Result<LocationInfo, APIError>)
+        case userLocationReceived(Coordinate)
         case replayTapped
         case replayEnded
         case didSeek(Double)
         case alert(PresentationAction<Alert.Action>)
     }
     
+    @Dependency(\.locationProvider) var locationProvider
     @Dependency(\.apiRepository) var apiRepository
     
     var body: some ReducerOf<PublicRoute> {
@@ -114,8 +116,6 @@ struct PublicRoute {
             case .locationTapped:
                 guard let location = state.location else { return .none }
                 state.detail = .location(location)
-                return .none
-            case .userFocusTapped:
                 return .none
             case .floatFocusTapped:
                 return .run {[districtId = state.districtId] send in
@@ -148,6 +148,15 @@ struct PublicRoute {
                     state.replay = .start
                 }
                 return .none
+            case .userLocationReceived(let value):
+                state.$mapRegion.withLock { $0 = makeRegion(origin: value, spanDelta: spanDelta)}
+                return .none
+            case .userFocusTapped:
+                return .run{ send in
+                    let result = await locationProvider.getLocation()
+                    guard let coordinate = result.value?.coordinate  else { return }
+                    await send(.userLocationReceived(Coordinate.fromCL(coordinate)))
+                }
             case .didSeek(let value):
                 if state.replay.isRunning{
                     state.replay = .seek(value)
