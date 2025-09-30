@@ -24,7 +24,7 @@ struct SettingsStoreView: View {
                     store.send(.dismissTapped)
                 }
                 .ignoresSafeArea(edges: .top)
-                VStack{
+                VStack(spacing: 8){
                     VStack{
                         MenuSelector(
                             title: "祭典を変更",
@@ -69,9 +69,7 @@ struct SettingsStoreView: View {
                             .font(.headline)
                         }
                     }
-                    .padding(.vertical, 8)
                     Text("バージョン \(AppStatusClient.getCurrentVersion())")
-                        .padding(.vertical, 8)
                     VStack{
                         Button(action: {
                             store.send(.signOutTapped)
@@ -84,7 +82,6 @@ struct SettingsStoreView: View {
                             .font(.footnote)
                             .foregroundColor(.gray)
                     }
-                    .padding(.vertical, 8)
                     Spacer()
                 }
                 .padding(.horizontal)
