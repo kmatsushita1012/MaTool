@@ -43,7 +43,6 @@ struct PublicMap{
             id: String,
             locationsResult: Result<[LocationInfo],APIError>
         )
-        case userLocationReceived(Coordinate)
         case destination(PresentationAction<Destination.Action>)
         case alert(PresentationAction<Alert.Action>)
     }
@@ -149,16 +148,6 @@ struct PublicMap{
                 state.isLoading = false
                 state.alert = Alert.error(error.localizedDescription)
                 return .none
-            case .userLocationReceived(let value):
-                state.$mapRegion.withLock { $0 = makeRegion(origin: value, spanDelta: spanDelta)}
-                return .none
-            case .destination(.presented(.route(.userFocusTapped))),
-                .destination(.presented(.locations(.userFocusTapped))):
-                return .run{ send in
-                    let result = await locationProvider.getLocation()
-                    guard let coordinate = result.value?.coordinate  else { return }
-                    await send(.userLocationReceived(Coordinate.fromCL(coordinate)))
-                }
             case .destination:
                 return .none
             case .alert:
