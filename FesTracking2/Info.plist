@@ -10,6 +10,8 @@
 	<array>
 		<string>location</string>
 	</array>
+	<key>UIDesignRequiresCompatibility</key>
+	<true/>
 	<key>UILaunchScreen</key>
 	<dict>
 		<key>UIColorName</key>
@@ -17,7 +19,5 @@
 		<key>UIImageName</key>
 		<string>LaunchImage</string>
 	</dict>
-    <key>UIDesignRequiresCompatibility</key>
-    <true/>
 </dict>
 </plist>

@@ -86,7 +86,7 @@ struct PublicRouteMapStoreView: View {
     func menu()-> some View {
         VStack(spacing: 8)  {
             if let selected = store.selectedItem {
-                ToggleSelectedItem(title: selected.text(format:"m/d T"), isExpanded: $store.isMenuExpanded)
+                ToggleSelectedItem(title: selected.text(format:"m/d(w) T"), isExpanded: $store.isMenuExpanded)
                     .padding(8)
                     .background(.white)
                     .cornerRadius(8)
@@ -97,7 +97,7 @@ struct PublicRouteMapStoreView: View {
                 ForEach(others) { route in
                     WithPerceptionTracking{
                         ToggleOptionItem(
-                            title: route.text(format:"m/d T"),
+                            title: route.text(format:"m/d(w) T"),
                             onTap: { store.send(.itemSelected(route)) }
                         )
                         .padding(8)

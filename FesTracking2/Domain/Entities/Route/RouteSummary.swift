@@ -71,6 +71,8 @@ extension RouteSummary{
                 } else {
                     result += String(date.day)
                 }
+            case "w":
+                result += date.weekdaySymbol ?? ""
             default:
                 result += String(char)
             }
