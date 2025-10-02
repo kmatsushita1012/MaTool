@@ -99,3 +99,27 @@ extension SimpleDate {
         return fromDate(Date())
     }
 }
+
+extension SimpleDate {
+    /// Foundation.Date に変換
+    var date: Date? {
+        var components = DateComponents()
+        components.year = year
+        components.month = month
+        components.day = day
+        return Calendar.current.date(from: components)
+    }
+    
+    /// 曜日 (1=日曜, 2=月曜 ... 7=土曜)
+    var weekday: Int? {
+        guard let date else { return nil }
+        return Calendar.current.component(.weekday, from: date)
+    }
+    
+    /// 日本語の曜日 ("日","月","火","水","木","金","土")
+    var weekdaySymbol: String? {
+        guard let weekday else { return nil }
+        let symbols = ["日", "月", "火", "水", "木", "金", "土"]
+        return symbols[weekday - 1]
+    }
+}
