@@ -14,11 +14,19 @@ actor LocationProvider: NSObject, LocationProviderProtocol {
     private(set) var isTracking = false
     private(set) var value: AsyncValue<CLLocation> = .loading
 
+    private var continuation: AsyncStream<CLLocation>.Continuation?
+    
     override init() {
         super.init()
         manager?.pausesLocationUpdatesAutomatically = false
         Task{
             await setupLocationManagerIfNeeded()
+        }
+    }
+    
+    var locations: AsyncStream<CLLocation> {
+       AsyncStream { continuation in
+           self.continuation = continuation
         }
     }
     
@@ -53,6 +61,7 @@ actor LocationProvider: NSObject, LocationProviderProtocol {
         
         if let cached = manager?.location {
             value = .success(cached)
+            continuation?.yield(cached)
         }
     }
 
@@ -61,6 +70,7 @@ actor LocationProvider: NSObject, LocationProviderProtocol {
         manager?.stopUpdatingLocation()
         manager?.allowsBackgroundLocationUpdates = false
         isTracking = false
+        continuation?.finish()
     }
 
     // 最新の状態を返す
@@ -87,7 +97,10 @@ actor LocationProvider: NSObject, LocationProviderProtocol {
 extension LocationProvider: CLLocationManagerDelegate {
     nonisolated func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
         guard let location = locations.last else { return }
-        Task{ await  updateValue(.success(location)) }
+        Task {
+            await updateValue(.success(location))
+            await continuation?.yield(location)
+        }
     }
 
     nonisolated func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) {
