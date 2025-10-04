@@ -10,11 +10,17 @@ import CoreLocation
 
 protocol LocationProviderProtocol {
     func requestPermission() async -> Void
-    func startTracking(backgroundUpdatesAllowed: Bool) async -> Void
+    func startTracking(backgroundUpdatesAllowed: Bool, onUpdate: ((AsyncValue<CLLocation>) async -> Void)?) async -> Void
     func stopTracking() async -> Void
     func getLocation() async -> AsyncValue<CLLocation>
     func isPermissionAllowed() async -> Bool
     var isTracking: Bool { get async }
+}
+
+extension LocationProviderProtocol {
+    func startTracking(backgroundUpdatesAllowed: Bool, onUpdate: ((AsyncValue<CLLocation>) async -> Void)? = nil) async -> Void {
+        await startTracking(backgroundUpdatesAllowed: backgroundUpdatesAllowed, onUpdate: onUpdate)
+    }
 }
 
 struct LocationProviderKey{}
