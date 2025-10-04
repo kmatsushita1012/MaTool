@@ -15,8 +15,6 @@ protocol LocationProviderProtocol {
     func getLocation() async -> AsyncValue<CLLocation>
     func isPermissionAllowed() async -> Bool
     var isTracking: Bool { get async }
-    
-    var locations: AsyncStream<CLLocation> { get async}
 }
 
 struct LocationProviderKey{}
