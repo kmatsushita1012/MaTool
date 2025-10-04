@@ -13,6 +13,7 @@ actor LocationProvider: NSObject, LocationProviderProtocol {
     private(set) var manager: CLLocationManager? = nil
     private(set) var isTracking = false
     private(set) var value: AsyncValue<CLLocation> = .loading
+    private(set) var onUpdate: ((AsyncValue<CLLocation>) async ->Void)? = nil
 
     override init() {
         super.init()
@@ -44,9 +45,12 @@ actor LocationProvider: NSObject, LocationProviderProtocol {
     }
 
     // トラッキング開始
-    func startTracking(backgroundUpdatesAllowed: Bool) {
+    func startTracking(backgroundUpdatesAllowed: Bool, onUpdate: ((AsyncValue<CLLocation>) async -> Void)?) {
         if backgroundUpdatesAllowed {
             manager?.allowsBackgroundLocationUpdates = true
+        }
+        if self.onUpdate == nil, onUpdate != nil{
+            self.onUpdate = onUpdate
         }
         manager?.startUpdatingLocation()
         isTracking = true
@@ -61,6 +65,7 @@ actor LocationProvider: NSObject, LocationProviderProtocol {
         manager?.stopUpdatingLocation()
         manager?.allowsBackgroundLocationUpdates = false
         isTracking = false
+        onUpdate = nil
     }
 
     // 最新の状態を返す
@@ -87,7 +92,10 @@ actor LocationProvider: NSObject, LocationProviderProtocol {
 extension LocationProvider: CLLocationManagerDelegate {
     nonisolated func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
         guard let location = locations.last else { return }
-        Task{ await  updateValue(.success(location)) }
+        Task{
+            await  updateValue(.success(location))
+            await onUpdate?(.success(location))
+        }
     }
 
     nonisolated func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) {
