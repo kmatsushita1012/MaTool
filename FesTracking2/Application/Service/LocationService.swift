@@ -17,6 +17,8 @@ actor LocationService {
     private(set) var locationHistory: [Status] = []
     private(set) var interval: Interval?
     private(set) var isTracking = false
+    private var lastSentAt: Date?
+    private let threshold: Double = 0.95
 
     private var continuation: AsyncStream<[Status]>.Continuation?
 
@@ -35,30 +37,25 @@ actor LocationService {
         }
     }
 
-    private func clearContinuation() {
-        continuation = nil
-    }
-
-    private func appendHistory(_ status: Status) {
-        locationHistory.append(status)
-        continuation?.yield(locationHistory)
-    }
-
     func requestPermission() async {
         await locationProvider.requestPermission()
     }
 
     func start(id: String, interval: Interval) async {
-        await locationProvider.startTracking(backgroundUpdatesAllowed: true)
         guard trackingTask == nil else { return }
 
         self.interval = interval
         isTracking = true
+        
+        await locationProvider.startTracking(backgroundUpdatesAllowed: true){ result in
+            await self.sendIfNeeded(id: id, result: result)
+        }
 
         trackingTask = Task { [weak self] in
             guard let self else { return }
             while !Task.isCancelled {
-                await self.fetchLocationAndSend(id)
+                let locationResult = await locationProvider.getLocation()
+                await self.sendIfNeeded(id: id, result: locationResult)
                 try? await Task.sleep(nanoseconds: UInt64(interval.value * 1_000_000_000))
             }
         }
@@ -68,18 +65,28 @@ actor LocationService {
         trackingTask?.cancel()
         trackingTask = nil
         isTracking = false
-
+        lastSentAt = nil
+        
         await locationProvider.stopTracking()
-        await deleteLocation(id)
+        await delete(id)
     }
 
     func getLocation() async -> AsyncValue<CLLocation> {
         await locationProvider.getLocation()
     }
+    
+    private func sendIfNeeded(id: String, result: AsyncValue<CLLocation>) async {
+            guard let interval else { return }
+            let now = Date()
+            let elapsed = lastSentAt.map { now.timeIntervalSince($0) } ?? .infinity
+            if elapsed >= Double(interval.value) * threshold {
+                lastSentAt = now
+                await send(id: id, result: result)
+            }
+        }
 
-    private func fetchLocationAndSend(_ id: String) async {
-        let locationResult = await locationProvider.getLocation()
-        switch locationResult {
+    private func send(id: String, result: AsyncValue<CLLocation>) async {
+        switch result {
         case .loading:
             appendHistory(.loading(Date()))
         case .failure:
@@ -100,7 +107,7 @@ actor LocationService {
         }
     }
 
-    private func deleteLocation(_ id: String) async {
+    private func delete(_ id: String) async {
         let result = await apiRepository.deleteLocation(id)
         switch result {
         case .success:
@@ -108,6 +115,15 @@ actor LocationService {
         case .failure(let error):
             appendHistory(.apiError(Date(), error))
         }
+    }
+    
+    private func clearContinuation() {
+        continuation = nil
+    }
+
+    private func appendHistory(_ status: Status) {
+        locationHistory.append(status)
+        continuation?.yield(locationHistory)
     }
 }
 
