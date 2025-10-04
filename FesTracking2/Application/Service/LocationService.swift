@@ -14,7 +14,6 @@ actor LocationService {
     @Dependency(\.locationProvider) var locationProvider
 
     private var trackingTask: Task<Void, Never>?
-    private var updateTask: Task<Void, Never>?
     private(set) var locationHistory: [Status] = []
     private(set) var interval: Interval?
     private(set) var isTracking = false
@@ -38,38 +37,26 @@ actor LocationService {
         }
     }
 
-    private func clearContinuation() {
-        continuation = nil
-    }
-
-    private func appendHistory(_ status: Status) {
-        locationHistory.append(status)
-        continuation?.yield(locationHistory)
-    }
-
     func requestPermission() async {
         await locationProvider.requestPermission()
     }
 
     func start(id: String, interval: Interval) async {
-        await locationProvider.startTracking(backgroundUpdatesAllowed: true)
-        guard trackingTask == nil, updateTask == nil else { return }
+        guard trackingTask == nil else { return }
 
         self.interval = interval
         isTracking = true
+        
+        await locationProvider.startTracking(backgroundUpdatesAllowed: true){ result in
+            await self.sendIfNeeded(id: id, result: result)
+        }
 
         trackingTask = Task { [weak self] in
             guard let self else { return }
             while !Task.isCancelled {
-                let result = await locationProvider.getLocation()
-                await self.sendIfNeeded(id: id, result: result)
+                let locationResult = await locationProvider.getLocation()
+                await self.sendIfNeeded(id: id, result: locationResult)
                 try? await Task.sleep(nanoseconds: UInt64(interval.value * 1_000_000_000))
-            }
-        }
-        
-        updateTask = Task {
-            for await location in await locationProvider.locations {
-                await self.sendIfNeeded(id: id, result: .success(location))
             }
         }
     }
@@ -77,12 +64,11 @@ actor LocationService {
     func stop(id: String) async {
         trackingTask?.cancel()
         trackingTask = nil
-        updateTask?.cancel()
-        updateTask = nil
         isTracking = false
-
+        lastSentAt = nil
+        
         await locationProvider.stopTracking()
-        await deleteLocation(id)
+        await delete(id)
     }
 
     func getLocation() async -> AsyncValue<CLLocation> {
@@ -90,14 +76,14 @@ actor LocationService {
     }
     
     private func sendIfNeeded(id: String, result: AsyncValue<CLLocation>) async {
-        guard let interval else { return }
-        let now = Date()
-        let elapsed = lastSentAt.map { now.timeIntervalSince($0) } ?? .infinity
-        if elapsed >= Double(interval.value) * threshold {
-            lastSentAt = now
-            await send(id: id, result: result)
+            guard let interval else { return }
+            let now = Date()
+            let elapsed = lastSentAt.map { now.timeIntervalSince($0) } ?? .infinity
+            if elapsed >= Double(interval.value) * threshold {
+                lastSentAt = now
+                await send(id: id, result: result)
+            }
         }
-    }
 
     private func send(id: String, result: AsyncValue<CLLocation>) async {
         switch result {
@@ -121,7 +107,7 @@ actor LocationService {
         }
     }
 
-    private func deleteLocation(_ id: String) async {
+    private func delete(_ id: String) async {
         let result = await apiRepository.deleteLocation(id)
         switch result {
         case .success:
@@ -129,6 +115,15 @@ actor LocationService {
         case .failure(let error):
             appendHistory(.apiError(Date(), error))
         }
+    }
+    
+    private func clearContinuation() {
+        continuation = nil
+    }
+
+    private func appendHistory(_ status: Status) {
+        locationHistory.append(status)
+        continuation?.yield(locationHistory)
     }
 }
 
