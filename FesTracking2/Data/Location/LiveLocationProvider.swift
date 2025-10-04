@@ -13,20 +13,13 @@ actor LocationProvider: NSObject, LocationProviderProtocol {
     private(set) var manager: CLLocationManager? = nil
     private(set) var isTracking = false
     private(set) var value: AsyncValue<CLLocation> = .loading
+    private(set) var onUpdate: ((AsyncValue<CLLocation>) async ->Void)? = nil
 
-    private var continuation: AsyncStream<CLLocation>.Continuation?
-    
     override init() {
         super.init()
         manager?.pausesLocationUpdatesAutomatically = false
         Task{
             await setupLocationManagerIfNeeded()
-        }
-    }
-    
-    var locations: AsyncStream<CLLocation> {
-       AsyncStream { continuation in
-           self.continuation = continuation
         }
     }
     
@@ -52,16 +45,18 @@ actor LocationProvider: NSObject, LocationProviderProtocol {
     }
 
     // トラッキング開始
-    func startTracking(backgroundUpdatesAllowed: Bool) {
+    func startTracking(backgroundUpdatesAllowed: Bool, onUpdate: ((AsyncValue<CLLocation>) async -> Void)?) {
         if backgroundUpdatesAllowed {
             manager?.allowsBackgroundLocationUpdates = true
+        }
+        if self.onUpdate == nil, onUpdate != nil{
+            self.onUpdate = onUpdate
         }
         manager?.startUpdatingLocation()
         isTracking = true
         
         if let cached = manager?.location {
             value = .success(cached)
-            continuation?.yield(cached)
         }
     }
 
@@ -70,7 +65,7 @@ actor LocationProvider: NSObject, LocationProviderProtocol {
         manager?.stopUpdatingLocation()
         manager?.allowsBackgroundLocationUpdates = false
         isTracking = false
-        continuation?.finish()
+        onUpdate = nil
     }
 
     // 最新の状態を返す
@@ -97,9 +92,9 @@ actor LocationProvider: NSObject, LocationProviderProtocol {
 extension LocationProvider: CLLocationManagerDelegate {
     nonisolated func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
         guard let location = locations.last else { return }
-        Task {
-            await updateValue(.success(location))
-            await continuation?.yield(location)
+        Task{
+            await  updateValue(.success(location))
+            await onUpdate?(.success(location))
         }
     }
 
