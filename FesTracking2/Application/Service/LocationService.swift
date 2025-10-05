@@ -45,6 +45,7 @@ actor LocationService {
         guard trackingTask == nil else { return }
 
         self.interval = interval
+        lastSentAt = nil
         isTracking = true
         
         await locationProvider.startTracking(backgroundUpdatesAllowed: true){ result in
