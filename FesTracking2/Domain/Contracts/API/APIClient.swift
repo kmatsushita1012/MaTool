@@ -8,7 +8,7 @@
 import Dependencies
 import Foundation
 
-protocol APIClientProtocol {
+protocol APIClientProtocol: Sendable {
 
     func request(
         path: String,

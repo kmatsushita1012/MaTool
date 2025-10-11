@@ -11,19 +11,26 @@ import Foundation
 
 extension UserDefaultsClient: DependencyKey {
   public static let liveValue: Self = {
-    let defaults = { UserDefaults(suiteName: "matool")! }
+      let defaults = SafeUserDefaults(suiteName: "matool")
     return Self(
-        string: { defaults().string(forKey: $0) },
-        bool: { defaults().bool(forKey: $0) },
-        data: { defaults().data(forKey: $0) },
-        double: { defaults().double(forKey: $0) },
-        integer: { defaults().integer(forKey: $0) },
-        remove: { defaults().removeObject(forKey: $0) },
-        setString: { defaults().set($0, forKey: $1) },
-        setBool: { defaults().set($0, forKey: $1) },
-        setData: { defaults().set($0, forKey: $1) },
-        setDouble: { defaults().set($0, forKey: $1) },
-        setInteger: { defaults().set($0, forKey: $1) }
+        string: { defaults.base.string(forKey: $0) },
+        bool: { defaults.base.bool(forKey: $0) },
+        data: { defaults.base.data(forKey: $0) },
+        double: { defaults.base.double(forKey: $0) },
+        integer: { defaults.base.integer(forKey: $0) },
+        remove: { defaults.base.removeObject(forKey: $0) },
+        setString: { defaults.base.set($0, forKey: $1) },
+        setBool: { defaults.base.set($0, forKey: $1) },
+        setData: { defaults.base.set($0, forKey: $1) },
+        setDouble: { defaults.base.set($0, forKey: $1) },
+        setInteger: { defaults.base.set($0, forKey: $1) }
     )
   }()
+}
+
+final class SafeUserDefaults: @unchecked Sendable {
+    let base: UserDefaults
+    init(suiteName: String? = nil) {
+        self.base = UserDefaults(suiteName: suiteName) ?? .standard
+    }
 }

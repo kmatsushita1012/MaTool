@@ -8,22 +8,22 @@
 import Dependencies
 import CoreLocation
 
-protocol LocationProviderProtocol {
+protocol LocationProviderProtocol:Sendable {
     func requestPermission() async -> Void
-    func startTracking(backgroundUpdatesAllowed: Bool, onUpdate: ((AsyncValue<CLLocation>) async -> Void)?) async -> Void
+    func startTracking(backgroundUpdatesAllowed: Bool, onUpdate: ( @Sendable (AsyncValue<Coordinate>) async -> Void)?) async -> Void
     func stopTracking() async -> Void
-    func getLocation() async -> AsyncValue<CLLocation>
+    func getLocation() async -> AsyncValue<Coordinate>
     func isPermissionAllowed() async -> Bool
     var isTracking: Bool { get async }
 }
 
 extension LocationProviderProtocol {
-    func startTracking(backgroundUpdatesAllowed: Bool, onUpdate: ((AsyncValue<CLLocation>) async -> Void)? = nil) async -> Void {
+    func startTracking(backgroundUpdatesAllowed: Bool, onUpdate: ( @Sendable (AsyncValue<Coordinate>) async -> Void)? = nil) async -> Void {
         await startTracking(backgroundUpdatesAllowed: backgroundUpdatesAllowed, onUpdate: onUpdate)
     }
 }
 
-struct LocationProviderKey{}
+struct LocationProviderKey: Sendable{}
 
 extension LocationProviderKey: DependencyKey{
     static let liveValue: LocationProviderProtocol = LocationProvider()

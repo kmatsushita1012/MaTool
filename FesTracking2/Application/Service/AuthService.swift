@@ -71,7 +71,7 @@ actor AuthService {
         let result = await authProvider.getTokens()
         switch result {
         case .success(let value):
-            return value.accessToken?.tokenString
+            return value
         case .failure:
             return nil
         }

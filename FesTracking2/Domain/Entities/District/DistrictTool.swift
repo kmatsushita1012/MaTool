@@ -5,7 +5,7 @@
 //  Created by 松下和也 on 2025/06/05.
 //
 
-struct DistrictTool: Codable, Equatable {
+struct DistrictTool: Codable, Equatable, Sendable {
   let districtId: String
   let districtName: String
   let regionId: String

@@ -7,7 +7,7 @@
 
 import Foundation
 
-struct PublicDistrict: Codable, Equatable, Identifiable {
+struct PublicDistrict: Codable, Equatable, Identifiable, Sendable {
     let id: String
     let name: String
     let regionId: String

@@ -6,7 +6,7 @@
 //
 
 
-struct Region: Codable, Equatable, Identifiable, Hashable {
+struct Region: Codable, Equatable, Identifiable, Hashable, Sendable {
     let id: String
     var name: String
     var subname: String

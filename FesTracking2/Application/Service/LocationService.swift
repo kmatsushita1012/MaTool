@@ -72,11 +72,11 @@ actor LocationService {
         await delete(id)
     }
 
-    func getLocation() async -> AsyncValue<CLLocation> {
+    func getLocation() async -> AsyncValue<Coordinate> {
         await locationProvider.getLocation()
     }
     
-    private func sendIfNeeded(id: String, result: AsyncValue<CLLocation>) async {
+    private func sendIfNeeded(id: String, result: AsyncValue<Coordinate>) async {
             guard let interval else { return }
             let now = Date()
             let elapsed = lastSentAt.map { now.timeIntervalSince($0) } ?? .infinity
@@ -86,16 +86,16 @@ actor LocationService {
             }
         }
 
-    private func send(id: String, result: AsyncValue<CLLocation>) async {
+    private func send(id: String, result: AsyncValue<Coordinate>) async {
         switch result {
         case .loading:
             appendHistory(.loading(Date()))
         case .failure:
             appendHistory(.locationError(Date()))
-        case .success(let cllocation):
+        case .success(let coordinate):
             let location = Location(
                 districtId: id,
-                coordinate: Coordinate.fromCL(cllocation.coordinate),
+                coordinate: coordinate,
                 timestamp: Date.now
             )
             let result = await apiRepository.putLocation(location)

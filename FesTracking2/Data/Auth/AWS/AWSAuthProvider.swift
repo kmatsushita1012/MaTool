@@ -136,14 +136,14 @@ extension AuthProvider: DependencyKey {
                         await withCheckedContinuation { continuation in
                             AWSMobileClient.default().getTokens { tokens, error in
                                 if let error = error {
-                                    continuation.resume(returning:  Result<Tokens, AuthError>.failure(error.toAuthError()))
+                                    continuation.resume(returning:  Result<String, AuthError>.failure(error.toAuthError()))
                                     return
                                 }
-                                guard let tokens = tokens else {
-                                    continuation.resume(returning:  Result<Tokens, AuthError>.failure(.unknown("notSignedIn")))
+                                guard let tokens = tokens?.accessToken?.tokenString else {
+                                    continuation.resume(returning:  Result<String, AuthError>.failure(.unknown("notSignedIn")))
                                     return
                                 }
-                                continuation.resume(returning:  Result<Tokens, AuthError>.success(tokens))
+                                continuation.resume(returning:  Result<String, AuthError>.success(tokens))
                             }
                         }
                     }

@@ -7,7 +7,7 @@
 
 import Foundation
 
-struct Route: Codable, Equatable, Identifiable {
+struct Route: Codable, Equatable, Identifiable, Sendable {
     let id: String
     let districtId: String
     var date:SimpleDate = .today

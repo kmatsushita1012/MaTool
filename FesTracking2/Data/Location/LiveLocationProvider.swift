@@ -5,15 +5,15 @@
 //  Created by 松下和也 on 2025/04/18.
 //
 
-import CoreLocation
+@preconcurrency import CoreLocation
 import Combine
 import ComposableArchitecture
 
 actor LocationProvider: NSObject, LocationProviderProtocol {
     private(set) var manager: CLLocationManager? = nil
     private(set) var isTracking = false
-    private(set) var value: AsyncValue<CLLocation> = .loading
-    private(set) var onUpdate: ((AsyncValue<CLLocation>) async ->Void)? = nil
+    private(set) var value: AsyncValue<Coordinate> = .loading
+    private(set) var onUpdate: ( @Sendable (AsyncValue<Coordinate>) async ->Void)? = nil
 
     override init() {
         super.init()
@@ -45,7 +45,7 @@ actor LocationProvider: NSObject, LocationProviderProtocol {
     }
 
     // トラッキング開始
-    func startTracking(backgroundUpdatesAllowed: Bool, onUpdate: ((AsyncValue<CLLocation>) async -> Void)?) {
+    func startTracking(backgroundUpdatesAllowed: Bool, onUpdate: ( @Sendable (AsyncValue<Coordinate>) async -> Void)?) {
         if backgroundUpdatesAllowed {
             manager?.allowsBackgroundLocationUpdates = true
         }
@@ -56,7 +56,11 @@ actor LocationProvider: NSObject, LocationProviderProtocol {
         isTracking = true
         
         if let cached = manager?.location {
-            value = .success(cached)
+            let coordinate = Coordinate(
+                latitude: cached.coordinate.latitude,
+                longitude: cached.coordinate.longitude
+            )
+            value = .success(coordinate)
         }
     }
 
@@ -69,7 +73,7 @@ actor LocationProvider: NSObject, LocationProviderProtocol {
     }
 
     // 最新の状態を返す
-    func getLocation() -> AsyncValue<CLLocation> {
+    func getLocation() -> AsyncValue<Coordinate> {
         if manager?.authorizationStatus == .denied {
             return .failure(LocationError.authorizationDenied)
         }
@@ -84,7 +88,7 @@ actor LocationProvider: NSObject, LocationProviderProtocol {
         return manager?.authorizationStatus != .denied
     }
 
-    private func updateValue(_ newValue: AsyncValue<CLLocation>) {
+    private func updateValue(_ newValue: AsyncValue<Coordinate>) {
         self.value = newValue
     }
 }
@@ -93,8 +97,9 @@ extension LocationProvider: CLLocationManagerDelegate {
     nonisolated func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
         guard let location = locations.last else { return }
         Task{
-            await  updateValue(.success(location))
-            await onUpdate?(.success(location))
+            let coordinate = Coordinate.fromCL(location.coordinate)
+            await updateValue(.success(coordinate))
+            await onUpdate?(.success(coordinate))
         }
     }
 

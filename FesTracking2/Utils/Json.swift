@@ -6,7 +6,7 @@
 //
 
 @propertyWrapper
-struct NullEncodable<T: Codable>: Codable{
+struct NullEncodable<T: Codable & Sendable>: Codable, Sendable{
 
     var wrappedValue: T?
 

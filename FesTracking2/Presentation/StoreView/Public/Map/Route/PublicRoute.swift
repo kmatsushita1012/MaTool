@@ -154,8 +154,8 @@ struct PublicRoute {
             case .userFocusTapped:
                 return .run{ send in
                     let result = await locationProvider.getLocation()
-                    guard let coordinate = result.value?.coordinate  else { return }
-                    await send(.userLocationReceived(Coordinate.fromCL(coordinate)))
+                    guard let coordinate = result.value  else { return }
+                    await send(.userLocationReceived(coordinate))
                 }
             case .didSeek(let value):
                 if state.replay.isRunning{

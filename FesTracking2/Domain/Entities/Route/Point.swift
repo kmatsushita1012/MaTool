@@ -7,7 +7,7 @@
 
 import Foundation
 
-struct Point: Codable, Identifiable, Equatable, Hashable{
+struct Point: Codable, Identifiable, Equatable, Hashable, Sendable{
     let id: String
     var coordinate: Coordinate
     @NullEncodable var title: String? = nil

@@ -127,7 +127,7 @@ struct PublicRouteMap: UIViewRepresentable {
     }
 }
 
-extension PublicRouteMap: Equatable {
+extension PublicRouteMap: @MainActor Equatable {
     static func == (lhs: PublicRouteMap, rhs: PublicRouteMap) -> Bool {
         lhs.points == rhs.points &&
         lhs.polylines == rhs.polylines &&

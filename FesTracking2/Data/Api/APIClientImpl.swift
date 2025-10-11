@@ -11,7 +11,7 @@ struct APIClient: APIClientProtocol {
 
     private let base: String
     private let session: URLSession
-    private let cache = NSCache<NSString, NSData>()
+    nonisolated(unsafe) private let cache = NSCache<NSString, NSData>()
 
     init(base: String, session: URLSession = .shared) {
         self.base = base

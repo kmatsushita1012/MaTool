@@ -7,7 +7,7 @@
 
 import Foundation
 
-struct Performance: Codable, Equatable, Identifiable {
+struct Performance: Codable, Equatable, Identifiable, Sendable {
     let id: String
     var name: String = ""
     var performer: String = ""

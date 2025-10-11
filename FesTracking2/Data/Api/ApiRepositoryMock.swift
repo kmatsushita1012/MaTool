@@ -12,7 +12,6 @@ extension APIRepotiroy: TestDependencyKey {
     internal static let previewValue = Self.noop
 }
 
-var routes: [Route] = [Route.sample]
 
 extension APIRepotiroy {
     public static let noop = Self(
@@ -41,34 +40,24 @@ extension APIRepotiroy {
             return Result.success(DistrictTool.sample)
         },
         getRoutes: { _ in
-            let summaries = routes.map{ RouteSummary(from: RouteInfo(from: $0, name: "城北町")) }
-            return Result.success(summaries)
+            return Result.success([RouteSummary.sample])
         },
         getRoute: { id  in
-            let route = routes.filter{ $0.id == id }.first ?? Route.sample
-            return Result.success( RouteInfo(from: route, name: "城北町") )
+            return Result.success( RouteInfo.sample )
         },
         getCurrentRoute: { _ in
-            let route = routes.first ?? Route.sample
             return Result.success(CurrentResponse(districtId: "ID", districtName: "Name", routes: [RouteSummary.sample], current: RouteInfo.sample, location: LocationInfo.sample))
         },
         getRouteIds: {
             return Result.success(["id"])
         },
         postRoute: { route in
-            routes.append(route)
             return Result.success("Success")
         },
         putRoute: { route in
-            if let index = routes.firstIndex(where: { $0.id == route.id }) {
-                routes[index] = route
-            }
             return Result.success("Success")
         },
         deleteRoute: { id  in
-            if let index = routes.firstIndex(where: { $0.id == id }) {
-                routes.remove(at: index)
-            }
             return Result.success("Success")
         },
         getLocation: { _ in

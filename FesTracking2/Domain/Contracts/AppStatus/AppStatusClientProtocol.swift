@@ -8,7 +8,7 @@
 import Foundation
 import Dependencies
 
-protocol AppStatusClientProtocol {
+protocol AppStatusClientProtocol: Sendable {
 
     func checkStatus() async -> StatusCheckResult?
     

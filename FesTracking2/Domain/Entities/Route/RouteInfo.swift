@@ -7,7 +7,7 @@
 
 import Foundation
 
-struct RouteInfo: Codable, Equatable, Identifiable{
+struct RouteInfo: Codable, Equatable, Identifiable, Sendable{
     let id: String
     let districtId: String
     let districtName: String

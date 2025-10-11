@@ -8,7 +8,7 @@
 import Foundation
 import Dependencies
 
-public struct UserDefaultsClient {
+public struct UserDefaultsClient: Sendable{
     public var string: @Sendable (String) -> String?
     public var bool: @Sendable (String) -> Bool
     public var data: @Sendable (String) -> Data?
