@@ -17,7 +17,6 @@ actor LocationProvider: NSObject, LocationProviderProtocol {
 
     override init() {
         super.init()
-        manager?.pausesLocationUpdatesAutomatically = false
         Task{
             await setupLocationManagerIfNeeded()
         }
@@ -28,7 +27,7 @@ actor LocationProvider: NSObject, LocationProviderProtocol {
             let manager = CLLocationManager()
             manager.delegate = self
             manager.desiredAccuracy = kCLLocationAccuracyBest
-            manager.pausesLocationUpdatesAutomatically = true
+            manager.pausesLocationUpdatesAutomatically = false
             return manager
         }
         if self.manager == nil {
