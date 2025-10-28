@@ -5,7 +5,6 @@
 //  Created by 松下和也 on 2025/04/20.
 //
 
-import AWSMobileClient
 import ComposableArchitecture
 import Foundation
 
@@ -90,10 +89,10 @@ struct Home {
                         await send(.statusReceived(result))
                     },
                     .run { send in
-                        let result = await authService.initialize()
+                        let result = await authService.getUserRole()
                         await send(.awsInitializeReceived(result))
                     }
-                        .cancellable(id: "AuthInitialize")
+                    .cancellable(id: "AuthInitialize")
                 )
             case .statusReceived(let value):
                 state.status = value
@@ -203,7 +202,7 @@ struct Home {
                     )
                 case (.success(let region),
                     .success(let districts),
-                    .failure(.forbidden(message: let message))):
+                      .failure(.forbidden(message: _))):
                     state.destination = .map(
                         PublicMap.State(
                             region: region,
@@ -275,7 +274,6 @@ struct Home {
                 case .login(.received(.success(let userRole))),
                         .login(.destination(.presented(.confirmSignIn(.received(.success(let userRole)))))):
                     state.userRole = userRole
-                    state.destination = nil
                     switch state.userRole {
                     case .region(let id):
                         state.isDestinationLoading = true
