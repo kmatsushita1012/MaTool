@@ -37,20 +37,33 @@ struct PublicLocationsMap: UIViewRepresentable {
     }
 
     func updateUIView(_ mapView: MKMapView, context: Context) {
-        mapView.removeAnnotations(mapView.annotations)
-        
-        //ロケーション追加
-        for location in items {
-            let annotation = FloatAnnotation(location: location)
-            annotation.coordinate = location.coordinate.toCL()
-            mapView.addAnnotation(annotation)
-        }
+        updateFloatAnnotations(on: mapView, with: items)
         
         if region.center.latitude != mapView.region.center.latitude
             || region.center.longitude != mapView.region.center.longitude {
             mapView.setRegion(region, animated: true)
         }
     }
+    
+    func updateFloatAnnotations(
+        on mapView: MKMapView,
+        with items: [LocationInfo]
+    ) {
+        let existingAnnotations = mapView.annotations.compactMap { $0 as? FloatCurrentAnnotation }
+        let existingLocations = existingAnnotations.map { $0.location }
+
+        // 削除
+        let toRemove = existingAnnotations.filter { !items.contains($0.location) }
+        mapView.removeAnnotations(toRemove)
+
+        // 追加
+        let toAdd = items.filter { !existingLocations.contains($0) }
+        for location in toAdd {
+            let annotation = FloatCurrentAnnotation(location: location)
+            mapView.addAnnotation(annotation)
+        }
+    }
+
 
     class Coordinator: NSObject, MKMapViewDelegate {
         var parent: PublicLocationsMap
@@ -64,15 +77,18 @@ struct PublicLocationsMap: UIViewRepresentable {
                 return nil
             }
             
-            if let floatAnnotation = annotation as? FloatAnnotation {
-                return FloatAnnotationView.view(for: mapView, annotation: floatAnnotation)
+            if let FloatCurrentAnnotation = annotation as? FloatCurrentAnnotation {
+                return FloatAnnotationView.view(for: mapView, annotation: FloatCurrentAnnotation)
             }
 
             return nil
         }
         
         func mapView(_ mapView: MKMapView, didSelect view: MKAnnotationView) {
-            if let  annotation = view.annotation as? FloatAnnotation {
+            if let annotation = view.annotation {
+                mapView.deselectAnnotation(annotation, animated: false)
+            }
+            if let  annotation = view.annotation as? FloatCurrentAnnotation {
                 parent.onTap(annotation.location)
             }
         }

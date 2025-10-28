@@ -43,21 +43,29 @@ struct AdminLocation{
         Reduce{state, action in
             switch action{
             case .onAppear:
-                state.selectedInterval = locationService.interval
-                state.history = locationService.locationHistory
                 return .run { send in
-                    for await history in locationService.historyStream {
+                    await locationService.requestPermission()
+                    let initial = await locationService.locationHistory
+                    await send(.historyUpdated(initial))
+                    // 以降の更新を購読
+                    for await history in await locationService.historyStream {
                         await send(.historyUpdated(history))
                     }
                 }
                 .cancellable(id: "HistoryStream", cancelInFlight: true)
             case .binding(\.isTracking):
-                if(state.isTracking){
-                    locationService.startTracking(id: state.id, interval: state.selectedInterval)
-                }else{
-                    locationService.stopTracking(id: state.id)
+                
+                return .run{ [
+                    id = state.id,
+                    isTracking = state.isTracking,
+                    interval = state.selectedInterval
+                ] send in
+                    if(isTracking){
+                        await locationService.start(id: id, interval: interval)
+                    }else{
+                        await locationService.stop(id: id)
+                    }
                 }
-                return .none
             case .binding:
                 return .none
             case .historyUpdated(let history):
@@ -76,10 +84,12 @@ struct AdminLocation{
 struct Interval: Equatable, Hashable {
     let label: String
     let value: Int
-    
+}
+
+extension Interval {
     static let sample = Interval(label: "1分", value: 60)
     static let options = [
-        Interval(label: "1秒（確認用）", value: 1),
+        Interval(label: "5秒（確認用）", value: 5),
         Interval(label: "1分", value: 60),
         Interval(label: "2分", value: 120),
         Interval(label: "3分", value: 180),

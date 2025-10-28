@@ -10,8 +10,9 @@ import PhotosUI
 import ComposableArchitecture
 import NavigationSwipeControl
 
+@available(iOS 17.0, *)
 struct AdminDistrictEditView: View {
-    @Bindable var store: StoreOf<AdminDistrictEdit>
+    @SwiftUI.Bindable var store: StoreOf<AdminDistrictEdit>
     
     var body: some View {
         List {

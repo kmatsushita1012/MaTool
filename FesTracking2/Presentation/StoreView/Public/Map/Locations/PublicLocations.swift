@@ -24,11 +24,13 @@ struct PublicLocations {
         case locationTapped(LocationInfo)
         case floatFocusSelected(LocationInfo)
         case userFocusTapped
+        case userLocationReceived(Coordinate)
         case reloadTapped
         case locationsReceived(Result<[LocationInfo], APIError>)
     }
     
     @Dependency(\.apiRepository) var apiRepository
+    @Dependency(\.locationProvider) var locationProvider
     
     var body: some ReducerOf<PublicLocations> {
         BindingReducer()
@@ -42,9 +44,6 @@ struct PublicLocations {
             case .floatFocusSelected(let value):
                 state.$mapRegion.withLock { $0 = makeRegion(origin: value.coordinate, spanDelta: spanDelta)}
                 return .none
-            //PublicMapが担当
-            case .userFocusTapped:
-                return .none
             case .reloadTapped:
                 return .run{ [id = state.regionId ]send in
                     let result = await apiRepository.getLocations(id)
@@ -55,6 +54,15 @@ struct PublicLocations {
                 return .none
             case .locationsReceived(.failure(let error)):
                 return .none
+            case .userLocationReceived(let value):
+                state.$mapRegion.withLock { $0 = makeRegion(origin: value, spanDelta: spanDelta)}
+                return .none
+            case .userFocusTapped:
+                return .run{ send in
+                    let result = await locationProvider.getLocation()
+                    guard let coordinate = result.value?.coordinate  else { return }
+                    await send(.userLocationReceived(Coordinate.fromCL(coordinate)))
+                }
             }
         }
     }

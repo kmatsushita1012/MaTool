@@ -18,47 +18,56 @@ struct PublicRoute {
         case location(LocationInfo)
     }
     
+    @CasePathable
+    enum Replay: Equatable{
+        case initial
+        case start
+        case seek(Double)
+        case stop
+    }
+    
     @ObservableState
     struct State: Equatable {
-        let id: String
+        let districtId: String
+        let name: String
         let items: [RouteSummary]?
         var selectedItem: RouteSummary?
         var route: RouteInfo?
-        var location: LocationInfo?
+        var location: LocationInfo? {
+            didSet {
+                if let location {
+                    floatAnnotation = FloatCurrentAnnotation(location: location)
+                } else {
+                    floatAnnotation = nil
+                }
+            }
+        }
+        var floatAnnotation: FloatCurrentAnnotation?
         var isMenuExpanded: Bool = false
         @Shared var mapRegion: MKCoordinateRegion
         var detail: Detail?
+        var replay: Replay = .initial
+        @Presents var alert: Alert.State?
         
-        var points: [Point]? {
-            if let route {
-                PointFilter.pub.apply(to: route)
-            } else {
-                nil
-            }
-        }
-        
-        var segments: [Segment]? {
-            route?.segments
-        }
-        
-        var others: [RouteSummary]? {
-            items?.filter {
-                if let selectedItem {
-                    $0.id != selectedItem.id
-                } else {
-                    false
-                }
-            }.sorted()
-        }
-        
-        init(id: String, routes: [RouteSummary]? = nil, selectedRoute: RouteInfo? = nil, location: LocationInfo? = nil, mapRegion: Shared<MKCoordinateRegion>){
-            self.id = id
+        init(
+            districtId: String,
+            name: String,
+            routes: [RouteSummary]? = nil,
+            selectedRoute: RouteInfo? = nil,
+            location: LocationInfo? = nil,
+            mapRegion: Shared<MKCoordinateRegion>
+        ){
+            self.districtId = districtId
+            self.name = name
             self.items = routes
             if let selectedRoute {
                 self.selectedItem = RouteSummary(from: selectedRoute)
             }
             self.route = selectedRoute
             self.location = location
+            if let location {
+                floatAnnotation = FloatCurrentAnnotation(location: location)
+            }
             self._mapRegion = mapRegion
         }
     }
@@ -74,8 +83,14 @@ struct PublicRoute {
         case floatFocusTapped
         case routeReceived(Result<RouteInfo, APIError>)
         case locationReceived(Result<LocationInfo, APIError>)
+        case userLocationReceived(Coordinate)
+        case replayTapped
+        case replayEnded
+        case didSeek(Double)
+        case alert(PresentationAction<Alert.Action>)
     }
     
+    @Dependency(\.locationProvider) var locationProvider
     @Dependency(\.apiRepository) var apiRepository
     
     var body: some ReducerOf<PublicRoute> {
@@ -102,27 +117,101 @@ struct PublicRoute {
                 guard let location = state.location else { return .none }
                 state.detail = .location(location)
                 return .none
-            case .userFocusTapped:
-                return .none
             case .floatFocusTapped:
-                return .run {[id = state.id] send in
-                    
-                    let result = await apiRepository.getLocation(id)
+                return .run {[districtId = state.districtId] send in
+                    let result = await apiRepository.getLocation(districtId)
                     await send(.locationReceived(result))
                 }
             case .routeReceived(.success(let value)):
                 state.route = value
+                state.replay = .initial
                 state.$mapRegion.withLock { $0 = makeRegion(value.points.map{ $0.coordinate })}
                 return .none
             case .routeReceived(.failure(let error)):
+                state.alert = Alert.error(error.localizedDescription)
                 return .none
             case .locationReceived(.success(let value)):
                 state.location = value
                 state.$mapRegion.withLock { $0 = makeRegion(origin: value.coordinate, spanDelta: spanDelta)}
                 return .none
+            case .locationReceived(.failure(.notFound)),
+                .locationReceived(.failure(.forbidden)):
+                state.alert = Alert.notice("現在地の配信は停止中です。")
+                return .none
             case .locationReceived(.failure(let error)):
+                state.alert = Alert.error(error.localizedDescription)
+                return .none
+            case .replayTapped:
+                if state.replay.isRunning{
+                    state.replay = .stop
+                } else {
+                    state.replay = .start
+                }
+                return .none
+            case .userLocationReceived(let value):
+                state.$mapRegion.withLock { $0 = makeRegion(origin: value, spanDelta: spanDelta)}
+                return .none
+            case .userFocusTapped:
+                return .run{ send in
+                    let result = await locationProvider.getLocation()
+                    guard let coordinate = result.value?.coordinate  else { return }
+                    await send(.userLocationReceived(Coordinate.fromCL(coordinate)))
+                }
+            case .didSeek(let value):
+                if state.replay.isRunning{
+                    state.replay = .seek(value)
+                }
+                return .none
+            case .replayEnded:
+                state.replay = .stop
+                return .none
+            case .alert:
+                state.alert = nil
                 return .none
             }
+        }
+    }
+}
+
+extension PublicRoute.State {
+    var pinPoints: [Point]? {
+        if let route {
+            PointFilter.pub.apply(to: route)
+        } else {
+            nil
+        }
+    }
+    
+    var points: [Point]? {
+        route?.points
+    }
+    
+    var segments: [Segment]? {
+        route?.segments
+    }
+    
+    var others: [RouteSummary]? {
+        items?.filter {
+            if let selectedItem {
+                $0.id != selectedItem.id
+            } else {
+                false
+            }
+        }.sorted()
+    }
+    
+    var isReplayEnable: Bool {
+        route != nil
+    }
+}
+
+extension PublicRoute.Replay {
+    var isRunning: Bool {
+        switch self {
+        case .start, .seek:
+            return true
+        case .stop, .initial:
+            return false
         }
     }
 }

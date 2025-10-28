@@ -9,8 +9,9 @@ import SwiftUI
 import ComposableArchitecture
 import NavigationSwipeControl
 
+@available(iOS 17.0, *)
 struct AdminRegionDistrictListView: View {
-    @Bindable var store: StoreOf<AdminRegionDistrictList>
+    @SwiftUI.Bindable var store: StoreOf<AdminRegionDistrictList>
     
     var body: some View {
         List {

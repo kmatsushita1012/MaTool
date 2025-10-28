@@ -21,6 +21,7 @@ struct InfoList {
     struct State: Equatable {
         let region: Region
         let districts: [PublicDistrict]
+        var isDismissed: Bool = false
         @Presents var destination: Destination.State? = nil
     }
     
@@ -45,8 +46,13 @@ struct InfoList {
                 state.destination = .district(DistrictInfo.State(item: value))
                 return .none
             case .homeTapped:
-                return .run { _ in
-                    await dismiss()
+                if #available(iOS 17.0, *) {
+                    return .run { _ in
+                        await dismiss()
+                    }
+                } else {
+                    state.isDismissed = true
+                    return .none
                 }
             case .destination(.presented):
                 return .none

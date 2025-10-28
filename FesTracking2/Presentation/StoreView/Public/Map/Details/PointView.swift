@@ -24,5 +24,9 @@ struct PointView: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding()
+        .safeAreaInset(edge: .top) {
+            Color.clear.frame(height: 0)
+        }
+        
     }
 }

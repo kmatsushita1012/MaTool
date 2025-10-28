@@ -34,3 +34,8 @@ extension Segment: Hashable {
 extension Segment{
     static let sample = Self(id: UUID().uuidString, start: Coordinate.sample, end: Coordinate.sample)
 }
+
+struct Pair<Element: Equatable>: Equatable {
+    let first: Element
+    let second: Element
+}

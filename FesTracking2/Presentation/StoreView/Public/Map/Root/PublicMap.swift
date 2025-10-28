@@ -25,6 +25,8 @@ struct PublicMap{
     struct State: Equatable{
         let contents: [Content]
         var selectedContent: Content
+        var isLoading: Bool = false
+        var isDismissed: Bool = false
         @Presents var destination: Destination.State?
         @Shared var mapRegion: MKCoordinateRegion
         @Presents var alert: Alert.State?
@@ -36,18 +38,17 @@ struct PublicMap{
         case binding(BindingAction<State>)
         case homeTapped
         case contentSelected(Content)
-        case routePrepared(Result<CurrentResponce, APIError>)
+        case routePrepared(Result<CurrentResponse, APIError>)
         case locationsPrepared(
             id: String,
             locationsResult: Result<[LocationInfo],APIError>
         )
-        case userLocationReceived(Coordinate)
         case destination(PresentationAction<Destination.Action>)
         case alert(PresentationAction<Alert.Action>)
     }
     
     @Dependency(\.apiRepository) var apiRepository
-    @Dependency(\.locationClient) var locationClient
+    @Dependency(\.locationProvider) var locationProvider
     @Dependency(\.dismiss) var dismiss
     
     var body: some ReducerOf<PublicMap> {
@@ -55,38 +56,46 @@ struct PublicMap{
             switch action {
             case .onAppear:
                 if case .route(let routeState) = state.destination,
-                    routeState.items == nil,
+                   routeState.items?.isEmpty ?? true,
                     routeState.route == nil,
                     routeState.location == nil {
                     state.alert = Alert.notice("配信停止中です。")
                 } else if case .locations(let locationState) = state.destination,
                           locationState.locations.isEmpty {
                 state.alert = Alert.notice("配信停止中です。")
-            }
+                }
                 return .run{ send in
-                    locationClient.startTracking()
+                    await locationProvider.requestPermission()
+                    await locationProvider.startTracking(backgroundUpdatesAllowed: false)
                 }
             case .binding:
                 return .none
             case .homeTapped:
-                return .run{ _ in
-                    await dismiss()
+                if #available(iOS 17.0, *) {
+                    return .run { _ in
+                        await dismiss()
+                    }
+                } else {
+                    state.isDismissed = true
+                    return .none
                 }
             case .contentSelected(let value):
                 state.selectedContent = value
+                state.isLoading = true
                 switch value {
-                //TODO　mapRegionの変更ができてない
                 case .locations(let id, _ , _):
                     return locationsEffect(id)
                 case .route(let id, _ , _):
                     return routeEffect(id)
                 }
             case .routePrepared(.success(let value)):
+                state.isLoading = false
                 let id = value.districtId
+                let name = value.districtName
                 let routes = value.routes
                 let current = value.current
                 let location = value.location
-                if routes == nil && current == nil && location == nil {
+                if  routes?.isEmpty ?? true && current == nil && location == nil {
                     state.alert = Alert.notice("配信停止中です。")
                 }
                 let mapRegion = makeRegion(
@@ -98,7 +107,8 @@ struct PublicMap{
                 state.$mapRegion.withLock{ $0 = mapRegion }
                 state.destination = .route(
                     PublicRoute.State(
-                        id: id,
+                        districtId: id,
+                        name: name,
                         routes: routes,
                         selectedRoute: current,
                         location: location,
@@ -106,25 +116,23 @@ struct PublicMap{
                     )
                 )
                 return .none
-            case .routePrepared(.failure( .forbidden(message: _))):
-                state.alert = Alert.error("配信停止中です。")
-                state.destination = .route(
-                    PublicRoute.State(
-                        id: state.selectedContent.id,
-                        mapRegion: state.$mapRegion
-                    )
-                )
-                return .none
             case .routePrepared(.failure(let error)):
-                state.alert = Alert.error(error.localizedDescription)
+                state.isLoading = false
+                if case .forbidden = error {
+                    state.alert = Alert.error("配信停止中です。")
+                } else {
+                    state.alert = Alert.error(error.localizedDescription)
+                }
                 state.destination = .route(
                     PublicRoute.State(
-                        id: state.selectedContent.id,
+                        districtId: state.selectedContent.id,
+                        name: state.selectedContent.name,
                         mapRegion: state.$mapRegion
                     )
                 )
                 return .none
             case .locationsPrepared(let id, .success(let value)):
+                state.isLoading = false
                 if value.isEmpty {
                     state.alert = Alert.notice("配信停止中です。")
                 }
@@ -137,18 +145,9 @@ struct PublicMap{
                 )
                 return .none
             case .locationsPrepared(_, .failure(let error)):
+                state.isLoading = false
                 state.alert = Alert.error(error.localizedDescription)
                 return .none
-            case .userLocationReceived(let value):
-                state.$mapRegion.withLock { $0 = makeRegion(origin: value, spanDelta: spanDelta)}
-                return .none
-            case .destination(.presented(.route(.userFocusTapped))),
-                .destination(.presented(.locations(.userFocusTapped))):
-                return .run{ send in
-                    let result = locationClient.getLocation()
-                    guard let coordinate = result.value?.coordinate  else { return }
-                    await send(.userLocationReceived(Coordinate.fromCL(coordinate)))
-                }
             case .destination:
                 return .none
             case .alert:
@@ -188,6 +187,15 @@ extension PublicMap.Content: Identifiable,Hashable  {
             return id
         case .route(let id, _, _):
             return id
+        }
+    }
+    
+    var name: String {
+        switch self {
+        case .locations(_, let name, _):
+            return id
+        case .route(_, let name, _):
+            return name
         }
     }
     
@@ -246,7 +254,8 @@ extension PublicMap.State {
         self._mapRegion = mapRegion
         self.destination = .route(
             PublicRoute.State(
-                id: id,
+                districtId: id,
+                name: selected.name,
                 routes: routes,
                 selectedRoute: current,
                 location: location,
