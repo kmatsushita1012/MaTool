@@ -8,8 +8,9 @@
 import SwiftUI
 import ComposableArchitecture
 
+@available(iOS 17.0, *)
 struct LocationAdminView: View {
-    @Bindable var store: StoreOf<AdminLocation>
+    @SwiftUI.Bindable var store: StoreOf<AdminLocation>
     
     var body: some View {
         List {
@@ -40,7 +41,10 @@ struct LocationAdminView: View {
                 )
                 .padding(0)
             if !store.history.isEmpty{
-                Section(header: Text("履歴")) {
+                Section(
+                    header: Text("履歴（最新10件）"),
+                    footer: Text("送信失敗が続く場合は、アプリの再起動や再ログインをお試しください。")
+                ) {
                     ForEach(store.history.suffix(10).reversed(), id: \.self) { history in
                         Text(history.text)
                             .font(.body)

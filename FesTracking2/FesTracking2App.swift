@@ -14,21 +14,27 @@ import AWSMobileClient
 struct FesTracking2App: App {
     //    @UIApplicationDelegateAdaptor(AppDelegate.self) var delegate
     @AppStorage(hasLaunchedBeforePath, store: UserDefaults(suiteName: "matool")) var hasLaunchedBefore: Bool = false
+    let store = Store(initialState:Home.State()){
+        Home()
+    }
     
     var body: some Scene {
         WindowGroup {
-            if hasLaunchedBefore {
-                HomeStoreView(
-                    store: Store(
-                        initialState:Home.State()
-                    ){
-                        Home()
-                    }
-                )
-            } else {
-                OnboardingStoreView(store: Store(initialState: OnboardingFeature.State()){ OnboardingFeature() })
+            Group{
+                if hasLaunchedBefore {
+                    HomeStoreView(
+                        store: store
+                    )
+                } else {
+                    OnboardingStoreView(store: Store(initialState: OnboardingFeature.State()){ OnboardingFeature() })
+                }
             }
-            
+            .task{
+                store.send(.initialize)
+                if #available(iOS 17.0, *){
+                    isPerceptionCheckingEnabled = false
+                }
+            }
         }
     }
 }

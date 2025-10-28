@@ -123,7 +123,10 @@ extension APIClientProtocol {
 }
 
 enum APIClientKey: DependencyKey {
-    static let liveValue: any APIClientProtocol = APIClient.init(base: "https://eqp8rvam4h.execute-api.ap-northeast-1.amazonaws.com")
+    static let liveValue: any APIClientProtocol =
+        APIClient.withDefaultTimeout(
+            base: "https://eqp8rvam4h.execute-api.ap-northeast-1.amazonaws.com"
+        )
 }
 
 extension DependencyValues {

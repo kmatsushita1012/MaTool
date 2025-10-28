@@ -10,8 +10,9 @@ import MapKit
 import ComposableArchitecture
 import NavigationSwipeControl
 
+@available(iOS 17.0, *)
 struct AdminRouteMapStoreView: View{
-    @Bindable var store: StoreOf<AdminRouteMap>
+    @SwiftUI.Bindable var store: StoreOf<AdminRouteMap>
     @State private var selectedDetent: PresentationDetent = .large
     
     var body: some View{
