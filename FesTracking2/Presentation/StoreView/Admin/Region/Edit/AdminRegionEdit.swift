@@ -59,12 +59,11 @@ struct AdminRegionEdit {
                 return .run { _ in
                     await dismiss()
                 }
-            case .putReceived(.success):
+            case .putReceived(let result):
                 state.isLoading = false
-                return .none
-            case .putReceived(.failure(let error)):
-                state.isLoading = false
-                state.alert = Alert.error("保存に失敗しました。\(error.localizedDescription)")
+                if case let .failure(error) = result {
+                    state.alert = Alert.error("保存に失敗しました。\(error.localizedDescription)")
+                }
                 return .none
             case .onSpanEdit(let item):
                 state.destination = .span(

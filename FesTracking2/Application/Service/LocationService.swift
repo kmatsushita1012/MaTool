@@ -6,99 +6,129 @@
 //
 
 import Foundation
-import Foundation
 import Dependencies
+import CoreLocation
 
-final class LocationService: Sendable {
-
+actor LocationService {
     @Dependency(\.apiRepository) var apiRepository
-    @Dependency(\.locationClient) var locationClient
+    @Dependency(\.locationProvider) var locationProvider
 
-    private var timer: Timer?
+    private var trackingTask: Task<Void, Never>?
     private(set) var locationHistory: [Status] = []
-    private(set) var isTracking: Bool = false
-    private(set) var interval: Interval = Interval.sample
+    private(set) var interval: Interval?
+    private(set) var isTracking = false
+    private var lastSentAt: Date?
+    private let threshold: Double = 0.95
 
-    private var historyStreamPair = AsyncStream<[Status]>.makeStream()
+    private var continuation: AsyncStream<[Status]>.Continuation?
+
     var historyStream: AsyncStream<[Status]> {
-        historyStreamPair = AsyncStream<[Status]>.makeStream()
-        return historyStreamPair.stream
-    }
-    private var continuation: AsyncStream<[Status]>.Continuation {
-        historyStreamPair.continuation
-    }
+        AsyncStream { continuation in
+            // 最新 continuation に置き換える
+            self.continuation = continuation
 
-    func startTracking(id: String, interval: Interval) {
-        guard !isTracking else { return }
-        isTracking = true
-        locationClient.startTracking()
-        self.interval = interval
-        startTimer(id, TimeInterval(interval.value))
-    }
+            // 終了時にクリーンアップ
+            continuation.onTermination = { @Sendable _ in
+                Task { await self.clearContinuation() }
+            }
 
-    func stopTracking(id: String) {
-        guard isTracking else { return }
-        locationClient.stopTracking()
-        stopTimer()
-        isTracking = false
-       
-        Task {
-            await deleteLocation(id)
+            // 初回は現状の履歴を流す
+            continuation.yield(locationHistory)
         }
     }
 
-    private func startTimer(_ id: String, _ interval: TimeInterval) {
-        stopTimer()
-        timer = Timer.scheduledTimer(withTimeInterval: interval, repeats: true) { [weak self] _ in
+    func requestPermission() async {
+        await locationProvider.requestPermission()
+    }
+
+    func start(id: String, interval: Interval) async {
+        guard trackingTask == nil else { return }
+
+        self.interval = interval
+        lastSentAt = nil
+        isTracking = true
+        
+        await locationProvider.startTracking(backgroundUpdatesAllowed: true){ result in
+            await self.sendIfNeeded(id: id, result: result)
+        }
+
+        trackingTask = Task { [weak self] in
             guard let self else { return }
-            Task {
-                await self.fetchLocationAndSend(id)
+            while !Task.isCancelled {
+                let locationResult = await locationProvider.getLocation()
+                await self.sendIfNeeded(id: id, result: locationResult)
+                try? await Task.sleep(nanoseconds: UInt64(interval.value * 1_000_000_000))
             }
         }
-        Task {
-            await self.fetchLocationAndSend(id)
+    }
+
+    func stop(id: String) async {
+        trackingTask?.cancel()
+        trackingTask = nil
+        isTracking = false
+        lastSentAt = nil
+        
+        await locationProvider.stopTracking()
+        await delete(id)
+    }
+
+    func getLocation() async -> AsyncValue<CLLocation> {
+        await locationProvider.getLocation()
+    }
+    
+    private func sendIfNeeded(id: String, result: AsyncValue<CLLocation>) async {
+            guard let interval else { return }
+            let now = Date()
+            let elapsed = lastSentAt.map { now.timeIntervalSince($0) } ?? .infinity
+            if elapsed >= Double(interval.value) * threshold {
+                lastSentAt = now
+                await send(id: id, result: result)
+            }
         }
-    }
 
-    private func stopTimer() {
-        timer?.invalidate()
-        timer = nil
-    }
-
-    private func appendHistory(_ status: Status) {
-        locationHistory.append(status)
-        continuation.yield(locationHistory)
-    }
-
-    private func fetchLocationAndSend(_ id: String) async {
-        let locationResult = locationClient.getLocation()
-        switch locationResult {
+    private func send(id: String, result: AsyncValue<CLLocation>) async {
+        switch result {
         case .loading:
             appendHistory(.loading(Date()))
-        case .failure(_):
+        case .failure:
             appendHistory(.locationError(Date()))
         case .success(let cllocation):
-            let location = Location(districtId: id, coordinate: Coordinate.fromCL(cllocation.coordinate), timestamp: Date())
+            let location = Location(
+                districtId: id,
+                coordinate: Coordinate.fromCL(cllocation.coordinate),
+                timestamp: Date.now
+            )
             let result = await apiRepository.putLocation(location)
             switch result {
             case .success:
                 appendHistory(.update(location))
-            case .failure:
-                appendHistory(.apiError(Date()))
+            case .failure(let error):
+                appendHistory(.apiError(Date(), error))
             }
         }
     }
-    
-    private func deleteLocation(_ id: String) async {
+
+    private func delete(_ id: String) async {
         let result = await apiRepository.deleteLocation(id)
         switch result {
         case .success:
             appendHistory(.delete(Date()))
-        case .failure:
-            appendHistory(.apiError(Date()))
+        case .failure(let error):
+            appendHistory(.apiError(Date(), error))
         }
     }
+    
+    private func clearContinuation() {
+        continuation = nil
+    }
+
+    private func appendHistory(_ status: Status) {
+        locationHistory.append(status)
+        continuation?.yield(locationHistory)
+    }
 }
+
+
 
 extension LocationService: DependencyKey {
     static let liveValue: LocationService = LocationService()

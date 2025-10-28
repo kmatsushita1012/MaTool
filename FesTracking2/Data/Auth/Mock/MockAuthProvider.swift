@@ -15,7 +15,7 @@ extension AuthProvider: TestDependencyKey {
 extension AuthProvider {
     static let noop = Self(
         initialize: {
-            return .success(Empty())
+            return .success(.signedIn)
         },
         signIn: { _, _ in
             return .success

@@ -9,8 +9,9 @@ import SwiftUI
 import ComposableArchitecture
 import NavigationSwipeControl
 
+@available(iOS 17.0, *)
 struct AdminPointEditStoreView: View {
-    @Bindable var store: StoreOf<AdminPointEdit>
+    @SwiftUI.Bindable var store: StoreOf<AdminPointEdit>
     
     var body: some View {
         Form {
@@ -20,7 +21,6 @@ struct AdminPointEditStoreView: View {
                         .popover(isPresented: $store.showPopover, content: {
                             Popover(items: store.milestones, textClosure: { $0.name }, onTapGesture: { option in
                                 store.send(.titleOptionSelected(option))
-                                
                             }).presentationCompactAdaptation(PresentationAdaptation.popover)
                         })
                     Button(action: {

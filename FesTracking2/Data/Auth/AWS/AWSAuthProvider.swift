@@ -5,7 +5,7 @@
 //  Created by 松下和也 on 202timeout/04/0timeout.
 //
 
-import AWSMobileClient
+import Amplify
 import Dependencies
 
 
@@ -26,6 +26,7 @@ extension AuthProvider: DependencyKey {
                 } catch {
                     return .failure(.timeout("initialize"))
                 }
+                return result
             },
             
             signIn: { username, password in

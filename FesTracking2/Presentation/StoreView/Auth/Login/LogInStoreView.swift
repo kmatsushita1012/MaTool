@@ -9,8 +9,9 @@ import SwiftUI
 import ComposableArchitecture
 import NavigationSwipeControl
 
+@available(iOS 17.0, *)
 struct LoginStoreView: View {
-    @Bindable var store: StoreOf<Login>
+    @SwiftUI.Bindable var store: StoreOf<Login>
     
     @FocusState private var focusedField: Field?
     
@@ -30,7 +31,8 @@ struct LoginStoreView: View {
                 .focused($focusedField, equals: .identifier)
                 .padding()
                 
-            SecureField("パスワード", text: $store.password)
+            TextField("パスワード", text: $store.password)
+                .textContentType(.password)
                 .textFieldStyle(RoundedBorderTextFieldStyle())
                 .focused($focusedField, equals: .password)
                 .padding()

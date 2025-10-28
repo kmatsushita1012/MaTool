@@ -25,7 +25,7 @@ struct Home {
     @ObservableState
     struct State: Equatable {
         var userRole: UserRole = .guest
-        var isAuthLoading: Bool = true
+        var isAuthLoading: Bool = false
         var isDestinationLoading: Bool = false
         var isLoading: Bool {
             isDestinationLoading
@@ -39,17 +39,18 @@ struct Home {
     @CasePathable
     enum Action: Equatable,BindableAction {
         case binding(BindingAction<Home.State>)
-        case onAppear
+        case initialize
         case mapTapped
         case infoTapped
         case adminTapped
         case settingsTapped
+        case skipTapped
         case statusReceived(StatusCheckResult?)
         case awsInitializeReceived(Result<UserRole, AuthError>)
         case routePrepared(
             regionResult: Result<Region, APIError>,
             districtsResult: Result<[PublicDistrict], APIError>,
-            currentResult: Result<CurrentResponce, APIError>
+            currentResult: Result<CurrentResponse, APIError>
         )
         case locationsPrepared(
             regionResult: Result<Region, APIError>,
@@ -81,7 +82,7 @@ struct Home {
             switch action {
             case .binding:
                 return .none
-            case .onAppear:
+            case .initialize:
                 state.isAuthLoading = true
                 return .merge(
                     .run { send in
@@ -92,6 +93,7 @@ struct Home {
                         let result = await authService.initialize()
                         await send(.awsInitializeReceived(result))
                     }
+                        .cancellable(id: "AuthInitialize")
                 )
             case .statusReceived(let value):
                 state.status = value
@@ -117,27 +119,19 @@ struct Home {
                 state.isDestinationLoading = true
                 return infoEffect(regionId: regionId)
             case .adminTapped:
-                if state.isAuthLoading {
-                    state.alert = Alert.error("認証中です。もう一度お試しください。再度このエラーが出る場合は設定画面から強制ログアウトをお試しください。")
-                    return .none
-                }
-                switch state.userRole {
-                case .region(let id):
-                    state.isDestinationLoading = true
-                    return adminRegionEffect(id)
-                case .district(let id):
-                    state.isDestinationLoading = true
-                    return adminDistrictEffect(id)
-                case .guest:
-                    let id = userDefaultsClient.string(loginIdKey) ?? ""
-                    state.destination = .login(Login.State(id: id))
-                    return .none
-                }
+                return adminTapped(state: &state, action: action)
             case .settingsTapped:
                 state.isDestinationLoading = true
                 let regionId = userDefaultsClient.string(defaultRegionKey)
                 let districtId = userDefaultsClient.string(defaultDistrictKey)
                 return settingsEffect(regionId: regionId, districtId: districtId)
+            case .skipTapped:
+                state.isAuthLoading = false
+                let effect = adminTapped(state: &state, action: action)
+                return .merge(
+                    .cancel(id: "AuthInitialize"),
+                    effect
+                )
             case .awsInitializeReceived(.success(let userRole)):
                 state.userRole = userRole
                 state.isAuthLoading = false
@@ -205,6 +199,16 @@ struct Home {
                             region: region,
                             districts: districts,
                             locations: locations
+                        )
+                    )
+                case (.success(let region),
+                    .success(let districts),
+                    .failure(.forbidden(message: let message))):
+                    state.destination = .map(
+                        PublicMap.State(
+                            region: region,
+                            districts: districts,
+                            locations: []
                         )
                     )
                 case (.failure(let error), _, _),
@@ -289,7 +293,13 @@ struct Home {
                         let regionId = userDefaultsClient.string(defaultRegionKey)  else {
                         return .none
                     }
-                    return routeEffect(regionId: regionId, districtId: districtId)
+                    if #available(iOS 17, *) {
+                        return routeEffect(regionId: regionId, districtId: districtId)
+                    }else{
+                        state.isDestinationLoading = true
+                        state.destination = nil
+                        return routeEffect(regionId: regionId, districtId: districtId)
+                    }
                 case .adminDistrict(.signOutReceived(.success(let userRole))),
                     .adminRegion(.signOutReceived(.success(let userRole))):
                     state.userRole = userRole
@@ -312,6 +322,24 @@ struct Home {
         .ifLet(\.$alert, action: \.alert)
     }
     
+    func adminTapped(state: inout State, action: Action) -> Effect<Action> {
+        if state.isAuthLoading {
+            state.alert = Alert.error("認証中です。もう一度お試しください。再度このエラーが出る場合は設定画面から強制ログアウトをお試しください。")
+            return .none
+        }
+        switch state.userRole {
+        case .region(let id):
+            state.isDestinationLoading = true
+            return adminRegionEffect(id)
+        case .district(let id):
+            state.isDestinationLoading = true
+            return adminDistrictEffect(id)
+        case .guest:
+            let id = userDefaultsClient.string(loginIdKey) ?? ""
+            state.destination = .login(Login.State(id: id))
+            return .none
+        }
+    }
     
     func routeEffect(regionId: String, districtId id: String) -> Effect<Action> {
         .run { send in

@@ -60,7 +60,7 @@ extension APIRepotiroy: DependencyKey {
                 )
                 let accessToken = await authService.getAccessToken()
                 return await encodeResult.asyncFlatMap { body in
-                    let response = await apiClient.put(
+                    let response = await apiClient.post(
                         path: "/regions/\(regionId)/districts",
                         body: body,
                         accessToken: accessToken
@@ -113,7 +113,7 @@ extension APIRepotiroy: DependencyKey {
                     accessToken: accessToken,
                     isCache: false
                 )
-                return decodeResponse(CurrentResponce.self, from: response)
+                return decodeResponse(CurrentResponse.self, from: response)
             },
             getRouteIds: {
                 let accessToken = await authService.getAccessToken()
