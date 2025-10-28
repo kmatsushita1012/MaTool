@@ -7,7 +7,6 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		27424699F68A56768788B40C /* Pods_FesTracking2Tests.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = AEBE114D12C288BBBF847107 /* Pods_FesTracking2Tests.framework */; };
 		2914184C2DA2B8E9003D7C72 /* PublicMapStoreView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2914184B2DA2B8E9003D7C72 /* PublicMapStoreView.swift */; };
 		291D91992DCDAD45007E5A80 /* AdminExportableMapView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 291D91982DCDAD3C007E5A80 /* AdminExportableMapView.swift */; };
 		291D919B2DCDAD71007E5A80 /* MapFragments.swift in Sources */ = {isa = PBXBuildFile; fileRef = 291D919A2DCDAD68007E5A80 /* MapFragments.swift */; };
@@ -24,7 +23,7 @@
 		293F2C2F2DD78559002C056E /* Alert.swift in Sources */ = {isa = PBXBuildFile; fileRef = 293F2C2E2DD7854D002C056E /* Alert.swift */; };
 		29460A0B2D8C28AC0097CAA1 /* LogIn.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29460A0A2D8C28A40097CAA1 /* LogIn.swift */; };
 		29460A0D2D8C29030097CAA1 /* LogInStoreView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29460A0C2D8C28FC0097CAA1 /* LogInStoreView.swift */; };
-		29460A1A2D8C32490097CAA1 /* awsconfiguration.json in Resources */ = {isa = PBXBuildFile; fileRef = 29460A162D8C314F0097CAA1 /* awsconfiguration.json */; };
+		29460A1A2D8C32490097CAA1 /* amplifyconfiguration.json in Resources */ = {isa = PBXBuildFile; fileRef = 29460A162D8C314F0097CAA1 /* amplifyconfiguration.json */; };
 		2948FCF02DC5C38100C73E99 /* PickerFeature.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2948FCEF2DC5C37800C73E99 /* PickerFeature.swift */; };
 		29550E522DE4554200E9D9B6 /* ButtonStyle.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29550E512DE4553A00E9D9B6 /* ButtonStyle.swift */; };
 		29550E542DE45CD800E9D9B6 /* MenuSelector.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29550E532DE45CD100E9D9B6 /* MenuSelector.swift */; };
@@ -85,7 +84,6 @@
 		29A1C21A2E28CC6E0036F221 /* ChangePasswordStoreView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29A1C2192E28CC670036F221 /* ChangePasswordStoreView.swift */; };
 		29A1C21D2E28D50C0036F221 /* ResetPasswordStoreView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29A1C21C2E28D5050036F221 /* ResetPasswordStoreView.swift */; };
 		29A1C21F2E28D88E0036F221 /* UpdateEmailStoreView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29A1C21E2E28D8870036F221 /* UpdateEmailStoreView.swift */; };
-		29A1C2212E291A470036F221 /* UpdateEmailResult.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29A1C2202E291A320036F221 /* UpdateEmailResult.swift */; };
 		29A2E5752E5D68F40012D944 /* Entity+.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29A2E5742E5D68F00012D944 /* Entity+.swift */; };
 		29A2E5772E5D6CAD0012D944 /* ReplayController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29A2E5762E5D6CA80012D944 /* ReplayController.swift */; };
 		29A2E57A2E64A80C0012D944 /* AWSCognitoAuthPlugin in Frameworks */ = {isa = PBXBuildFile; productRef = 29A2E5792E64A80C0012D944 /* AWSCognitoAuthPlugin */; };
@@ -173,8 +171,6 @@
 		29F8A7932DFD645000331A7F /* TitleView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29F8A7922DFD643C00331A7F /* TitleView.swift */; };
 		29FBA84B2E3B31FF00F6E33C /* RouteSnapshotter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29FBA84A2E3B31FE00F6E33C /* RouteSnapshotter.swift */; };
 		29FBA84D2E3B34A900F6E33C /* ShareSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29FBA84C2E3B34A300F6E33C /* ShareSheet.swift */; };
-		669224E9583394F966E1C953 /* Pods_FesTracking2.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A618585B10BC13EF80425258 /* Pods_FesTracking2.framework */; };
-		BDC150D136794E0D80F535CD /* Pods_FesTracking2_FesTracking2UITests.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A449D00CF487FFFF67AD9A67 /* Pods_FesTracking2_FesTracking2UITests.framework */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -211,7 +207,7 @@
 		293F2C2E2DD7854D002C056E /* Alert.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Alert.swift; sourceTree = "<group>"; };
 		29460A0A2D8C28A40097CAA1 /* LogIn.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LogIn.swift; sourceTree = "<group>"; };
 		29460A0C2D8C28FC0097CAA1 /* LogInStoreView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LogInStoreView.swift; sourceTree = "<group>"; };
-		29460A162D8C314F0097CAA1 /* awsconfiguration.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = awsconfiguration.json; sourceTree = "<group>"; };
+		29460A162D8C314F0097CAA1 /* amplifyconfiguration.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = amplifyconfiguration.json; sourceTree = "<group>"; };
 		2948FCEF2DC5C37800C73E99 /* PickerFeature.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PickerFeature.swift; sourceTree = "<group>"; };
 		29550E512DE4553A00E9D9B6 /* ButtonStyle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ButtonStyle.swift; sourceTree = "<group>"; };
 		29550E532DE45CD100E9D9B6 /* MenuSelector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuSelector.swift; sourceTree = "<group>"; };
@@ -359,9 +355,6 @@
 		29F8A7922DFD643C00331A7F /* TitleView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TitleView.swift; sourceTree = "<group>"; };
 		29FBA84A2E3B31FE00F6E33C /* RouteSnapshotter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RouteSnapshotter.swift; sourceTree = "<group>"; };
 		29FBA84C2E3B34A300F6E33C /* ShareSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShareSheet.swift; sourceTree = "<group>"; };
-		A449D00CF487FFFF67AD9A67 /* Pods_FesTracking2_FesTracking2UITests.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_FesTracking2_FesTracking2UITests.framework; sourceTree = BUILT_PRODUCTS_DIR; };
-		A618585B10BC13EF80425258 /* Pods_FesTracking2.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_FesTracking2.framework; sourceTree = BUILT_PRODUCTS_DIR; };
-		AEBE114D12C288BBBF847107 /* Pods_FesTracking2Tests.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_FesTracking2Tests.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -372,7 +365,6 @@
 				29C74ACF2E388FC800417533 /* Kingfisher in Frameworks */,
 				29A2E57A2E64A80C0012D944 /* AWSCognitoAuthPlugin in Frameworks */,
 				29F8A2BE2D9EF079001633B3 /* ComposableArchitecture in Frameworks */,
-				669224E9583394F966E1C953 /* Pods_FesTracking2.framework in Frameworks */,
 				2972EF2B2E2DFED0003A4F1C /* NavigationSwipeControl in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -381,7 +373,6 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				27424699F68A56768788B40C /* Pods_FesTracking2Tests.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -389,7 +380,6 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				BDC150D136794E0D80F535CD /* Pods_FesTracking2_FesTracking2UITests.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -522,13 +512,12 @@
 		298BD7912D71E46600CB63F1 = {
 			isa = PBXGroup;
 			children = (
-				29460A162D8C314F0097CAA1 /* awsconfiguration.json */,
+				29460A162D8C314F0097CAA1 /* amplifyconfiguration.json */,
 				2983AB802D741C18002F6CB5 /* README.md */,
 				298BD79C2D71E46600CB63F1 /* FesTracking2 */,
 				298BD7AF2D71E46900CB63F1 /* FesTracking2Tests */,
 				298BD7B92D71E46900CB63F1 /* FesTracking2UITests */,
 				298BD79B2D71E46600CB63F1 /* Products */,
-				301EBB7653C0DF6665EAAFF3 /* Frameworks */,
 			);
 			sourceTree = "<group>";
 		};
@@ -1271,16 +1260,6 @@
 			path = District;
 			sourceTree = "<group>";
 		};
-		301EBB7653C0DF6665EAAFF3 /* Frameworks */ = {
-			isa = PBXGroup;
-			children = (
-				A618585B10BC13EF80425258 /* Pods_FesTracking2.framework */,
-				A449D00CF487FFFF67AD9A67 /* Pods_FesTracking2_FesTracking2UITests.framework */,
-				AEBE114D12C288BBBF847107 /* Pods_FesTracking2Tests.framework */,
-			);
-			name = Frameworks;
-			sourceTree = "<group>";
-		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
@@ -1288,11 +1267,9 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = 298BD7C02D71E46900CB63F1 /* Build configuration list for PBXNativeTarget "FesTracking2" */;
 			buildPhases = (
-				A059BF55138D2ABF93A4F7E6 /* [CP] Check Pods Manifest.lock */,
 				298BD7962D71E46600CB63F1 /* Sources */,
 				298BD7972D71E46600CB63F1 /* Frameworks */,
 				298BD7982D71E46600CB63F1 /* Resources */,
-				2E602B76E071C1FB47E8D7FF /* [CP] Copy Pods Resources */,
 			);
 			buildRules = (
 			);
@@ -1403,7 +1380,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				29460A1A2D8C32490097CAA1 /* awsconfiguration.json in Resources */,
+				29460A1A2D8C32490097CAA1 /* amplifyconfiguration.json in Resources */,
 				2983AB852D741C19002F6CB5 /* README.md in Resources */,
 				298BD7A72D71E46800CB63F1 /* Preview Assets.xcassets in Resources */,
 				298BD7A42D71E46800CB63F1 /* Assets.xcassets in Resources */,
@@ -1449,27 +1426,6 @@
 			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-FesTracking2-FesTracking2UITests/Pods-FesTracking2-FesTracking2UITests-resources.sh\"\n";
 			showEnvVarsInLog = 0;
 		};
-		2E602B76E071C1FB47E8D7FF /* [CP] Copy Pods Resources */ = {
-			isa = PBXShellScriptBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			inputFileListPaths = (
-				"${PODS_ROOT}/Target Support Files/Pods-FesTracking2/Pods-FesTracking2-resources-${CONFIGURATION}-input-files.xcfilelist",
-			);
-			inputPaths = (
-			);
-			name = "[CP] Copy Pods Resources";
-			outputFileListPaths = (
-				"${PODS_ROOT}/Target Support Files/Pods-FesTracking2/Pods-FesTracking2-resources-${CONFIGURATION}-output-files.xcfilelist",
-			);
-			outputPaths = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/sh;
-			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-FesTracking2/Pods-FesTracking2-resources.sh\"\n";
-			showEnvVarsInLog = 0;
-		};
 		44563593E4E9001D064CF60C /* [CP] Check Pods Manifest.lock */ = {
 			isa = PBXShellScriptBuildPhase;
 			buildActionMask = 2147483647;
@@ -1486,28 +1442,6 @@
 			);
 			outputPaths = (
 				"$(DERIVED_FILE_DIR)/Pods-FesTracking2-FesTracking2UITests-checkManifestLockResult.txt",
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/sh;
-			shellScript = "diff \"${PODS_PODFILE_DIR_PATH}/Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [ $? != 0 ] ; then\n    # print error to STDERR\n    echo \"error: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\" >&2\n    exit 1\nfi\n# This output is used by Xcode 'outputs' to avoid re-running this script phase.\necho \"SUCCESS\" > \"${SCRIPT_OUTPUT_FILE_0}\"\n";
-			showEnvVarsInLog = 0;
-		};
-		A059BF55138D2ABF93A4F7E6 /* [CP] Check Pods Manifest.lock */ = {
-			isa = PBXShellScriptBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			inputFileListPaths = (
-			);
-			inputPaths = (
-				"${PODS_PODFILE_DIR_PATH}/Podfile.lock",
-				"${PODS_ROOT}/Manifest.lock",
-			);
-			name = "[CP] Check Pods Manifest.lock";
-			outputFileListPaths = (
-			);
-			outputPaths = (
-				"$(DERIVED_FILE_DIR)/Pods-FesTracking2-checkManifestLockResult.txt",
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
@@ -2082,7 +2016,7 @@
 			repositoryURL = "https://github.com/pointfreeco/swift-composable-architecture";
 			requirement = {
 				kind = upToNextMajorVersion;
-				minimumVersion = 1.19.0;
+				minimumVersion = 1.23.1;
 			};
 		};
 /* End XCRemoteSwiftPackageReference section */

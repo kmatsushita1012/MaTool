@@ -8,10 +8,16 @@
 import SwiftUI
 import SwiftData
 import ComposableArchitecture
-import AWSMobileClient
 
 @main
 struct FesTracking2App: App {
+    @Dependency(\.authService) var authService
+    
+    init() {
+        let result = authService.initialize()
+        print(result)
+    }
+    
     //    @UIApplicationDelegateAdaptor(AppDelegate.self) var delegate
     @AppStorage(hasLaunchedBeforePath, store: UserDefaults(suiteName: "matool")) var hasLaunchedBefore: Bool = false
     let store = Store(initialState:Home.State()){
