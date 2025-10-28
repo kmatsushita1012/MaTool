@@ -41,7 +41,7 @@ jobs:
       - name: Build
         run: |
           xcodebuild build \
-            -project FesTracking2.xcodeproj \   # ← workspace ではなく project に変更
+            -project FesTracking2.xcodeproj \
             -scheme FesTracking2 \
             -sdk iphoneos \
             -configuration Release \
@@ -50,4 +50,3 @@ jobs:
             -skipMacroValidation \
             CODE_SIGNING_ALLOWED=NO \
             ENABLE_SWIFT_MACROS=YES
-
