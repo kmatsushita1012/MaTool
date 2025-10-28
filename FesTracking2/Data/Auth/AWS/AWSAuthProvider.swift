@@ -2,31 +2,29 @@
 //  AWSCognitoLive.swift
 //  FesTracking2
 //
-//  Created by 松下和也 on 202timeout/04/0timeout.
+//  Created by 松下和也 on 2024/04/01.
 //
 
 import Amplify
+import AWSCognitoAuthPlugin
 import Dependencies
-
+import Foundation
 
 extension AuthProvider: DependencyKey {
     static let liveValue = {
-        let timeout: TimeInterval = 5
+        let timeout: Int = 5
         
         return Self(
             initialize: {
                 do {
-                    try await withTimeout(seconds: timeout) {
-                        try Amplify.add(plugin: AWSCognitoAuthPlugin())
-                        try Amplify.configure()
-                    }
+                    try Amplify.add(plugin: AWSCognitoAuthPlugin())
+                    try Amplify.configure()
                     return .success(Empty())
                 } catch let error as AuthError {
                     return .failure(error)
                 } catch {
-                    return .failure(.timeout("initialize"))
+                    return .failure(.unknown(error.localizedDescription))
                 }
-                return result
             },
             
             signIn: { username, password in
@@ -86,25 +84,24 @@ extension AuthProvider: DependencyKey {
             
             getTokens: {
                 do {
-                    let tokens = try await withTimeout(seconds: timeout) {
-                        let session = try await Amplify.Auth.fetchAuthSession()
-                        guard let cognito = session as? AuthCognitoTokensProvider else {
-                            throw AuthError.unknown("No Cognito session")
-                        }
-                        return try cognito.getCognitoTokens().get()
+                    let session = try await Amplify.Auth.fetchAuthSession() as? AWSAuthCognitoSession
+                    let result = session?.getCognitoTokens()
+                    switch result {
+                    case .success(let tokens):
+                        return .success(tokens.accessToken)
+                    case .failure(let error):
+                        return .failure(.unknown(""))
+                    case .none:
+                        return .failure(.unknown(""))
                     }
-                    return .success(tokens)
-                } catch let error as AuthError {
-                    return .failure(error)
                 } catch {
-                    return .failure(.timeout("getTokens"))
+                    return .failure(.unknown(""))
                 }
             },
-            
             signOut: {
                 do {
-                    try await withTimeout(seconds: timeout) {
-                        try await Amplify.Auth.signOut()
+                    let _ = try await withTimeout(seconds: timeout) {
+                        await Amplify.Auth.signOut()
                     }
                     return .success(Empty())
                 } catch let error as AuthError {
@@ -160,15 +157,14 @@ extension AuthProvider: DependencyKey {
             updateEmail: { newEmail in
                 do {
                     let result = try await withTimeout(seconds: timeout) {
-                        try await Amplify.Auth.update(userAttribute: .email(newEmail))
+                        try await Amplify.Auth.update(userAttribute: .init(.email, value: newEmail))
                     }
                     switch result.nextStep {
                     case .done:
                         return .completed
-                    case .confirmAttributeWithCode(let delivery):
-                        return .verificationRequired(destination: delivery.destination)
-                    default:
-                        return .failure(.unknown("Unexpected next step"))
+                    case .confirmAttributeWithCode(_, _):
+                        //TODO: destination
+                        return .verificationRequired(destination: "仮")
                     }
                 } catch let error as AuthError {
                     return .failure(error)
