@@ -55,7 +55,7 @@ jobs:
       - name: Build
         run: |
           xcodebuild archive \
-            -workspace FesTracking2.xcworkspace \
+            -workspace FesTracking2.xcodeproj \
             -scheme FesTracking2 \
             -archivePath FesTracking2.xcarchive \
             -sdk iphoneos \
