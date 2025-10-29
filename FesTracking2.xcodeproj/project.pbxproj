@@ -140,7 +140,6 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = 298BD7C32D71E46900CB63F1 /* Build configuration list for PBXNativeTarget "FesTracking2Tests" */;
 			buildPhases = (
-				FED43AC7FBA8042DEE5D568B /* [CP] Check Pods Manifest.lock */,
 				298BD7A82D71E46900CB63F1 /* Sources */,
 				298BD7A92D71E46900CB63F1 /* Frameworks */,
 				298BD7AA2D71E46900CB63F1 /* Resources */,
@@ -162,11 +161,9 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = 298BD7C62D71E46900CB63F1 /* Build configuration list for PBXNativeTarget "FesTracking2UITests" */;
 			buildPhases = (
-				44563593E4E9001D064CF60C /* [CP] Check Pods Manifest.lock */,
 				298BD7B22D71E46900CB63F1 /* Sources */,
 				298BD7B32D71E46900CB63F1 /* Frameworks */,
 				298BD7B42D71E46900CB63F1 /* Resources */,
-				09B7B4075DD4A2AA19982CC2 /* [CP] Copy Pods Resources */,
 			);
 			buildRules = (
 			);
@@ -256,74 +253,6 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXResourcesBuildPhase section */
-
-/* Begin PBXShellScriptBuildPhase section */
-		09B7B4075DD4A2AA19982CC2 /* [CP] Copy Pods Resources */ = {
-			isa = PBXShellScriptBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			inputFileListPaths = (
-				"${PODS_ROOT}/Target Support Files/Pods-FesTracking2-FesTracking2UITests/Pods-FesTracking2-FesTracking2UITests-resources-${CONFIGURATION}-input-files.xcfilelist",
-			);
-			inputPaths = (
-			);
-			name = "[CP] Copy Pods Resources";
-			outputFileListPaths = (
-				"${PODS_ROOT}/Target Support Files/Pods-FesTracking2-FesTracking2UITests/Pods-FesTracking2-FesTracking2UITests-resources-${CONFIGURATION}-output-files.xcfilelist",
-			);
-			outputPaths = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/sh;
-			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-FesTracking2-FesTracking2UITests/Pods-FesTracking2-FesTracking2UITests-resources.sh\"\n";
-			showEnvVarsInLog = 0;
-		};
-		44563593E4E9001D064CF60C /* [CP] Check Pods Manifest.lock */ = {
-			isa = PBXShellScriptBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			inputFileListPaths = (
-			);
-			inputPaths = (
-				"${PODS_PODFILE_DIR_PATH}/Podfile.lock",
-				"${PODS_ROOT}/Manifest.lock",
-			);
-			name = "[CP] Check Pods Manifest.lock";
-			outputFileListPaths = (
-			);
-			outputPaths = (
-				"$(DERIVED_FILE_DIR)/Pods-FesTracking2-FesTracking2UITests-checkManifestLockResult.txt",
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/sh;
-			shellScript = "diff \"${PODS_PODFILE_DIR_PATH}/Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [ $? != 0 ] ; then\n    # print error to STDERR\n    echo \"error: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\" >&2\n    exit 1\nfi\n# This output is used by Xcode 'outputs' to avoid re-running this script phase.\necho \"SUCCESS\" > \"${SCRIPT_OUTPUT_FILE_0}\"\n";
-			showEnvVarsInLog = 0;
-		};
-		FED43AC7FBA8042DEE5D568B /* [CP] Check Pods Manifest.lock */ = {
-			isa = PBXShellScriptBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			inputFileListPaths = (
-			);
-			inputPaths = (
-				"${PODS_PODFILE_DIR_PATH}/Podfile.lock",
-				"${PODS_ROOT}/Manifest.lock",
-			);
-			name = "[CP] Check Pods Manifest.lock";
-			outputFileListPaths = (
-			);
-			outputPaths = (
-				"$(DERIVED_FILE_DIR)/Pods-FesTracking2Tests-checkManifestLockResult.txt",
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/sh;
-			shellScript = "diff \"${PODS_PODFILE_DIR_PATH}/Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [ $? != 0 ] ; then\n    # print error to STDERR\n    echo \"error: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\" >&2\n    exit 1\nfi\n# This output is used by Xcode 'outputs' to avoid re-running this script phase.\necho \"SUCCESS\" > \"${SCRIPT_OUTPUT_FILE_0}\"\n";
-			showEnvVarsInLog = 0;
-		};
-/* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
 		298BD7962D71E46600CB63F1 /* Sources */ = {
@@ -518,7 +447,7 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 2.2.11;
-				OTHER_SWIFT_FLAGS = "$(inherited) -D COCOAPODS";
+				OTHER_SWIFT_FLAGS = "$(inherited)";
 				PRODUCT_BUNDLE_IDENTIFIER = StudioMK.FesTracking;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
