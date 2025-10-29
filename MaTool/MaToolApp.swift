@@ -10,7 +10,7 @@ import SwiftData
 import ComposableArchitecture
 
 @main
-struct FesTracking2App: App {
+struct MaToolApp: App {
     @Dependency(\.authService) var authService
     
     init() {
