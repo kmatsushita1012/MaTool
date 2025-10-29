@@ -43,7 +43,7 @@ jobs:
         uses: actions/cache@v3
         with:
           path: .derivedData
-          key: ${{ runner.os }}-derived-${{ hashFiles('FesTracking2.xcodeproj/project.pbxproj', '**/*.swift', '**/*.h') }}
+          key: ${{ runner.os }}-derived-${{ hashFiles('MaTool.xcodeproj/project.pbxproj', '**/*.swift', '**/*.h') }}
           restore-keys: |
             ${{ runner.os }}-derived-
 
@@ -55,9 +55,9 @@ jobs:
       - name: Build
         run: |
           xcodebuild archive \
-            -workspace FesTracking2.xcodeproj \
-            -scheme FesTracking2 \
-            -archivePath FesTracking2.xcarchive \
+            -workspace MaTool.xcodeproj \
+            -scheme MaTool \
+            -archivePath MaTool.xcarchive \
             -sdk iphoneos \
             -configuration Release \
             -destination 'generic/platform=iOS' \
@@ -78,8 +78,8 @@ jobs:
 
       - name: Export IPA
         run: |
-          xcodebuild -exportArchive -archivePath FesTracking2.xcarchive -exportOptionsPlist ExportOptions.plist -exportPath FesTracking2.ipa -allowProvisioningUpdates -authenticationKeyPath `pwd`/private_keys/AuthKey_${{ secrets.APPLE_API_ISSUE_ID }}.p8 -authenticationKeyID ${{ secrets.APPLE_API_KEY_ID }} -authenticationKeyIssuerID ${{ secrets.APPLE_API_ISSUE_ID }}
+          xcodebuild -exportArchive -archivePath MaTool.xcarchive -exportOptionsPlist ExportOptions.plist -exportPath MaTool.ipa -allowProvisioningUpdates -authenticationKeyPath `pwd`/private_keys/AuthKey_${{ secrets.APPLE_API_ISSUE_ID }}.p8 -authenticationKeyID ${{ secrets.APPLE_API_KEY_ID }} -authenticationKeyIssuerID ${{ secrets.APPLE_API_ISSUE_ID }}
 
       - name: Upload to App Store Connect
         run: |
-          xcrun altool --upload-app -f FesTracking2.ipa/FesTracking2.ipa -t ios -u ${{ secrets.APPLE_ID }} -p ${{ secrets.APP_SPECIFIC_PASSWORD }} --type ios
+          xcrun altool --upload-app -f MaTool.ipa/MaTool.ipa -t ios -u ${{ secrets.APPLE_ID }} -p ${{ secrets.APP_SPECIFIC_PASSWORD }} --type ios

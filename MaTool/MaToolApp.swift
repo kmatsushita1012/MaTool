@@ -1,6 +1,6 @@
 //
-//  FesTracking2App.swift
-//  FesTracking2
+//  MaToolApp.swift
+//  MaTool
 //
 //  Created by 松下和也 on 2025/02/28.
 //
