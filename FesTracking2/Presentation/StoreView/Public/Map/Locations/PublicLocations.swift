@@ -52,7 +52,7 @@ struct PublicLocations {
             case .locationsReceived(.success(let value)):
                 state.locations = value
                 return .none
-            case .locationsReceived(.failure(let error)):
+            case .locationsReceived(.failure(_)):
                 return .none
             case .userLocationReceived(let value):
                 state.$mapRegion.withLock { $0 = makeRegion(origin: value, spanDelta: spanDelta)}
