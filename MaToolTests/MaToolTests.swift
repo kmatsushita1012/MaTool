@@ -1,14 +1,14 @@
 //
-//  FesTracking2Tests.swift
-//  FesTracking2Tests
+//  MaToolTests.swift
+//  MaToolTests
 //
 //  Created by 松下和也 on 2025/02/28.
 //
 
 import XCTest
-@testable import FesTracking2
+@testable import MaTool
 
-final class FesTracking2Tests: XCTestCase {
+final class MaToolTests: XCTestCase {
 
     override func setUpWithError() throws {
         // Put setup code here. This method is called before the invocation of each test method in the class.

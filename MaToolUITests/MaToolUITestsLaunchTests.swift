@@ -7,7 +7,7 @@
 
 import XCTest
 
-final class FesTracking2UITestsLaunchTests: XCTestCase {
+final class MaToolUITestsLaunchTests: XCTestCase {
 
     override class var runsForEachTargetApplicationUIConfiguration: Bool {
         true
