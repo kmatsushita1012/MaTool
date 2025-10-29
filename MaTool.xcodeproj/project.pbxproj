@@ -35,9 +35,9 @@
 /* Begin PBXFileReference section */
 		29460A162D8C314F0097CAA1 /* amplifyconfiguration.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = amplifyconfiguration.json; sourceTree = "<group>"; };
 		2983AB802D741C18002F6CB5 /* README.md */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
-		298BD79A2D71E46600CB63F1 /* FesTracking2.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = FesTracking2.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		298BD7AC2D71E46900CB63F1 /* FesTracking2Tests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = FesTracking2Tests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
-		298BD7B62D71E46900CB63F1 /* FesTracking2UITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = FesTracking2UITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		298BD79A2D71E46600CB63F1 /* MaTool.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = MaTool.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		298BD7AC2D71E46900CB63F1 /* MaToolTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = MaToolTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		298BD7B62D71E46900CB63F1 /* MaToolUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = MaToolUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -46,14 +46,14 @@
 			membershipExceptions = (
 				Info.plist,
 			);
-			target = 298BD7992D71E46600CB63F1 /* FesTracking2 */;
+			target = 298BD7992D71E46600CB63F1 /* MaTool */;
 		};
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
-		291F008F2EB223A40080B26A /* FesTracking2UITests */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = FesTracking2UITests; sourceTree = "<group>"; };
-		291F00932EB223A40080B26A /* FesTracking2Tests */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = FesTracking2Tests; sourceTree = "<group>"; };
-		291FFFEF2EB2239F0080B26A /* FesTracking2 */ = {isa = PBXFileSystemSynchronizedRootGroup; exceptions = (291F008C2EB223A00080B26A /* PBXFileSystemSynchronizedBuildFileExceptionSet */, ); explicitFileTypes = {}; explicitFolders = (); path = FesTracking2; sourceTree = "<group>"; };
+		291F008F2EB223A40080B26A /* MaToolUITests */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = MaToolUITests; sourceTree = "<group>"; };
+		291F00932EB223A40080B26A /* MaToolTests */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = MaToolTests; sourceTree = "<group>"; };
+		291FFFEF2EB2239F0080B26A /* MaTool */ = {isa = PBXFileSystemSynchronizedRootGroup; exceptions = (291F008C2EB223A00080B26A /* PBXFileSystemSynchronizedBuildFileExceptionSet */, ); explicitFileTypes = {}; explicitFolders = (); path = MaTool; sourceTree = "<group>"; };
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -90,9 +90,9 @@
 			children = (
 				29460A162D8C314F0097CAA1 /* amplifyconfiguration.json */,
 				2983AB802D741C18002F6CB5 /* README.md */,
-				291FFFEF2EB2239F0080B26A /* FesTracking2 */,
-				291F00932EB223A40080B26A /* FesTracking2Tests */,
-				291F008F2EB223A40080B26A /* FesTracking2UITests */,
+				291FFFEF2EB2239F0080B26A /* MaTool */,
+				291F00932EB223A40080B26A /* MaToolTests */,
+				291F008F2EB223A40080B26A /* MaToolUITests */,
 				298BD79B2D71E46600CB63F1 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -100,9 +100,9 @@
 		298BD79B2D71E46600CB63F1 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				298BD79A2D71E46600CB63F1 /* FesTracking2.app */,
-				298BD7AC2D71E46900CB63F1 /* FesTracking2Tests.xctest */,
-				298BD7B62D71E46900CB63F1 /* FesTracking2UITests.xctest */,
+				298BD79A2D71E46600CB63F1 /* MaTool.app */,
+				298BD7AC2D71E46900CB63F1 /* MaToolTests.xctest */,
+				298BD7B62D71E46900CB63F1 /* MaToolUITests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -110,9 +110,9 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		298BD7992D71E46600CB63F1 /* FesTracking2 */ = {
+		298BD7992D71E46600CB63F1 /* MaTool */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 298BD7C02D71E46900CB63F1 /* Build configuration list for PBXNativeTarget "FesTracking2" */;
+			buildConfigurationList = 298BD7C02D71E46900CB63F1 /* Build configuration list for PBXNativeTarget "MaTool" */;
 			buildPhases = (
 				298BD7962D71E46600CB63F1 /* Sources */,
 				298BD7972D71E46600CB63F1 /* Frameworks */,
@@ -123,9 +123,9 @@
 			dependencies = (
 			);
 			fileSystemSynchronizedGroups = (
-				291FFFEF2EB2239F0080B26A /* FesTracking2 */,
+				291FFFEF2EB2239F0080B26A /* MaTool */,
 			);
-			name = FesTracking2;
+			name = MaTool;
 			packageProductDependencies = (
 				29F8A2BD2D9EF079001633B3 /* ComposableArchitecture */,
 				2972EF2A2E2DFED0003A4F1C /* NavigationSwipeControl */,
@@ -133,12 +133,12 @@
 				29A2E5792E64A80C0012D944 /* AWSCognitoAuthPlugin */,
 			);
 			productName = FesTracking2;
-			productReference = 298BD79A2D71E46600CB63F1 /* FesTracking2.app */;
+			productReference = 298BD79A2D71E46600CB63F1 /* MaTool.app */;
 			productType = "com.apple.product-type.application";
 		};
-		298BD7AB2D71E46900CB63F1 /* FesTracking2Tests */ = {
+		298BD7AB2D71E46900CB63F1 /* MaToolTests */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 298BD7C32D71E46900CB63F1 /* Build configuration list for PBXNativeTarget "FesTracking2Tests" */;
+			buildConfigurationList = 298BD7C32D71E46900CB63F1 /* Build configuration list for PBXNativeTarget "MaToolTests" */;
 			buildPhases = (
 				298BD7A82D71E46900CB63F1 /* Sources */,
 				298BD7A92D71E46900CB63F1 /* Frameworks */,
@@ -150,16 +150,16 @@
 				298BD7AE2D71E46900CB63F1 /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
-				291F00932EB223A40080B26A /* FesTracking2Tests */,
+				291F00932EB223A40080B26A /* MaToolTests */,
 			);
-			name = FesTracking2Tests;
+			name = MaToolTests;
 			productName = FesTracking2Tests;
-			productReference = 298BD7AC2D71E46900CB63F1 /* FesTracking2Tests.xctest */;
+			productReference = 298BD7AC2D71E46900CB63F1 /* MaToolTests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
 		};
-		298BD7B52D71E46900CB63F1 /* FesTracking2UITests */ = {
+		298BD7B52D71E46900CB63F1 /* MaToolUITests */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 298BD7C62D71E46900CB63F1 /* Build configuration list for PBXNativeTarget "FesTracking2UITests" */;
+			buildConfigurationList = 298BD7C62D71E46900CB63F1 /* Build configuration list for PBXNativeTarget "MaToolUITests" */;
 			buildPhases = (
 				298BD7B22D71E46900CB63F1 /* Sources */,
 				298BD7B32D71E46900CB63F1 /* Frameworks */,
@@ -171,11 +171,11 @@
 				298BD7B82D71E46900CB63F1 /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
-				291F008F2EB223A40080B26A /* FesTracking2UITests */,
+				291F008F2EB223A40080B26A /* MaToolUITests */,
 			);
-			name = FesTracking2UITests;
+			name = MaToolUITests;
 			productName = FesTracking2UITests;
-			productReference = 298BD7B62D71E46900CB63F1 /* FesTracking2UITests.xctest */;
+			productReference = 298BD7B62D71E46900CB63F1 /* MaToolUITests.xctest */;
 			productType = "com.apple.product-type.bundle.ui-testing";
 		};
 /* End PBXNativeTarget section */
@@ -201,7 +201,7 @@
 					};
 				};
 			};
-			buildConfigurationList = 298BD7952D71E46600CB63F1 /* Build configuration list for PBXProject "FesTracking2" */;
+			buildConfigurationList = 298BD7952D71E46600CB63F1 /* Build configuration list for PBXProject "MaTool" */;
 			compatibilityVersion = "Xcode 14.0";
 			developmentRegion = ja;
 			hasScannedForEncodings = 0;
@@ -221,9 +221,9 @@
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				298BD7992D71E46600CB63F1 /* FesTracking2 */,
-				298BD7AB2D71E46900CB63F1 /* FesTracking2Tests */,
-				298BD7B52D71E46900CB63F1 /* FesTracking2UITests */,
+				298BD7992D71E46600CB63F1 /* MaTool */,
+				298BD7AB2D71E46900CB63F1 /* MaToolTests */,
+				298BD7B52D71E46900CB63F1 /* MaToolUITests */,
 			);
 		};
 /* End PBXProject section */
@@ -281,12 +281,12 @@
 /* Begin PBXTargetDependency section */
 		298BD7AE2D71E46900CB63F1 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			target = 298BD7992D71E46600CB63F1 /* FesTracking2 */;
+			target = 298BD7992D71E46600CB63F1 /* MaTool */;
 			targetProxy = 298BD7AD2D71E46900CB63F1 /* PBXContainerItemProxy */;
 		};
 		298BD7B82D71E46900CB63F1 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			target = 298BD7992D71E46600CB63F1 /* FesTracking2 */;
+			target = 298BD7992D71E46600CB63F1 /* MaTool */;
 			targetProxy = 298BD7B72D71E46900CB63F1 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
@@ -514,7 +514,7 @@
 				SWIFT_EMIT_LOC_STRINGS = NO;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/FesTracking2.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/FesTracking2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/MaTool.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/MaTool";
 			};
 			name = Debug;
 		};
@@ -533,7 +533,7 @@
 				SWIFT_EMIT_LOC_STRINGS = NO;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/FesTracking2.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/FesTracking2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/MaTool.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/MaTool";
 			};
 			name = Release;
 		};
@@ -574,7 +574,7 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		298BD7952D71E46600CB63F1 /* Build configuration list for PBXProject "FesTracking2" */ = {
+		298BD7952D71E46600CB63F1 /* Build configuration list for PBXProject "MaTool" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				298BD7BE2D71E46900CB63F1 /* Debug */,
@@ -583,7 +583,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		298BD7C02D71E46900CB63F1 /* Build configuration list for PBXNativeTarget "FesTracking2" */ = {
+		298BD7C02D71E46900CB63F1 /* Build configuration list for PBXNativeTarget "MaTool" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				298BD7C12D71E46900CB63F1 /* Debug */,
@@ -592,7 +592,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		298BD7C32D71E46900CB63F1 /* Build configuration list for PBXNativeTarget "FesTracking2Tests" */ = {
+		298BD7C32D71E46900CB63F1 /* Build configuration list for PBXNativeTarget "MaToolTests" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				298BD7C42D71E46900CB63F1 /* Debug */,
@@ -601,7 +601,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		298BD7C62D71E46900CB63F1 /* Build configuration list for PBXNativeTarget "FesTracking2UITests" */ = {
+		298BD7C62D71E46900CB63F1 /* Build configuration list for PBXNativeTarget "MaToolUITests" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				298BD7C72D71E46900CB63F1 /* Debug */,
