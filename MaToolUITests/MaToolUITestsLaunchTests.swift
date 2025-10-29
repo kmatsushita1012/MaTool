@@ -1,6 +1,6 @@
 //
-//  FesTracking2UITestsLaunchTests.swift
-//  FesTracking2UITests
+//  MaToolUITestsLaunchTests.swift
+//  MaToolUITests
 //
 //  Created by 松下和也 on 2025/02/28.
 //
