@@ -13,17 +13,8 @@ actor AuthService {
     
     @Dependency(\.authProvider) var authProvider
     
-    func initialize() async -> Result<UserRole,AuthError> {
-        let result = await authProvider.initialize()
-        switch result {
-        case .failure(let error):
-            let _ = await authProvider.signOut()
-            return .failure(error)
-        case .success(.signedOut):
-            return .success(.guest)
-        case .success(.signedIn):
-            return await getUserRole()
-        }
+    func initialize() -> Result<Empty, AuthError> {
+        return authProvider.initialize()
     }
     
     func signIn(_ username: String, password: String) async -> SignInResult {
@@ -71,7 +62,7 @@ actor AuthService {
         let result = await authProvider.getTokens()
         switch result {
         case .success(let value):
-            return value.accessToken?.tokenString
+            return value
         case .failure:
             return nil
         }
@@ -107,7 +98,7 @@ actor AuthService {
         return lengthRule && hasNumber && hasUppercase && hasLowercase
     }
     
-    private func getUserRole() async -> Result<UserRole, AuthError> {
+    func getUserRole() async -> Result<UserRole, AuthError> {
         let userRoleResult = await authProvider.getUserRole()
         switch userRoleResult {
         case .success(let value):

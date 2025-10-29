@@ -192,7 +192,7 @@ extension PublicMap.Content: Identifiable,Hashable  {
     
     var name: String {
         switch self {
-        case .locations(_, let name, _):
+        case .locations(_, _, _):
             return id
         case .route(_, let name, _):
             return name
