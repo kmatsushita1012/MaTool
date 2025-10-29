@@ -30,9 +30,6 @@ struct HomeStoreView: View {
                                         }
                                     
                                     card("ShopCard", priority: 1)
-                                        .onTapGesture{
-                                            print("Debug \(store.destination)")
-                                        }
                                         .frame(height: geometry.size.height * 2 / 5)
                                 }
                             }

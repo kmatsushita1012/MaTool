@@ -30,17 +30,6 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-spm-
 
-      - name: Cache Pods
-        uses: actions/cache@v3
-        with:
-          path: |
-            Pods
-            ~/Library/Caches/CocoaPods
-            ~/.cocoapods
-          key: ${{ runner.os }}-pods-${{ hashFiles('**/Podfile.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-pods-
-
       - name: Cache DerivedData
         uses: actions/cache@v3
         with:
@@ -49,15 +38,10 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-derived-
 
-      - name: Install CocoaPods
-        run: |
-          gem install cocoapods
-          pod install
-
       - name: Build
         run: |
           xcodebuild build \
-            -workspace FesTracking2.xcworkspace \
+            -project FesTracking2.xcodeproj \
             -scheme FesTracking2 \
             -sdk iphoneos \
             -configuration Release \
