@@ -1,7 +1,7 @@
 # =========================================
 # macOS
 # =========================================
-.DS_Store
+*.DS_Store
 .AppleDouble
 .LSOverride
 Icon?
@@ -19,6 +19,7 @@ Icon?
 xcuserdata/
 *.xcuserstate
 *.xcscmblueprint
+*.xcuserstate
 
 ## Xcode project
 project.xcworkspace/
@@ -76,7 +77,7 @@ amplify/backend/
 amplify/#deployment
 amplify/team-provider-info.json
 amplify/.config/local-*
-amplifyconfiguration.json # ✅ アプリごとに commit したい場合はコメントアウト
+*/amplifyconfiguration.json 
 
 # =========================================
 # Swift Playgrounds
