@@ -217,10 +217,6 @@ extension FloatAnnotationView {
     }
 }
 
-class SegmentPolyline: MKPolyline {
-    var segment: Segment? = nil
-}
-
 final class PathPolyline: MKPolyline {
     convenience init(from start: Point, to end: Point) {
         let coordinates = [start.coordinate.toCL(), end.coordinate.toCL()]
