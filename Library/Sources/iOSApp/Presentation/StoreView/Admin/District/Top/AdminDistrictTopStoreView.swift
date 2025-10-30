@@ -35,7 +35,7 @@ struct AdminDistrictView: View{
                     AdminRouteItem(
                         text: route.text(format:"m/d T"),
                         onEdit: { store.send(.onRouteEdit(route)) },
-                        onExport:{ store.send(.onRouteExport(route)) }
+                        onExport:{  }
                     )
                 }
                 Button(action: {
@@ -88,10 +88,7 @@ struct AdminDistrictView: View{
             LocationAdminView(store: store)
         }
         .navigationDestination(item: $store.scope(state: \.destination?.route, action: \.destination.route)) { store in
-            AdminRouteInfoView(store: store)
-        }
-        .navigationDestination(item: $store.scope(state: \.destination?.export, action: \.destination.export)) { store in
-            AdminRouteExportView(store: store)
+            AdminRouteEditStoreView(store: store)
         }
         .navigationDestination(
             item: $store.scope(state: \.destination?.changePassword, action: \.destination.changePassword)

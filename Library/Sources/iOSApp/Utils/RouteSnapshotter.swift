@@ -29,12 +29,13 @@ struct RouteSnapshotter: Equatable {
         filter.apply(to: route)
     }
     
-    var segments: [Segment] {
-        route.segments
+    var coordinates: [Coordinate] {
+        points.map { $0.coordinate }
     }
     
+    
     func take() async throws -> UIImage? {
-        let region = makeRegion(segments.flatMap { $0.coordinates }, ratio: 1.4)
+        let region = makeRegion(coordinates, ratio: 1.4)
         let image = try await take(of: region, size: CGSize(width: 594, height: 420))
         return image
     }
@@ -88,9 +89,7 @@ struct RouteSnapshotter: Equatable {
     }
     
     private func drawPolylines(on snapshot: MKMapSnapshotter.Snapshot, color: UIColor, lineWidth: CGFloat ) {
-        for segment in segments {
-            drawPolyline(on: snapshot, coordinates: segment.coordinates, color: color, lineWidth: lineWidth)
-        }
+        drawPolyline(on: snapshot, coordinates: coordinates, color: color, lineWidth: lineWidth)
     }
     
     private func drawPolyline(on snapshot: MKMapSnapshotter.Snapshot, coordinates: [Coordinate], color: UIColor, lineWidth: CGFloat ) {
