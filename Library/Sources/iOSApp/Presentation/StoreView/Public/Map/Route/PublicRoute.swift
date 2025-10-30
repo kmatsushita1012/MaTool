@@ -186,10 +186,6 @@ extension PublicRoute.State {
         route?.points
     }
     
-    var segments: [Segment]? {
-        route?.segments
-    }
-    
     var others: [RouteSummary]? {
         items?.filter {
             if let selectedItem {
