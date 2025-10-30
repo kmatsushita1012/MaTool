@@ -1,30 +1,63 @@
-# MaTool-for-iOS_SwiftUI
+# MaTool - 掛川祭アプリ
 
-「掛川祭」屋台位置配信アプリ「MaTool」iOS 版 SwiftUI
+## 概要
+静岡県掛川市の「掛川祭」をさらに楽しむためのアプリです。屋台位置・行動経路を配信し、地元の参加者はもちろん、観光客の方々にも役立つ情報をお届けします。
 
-## Actions
+## 技術スタック
 
-[GitHubActions×Fastlane×Firebase で iOS アプリを配布する CI/CD を構築](https://note.com/resan0725/n/nc84186fa841c)
+### フレームワークと言語
+- Swift
+- SwiftUI
+- The Composable Architecture (TCA)
 
-## Map
+### 主要な依存パッケージ
+- AWS Amplify: バックエンド連携
+- Kingfisher: 画像のキャッシュと読み込み
+- NavigationSwipeControl: ナビゲーション制御
+- TCA (The Composable Architecture): アプリケーションアーキテクチャ
 
-https://zenn.dev/oka_yuuji/articles/38afe965565002
-
-## TCA
-
-[TCA で Github リポジトリ検索アプリを作ってみよう ①](https://qiita.com/takehilo/items/814319d4666fef402a41)
-[Refreshable API を TCA で使う](https://www.docswell.com/s/kalupas226/KEER8K-2021-11-13-123255#p30)
-
-[Documents](https://pointfreeco.github.io/swift-composable-architecture/main/documentation/composablearchitecture/treebasednavigation/#Enum-state)
-
-## yml
+## プロジェクト構成
 
 ```
-      - uses: actions/cache@v4
-        with:
-          path: .build
-          key: ${{ runner.os }}-spm-${{ hashFiles('**/Package.resolved') }}
-          restore-keys: |
-            ${{ runner.os }}-spm-
-            # - uses: actions/cache@v3
+MaTool/
+├── App/              # iOSアプリのメインエントリーポイント
+└── Library/          # 共有ライブラリモジュール
+    ├── Sources/
+    │   ├── Backend/  # バックエンドロジック
+    │   ├── iOSApp/   # iOSアプリケーションロジック
+    │   └── Shared/   # 共有コンポーネント
+    └── Tests/        # テストモジュール
 ```
+
+### アーキテクチャ
+- モジュラーアーキテクチャを採用
+- Clean Architectureの原則に基づいた層分け
+  - Presentation層: SwiftUI Views + TCA
+  - Domain層: ビジネスロジックとエンティティ
+  - Data層: リポジトリとデータソース
+
+### 開発要件
+- Xcode 15.0以上
+- iOS 16.0以上
+- macOS 14.0以上（開発環境）
+
+※本年度(2025年度)は10/10~10/12に配信予定
+
+## 主な機能
+
+### 🗺️ 屋台の現在位置情報
+地図上で協賛中の町の全ての屋台の現在位置を表示します。自分の現在位置と比較して、近くにある屋台を見つけやすくなります。
+
+### 📍 屋台の経路情報
+各町別に屋台の行動経路を、期間中の全日程分、現在位置とともに表示します。参加者は屋台が自宅の前を通るタイミングに合わせて参加したり、観光客は見たい屋台がどこにいるかを確認してスムーズに予定を立てられます。
+
+## ご利用にあたって
+
+掛川祭をもっと楽しむための必須アプリです。ぜひご利用ください。
+
+### 注意事項
+
+- 本アプリはスマートフォンでのご利用を推奨しています。
+- タブレットでの表示は最適化されていないため、見にくい場合があります。
+- 快適な利用のためにはスマートフォンでのご利用をおすすめします。
+- 掛川祭では一般的な山車を屋台と呼称しております。飲食物の販売を行う屋台に関する情報は提供しておりません。
