@@ -1,5 +1,5 @@
 //
-//  AdminRouteEditV2.swift
+//  AdminRouteEdit.swift
 //  MaTool
 //
 //  Created by 松下和也 on 2025/08/01.
@@ -10,7 +10,7 @@ import Foundation
 import MapKit
 
 @Reducer
-struct AdminRouteEditV2{
+struct AdminRouteEdit{
     
     enum Destination: Equatable {
         case point
@@ -19,7 +19,7 @@ struct AdminRouteEditV2{
     }
     
     enum EditMode: Equatable {
-        case create(String)
+        case create
         case update
         case preview
     }
@@ -28,7 +28,6 @@ struct AdminRouteEditV2{
         case info
         case map
         case pub
-        case export
     }
     
     enum Operation: Equatable{
@@ -93,8 +92,6 @@ struct AdminRouteEditV2{
                 return .none
             case .pub:
                 return .pub
-            case .export:
-                return .export
             }
         }
         
@@ -109,7 +106,7 @@ struct AdminRouteEditV2{
                 self.region = makeRegion(origin: origin, spanDelta: spanDelta)
             }
             if mode == .preview {
-                self.tab = .export
+                self.tab = .map
             }else{
                 self.tab = .info
             }
@@ -140,7 +137,7 @@ struct AdminRouteEditV2{
     @Dependency(\.apiRepository) var apiRepository
     @Dependency(\.dismiss) var dismiss
     
-    var body: some ReducerOf<AdminRouteEditV2> {
+    var body: some ReducerOf<AdminRouteEdit> {
         BindingReducer()
         Reduce{ state, action in
             switch action {
@@ -156,20 +153,12 @@ struct AdminRouteEditV2{
                             return
                         }
                         $0.points.append(point)
-                        let segment = Segment(id: UUID().uuidString, start: last.coordinate, end: coordinate)
-                        $0.segments.append(segment)
                     }
                     return .none
                 case .move(let index):
                     if index < 0 || index >= state.route.points.count { return .none }
                     state.manager.apply{
                         $0.points[index].coordinate = coordinate
-                        if index > 0 {
-                            $0.segments[index-1] = Segment(id: UUID().uuidString, start: $0.points[index-1].coordinate, end: coordinate)
-                        }
-                        if index < $0.segments.count{
-                            $0.segments[index] = Segment(id: UUID().uuidString, start: coordinate, end: $0.points[index+1].coordinate)
-                        }
                     }
                     state.operation = .add
                     return .none
@@ -177,16 +166,6 @@ struct AdminRouteEditV2{
                     if index < 0 || index >= state.route.points.count { return .none }
                     let point = Point(id: UUID().uuidString, coordinate: coordinate)
                     state.manager.apply{
-                        if index > 0 {
-                            let segment = Segment(id: UUID().uuidString, start: $0.points[index-1].coordinate, end: coordinate)
-                            $0.segments[index-1] = segment
-                        }
-                        let segment = Segment(id: UUID().uuidString, start: coordinate, end: $0.points[index].coordinate)
-                        if index < $0.segments.count {
-                            $0.segments.insert(segment, at: index)
-                        }else{
-                            $0.segments.append(segment)
-                        }
                         $0.points.insert(point, at: index)
                     }
                     state.operation = .add
@@ -322,14 +301,6 @@ struct AdminRouteEditV2{
                     if let pointState = state.point,
                        let index = state.route.points.firstIndex(where: { $0.id == pointState.item.id }){
                         state.manager.apply {
-                            if index < $0.segments.count && index >= 0{
-                                $0.segments.remove(at: index)
-                            }
-                            if index > 1 && index < $0.points.count-1{
-                                $0.segments[index-1] = Segment(id: UUID().uuidString, start: $0.points[index-1].coordinate, end: $0.points[index+1].coordinate)
-                            }else if index == $0.points.count-1 && index > 1{
-                                $0.segments.remove(at: index-1)
-                            }
                             $0.points.remove(at: index)
                         }
                     }
@@ -372,8 +343,8 @@ struct AdminRouteEditV2{
     }
 }
 
-extension AdminRouteEditV2.AlertDestination.State: Equatable {}
-extension AdminRouteEditV2.AlertDestination.Action: Equatable {}
+extension AdminRouteEdit.AlertDestination.State: Equatable {}
+extension AdminRouteEdit.AlertDestination.Action: Equatable {}
 
 struct ExportedItem: Identifiable, Equatable {
     let id = UUID()

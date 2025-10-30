@@ -1,5 +1,5 @@
 //
-//  AdminRouteEditStoreViewV2.swift
+//  AdminRouteEditStoreView.swift
 //  MaTool
 //
 //  Created by 松下和也 on 2025/08/01.
@@ -10,11 +10,11 @@ import SwiftUI
 import NavigationSwipeControl
 
 @available(iOS 17.0, *)
-struct AdminRouteEditStoreViewV2: View {
+struct AdminRouteEditStoreView: View {
     
-    typealias Tab = AdminRouteEditV2.Tab
+    typealias Tab = AdminRouteEdit.Tab
     
-    @SwiftUI.Bindable var store: StoreOf<AdminRouteEditV2>
+    @SwiftUI.Bindable var store: StoreOf<AdminRouteEdit>
     @State private var selectedDetent: PresentationDetent = .large
     
     var body: some View {
@@ -23,7 +23,6 @@ struct AdminRouteEditStoreViewV2: View {
                 Text("基本情報").tag(Tab.info)
                 Text("ルート").tag(Tab.map)
                 Text("公開").tag(Tab.pub)
-                Text("提出").tag(Tab.export)
             }
             .pickerStyle(.segmented)
             .frame(maxWidth: .infinity)
@@ -31,7 +30,7 @@ struct AdminRouteEditStoreViewV2: View {
             if store.tab == .info {
                 info()
             } else {
-                AdminRouteMapViewV2(
+                AdminRouteMapView(
                     route: $store.route.readonly,
                     filter: store.filter,
                     onMapLongPress: { store.send(.mapLongPressed($0)) },

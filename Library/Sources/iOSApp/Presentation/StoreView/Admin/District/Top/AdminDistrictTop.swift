@@ -6,6 +6,7 @@
 //
 
 import ComposableArchitecture
+import Foundation
 
 @Reducer
 struct AdminDistrictTop {
@@ -13,8 +14,7 @@ struct AdminDistrictTop {
     @Reducer
     enum Destination {
         case edit(AdminDistrictEdit)
-        case route(AdminRouteInfo)
-        case export(AdminRouteExport)
+        case route(AdminRouteEdit)
         case location(AdminLocation)
         case changePassword(ChangePassword)
         case updateEmail(UpdateEmail)
@@ -27,12 +27,11 @@ struct AdminDistrictTop {
         var isDistrictLoading: Bool = false
         var isRoutesLoading: Bool = false
         var isRouteLoading: Bool = false
-        var isExportLoading: Bool = false
         var isAWSLoading: Bool = false
         @Presents var destination: Destination.State?
         @Presents var alert: Alert.State?
         var isLoading: Bool {
-            isDistrictLoading || isRoutesLoading || isAWSLoading || isRouteLoading || isExportLoading
+            isDistrictLoading || isRoutesLoading || isAWSLoading || isRouteLoading
         }
     }
     
@@ -41,7 +40,6 @@ struct AdminDistrictTop {
         case onEdit
         case onRouteAdd
         case onRouteEdit(RouteSummary)
-        case onRouteExport(RouteSummary)
         case changePasswordTapped
         case updateEmailTapped
         case getDistrictReceived(Result<PublicDistrict,APIError>)
@@ -49,7 +47,6 @@ struct AdminDistrictTop {
         case editPrepared(Result<DistrictTool,APIError>)
         case routeEditPrepared(Result<RouteInfo,APIError>,Result<DistrictTool,APIError>)
         case routeCreatePrepared(Result<DistrictTool,APIError>)
-        case exportPrepared(Result<RouteInfo,APIError>)
         case locationPrepared(isTracking: Bool, Interval: Interval?)
         case onLocation
         case destination(PresentationAction<Destination.Action>)
@@ -85,12 +82,6 @@ struct AdminDistrictTop {
                     let routeResult = await apiRepository.getRoute(route.id)
                     let toolResult = await apiRepository.getTool(route.districtId)
                     await send(.routeEditPrepared(routeResult, toolResult))
-                }
-            case .onRouteExport(let route):
-                state.isExportLoading = true
-                return .run { send in
-                    let result = await apiRepository.getRoute(route.id)
-                    await send(.exportPrepared(result))
                 }
             case .changePasswordTapped:
                 state.destination = .changePassword(ChangePassword.State())
@@ -135,8 +126,10 @@ struct AdminDistrictTop {
                 if case let .success(route) = routeResult,
                    case let .success(tool) = toolResult{
                     state.destination = .route(
-                        AdminRouteInfo.State(
-                            mode: .edit(route.toModel()),
+                        AdminRouteEdit.State(
+                            mode: .update,
+                            route: route.toModel(),
+                            districtName: tool.districtName,
                             milestones: tool.milestones,
                             origin: tool.base
                         )
@@ -150,25 +143,18 @@ struct AdminDistrictTop {
                 switch result {
                 case .success(let tool):
                     state.destination = .route(
-                        AdminRouteInfo.State(
-                            mode: .create(
-                                state.district.id,
-                                tool.spans.first ?? Span.sample
+                        AdminRouteEdit.State(
+                            mode: .create,
+                            route: Route(
+                                id: UUID().uuidString,
+                                districtId: tool.districtId,
+                                start: SimpleTime.fromDate(Date.now),
+                                goal: SimpleTime.fromDate(Date.now),
                             ),
+                            districtName: tool.districtName,
                             milestones: tool.milestones,
                             origin: tool.base
                         )
-                    )
-                case .failure(let error):
-                    state.alert = Alert.error("情報の取得に失敗しました。 \(error.localizedDescription)")
-                }
-                return .none
-            case .exportPrepared(let result):
-                state.isExportLoading = false
-                switch result {
-                case .success(let value):
-                    state.destination = .export(
-                        AdminRouteExport.State(route: value)
                     )
                 case .failure(let error):
                     state.alert = Alert.error("情報の取得に失敗しました。 \(error.localizedDescription)")
@@ -214,7 +200,6 @@ struct AdminDistrictTop {
                 case .edit,
                     .route,
                     .location,
-                    .export,
                     .changePassword,
                     .updateEmail:
                     return .none

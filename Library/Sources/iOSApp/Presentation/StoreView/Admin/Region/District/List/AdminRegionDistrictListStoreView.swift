@@ -42,7 +42,7 @@ struct AdminRegionDistrictListView: View {
         .navigationDestination(
             item: $store.scope(state: \.export, action: \.export)
         ) { store in
-            AdminRouteEditStoreViewV2(store: store)
+            AdminRouteEditStoreView(store: store)
         }
         .loadingOverlay(store.isLoading)
     }
