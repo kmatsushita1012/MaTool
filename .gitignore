@@ -1,0 +1,110 @@
+# =========================================
+# macOS
+# =========================================
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon?
+._*
+
+# Thumbnails
+*.swp
+*.swo
+*~
+
+# =========================================
+# Xcode / Swift
+# =========================================
+## User settings
+xcuserdata/
+*.xcuserstate
+*.xcscmblueprint
+
+## Xcode project
+project.xcworkspace/
+DerivedData/
+build/
+*.xccheckout
+*.xcodeproj/*.xcuserdatad
+*.xcodeproj/project.xcworkspace
+*.xcodeproj/xcuserdata
+*.xcworkspace/xcuserdata
+*.xcodeproj/xcshareddata/WorkspaceSettings.xcsettings
+
+## Logs
+*.log
+
+## Generated files
+*.dSYM
+*.ipa
+*.app
+*.xcarchive
+*.swiftpm
+
+# =========================================
+# Swift Package Manager
+# =========================================
+Packages/
+.swiftpm/
+.build/
+
+# =========================================
+# CocoaPods (for legacy cleanup)
+# =========================================
+Pods/
+Podfile.lock
+
+# =========================================
+# Carthage (if ever used)
+# =========================================
+Carthage/
+Carthage/Build/
+
+# =========================================
+# Fastlane
+# =========================================
+fastlane/report.xml
+fastlane/Preview.html
+fastlane/screenshots/**/*.png
+fastlane/test_output
+
+# =========================================
+# AWS Amplify / Config
+# =========================================
+amplify/#current-cloud-backend
+amplify/backend/
+amplify/#deployment
+amplify/team-provider-info.json
+amplify/.config/local-*
+amplifyconfiguration.json # ✅ アプリごとに commit したい場合はコメントアウト
+
+# =========================================
+# Swift Playgrounds
+# =========================================
+timeline.xctimeline
+playground.xcworkspace
+
+# =========================================
+# Environment / Secrets
+# =========================================
+.env
+*.key
+*.pem
+*.cert
+*.mobileprovision
+
+# =========================================
+# Editor / Tool
+# =========================================
+.vscode/
+.idea/
+*.swp
+*.swo
+*.bak
+
+# =========================================
+# Local test files / artifacts
+# =========================================
+*.out
+*.tmp
+*.lock
