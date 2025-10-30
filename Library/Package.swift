@@ -48,7 +48,6 @@ let package = Package(
             ],
             path: "Sources/iOSApp",
             resources: [
-                .process("SupportingFiles/Assets.xcassets"),
                 .process("SupportingFiles"),
             ]
         ),
