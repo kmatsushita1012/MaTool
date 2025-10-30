@@ -1,24 +1,25 @@
-////
-////  CustomMapView.swift
-////  MaTool
-////
-////  Created by 松下和也 on 2025/04/08.
-////
+//
+//  AdminRouteMapView.swift
+//  MaTool
+//
+//  Created by 松下和也 on 2025/08/01.
+//
+
 import UIKit
 import MapKit
 import SwiftUI
 
 struct AdminRouteMapView: UIViewRepresentable {
-    var points: [Point]
-    var segments: [Segment]
+    @Binding var route: Route
+    var filter: PointFilter = .none
     var onMapLongPress: (Coordinate) -> Void
     var pointTapped: (Point) -> Void
-    var polylineTapped: (Segment) -> Void
     @Binding var region: MKCoordinateRegion?
+    @Binding var size: CGSize?
 
 
     func makeCoordinator() -> Coordinator {
-        Coordinator(self)
+        Coordinator(self, route: $route)
     }
 
     func makeUIView(context: Context) -> MKMapView {
@@ -36,37 +37,44 @@ struct AdminRouteMapView: UIViewRepresentable {
         if let region = region {
             mapView.setRegion(region, animated: false)
         }
+        size = mapView.frame.size
+        
         return mapView
     }
 
     func updateUIView(_ mapView: MKMapView, context: Context) {
+        
         mapView.removeAnnotations(mapView.annotations)
         mapView.removeOverlays(mapView.overlays)
-
+        
         // アノテーション追加
-        for point in points {
-            let annotation = PointAnnotation(point, type: .simple )
+        for (index, point) in filter.apply(to: route).enumerated() {
+            let type: PointAnnotation.TitleType = filter == .export ? .time(index) : .simple
+            let annotation = PointAnnotation(point, type: type)
             annotation.coordinate = point.coordinate.toCL()
             mapView.addAnnotation(annotation)
         }
-
-        // ポリライン追加
-        for segment in segments {
-            let polyline = SegmentPolyline(coordinates: segment.coordinates.map({$0.toCL()}), count: segment.coordinates.count)
-            polyline.segment = segment // ユーザーデータに保持
-            mapView.addOverlay(polyline)
-        }
+        
+        let coordinates = route.points.map { $0.coordinate.toCL() }
+        let polyline = MKPolyline(coordinates: coordinates, count: coordinates.count)
+        mapView.addOverlay(polyline)
         
         if let region = region, region.center.latitude != mapView.region.center.latitude || region.center.longitude != mapView.region.center.longitude {
             mapView.setRegion(region, animated: true)
+        }
+        
+        if size != mapView.frame.size{
+            size = mapView.frame.size
         }
     }
 
     class Coordinator: NSObject, MKMapViewDelegate {
         var parent: AdminRouteMapView
+        var route: Binding<Route>
 
-        init(_ parent: AdminRouteMapView) {
+        init(_ parent: AdminRouteMapView, route: Binding<Route>) {
             self.parent = parent
+            self.route = route
         }
 
         @objc func handleLongPress(_ gesture: UILongPressGestureRecognizer) {
@@ -101,14 +109,16 @@ struct AdminRouteMapView: UIViewRepresentable {
         }
         
         func mapView(_ mapView: MKMapView, didSelect view: MKAnnotationView) {
-            if let annotation = view.annotation as? PointAnnotation {
-                parent.pointTapped(annotation.point)
+            let route = route.wrappedValue
+            if let annotation = view.annotation as? PointAnnotation,
+               let point = route.points.first(matching: annotation.point.id) {
+                parent.pointTapped(point)
             }
         }
 
         func mapView(_ mapView: MKMapView, rendererFor overlay: MKOverlay) -> MKOverlayRenderer {
-            if let tappablePolyline = overlay as? SegmentPolyline {
-                let renderer = MKPolylineRenderer(overlay: tappablePolyline)
+            if let polyline = overlay as? MKPolyline {
+                let renderer = MKPolylineRenderer(overlay: polyline)
                 renderer.strokeColor = .blue
                 renderer.lineWidth = 4
                 renderer.alpha = 0.8
