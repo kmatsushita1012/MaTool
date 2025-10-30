@@ -1,0 +1,100 @@
+//
+//  OnBoardingFeature.swift
+//  MaTool
+//
+//  Created by 松下和也 on 2025/05/24.
+//
+
+import ComposableArchitecture
+import Foundation
+
+@Reducer
+struct OnboardingFeature {
+    
+    @ObservableState
+    struct State: Equatable {
+        var regions: [Region]?
+        var selectedRegion: Region?
+        var districts: [PublicDistrict]?
+        var regionErrorMessaage: String?
+        var isRegionsLoading: Bool = false
+        var isDistrictsLoading: Bool = false
+        var isLoading: Bool { isRegionsLoading || isDistrictsLoading }
+    }
+    
+    @CasePathable
+    enum Action: Equatable, BindableAction {
+        case binding(BindingAction<State>)
+        case onAppear
+        case externalGuestTapped
+        case adminTapped
+        case districtSelected(PublicDistrict)
+        case regionsReceived(Result<[Region], APIError>)
+        case districtsReceived(Result<[PublicDistrict], APIError>)
+    }
+    
+    @Dependency(\.apiRepository) var apiRepository
+    @Dependency(\.userDefaultsClient) var userDefaultsClient
+    
+    var body: some ReducerOf<OnboardingFeature> {
+        BindingReducer()
+        Reduce { state, action in
+            switch action {
+            case .binding(\.selectedRegion):
+                guard let region = state.selectedRegion else {
+                    state.districts = nil
+                    return .none
+                }
+                state.isDistrictsLoading = true
+                return .run { send in
+                    let result = await apiRepository.getDistricts(region.id)
+                    await send(.districtsReceived(result))
+                }
+            case .binding:
+                return .none
+            case .onAppear:
+                state.isRegionsLoading = true
+                return .run { send in
+                    let result = await apiRepository.getRegions()
+                    await send(.regionsReceived(result))
+                }
+            case .externalGuestTapped,
+                .adminTapped:
+                guard let region = state.selectedRegion else {
+                    state.regionErrorMessaage = "祭典を選択してください。"
+                    return .none
+                }
+                userDefaultsClient.setString(region.id, defaultRegionKey)
+                userDefaultsClient.setBool(true, hasLaunchedBeforePath)
+                return .none
+            case .districtSelected(let district):
+                guard let region = state.selectedRegion else {
+                    state.regionErrorMessaage = "祭典を選択してください。"
+                    return .none
+                }
+                userDefaultsClient.setString(region.id, defaultRegionKey)
+                if(district.regionId != region.id){
+                    return .none
+                }
+                userDefaultsClient.setString(district.id, defaultDistrictKey)
+                userDefaultsClient.setBool(true, hasLaunchedBeforePath)
+                return .none
+            case .regionsReceived(.success(let value)):
+                state.regions = value
+                state.isRegionsLoading = false
+                return .none
+            case .regionsReceived(.failure(_)):
+                state.isRegionsLoading = false
+                return .none
+            case .districtsReceived(.success(let value)):
+                state.districts = value
+                state.isDistrictsLoading = false
+                return .none
+            case .districtsReceived(.failure(_)):
+                state.isDistrictsLoading = false
+                return .none
+            }
+        }
+    }
+}
+

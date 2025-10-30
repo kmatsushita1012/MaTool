@@ -34,15 +34,15 @@ jobs:
         uses: actions/cache@v3
         with:
           path: .derivedData
-          key: ${{ runner.os }}-derived-${{ hashFiles('FesTracking2.xcodeproj/project.pbxproj', '**/*.swift', '**/*.h') }}
+          key: ${{ runner.os }}-derived-${{ hashFiles('MaTool.xcodeproj/project.pbxproj', '**/*.swift', '**/*.h') }}
           restore-keys: |
             ${{ runner.os }}-derived-
 
       - name: Build
         run: |
           xcodebuild build \
-            -project FesTracking2.xcodeproj \
-            -scheme FesTracking2 \
+            -project MaTool.xcodeproj \
+            -scheme MaTool \
             -sdk iphoneos \
             -configuration Release \
             -destination 'generic/platform=iOS' \
