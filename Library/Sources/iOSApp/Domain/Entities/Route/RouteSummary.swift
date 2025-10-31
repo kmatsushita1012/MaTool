@@ -10,7 +10,6 @@ import Foundation
 struct RouteSummary: Codable, Equatable, Identifiable, Hashable {
     let id: String
     let districtId: String
-    let districtName: String
     let date:SimpleDate
     let title: String
     let start: SimpleTime
@@ -28,10 +27,9 @@ extension RouteSummary: Comparable {
 
 
 extension RouteSummary{
-    init(from route: RouteInfo) {
+    init(from route: Route) {
         self.id = route.id
         self.districtId = route.districtId
-        self.districtName = route.districtName
         self.date = route.date
         self.title = route.title
         self.start = route.start
@@ -49,8 +47,6 @@ extension RouteSummary{
             let nextChar = hasNext ? format[nextIndex] : nil
 
             switch char {
-            case "D":
-                result += districtName
             case "T":
                 result += title
             case "y":
@@ -87,7 +83,6 @@ extension RouteSummary{
     static let sample = Self(
         id: UUID().uuidString,
         districtId: "Johoku",
-        districtName: "城北町",
         date: SimpleDate.sample,
         title: "午後",
         start: SimpleTime(hour: 9, minute: 0)

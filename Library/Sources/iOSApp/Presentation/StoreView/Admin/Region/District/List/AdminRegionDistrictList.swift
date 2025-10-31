@@ -14,12 +14,12 @@ struct AdminRegionDistrictList {
     @ObservableState
     struct State: Equatable {
         let region: Region
-        let district: PublicDistrict
+        let district: District
         let routes: [RouteSummary]
         var isApiLoading: Bool = false
         var isExportLoading: Bool = false
         var folder: ExportedFolder? = nil
-        @Presents var export: AdminRouteEditV2.State?
+        @Presents var export: AdminRouteEdit.State?
         @Presents var alert: Alert.State?
         var isLoading: Bool {
             isApiLoading || isExportLoading
@@ -30,11 +30,11 @@ struct AdminRegionDistrictList {
     enum Action: Equatable, BindableAction {
         case binding(BindingAction<State>)
         case exportTapped(RouteSummary)
-        case exportPrepared(Result<RouteInfo,APIError>)
+        case exportPrepared(Result<Route,APIError>)
         case dismissTapped
         case batchExportTapped
         case batchExportPrepared(Result<[URL], APIError>)
-        case export(PresentationAction<AdminRouteEditV2.Action>)
+        case export(PresentationAction<AdminRouteEdit.Action>)
         case alert(PresentationAction<Alert.Action>)
     }
     
@@ -55,9 +55,9 @@ struct AdminRegionDistrictList {
                 }
             case .exportPrepared(.success(let route)):
                 state.isApiLoading = false
-                state.export = AdminRouteEditV2.State(
+                state.export = AdminRouteEdit.State(
                     mode: .preview,
-                    route: route.toModel(),
+                    route: route,
                     districtName: state.district.name,
                     milestones: state.region.milestones,
                     origin: Coordinate.sample
@@ -89,7 +89,7 @@ struct AdminRegionDistrictList {
             }
         }
         .ifLet(\.$export, action: \.export){
-            AdminRouteEditV2()
+            AdminRouteEdit()
         }
         .ifLet(\.$alert, action: \.alert)
     }

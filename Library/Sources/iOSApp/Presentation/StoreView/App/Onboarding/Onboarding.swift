@@ -15,7 +15,7 @@ struct OnboardingFeature {
     struct State: Equatable {
         var regions: [Region]?
         var selectedRegion: Region?
-        var districts: [PublicDistrict]?
+        var districts: [District]?
         var regionErrorMessaage: String?
         var isRegionsLoading: Bool = false
         var isDistrictsLoading: Bool = false
@@ -28,9 +28,9 @@ struct OnboardingFeature {
         case onAppear
         case externalGuestTapped
         case adminTapped
-        case districtSelected(PublicDistrict)
+        case districtSelected(District)
         case regionsReceived(Result<[Region], APIError>)
-        case districtsReceived(Result<[PublicDistrict], APIError>)
+        case districtsReceived(Result<[District], APIError>)
     }
     
     @Dependency(\.apiRepository) var apiRepository

@@ -20,7 +20,7 @@ struct InfoList {
     @ObservableState
     struct State: Equatable {
         let region: Region
-        let districts: [PublicDistrict]
+        let districts: [District]
         var isDismissed: Bool = false
         @Presents var destination: Destination.State? = nil
     }
@@ -28,7 +28,7 @@ struct InfoList {
     @CasePathable
     enum Action: Equatable {
         case regionTapped
-        case districtTapped(PublicDistrict)
+        case districtTapped(District)
         case homeTapped
         case destination(PresentationAction<Destination.Action>)
     }

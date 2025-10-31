@@ -1,5 +1,5 @@
 //
-//  RouteInfo.swift
+//  Route.swift
 //  MaTool
 //
 //  Created by 松下和也 on 2025/05/04.
@@ -32,7 +32,7 @@ struct PublicRoute {
         let name: String
         let items: [RouteSummary]?
         var selectedItem: RouteSummary?
-        var route: RouteInfo?
+        var route: Route?
         var location: LocationInfo? {
             didSet {
                 if let location {
@@ -53,7 +53,7 @@ struct PublicRoute {
             districtId: String,
             name: String,
             routes: [RouteSummary]? = nil,
-            selectedRoute: RouteInfo? = nil,
+            selectedRoute: Route? = nil,
             location: LocationInfo? = nil,
             mapRegion: Shared<MKCoordinateRegion>
         ){
@@ -81,7 +81,7 @@ struct PublicRoute {
         case locationTapped
         case userFocusTapped
         case floatFocusTapped
-        case routeReceived(Result<RouteInfo, APIError>)
+        case routeReceived(Result<Route, APIError>)
         case locationReceived(Result<LocationInfo, APIError>)
         case userLocationReceived(Coordinate)
         case replayTapped
@@ -184,10 +184,6 @@ extension PublicRoute.State {
     
     var points: [Point]? {
         route?.points
-    }
-    
-    var segments: [Segment]? {
-        route?.segments
     }
     
     var others: [RouteSummary]? {

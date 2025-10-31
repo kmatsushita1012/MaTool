@@ -13,13 +13,13 @@ struct APIRepotiroy: Sendable {
     var getRegions: @Sendable () async  -> Result<[Region], APIError>
     var getRegion: @Sendable (_ regionId: String) async -> Result<Region, APIError>
     var putRegion: @Sendable (_ district: Region) async -> Result<String, APIError>
-    var getDistricts: @Sendable (_ regionId: String) async -> Result<[PublicDistrict], APIError>
-    var getDistrict: @Sendable (_ districtId: String) async -> Result<PublicDistrict, APIError>
+    var getDistricts: @Sendable (_ regionId: String) async -> Result<[District], APIError>
+    var getDistrict: @Sendable (_ districtId: String) async -> Result<District, APIError>
     var postDistrict: @Sendable (_ regionId: String, _ districtName: String, _ email: String) async -> Result<String, APIError>
     var putDistrict: @Sendable (_ district: District) async -> Result<String, APIError>
     var getTool: @Sendable (_ districtId: String) async -> Result<DistrictTool, APIError>
     var getRoutes: @Sendable (_ districtId: String) async -> Result<[RouteSummary], APIError>
-    var getRoute: @Sendable (_ id: String) async -> Result<RouteInfo, APIError>
+    var getRoute: @Sendable (_ id: String) async -> Result<Route, APIError>
     var getCurrentRoute: @Sendable (_ districtId: String) async -> Result<CurrentResponse, APIError>
     var getRouteIds: @Sendable () async -> Result<[String], APIError>
     var postRoute: @Sendable (_ route: Route) async -> Result<String, APIError>
