@@ -27,7 +27,7 @@ extension RouteSummary: Comparable {
 
 
 extension RouteSummary{
-    init(from route: RouteInfo) {
+    init(from route: Route) {
         self.id = route.id
         self.districtId = route.districtId
         self.date = route.date

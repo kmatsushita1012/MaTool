@@ -104,7 +104,7 @@ extension APIRepotiroy: DependencyKey {
                     accessToken: accessToken,
                     isCache: false
                 )
-                return decodeResponse(RouteInfo.self, from: response)
+                return decodeResponse(Route.self, from: response)
             },
             getCurrentRoute: { districtId in
                 let accessToken = await authService.getAccessToken()
