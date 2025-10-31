@@ -7,7 +7,7 @@
 
 import Foundation
 import MapKit
-
+import Shared
 
 @MainActor
 final class ReplayController: ObservableObject {

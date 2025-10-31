@@ -1,18 +1,18 @@
+////
+////  APIRepositoryMock.swift
+////  MaTool
+////
+////  Created by 松下和也 on 2025/03/02.
+////
 //
-//  APIRepositoryMock.swift
-//  MaTool
+//import Dependencies
 //
-//  Created by 松下和也 on 2025/03/02.
-//
-
-import Dependencies
-
 //extension APIRepotiroy: TestDependencyKey {
 //    internal static let testValue = Self.noop
 //    internal static let previewValue = Self.noop
 //}
 //
-//var routes: [Route] = [Route.sample]
+////var routes: [Route] = [Route.sample]
 //
 //extension APIRepotiroy {
 //    public static let noop = Self(
@@ -26,10 +26,10 @@ import Dependencies
 //            return Result.success("Success")
 //        },
 //        getDistricts: { _ in
-//            return Result.success([District.sample])
+//            return Result.success([DistrictGetDTO.sample])
 //        },
 //        getDistrict: { _ in
-//            return Result.success(District.sample)
+//            return Result.success(DistrictGetDTO.sample)
 //        },
 //        postDistrict: { _,_,_ in
 //            return Result.success("Success")
@@ -41,16 +41,16 @@ import Dependencies
 //            return Result.success(DistrictTool.sample)
 //        },
 //        getRoutes: { _ in
-//            let summaries = routes.map{ RouteSummary(from: Route(from: $0, name: "城北町")) }
+//            let summaries = routes.map{ RouteItem(from: RouteGetDTO(from: $0, name: "城北町")) }
 //            return Result.success(summaries)
 //        },
 //        getRoute: { id  in
 //            let route = routes.filter{ $0.id == id }.first ?? Route.sample
-//            return Result.success( Route(from: route, name: "城北町") )
+//            return Result.success( RouteGetDTO(from: route, name: "城北町") )
 //        },
 //        getCurrentRoute: { _ in
 //            let route = routes.first ?? Route.sample
-//            return Result.success(CurrentResponse(districtId: "ID", districtName: "Name", routes: [RouteSummary.sample], current: Route.sample, location: LocationInfo.sample))
+//            return Result.success(CurrentResponse(districtId: "ID", districtName: "Name", routes: [RouteItem.sample], current: RouteGetDTO.sample, location: FloatLocationGetDTO.sample))
 //        },
 //        getRouteIds: {
 //            return Result.success(["id"])
@@ -72,10 +72,10 @@ import Dependencies
 //            return Result.success("Success")
 //        },
 //        getLocation: { _ in
-//            return Result.success(LocationInfo.sample)
+//            return Result.success(FloatLocationGetDTO.sample)
 //        },
 //        getLocations: { _ in
-//            return Result.success([LocationInfo.sample])
+//            return Result.success([FloatLocationGetDTO.sample])
 //        },
 //        putLocation: { _ in
 //            return Result.success("Success")

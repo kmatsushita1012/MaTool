@@ -7,6 +7,7 @@
 
 import UIKit
 @preconcurrency import MapKit
+import Shared
 
 struct RouteSnapshotter: Equatable {
     let districtName: String

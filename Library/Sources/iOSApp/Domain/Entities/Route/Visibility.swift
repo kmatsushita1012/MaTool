@@ -4,16 +4,7 @@
 //
 //  Created by 松下和也 on 2025/05/08.
 //
-
-enum Visibility: String, Codable, Hashable, CaseIterable {
-    case admin
-    case route
-    case all
-}
-
-extension Visibility: Identifiable{
-    var id: Self { self }
-}
+import Shared
 
 extension Visibility {
     var label: String {

@@ -5,10 +5,11 @@
 //  Created by 松下和也 on 2024/04/01.
 //
 
-import Amplify
-import Dependencies
 import Foundation
+import Dependencies
+import Amplify
 import AWSCognitoAuthPlugin
+import Shared
 
 extension AuthProvider: DependencyKey {
     static let liveValue = {

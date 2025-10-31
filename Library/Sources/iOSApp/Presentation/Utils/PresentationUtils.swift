@@ -7,6 +7,7 @@
 import MapKit
 import Foundation
 import SwiftUI
+import Shared
 
 
 func makeRegion(_ coordinates:[Coordinate], ratio :Double = 1.1) -> MKCoordinateRegion {
@@ -36,7 +37,7 @@ func makeRegion(origin: Coordinate, spanDelta: CLLocationDegrees) -> MKCoordinat
     )
 }
 
-func makeRegion(route: Route?, location: LocationInfo?, origin: Coordinate, spanDelta: CLLocationDegrees) -> MKCoordinateRegion {
+func makeRegion(route: Route?, location: FloatLocationGetDTO?, origin: Coordinate, spanDelta: CLLocationDegrees) -> MKCoordinateRegion {
     if let location {
         return makeRegion(origin: location.coordinate, spanDelta: spanDelta)
     } else if let route {
@@ -46,7 +47,7 @@ func makeRegion(route: Route?, location: LocationInfo?, origin: Coordinate, span
     }
 }
 
-func makeRegion(locations: [LocationInfo], origin: Coordinate) -> MKCoordinateRegion {
+func makeRegion(locations: [FloatLocationGetDTO], origin: Coordinate) -> MKCoordinateRegion {
     if !locations.isEmpty {
         return makeRegion(locations.map { $0.coordinate })
     } else {

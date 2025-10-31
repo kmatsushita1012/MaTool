@@ -7,6 +7,7 @@
 
 import ComposableArchitecture
 import Foundation
+import Shared
 
 @Reducer
 struct AdminRegionDistrictList {
@@ -15,7 +16,7 @@ struct AdminRegionDistrictList {
     struct State: Equatable {
         let region: Region
         let district: District
-        let routes: [RouteSummary]
+        let routes: [RouteItem]
         var isApiLoading: Bool = false
         var isExportLoading: Bool = false
         var folder: ExportedFolder? = nil
@@ -29,7 +30,7 @@ struct AdminRegionDistrictList {
     @CasePathable
     enum Action: Equatable, BindableAction {
         case binding(BindingAction<State>)
-        case exportTapped(RouteSummary)
+        case exportTapped(RouteItem)
         case exportPrepared(Result<Route,APIError>)
         case dismissTapped
         case batchExportTapped
@@ -60,7 +61,7 @@ struct AdminRegionDistrictList {
                     route: route,
                     districtName: state.district.name,
                     milestones: state.region.milestones,
-                    origin: Coordinate.sample
+                    origin: Coordinate(latitude: 0, longitude: 0)
                 )
                 return .none
             case .exportPrepared(.failure(let error)):
@@ -94,7 +95,7 @@ struct AdminRegionDistrictList {
         .ifLet(\.$alert, action: \.alert)
     }
     
-    func batchExportEffect(_ items: [RouteSummary]) -> Effect<Action> {
+    func batchExportEffect(_ items: [RouteItem]) -> Effect<Action> {
         .run { send in
             
             var urls: [URL] = []

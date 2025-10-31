@@ -7,6 +7,7 @@
 
 import ComposableArchitecture
 import MapKit
+import Shared
 
 @Reducer
 struct DistrictInfo {

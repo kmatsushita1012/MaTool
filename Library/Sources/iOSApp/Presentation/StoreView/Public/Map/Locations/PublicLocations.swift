@@ -7,26 +7,27 @@
 
 import ComposableArchitecture
 import MapKit
+import Shared
 
 @Reducer
 struct PublicLocations {
     @ObservableState
     struct State:Equatable {
         let regionId: String
-        var locations: [LocationInfo]
+        var locations: [FloatLocationGetDTO]
         @Shared var mapRegion: MKCoordinateRegion
-        var detail: LocationInfo?
+        var detail: FloatLocationGetDTO?
     }
     
     @CasePathable
     enum Action: Equatable, BindableAction {
         case binding(BindingAction<State>)
-        case locationTapped(LocationInfo)
-        case floatFocusSelected(LocationInfo)
+        case locationTapped(FloatLocationGetDTO)
+        case floatFocusSelected(FloatLocationGetDTO)
         case userFocusTapped
         case userLocationReceived(Coordinate)
         case reloadTapped
-        case locationsReceived(Result<[LocationInfo], APIError>)
+        case locationsReceived(Result<[FloatLocationGetDTO], APIError>)
     }
     
     @Dependency(\.apiRepository) var apiRepository

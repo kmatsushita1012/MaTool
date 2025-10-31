@@ -5,8 +5,9 @@
 //  Created by 松下和也 on 2025/04/20.
 //
 
-import ComposableArchitecture
 import Foundation
+import ComposableArchitecture
+import Shared
 
 @Reducer
 struct Settings {

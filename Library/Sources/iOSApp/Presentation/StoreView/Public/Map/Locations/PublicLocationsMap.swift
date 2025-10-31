@@ -6,17 +6,18 @@
 //
 
 import UIKit
-import MapKit
 import SwiftUI
+import MapKit
+import Shared
 
 struct PublicLocationsMap: UIViewRepresentable {
-    var items: [LocationInfo]
-    var onTap: (LocationInfo)->Void
+    var items: [FloatLocationGetDTO]
+    var onTap: (FloatLocationGetDTO)->Void
     @Binding var region: MKCoordinateRegion
     
     init(
-        items: [LocationInfo],
-        onTap: @escaping (LocationInfo) -> Void,
+        items: [FloatLocationGetDTO],
+        onTap: @escaping (FloatLocationGetDTO) -> Void,
         region: Binding<MKCoordinateRegion>
     ) {
         self.items = items
@@ -47,7 +48,7 @@ struct PublicLocationsMap: UIViewRepresentable {
     
     func updateFloatAnnotations(
         on mapView: MKMapView,
-        with items: [LocationInfo]
+        with items: [FloatLocationGetDTO]
     ) {
         let existingAnnotations = mapView.annotations.compactMap { $0 as? FloatCurrentAnnotation }
         let existingLocations = existingAnnotations.map { $0.location }

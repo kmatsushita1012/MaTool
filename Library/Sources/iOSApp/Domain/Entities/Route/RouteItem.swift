@@ -1,40 +1,15 @@
 //
-//  RouteSummary.swift
+//  RouteItem.swift
 //  MaTool
 //
 //  Created by 松下和也 on 2025/03/09.
 //
 
 import Foundation
-
-struct RouteSummary: Codable, Equatable, Identifiable, Hashable {
-    let id: String
-    let districtId: String
-    let date:SimpleDate
-    let title: String
-    let start: SimpleTime
-}
-
-extension RouteSummary: Comparable {
-    static func < (lhs: RouteSummary, rhs: RouteSummary) -> Bool {
-        if(lhs.date != rhs.date){
-            return lhs.date < rhs.date
-        }else{
-            return lhs.start < rhs.start
-        }
-    }
-}
+import Shared
 
 
-extension RouteSummary{
-    init(from route: Route) {
-        self.id = route.id
-        self.districtId = route.districtId
-        self.date = route.date
-        self.title = route.title
-        self.start = route.start
-    }
-    
+extension RouteItem{
     func text(format: String) -> String {
         var result = ""
         var i = format.startIndex
@@ -77,14 +52,4 @@ extension RouteSummary{
         }
         return result
     }
-}
-
-extension RouteSummary{
-    static let sample = Self(
-        id: UUID().uuidString,
-        districtId: "Johoku",
-        date: SimpleDate.sample,
-        title: "午後",
-        start: SimpleTime(hour: 9, minute: 0)
-    )
 }

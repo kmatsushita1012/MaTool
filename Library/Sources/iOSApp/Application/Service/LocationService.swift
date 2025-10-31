@@ -8,6 +8,7 @@
 import Foundation
 import Dependencies
 import CoreLocation
+import Shared
 
 actor LocationService {
     @Dependency(\.apiRepository) var apiRepository
@@ -93,7 +94,7 @@ actor LocationService {
         case .failure:
             appendHistory(.locationError(Date()))
         case .success(let cllocation):
-            let location = Location(
+            let location = FloatLocation(
                 districtId: id,
                 coordinate: Coordinate.fromCL(cllocation.coordinate),
                 timestamp: Date.now

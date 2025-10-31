@@ -8,9 +8,10 @@
 import UIKit
 import MapKit
 import SwiftUI
+import Shared
 
 struct AdminLocationMap: UIViewRepresentable {
-    var location: Location?
+    var location: FloatLocation?
     
     func makeUIView(context: Context) -> MKMapView {
         let mapView = MKMapView()
