@@ -8,6 +8,7 @@
 import UIKit
 import MapKit
 import SwiftUI
+import Shared
 
 struct AdminRouteMapView: UIViewRepresentable {
     @Binding var route: Route

@@ -1,5 +1,5 @@
 //
-//  AdminRegionView.swift
+//  AdminFestivalView.swift
 //  MaTool
 //
 //  Created by 松下和也 on 2025/05/09.
@@ -10,8 +10,8 @@ import ComposableArchitecture
 import NavigationSwipeControl
 
 @available(iOS 17.0, *)
-struct AdminRegionView: View {
-    @SwiftUI.Bindable var store: StoreOf<AdminRegionTop>
+struct AdminFestivalView: View {
+    @SwiftUI.Bindable var store: StoreOf<AdminFestivalTop>
     
     var body: some View {
         List {
@@ -68,7 +68,7 @@ struct AdminRegionView: View {
             }
         }
         .navigationTitle(
-            "\(store.region.name) \(store.region.subname)"
+            "\(store.festival.name) \(store.festival.subname)"
         )
         .toolbar {
             ToolbarItem(placement: .topBarLeading) {
@@ -89,17 +89,17 @@ struct AdminRegionView: View {
         .navigationDestination(
             item: $store.scope(state: \.destination?.edit, action: \.destination.edit)
         ) { store in
-            AdminRegionEditView(store: store)
+            AdminFestivalEditView(store: store)
         }
         .navigationDestination(
             item: $store.scope(state: \.destination?.districtInfo, action: \.destination.districtInfo)
         ) { store in
-            AdminRegionDistrictListView(store: store)
+            AdminDistrictListView(store: store)
         }
         .navigationDestination(
             item: $store.scope(state: \.destination?.districtCreate, action: \.destination.districtCreate)
         ) { store in
-            AdminRegionCreateDistrictView(store: store)
+            AdminCreateDistrictView(store: store)
         }
         .navigationDestination(
             item: $store.scope(state: \.destination?.changePassword, action: \.destination.changePassword)

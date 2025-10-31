@@ -6,6 +6,7 @@
 //
 
 import Dependencies
+import Shared
 
 actor AuthService {
     
@@ -13,7 +14,7 @@ actor AuthService {
     
     @Dependency(\.authProvider) var authProvider
     
-    func initialize() -> Result<Empty, AuthError> {
+    func initialize() -> Result<Shared.Empty, AuthError> {
         return authProvider.initialize()
     }
     

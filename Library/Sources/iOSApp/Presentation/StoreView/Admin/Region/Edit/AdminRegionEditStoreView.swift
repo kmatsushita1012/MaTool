@@ -1,5 +1,5 @@
 //
-//  adminRegion.swift
+//  AdminFestivalEdit.swift
 //  MaTool
 //
 //  Created by 松下和也 on 2025/04/17.
@@ -10,9 +10,9 @@ import ComposableArchitecture
 import NavigationSwipeControl
 
 @available(iOS 17.0, *)
-struct AdminRegionEditView: View{
+struct AdminFestivalEditView: View{
     
-    @SwiftUI.Bindable var store: StoreOf<AdminRegionEdit>
+    @SwiftUI.Bindable var store: StoreOf<AdminFestivalEdit>
     
     var body: some View{
         List {

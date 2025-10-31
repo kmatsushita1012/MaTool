@@ -24,10 +24,10 @@ struct InfoStoreView: View {
                 }
                 .ignoresSafeArea(edges: .top)
                 VStack{
-                    mainItem(store.region.name)
+                    mainItem(store.festival.name)
                         .onTapGesture{
                             #if DEBUG
-                            store.send(.regionTapped)
+                            store.send(.festivalTapped)
                             #endif
                         }
                 }

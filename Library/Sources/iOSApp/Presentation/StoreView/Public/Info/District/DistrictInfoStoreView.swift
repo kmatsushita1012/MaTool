@@ -5,9 +5,10 @@
 //  Created by 松下和也 on 2025/07/29.
 //
 
-import ComposableArchitecture
 import SwiftUI
+import ComposableArchitecture
 import NavigationSwipeControl
+import Shared
 
 struct DistrictInfoStoreView: View {
     @Perception.Bindable var store: StoreOf<DistrictInfo>

@@ -6,6 +6,7 @@
 //
 
 import MapKit
+import Shared
 
 extension Point{
     func annotation(type: PointAnnotation.TitleType = .simple) -> PointAnnotation {
