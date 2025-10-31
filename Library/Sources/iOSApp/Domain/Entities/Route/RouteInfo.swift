@@ -10,7 +10,6 @@ import Foundation
 struct RouteInfo: Codable, Equatable, Identifiable{
     let id: String
     let districtId: String
-    let districtName: String
     let visibility: Visibility
     let date: SimpleDate
     let title: String
@@ -34,8 +33,6 @@ extension RouteInfo {
             let nextChar = hasNext ? format[nextIndex] : nil
 
             switch char {
-            case "D":
-                result += districtName
             case "T":
                 result += title
             case "y":
@@ -82,7 +79,6 @@ extension RouteInfo {
     init(from route: Route, name: String, visibility: Visibility = .admin) {
         id = route.id
         districtId = route.districtId
-        districtName = name
         self.visibility = visibility
         date = route.date
         title = route.title
@@ -99,7 +95,6 @@ extension RouteInfo {
     static let sample = Self(
         id: UUID().uuidString,
         districtId: "Johoku",
-        districtName: "城北町",
         visibility: .all,
         date: SimpleDate.sample,
         title: "午後",
