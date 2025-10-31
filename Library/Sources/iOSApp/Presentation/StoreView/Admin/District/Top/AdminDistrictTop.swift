@@ -22,7 +22,7 @@ struct AdminDistrictTop {
     
     @ObservableState
     struct State:Equatable {
-        var district: PublicDistrict
+        var district: District
         var routes: [RouteSummary]
         var isDistrictLoading: Bool = false
         var isRoutesLoading: Bool = false
@@ -42,7 +42,7 @@ struct AdminDistrictTop {
         case onRouteEdit(RouteSummary)
         case changePasswordTapped
         case updateEmailTapped
-        case getDistrictReceived(Result<PublicDistrict,APIError>)
+        case getDistrictReceived(Result<District,APIError>)
         case getRoutesReceived(Result<[RouteSummary],APIError>)
         case editPrepared(Result<DistrictTool,APIError>)
         case routeEditPrepared(Result<RouteInfo,APIError>,Result<DistrictTool,APIError>)
@@ -113,7 +113,7 @@ struct AdminDistrictTop {
                 case .success(let tool):
                     state.destination = .edit(
                         AdminDistrictEdit.State(
-                            item: state.district.toModel(),
+                            item: state.district,
                             tool: tool
                         )
                     )

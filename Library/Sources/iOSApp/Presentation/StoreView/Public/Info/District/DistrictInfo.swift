@@ -13,12 +13,12 @@ struct DistrictInfo {
     
     @ObservableState
     struct State: Equatable {
-        let item: PublicDistrict
+        let item: District
         var region: MKCoordinateRegion?
         var isLoading: Bool = false
         var isDismissed:Bool = false
         
-        init(item: PublicDistrict){
+        init(item: District){
             self.item = item
             if let base = item.base, item.area.isEmpty{
                 region = makeRegion(origin: base, spanDelta: spanDelta)

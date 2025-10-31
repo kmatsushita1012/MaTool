@@ -14,7 +14,7 @@ struct AdminRegionDistrictList {
     @ObservableState
     struct State: Equatable {
         let region: Region
-        let district: PublicDistrict
+        let district: District
         let routes: [RouteSummary]
         var isApiLoading: Bool = false
         var isExportLoading: Bool = false
