@@ -224,7 +224,7 @@ extension PublicMap.Content: Identifiable,Hashable  {
             origin: region.base
         )
     }
-    static func from(district: PublicDistrict, origin: Coordinate) -> Self{
+    static func from(district: District, origin: Coordinate) -> Self{
         return .route(
             id: district.id,
             name: district.name,
@@ -236,10 +236,10 @@ extension PublicMap.Content: Identifiable,Hashable  {
 extension PublicMap.State {
     init(
         region: Region,
-        districts: [PublicDistrict],
+        districts: [District],
         id: String,
         routes: [RouteSummary]?,
-        current: RouteInfo?,
+        current: Route?,
         location: LocationInfo?
     ) {
         let locations = PublicMap.Content.from(region: region)
@@ -266,7 +266,7 @@ extension PublicMap.State {
     
     init(
         region: Region,
-        districts: [PublicDistrict],
+        districts: [District],
         locations: [LocationInfo]
     ){
         let selected = PublicMap.Content.from(region: region)

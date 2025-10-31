@@ -15,16 +15,6 @@ struct Point: Codable, Identifiable, Equatable, Hashable{
     @NullEncodable var time: SimpleTime? = nil
     var isPassed: Bool = false
     var shouldExport: Bool = false
-    
-    init(id:String, coordinate: Coordinate, title: String?=nil, description: String?=nil, time: SimpleTime?=nil, isPassed: Bool = false, shouldExport: Bool = false) {
-        self.id = id
-        self.coordinate = coordinate
-        self.title = title
-        self.description = description
-        self.time = time
-        self.isPassed = isPassed
-        self.shouldExport = shouldExport
-    }
 }
 
 extension Point {
@@ -37,8 +27,8 @@ enum PointFilter: Equatable {
     case pub
     case export
     
-    func apply(to route: RouteInfo) -> [Point] {
-        return apply(to: route.toModel(), visibility: route.visibility)
+    func apply(to route: Route) -> [Point] {
+        return apply(to: route, visibility: route.visibility)
     }
 
     func apply(to route: Route, visibility: Visibility = .all) -> [Point] {

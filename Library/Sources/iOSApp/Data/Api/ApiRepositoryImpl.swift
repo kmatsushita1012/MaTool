@@ -43,13 +43,13 @@ extension APIRepotiroy: DependencyKey {
                 let response = await apiClient.get(
                     path: "/regions/\(regionId)/districts"
                 )
-                return decodeResponse([PublicDistrict].self, from: response)
+                return decodeResponse([District].self, from: response)
             },
             getDistrict: { id in
                 let response = await apiClient.get(
                     path: "/districts/\(id)"
                 )
-                return decodeResponse(PublicDistrict.self, from: response)
+                return decodeResponse(District.self, from: response)
             },
             postDistrict: { regionId, districtName, email in
                 let encodeResult = encodeRequest(
@@ -104,7 +104,7 @@ extension APIRepotiroy: DependencyKey {
                     accessToken: accessToken,
                     isCache: false
                 )
-                return decodeResponse(RouteInfo.self, from: response)
+                return decodeResponse(Route.self, from: response)
             },
             getCurrentRoute: { districtId in
                 let accessToken = await authService.getAccessToken()
