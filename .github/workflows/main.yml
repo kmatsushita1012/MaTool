@@ -41,7 +41,7 @@ jobs:
       - name: Build
         run: |
           xcodebuild build \
-            -project MaTool.xcodeproj \
+            -project App/MaTool.xcodeproj \
             -scheme MaTool \
             -sdk iphoneos \
             -configuration Release \
