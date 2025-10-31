@@ -7,6 +7,7 @@
 
 import ComposableArchitecture
 import Foundation
+import Shared
 
 @Reducer
 struct Home {
@@ -54,10 +55,10 @@ struct Home {
         case locationsPrepared(
             regionResult: Result<Region, APIError>,
             districtsResult: Result<[District], APIError>,
-            locationsResult: Result<[LocationInfo], APIError>
+            locationsResult: Result<[FloatLocationGetDTO], APIError>
         )
         case infoPrepared(Result<Region, APIError>, Result<[District], APIError>)
-        case adminDistrictPrepared(Result<District,APIError>, Result<[RouteSummary],APIError>)
+        case adminDistrictPrepared(Result<District,APIError>, Result<[RouteItem],APIError>)
         case adminRegionPrepared(Result<Region,APIError>, Result<[District],APIError>)
         
         case settingsPrepared(

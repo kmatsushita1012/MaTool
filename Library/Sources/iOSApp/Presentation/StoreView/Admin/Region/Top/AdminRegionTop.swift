@@ -7,6 +7,7 @@
 
 import ComposableArchitecture
 import Foundation
+import Shared
 
 @Reducer
 struct AdminRegionTop {
@@ -49,7 +50,7 @@ struct AdminRegionTop {
         case batchExportTapped
         case regionReceived(Result<Region,APIError>)
         case districtsReceived(Result<[District],APIError>)
-        case districtInfoPrepared(District, Result<[RouteSummary],APIError>)
+        case districtInfoPrepared(District, Result<[RouteItem],APIError>)
         case signOutReceived(Result<UserRole,AuthError>)
         case batchExportPrepared(Result<[URL], APIError>)
         case destination(PresentationAction<Destination.Action>)

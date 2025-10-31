@@ -6,6 +6,7 @@
 //
 
 import Dependencies
+import Shared
 
 struct APIRepotiroy: Sendable {
     @Dependency(\.apiClient) var apiClient
@@ -18,16 +19,16 @@ struct APIRepotiroy: Sendable {
     var postDistrict: @Sendable (_ regionId: String, _ districtName: String, _ email: String) async -> Result<String, APIError>
     var putDistrict: @Sendable (_ district: District) async -> Result<String, APIError>
     var getTool: @Sendable (_ districtId: String) async -> Result<DistrictTool, APIError>
-    var getRoutes: @Sendable (_ districtId: String) async -> Result<[RouteSummary], APIError>
+    var getRoutes: @Sendable (_ districtId: String) async -> Result<[RouteItem], APIError>
     var getRoute: @Sendable (_ id: String) async -> Result<Route, APIError>
     var getCurrentRoute: @Sendable (_ districtId: String) async -> Result<CurrentResponse, APIError>
     var getRouteIds: @Sendable () async -> Result<[String], APIError>
     var postRoute: @Sendable (_ route: Route) async -> Result<String, APIError>
     var putRoute: @Sendable (_ route: Route) async -> Result<String, APIError>
     var deleteRoute: @Sendable (_ id: String) async -> Result<String, APIError>
-    var getLocation: @Sendable (_ districtId: String) async -> Result<LocationInfo, APIError>
-    var getLocations: @Sendable (_ regionId: String) async -> Result<[LocationInfo], APIError>
-    var putLocation: @Sendable (_ location: Location) async -> Result<String, APIError>
+    var getLocation: @Sendable (_ districtId: String) async -> Result<FloatLocationGetDTO, APIError>
+    var getLocations: @Sendable (_ regionId: String) async -> Result<[FloatLocationGetDTO], APIError>
+    var putLocation: @Sendable (_ location: FloatLocation) async -> Result<String, APIError>
     var deleteLocation: @Sendable (_ districtId: String) async -> Result<String, APIError>
 }
 

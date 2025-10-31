@@ -6,21 +6,9 @@
 //
 
 import Foundation
-
-struct Route: Codable, Equatable, Identifiable {
-    let id: String
-    let districtId: String
-    var date:SimpleDate = .today
-    var title: String = ""
-    @NullEncodable var description: String?
-    var points: [Point] = []
-    var visibility: Visibility = .all
-    var start: SimpleTime
-    var goal: SimpleTime
-}
+import Shared
 
 extension Route {
-    
     func text(format: String) -> String {
         var result = ""
         var i = format.startIndex
@@ -62,23 +50,4 @@ extension Route {
         return result
     }
     
-}
-
-extension Route {
-    static let sample = Route(
-        id: UUID().uuidString,
-        districtId: "Johoku",
-        date: SimpleDate.sample,
-        title: "午後",
-        description: "準備中",
-        points: [
-            Point(id: UUID().uuidString,coordinate: Coordinate(latitude: 34.777681, longitude: 138.007029), title: "出発", time: SimpleTime(hour: 9, minute: 0)),
-            Point(id: UUID().uuidString,coordinate: Coordinate(latitude: 34.778314, longitude: 138.008176), title: "到着", description: "お疲れ様です", time: SimpleTime(hour: 12, minute: 0))
-        ],
-        start: SimpleTime.sample,
-        goal: SimpleTime(
-            hour:12,
-            minute: 00
-        )
-    )
 }
