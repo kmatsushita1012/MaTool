@@ -96,9 +96,9 @@ struct HomeStoreView: View {
                             EmptyView()
                         }
                     }
-                    .navigationDestination(item: $store.scope(state: \.destination?.adminRegion, action: \.destination.adminRegion)) { store in
+                    .navigationDestination(item: $store.scope(state: \.destination?.adminFestival, action: \.destination.adminFestival)) { store in
                         if #available(iOS 17.0, *){
-                            AdminRegionView(store: store)
+                            AdminFestivalView(store: store)
                         } else {
                             EmptyView()
                         }

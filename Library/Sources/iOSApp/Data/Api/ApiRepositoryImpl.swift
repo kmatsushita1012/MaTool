@@ -15,34 +15,34 @@ extension APIRepotiroy: DependencyKey {
         let authService = DependencyValues().authService
         let apiClient = DependencyValues().apiClient
         return Self(
-            getRegions: {
+            getFestivals: {
                 let response = await apiClient.get(
                     path: "/regions"
                 )
-                return decodeResponse([Region].self, from: response)
+                return decodeResponse([Festival].self, from: response)
             },
-            getRegion: { id in
+            getFestival: { id in
                 let response = await apiClient.get(
                     path: "/regions/\(id)"
                 )
-                return decodeResponse(Region.self, from: response)
+                return decodeResponse(Festival.self, from: response)
             },
-            putRegion: { region in
-                let encodeResult = encodeRequest(region)
+            putFestival: { festival in
+                let encodeResult = encodeRequest(festival)
                     .mapError { APIError.encoding(message: $0.localizedDescription) }
                 let accessToken = await authService.getAccessToken()
                 return await encodeResult.asyncFlatMap { body in
                     let response = await apiClient.put(
-                        path: "/regions/\(region.id)",
+                        path: "/regions/\(festival.id)",
                         body: body,
                         accessToken: accessToken
                     )
                     return decodeResponse(String.self, from: response)
                 }
             },
-            getDistricts: { regionId in
+            getDistricts: { festivalId in
                 let response = await apiClient.get(
-                    path: "/regions/\(regionId)/districts"
+                    path: "/regions/\(festivalId)/districts"
                 )
                 return decodeResponse([District].self, from: response)
             },
@@ -52,7 +52,7 @@ extension APIRepotiroy: DependencyKey {
                 )
                 return decodeResponse(District.self, from: response)
             },
-            postDistrict: { regionId, districtName, email in
+            postDistrict: { festivalId, districtName, email in
                 let encodeResult = encodeRequest(
                     [
                         "name": districtName,
@@ -62,7 +62,7 @@ extension APIRepotiroy: DependencyKey {
                 let accessToken = await authService.getAccessToken()
                 return await encodeResult.asyncFlatMap { body in
                     let response = await apiClient.post(
-                        path: "/regions/\(regionId)/districts",
+                        path: "/regions/\(festivalId)/districts",
                         body: body,
                         accessToken: accessToken
                     )
@@ -166,10 +166,10 @@ extension APIRepotiroy: DependencyKey {
                 )
                 return decodeResponse(FloatLocationGetDTO.self, from: response)
             },
-            getLocations: { regionId in
+            getLocations: { festivalId in
                 let accessToken = await authService.getAccessToken()
                 let response = await apiClient.get(
-                    path: "/regions/\(regionId)/locations",
+                    path: "/regions/\(festivalId)/locations",
                     accessToken: accessToken,
                     isCache: false
                 )

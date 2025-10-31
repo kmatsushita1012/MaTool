@@ -57,8 +57,8 @@ struct ConfirmSignIn {
                 }
             case .received(.success(let userRole)):
                 switch userRole {
-                case .region(let id):
-                    userDefaultsClient.setString(id, defaultRegionKey)
+                case .headquarter(let id):
+                    userDefaultsClient.setString(id, defaultFestivalKey)
                     userDefaultsClient.setString(nil, defaultDistrictKey)
                     userDefaultsClient.setString(id, loginIdKey)
                     return .none

@@ -16,13 +16,13 @@
 //
 //extension APIRepotiroy {
 //    public static let noop = Self(
-//        getRegions: {
-//            return Result.success([Region.sample])
+//        getFestivals: {
+//            return Result.success([Festival.sample])
 //        },
-//        getRegion:{ _ in
-//            return Result.success(Region.sample)
+//        getFestival:{ _ in
+//            return Result.success(Festival.sample)
 //        },
-//        putRegion: { _ in
+//        putFestival: { _ in
 //            return Result.success("Success")
 //        },
 //        getDistricts: { _ in

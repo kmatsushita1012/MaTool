@@ -8,7 +8,7 @@
 import Foundation
 
 public enum UserRole: Entity {
-    case region(String)
+    case headquarter(String)
     case district(String)
     case guest
 }

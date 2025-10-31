@@ -70,7 +70,7 @@ extension AuthProvider: DependencyKey {
                     
                     if let role = attributes.first(where: { $0.key.rawValue == "custom:role" })?.value {
                         switch role {
-                        case "region": return .success(.region(user.username))
+                        case "region": return .success(.headquarter(user.username))
                         case "district": return .success(.district(user.username))
                         default: return .success(.guest)
                         }

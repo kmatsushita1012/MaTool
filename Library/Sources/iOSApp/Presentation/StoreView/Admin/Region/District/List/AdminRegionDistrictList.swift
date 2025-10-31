@@ -1,5 +1,5 @@
 //
-//  AdminRegionDistrictList.swift
+//  AdminDistrictList.swift
 //  MaTool
 //
 //  Created by 松下和也 on 2025/05/12.
@@ -10,11 +10,11 @@ import Foundation
 import Shared
 
 @Reducer
-struct AdminRegionDistrictList {
+struct AdminDistrictList {
     
     @ObservableState
     struct State: Equatable {
-        let region: Region
+        let festival: Festival
         let district: District
         let routes: [RouteItem]
         var isApiLoading: Bool = false
@@ -42,7 +42,7 @@ struct AdminRegionDistrictList {
     @Dependency(\.apiRepository) var apiRepository
     @Dependency(\.dismiss) var dismiss
     
-    var body: some ReducerOf<AdminRegionDistrictList> {
+    var body: some ReducerOf<AdminDistrictList> {
         BindingReducer()
         Reduce{ state, action in
             switch action {
@@ -60,7 +60,7 @@ struct AdminRegionDistrictList {
                     mode: .preview,
                     route: route,
                     districtName: state.district.name,
-                    milestones: state.region.milestones,
+                    milestones: state.festival.milestones,
                     origin: Coordinate(latitude: 0, longitude: 0)
                 )
                 return .none

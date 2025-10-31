@@ -13,14 +13,14 @@ struct InfoList {
     
     @Reducer
     enum Destination{
-        case region(RegionInfo)
+        case festival(FestivalInfo)
         case district(DistrictInfo)
     }
     
     
     @ObservableState
     struct State: Equatable {
-        let region: Region
+        let festival: Festival
         let districts: [District]
         var isDismissed: Bool = false
         @Presents var destination: Destination.State? = nil
@@ -28,7 +28,7 @@ struct InfoList {
     
     @CasePathable
     enum Action: Equatable {
-        case regionTapped
+        case festivalTapped
         case districtTapped(District)
         case homeTapped
         case destination(PresentationAction<Destination.Action>)
@@ -39,8 +39,8 @@ struct InfoList {
     var body: some ReducerOf<InfoList> {
         Reduce { state,action in
             switch action {
-            case .regionTapped:
-                state.destination = .region(RegionInfo.State(item: state.region))
+            case .festivalTapped:
+                state.destination = .festival(FestivalInfo.State(item: state.festival))
                 return .none
             case .districtTapped(let value):
                 print(value)

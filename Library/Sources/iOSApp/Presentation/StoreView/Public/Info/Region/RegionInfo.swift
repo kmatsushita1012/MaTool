@@ -1,5 +1,5 @@
 //
-//  RegionInfo.swift
+//  FestivalInfo.swift
 //  MaTool
 //
 //  Created by 松下和也 on 2025/07/27.
@@ -9,11 +9,11 @@ import ComposableArchitecture
 import Shared
 
 @Reducer
-struct RegionInfo {
+struct FestivalInfo {
     
     @ObservableState
     struct State: Equatable {
-        let item: Region
+        let item: Festival
     }
     
     @CasePathable
@@ -21,7 +21,7 @@ struct RegionInfo {
         case dismissTapped
     }
     
-    var body: some ReducerOf<RegionInfo> {
+    var body: some ReducerOf<FestivalInfo> {
         Reduce{ state,action in
             return .none
         }

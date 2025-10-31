@@ -44,13 +44,13 @@ struct OnboardingStoreView: View {
                             .frame(maxWidth: .infinity, alignment: .leading)
                             .padding(.horizontal)
                         MenuSelector(
-                            items: store.regions,
-                            selection: $store.selectedRegion,
-                            label: { region in
-                                region?.name ?? "未設定"
+                            items: store.festivals,
+                            selection: $store.selectedFestival,
+                            label: { festival in
+                                festival?.name ?? "未設定"
                             },
                             isNullable: false,
-                            errorMessage: store.regionErrorMessaage,
+                            errorMessage: store.festivalErrorMessaage,
                             footer: "「テスト」は業務用です。選択しないでください。\n設定画面から変更が可能です。",
                             borderColor : .onboarding
                         )

@@ -13,7 +13,7 @@ import Shared
 struct PublicLocations {
     @ObservableState
     struct State:Equatable {
-        let regionId: String
+        let festivalId: String
         var locations: [FloatLocationGetDTO]
         @Shared var mapRegion: MKCoordinateRegion
         var detail: FloatLocationGetDTO?
@@ -46,7 +46,7 @@ struct PublicLocations {
                 state.$mapRegion.withLock { $0 = makeRegion(origin: value.coordinate, spanDelta: spanDelta)}
                 return .none
             case .reloadTapped:
-                return .run{ [id = state.regionId ]send in
+                return .run{ [id = state.festivalId ]send in
                     let result = await apiRepository.getLocations(id)
                     await send(.locationsReceived(result))
                 }

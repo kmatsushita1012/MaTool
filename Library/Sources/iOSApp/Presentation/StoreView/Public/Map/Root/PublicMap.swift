@@ -140,7 +140,7 @@ struct PublicMap{
                 }
                 state.destination = .locations(
                     PublicLocations.State(
-                        regionId: id,
+                        festivalId: id,
                         locations: value,
                         mapRegion: state.$mapRegion
                     )
@@ -219,11 +219,11 @@ extension PublicMap.Content: Identifiable, Hashable  {
         }
     }
     
-    static func from(region: Region) -> Self {
+    static func from(festival: Festival) -> Self {
         return .locations(
-            id: region.id,
-            name: region.name,
-            origin: region.base
+            id: festival.id,
+            name: festival.name,
+            origin: festival.base
         )
     }
     static func from(district: District, origin: Coordinate) -> Self{
@@ -237,17 +237,17 @@ extension PublicMap.Content: Identifiable, Hashable  {
 
 extension PublicMap.State {
     init(
-        region: Region,
+        festival: Festival,
         districts: [District],
         id: String,
         routes: [RouteItem]?,
         current: Route?,
         location: FloatLocationGetDTO?
     ) {
-        let locations = PublicMap.Content.from(region: region)
+        let locations = PublicMap.Content.from(festival: festival)
         let contents = [locations]
             + districts
-            .map{ PublicMap.Content.from(district: $0, origin: region.base) }
+            .map{ PublicMap.Content.from(district: $0, origin: festival.base) }
             .prioritizing(by: \.id, match: id)
         let selected = contents.first(where: \.id, equals: id) ?? locations
         self.contents = contents
@@ -267,21 +267,21 @@ extension PublicMap.State {
     }
     
     init(
-        region: Region,
+        festival: Festival,
         districts: [District],
         locations: [FloatLocationGetDTO]
     ){
-        let selected = PublicMap.Content.from(region: region)
-        let contents = [selected] + districts.map{ PublicMap.Content.from(district: $0, origin: region.base) }
+        let selected = PublicMap.Content.from(festival: festival)
+        let contents = [selected] + districts.map{ PublicMap.Content.from(district: $0, origin: festival.base) }
         
         self.contents = contents
         self.selectedContent = selected
         
-        let mapRegion = Shared(value: makeRegion(locations: locations, origin: region.base))
+        let mapRegion = Shared(value: makeRegion(locations: locations, origin: festival.base))
         self._mapRegion = mapRegion
         self.destination = .locations(
             PublicLocations.State(
-                regionId: region.id,
+                festivalId: festival.id,
                 locations: locations,
                 mapRegion: mapRegion
             )
