@@ -30,7 +30,7 @@ struct AdminRegionDistrictList {
     enum Action: Equatable, BindableAction {
         case binding(BindingAction<State>)
         case exportTapped(RouteSummary)
-        case exportPrepared(Result<RouteInfo,APIError>)
+        case exportPrepared(Result<Route,APIError>)
         case dismissTapped
         case batchExportTapped
         case batchExportPrepared(Result<[URL], APIError>)
@@ -57,7 +57,7 @@ struct AdminRegionDistrictList {
                 state.isApiLoading = false
                 state.export = AdminRouteEdit.State(
                     mode: .preview,
-                    route: route.toModel(),
+                    route: route,
                     districtName: state.district.name,
                     milestones: state.region.milestones,
                     origin: Coordinate.sample
