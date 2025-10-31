@@ -1,11 +1,11 @@
 //
-//  Region.swift
+//  Festival.swift
 //  MaTool
 //
 //  Created by 松下和也 on 2025/10/30.
 //
 
-public struct Region: Codable, Equatable, Identifiable, Hashable {
+public struct Festival: Entity {
     public let id: String
     public var name: String
     public var subname: String
@@ -17,3 +17,5 @@ public struct Region: Codable, Equatable, Identifiable, Hashable {
     public var milestones: [Information] = []
     @NullEncodable public var imagePath:String?
 }
+
+extension Festival: Identifiable {}

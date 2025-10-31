@@ -61,8 +61,8 @@ struct Login {
             case .received(.success(let userRole)):
                 state.errorMessage = nil
                 switch userRole {
-                case .region(let id):
-                    userDefaultsClient.setString(id, defaultRegionKey)
+                case .headquarter(let id):
+                    userDefaultsClient.setString(id, defaultFestivalKey)
                     userDefaultsClient.setString(nil, defaultDistrictKey)
                     userDefaultsClient.setString(id, loginIdKey)
                     return .none

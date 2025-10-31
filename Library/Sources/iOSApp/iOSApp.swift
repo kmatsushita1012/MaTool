@@ -54,7 +54,7 @@ public struct RootSceneView: View {
 
 //定数
 let spanDelta: Double = 0.005
-let defaultRegionKey: String = "region"
+let defaultFestivalKey: String = "region"
 let defaultDistrictKey: String = "district"
 let loginIdKey: String = "login"
 let hasLaunchedBeforePath = "hasLaunchedBefore"
