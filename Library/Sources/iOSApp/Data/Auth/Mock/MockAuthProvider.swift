@@ -6,6 +6,7 @@
 //
 
 import Dependencies
+import Shared
 
 extension AuthProvider: TestDependencyKey {
     internal static let testValue = Self.noop

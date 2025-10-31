@@ -7,6 +7,7 @@
 
 import ComposableArchitecture
 import CoreLocation
+import Shared
 
 @Reducer
 struct AdminLocation{
@@ -14,7 +15,7 @@ struct AdminLocation{
     @ObservableState
     struct State:Equatable{
         let id: String
-        var location: Location?
+        var location: FloatLocation?
         var isTracking: Bool
         var isLoading: Bool = false
         var history: [Status] = []

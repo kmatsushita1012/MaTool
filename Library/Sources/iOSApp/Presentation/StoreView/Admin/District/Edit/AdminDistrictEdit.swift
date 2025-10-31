@@ -7,8 +7,7 @@
 
 //state 共通
 import ComposableArchitecture
-import PhotosUI
-import _PhotosUI_SwiftUI
+import Shared
 
 @Reducer
 struct AdminDistrictEdit {
@@ -23,7 +22,7 @@ struct AdminDistrictEdit {
     @ObservableState
     struct State: Equatable{
         var item: District
-        var image: PhotosPickerItem?
+//        var image: PhotosPickerItem?
         var isLoading: Bool = false
         let tool: DistrictTool
         @Presents var destination: Destination.State?

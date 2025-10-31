@@ -5,6 +5,8 @@
 //  Created by 松下和也 on 2025/06/20.
 //
 
+import Shared
+
 enum SignInResult: Equatable {
     case success(UserRole)
     case newPasswordRequired

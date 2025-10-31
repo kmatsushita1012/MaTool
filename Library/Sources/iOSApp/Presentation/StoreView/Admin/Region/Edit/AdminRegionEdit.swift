@@ -1,5 +1,5 @@
 //
-//  AdminRegionInfoFeature.swift
+//  AdminFestivalInfoFeature.swift
 //  MaTool
 //
 //  Created by 松下和也 on 2025/04/17.
@@ -7,9 +7,10 @@
 
 import Foundation
 import ComposableArchitecture
+import Shared
 
 @Reducer
-struct AdminRegionEdit {
+struct AdminFestivalEdit {
     
     @Reducer
     enum Destination {
@@ -19,7 +20,7 @@ struct AdminRegionEdit {
     
     @ObservableState
     struct State: Equatable {
-        var item: Region
+        var item: Festival
         var isLoading: Bool = false
         @Presents var destination: Destination.State?
         @Presents var alert: Alert.State?
@@ -43,7 +44,7 @@ struct AdminRegionEdit {
     @Dependency(\.apiRepository) var apiRepository
     @Dependency(\.dismiss) var dismiss
     
-    var body: some ReducerOf<AdminRegionEdit> {
+    var body: some ReducerOf<AdminFestivalEdit> {
         BindingReducer()
         Reduce{ state, action in
             switch action {
@@ -51,8 +52,8 @@ struct AdminRegionEdit {
                 return .none
             case .saveTapped:
                 state.isLoading = true
-                return .run { [region = state.item] send in
-                    let result = await apiRepository.putRegion(region)
+                return .run { [festival = state.item] send in
+                    let result = await apiRepository.putFestival(festival)
                     await send(.putReceived(result))
                 }
             case .cancelTapped:
@@ -138,5 +139,5 @@ struct AdminRegionEdit {
     }
 }
 
-extension AdminRegionEdit.Destination.State: Equatable{}
-extension AdminRegionEdit.Destination.Action: Equatable{}
+extension AdminFestivalEdit.Destination.State: Equatable{}
+extension AdminFestivalEdit.Destination.Action: Equatable{}

@@ -1,5 +1,5 @@
 //
-//  AdminRegionDistrictList.swift
+//  AdminDistrictList.swift
 //  MaTool
 //
 //  Created by 松下和也 on 2025/05/12.
@@ -7,15 +7,16 @@
 
 import ComposableArchitecture
 import Foundation
+import Shared
 
 @Reducer
-struct AdminRegionDistrictList {
+struct AdminDistrictList {
     
     @ObservableState
     struct State: Equatable {
-        let region: Region
+        let festival: Festival
         let district: District
-        let routes: [RouteSummary]
+        let routes: [RouteItem]
         var isApiLoading: Bool = false
         var isExportLoading: Bool = false
         var folder: ExportedFolder? = nil
@@ -29,7 +30,7 @@ struct AdminRegionDistrictList {
     @CasePathable
     enum Action: Equatable, BindableAction {
         case binding(BindingAction<State>)
-        case exportTapped(RouteSummary)
+        case exportTapped(RouteItem)
         case exportPrepared(Result<Route,APIError>)
         case dismissTapped
         case batchExportTapped
@@ -41,7 +42,7 @@ struct AdminRegionDistrictList {
     @Dependency(\.apiRepository) var apiRepository
     @Dependency(\.dismiss) var dismiss
     
-    var body: some ReducerOf<AdminRegionDistrictList> {
+    var body: some ReducerOf<AdminDistrictList> {
         BindingReducer()
         Reduce{ state, action in
             switch action {
@@ -59,8 +60,8 @@ struct AdminRegionDistrictList {
                     mode: .preview,
                     route: route,
                     districtName: state.district.name,
-                    milestones: state.region.milestones,
-                    origin: Coordinate.sample
+                    milestones: state.festival.milestones,
+                    origin: Coordinate(latitude: 0, longitude: 0)
                 )
                 return .none
             case .exportPrepared(.failure(let error)):
@@ -94,7 +95,7 @@ struct AdminRegionDistrictList {
         .ifLet(\.$alert, action: \.alert)
     }
     
-    func batchExportEffect(_ items: [RouteSummary]) -> Effect<Action> {
+    func batchExportEffect(_ items: [RouteItem]) -> Effect<Action> {
         .run { send in
             
             var urls: [URL] = []

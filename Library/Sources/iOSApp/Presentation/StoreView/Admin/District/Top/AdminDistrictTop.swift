@@ -7,6 +7,7 @@
 
 import ComposableArchitecture
 import Foundation
+import Shared
 
 @Reducer
 struct AdminDistrictTop {
@@ -23,7 +24,7 @@ struct AdminDistrictTop {
     @ObservableState
     struct State:Equatable {
         var district: District
-        var routes: [RouteSummary]
+        var routes: [RouteItem]
         var isDistrictLoading: Bool = false
         var isRoutesLoading: Bool = false
         var isRouteLoading: Bool = false
@@ -39,11 +40,11 @@ struct AdminDistrictTop {
     enum Action: Equatable {
         case onEdit
         case onRouteAdd
-        case onRouteEdit(RouteSummary)
+        case onRouteEdit(RouteItem)
         case changePasswordTapped
         case updateEmailTapped
         case getDistrictReceived(Result<District,APIError>)
-        case getRoutesReceived(Result<[RouteSummary],APIError>)
+        case getRoutesReceived(Result<[RouteItem],APIError>)
         case editPrepared(Result<DistrictTool,APIError>)
         case routeEditPrepared(Result<Route,APIError>,Result<DistrictTool,APIError>)
         case routeCreatePrepared(Result<DistrictTool,APIError>)

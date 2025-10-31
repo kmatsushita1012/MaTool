@@ -1,5 +1,5 @@
 //
-//  AdminRegionDistrictListView.swift
+//  AdminFestivalDistrictListView.swift
 //  MaTool
 //
 //  Created by 松下和也 on 2025/05/12.
@@ -10,8 +10,8 @@ import ComposableArchitecture
 import NavigationSwipeControl
 
 @available(iOS 17.0, *)
-struct AdminRegionDistrictListView: View {
-    @SwiftUI.Bindable var store: StoreOf<AdminRegionDistrictList>
+struct AdminDistrictListView: View {
+    @SwiftUI.Bindable var store: StoreOf<AdminDistrictList>
     
     var body: some View {
         List {
