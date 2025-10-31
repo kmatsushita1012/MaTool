@@ -1,5 +1,5 @@
 //
-//  AdminRegionDistrictCreate.swift
+//  AdminFestivalDistrictCreate.swift
 //  MaTool
 //
 //  Created by 松下和也 on 2025/05/12.
@@ -9,11 +9,11 @@ import ComposableArchitecture
 import Shared
 
 @Reducer
-struct AdminRegionDistrictCreate {
+struct AdminDistrictCreate {
     
     @ObservableState
     struct State: Equatable {
-        let region: Region
+        let festival: Festival
         var name: String = ""
         var email: String = ""
         var isLoading: Bool = false
@@ -31,7 +31,7 @@ struct AdminRegionDistrictCreate {
     @Dependency(\.apiRepository) var apiRepository
     @Dependency(\.dismiss) var dismiss
     
-    var body: some ReducerOf<AdminRegionDistrictCreate> {
+    var body: some ReducerOf<AdminDistrictCreate> {
         BindingReducer()
         Reduce{ state, action in
             switch action {
@@ -42,8 +42,8 @@ struct AdminRegionDistrictCreate {
                     return .none
                 }
                 state.isLoading = true
-                return .run { [region = state.region, name = state.name, email = state.email] send in
-                    let result = await apiRepository.postDistrict(region.id, name, email)
+                return .run { [festival = state.festival, name = state.name, email = state.email] send in
+                    let result = await apiRepository.postDistrict(festival.id, name, email)
                     await send(.received(result))
                 }
             case .cancelTapped:

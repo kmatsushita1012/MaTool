@@ -15,8 +15,8 @@ struct Settings {
     @ObservableState
     struct State: Equatable {
         let isOfflineMode: Bool
-        var regions: [Region] = []
-        var selectedRegion: Region? = nil
+        var festivals: [Festival] = []
+        var selectedFestival: Festival? = nil
         var districts: [District] = []
         var selectedDistrict: District? = nil
         var isLoading: Bool = false
@@ -24,7 +24,7 @@ struct Settings {
         var contact: URL = URL(string: contactURLString)!
         @Presents var alert: Alert.State? = nil
         var isDismissEnabled: Bool {
-            selectedRegion != nil || isOfflineMode
+            selectedFestival != nil || isOfflineMode
         }
     }
 
@@ -47,17 +47,17 @@ struct Settings {
         BindingReducer()
         Reduce{ state, action in
             switch action {
-            case .binding(\.selectedRegion):
+            case .binding(\.selectedFestival):
                 state.districts = []
                 state.selectedDistrict = nil
                 userDefaultsClient.setString(state.selectedDistrict?.id, defaultDistrictKey)
-                userDefaultsClient.setString(state.selectedRegion?.id, defaultRegionKey)
-                guard let region = state.selectedRegion else {
+                userDefaultsClient.setString(state.selectedFestival?.id, defaultFestivalKey)
+                guard let festival = state.selectedFestival else {
                     return .none
                 }
                 state.isLoading = true
                 return .run { send in
-                    let result = await apiRepository.getDistricts(region.id)
+                    let result = await apiRepository.getDistricts(festival.id)
                     await send(.districtsReceived(result))
                 }
             case .binding(\.selectedDistrict):

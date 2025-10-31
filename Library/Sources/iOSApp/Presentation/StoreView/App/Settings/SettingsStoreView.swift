@@ -28,10 +28,10 @@ struct SettingsStoreView: View {
                     VStack{
                         MenuSelector(
                             title: "祭典を変更",
-                            items: store.regions,
-                            selection: $store.selectedRegion,
-                            label: { region in
-                                region?.name ?? "未設定"
+                            items: store.festivals,
+                            selection: $store.selectedFestival,
+                            label: { festival in
+                                festival?.name ?? "未設定"
                             },
                             isNullable: false
                         )

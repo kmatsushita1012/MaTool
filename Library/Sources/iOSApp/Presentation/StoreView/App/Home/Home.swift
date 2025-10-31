@@ -18,7 +18,7 @@ struct Home {
         case info(InfoList)
         case login(Login)
         case adminDistrict(AdminDistrictTop)
-        case adminRegion(AdminRegionTop)
+        case adminFestival(AdminFestivalTop)
         case settings(Settings)
     }
     
@@ -48,22 +48,22 @@ struct Home {
         case statusReceived(StatusCheckResult?)
         case awsInitializeReceived(Result<UserRole, AuthError>)
         case routePrepared(
-            regionResult: Result<Region, APIError>,
+            festivalResult: Result<Festival, APIError>,
             districtsResult: Result<[District], APIError>,
             currentResult: Result<CurrentResponse, APIError>
         )
         case locationsPrepared(
-            regionResult: Result<Region, APIError>,
+            festivalResult: Result<Festival, APIError>,
             districtsResult: Result<[District], APIError>,
             locationsResult: Result<[FloatLocationGetDTO], APIError>
         )
-        case infoPrepared(Result<Region, APIError>, Result<[District], APIError>)
+        case infoPrepared(Result<Festival, APIError>, Result<[District], APIError>)
         case adminDistrictPrepared(Result<District,APIError>, Result<[RouteItem],APIError>)
-        case adminRegionPrepared(Result<Region,APIError>, Result<[District],APIError>)
+        case adminFestivalPrepared(Result<Festival,APIError>, Result<[District],APIError>)
         
         case settingsPrepared(
-            Result<[Region],APIError>,
-            Result<Region?,APIError>,
+            Result<[Festival],APIError>,
+            Result<Festival?,APIError>,
             Result<[District],APIError>,
             Result<District?,APIError>
         )
@@ -99,32 +99,32 @@ struct Home {
                 state.status = value
                 return .none
             case .mapTapped:
-                let regionId = userDefaultsClient.string(defaultRegionKey)
+                let festivalId = userDefaultsClient.string(defaultFestivalKey)
                 let districtId = userDefaultsClient.string(defaultDistrictKey)
                 
-                if let regionId, let districtId {
+                if let festivalId, let districtId {
                     state.isDestinationLoading = true
-                    return routeEffect(regionId: regionId, districtId: districtId)
-                } else if let regionId {
+                    return routeEffect(festivalId: festivalId, districtId: districtId)
+                } else if let festivalId {
                     state.isDestinationLoading = true
-                    return locationsEffect(regionId)
+                    return locationsEffect(festivalId)
                 }
                 state.alert = Alert.error("設定画面で参加する祭典を選択してください")
                 return .none
             case .infoTapped:
-                guard let regionId = userDefaultsClient.string(defaultRegionKey) else {
+                guard let festivalId = userDefaultsClient.string(defaultFestivalKey) else {
                     state.alert = Alert.error("設定画面から祭典を選択してください。")
                     return .none
                 }
                 state.isDestinationLoading = true
-                return infoEffect(regionId: regionId)
+                return infoEffect(festivalId: festivalId)
             case .adminTapped:
                 return adminTapped(state: &state, action: action)
             case .settingsTapped:
                 state.isDestinationLoading = true
-                let regionId = userDefaultsClient.string(defaultRegionKey)
+                let festivalId = userDefaultsClient.string(defaultFestivalKey)
                 let districtId = userDefaultsClient.string(defaultDistrictKey)
-                return settingsEffect(regionId: regionId, districtId: districtId)
+                return settingsEffect(festivalId: festivalId, districtId: districtId)
             case .skipTapped:
                 state.isAuthLoading = false
                 let effect = adminTapped(state: &state, action: action)
@@ -140,20 +140,20 @@ struct Home {
                 state.isAuthLoading = false
                 return .none
             case .routePrepared(
-                let regionResult,
+                let festivalResult,
                 let districtsResult,
                 let currentResult,
             ):
                 state.isDestinationLoading = false
                 switch (
-                    regionResult,
+                    festivalResult,
                     districtsResult,
                     currentResult,
                 ){
-                case (.success(let region), .success(let districts), .success(let currentResponse)):
+                case (.success(let festival), .success(let districts), .success(let currentResponse)):
                     state.destination = .map(
                         PublicMap.State(
-                            region: region,
+                            festival: festival,
                             districts: districts,
                             id: currentResponse.districtId,
                             routes: currentResponse.routes,
@@ -162,14 +162,14 @@ struct Home {
                         )
                     )
                     return .none
-                case (.success(let region), .success(let districts), .failure(let error)):
+                case (.success(let festival), .success(let districts), .failure(let error)):
                     guard let id = userDefaultsClient.string(defaultDistrictKey) else {
                         state.alert = Alert.error("情報の取得に失敗しました \(error.localizedDescription)")
                         return .none
                     }
                     state.destination = .map(
                         PublicMap.State(
-                            region: region,
+                            festival: festival,
                             districts: districts,
                             id: id,
                             routes: nil,
@@ -183,30 +183,30 @@ struct Home {
                 }
                 return .none
             case .locationsPrepared(
-                let regionResult,
+                let festivalResult,
                 let districtsResult,
                 let locationsResult
             ):
                 state.isDestinationLoading = false
                 switch (
-                    regionResult,
+                    festivalResult,
                     districtsResult,
                     locationsResult
                 ){
-                case (.success(let region), .success(let districts), .success(let locations)):
+                case (.success(let festival), .success(let districts), .success(let locations)):
                     state.destination = .map(
                         PublicMap.State(
-                            region: region,
+                            festival: festival,
                             districts: districts,
                             locations: locations
                         )
                     )
-                case (.success(let region),
+                case (.success(let festival),
                     .success(let districts),
                       .failure(.forbidden(message: _))):
                     state.destination = .map(
                         PublicMap.State(
-                            region: region,
+                            festival: festival,
                             districts: districts,
                             locations: []
                         )
@@ -226,30 +226,30 @@ struct Home {
                 }
                 state.isDestinationLoading = false
                 return .none
-            case .adminRegionPrepared(let regionResult, let districtsResult):
-                if case let .success(region) = regionResult,
+            case .adminFestivalPrepared(let festivalResult, let districtsResult):
+                if case let .success(festival) = festivalResult,
                    case let .success(districts) = districtsResult{
-                    state.destination = .adminRegion(AdminRegionTop.State(region: region, districts: districts))
+                    state.destination = .adminFestival(AdminFestivalTop.State(festival: festival, districts: districts))
                 }else{
                     state.alert = Alert.error("情報の取得に失敗しました")
                 }
                 state.isDestinationLoading = false
                 return .none
-            case let .infoPrepared(regionResult, districtsResult):
+            case let .infoPrepared(festivalResult, districtsResult):
                 state.isDestinationLoading = false
-                switch (regionResult, districtsResult) {
-                case (.success(let region), .success(let districts)):
+                switch (festivalResult, districtsResult) {
+                case (.success(let festival), .success(let districts)):
                     if let districtId = userDefaultsClient.string(defaultDistrictKey) {
                         state.destination = .info(
                             InfoList.State(
-                                region: region,
+                                festival: festival,
                                 districts: districts.prioritizing(by: \.id, match: districtId)
                             )
                         )
                     } else {
                         state.destination = .info(
                             InfoList.State(
-                                region: region,
+                                festival: festival,
                                 districts: districts
                             )
                         )
@@ -258,13 +258,13 @@ struct Home {
                     state.alert = Alert.error("情報の取得に失敗しました")
                 }
                 return .none
-            case let .settingsPrepared(regionsResult, regionResult, districtsResult, districtResult):
+            case let .settingsPrepared(festivalsResult, festivalResult, districtsResult, districtResult):
                 state.isDestinationLoading = false
                 state.destination = .settings(
                     Settings.State(
-                        isOfflineMode: regionsResult.value == nil,
-                        regions: regionsResult.value ?? [],
-                        selectedRegion: regionResult.value ?? nil,
+                        isOfflineMode: festivalsResult.value == nil,
+                        festivals: festivalsResult.value ?? [],
+                        selectedFestival: festivalResult.value ?? nil,
                         districts: districtsResult.value ?? [],
                         selectedDistrict: districtResult.value ?? nil
                     )
@@ -276,9 +276,9 @@ struct Home {
                         .login(.destination(.presented(.confirmSignIn(.received(.success(let userRole)))))):
                     state.userRole = userRole
                     switch state.userRole {
-                    case .region(let id):
+                    case .headquarter(let id):
                         state.isDestinationLoading = true
-                        return adminRegionEffect(id)
+                        return adminFestivalEffect(id)
                     case .district(let id):
                         state.isDestinationLoading = true
                         return adminDistrictEffect(id)
@@ -289,18 +289,18 @@ struct Home {
                     return .none
                 case .info(.destination(.presented(.district(.mapTapped)))):
                     guard let districtId = state.destination?.info?.destination?.district?.item.id,
-                        let regionId = userDefaultsClient.string(defaultRegionKey)  else {
+                        let festivalId = userDefaultsClient.string(defaultFestivalKey)  else {
                         return .none
                     }
                     if #available(iOS 17, *) {
-                        return routeEffect(regionId: regionId, districtId: districtId)
+                        return routeEffect(festivalId: festivalId, districtId: districtId)
                     }else{
                         state.isDestinationLoading = true
                         state.destination = nil
-                        return routeEffect(regionId: regionId, districtId: districtId)
+                        return routeEffect(festivalId: festivalId, districtId: districtId)
                     }
                 case .adminDistrict(.signOutReceived(.success(let userRole))),
-                    .adminRegion(.signOutReceived(.success(let userRole))):
+                    .adminFestival(.signOutReceived(.success(let userRole))):
                     state.userRole = userRole
                     state.destination = nil
                     return .none
@@ -327,9 +327,9 @@ struct Home {
             return .none
         }
         switch state.userRole {
-        case .region(let id):
+        case .headquarter(let id):
             state.isDestinationLoading = true
-            return adminRegionEffect(id)
+            return adminFestivalEffect(id)
         case .district(let id):
             state.isDestinationLoading = true
             return adminDistrictEffect(id)
@@ -340,25 +340,25 @@ struct Home {
         }
     }
     
-    func routeEffect(regionId: String, districtId id: String) -> Effect<Action> {
+    func routeEffect(festivalId: String, districtId id: String) -> Effect<Action> {
         .run { send in
-            async let regionTask = apiRepository.getRegion(regionId)
-            async let districtsTask = apiRepository.getDistricts(regionId)
+            async let festivalTask = apiRepository.getFestival(festivalId)
+            async let districtsTask = apiRepository.getDistricts(festivalId)
             async let currentTask = apiRepository.getCurrentRoute(id)
             
             let (
-                regionResult,
+                festivalResult,
                 districtsResult,
                 currentResult,
             ) = await (
-                regionTask,
+                festivalTask,
                 districtsTask,
                 currentTask,
             )
             
             await send(
                 .routePrepared(
-                    regionResult: regionResult,
+                    festivalResult: festivalResult,
                     districtsResult: districtsResult,
                     currentResult: currentResult,
                 )
@@ -370,22 +370,22 @@ struct Home {
     func locationsEffect(_ id: String) -> Effect<Action> {
         .run { send in
             
-            async let regionTask = apiRepository.getRegion(id)
+            async let festivalTask = apiRepository.getFestival(id)
             async let districtsTask = apiRepository.getDistricts(id)
             async let locationsTask = apiRepository.getLocations(id)
             
             let (
-                regionResult,
+                festivalResult,
                 districtsResult,
                 locationsResult
             ) = await (
-                regionTask,
+                festivalTask,
                 districtsTask,
                 locationsTask
             )
             
             await send(.locationsPrepared(
-                regionResult: regionResult,
+                festivalResult: festivalResult,
                 districtsResult: districtsResult,
                 locationsResult: locationsResult
             ))
@@ -401,30 +401,30 @@ struct Home {
         }
     }
     
-    func adminRegionEffect(_ id: String)-> Effect<Action> {
+    func adminFestivalEffect(_ id: String)-> Effect<Action> {
         .run { send in
-            async let regionResult = apiRepository.getRegion(id)
+            async let festivalResult = apiRepository.getFestival(id)
             async let districtsResult =  apiRepository.getDistricts(id)
-            let _ = await (regionResult, districtsResult)
-            await send(.adminRegionPrepared(regionResult, districtsResult))
+            let _ = await (festivalResult, districtsResult)
+            await send(.adminFestivalPrepared(festivalResult, districtsResult))
         }
     }
     
-    func settingsEffect(regionId: String?, districtId: String?) -> Effect<Action> {
+    func settingsEffect(festivalId: String?, districtId: String?) -> Effect<Action> {
         .run { send in
-            async let regionsResult = apiRepository.getRegions()
+            async let festivalsResult = apiRepository.getFestivals()
             async let districtsResult: Result<[District], APIError> = {
-                guard let id = regionId else { return .success([]) }
+                guard let id = festivalId else { return .success([]) }
                 return await apiRepository.getDistricts(id)
             }()
 
-            let regions = await regionsResult
+            let festivals = await festivalsResult
             let districts = await districtsResult
 
-            let region: Result<Region?, APIError> = {
-                switch regions {
+            let festival: Result<Festival?, APIError> = {
+                switch festivals {
                 case .success(let list):
-                    guard let id = regionId else { return .success(nil) }
+                    guard let id = festivalId else { return .success(nil) }
                     return .success(list.first { $0.id == id })
                 case .failure(let error):
                     return .failure(error)
@@ -441,19 +441,19 @@ struct Home {
                 }
             }()
 
-            await send(.settingsPrepared(regions, region, districts, district))
+            await send(.settingsPrepared(festivals, festival, districts, district))
         }
     }
 
-    func infoEffect(regionId: String) -> Effect<Action> {
+    func infoEffect(festivalId: String) -> Effect<Action> {
         .run { send in
-            async let regionResult = apiRepository.getRegion(regionId)
-            async let districtsResult = apiRepository.getDistricts(regionId)
+            async let festivalResult = apiRepository.getFestival(festivalId)
+            async let districtsResult = apiRepository.getDistricts(festivalId)
             
-            let region = await regionResult
+            let festival = await festivalResult
             let districts = await districtsResult
             
-            await send(.infoPrepared(region, districts))
+            await send(.infoPrepared(festival, districts))
         }
     }
 }
