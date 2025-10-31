@@ -21,7 +21,8 @@ struct RouteSnapshotter: Equatable {
     
     init(_ route: RouteInfo, filter: PointFilter = .export){
         self.route = route.toModel()
-        self.districtName = route.districtName
+        //TODO: DistrictName指定
+        self.districtName = ""
         self.filter = filter
     }
     
