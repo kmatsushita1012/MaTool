@@ -6,23 +6,7 @@
 //
 
 import Foundation
-
-struct Span: Codable, Identifiable, Hashable, Equatable{
-    let id: String
-    let start: Date
-    let end: Date
-}
-
-
-extension Span: Comparable{
-    static func < (lhs: Span, rhs: Span) -> Bool {
-        return lhs.start < rhs.start
-    }
-}
-
-extension Span {
-    static let sample = Self(id: UUID().uuidString, start: Date.sample, end: Date.sample)
-}
+import Shared
 
 extension Span {
     func text(year: Bool = true) -> String {

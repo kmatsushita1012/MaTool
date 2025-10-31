@@ -1,5 +1,5 @@
 //
-//  AdminRegionTop.swift
+//  AdminFestivalTop.swift
 //  MaTool
 //
 //  Created by 松下和也 on 2025/05/09.
@@ -7,22 +7,23 @@
 
 import ComposableArchitecture
 import Foundation
+import Shared
 
 @Reducer
-struct AdminRegionTop {
+struct AdminFestivalTop {
     
     @Reducer
     enum Destination {
-        case edit(AdminRegionEdit)
-        case districtInfo(AdminRegionDistrictList)
-        case districtCreate(AdminRegionDistrictCreate)
+        case edit(AdminFestivalEdit)
+        case districtInfo(AdminDistrictList)
+        case districtCreate(AdminDistrictCreate)
         case changePassword(ChangePassword)
         case updateEmail(UpdateEmail)
     }
     
     @ObservableState
     struct State: Equatable {
-        var region: Region
+        var festival: Festival
         var districts: [District]
         var isApiLoading: Bool = false
         var isAuthLoading: Bool = false
@@ -47,9 +48,9 @@ struct AdminRegionTop {
         case updateEmailTapped
         case signOutTapped
         case batchExportTapped
-        case regionReceived(Result<Region,APIError>)
+        case festivalReceived(Result<Festival,APIError>)
         case districtsReceived(Result<[District],APIError>)
-        case districtInfoPrepared(District, Result<[RouteSummary],APIError>)
+        case districtInfoPrepared(District, Result<[RouteItem],APIError>)
         case signOutReceived(Result<UserRole,AuthError>)
         case batchExportPrepared(Result<[URL], APIError>)
         case destination(PresentationAction<Destination.Action>)
@@ -60,14 +61,14 @@ struct AdminRegionTop {
     @Dependency(\.authService) var authService
     @Dependency(\.dismiss) var dismiss
     
-    var body: some ReducerOf<AdminRegionTop> {
+    var body: some ReducerOf<AdminFestivalTop> {
         BindingReducer()
         Reduce { state, action in
             switch action {
             case .binding:
                 return .none
             case .onEdit:
-                state.destination = .edit(AdminRegionEdit.State(item: state.region))
+                state.destination = .edit(AdminFestivalEdit.State(item: state.festival))
                 return .none
             case .onDistrictInfo(let district):
                 state.isApiLoading = true
@@ -76,7 +77,7 @@ struct AdminRegionTop {
                     await send(.districtInfoPrepared(district, result))
                 }
             case .onCreateDistrict:
-                state.destination = .districtCreate(AdminRegionDistrictCreate.State(region: state.region))
+                state.destination = .districtCreate(AdminDistrictCreate.State(festival: state.festival))
                 return .none
             case .homeTapped:
                 return .run { _ in
@@ -97,11 +98,11 @@ struct AdminRegionTop {
             case .batchExportTapped:
                 state.isExportLoading = true
                 return batchExportEffect()
-            case .regionReceived(.success(let value)):
+            case .festivalReceived(.success(let value)):
                 state.isApiLoading = false
-                state.region = value
+                state.festival = value
                 return .none
-            case .regionReceived(.failure(let error)):
+            case .festivalReceived(.failure(let error)):
                 state.isApiLoading = false
                 state.alert = Alert.error("情報の取得に失敗しました。\(error.localizedDescription)")
                 return .none
@@ -116,8 +117,8 @@ struct AdminRegionTop {
             case .districtInfoPrepared(let district, .success(let routes)):
                 state.isApiLoading = false
                 state.destination = .districtInfo(
-                    AdminRegionDistrictList.State(
-                        region: state.region,
+                    AdminDistrictList.State(
+                        festival: state.festival,
                         district: district,
                         routes: routes.sorted()
                     )
@@ -147,13 +148,13 @@ struct AdminRegionTop {
                 case .edit(.putReceived(.success)):
                     state.destination = nil
                     state.isApiLoading = true
-                    return getRegionEffect(state.region.id)
+                    return getFestivalEffect(state.festival.id)
                 case .districtCreate(.received(.success)):
                     state.isApiLoading = true
                     state.destination = nil
                     state.alert = Alert.success("参加町の追加が完了しました")
-                    return .run {[regionId = state.region.id] send in
-                        let result  = await apiRepository.getDistricts(regionId)
+                    return .run {[festivalId = state.festival.id] send in
+                        let result  = await apiRepository.getDistricts(festivalId)
                         await send(.districtsReceived(result))
                     }
                 case .changePassword(.received(.success)):
@@ -178,10 +179,10 @@ struct AdminRegionTop {
         .ifLet(\.$alert, action: \.alert)
     }
     
-    func getRegionEffect(_ id: String) -> Effect<Action> {
+    func getFestivalEffect(_ id: String) -> Effect<Action> {
         .run { send in
-            let result = await apiRepository.getRegion(id)
-            await send(.regionReceived(result))
+            let result = await apiRepository.getFestival(id)
+            await send(.festivalReceived(result))
         }
     }
     
@@ -208,6 +209,6 @@ struct AdminRegionTop {
     }
 }
 
-extension AdminRegionTop.Destination.State: Equatable {}
-extension AdminRegionTop.Destination.Action: Equatable {}
+extension AdminFestivalTop.Destination.State: Equatable {}
+extension AdminFestivalTop.Destination.Action: Equatable {}
 

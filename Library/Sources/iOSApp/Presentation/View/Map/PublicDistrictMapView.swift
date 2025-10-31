@@ -8,6 +8,7 @@
 import UIKit
 import MapKit
 import SwiftUI
+import Shared
 
 struct PublicDistrictMapView: UIViewRepresentable {
     var base: Coordinate?

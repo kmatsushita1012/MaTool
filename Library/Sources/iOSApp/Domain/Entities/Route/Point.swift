@@ -6,21 +6,7 @@
 //
 
 import Foundation
-
-struct Point: Codable, Identifiable, Equatable, Hashable{
-    let id: String
-    var coordinate: Coordinate
-    @NullEncodable var title: String? = nil
-    @NullEncodable var description: String? = nil
-    @NullEncodable var time: SimpleTime? = nil
-    var isPassed: Bool = false
-    var shouldExport: Bool = false
-}
-
-extension Point {
-    static let sample = Self(id: UUID().uuidString, coordinate: Coordinate.sample)
-}
-
+import Shared
 
 enum PointFilter: Equatable {
     case none

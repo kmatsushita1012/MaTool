@@ -7,19 +7,20 @@
 
 import ComposableArchitecture
 import Foundation
+import Shared
 
 @Reducer
 struct OnboardingFeature {
     
     @ObservableState
     struct State: Equatable {
-        var regions: [Region]?
-        var selectedRegion: Region?
+        var festivals: [Festival]?
+        var selectedFestival: Festival?
         var districts: [District]?
-        var regionErrorMessaage: String?
-        var isRegionsLoading: Bool = false
+        var festivalErrorMessaage: String?
+        var isFestivalsLoading: Bool = false
         var isDistrictsLoading: Bool = false
-        var isLoading: Bool { isRegionsLoading || isDistrictsLoading }
+        var isLoading: Bool { isFestivalsLoading || isDistrictsLoading }
     }
     
     @CasePathable
@@ -29,7 +30,7 @@ struct OnboardingFeature {
         case externalGuestTapped
         case adminTapped
         case districtSelected(District)
-        case regionsReceived(Result<[Region], APIError>)
+        case festivalsReceived(Result<[Festival], APIError>)
         case districtsReceived(Result<[District], APIError>)
     }
     
@@ -40,51 +41,51 @@ struct OnboardingFeature {
         BindingReducer()
         Reduce { state, action in
             switch action {
-            case .binding(\.selectedRegion):
-                guard let region = state.selectedRegion else {
+            case .binding(\.selectedFestival):
+                guard let festival = state.selectedFestival else {
                     state.districts = nil
                     return .none
                 }
                 state.isDistrictsLoading = true
                 return .run { send in
-                    let result = await apiRepository.getDistricts(region.id)
+                    let result = await apiRepository.getDistricts(festival.id)
                     await send(.districtsReceived(result))
                 }
             case .binding:
                 return .none
             case .onAppear:
-                state.isRegionsLoading = true
+                state.isFestivalsLoading = true
                 return .run { send in
-                    let result = await apiRepository.getRegions()
-                    await send(.regionsReceived(result))
+                    let result = await apiRepository.getFestivals()
+                    await send(.festivalsReceived(result))
                 }
             case .externalGuestTapped,
                 .adminTapped:
-                guard let region = state.selectedRegion else {
-                    state.regionErrorMessaage = "祭典を選択してください。"
+                guard let festival = state.selectedFestival else {
+                    state.festivalErrorMessaage = "祭典を選択してください。"
                     return .none
                 }
-                userDefaultsClient.setString(region.id, defaultRegionKey)
+                userDefaultsClient.setString(festival.id, defaultFestivalKey)
                 userDefaultsClient.setBool(true, hasLaunchedBeforePath)
                 return .none
             case .districtSelected(let district):
-                guard let region = state.selectedRegion else {
-                    state.regionErrorMessaage = "祭典を選択してください。"
+                guard let festival = state.selectedFestival else {
+                    state.festivalErrorMessaage = "祭典を選択してください。"
                     return .none
                 }
-                userDefaultsClient.setString(region.id, defaultRegionKey)
-                if(district.regionId != region.id){
+                userDefaultsClient.setString(festival.id, defaultFestivalKey)
+                if(district.festivalId != festival.id){
                     return .none
                 }
                 userDefaultsClient.setString(district.id, defaultDistrictKey)
                 userDefaultsClient.setBool(true, hasLaunchedBeforePath)
                 return .none
-            case .regionsReceived(.success(let value)):
-                state.regions = value
-                state.isRegionsLoading = false
+            case .festivalsReceived(.success(let value)):
+                state.festivals = value
+                state.isFestivalsLoading = false
                 return .none
-            case .regionsReceived(.failure(_)):
-                state.isRegionsLoading = false
+            case .festivalsReceived(.failure(_)):
+                state.isFestivalsLoading = false
                 return .none
             case .districtsReceived(.success(let value)):
                 state.districts = value

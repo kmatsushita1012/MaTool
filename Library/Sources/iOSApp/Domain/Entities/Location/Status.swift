@@ -6,9 +6,10 @@
 //
 
 import Foundation
+import Shared
 
 enum Status:Equatable, Hashable {
-    case update(Location)
+    case update(FloatLocation)
     case delete(Date)
     case loading(Date)
     case locationError(Date)

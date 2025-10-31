@@ -6,18 +6,19 @@
 //
 import MapKit
 
-struct Coordinate: Codable, Equatable, Hashable{
-    let latitude: Double
-    let longitude: Double
+public struct Coordinate: Entity {
+    public let latitude: Double
+    public let longitude: Double
+    
+    public init(latitude: Double, longitude: Double) {
+        self.latitude = latitude
+        self.longitude = longitude
+    }
 }
 
 
-extension Coordinate {
-    static let sample = Self(latitude: 34.777805, longitude: 138.007211)
-}
-
-extension Coordinate {
-    func toCL()->CLLocationCoordinate2D{
+public extension Coordinate {
+    func toCL() -> CLLocationCoordinate2D {
         return CLLocationCoordinate2D(latitude: self.latitude, longitude: self.longitude)
     }
     static func fromCL(_ coordinate: CLLocationCoordinate2D)->Coordinate{

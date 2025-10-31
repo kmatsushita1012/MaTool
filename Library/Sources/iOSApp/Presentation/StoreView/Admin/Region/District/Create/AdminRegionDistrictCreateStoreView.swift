@@ -1,5 +1,5 @@
 //
-//  AdminRegionCreateDistrictView.swift
+//  AdminCreateDistrictView.swift
 //  MaTool
 //
 //  Created by 松下和也 on 2025/05/12.
@@ -10,9 +10,9 @@ import ComposableArchitecture
 import NavigationSwipeControl
 
 @available(iOS 17.0, *)
-struct AdminRegionCreateDistrictView: View {
+struct AdminCreateDistrictView: View {
     
-    @SwiftUI.Bindable var store: StoreOf<AdminRegionDistrictCreate>
+    @SwiftUI.Bindable var store: StoreOf<AdminDistrictCreate>
     
     var body: some View {
         List{

@@ -6,9 +6,10 @@
 //
 
 import SwiftUI
+import Shared
 
 struct LocationView: View {
-    let item: LocationInfo
+    let item: FloatLocationGetDTO
     
     var body: some View {
         VStack(alignment: .leading, spacing: 16){

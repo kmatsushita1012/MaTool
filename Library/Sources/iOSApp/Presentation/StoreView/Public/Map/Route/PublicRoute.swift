@@ -1,13 +1,14 @@
 //
-//  Route.swift
+//  PublicRoute.swift
 //  MaTool
 //
 //  Created by 松下和也 on 2025/05/04.
 //
 
 import Foundation
-import ComposableArchitecture
 import MapKit
+import ComposableArchitecture
+import Shared
 
 @Reducer
 struct PublicRoute {
@@ -15,7 +16,7 @@ struct PublicRoute {
     @CasePathable
     enum Detail: Equatable{
         case point(Point)
-        case location(LocationInfo)
+        case location(FloatLocationGetDTO)
     }
     
     @CasePathable
@@ -30,10 +31,10 @@ struct PublicRoute {
     struct State: Equatable {
         let districtId: String
         let name: String
-        let items: [RouteSummary]?
-        var selectedItem: RouteSummary?
+        let items: [RouteItem]?
+        var selectedItem: RouteItem?
         var route: Route?
-        var location: LocationInfo? {
+        var location: FloatLocationGetDTO? {
             didSet {
                 if let location {
                     floatAnnotation = FloatCurrentAnnotation(location: location)
@@ -52,16 +53,16 @@ struct PublicRoute {
         init(
             districtId: String,
             name: String,
-            routes: [RouteSummary]? = nil,
+            routes: [RouteItem]? = nil,
             selectedRoute: Route? = nil,
-            location: LocationInfo? = nil,
+            location: FloatLocationGetDTO? = nil,
             mapRegion: Shared<MKCoordinateRegion>
         ){
             self.districtId = districtId
             self.name = name
             self.items = routes
             if let selectedRoute {
-                self.selectedItem = RouteSummary(from: selectedRoute)
+                self.selectedItem = RouteItem(from: selectedRoute)
             }
             self.route = selectedRoute
             self.location = location
@@ -76,13 +77,13 @@ struct PublicRoute {
     enum Action: Equatable, BindableAction {
         case binding(BindingAction<State>)
         case menuTapped
-        case itemSelected(RouteSummary)
+        case itemSelected(RouteItem)
         case pointTapped(Point)
         case locationTapped
         case userFocusTapped
         case floatFocusTapped
         case routeReceived(Result<Route, APIError>)
-        case locationReceived(Result<LocationInfo, APIError>)
+        case locationReceived(Result<FloatLocationGetDTO, APIError>)
         case userLocationReceived(Coordinate)
         case replayTapped
         case replayEnded
@@ -186,7 +187,7 @@ extension PublicRoute.State {
         route?.points
     }
     
-    var others: [RouteSummary]? {
+    var others: [RouteItem]? {
         items?.filter {
             if let selectedItem {
                 $0.id != selectedItem.id
