@@ -9,6 +9,6 @@ struct CurrentResponse: Codable, Equatable {
     let districtId: String
     let districtName: String
     let routes: [RouteSummary]?
-    let current: RouteInfo?
+    let current: Route?
     let location: LocationInfo?
 }
