@@ -4,8 +4,10 @@
 //
 //  Created by 松下和也 on 2025/04/02.
 //
-import ComposableArchitecture
+
 import MapKit
+import ComposableArchitecture
+import Shared
 
 @Reducer
 struct PublicMap{
@@ -41,7 +43,7 @@ struct PublicMap{
         case routePrepared(Result<CurrentResponse, APIError>)
         case locationsPrepared(
             id: String,
-            locationsResult: Result<[LocationInfo],APIError>
+            locationsResult: Result<[FloatLocationGetDTO],APIError>
         )
         case destination(PresentationAction<Destination.Action>)
         case alert(PresentationAction<Alert.Action>)
@@ -180,7 +182,7 @@ struct PublicMap{
 extension PublicMap.Destination.State: Equatable {}
 extension PublicMap.Destination.Action: Equatable {}
 
-extension PublicMap.Content: Identifiable,Hashable  {
+extension PublicMap.Content: Identifiable, Hashable  {
     var id:String {
         switch self {
         case .locations(let id, _, _):
@@ -238,9 +240,9 @@ extension PublicMap.State {
         region: Region,
         districts: [District],
         id: String,
-        routes: [RouteSummary]?,
+        routes: [RouteItem]?,
         current: Route?,
-        location: LocationInfo?
+        location: FloatLocationGetDTO?
     ) {
         let locations = PublicMap.Content.from(region: region)
         let contents = [locations]
@@ -267,7 +269,7 @@ extension PublicMap.State {
     init(
         region: Region,
         districts: [District],
-        locations: [LocationInfo]
+        locations: [FloatLocationGetDTO]
     ){
         let selected = PublicMap.Content.from(region: region)
         let contents = [selected] + districts.map{ PublicMap.Content.from(district: $0, origin: region.base) }

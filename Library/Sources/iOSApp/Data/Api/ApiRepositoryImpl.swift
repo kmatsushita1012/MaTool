@@ -7,6 +7,7 @@
 
 import Foundation
 import Dependencies
+import Shared
 
 extension APIRepotiroy: DependencyKey {
     
@@ -95,7 +96,7 @@ extension APIRepotiroy: DependencyKey {
                     accessToken: accessToken,
                     isCache: true
                 )
-                return decodeResponse([RouteSummary].self, from: response)
+                return decodeResponse([RouteItem].self, from: response)
             },
             getRoute: { id in
                 let accessToken = await authService.getAccessToken()
@@ -163,7 +164,7 @@ extension APIRepotiroy: DependencyKey {
                     accessToken: accessToken,
                     isCache: false
                 )
-                return decodeResponse(LocationInfo.self, from: response)
+                return decodeResponse(FloatLocationGetDTO.self, from: response)
             },
             getLocations: { regionId in
                 let accessToken = await authService.getAccessToken()
@@ -172,7 +173,7 @@ extension APIRepotiroy: DependencyKey {
                     accessToken: accessToken,
                     isCache: false
                 )
-                return decodeResponse([LocationInfo].self, from: response)
+                return decodeResponse([FloatLocationGetDTO].self, from: response)
             },
             putLocation: { location in
                 let encodeResult = encodeRequest(location)

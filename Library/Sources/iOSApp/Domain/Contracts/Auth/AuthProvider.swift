@@ -6,6 +6,7 @@
 //
 
 import Dependencies
+import Shared
 
 struct AuthProvider: Sendable {
     var initialize: @Sendable () -> Result<Empty, AuthError>

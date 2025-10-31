@@ -8,6 +8,7 @@
 import UIKit
 import MapKit
 import SwiftUI
+import Shared
 
 class PointAnnotation: MKPointAnnotation {
     enum TitleType {
@@ -76,9 +77,9 @@ class FloatAnnotation: MKPointAnnotation {
 }
 
 final class FloatCurrentAnnotation: FloatAnnotation {
-    let location: LocationInfo
+    let location: FloatLocationGetDTO
     
-    init(location: LocationInfo) {
+    init(location: FloatLocationGetDTO) {
         self.location = location
         super.init()
         self.title = location.districtName

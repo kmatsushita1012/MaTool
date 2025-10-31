@@ -9,6 +9,7 @@ import SwiftUI
 import PhotosUI
 import ComposableArchitecture
 import NavigationSwipeControl
+import Shared
 
 @available(iOS 17.0, *)
 struct AdminDistrictEditView: View {

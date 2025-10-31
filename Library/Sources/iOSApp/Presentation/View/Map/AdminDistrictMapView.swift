@@ -7,6 +7,7 @@
 import UIKit
 import MapKit
 import SwiftUI
+import Shared
 
 struct AdminDistrictMap: UIViewRepresentable {
     var coordinates: [Coordinate]?

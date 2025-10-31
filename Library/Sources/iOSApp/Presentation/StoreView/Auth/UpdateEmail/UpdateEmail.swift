@@ -6,6 +6,7 @@
 //
 
 import ComposableArchitecture
+import Shared
 
 @Reducer
 struct UpdateEmail {
