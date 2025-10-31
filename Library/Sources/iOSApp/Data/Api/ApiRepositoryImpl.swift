@@ -43,13 +43,13 @@ extension APIRepotiroy: DependencyKey {
                 let response = await apiClient.get(
                     path: "/regions/\(regionId)/districts"
                 )
-                return decodeResponse([PublicDistrict].self, from: response)
+                return decodeResponse([District].self, from: response)
             },
             getDistrict: { id in
                 let response = await apiClient.get(
                     path: "/districts/\(id)"
                 )
-                return decodeResponse(PublicDistrict.self, from: response)
+                return decodeResponse(District.self, from: response)
             },
             postDistrict: { regionId, districtName, email in
                 let encodeResult = encodeRequest(

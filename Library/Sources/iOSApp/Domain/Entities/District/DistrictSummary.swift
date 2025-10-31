@@ -21,10 +21,6 @@ extension DistrictSummary {
         self.id = district.id
         self.name = district.name
     }
-    init(from district: PublicDistrict) {
-        self.id = district.id
-        self.name = district.name
-    }
 }
 
 extension DistrictSummary{

@@ -26,10 +26,10 @@ extension APIRepotiroy {
             return Result.success("Success")
         },
         getDistricts: { _ in
-            return Result.success([PublicDistrict.sample])
+            return Result.success([District.sample])
         },
         getDistrict: { _ in
-            return Result.success(PublicDistrict.sample)
+            return Result.success(District.sample)
         },
         postDistrict: { _,_,_ in
             return Result.success("Success")
