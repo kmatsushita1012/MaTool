@@ -14,7 +14,7 @@ struct Route: Codable, Equatable, Identifiable {
     var title: String = ""
     @NullEncodable var description: String?
     var points: [Point] = []
-    var segments: [Segment] = []
+    var visibility: Visibility = .all
     var start: SimpleTime
     var goal: SimpleTime
 }
@@ -74,13 +74,6 @@ extension Route {
         points: [
             Point(id: UUID().uuidString,coordinate: Coordinate(latitude: 34.777681, longitude: 138.007029), title: "出発", time: SimpleTime(hour: 9, minute: 0)),
             Point(id: UUID().uuidString,coordinate: Coordinate(latitude: 34.778314, longitude: 138.008176), title: "到着", description: "お疲れ様です", time: SimpleTime(hour: 12, minute: 0))
-        ],
-        segments: [
-            Segment(id: UUID().uuidString, start: Coordinate(latitude: 34.777681, longitude: 138.007029), end: Coordinate(latitude: 34.778314, longitude: 138.008176), coordinates: [
-                Coordinate(latitude: 34.777681, longitude: 138.007029),
-                Coordinate(latitude: 34.777707, longitude: 138.008183),
-                Coordinate(latitude: 34.778314, longitude: 138.008176)
-            ], isPassed: true)
         ],
         start: SimpleTime.sample,
         goal: SimpleTime(
