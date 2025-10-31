@@ -36,7 +36,7 @@ func makeRegion(origin: Coordinate, spanDelta: CLLocationDegrees) -> MKCoordinat
     )
 }
 
-func makeRegion(route: RouteInfo?, location: LocationInfo?, origin: Coordinate, spanDelta: CLLocationDegrees) -> MKCoordinateRegion {
+func makeRegion(route: Route?, location: LocationInfo?, origin: Coordinate, spanDelta: CLLocationDegrees) -> MKCoordinateRegion {
     if let location {
         return makeRegion(origin: location.coordinate, spanDelta: spanDelta)
     } else if let route {

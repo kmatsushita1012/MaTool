@@ -23,7 +23,7 @@ struct AdminRegionTop {
     @ObservableState
     struct State: Equatable {
         var region: Region
-        var districts: [PublicDistrict]
+        var districts: [District]
         var isApiLoading: Bool = false
         var isAuthLoading: Bool = false
         var isExportLoading: Bool = false
@@ -40,7 +40,7 @@ struct AdminRegionTop {
     enum Action: Equatable, BindableAction {
         case binding(BindingAction<State>)
         case onEdit
-        case onDistrictInfo(PublicDistrict)
+        case onDistrictInfo(District)
         case onCreateDistrict
         case homeTapped
         case changePasswordTapped
@@ -48,8 +48,8 @@ struct AdminRegionTop {
         case signOutTapped
         case batchExportTapped
         case regionReceived(Result<Region,APIError>)
-        case districtsReceived(Result<[PublicDistrict],APIError>)
-        case districtInfoPrepared(PublicDistrict, Result<[RouteSummary],APIError>)
+        case districtsReceived(Result<[District],APIError>)
+        case districtInfoPrepared(District, Result<[RouteSummary],APIError>)
         case signOutReceived(Result<UserRole,AuthError>)
         case batchExportPrepared(Result<[URL], APIError>)
         case destination(PresentationAction<Destination.Action>)

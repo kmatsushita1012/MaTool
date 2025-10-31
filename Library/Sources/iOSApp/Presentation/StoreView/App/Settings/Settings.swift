@@ -16,8 +16,8 @@ struct Settings {
         let isOfflineMode: Bool
         var regions: [Region] = []
         var selectedRegion: Region? = nil
-        var districts: [PublicDistrict] = []
-        var selectedDistrict: PublicDistrict? = nil
+        var districts: [District] = []
+        var selectedDistrict: District? = nil
         var isLoading: Bool = false
         var userGuide: URL = URL(string: userGuideURLString)!
         var contact: URL = URL(string: contactURLString)!
@@ -33,7 +33,7 @@ struct Settings {
         case dismissTapped
         case signOutTapped
         case signOutReceived(Result<UserRole,AuthError>)
-        case districtsReceived(Result<[PublicDistrict], APIError>)
+        case districtsReceived(Result<[District], APIError>)
         case alert(PresentationAction<Alert.Action>)
     }
     
