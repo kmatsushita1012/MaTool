@@ -48,23 +48,23 @@ struct Home {
         case awsInitializeReceived(Result<UserRole, AuthError>)
         case routePrepared(
             regionResult: Result<Region, APIError>,
-            districtsResult: Result<[PublicDistrict], APIError>,
+            districtsResult: Result<[District], APIError>,
             currentResult: Result<CurrentResponse, APIError>
         )
         case locationsPrepared(
             regionResult: Result<Region, APIError>,
-            districtsResult: Result<[PublicDistrict], APIError>,
+            districtsResult: Result<[District], APIError>,
             locationsResult: Result<[LocationInfo], APIError>
         )
-        case infoPrepared(Result<Region, APIError>, Result<[PublicDistrict], APIError>)
-        case adminDistrictPrepared(Result<PublicDistrict,APIError>, Result<[RouteSummary],APIError>)
-        case adminRegionPrepared(Result<Region,APIError>, Result<[PublicDistrict],APIError>)
+        case infoPrepared(Result<Region, APIError>, Result<[District], APIError>)
+        case adminDistrictPrepared(Result<District,APIError>, Result<[RouteSummary],APIError>)
+        case adminRegionPrepared(Result<Region,APIError>, Result<[District],APIError>)
         
         case settingsPrepared(
             Result<[Region],APIError>,
             Result<Region?,APIError>,
-            Result<[PublicDistrict],APIError>,
-            Result<PublicDistrict?,APIError>
+            Result<[District],APIError>,
+            Result<District?,APIError>
         )
         case destination(PresentationAction<Destination.Action>)
         case alert(PresentationAction<Alert.Action>)
@@ -412,7 +412,7 @@ struct Home {
     func settingsEffect(regionId: String?, districtId: String?) -> Effect<Action> {
         .run { send in
             async let regionsResult = apiRepository.getRegions()
-            async let districtsResult: Result<[PublicDistrict], APIError> = {
+            async let districtsResult: Result<[District], APIError> = {
                 guard let id = regionId else { return .success([]) }
                 return await apiRepository.getDistricts(id)
             }()
@@ -430,7 +430,7 @@ struct Home {
                 }
             }()
 
-            let district: Result<PublicDistrict?, APIError> = {
+            let district: Result<District?, APIError> = {
                 switch districts {
                 case .success(let list):
                     guard let id = districtId else { return .success(nil) }
