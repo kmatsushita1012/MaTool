@@ -45,7 +45,7 @@ struct AdminDistrictTop {
         case getDistrictReceived(Result<District,APIError>)
         case getRoutesReceived(Result<[RouteSummary],APIError>)
         case editPrepared(Result<DistrictTool,APIError>)
-        case routeEditPrepared(Result<RouteInfo,APIError>,Result<DistrictTool,APIError>)
+        case routeEditPrepared(Result<Route,APIError>,Result<DistrictTool,APIError>)
         case routeCreatePrepared(Result<DistrictTool,APIError>)
         case locationPrepared(isTracking: Bool, Interval: Interval?)
         case onLocation
@@ -128,7 +128,7 @@ struct AdminDistrictTop {
                     state.destination = .route(
                         AdminRouteEdit.State(
                             mode: .update,
-                            route: route.toModel(),
+                            route: route,
                             districtName: tool.districtName,
                             milestones: tool.milestones,
                             origin: tool.base

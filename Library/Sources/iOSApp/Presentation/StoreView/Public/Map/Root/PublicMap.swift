@@ -239,7 +239,7 @@ extension PublicMap.State {
         districts: [District],
         id: String,
         routes: [RouteSummary]?,
-        current: RouteInfo?,
+        current: Route?,
         location: LocationInfo?
     ) {
         let locations = PublicMap.Content.from(region: region)
