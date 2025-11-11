@@ -1,9 +1,9 @@
-name: Deploy Backend API
+name: Deploy Lambda
 
 on:
   push:
     branches:
-      - 'release-backend'
+      - release-backend
       - 'backend/**'
   workflow_dispatch:
 
@@ -40,10 +40,8 @@ jobs:
           BRANCH=${GITHUB_REF_NAME//\//-}
           if [[ "$BRANCH" == backend-* ]]; then
             STAGE_NAME="dev-${BRANCH#backend-}"
-          elif [[ "$BRANCH" == shared-* ]]; then
-            STAGE_NAME="$BRANCH"
           elif [[ "$BRANCH" == "release-backend" ]]; then
-            STAGE_NAME = "prod"
+            STAGE_NAME="prod"
           elif [[ "$BRANCH" == "main" ]]; then
             STAGE_NAME="dev"
           else
@@ -108,6 +106,8 @@ jobs:
             --api-id "$API_GATEWAY_ID" \
             --query "Items[?contains(IntegrationUri, ':${STAGE_NAME}/invocations')].IntegrationId" \
             --output text)
+          
+          echo "Existing Integration ID: $INTEGRATION_ID"
 
           if [ -z "$INTEGRATION_ID" ]; then
             echo "🆕 No integration found for $STAGE_NAME. Creating new one..."
@@ -139,24 +139,6 @@ jobs:
           else
             echo "♻️ Integration already exists: $INTEGRATION_ID"
           fi
-
-          # --- Add permission for API Gateway to invoke Lambda alias ---
-          echo "🔑 Ensuring API Gateway can invoke Lambda alias..."
-          PERM_STATEMENT_ID="apigateway-v2-${API_GATEWAY_STAGE_NAME}"
-
-          aws lambda remove-permission \
-            --function-name "$LAMBDA_FUNCTION_NAME" \
-            --statement-id "$PERM_STATEMENT_ID" \
-            >/dev/null 2>&1 || true
-
-          aws lambda add-permission \
-            --function-name "$LAMBDA_FUNCTION_NAME" \
-            --statement-id "$PERM_STATEMENT_ID" \
-            --action lambda:InvokeFunction \
-            --principal apigateway.amazonaws.com \
-            --source-arn "arn:aws:execute-api:${AWS_REGION}:${ACCOUNT_ID}:${API_GATEWAY_ID}/*/*/${STAGE_NAME}/*"
-
-          echo "✅ Lambda permission refreshed"
 
           # --- Deploy $default stage (auto-deploy disabled systems) ---
           echo "🚀 Deploying $default stage..."

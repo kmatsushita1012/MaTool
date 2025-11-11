@@ -1,12 +1,12 @@
-name: Clean up backend resources on PR merge
+name: Cleanup API Gateway Stage
 
 on:
   pull_request:
-    types: [closed]
+    types: [closed]  # PRがクローズされた時に発火（マージ or クローズ）
 
 jobs:
   cleanup:
-    if: github.event.pull_request.merged == true 
+    if: github.event.pull_request.merged == true  # マージされた場合のみ実行
     runs-on: ubuntu-latest
 
     env:
