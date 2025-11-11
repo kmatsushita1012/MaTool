@@ -1,8 +1,9 @@
-name: main
+name: Main Dispatch
 
 on:
   push:
-    branches: ["main"]
+    branches: 
+      - "main"
 
 jobs:
   test_shared:

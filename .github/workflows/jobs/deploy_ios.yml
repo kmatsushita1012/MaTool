@@ -1,9 +1,6 @@
 name: deploy_ios
 
 on:
-  push:
-    branches: 
-      - 'release-ios'
   workflow_dispatch:
 
 jobs:
