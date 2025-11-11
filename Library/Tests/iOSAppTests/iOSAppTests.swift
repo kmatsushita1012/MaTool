@@ -1,5 +1,5 @@
 import Testing
-@testable import MaTool
+@testable import iOSApp
 
 @Test func example() async throws {
     // Write your test here and use APIs like `#expect(...)` to check expected conditions.

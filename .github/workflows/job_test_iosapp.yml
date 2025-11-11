@@ -36,17 +36,17 @@ jobs:
             ${{ runner.os }}-derived-
 
       - name: Build and Test
+        working-directory: Library
         run: |
           xcodebuild \
-            -project App/MaTool.xcodeproj \
-            -scheme MaTool \
-            -sdk iphonesimulator \
+            -scheme iOSApp \
             -destination 'platform=iOS Simulator,name=iPhone 17,OS=26.0' \
             -configuration Debug \
             -derivedDataPath .derivedData \
             -enableCodeCoverage YES \
             -skipMacroValidation \
             CODE_SIGNING_ALLOWED=NO \
+            ENABLE_SWIFT_MACROS=YES \
             test \
             | xcpretty
 
