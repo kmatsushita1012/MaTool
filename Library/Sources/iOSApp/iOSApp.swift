@@ -64,3 +64,5 @@ let contactURLString = ""
 extension Bundle {
     static var iOSApp: Bundle { .module }
 }
+
+/// CIテスト用
