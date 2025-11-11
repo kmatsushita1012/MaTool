@@ -6,5 +6,5 @@ on:
 jobs:
     deploy_backend:
         name: Deploy Backend API
-        uses: ./.github/workflows/jobs/deploy_backend.yml
+        uses: ./.github/workflow_jobs/deploy_backend.yml
         secrets: inherit
