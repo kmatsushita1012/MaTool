@@ -40,7 +40,7 @@ jobs:
         run: |
           xcodebuild \
             -scheme iOSApp \
-            -destination 'platform=iOS Simulator,name=iPhone 17,OS=26.0' \
+            -destination 'platform=iOS Simulator,name=iPhone 17,OS=26.1' \
             -configuration Debug \
             -derivedDataPath .derivedData \
             -enableCodeCoverage YES \
