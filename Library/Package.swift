@@ -20,9 +20,7 @@ let package = Package(
         .package(url: "https://github.com/pointfreeco/swift-composable-architecture", from: "1.23.1")
     ],
     targets: [
-        // ----------------------
-        // モジュールターゲット
-        // ----------------------
+        // MARK: - Module Target
         .target(
             name: "Shared",
             path: "Sources/Shared"
@@ -51,10 +49,7 @@ let package = Package(
                 .process("SupportingFiles"),
             ]
         ),
-
-        // ----------------------
-        // テストターゲット
-        // ----------------------
+        // MARK: - Test Target
         .testTarget(
             name: "SharedTests",
             dependencies: ["Shared"],
@@ -70,10 +65,5 @@ let package = Package(
             dependencies: ["iOSApp"],
             path: "Tests/iOSAppTests"
         )
-//        .testTarget(
-//            name: "iOSAppUITests",
-//            dependencies: ["iOSApp"],
-//            path: "Tests/iOSAppUITests"
-//        )
     ]
 )
