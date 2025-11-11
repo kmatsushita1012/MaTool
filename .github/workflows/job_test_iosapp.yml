@@ -27,27 +27,36 @@ jobs:
           key: ${{ runner.os }}-spm-${{ hashFiles('**/Package.resolved') }}
           restore-keys: ${{ runner.os }}-spm-
 
-      - name: Cache SwiftPM build artifacts
+      - name: Cache DerivedData
         uses: actions/cache@v3
         with:
-          path: Library/.build
-          key: ${{ runner.os }}-spm-build-${{ hashFiles('Library/Package.swift', 'Library/Package.resolved') }}
-          restore-keys: ${{ runner.os }}-spm-build-
+          path: .derivedData
+          key: ${{ runner.os }}-derived-${{ hashFiles('App/MaTool.xcodeproj/project.pbxproj', '**/*.swift', '**/*.h') }}
+          restore-keys: |
+            ${{ runner.os }}-derived-
 
-      - name: Build Swift Package
-        working-directory: Library
-        run: swift build --build-tests
-
-      - name: Run Swift Package Tests
-        working-directory: Library
-        run: swift test --parallel --enable-code-coverage
+      - name: Build and Test
+        run: |
+          xcodebuild \
+            -project App/MaTool.xcodeproj \
+            -scheme MaTool \
+            -sdk iphonesimulator \
+            -destination 'platform=iOS Simulator,name=iPhone 17,OS=26.0' \
+            -configuration Debug \
+            -derivedDataPath .derivedData \
+            -enableCodeCoverage YES \
+            -skipMacroValidation \
+            CODE_SIGNING_ALLOWED=NO \
+            test \
+            | xcpretty
 
       - name: Upload Test Results
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: library-test-results
-          path: Library/.build/debug/codecov/
+          name: ios-test-results
+          path: .derivedData/Logs/Test
+
 
   # ===============================
   # 2️⃣ iOS App ビルド（構文・設定確認）
