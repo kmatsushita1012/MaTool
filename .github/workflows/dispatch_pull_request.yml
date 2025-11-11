@@ -38,16 +38,16 @@ jobs:
   backend-tests:
     needs: detect-changes
     if: ${{ needs.detect-changes.outputs.backend_changed == 'true' }}
-    uses: ./.github/workflows/jobs_test_backend.yml
+    uses: ./.github/workflows/job_test_backend.yml
 
   # ==== 条件付きでiOSAppテスト ====
   iosapp-tests:
     needs: detect-changes
     if: ${{ needs.detect-changes.outputs.iosapp_changed == 'true' }}
-    uses: ./.github/workflows/jobs_test_iosapp.yml
+    uses: ./.github/workflows/job_test_iosapp.yml
 
   # ==== 条件付きでSharedテスト ====
   shared-tests:
     needs: detect-changes
     if: ${{ needs.detect-changes.outputs.shared_changed == 'true' }}
-    uses: ./.github/workflows/jobs_test_shared.yml
+    uses: ./.github/workflows/job_test_shared.yml
