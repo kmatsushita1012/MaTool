@@ -1,7 +1,7 @@
 name: Test Shared
 
 on:
-  workflow_dispatch:
+  workflow_call:
 
 jobs:
   test-shared:
