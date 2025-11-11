@@ -64,3 +64,5 @@ let contactURLString = "https://forms.gle/ppaAwkqrFPKiC9mr8"
 extension Bundle {
     static var iOSApp: Bundle { .module }
 }
+
+/// CIテスト用
