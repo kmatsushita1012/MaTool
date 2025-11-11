@@ -1,0 +1,91 @@
+name: Clean up backend resources on PR merge
+
+on:
+  pull_request:
+    types: [closed]
+
+jobs:
+  cleanup:
+    if: github.event.pull_request.merged == true 
+    runs-on: ubuntu-latest
+
+    env:
+      AWS_REGION: ${{ secrets.AWS_REGION }}
+      API_GATEWAY_ID: ${{ secrets.API_GATEWAY_ID }}
+      LAMBDA_FUNCTION_NAME: "MaToolAPIv2"
+
+    steps:
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Set stage name
+        id: set_stage
+        run: |
+          BRANCH=${{ github.head_ref }}
+          BRANCH=${BRANCH//\//-}
+          if [[ "$BRANCH" == backend-* ]]; then
+            STAGE_NAME="dev-${BRANCH#backend-}"
+          elif [[ "$BRANCH" == "release-backend" ]]; then
+            STAGE_NAME = "prod"
+          elif [[ "$BRANCH" == "main" ]]; then
+            STAGE_NAME="dev"
+          else
+            STAGE_NAME="$BRANCH"
+          fi
+
+          echo "Resolved stage name: $STAGE_NAME"
+          echo "stage=$STAGE_NAME" >> $GITHUB_OUTPUT
+
+      - name: Cleanup API Gateway resources
+        run: |
+          set -e
+          STAGE_NAME=${{ steps.set_stage.outputs.stage }}
+          echo "🧹 Cleaning up API Gateway resources for branch: $STAGE_NAME"
+
+          # --- Skip cleanup for prod or main ---
+          if [ "$STAGE_NAME" = "prod" ] || [ "$STAGE_NAME" = "dev" ]; then
+            echo "⚠️  Skipping cleanup for protected stage: $STAGE_NAME"
+            exit 0
+          fi
+
+          # --- Delete the corresponding route ---
+          if [ "$STAGE_NAME" = "prod" ]; then
+            ROUTE_KEY="ANY /{proxy+}"
+          else
+            ROUTE_KEY="ANY /${STAGE_NAME}/{proxy+}"
+          fi
+
+          ROUTE_ID=$(aws apigatewayv2 get-routes \
+            --api-id "$API_GATEWAY_ID" \
+            --query "Items[?RouteKey=='$ROUTE_KEY'].RouteId" \
+            --output text)
+
+          if [ -n "$ROUTE_ID" ]; then
+            echo "🗑  Deleting route: $ROUTE_KEY ($ROUTE_ID)"
+            aws apigatewayv2 delete-route \
+              --api-id "$API_GATEWAY_ID" \
+              --route-id "$ROUTE_ID"
+          else
+            echo "ℹ️  No route found for $ROUTE_KEY"
+          fi
+
+          # --- Find the integration for this stage ---
+          INTEGRATION_ID=$(aws apigatewayv2 get-integrations \
+            --api-id "$API_GATEWAY_ID" \
+            --query "Items[?contains(IntegrationUri, ':${STAGE_NAME}/invocations')].IntegrationId" \
+            --output text)
+
+          if [ -z "$INTEGRATION_ID" ]; then
+            echo "ℹ️  No integration found for $STAGE_NAME, skipping."
+          else
+            echo "🗑  Deleting integration: $INTEGRATION_ID"
+            aws apigatewayv2 delete-integration \
+              --api-id "$API_GATEWAY_ID" \
+              --integration-id "$INTEGRATION_ID"
+          fi
+          
+          echo "✅ Cleanup completed for $STAGE_NAME"

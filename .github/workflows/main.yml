@@ -3,50 +3,25 @@ name: main
 on:
   push:
     branches: ["main"]
-  pull_request:
-    branches: ["main", "release"]
-
-  workflow_dispatch:
 
 jobs:
-  build:
-    runs-on: macos-26
+  test_shared:
+    name: Run Shared App Tests
+    uses: ./.github/workflows/test_shared.yml
+    secrets: inherit
 
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+  test_backend:
+    name: Run Backend Tests
+    uses: ./.github/workflows/test_backend.yml
+    secrets: inherit
 
-      - name: Setup Xcode 26.0
-        uses: maxim-lobanov/setup-xcode@v1
-        with:
-          xcode-version: "26.0"
+  test_iosapp:
+    name: Run iOS App Tests
+    uses: ./.github/workflows/test_iosapp.yml
+    secrets: inherit
 
-      - name: Cache SPM
-        uses: actions/cache@v3
-        with:
-          path: |
-            ~/Library/Caches/org.swift.swiftpm
-          key: ${{ runner.os }}-spm-${{ hashFiles('**/Package.resolved') }}
-          restore-keys: |
-            ${{ runner.os }}-spm-
-
-      - name: Cache DerivedData
-        uses: actions/cache@v3
-        with:
-          path: .derivedData
-          key: ${{ runner.os }}-derived-${{ hashFiles('MaTool.xcodeproj/project.pbxproj', '**/*.swift', '**/*.h') }}
-          restore-keys: |
-            ${{ runner.os }}-derived-
-
-      - name: Build
-        run: |
-          xcodebuild build \
-            -project App/MaTool.xcodeproj \
-            -scheme MaTool \
-            -sdk iphoneos \
-            -configuration Release \
-            -destination 'generic/platform=iOS' \
-            -derivedDataPath .derivedData \
-            -skipMacroValidation \
-            CODE_SIGNING_ALLOWED=NO \
-            ENABLE_SWIFT_MACROS=YES
+  deploy:
+    name: Deploy Backend API
+    needs: [test_backend, test_shared]
+    uses: ./.github/workflows/deploy_backend.yml
+    secrets: inherit

@@ -1,9 +1,9 @@
-name: release
+name: deploy_ios
 
 on:
   push:
-    branches: ["release"]
-
+    branches: 
+      - 'release-ios'
   workflow_dispatch:
 
 jobs:
@@ -28,17 +28,6 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-spm-
 
-      - name: Cache Pods
-        uses: actions/cache@v3
-        with:
-          path: |
-            Pods
-            ~/Library/Caches/CocoaPods
-            ~/.cocoapods
-          key: ${{ runner.os }}-pods-${{ hashFiles('**/Podfile.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-pods-
-
       - name: Cache DerivedData
         uses: actions/cache@v3
         with:
@@ -46,11 +35,6 @@ jobs:
           key: ${{ runner.os }}-derived-${{ hashFiles('MaTool.xcodeproj/project.pbxproj', '**/*.swift', '**/*.h') }}
           restore-keys: |
             ${{ runner.os }}-derived-
-
-      - name: Install CocoaPods
-        run: |
-          gem install cocoapods
-          pod install
 
       - name: Build
         run: |
