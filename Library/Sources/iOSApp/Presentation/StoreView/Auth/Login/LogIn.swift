@@ -37,6 +37,9 @@ struct Login {
     
     @Dependency(\.userDefaultsClient) var userDefaultsClient
     @Dependency(\.authService) var authService
+    @Dependency(\.values.defaultFestivalKey) var defaultFestivalKey
+    @Dependency(\.values.defaultDistrictKey) var defaultDistrictKey
+    @Dependency(\.values.loginIdKey) var loginIdKey
     @Dependency(\.dismiss) var dismiss
     
     var body: some ReducerOf<Login> {
