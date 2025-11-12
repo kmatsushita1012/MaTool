@@ -54,12 +54,6 @@ public struct RootSceneView: View {
 
 //定数
 let spanDelta: Double = 0.005
-let defaultFestivalKey: String = "region"
-let defaultDistrictKey: String = "district"
-let loginIdKey: String = "login"
-let hasLaunchedBeforePath = "hasLaunchedBefore"
-let userGuideURLString = ""
-let contactURLString = ""
 
 extension Bundle {
     static var iOSApp: Bundle { .module }
