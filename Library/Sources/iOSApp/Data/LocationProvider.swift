@@ -5,10 +5,33 @@
 //  Created by 松下和也 on 2025/04/18.
 //
 
+import Dependencies
 import CoreLocation
 import Combine
-import ComposableArchitecture
 
+// MARK: - Dependencies
+enum LocationProviderKey: DependencyKey{
+    static let liveValue: LocationProviderProtocol = LocationProvider()
+}
+
+extension DependencyValues {
+    var locationProvider: LocationProviderProtocol {
+        get { self[LocationProviderKey.self] }
+        set { self[LocationProviderKey.self] = newValue }
+    }
+}
+
+// MARK: - LocationProviderProtocol
+protocol LocationProviderProtocol: Sendable {
+    func requestPermission() async -> Void
+    func startTracking(backgroundUpdatesAllowed: Bool, onUpdate: ((AsyncValue<CLLocation>) async -> Void)?) async -> Void
+    func stopTracking() async -> Void
+    func getLocation() async -> AsyncValue<CLLocation>
+    func isPermissionAllowed() async -> Bool
+    var isTracking: Bool { get async }
+}
+
+// MARK: - LocationProvider
 actor LocationProvider: NSObject, LocationProviderProtocol {
     private(set) var manager: CLLocationManager? = nil
     private(set) var isTracking = false
@@ -36,14 +59,12 @@ actor LocationProvider: NSObject, LocationProviderProtocol {
         
     }
 
-    // 権限リクエスト
     func requestPermission() async {
         await setupLocationManagerIfNeeded()
         manager?.requestWhenInUseAuthorization()
         manager?.requestAlwaysAuthorization()
     }
 
-    // トラッキング開始
     func startTracking(backgroundUpdatesAllowed: Bool, onUpdate: ((AsyncValue<CLLocation>) async -> Void)?) {
         if backgroundUpdatesAllowed {
             manager?.allowsBackgroundLocationUpdates = true
@@ -59,7 +80,6 @@ actor LocationProvider: NSObject, LocationProviderProtocol {
         }
     }
 
-    // トラッキング停止
     func stopTracking() {
         manager?.stopUpdatingLocation()
         manager?.allowsBackgroundLocationUpdates = false
@@ -67,7 +87,6 @@ actor LocationProvider: NSObject, LocationProviderProtocol {
         onUpdate = nil
     }
 
-    // 最新の状態を返す
     func getLocation() -> AsyncValue<CLLocation> {
         if manager?.authorizationStatus == .denied {
             return .failure(LocationError.authorizationDenied)
@@ -100,4 +119,17 @@ extension LocationProvider: CLLocationManagerDelegate {
     nonisolated func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) {
         Task{ await updateValue(.failure(error)) }
     }
+}
+
+// MARK: - LocationProviderProtocol+
+extension LocationProviderProtocol {
+    func startTracking(backgroundUpdatesAllowed: Bool, onUpdate: ((AsyncValue<CLLocation>) async -> Void)? = nil) async -> Void {
+        await startTracking(backgroundUpdatesAllowed: backgroundUpdatesAllowed, onUpdate: onUpdate)
+    }
+}
+
+
+enum LocationError: Error {
+    case authorizationDenied
+    case servicesDisabled
 }
