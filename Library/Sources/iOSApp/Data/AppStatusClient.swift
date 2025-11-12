@@ -6,9 +6,31 @@
 //
 
 import Foundation
+import Dependencies
 
-import Foundation
+// MARK: - Dependencies
+enum AppStatusClientKey: DependencyKey {
+    static let liveValue: any AppStatusClientProtocol = {
+        @Dependency(\.values.appStatusUrl) var url
+        return AppStatusClient(urlString: url)
+    }()
+}
 
+extension DependencyValues {
+    var appStatusClient: any AppStatusClientProtocol {
+        get { self[AppStatusClientKey.self] }
+        set { self[AppStatusClientKey.self] = newValue }
+    }
+}
+
+// MARK: - AppStatusClientProtocol
+protocol AppStatusClientProtocol {
+    func checkStatus() async -> StatusCheckResult?
+    func checkStatus(currentVersion: String) async -> StatusCheckResult?
+    static func getCurrentVersion() -> String
+}
+
+// MARK: - AppStatusClient
 actor AppStatusClient: AppStatusClientProtocol {
     
     private var status: AppStatus?
