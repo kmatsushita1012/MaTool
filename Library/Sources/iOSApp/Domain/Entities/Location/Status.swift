@@ -8,7 +8,7 @@
 import Foundation
 import Shared
 
-enum Status:Equatable, Hashable {
+enum Status:Sendable, Equatable, Hashable {
     case update(FloatLocation)
     case delete(Date)
     case loading(Date)
