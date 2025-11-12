@@ -8,11 +8,39 @@
 import Dependencies
 import Shared
 
+// MARK: - Dependencies
+enum AuthServiceKey: DependencyKey {
+    static let liveValue = AuthService()
+}
+
+extension DependencyValues {
+    var authService: AuthService {
+        get { self[AuthServiceKey.self] }
+        set { self[AuthServiceKey.self] = newValue }
+    }
+}
+
+// MARK: - AuthServiceProtocol
+protocol AuthServiceProtocol: Sendable {
+    func initialize() -> Result<Shared.Empty, AuthError>
+    func signIn(_ username: String, password: String) async -> SignInResult
+    func confirmSignIn(password: String) async -> Result<UserRole,AuthError>
+    func signOut() async -> Result<UserRole, AuthError>
+    func getAccessToken() async -> String?
+    func changePassword(current: String, new: String) async -> Result<Empty,AuthError>
+    func resetPassword(username: String)  async -> Result<Empty,AuthError>
+    func confirmResetPassword(username: String, newPassword: String, code: String)  async -> Result<Empty,AuthError>
+    func updateEmail(to newEmail: String) async -> UpdateEmailResult
+    func confirmUpdateEmail(code: String) async -> Result<Empty,AuthError>
+    nonisolated func isValidPassword(_ password: String) -> Bool
+    func getUserRole() async -> Result<UserRole, AuthError>
+}
+
+// MARK: - AuthService
 actor AuthService {
-    
-    var userRole: UserRole = .guest
-    
     @Dependency(\.authProvider) var authProvider
+    
+    private var userRole: UserRole = .guest
     
     func initialize() -> Result<Shared.Empty, AuthError> {
         return authProvider.initialize()
@@ -37,7 +65,7 @@ actor AuthService {
         }
     }
     
-    func confirmSignIn(password: String) async-> Result<UserRole,AuthError> {
+    func confirmSignIn(password: String) async -> Result<UserRole,AuthError> {
         let confirmSignInResult = await authProvider.confirmSignIn(password)
         if case .failure(let error) = confirmSignInResult {
             let _ = await authProvider.signOut()
@@ -52,7 +80,6 @@ actor AuthService {
         if case .failure(let error) = signOutResult{
             return .failure(error)
         }
-        userRole = .guest
         return .success(userRole)
     }
     
@@ -72,9 +99,11 @@ actor AuthService {
     func changePassword(current: String, new: String) async -> Result<Empty,AuthError> {
         return await authProvider.changePassword(current, new)
     }
+    
     func resetPassword(username: String)  async -> Result<Empty,AuthError> {
         return await authProvider.resetPassword(username)
     }
+    
     func confirmResetPassword(username: String, newPassword: String, code: String)  async -> Result<Empty,AuthError> {
         return await authProvider.confirmResetPassword(
             username,
@@ -82,6 +111,7 @@ actor AuthService {
             code
         )
     }
+    
     func updateEmail(to newEmail: String) async -> UpdateEmailResult {
         return await authProvider.updateEmail(newEmail)
     }
@@ -109,18 +139,5 @@ actor AuthService {
             let _ = await authProvider.signOut()
             return .success(.guest)
         }
-    }
-}
-
-private enum AuthServiceKey: DependencyKey {
-    static let liveValue = AuthService()
-    static let testValue = AuthService()
-    static let previewValue = AuthService()
-}
-
-extension DependencyValues {
-    var authService: AuthService {
-        get { self[AuthServiceKey.self] }
-        set { self[AuthServiceKey.self] = newValue }
     }
 }
