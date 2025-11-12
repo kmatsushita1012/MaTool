@@ -48,7 +48,7 @@ jobs:
             CODE_SIGNING_ALLOWED=NO \
             ENABLE_SWIFT_MACROS=YES \
             test \
-            | xcpretty
+            | xcpretty --test --color --report junit
 
       - name: Upload Test Results
         if: always()
