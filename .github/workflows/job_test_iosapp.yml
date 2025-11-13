@@ -62,15 +62,26 @@ jobs:
       - name: Print Test Summary and Fail CI if any
         if: always()
         run: |
-          # .xcresult ファイルを取得
-          xcresult_path=$(ls Library/.derivedData/Logs/Test/*.xcresult | head -n 1)
           echo "===== Test Summary ====="
 
-          # JSON 形式でサマリを取得
+          # 最新の xcresult を自動検出
+          xcresult_path=$(find Library/.derivedData/Logs/Test -type d -name "*.xcresult" | sort | tail -n 1)
+
+          if [ -z "$xcresult_path" ]; then
+            echo "❌ No .xcresult file found."
+            exit 1
+          fi
+
+          echo "Found result bundle:"
+          echo "$xcresult_path"
+
+          # 出力フォルダを確保
           mkdir -p build/reports
+
+          # サマリを取得
           xcrun xcresulttool get test-results summary --path "$xcresult_path" --format json | tee build/reports/test-summary.json
 
-          # failedTests の数で exit 判定
+          # 失敗数を jq で判定
           failed_count=$(jq '.failedTests' build/reports/test-summary.json)
           if [ "$failed_count" -gt 0 ]; then
             echo "❌ $failed_count test(s) failed!"
@@ -78,6 +89,7 @@ jobs:
           else
             echo "✅ All tests passed"
           fi
+
 
 
 
