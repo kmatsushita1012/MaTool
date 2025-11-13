@@ -59,36 +59,54 @@ jobs:
           name: ios-test-results
           path: Library/.derivedData/Logs/Test/*.xcresult
 
-      - name: Print Test Summary and Fail CI if any
+      - name: Print Test Summary
         if: always()
         run: |
-          echo "===== Test Summary ====="
+          set -e
+          echo "===== Test Results Summary ====="
 
-          # 最新の xcresult を自動検出
-          xcresult_path=$(find Library/.derivedData/Logs/Test -type d -name "*.xcresult" | sort | tail -n 1)
+          xcresult_path=$(ls Library/.derivedData/Logs/Test/*.xcresult | head -n 1)
+          echo "Using result: $xcresult_path"
 
-          if [ -z "$xcresult_path" ]; then
-            echo "❌ No .xcresult file found."
-            exit 1
-          fi
+          # JSONを取得
+          xcrun xcresulttool get test-results summary --path "$xcresult_path" --format json > build/reports/test_summary.json
 
-          echo "Found result bundle:"
-          echo "$xcresult_path"
+          # 失敗したテストを整形表示
+          echo "----- Failed Tests -----"
+          jq -r '
+            .testFailures[]? |
+            "✘ \(.testIdentifierString)\t\"\(.failureText)\""
+          ' build/reports/test_summary.json || echo "✅ No failed tests"
 
-          # 出力フォルダを確保
-          mkdir -p build/reports
+          # メタ情報
+          echo ""
+          echo "----- Environment -----"
+          jq -r '
+            "Title: \(.title)",
+            "Platform: \(.devicesAndConfigurations[0].device.platform)",
+            "Device: \(.devicesAndConfigurations[0].device.deviceName)",
+            "OS: \(.devicesAndConfigurations[0].device.osVersion)"
+          ' build/reports/test_summary.json
 
-          # サマリを取得
-          xcrun xcresulttool get test-results summary --path "$xcresult_path" --format json | tee build/reports/test-summary.json
+          # 成績表を整形
+          echo ""
+          echo "----- Test Counts -----"
+          jq -r '
+            .devicesAndConfigurations[0] |
+            "Passed: \(.passedTests)\nSkipped: \(.skippedTests)\nFailed: \(.failedTests)\nTotal: \(.passedTests + .skippedTests + .failedTests)"
+          ' build/reports/test_summary.json
 
-          # 失敗数を jq で判定
-          failed_count=$(jq '.failedTests' build/reports/test-summary.json)
-          if [ "$failed_count" -gt 0 ]; then
-            echo "❌ $failed_count test(s) failed!"
+          # 失敗数で終了ステータス制御
+          failed=$(jq '.failedTests' build/reports/test_summary.json)
+          if [ "$failed" -gt 0 ]; then
+            echo ""
+            echo "❌ Some tests failed ($failed)"
             exit 1
           else
+            echo ""
             echo "✅ All tests passed"
           fi
+
 
 
 
