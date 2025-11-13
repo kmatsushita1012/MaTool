@@ -35,23 +35,7 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-derived-
 
-
-      - name: Build
-        run: |
-          mkdir -p build/reports
-          xcodebuild \
-            -project App/MaTool.xcodeproj \
-            -scheme iOSApp \
-            -destination 'platform=iOS Simulator,name=iPhone 17,OS=26.1' \
-            -configuration Debug \
-            -derivedDataPath Library/.derivedData \
-            -skipMacroValidation \
-            CODE_SIGNING_ALLOWED=NO \
-            ENABLE_SWIFT_MACROS=YES \
-            build \
-            | tee build/reports/build.log | xcpretty --color
-
-      - name: Test
+      - name: Build&Test
         run: |
           mkdir -p build/reports
           xcodebuild \
@@ -67,15 +51,7 @@ jobs:
             test \
             | tee build/reports/test.log | xcpretty --test --color --report junit --output build/reports/junit.xml || true
 
-        # Buildログのアップロード
-      - name: Upload build log
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: ios-build-log
-          path: build/reports/build.log
-
-      # Testログのアップロード
+      # ログのアップロード
       - name: Upload test log
         if: always()
         uses: actions/upload-artifact@v4
@@ -83,13 +59,21 @@ jobs:
           name: ios-test-log
           path: build/reports/test.log
 
-      # JUnit XMLのアップロード
-      - name: Upload JUnit report
+      - name: Upload Test Results
+        id: upload-tests
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: ios-junit
-          path: build/reports/junit.xml
+          name: ios-test-results
+          path: Library/.derivedData/Logs/Test/*.xcresult
+
+      - name: Print Test Results
+        if: always()
+        run: |
+          xcresult_path=$(ls Library/.derivedData/Logs/Test/*.xcresult | head -n 1)
+          echo "===== Test Results from xcresult ====="
+          xcrun xcresulttool get --path "$xcresult_path" --format json | jq '.actions[]?.actionResult?.testsRef?.summaryRef' || true
+
 
 
 
