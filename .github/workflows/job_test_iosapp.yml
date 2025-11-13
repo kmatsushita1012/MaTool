@@ -30,10 +30,11 @@ jobs:
       - name: Cache DerivedData
         uses: actions/cache@v3
         with:
-          path: .derivedData
+          path: Library/.derivedData
           key: ${{ runner.os }}-derived-${{ hashFiles('App/MaTool.xcodeproj/project.pbxproj', '**/*.swift', '**/*.h') }}
           restore-keys: |
             ${{ runner.os }}-derived-
+
 
       - name: Build
         run: |
@@ -60,6 +61,7 @@ jobs:
             -configuration Debug \
             -derivedDataPath Library/.derivedData \
             -enableCodeCoverage YES \
+            -skipMacroValidation \
             CODE_SIGNING_ALLOWED=NO \
             ENABLE_SWIFT_MACROS=YES \
             test \
