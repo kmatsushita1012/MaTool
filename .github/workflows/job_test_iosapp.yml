@@ -64,14 +64,30 @@ jobs:
             test \
             | tee Library/build/reports/test.log | xcpretty --test --color --report junit --output Library/build/reports/junit.xml
 
-
-
-      - name: Upload Test Results
+        # Buildログのアップロード
+      - name: Upload build log
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: ios-test-results
-          path: .derivedData/Logs/Test
+          name: ios-build-log
+          path: Library/build/reports/build.log
+
+      # Testログのアップロード
+      - name: Upload test log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ios-test-log
+          path: Library/build/reports/test.log
+
+      # JUnit XMLのアップロード
+      - name: Upload JUnit report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ios-junit
+          path: Library/build/reports/junit.xml
+
 
 
   # ===============================
@@ -92,6 +108,7 @@ jobs:
 
       - name: Cache SPM
         uses: actions/cache@v3
+        if: always()
         with:
           path: ~/Library/Caches/org.swift.swiftpm
           key: ${{ runner.os }}-spm-${{ hashFiles('**/Package.resolved') }}
@@ -99,6 +116,7 @@ jobs:
 
       - name: Cache DerivedData
         uses: actions/cache@v3
+        if: always()
         with:
           path: .derivedData
           key: ${{ runner.os }}-derived-${{ hashFiles('App/MaTool.xcodeproj/project.pbxproj', '**/*.swift', '**/*.h') }}
