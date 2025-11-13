@@ -80,94 +80,35 @@ jobs:
 
           # メタ情報
           echo ""
-          echo "----- Environment -----"
+          echo "───────────────💻 Environment ───────────────"
           jq -r '
-            "Title: \(.title)",
-            "Platform: \(.devicesAndConfigurations[0].device.platform)",
-            "Device: \(.devicesAndConfigurations[0].device.deviceName)",
-            "OS: \(.devicesAndConfigurations[0].device.osVersion)"
+            . as $root |
+            "┌──────────────────────┬────────────────────────────┐",
+            "│ Title                │ \($root.title) │",
+            "│ Platform             │ \($root.devicesAndConfigurations[0].device.platform) │",
+            "│ Device               │ \($root.devicesAndConfigurations[0].device.deviceName) │",
+            "│ OS Version           │ \($root.devicesAndConfigurations[0].device.osVersion) │",
+            "└──────────────────────┴────────────────────────────┘"
           ' build/reports/test_summary.json
 
-          # 成績表を整形
           echo ""
-          echo "----- Test Counts -----"
-          jq -r '
-            .devicesAndConfigurations[0] |
-            "Passed: \(.passedTests)\nSkipped: \(.skippedTests)\nFailed: \(.failedTests)\nTotal: \(.passedTests + .skippedTests + .failedTests)"
-          ' build/reports/test_summary.json
+          echo "───────────────📊 Test Counts ───────────────"
+          passed=$(jq '.devicesAndConfigurations[0].passedTests' build/reports/test_summary.json)
+          skipped=$(jq '.devicesAndConfigurations[0].skippedTests' build/reports/test_summary.json)
+          failed=$(jq '.devicesAndConfigurations[0].failedTests' build/reports/test_summary.json)
+          total=$((passed + skipped + failed))
 
-          # 失敗数で終了ステータス制御
-          failed=$(jq '.failedTests' build/reports/test_summary.json)
+          echo "┌─────────────┬──────────┐"
+          printf "│ %-11s │ %8s │\n" "Passed" "$passed"
+          printf "│ %-11s │ %8s │\n" "Skipped" "$skipped"
+          printf "│ %-11s │ %8s │\n" "Failed" "$failed"
+          printf "│ %-11s │ %8s │\n" "Total" "$total"
+          echo "└─────────────┴──────────┘"
+
+          echo ""
           if [ "$failed" -gt 0 ]; then
-            echo ""
             echo "❌ Some tests failed ($failed)"
             exit 1
           else
-            echo ""
             echo "✅ All tests passed"
           fi
-
-
-
-
-
-
-
-
-  # ===============================
-  # 2️⃣ iOS App ビルド（構文・設定確認）
-  # ===============================
-  # build-app:
-  #   name: Build iOS App
-  #   runs-on: macos-26
-
-  #   steps:
-  #     - name: Checkout
-  #       uses: actions/checkout@v4
-
-  #     - name: Setup Xcode
-  #       uses: maxim-lobanov/setup-xcode@v1
-  #       with:
-  #         xcode-version: "26.0"
-
-  #     - name: Cache SPM
-  #       uses: actions/cache@v3
-  #       if: always()
-  #       with:
-  #         path: ~/Library/Caches/org.swift.swiftpm
-  #         key: ${{ runner.os }}-spm-${{ hashFiles('**/Package.resolved') }}
-  #         restore-keys: ${{ runner.os }}-spm-
-
-  #     - name: Cache DerivedData
-  #       uses: actions/cache@v3
-  #       if: always()
-  #       with:
-  #         path: .derivedData
-  #         key: ${{ runner.os }}-derived-${{ hashFiles('App/MaTool.xcodeproj/project.pbxproj', '**/*.swift', '**/*.h') }}
-  #         restore-keys: |
-  #           ${{ runner.os }}-derived-
-
-  #     - name: Build iOS App
-  #       run: |
-  #         xcodebuild build \
-  #           -project App/MaTool.xcodeproj \
-  #           -scheme MaTool \
-  #           -sdk iphoneos \
-  #           -configuration Release \
-  #           -destination 'generic/platform=iOS' \
-  #           -derivedDataPath .derivedData \
-  #           -skipMacroValidation \
-  #           CODE_SIGNING_ALLOWED=NO \
-  #           ENABLE_SWIFT_MACROS=YES
-
-  # # ===============================
-  # # 3️⃣ まとめ（オプション）
-  # # ===============================
-  # summary:
-  #   name: CI Summary
-  #   runs-on: ubuntu-latest
-  #   needs: [test-iosapp-library, build-app]
-  #   if: always()
-  #   steps:
-  #     - name: Report
-  #       run: echo "✅ Library tests and App build finished."
