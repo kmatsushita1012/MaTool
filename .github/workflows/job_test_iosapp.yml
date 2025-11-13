@@ -65,7 +65,7 @@ jobs:
           set -e
           echo "===== Test Results Summary ====="
 
-          xcresult_path=$(ls Library/.derivedData/Logs/Test/*.xcresult | head -n 1)
+          xcresult_path=$(find Library/.derivedData/Logs/Test -type d -name "*.xcresult" | sort | tail -n 1)
           echo "Using result: $xcresult_path"
 
           # JSONを取得
