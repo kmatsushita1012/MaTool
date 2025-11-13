@@ -65,10 +65,9 @@ jobs:
           xcresult_path=$(ls Library/.derivedData/Logs/Test/*.xcresult | head -n 1)
           echo "===== Failed Tests ====="
 
-          # JSON 形式で出力
-          xcrun xcresulttool get object --path "$xcresult_path" --format json > build/reports/test-results.json
+          mkdir -p build/reports
+          xcresulttool get --path "$xcresult_path" --format json > build/reports/test-results.json
 
-          # jq で失敗テストだけ抜き出す
           failed=$(jq -r '
             .actions[]?.actionResult?.testsRef?.summaryRef?.summaries[]?.testStatusSummaries[]? 
             | select(.status=="Failure") 
@@ -82,6 +81,7 @@ jobs:
           else
             echo "✅ All tests passed"
           fi
+
 
 
 
