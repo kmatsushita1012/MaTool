@@ -49,15 +49,7 @@ jobs:
             CODE_SIGNING_ALLOWED=NO \
             ENABLE_SWIFT_MACROS=YES \
             test \
-            | tee build/reports/test.log | xcpretty --test --color --report junit --output build/reports/junit.xml || true
-
-      # ログのアップロード
-      - name: Upload test log
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: ios-test-log
-          path: build/reports/test.log
+            | tee build/reports/test.log
 
       - name: Upload Test Results
         id: upload-tests
@@ -67,13 +59,13 @@ jobs:
           name: ios-test-results
           path: Library/.derivedData/Logs/Test/*.xcresult
 
-      - name: Print Test Results
+      - name: Print Failed Tests
         if: always()
         run: |
           xcresult_path=$(ls Library/.derivedData/Logs/Test/*.xcresult | head -n 1)
-          echo "===== Test Results from xcresult ====="
-          xcrun xcresulttool get --path "$xcresult_path" --format json | jq '.actions[]?.actionResult?.testsRef?.summaryRef' || true
-
+          echo "===== Failed Tests ====="
+          # Legacy モードで全テスト出力
+          xcrun xcresulttool get object --path "$xcresult_path" --format text --legacy
 
 
 
