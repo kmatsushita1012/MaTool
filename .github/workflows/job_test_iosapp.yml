@@ -59,13 +59,30 @@ jobs:
           name: ios-test-results
           path: Library/.derivedData/Logs/Test/*.xcresult
 
-      - name: Print Failed Tests
+      - name: Print Failed Tests and Fail CI if any
         if: always()
         run: |
           xcresult_path=$(ls Library/.derivedData/Logs/Test/*.xcresult | head -n 1)
           echo "===== Failed Tests ====="
-          # Legacy モードで全テスト出力
-          xcrun xcresulttool get object --path "$xcresult_path" --format text --legacy
+
+          # JSON 形式で出力
+          xcrun xcresulttool get object --path "$xcresult_path" --format json > build/reports/test-results.json
+
+          # jq で失敗テストだけ抜き出す
+          failed=$(jq -r '
+            .actions[]?.actionResult?.testsRef?.summaryRef?.summaries[]?.testStatusSummaries[]? 
+            | select(.status=="Failure") 
+            | "\(.identifier): \(.name) \(.message // "")"
+          ' build/reports/test-results.json)
+
+          if [ -n "$failed" ]; then
+            echo "$failed"
+            echo "❌ Some tests failed!"
+            exit 1
+          else
+            echo "✅ All tests passed"
+          fi
+
 
 
 
