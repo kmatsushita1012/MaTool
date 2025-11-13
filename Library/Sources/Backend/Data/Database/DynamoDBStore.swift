@@ -7,7 +7,7 @@
 
 @preconcurrency import AWSDynamoDB
 
-typealias AttributeValue = DynamoDBClientTypes.AttributeValue
+fileprivate typealias AttributeValue = DynamoDBClientTypes.AttributeValue
 
 // MARK: - DynamoDBStore
 struct DynamoDBStore: DataStore {
@@ -93,6 +93,13 @@ struct DynamoDBStore: DataStore {
         let output = try await client.query(input: input)
         guard let items = output.items else { return [] }
         return try items.map { try decoder.decode($0, as: T.self) }
+    }
+    
+    static func make(tableName: String) -> DynamoDBStore {
+        guard let store = try? DynamoDBStore(tableName: tableName) else {
+            fatalError("DynamoDBStore could not be initialized.")
+        }
+        return store
     }
 }
 
