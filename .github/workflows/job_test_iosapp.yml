@@ -36,37 +36,34 @@ jobs:
             ${{ runner.os }}-derived-
 
       - name: Build
-        working-directory: Library
         run: |
           set -o pipefail
           mkdir -p build/reports
           xcodebuild \
+            -project App/MaTool.xcodeproj \
             -scheme iOSApp \
             -destination 'platform=iOS Simulator,name=iPhone 17,OS=26.1' \
             -configuration Debug \
-            -derivedDataPath .derivedData \
+            -derivedDataPath Library/.derivedData \
             -skipMacroValidation \
             CODE_SIGNING_ALLOWED=NO \
             ENABLE_SWIFT_MACROS=YES \
             build \
-            | tee build/reports/build.log | xcpretty --color
+            | tee Library/build/reports/build.log | xcpretty --color
 
       - name: Test
-        working-directory: Library
         run: |
-          set -o pipefail
-          mkdir -p build/reports
           xcodebuild \
+            -project App/MaTool.xcodeproj \
             -scheme iOSApp \
             -destination 'platform=iOS Simulator,name=iPhone 17,OS=26.1' \
             -configuration Debug \
-            -derivedDataPath .derivedData \
+            -derivedDataPath Library/.derivedData \
             -enableCodeCoverage YES \
-            -skipMacroValidation \
-            CODE_SIGNING_ALLOWED=NO \
-            ENABLE_SWIFT_MACROS=YES \
+            -skipBuild \
             test \
-            | tee build/reports/test.log | xcpretty --test --color --report junit --output build/reports/junit.xml
+            | tee Library/build/reports/test.log | xcpretty --test --color --report junit --output Library/build/reports/junit.xml
+
 
 
       - name: Upload Test Results
