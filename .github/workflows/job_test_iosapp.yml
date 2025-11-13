@@ -35,9 +35,27 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-derived-
 
-      - name: Build and Test
+      - name: Build
         working-directory: Library
         run: |
+          set -o pipefail
+          mkdir -p build/reports
+          xcodebuild \
+            -scheme iOSApp \
+            -destination 'platform=iOS Simulator,name=iPhone 17,OS=26.1' \
+            -configuration Debug \
+            -derivedDataPath .derivedData \
+            -skipMacroValidation \
+            CODE_SIGNING_ALLOWED=NO \
+            ENABLE_SWIFT_MACROS=YES \
+            build \
+            | tee build/reports/build.log | xcpretty --color
+
+      - name: Test
+        working-directory: Library
+        run: |
+          set -o pipefail
+          mkdir -p build/reports
           xcodebuild \
             -scheme iOSApp \
             -destination 'platform=iOS Simulator,name=iPhone 17,OS=26.1' \
@@ -48,7 +66,8 @@ jobs:
             CODE_SIGNING_ALLOWED=NO \
             ENABLE_SWIFT_MACROS=YES \
             test \
-            | xcpretty --test --color --report junit
+            | tee build/reports/test.log | xcpretty --test --color --report junit --output build/reports/junit.xml
+
 
       - name: Upload Test Results
         if: always()
