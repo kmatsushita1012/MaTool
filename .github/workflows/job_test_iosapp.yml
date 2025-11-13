@@ -59,28 +59,26 @@ jobs:
           name: ios-test-results
           path: Library/.derivedData/Logs/Test/*.xcresult
 
-      - name: Print Failed Tests and Fail CI if any
+      - name: Print Test Summary and Fail CI if any
         if: always()
         run: |
+          # .xcresult ファイルを取得
           xcresult_path=$(ls Library/.derivedData/Logs/Test/*.xcresult | head -n 1)
-          echo "===== Failed Tests ====="
+          echo "===== Test Summary ====="
 
+          # JSON 形式でサマリを取得
           mkdir -p build/reports
-          xcresulttool get --path "$xcresult_path" --format json > build/reports/test-results.json
+          xcrun xcresulttool get test-results summary --path "$xcresult_path" --format json | tee build/reports/test-summary.json
 
-          failed=$(jq -r '
-            .actions[]?.actionResult?.testsRef?.summaryRef?.summaries[]?.testStatusSummaries[]? 
-            | select(.status=="Failure") 
-            | "\(.identifier): \(.name) \(.message // "")"
-          ' build/reports/test-results.json)
-
-          if [ -n "$failed" ]; then
-            echo "$failed"
-            echo "❌ Some tests failed!"
+          # failedTests の数で exit 判定
+          failed_count=$(jq '.failedTests' build/reports/test-summary.json)
+          if [ "$failed_count" -gt 0 ]; then
+            echo "❌ $failed_count test(s) failed!"
             exit 1
           else
             echo "✅ All tests passed"
           fi
+
 
 
 
