@@ -5,6 +5,24 @@
 //  Created by 松下和也 on 2025/11/14.
 //
 
+import Dependencies
+
+// MARK: - Dependencies
+enum DataStreFactoryKey: DependencyKey {
+    static let liveValue: DataStoreFactory = { tableName in
+        DynamoDBStore.make(tableName: tableName)
+    }
+}
+
+extension DependencyValues {
+    var dataStoreFactory: DataStoreFactory {
+        get { self[DataStreFactoryKey.self] }
+        set { self[DataStreFactoryKey.self] = newValue }
+    }
+}
+
+typealias DataStoreFactory = (String) -> DataStore
+
 // MARK: - DataStore
 protocol DataStore: Sendable {
     func put<T: Codable>(_ item: T) async throws
@@ -19,6 +37,8 @@ protocol DataStore: Sendable {
         ascending: Bool,
         as type: T.Type
     ) async throws -> [T]
+    
+    static func make(tableName: String) -> Self
 }
 
 // MARK: - QueryCondition
