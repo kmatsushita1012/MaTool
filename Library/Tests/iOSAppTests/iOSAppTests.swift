@@ -3,5 +3,6 @@ import Testing
 
 @Test func example() async throws {
     // Write your test here and use APIs like `#expect(...)` to check expected conditions.
-    #expect(false)
+    let count = 5
+    #expect(count == 4)
 }

@@ -9,6 +9,7 @@
 /* Begin PBXBuildFile section */
 		291605232EB3680E00E6C6E3 /* iOSApp in Frameworks */ = {isa = PBXBuildFile; productRef = 291605222EB3680E00E6C6E3 /* iOSApp */; };
 		2972EF2B2E2DFED0003A4F1C /* NavigationSwipeControl in Frameworks */ = {isa = PBXBuildFile; productRef = 2972EF2A2E2DFED0003A4F1C /* NavigationSwipeControl */; };
+		29935FC72EC58FAE001663CC /* iOSApp in Frameworks */ = {isa = PBXBuildFile; productRef = 29935FC62EC58FAE001663CC /* iOSApp */; };
 		29A2E57A2E64A80C0012D944 /* AWSCognitoAuthPlugin in Frameworks */ = {isa = PBXBuildFile; productRef = 29A2E5792E64A80C0012D944 /* AWSCognitoAuthPlugin */; };
 		29C674182EB37948003DCA4C /* amplifyconfiguration.json in Resources */ = {isa = PBXBuildFile; fileRef = 29C674172EB37948003DCA4C /* amplifyconfiguration.json */; };
 		29C74ACF2E388FC800417533 /* Kingfisher in Frameworks */ = {isa = PBXBuildFile; productRef = 29C74ACE2E388FC800417533 /* Kingfisher */; };
@@ -55,6 +56,7 @@
 			files = (
 				291605232EB3680E00E6C6E3 /* iOSApp in Frameworks */,
 				29C74ACF2E388FC800417533 /* Kingfisher in Frameworks */,
+				29935FC72EC58FAE001663CC /* iOSApp in Frameworks */,
 				29A2E57A2E64A80C0012D944 /* AWSCognitoAuthPlugin in Frameworks */,
 				29F8A2BE2D9EF079001633B3 /* ComposableArchitecture in Frameworks */,
 				2972EF2B2E2DFED0003A4F1C /* NavigationSwipeControl in Frameworks */,
@@ -128,6 +130,7 @@
 				29C74ACE2E388FC800417533 /* Kingfisher */,
 				29A2E5792E64A80C0012D944 /* AWSCognitoAuthPlugin */,
 				291605222EB3680E00E6C6E3 /* iOSApp */,
+				29935FC62EC58FAE001663CC /* iOSApp */,
 			);
 			productName = MaTool;
 			productReference = 291604FD2EB3665900E6C6E3 /* App.app */;
@@ -210,6 +213,7 @@
 				2972EF292E2DFED0003A4F1C /* XCRemoteSwiftPackageReference "NavigationSwipeControl" */,
 				29C74ACD2E388FC800417533 /* XCRemoteSwiftPackageReference "Kingfisher" */,
 				29A2E5782E64A80C0012D944 /* XCRemoteSwiftPackageReference "amplify-ios" */,
+				29935FC52EC58FAE001663CC /* XCLocalSwiftPackageReference "../Library" */,
 			);
 			productRefGroup = 298BD7912D71E46600CB63F1;
 			projectDirPath = "";
@@ -611,6 +615,13 @@
 		};
 /* End XCConfigurationList section */
 
+/* Begin XCLocalSwiftPackageReference section */
+		29935FC52EC58FAE001663CC /* XCLocalSwiftPackageReference "../Library" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = ../Library;
+		};
+/* End XCLocalSwiftPackageReference section */
+
 /* Begin XCRemoteSwiftPackageReference section */
 		2972EF292E2DFED0003A4F1C /* XCRemoteSwiftPackageReference "NavigationSwipeControl" */ = {
 			isa = XCRemoteSwiftPackageReference;
@@ -655,6 +666,10 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 2972EF292E2DFED0003A4F1C /* XCRemoteSwiftPackageReference "NavigationSwipeControl" */;
 			productName = NavigationSwipeControl;
+		};
+		29935FC62EC58FAE001663CC /* iOSApp */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = iOSApp;
 		};
 		29A2E5792E64A80C0012D944 /* AWSCognitoAuthPlugin */ = {
 			isa = XCSwiftPackageProductDependency;
