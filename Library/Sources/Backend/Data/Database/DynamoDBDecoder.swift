@@ -13,21 +13,16 @@ struct DynamoDBDecoder {
     private let jsonDecoder = JSONDecoder()
     
     func decode<T: Codable>(_ item: [String: DynamoDBClientTypes.AttributeValue], as type: T.Type) throws -> T {
-        let data = try JSONSerialization.data(withJSONObject: decodeFromAttributes(item))
+        let decodedDict = decodeFromAttributes(item)
+        let data = try JSONSerialization.data(withJSONObject: decodedDict)
         return try jsonDecoder.decode(T.self, from: data)
     }
     
     private func decodeFromAttributes(_ item: [String: DynamoDBClientTypes.AttributeValue]) -> [String: Any] {
         var dict: [String: Any] = [:]
         for (k, v) in item {
-            switch v {
-            case .s(let s): dict[k] = s
-            case .n(let n): dict[k] = Double(n) ?? n
-            case .bool(let b): dict[k] = b
-            case .l(let arr): dict[k] = arr.map { decodeFromAttribute($0) }
-            case .m(let map): dict[k] = decodeFromAttributes(map)
-            default: dict[k] = nil
-            }
+            let camelKey = snakeToCamel(k) // ← ここで変換
+            dict[camelKey] = decodeFromAttribute(v)
         }
         return dict
     }
@@ -41,5 +36,12 @@ struct DynamoDBDecoder {
         case .m(let map): return decodeFromAttributes(map)
         default: return NSNull()
         }
+    }
+    
+    private func snakeToCamel(_ key: String) -> String {
+        let parts = key.split(separator: "_")
+        let first = parts.first?.lowercased() ?? ""
+        let rest = parts.dropFirst().map { $0.capitalized }
+        return ([first] + rest).joined()
     }
 }
