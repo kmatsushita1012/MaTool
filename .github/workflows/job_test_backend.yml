@@ -31,11 +31,6 @@ jobs:
         key: ${{ runner.os }}-spm-build-${{ hashFiles('Library/Package.swift', 'Library/Package.resolved') }}
         restore-keys: ${{ runner.os }}-spm-build-
 
-    # ✅ Backendモジュールのテストのみ実行
-    - name: Build Backend Tests
-      working-directory: Library
-      run: swift build --build-tests
-
     - name: Run Backend Tests
       working-directory: Library
       run: swift test --filter BackendTests --parallel --enable-code-coverage
