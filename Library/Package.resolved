@@ -68,8 +68,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/kmatsushita1012/NavigationSwipeControl",
       "state" : {
-        "revision" : "3f0348c7fc4923dc3daf433d61562338e3703c23",
-        "version" : "0.2.1"
+        "branch" : "main",
+        "revision" : "5b7034da676d9194d893a81598bd3afed308a97f"
       }
     },
     {
