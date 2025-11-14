@@ -78,18 +78,26 @@ jobs:
             "✘ \(.testIdentifierString)\t\"\(.failureText)\""
           ' build/reports/test_summary.json || echo "✅ No failed tests"
 
-          # メタ情報
           echo ""
           echo "───────────────💻 Environment ───────────────"
-          jq -r '
-            . as $root |
-            "┌──────────────────────┬────────────────────────────┐",
-            "│ Title                │ \($root.title) │",
-            "│ Platform             │ \($root.devicesAndConfigurations[0].device.platform) │",
-            "│ Device               │ \($root.devicesAndConfigurations[0].device.deviceName) │",
-            "│ OS Version           │ \($root.devicesAndConfigurations[0].device.osVersion) │",
-            "└──────────────────────┴────────────────────────────┘"
-          ' build/reports/test_summary.json
+
+          title=$(jq -r '.title' build/reports/test_summary.json)
+          platform=$(jq -r '.devicesAndConfigurations[0].device.platform' build/reports/test_summary.json)
+          device=$(jq -r '.devicesAndConfigurations[0].device.deviceName' build/reports/test_summary.json)
+          osver=$(jq -r '.devicesAndConfigurations[0].device.osVersion' build/reports/test_summary.json)
+
+          # 右側のカラム幅を固定（例：30文字）
+          pad() {
+            printf "%-30s" "$1"
+          }
+
+          echo "┌──────────────────────┬────────────────────────────────┐"
+          printf "│ %-20s │ %s │\n" "Title"     "$(pad "$title")"
+          printf "│ %-20s │ %s │\n" "Platform"  "$(pad "$platform")"
+          printf "│ %-20s │ %s │\n" "Device"    "$(pad "$device")"
+          printf "│ %-20s │ %s │\n" "OS Version" "$(pad "$osver")"
+          echo "└──────────────────────┴────────────────────────────────┘"
+
 
           echo ""
           echo "───────────────📊 Test Counts ───────────────"
