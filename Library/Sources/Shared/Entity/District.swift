@@ -10,12 +10,24 @@ public struct District: Entity{
     public let id: String
     public var name: String
     public let festivalId: String
-    @NullEncodable public var description: String? = nil
-    @NullEncodable public var base: Coordinate? = nil
+    @NullEncodable public var description: String?
+    @NullEncodable public var base: Coordinate?
     public var area: [Coordinate] = []
-    @NullEncodable public  var imagePath:String? = nil
-    public var performances: [Performance] = []
+    @NullEncodable public  var imagePath:String?
+    public var performances: [Performance]
     public var visibility: Visibility
+    
+    public init(id: String, name: String, festivalId: String, description: String? = nil, base: Coordinate? = nil, area: [Coordinate] = [], imagePath: String? = nil, performances: [Performance] = [], visibility: Visibility) {
+        self.id = id
+        self.name = name
+        self.festivalId = festivalId
+        self.description = description
+        self.base = base
+        self.area = area
+        self.imagePath = imagePath
+        self.performances = performances
+        self.visibility = visibility
+    }
     
     private enum CodingKeys: String, CodingKey {
         case id
