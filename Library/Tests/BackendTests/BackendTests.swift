@@ -6,7 +6,7 @@
 //
 
 import Testing
-@testable import iOSApp
+@testable import Backend
 
 struct BackendTests{
     @Test func test_成功する() async throws {
