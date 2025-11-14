@@ -14,7 +14,7 @@ let package = Package(
         .library(name: "iOSApp", targets: ["iOSApp"])
     ],
     dependencies: [
-        .package(url: "https://github.com/kmatsushita1012/NavigationSwipeControl", exact: "0.2.1"),
+        .package(url: "https://github.com/kmatsushita1012/NavigationSwipeControl", branch: "main"),
         .package(url: "https://github.com/aws-amplify/amplify-ios.git", exact: "2.50.0"),
         .package(url: "https://github.com/onevcat/Kingfisher.git", from: "8.5.0"),
         .package(url: "https://github.com/pointfreeco/swift-composable-architecture", from: "1.23.1")
