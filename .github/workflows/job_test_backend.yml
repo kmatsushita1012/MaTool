@@ -31,9 +31,10 @@ jobs:
         key: ${{ runner.os }}-spm-build-${{ hashFiles('Library/Package.swift', 'Library/Package.resolved') }}
         restore-keys: ${{ runner.os }}-spm-build-
 
-    - name: Run Backend Tests
+    - name: Build and Run Backend Tests
       working-directory: Library
-      run: swift test --filter BackendTests --parallel --enable-code-coverage
+      run: swift test --target Backend --parallel --enable-code-coverage
+
 
     - name: Upload Test Results
       if: always()
