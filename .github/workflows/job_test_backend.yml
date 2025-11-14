@@ -46,3 +46,53 @@ jobs:
       with:
         name: backend-test-results
         path: Library/.build/debug/codecov/
+
+    - name: Collect & Format Backend Test Results
+      if: always()
+      working-directory: Library
+      run: |
+        echo ""
+        echo "===== Test Results Summary ====="
+
+        # coverage JSON の取得（find で 1 件だけ取る）
+        result_file=$(find .build -type f -path "*/debug/codecov/*.json" | head -n 1)
+
+        if [ -z "$result_file" ]; then
+          echo "❌ No coverage/test result found!"
+          exit 1
+        fi
+
+        # テスト数を抽出
+        total=$(jq '.targets[].files[].functions | length' "$result_file" | awk '{s+=$1} END{print s+0}')
+        passed=$(jq '.targets[].files[].functions[] | select(.coveredLines > 0)' "$result_file" | wc -l | tr -d ' ')
+        failed=$((total - passed))
+
+        # SwiftPM の標準ログから失敗テストを拾う
+        FAILED_LOG="backend_failed_tests.txt"
+        find .build -type f -name "*.test" -exec grep -EH "error:|failed" {} \; | sed 's/^/✘ /' > "$FAILED_LOG" || true
+
+        echo ""
+        echo "───────────────📋 Environment ───────────────"
+        echo "┌──────────────────────┬────────────────────────────┐"
+        printf "│ %-20s │ %-26s │\n" "Runner" "GitHub Actions"
+        printf "│ %-20s │ %-26s │\n" "SwiftPM" "$(swift --version | head -n 1)"
+        echo "└──────────────────────┴────────────────────────────┘"
+
+        echo ""
+        echo "───────────────📊 Test Counts ───────────────"
+        echo "┌─────────────┬──────────────┐"
+        printf "│ %-11s │ %4s         │\n" "Passed" "$passed"
+        printf "│ %-11s │ %4s         │\n" "Failed" "$failed"
+        printf "│ %-11s │ %4s         │\n" "Total" "$total"
+        echo "└─────────────┴──────────────┘"
+
+        if [ -s "$FAILED_LOG" ]; then
+          echo ""
+          echo "───────────────❌ Failed Tests ───────────────"
+          cat "$FAILED_LOG"
+          exit 1
+        else
+          echo ""
+          echo "✅ All backend tests passed"
+        fi
+
