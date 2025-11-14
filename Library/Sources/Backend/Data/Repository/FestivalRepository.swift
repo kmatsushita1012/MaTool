@@ -4,33 +4,48 @@
 //
 //  Created by 松下和也 on 2025/11/14.
 //
+
+import Dependencies
 import Shared
 
-final class DynamoDBDistrictRepository: DistrictRepository {
+// MARK: - Dependencies
+enum FestivalRepositoryKey: DependencyKey {
+    static let liveValue: any FestivalRepositoryProtocol = FestivalRepository()
+}
+
+extension DependencyValues {
+    var festivalRepository: FestivalRepositoryProtocol {
+        get { self[FestivalRepositoryKey.self] }
+        set { self[FestivalRepositoryKey.self] = newValue }
+    }
+}
+
+// MARK: - FestivalRepositoryProtocol
+protocol FestivalRepositoryProtocol: Sendable {
+    func get(id: String) async throws -> Festival?
+    func scan() async throws -> [Festival]
+    func put(_ item: Festival) async throws
+}
+
+// MARK: - FestivalRepository
+struct FestivalRepository: FestivalRepositoryProtocol {
     private let store: DataStore
 
-    init(store: DataStore) {
-        self.store = store
+    init() {
+        @Dependency(\.dataStoreFactory) var storeFactory
+        self.store = storeFactory("matool_regions")
     }
 
-    func get(id: String) async throws -> District? {
-        try await store.get(key: id, keyName: "id", as: District.self)
+    func get(id: String) async throws -> Festival? {
+        try await store.get(key: id, keyName: "id", as: Festival.self)
     }
 
-    func queryBy(festivalId: String) async throws -> [District] {
-        try await store.query(
-            indexName: "region_id-index",
-            keyCondition: .equals("region_id", festivalId),
-            as: District.self
-        )
+    func scan() async throws -> [Festival] {
+        try await store.scan(Festival.self)
     }
 
-    func put(id: String, item: District) async throws {
-        // そのまま渡す
-        try await store.put(item)
-    }
-
-    func post(item: District) async throws {
+    func put(_ item: Festival) async throws {
         try await store.put(item)
     }
 }
+
