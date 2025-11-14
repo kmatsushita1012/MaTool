@@ -37,8 +37,6 @@ protocol DataStore: Sendable {
         ascending: Bool,
         as type: T.Type
     ) async throws -> [T]
-    
-    static func make(tableName: String) -> Self
 }
 
 // MARK: - QueryCondition
