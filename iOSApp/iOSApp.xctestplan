@@ -1,0 +1,30 @@
+{
+  "configurations" : [
+    {
+      "id" : "E502483C-03AB-4AB4-9EE0-73F453BCB77E",
+      "name" : "Test Scheme Action",
+      "options" : {
+
+      }
+    }
+  ],
+  "defaultOptions" : {
+    "codeCoverage" : false,
+    "performanceAntipatternCheckerEnabled" : true,
+    "targetForVariableExpansion" : {
+      "containerPath" : "container:MaTool.xcodeproj",
+      "identifier" : "298BD7992D71E46600CB63F1",
+      "name" : "iOSApp"
+    }
+  },
+  "testTargets" : [
+    {
+      "target" : {
+        "containerPath" : "container:MaTool.xcodeproj",
+        "identifier" : "298BD7AB2D71E46900CB63F1",
+        "name" : "iOSAppTests"
+      }
+    }
+  ],
+  "version" : 1
+}
