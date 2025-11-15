@@ -10,20 +10,58 @@ import Dependencies
 import CoreLocation
 import Shared
 
-actor LocationService {
+// MARK: - Dependencies
+enum LocationServiceKey: DependencyKey {
+    static let liveValue: any LocationServiceProtocol = LocationService()
+}
+
+extension DependencyValues {
+    var locationService: any LocationServiceProtocol {
+        get { self[LocationServiceKey.self] }
+        set { self[LocationServiceKey.self] = newValue }
+    }
+}
+
+// MARK: - LocationServiceProtocol
+protocol LocationServiceProtocol: Sendable {
+    func getLocationHistory() async -> [Status]
+    func getInterval() async -> Interval?
+    func getIsTracking() async -> Bool
+    func historyStream() async -> AsyncStream<[Status]>
+    func requestPermission() async -> Void
+    func start(id: String, interval: Interval) async -> Void
+    func stop(id: String) async -> Void
+    func getLocation() async -> AsyncValue<CLLocation>
+}
+
+// MARK: - LocationService
+actor LocationService: LocationServiceProtocol {
+    
     @Dependency(\.apiRepository) var apiRepository
     @Dependency(\.locationProvider) var locationProvider
 
     private var trackingTask: Task<Void, Never>?
-    private(set) var locationHistory: [Status] = []
-    private(set) var interval: Interval?
-    private(set) var isTracking = false
+    private var locationHistory: [Status] = []
+    private var interval: Interval?
+    private var isTracking = false
     private var lastSentAt: Date?
     private let threshold: Double = 0.95
 
     private var continuation: AsyncStream<[Status]>.Continuation?
+    
+    func getLocationHistory() async -> [Status] {
+        locationHistory
+    }
+    
+    func getInterval() async -> Interval? {
+        interval
+    }
+    
+    func getIsTracking() async -> Bool {
+        isTracking
+    }
 
-    var historyStream: AsyncStream<[Status]> {
+    func historyStream() async -> AsyncStream<[Status]> {
         AsyncStream { continuation in
             // 最新 continuation に置き換える
             self.continuation = continuation
@@ -38,11 +76,11 @@ actor LocationService {
         }
     }
 
-    func requestPermission() async {
+    func requestPermission() async -> Void {
         await locationProvider.requestPermission()
     }
 
-    func start(id: String, interval: Interval) async {
+    func start(id: String, interval: Interval) async -> Void {
         guard trackingTask == nil else { return }
 
         self.interval = interval
@@ -63,7 +101,7 @@ actor LocationService {
         }
     }
 
-    func stop(id: String) async {
+    func stop(id: String) async -> Void {
         trackingTask?.cancel()
         trackingTask = nil
         isTracking = false
@@ -128,22 +166,3 @@ actor LocationService {
         continuation?.yield(locationHistory)
     }
 }
-
-
-
-extension LocationService: DependencyKey {
-    static let liveValue: LocationService = LocationService()
-}
-
-extension LocationService: TestDependencyKey {
-    static let testValue: LocationService = LocationService()
-}
-
-
-extension DependencyValues {
-    var locationService: LocationService {
-        get { self[LocationService.self] }
-        set { self[LocationService.self] = newValue }
-    }
-}
-

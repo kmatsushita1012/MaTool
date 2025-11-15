@@ -46,10 +46,10 @@ struct AdminLocation{
             case .onAppear:
                 return .run { send in
                     await locationService.requestPermission()
-                    let initial = await locationService.locationHistory
+                    let initial = await locationService.getLocationHistory()
                     await send(.historyUpdated(initial))
                     // 以降の更新を購読
-                    for await history in await locationService.historyStream {
+                    for await history in await locationService.historyStream() {
                         await send(.historyUpdated(history))
                     }
                 }
