@@ -12,3 +12,5 @@ struct Backend {
         print("Hello from async main")
     }
 }
+
+//差分注入

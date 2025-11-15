@@ -21,3 +21,5 @@ struct MaToolApp: App {
         }
     }
 }
+
+//差分注入
