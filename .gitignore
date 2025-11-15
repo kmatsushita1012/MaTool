@@ -83,7 +83,6 @@ amplify/backend/
 amplify/#deployment
 amplify/team-provider-info.json
 amplify/.config/local-*
-*/amplifyconfiguration.json 
 
 # =========================================
 # Swift Playgrounds

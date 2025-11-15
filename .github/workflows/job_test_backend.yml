@@ -33,8 +33,7 @@ jobs:
 
     - name: Build and Run Backend Tests
       working-directory: Backend
-      run: swift test --target Backend --parallel --enable-code-coverage
-
+      run: swift test --filter BackendTests --parallel --enable-code-coverage
 
     - name: Upload Test Results
       if: always()
@@ -43,7 +42,7 @@ jobs:
         name: backend-test-results
         path: Backend/.build/debug/codecov/
 
-    - name: Collect & Format Backend Test Results
+    - name: Collect & Format Test Results
       if: always()
       working-directory: Backend
       run: |
