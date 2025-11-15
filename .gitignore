@@ -40,14 +40,20 @@ build/
 *.ipa
 *.app
 *.xcarchive
-*.swiftpm
 
 # =========================================
 # Swift Package Manager
 # =========================================
 Packages/
-.swiftpm/
 .build/
+
+# ================================
+# Swift Package Manager (.swiftpm)
+# ================================
+**/.swiftpm/*
+!**/.swiftpm/xcode/
+!**/.swiftpm/xcode/xcshareddata/
+!**/.swiftpm/xcode/xcshareddata/xcschemes/
 
 # =========================================
 # CocoaPods (for legacy cleanup)
