@@ -1,0 +1,10 @@
+name: Prod iOS Dispatch
+on:
+  push:
+    branches:
+      - 'release-ios'
+jobs:
+    deploy_iosapp:
+        name: Deploy iOS App
+        uses: ./.github/workflows/job_deploy_iosapp.yml
+        secrets: inherit
