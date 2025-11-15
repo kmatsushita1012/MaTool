@@ -8,11 +8,10 @@
 
 /* Begin PBXBuildFile section */
 		291605232EB3680E00E6C6E3 /* iOSApp in Frameworks */ = {isa = PBXBuildFile; productRef = 291605222EB3680E00E6C6E3 /* iOSApp */; };
-		2972EF2B2E2DFED0003A4F1C /* NavigationSwipeControl in Frameworks */ = {isa = PBXBuildFile; productRef = 2972EF2A2E2DFED0003A4F1C /* NavigationSwipeControl */; };
-		29A2E57A2E64A80C0012D944 /* AWSCognitoAuthPlugin in Frameworks */ = {isa = PBXBuildFile; productRef = 29A2E5792E64A80C0012D944 /* AWSCognitoAuthPlugin */; };
+		295897052EC83D6D004FAD26 /* Shared in Frameworks */ = {isa = PBXBuildFile; productRef = 295897042EC83D6D004FAD26 /* Shared */; };
+		295897072EC83D6D004FAD26 /* iOSApp in Frameworks */ = {isa = PBXBuildFile; productRef = 295897062EC83D6D004FAD26 /* iOSApp */; };
+		295897092EC83D6D004FAD26 /* Backend in Frameworks */ = {isa = PBXBuildFile; productRef = 295897082EC83D6D004FAD26 /* Backend */; };
 		29C674182EB37948003DCA4C /* amplifyconfiguration.json in Resources */ = {isa = PBXBuildFile; fileRef = 29C674172EB37948003DCA4C /* amplifyconfiguration.json */; };
-		29C74ACF2E388FC800417533 /* Kingfisher in Frameworks */ = {isa = PBXBuildFile; productRef = 29C74ACE2E388FC800417533 /* Kingfisher */; };
-		29F8A2BE2D9EF079001633B3 /* ComposableArchitecture in Frameworks */ = {isa = PBXBuildFile; productRef = 29F8A2BD2D9EF079001633B3 /* ComposableArchitecture */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -36,6 +35,7 @@
 		291604FD2EB3665900E6C6E3 /* App.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = App.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		291604FE2EB3666400E6C6E3 /* AppTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = AppTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		291604FF2EB3666900E6C6E3 /* AppUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = AppUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		295897142EC83F4C004FAD26 /* Backend.xctestplan */ = {isa = PBXFileReference; lastKnownFileType = text; name = Backend.xctestplan; path = ../Library/Tests/BackendTests/Backend.xctestplan; sourceTree = "<group>"; };
 		29C6740A2EB36ADC003DCA4C /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		29C674172EB37948003DCA4C /* amplifyconfiguration.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = amplifyconfiguration.json; sourceTree = "<group>"; };
 		29D697D52EB362BD003EEC18 /* Library */ = {isa = PBXFileReference; lastKnownFileType = wrapper; name = Library; path = ../Library; sourceTree = SOURCE_ROOT; };
@@ -54,10 +54,9 @@
 			buildActionMask = 2147483647;
 			files = (
 				291605232EB3680E00E6C6E3 /* iOSApp in Frameworks */,
-				29C74ACF2E388FC800417533 /* Kingfisher in Frameworks */,
-				29A2E57A2E64A80C0012D944 /* AWSCognitoAuthPlugin in Frameworks */,
-				29F8A2BE2D9EF079001633B3 /* ComposableArchitecture in Frameworks */,
-				2972EF2B2E2DFED0003A4F1C /* NavigationSwipeControl in Frameworks */,
+				295897052EC83D6D004FAD26 /* Shared in Frameworks */,
+				295897072EC83D6D004FAD26 /* iOSApp in Frameworks */,
+				295897092EC83D6D004FAD26 /* Backend in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -91,6 +90,7 @@
 		298BD7912D71E46600CB63F1 = {
 			isa = PBXGroup;
 			children = (
+				295897142EC83F4C004FAD26 /* Backend.xctestplan */,
 				29D697D52EB362BD003EEC18 /* Library */,
 				298DABD52EB361980053637A /* AppTests */,
 				298DACCA2EB361990053637A /* App */,
@@ -123,11 +123,10 @@
 			);
 			name = App;
 			packageProductDependencies = (
-				29F8A2BD2D9EF079001633B3 /* ComposableArchitecture */,
-				2972EF2A2E2DFED0003A4F1C /* NavigationSwipeControl */,
-				29C74ACE2E388FC800417533 /* Kingfisher */,
-				29A2E5792E64A80C0012D944 /* AWSCognitoAuthPlugin */,
 				291605222EB3680E00E6C6E3 /* iOSApp */,
+				295897042EC83D6D004FAD26 /* Shared */,
+				295897062EC83D6D004FAD26 /* iOSApp */,
+				295897082EC83D6D004FAD26 /* Backend */,
 			);
 			productName = MaTool;
 			productReference = 291604FD2EB3665900E6C6E3 /* App.app */;
@@ -206,10 +205,7 @@
 			);
 			mainGroup = 298BD7912D71E46600CB63F1;
 			packageReferences = (
-				29F8A2BC2D9EF078001633B3 /* XCRemoteSwiftPackageReference "swift-composable-architecture" */,
-				2972EF292E2DFED0003A4F1C /* XCRemoteSwiftPackageReference "NavigationSwipeControl" */,
-				29C74ACD2E388FC800417533 /* XCRemoteSwiftPackageReference "Kingfisher" */,
-				29A2E5782E64A80C0012D944 /* XCRemoteSwiftPackageReference "amplify-ios" */,
+				295897032EC83D6D004FAD26 /* XCLocalSwiftPackageReference "../Library" */,
 			);
 			productRefGroup = 298BD7912D71E46600CB63F1;
 			projectDirPath = "";
@@ -611,65 +607,29 @@
 		};
 /* End XCConfigurationList section */
 
-/* Begin XCRemoteSwiftPackageReference section */
-		2972EF292E2DFED0003A4F1C /* XCRemoteSwiftPackageReference "NavigationSwipeControl" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/kmatsushita1012/NavigationSwipeControl";
-			requirement = {
-				kind = exactVersion;
-				version = 0.2.1;
-			};
+/* Begin XCLocalSwiftPackageReference section */
+		295897032EC83D6D004FAD26 /* XCLocalSwiftPackageReference "../Library" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = ../Library;
 		};
-		29A2E5782E64A80C0012D944 /* XCRemoteSwiftPackageReference "amplify-ios" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/aws-amplify/amplify-ios.git";
-			requirement = {
-				kind = exactVersion;
-				version = 2.50.0;
-			};
-		};
-		29C74ACD2E388FC800417533 /* XCRemoteSwiftPackageReference "Kingfisher" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/onevcat/Kingfisher.git";
-			requirement = {
-				kind = upToNextMajorVersion;
-				minimumVersion = 8.5.0;
-			};
-		};
-		29F8A2BC2D9EF078001633B3 /* XCRemoteSwiftPackageReference "swift-composable-architecture" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/pointfreeco/swift-composable-architecture";
-			requirement = {
-				kind = upToNextMajorVersion;
-				minimumVersion = 1.23.1;
-			};
-		};
-/* End XCRemoteSwiftPackageReference section */
+/* End XCLocalSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
 		291605222EB3680E00E6C6E3 /* iOSApp */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = iOSApp;
 		};
-		2972EF2A2E2DFED0003A4F1C /* NavigationSwipeControl */ = {
+		295897042EC83D6D004FAD26 /* Shared */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = 2972EF292E2DFED0003A4F1C /* XCRemoteSwiftPackageReference "NavigationSwipeControl" */;
-			productName = NavigationSwipeControl;
+			productName = Shared;
 		};
-		29A2E5792E64A80C0012D944 /* AWSCognitoAuthPlugin */ = {
+		295897062EC83D6D004FAD26 /* iOSApp */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = 29A2E5782E64A80C0012D944 /* XCRemoteSwiftPackageReference "amplify-ios" */;
-			productName = AWSCognitoAuthPlugin;
+			productName = iOSApp;
 		};
-		29C74ACE2E388FC800417533 /* Kingfisher */ = {
+		295897082EC83D6D004FAD26 /* Backend */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = 29C74ACD2E388FC800417533 /* XCRemoteSwiftPackageReference "Kingfisher" */;
-			productName = Kingfisher;
-		};
-		29F8A2BD2D9EF079001633B3 /* ComposableArchitecture */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 29F8A2BC2D9EF078001633B3 /* XCRemoteSwiftPackageReference "swift-composable-architecture" */;
-			productName = ComposableArchitecture;
+			productName = Backend;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};
