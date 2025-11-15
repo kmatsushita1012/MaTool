@@ -3,7 +3,7 @@ on:
   push:
     branches:
       - 'backend/**'
-      - 'feature-ci'
+      - 'feature/ci-v2'
 jobs:
     deploy_backend:
         name: Deploy Backend API
