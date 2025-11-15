@@ -22,9 +22,9 @@ struct DynamoDBEncoder {
     func toAttributeValue(_ value: Any) -> DynamoDBClientTypes.AttributeValue {
         switch value {
         case let v as String: return .s(v)
+        case let v as Bool: return .bool(v)
         case let v as Int: return .n("\(v)")
         case let v as Double: return .n("\(v)")
-        case let v as Bool: return .bool(v)
         case let v as [Any]: return .l(v.map { toAttributeValue($0) })
         case let v as [String: Any]: return .m(mapKeysToSnakeCase(v).mapValues { toAttributeValue($0) })
         default: return .s("\(value)")
