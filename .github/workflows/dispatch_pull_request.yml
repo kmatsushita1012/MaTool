@@ -25,14 +25,14 @@ jobs:
         with:
           filters: |
             backend:
-              - 'Backend/Sources/Backend/**'
-              - 'Backend/Tests/BackendTests/**'
+              - 'Backend/Sources/**'
+              - 'Backend/Tests/**'
             iosapp:
-              - 'iOSApp/Sources/iOSApp/**'
-              - 'iOSApp/Tests/iOSAppTests/**'
+              - 'iOSApp/Sources/**'
+              - 'iOSApp/Tests/**'
             shared:
-              - 'Shared/Sources/Shared/**'
-              - 'Shared/Tests/SharedTests/**'
+              - 'Shared/Sources/**'
+              - 'Shared/Tests/**'
 
   # ==== 条件付きでBackendテスト ====
   backend-tests:
