@@ -20,7 +20,7 @@ jobs:
         uses: actions/cache@v3
         with:
           path: |
-            ~/Library/Caches/org.swift.swiftpm
+            ~/iOSApp/Caches/org.swift.swiftpm
           key: ${{ runner.os }}-spm-${{ hashFiles('**/Package.resolved') }}
           restore-keys: |
             ${{ runner.os }}-spm-
@@ -36,13 +36,13 @@ jobs:
       - name: Build
         run: |
           xcodebuild archive \
-            -workspace App/MaTool.xcodeproj \
-            -scheme MaTool \
-            -archivePath App/MaTool.xcarchive \
+            -workspace iOSApp/MaTool.xcodeproj \
+            -scheme iOSApp \
+            -archivePath iOSApp/MaTool.xcarchive \
             -sdk iphoneos \
             -configuration Release \
             -destination 'generic/platform=iOS' \
-            -derivedDataPath .derivedData \
+            -derivedDataPath iOSApp/.derivedData \
             -skipMacroValidation \
             CODE_SIGNING_ALLOWED=NO \
             ENABLE_SWIFT_MACROS=YES
