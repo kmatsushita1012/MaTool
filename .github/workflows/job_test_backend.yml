@@ -20,19 +20,19 @@ jobs:
     - name: Cache SwiftPM
       uses: actions/cache@v3
       with:
-        path: ~/Library/Caches/org.swift.swiftpm
-        key: ${{ runner.os }}-swiftpm-${{ hashFiles('Library/Package.resolved') }}
+        path: ~/Backend/Caches/org.swift.swiftpm
+        key: ${{ runner.os }}-swiftpm-${{ hashFiles('Backend/Package.resolved') }}
         restore-keys: ${{ runner.os }}-swiftpm-
           
     - name: Cache SwiftPM build artifacts
       uses: actions/cache@v3
       with:
-        path: Library/.build
-        key: ${{ runner.os }}-spm-build-${{ hashFiles('Library/Package.swift', 'Library/Package.resolved') }}
+        path: Backend/.build
+        key: ${{ runner.os }}-spm-build-${{ hashFiles('Backend/Package.swift', 'Backend/Package.resolved') }}
         restore-keys: ${{ runner.os }}-spm-build-
 
     - name: Build and Run Backend Tests
-      working-directory: Library
+      working-directory: Backend
       run: swift test --target Backend --parallel --enable-code-coverage
 
 
@@ -41,11 +41,11 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: backend-test-results
-        path: Library/.build/debug/codecov/
+        path: Backend/.build/debug/codecov/
 
     - name: Collect & Format Backend Test Results
       if: always()
-      working-directory: Library
+      working-directory: Backend
       run: |
         echo ""
         echo "===== Test Results Summary ====="

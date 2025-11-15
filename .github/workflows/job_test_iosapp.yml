@@ -4,9 +4,6 @@ on:
   workflow_call:
 
 jobs:
-  # ===============================
-  # 1️⃣ Swift Package (Library) テスト
-  # ===============================
   test-iosapp-library:
     name: Test Swift Package
     runs-on: macos-26
@@ -23,15 +20,15 @@ jobs:
       - name: Cache SPM
         uses: actions/cache@v3
         with:
-          path: ~/Library/Caches/org.swift.swiftpm
+          path: ~/iOSApp/Caches/org.swift.swiftpm
           key: ${{ runner.os }}-spm-${{ hashFiles('**/Package.resolved') }}
           restore-keys: ${{ runner.os }}-spm-
 
       - name: Cache DerivedData
         uses: actions/cache@v3
         with:
-          path: Library/.derivedData
-          key: ${{ runner.os }}-derived-${{ hashFiles('App/MaTool.xcodeproj/project.pbxproj', '**/*.swift', '**/*.h') }}
+          path: iOSApp/.derivedData
+          key: ${{ runner.os }}-derived-${{ hashFiles('iOSApp/MaTool.xcodeproj/project.pbxproj', '**/*.swift', '**/*.h') }}
           restore-keys: |
             ${{ runner.os }}-derived-
 
@@ -39,11 +36,11 @@ jobs:
         run: |
           mkdir -p build/reports
           xcodebuild \
-            -project App/MaTool.xcodeproj \
+            -project iOSApp/MaTool.xcodeproj \
             -scheme iOSApp \
             -destination 'platform=iOS Simulator,name=iPhone 17,OS=26.1' \
             -configuration Debug \
-            -derivedDataPath Library/.derivedData \
+            -derivedDataPath iOSApp/.derivedData \
             -enableCodeCoverage YES \
             -skipMacroValidation \
             CODE_SIGNING_ALLOWED=NO \
@@ -57,7 +54,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: ios-test-results
-          path: Library/.derivedData/Logs/Test/*.xcresult
+          path: iOSApp/.derivedData/Logs/Test/*.xcresult
 
       - name: Print Test Summary
         if: always()
@@ -65,7 +62,7 @@ jobs:
           set -e
           echo "===== Test Results Summary ====="
 
-          xcresult_path=$(find Library/.derivedData/Logs/Test -type d -name "*.xcresult" | sort | tail -n 1)
+          xcresult_path=$(find iOSApp/.derivedData/Logs/Test -type d -name "*.xcresult" | sort | tail -n 1)
           echo "Using result: $xcresult_path"
 
           # JSONを取得
