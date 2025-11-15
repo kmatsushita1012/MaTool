@@ -1,19 +1,53 @@
 //
-//  APIRepositoryImpl.swift
+//  RemoteRepository.swift
 //  MaTool
 //
 //  Created by 松下和也 on 2025/03/02.
 //
 
-import Foundation
 import Dependencies
 import Shared
+import Foundation
 
-extension APIRepotiroy: DependencyKey {
+// MARK: - Dependencies
+extension DependencyValues {
+  var apiRepository: APIRepotiroy {
+    get { self[APIRepotiroy.self] }
+    set { self[APIRepotiroy.self] = newValue }
+  }
+}
+
+// MARK: - APIRepository(Protocol)
+struct APIRepotiroy: Sendable {
+    @Dependency(\.apiClient) var apiClient
     
+    var getFestivals: @Sendable () async  -> Result<[Festival], APIError>
+    var getFestival: @Sendable (_ festivalId: String) async -> Result<Festival, APIError>
+    var putFestival: @Sendable (_ district: Festival) async -> Result<String, APIError>
+    var getDistricts: @Sendable (_ festivalId: String) async -> Result<[District], APIError>
+    var getDistrict: @Sendable (_ districtId: String) async -> Result<District, APIError>
+    var postDistrict: @Sendable (_ festivalId: String, _ districtName: String, _ email: String) async -> Result<String, APIError>
+    var putDistrict: @Sendable (_ district: District) async -> Result<String, APIError>
+    var getTool: @Sendable (_ districtId: String) async -> Result<DistrictTool, APIError>
+    var getRoutes: @Sendable (_ districtId: String) async -> Result<[RouteItem], APIError>
+    var getRoute: @Sendable (_ id: String) async -> Result<Route, APIError>
+    var getCurrentRoute: @Sendable (_ districtId: String) async -> Result<CurrentResponse, APIError>
+    var getRouteIds: @Sendable () async -> Result<[String], APIError>
+    var postRoute: @Sendable (_ route: Route) async -> Result<String, APIError>
+    var putRoute: @Sendable (_ route: Route) async -> Result<String, APIError>
+    var deleteRoute: @Sendable (_ id: String) async -> Result<String, APIError>
+    var getLocation: @Sendable (_ districtId: String) async -> Result<FloatLocationGetDTO, APIError>
+    var getLocations: @Sendable (_ festivalId: String) async -> Result<[FloatLocationGetDTO], APIError>
+    var putLocation: @Sendable (_ location: FloatLocation) async -> Result<String, APIError>
+    var deleteLocation: @Sendable (_ districtId: String) async -> Result<String, APIError>
+}
+
+// MARK: - APIRepository
+extension APIRepotiroy: DependencyKey {
     static let liveValue = {
-        let authService = DependencyValues().authService
-        let apiClient = DependencyValues().apiClient
+        @Dependency(\.authService) var authService
+        @Dependency(\.apiClient) var apiClient
+        
         return Self(
             getFestivals: {
                 let response = await apiClient.get(
@@ -198,7 +232,7 @@ extension APIRepotiroy: DependencyKey {
         )
     }()
     
-    static private func decodeResponse<T:Codable>(_ type:T.Type, from response: Result<Data,APIError>)->Result<T,APIError>{
+    static private func decodeResponse<T:Codable>(_ type:T.Type, from response: Result<Data,APIError>) -> Result<T,APIError>{
         switch response {
         case .success(let data):
             let decoder = JSONDecoder()
@@ -233,3 +267,5 @@ extension APIRepotiroy: DependencyKey {
         }
     }
 }
+
+
