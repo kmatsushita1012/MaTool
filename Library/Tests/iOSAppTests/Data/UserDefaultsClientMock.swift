@@ -1,5 +1,5 @@
 //
-//  LocalMockClient.swift
+//  UserDefaultsClientMock.swift
 //  MaTool
 //
 //  Created by 松下和也 on 2025/03/07.
@@ -22,4 +22,20 @@ extension UserDefaultsClient: TestDependencyKey {
     setDouble: unimplemented("\(Self.self).setDouble"),
     setInteger: unimplemented("\(Self.self).setInteger")
   )
+}
+
+extension UserDefaultsClient{
+    static let noop = Self(
+        string: { _ in return "" },
+        bool: { _ in return true },
+        data: { _ in return nil},
+        double: { _ in return 0.0},
+        integer: { _ in return 0},
+        remove: { _ in return },
+        setString: { _,_  in return },
+        setBool: { _,_  in return },
+        setData: { _,_ in return },
+        setDouble: { _,_ in return },
+        setInteger:  { _,_ in return }
+    )
 }

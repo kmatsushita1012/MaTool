@@ -20,8 +20,15 @@ struct Settings {
         var districts: [District] = []
         var selectedDistrict: District? = nil
         var isLoading: Bool = false
-        var userGuide: URL = URL(string: userGuideURLString)!
-        var contact: URL = URL(string: contactURLString)!
+        var userGuide: URL = {
+            @Dependency(\.values.userGuideUrl) var userGuideURLString
+            return URL(string: userGuideURLString)!
+        }()
+        
+        var contact: URL = {
+            @Dependency(\.values.contactURL) var contactURLString
+            return URL(string: contactURLString)!
+        }()
         @Presents var alert: Alert.State? = nil
         var isDismissEnabled: Bool {
             selectedFestival != nil || isOfflineMode
@@ -42,6 +49,8 @@ struct Settings {
     @Dependency(\.authService) var authService
     @Dependency(\.apiRepository) var apiRepository
     @Dependency(\.userDefaultsClient) var userDefaultsClient
+    @Dependency(\.values.defaultFestivalKey) var defaultFestivalKey
+    @Dependency(\.values.defaultDistrictKey) var defaultDistrictKey
     
     var body: some ReducerOf<Settings> {
         BindingReducer()

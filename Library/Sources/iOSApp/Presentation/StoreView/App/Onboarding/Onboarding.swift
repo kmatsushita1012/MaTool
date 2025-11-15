@@ -36,6 +36,9 @@ struct OnboardingFeature {
     
     @Dependency(\.apiRepository) var apiRepository
     @Dependency(\.userDefaultsClient) var userDefaultsClient
+    @Dependency(\.values.defaultFestivalKey) var defaultFestivalKey
+    @Dependency(\.values.defaultDistrictKey) var defaultDistrictKey
+    @Dependency(\.values.hasLaunchedBeforeKey) var hasLaunchedBeforeKey
     
     var body: some ReducerOf<OnboardingFeature> {
         BindingReducer()
@@ -66,7 +69,7 @@ struct OnboardingFeature {
                     return .none
                 }
                 userDefaultsClient.setString(festival.id, defaultFestivalKey)
-                userDefaultsClient.setBool(true, hasLaunchedBeforePath)
+                userDefaultsClient.setBool(true, hasLaunchedBeforeKey)
                 return .none
             case .districtSelected(let district):
                 guard let festival = state.selectedFestival else {
@@ -78,7 +81,7 @@ struct OnboardingFeature {
                     return .none
                 }
                 userDefaultsClient.setString(district.id, defaultDistrictKey)
-                userDefaultsClient.setBool(true, hasLaunchedBeforePath)
+                userDefaultsClient.setBool(true, hasLaunchedBeforeKey)
                 return .none
             case .festivalsReceived(.success(let value)):
                 state.festivals = value

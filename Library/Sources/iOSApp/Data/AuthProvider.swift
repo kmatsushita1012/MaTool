@@ -1,16 +1,39 @@
 //
-//  AWSCognitoLive.swift
+//  AuthProvider.swift
 //  MaTool
 //
-//  Created by 松下和也 on 2024/04/01.
+//  Created by 松下和也 on 2025/06/19.
 //
 
-import Foundation
 import Dependencies
+import Shared
 import Amplify
 import AWSCognitoAuthPlugin
-import Shared
 
+// MARK: - Dependencies
+extension DependencyValues {
+  var authProvider: AuthProvider {
+    get { self[AuthProvider.self] }
+    set { self[AuthProvider.self] = newValue }
+  }
+}
+
+// MARK: - AuthProvider(Protocol)
+struct AuthProvider: Sendable {
+    var initialize: @Sendable () -> Result<Empty, AuthError>
+    var signIn: @Sendable (_ username: String, _ password: String) async -> SignInResponse
+    var confirmSignIn: @Sendable (_ newPassword: String) async -> Result<Empty, AuthError>
+    var getUserRole: @Sendable () async -> Result<UserRole, AuthError>
+    var getTokens: @Sendable () async -> Result<String, AuthError>
+    var signOut: @Sendable () async -> Result<Empty, AuthError>
+    var changePassword: @Sendable (_ current: String, _ new: String) async -> Result<Empty,AuthError>
+    var resetPassword: @Sendable (_ username: String) async -> Result<Empty,AuthError>
+    var confirmResetPassword: @Sendable (_ username: String,_ newPassword: String, _ code: String) async -> Result<Empty,AuthError>
+    var updateEmail: @Sendable (_ newEmail: String) async -> UpdateEmailResult
+    var confirmUpdateEmail: @Sendable (_ code: String) async -> Result<Empty,AuthError>
+}
+
+// MARK: - AuthProvider(AWS)
 extension AuthProvider: DependencyKey {
     static let liveValue = {
         let timeout: Int = 5

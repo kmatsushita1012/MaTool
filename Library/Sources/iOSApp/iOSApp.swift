@@ -54,12 +54,6 @@ public struct RootSceneView: View {
 
 //定数
 let spanDelta: Double = 0.005
-let defaultFestivalKey: String = "region"
-let defaultDistrictKey: String = "district"
-let loginIdKey: String = "login"
-let hasLaunchedBeforePath = "hasLaunchedBefore"
-let userGuideURLString = "https://s3.ap-northeast-1.amazonaws.com/studiomk.documents/userguides/matool.pdf"
-let contactURLString = "https://forms.gle/ppaAwkqrFPKiC9mr8"
 
 extension Bundle {
     static var iOSApp: Bundle { .module }

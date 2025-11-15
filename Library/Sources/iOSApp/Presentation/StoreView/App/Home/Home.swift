@@ -75,6 +75,9 @@ struct Home {
     @Dependency(\.authService) var authService
     @Dependency(\.userDefaultsClient) var userDefaultsClient
     @Dependency(\.appStatusClient) var appStatusClient
+    @Dependency(\.values.defaultFestivalKey) var defaultFestivalKey
+    @Dependency(\.values.defaultDistrictKey) var defaultDistrictKey
+    @Dependency(\.values.loginIdKey) var loginIdKey
     
     var body: some ReducerOf<Home> {
         BindingReducer()

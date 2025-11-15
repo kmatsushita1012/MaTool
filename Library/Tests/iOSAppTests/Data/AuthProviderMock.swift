@@ -1,5 +1,5 @@
 //
-//  AWSCognitoMockClient.swift
+//  AuthProviderMock.swift
 //  MaTool
 //
 //  Created by 松下和也 on 2025/04/05.
@@ -9,8 +9,8 @@ import Dependencies
 import Shared
 
 extension AuthProvider: TestDependencyKey {
-    internal static let testValue = Self.noop
-    internal static let previewValue = Self.noop
+    static let testValue = Self.noop
+    static let previewValue = Self.noop
 }
 
 extension AuthProvider {

@@ -24,3 +24,16 @@ enum InitializeResult: Equatable {
     case signedIn
     case signedOut
 }
+
+extension Error {
+    func toAuthError() -> AuthError {
+        return .unknown(self.localizedDescription)
+    }
+}
+
+enum SignInResponse {
+    case success
+    case newPasswordRequired
+    case failure(AuthError)
+}
+

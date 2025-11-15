@@ -172,8 +172,8 @@ struct AdminDistrictTop {
                 return .none
             case .onLocation:
                 return .run { send in
-                    let isTracking = await locationService.isTracking
-                    let interval = await locationService.interval
+                    let isTracking = await locationService.getIsTracking()
+                    let interval = await locationService.getInterval()
                     await send(.locationPrepared(isTracking: isTracking, Interval: interval))
                 }
             case .destination(.presented(let childAction)):
