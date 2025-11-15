@@ -1,0 +1,10 @@
+name: Prod Backend Dispatch
+on:
+  push:
+    branches:
+      - 'release-backend'
+jobs:
+    deploy_backend:
+        name: Deploy Backend API
+        uses: ./.github/workflows/job_deploy_backend.yml
+        secrets: inherit
