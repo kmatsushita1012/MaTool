@@ -33,6 +33,10 @@ jobs:
 
     - name: Build and Run Backend Tests
       working-directory: Backend
+      env:
+        AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        AWS_REGION: ${{ secrets.AWS_REGION }}
       run: swift test --filter BackendTests --parallel --enable-code-coverage
 
     - name: Upload Test Results
@@ -46,6 +50,7 @@ jobs:
       if: always()
       working-directory: Backend
       run: |
+        ls -R Backend/.build
         echo ""
         echo "===== Test Results Summary ====="
 
