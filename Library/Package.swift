@@ -15,9 +15,11 @@ let package = Package(
     ],
     dependencies: [
         .package(url: "https://github.com/kmatsushita1012/NavigationSwipeControl", exact: "0.2.1"),
-        .package(url: "https://github.com/aws-amplify/amplify-ios.git", exact: "2.50.0"),
+        .package(url: "https://github.com/aws-amplify/amplify-ios.git", exact: "2.51.5"),
         .package(url: "https://github.com/onevcat/Kingfisher.git", from: "8.5.0"),
-        .package(url: "https://github.com/pointfreeco/swift-composable-architecture", from: "1.23.1")
+        .package(url: "https://github.com/pointfreeco/swift-composable-architecture", from: "1.23.1"),
+        .package(url: "https://github.com/pointfreeco/swift-dependencies", from: "1.4.0"),
+        .package(url: "https://github.com/awslabs/aws-sdk-swift.git", from: "1.5.18")
     ],
     targets: [
         // ----------------------
@@ -29,12 +31,13 @@ let package = Package(
         ),
         .executableTarget(
             name: "Backend",
-            dependencies: ["Shared"],
+            dependencies: [
+                "Shared",
+                .product(name: "AWSDynamoDB", package: "aws-sdk-swift"),
+                .product(name: "Dependencies", package: "swift-dependencies")
+            ],
             path: "Sources/Backend",
-            resources: [
-                // 必要に応じて JSON / 設定ファイルを追加
-                // .process("amplifyconfiguration.json")
-            ]
+            resources: []
         ),
         .target(
             name: "iOSApp",
