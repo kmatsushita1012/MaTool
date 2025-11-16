@@ -63,6 +63,4 @@ jobs:
 
       - name: Upload to App Store Connect
         run: |
-          IPA_PATH=$(find . -type f -name "*.ipa")
-          echo "Found IPA: $IPA_PATH"
           xcrun altool --upload-app -f build/export/MaTool.ipa -t ios -u ${{ secrets.APPLE_ID }} -p ${{ secrets.APP_SPECIFIC_PASSWORD }} --type ios
