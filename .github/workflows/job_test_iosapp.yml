@@ -17,12 +17,14 @@ jobs:
         with:
           xcode-version: "26.0"
 
-      - name: Cache SPM
-        uses: actions/cache@v3
+      - name: Ensure and Cache iOSApp SwiftPM
+        run: mkdir -p iOSApp/Caches/org.swift.swiftpm
+      - uses: actions/cache@v3
         with:
-          path: ~/iOSApp/Caches/org.swift.swiftpm
-          key: ${{ runner.os }}-spm-${{ hashFiles('**/Package.resolved') }}
-          restore-keys: ${{ runner.os }}-spm-
+          path: iOSApp/Caches/org.swift.swiftpm
+          key: ${{ runner.os }}-spm-iOSApp-${{ hashFiles('iOSApp/Package.resolved') }}
+          restore-keys: |
+            ${{ runner.os }}-spm-iOSApp-
 
       - name: Cache DerivedData
         uses: actions/cache@v3
