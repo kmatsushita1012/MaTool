@@ -17,12 +17,14 @@ jobs:
       with:
         xcode-version: "26.0"
 
-    - name: Cache SwiftPM
-      uses: actions/cache@v3
+    - name: Ensure and Cache Backend SwiftPM
+      run: mkdir -p Backend/Caches/org.swift.swiftpm
+    - uses: actions/cache@v3
       with:
-        path: ~/Backend/Caches/org.swift.swiftpm
-        key: ${{ runner.os }}-swiftpm-${{ hashFiles('Backend/Package.resolved') }}
-        restore-keys: ${{ runner.os }}-swiftpm-
+        path: Backend/Caches/org.swift.swiftpm
+        key: ${{ runner.os }}-spm-Backend-${{ hashFiles('Backend/Package.resolved') }}
+        restore-keys: |
+          ${{ runner.os }}-spm-Backend-
           
     - name: Cache Xcode Derived Data
       uses: actions/cache@v3
