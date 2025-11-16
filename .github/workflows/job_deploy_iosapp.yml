@@ -59,8 +59,10 @@ jobs:
 
       - name: Export IPA
         run: |
-          xcodebuild -exportArchive -archivePath iOSApp/MaTool.xcarchive -exportOptionsPlist ExportOptions.plist -exportPath MaTool.ipa -allowProvisioningUpdates -authenticationKeyPath `pwd`/private_keys/AuthKey_${{ secrets.APPLE_API_ISSUE_ID }}.p8 -authenticationKeyID ${{ secrets.APPLE_API_KEY_ID }} -authenticationKeyIssuerID ${{ secrets.APPLE_API_ISSUE_ID }}
+          xcodebuild -exportArchive -archivePath iOSApp/MaTool.xcarchive -exportOptionsPlist ExportOptions.plist -exportPath build/export -allowProvisioningUpdates -authenticationKeyPath `pwd`/private_keys/AuthKey_${{ secrets.APPLE_API_ISSUE_ID }}.p8 -authenticationKeyID ${{ secrets.APPLE_API_KEY_ID }} -authenticationKeyIssuerID ${{ secrets.APPLE_API_ISSUE_ID }}
 
       - name: Upload to App Store Connect
         run: |
-          xcrun altool --upload-app -f MaTool.ipa/MaTool.ipa -t ios -u ${{ secrets.APPLE_ID }} -p ${{ secrets.APP_SPECIFIC_PASSWORD }} --type ios
+          IPA_PATH=$(find . -type f -name "*.ipa")
+          echo "Found IPA: $IPA_PATH"
+          xcrun altool --upload-app -f build/export/MaTool.ipa -t ios -u ${{ secrets.APPLE_ID }} -p ${{ secrets.APP_SPECIFIC_PASSWORD }} --type ios
