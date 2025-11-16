@@ -37,7 +37,7 @@ jobs:
         xcodebuild \
           -workspace MaTool.xcworkspace \
           -scheme BackendTests \
-          -testPlan Backend \
+          -testPlan BackendTests \
           -destination 'platform=macOS' \
           -configuration Debug \
           -derivedDataPath Backend/.derivedData \
