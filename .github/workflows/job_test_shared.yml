@@ -62,7 +62,7 @@ jobs:
         echo "===== Test Results Summary ====="
 
         # coverage JSON の取得（find で 1 件だけ取る）
-        result_file=$(find .build -type f -path "*/debug/codecov/*.json" | head -n 1)
+        xcresult_path=$(find Shared/.derivedData/Logs/Test -type d -name "*.xcresult" | sort | tail -n 1)
 
         if [ -z "$result_file" ]; then
           echo "❌ No coverage/test result found!"
