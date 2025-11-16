@@ -34,7 +34,7 @@
 
 /* Begin PBXFileReference section */
 		29125B992EC8C24C004EB53A /* iOSApp.xctestplan */ = {isa = PBXFileReference; lastKnownFileType = text; path = iOSApp.xctestplan; sourceTree = "<group>"; };
-		291604FD2EB3665900E6C6E3 /* iOSApp.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = iOSApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		291604FD2EB3665900E6C6E3 /* MaTool.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = MaTool.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		291604FE2EB3666400E6C6E3 /* iOSAppTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = iOSAppTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		291604FF2EB3666900E6C6E3 /* iOSAppUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = iOSAppUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		29C6740A2EB36ADC003DCA4C /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
@@ -82,7 +82,7 @@
 			isa = PBXGroup;
 			children = (
 				291604FE2EB3666400E6C6E3 /* iOSAppTests.xctest */,
-				291604FD2EB3665900E6C6E3 /* iOSApp.app */,
+				291604FD2EB3665900E6C6E3 /* MaTool.app */,
 				291604FF2EB3666900E6C6E3 /* iOSAppUITests.xctest */,
 			);
 			name = Frameworks;
@@ -130,7 +130,7 @@
 				29F7B7372EC8C06D0099607E /* Shared */,
 			);
 			productName = MaTool;
-			productReference = 291604FD2EB3665900E6C6E3 /* iOSApp.app */;
+			productReference = 291604FD2EB3665900E6C6E3 /* MaTool.app */;
 			productType = "com.apple.product-type.application";
 		};
 		298BD7AB2D71E46900CB63F1 /* iOSAppTests */ = {
@@ -443,7 +443,7 @@
 				MARKETING_VERSION = 2.2.11;
 				OTHER_SWIFT_FLAGS = "$(inherited)";
 				PRODUCT_BUNDLE_IDENTIFIER = StudioMK.FesTracking;
-				PRODUCT_NAME = "$(TARGET_NAME)";
+				PRODUCT_NAME = MaTool;
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
@@ -481,7 +481,7 @@
 				);
 				MARKETING_VERSION = 2.2.11;
 				PRODUCT_BUNDLE_IDENTIFIER = StudioMK.FesTracking;
-				PRODUCT_NAME = "$(TARGET_NAME)";
+				PRODUCT_NAME = MaTool;
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;

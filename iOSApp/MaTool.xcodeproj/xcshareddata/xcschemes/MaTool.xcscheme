@@ -16,7 +16,7 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "298BD7992D71E46600CB63F1"
-               BuildableName = "iOSApp.app"
+               BuildableName = "MaTool.app"
                BlueprintName = "iOSApp"
                ReferencedContainer = "container:MaTool.xcodeproj">
             </BuildableReference>
@@ -86,7 +86,7 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "298BD7992D71E46600CB63F1"
-            BuildableName = "iOSApp.app"
+            BuildableName = "MaTool.app"
             BlueprintName = "iOSApp"
             ReferencedContainer = "container:MaTool.xcodeproj">
          </BuildableReference>
@@ -110,7 +110,7 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "298BD7992D71E46600CB63F1"
-            BuildableName = "iOSApp.app"
+            BuildableName = "MaTool.app"
             BlueprintName = "iOSApp"
             ReferencedContainer = "container:MaTool.xcodeproj">
          </BuildableReference>
