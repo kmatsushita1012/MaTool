@@ -24,7 +24,7 @@ jobs:
         key: ${{ runner.os }}-swiftpm-${{ hashFiles('Shared/Package.resolved') }}
         restore-keys: ${{ runner.os }}-swiftpm-
 
-    - name: Cache Xcode Derived Data (Shared)
+    - name: Cache Xcode Derived Data
       uses: actions/cache@v3
       with:
         path: Shared/.derivedData
@@ -100,6 +100,10 @@ jobs:
         skipped=$(jq '.devicesAndConfigurations[0].skippedTests' build/reports/test_summary.json)
         failed=$(jq '.devicesAndConfigurations[0].failedTests' build/reports/test_summary.json)
         total=$((passed + skipped + failed))
+
+        passed=$((passed + 0))
+        skipped=$((skipped + 0))
+        failed=$((failed + 0))
 
         echo "┌─────────────┬──────────┐"
         printf "│ %-11s │ %8s │\n" "Passed" "$passed"

@@ -100,6 +100,11 @@ jobs:
         passed=$(jq '.devicesAndConfigurations[0].passedTests' build/reports/test_summary.json)
         skipped=$(jq '.devicesAndConfigurations[0].skippedTests' build/reports/test_summary.json)
         failed=$(jq '.devicesAndConfigurations[0].failedTests' build/reports/test_summary.json)
+
+        passed=$((passed + 0))
+        skipped=$((skipped + 0))
+        failed=$((failed + 0))
+
         total=$((passed + skipped + failed))
 
         echo "┌─────────────┬──────────┐"
