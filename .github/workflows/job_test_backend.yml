@@ -36,7 +36,7 @@ jobs:
         mkdir -p build/reports
         xcodebuild \
           -workspace MaTool.xcworkspace \
-          -scheme Backend-Package \
+          -scheme BackendTests \
           -testPlan Backend \
           -destination 'platform=macOS' \
           -configuration Debug \
