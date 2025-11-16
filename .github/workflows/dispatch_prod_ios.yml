@@ -3,6 +3,7 @@ on:
   push:
     branches:
       - 'release-ios'
+      - 'feature/ci-v2'
 jobs:
     deploy_iosapp:
         name: Deploy iOS App
