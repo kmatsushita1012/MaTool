@@ -5,9 +5,6 @@
       location = "group:Backend">
    </FileRef>
    <FileRef
-      location = "group:iOSApp">
-   </FileRef>
-   <FileRef
       location = "group:Shared">
    </FileRef>
    <FileRef
@@ -15,5 +12,8 @@
    </FileRef>
    <FileRef
       location = "group:Shared/SharedTests.xctestplan">
+   </FileRef>
+   <FileRef
+      location = "group:iOSApp/MaTool.xcodeproj">
    </FileRef>
 </Workspace>
