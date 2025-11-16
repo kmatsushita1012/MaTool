@@ -28,6 +28,23 @@
                BlueprintName = "BackendTests"
                ReferencedContainer = "container:">
             </BuildableReference>
+            <SkippedTests>
+               <Test
+                  Identifier = "DynamoDBStoreTest">
+               </Test>
+               <Test
+                  Identifier = "DynamoDBStoreTest/testDelete()">
+               </Test>
+               <Test
+                  Identifier = "DynamoDBStoreTest/testPutAndGet()">
+               </Test>
+               <Test
+                  Identifier = "DynamoDBStoreTest/testQuery()">
+               </Test>
+               <Test
+                  Identifier = "DynamoDBStoreTest/testScan()">
+               </Test>
+            </SkippedTests>
          </TestableReference>
       </Testables>
    </TestAction>

@@ -37,7 +37,7 @@ jobs:
         xcodebuild \
           -workspace MaTool.xcworkspace \
           -scheme SharedTests \
-          -testPlan Shared \
+          -testPlan SharedTests \
           -destination 'platform=macOS' \
           -configuration Debug \
           -derivedDataPath Shared/.derivedData \
