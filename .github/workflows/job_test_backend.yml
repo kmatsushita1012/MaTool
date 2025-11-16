@@ -24,14 +24,14 @@ jobs:
         key: ${{ runner.os }}-swiftpm-${{ hashFiles('Backend/Package.resolved') }}
         restore-keys: ${{ runner.os }}-swiftpm-
           
-    - name: Cache SwiftPM build artifacts
+    - name: Cache Xcode Derived Data
       uses: actions/cache@v3
       with:
-        path: Backend/.build
-        key: ${{ runner.os }}-spm-build-${{ hashFiles('Backend/Package.swift', 'Backend/Package.resolved') }}
-        restore-keys: ${{ runner.os }}-spm-build-
+        path: Backend/.derivedData
+        key: ${{ runner.os }}-derivedData-${{ hashFiles('Backend/Package.swift', 'Shared/Package.swift') }}
+        restore-keys: ${{ runner.os }}-derivedData-
 
-    - name: Build & Test Backend (Xcode)
+    - name: Build & Test
       run: |
         mkdir -p build/reports
         xcodebuild \
@@ -48,7 +48,6 @@ jobs:
           test \
           | tee build/reports/backend-test.log
 
-
     - name: Upload Test Results
       if: always()
       uses: actions/upload-artifact@v4
@@ -59,7 +58,6 @@ jobs:
     - name: Collect & Format Test Results
       if: always()
       run: |
-        ls -R .build
         echo ""
         echo "===== Test Results Summary ====="
 
