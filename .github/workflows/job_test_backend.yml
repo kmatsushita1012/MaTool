@@ -17,9 +17,11 @@ jobs:
       with:
         xcode-version: "26.0"
 
-    - name: Ensure and Cache Backend SwiftPM
+    - name: Ensure SPM Cache Dir Exists
       run: mkdir -p Backend/Caches/org.swift.swiftpm
-    - uses: actions/cache@v3
+
+    - name: Cache SPM
+      uses: actions/cache@v3
       with:
         path: Backend/Caches/org.swift.swiftpm
         key: ${{ runner.os }}-spm-Backend-${{ hashFiles('Backend/Package.resolved') }}
