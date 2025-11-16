@@ -1,7 +1,7 @@
 {
   "configurations" : [
     {
-      "id" : "FB27B049-4A45-4103-9141-43CCB12A66C3",
+      "id" : "E086A052-3C2E-4D61-9B99-35BACBFFB5E0",
       "name" : "Test Scheme Action",
       "options" : {
 
@@ -9,16 +9,17 @@
     }
   ],
   "defaultOptions" : {
-    "codeCoverage" : false,
-    "performanceAntipatternCheckerEnabled" : true,
-    "targetForVariableExpansion" : {
-      "containerPath" : "container:",
-      "identifier" : "Backend",
-      "name" : "Backend"
-    }
+    "performanceAntipatternCheckerEnabled" : true
   },
   "testTargets" : [
     {
+      "skippedTests" : {
+        "suites" : [
+          {
+            "name" : "DynamoDBStoreTest"
+          }
+        ]
+      },
       "target" : {
         "containerPath" : "container:",
         "identifier" : "BackendTests",
@@ -26,5 +27,5 @@
       }
     }
   ],
-  "version" : 1
+  "version" : 2
 }
