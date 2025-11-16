@@ -55,51 +55,64 @@ jobs:
         name: backend-test-results
         path: Backend/.build/debug/codecov/
 
-    - name: Collect & Format Test Results
+    - name: Print Test Summary
       if: always()
       run: |
-        echo ""
+        set -e
         echo "===== Test Results Summary ====="
 
-        # coverage JSON の取得（find で 1 件だけ取る）
         xcresult_path=$(find Backend/.derivedData/Logs/Test -type d -name "*.xcresult" | sort | tail -n 1)
+        echo "Using result: $xcresult_path"
 
-        if [ -z "$result_file" ]; then
-          echo "❌ No coverage/test result found!"
-          exit 1
-        fi
+        # JSONを取得
+        xcrun xcresulttool get test-results summary --path "$xcresult_path" --format json > build/reports/test_summary.json
 
-        # テスト数を抽出
-        total=$(jq '.targets[].files[].functions | length' "$result_file" | awk '{s+=$1} END{print s+0}')
-        passed=$(jq '.targets[].files[].functions[] | select(.coveredLines > 0)' "$result_file" | wc -l | tr -d ' ')
-        failed=$((total - passed))
-
-        # SwiftPM の標準ログから失敗テストを拾う
-        FAILED_LOG="backend_failed_tests.txt"
-        find .build -type f -name "*.test" -exec grep -EH "error:|failed" {} \; | sed 's/^/✘ /' > "$FAILED_LOG" || true
+        # 失敗したテストを整形表示
+        echo "----- Failed Tests -----"
+        jq -r '
+          .testFailures[]? |
+          "✘ \(.testIdentifierString)\t\"\(.failureText)\""
+        ' build/reports/test_summary.json || echo "✅ No failed tests"
 
         echo ""
-        echo "───────────────📋 Environment ───────────────"
-        echo "┌──────────────────────┬────────────────────────────┐"
-        printf "│ %-20s │ %-26s │\n" "Runner" "GitHub Actions"
-        printf "│ %-20s │ %-26s │\n" "SwiftPM" "$(swift --version | head -n 1)"
-        echo "└──────────────────────┴────────────────────────────┘"
+        echo "───────────────💻 Environment ───────────────"
+
+        title=$(jq -r '.title' build/reports/test_summary.json)
+        platform=$(jq -r '.devicesAndConfigurations[0].device.platform' build/reports/test_summary.json)
+        device=$(jq -r '.devicesAndConfigurations[0].device.deviceName' build/reports/test_summary.json)
+        osver=$(jq -r '.devicesAndConfigurations[0].device.osVersion' build/reports/test_summary.json)
+
+        # 右側のカラム幅を固定（例：30文字）
+        pad() {
+          printf "%-30s" "$1"
+        }
+
+        echo "┌──────────────────────┬────────────────────────────────┐"
+        printf "│ %-20s │ %s │\n" "Title"     "$(pad "$title")"
+        printf "│ %-20s │ %s │\n" "Platform"  "$(pad "$platform")"
+        printf "│ %-20s │ %s │\n" "Device"    "$(pad "$device")"
+        printf "│ %-20s │ %s │\n" "OS Version" "$(pad "$osver")"
+        echo "└──────────────────────┴────────────────────────────────┘"
+
 
         echo ""
         echo "───────────────📊 Test Counts ───────────────"
-        echo "┌─────────────┬──────────────┐"
-        printf "│ %-11s │ %4s         │\n" "Passed" "$passed"
-        printf "│ %-11s │ %4s         │\n" "Failed" "$failed"
-        printf "│ %-11s │ %4s         │\n" "Total" "$total"
-        echo "└─────────────┴──────────────┘"
+        passed=$(jq '.devicesAndConfigurations[0].passedTests' build/reports/test_summary.json)
+        skipped=$(jq '.devicesAndConfigurations[0].skippedTests' build/reports/test_summary.json)
+        failed=$(jq '.devicesAndConfigurations[0].failedTests' build/reports/test_summary.json)
+        total=$((passed + skipped + failed))
 
-        if [ -s "$FAILED_LOG" ]; then
-          echo ""
-          echo "───────────────❌ Failed Tests ───────────────"
-          cat "$FAILED_LOG"
+        echo "┌─────────────┬──────────┐"
+        printf "│ %-11s │ %8s │\n" "Passed" "$passed"
+        printf "│ %-11s │ %8s │\n" "Skipped" "$skipped"
+        printf "│ %-11s │ %8s │\n" "Failed" "$failed"
+        printf "│ %-11s │ %8s │\n" "Total" "$total"
+        echo "└─────────────┴──────────┘"
+
+        echo ""
+        if [ "$failed" -gt 0 ]; then
+          echo "❌ Some tests failed ($failed)"
           exit 1
         else
-          echo ""
-          echo "✅ All backend tests passed"
+          echo "✅ All tests passed"
         fi
-
