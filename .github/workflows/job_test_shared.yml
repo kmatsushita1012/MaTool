@@ -31,14 +31,21 @@ jobs:
         key: ${{ runner.os }}-spm-build-${{ hashFiles('Shared/Package.swift', 'Shared/Package.resolved') }}
         restore-keys: ${{ runner.os }}-spm-build-
 
-    # ✅ Sharedモジュールのテストのみ実行
-    - name: Build Shared Tests
-      working-directory: Shared
-      run: swift build --build-tests
-
-    - name: Run Shared Tests
-      working-directory: Shared
-      run: swift test --filter SharedTests --parallel --enable-code-coverage
+    - name: Build & Test Shared (Xcode)
+      run: |
+        mkdir -p build/reports
+        xcodebuild \
+          -workspace MaTool.xcworkspace \
+          -scheme Shared \
+          -testPlan Shared \
+          -destination 'platform=macOS' \
+          -configuration Debug \
+          -derivedDataPath Shared/.derivedData \
+          -enableCodeCoverage YES \
+          CODE_SIGNING_ALLOWED=NO \
+          ENABLE_SWIFT_MACROS=YES \
+          test \
+          | tee build/reports/shared-test.log
 
     - name: Upload Test Results
       if: always()

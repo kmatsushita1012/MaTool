@@ -31,13 +31,23 @@ jobs:
         key: ${{ runner.os }}-spm-build-${{ hashFiles('Backend/Package.swift', 'Backend/Package.resolved') }}
         restore-keys: ${{ runner.os }}-spm-build-
 
-    - name: Build and Run Backend Tests
-      working-directory: Backend
-      env:
-        AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-        AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-        AWS_REGION: ${{ secrets.AWS_REGION }}
-      run: swift test --filter BackendTests --parallel --enable-code-coverage
+    - name: Build & Test Backend (Xcode)
+      run: |
+        mkdir -p build/reports
+        xcodebuild \
+          -workspace MaTool.xcworkspace \
+          -scheme Backend-Package \
+          -testPlan Backend \
+          -destination 'platform=macOS' \
+          -configuration Debug \
+          -derivedDataPath Backend/.derivedData \
+          -enableCodeCoverage YES \
+          -skipMacroValidation \
+          CODE_SIGNING_ALLOWED=NO \
+          ENABLE_SWIFT_MACROS=YES \
+          test \
+          | tee build/reports/backend-test.log
+
 
     - name: Upload Test Results
       if: always()
@@ -48,9 +58,8 @@ jobs:
 
     - name: Collect & Format Test Results
       if: always()
-      working-directory: Backend
       run: |
-        ls -R Backend/.build
+        ls -R .build
         echo ""
         echo "===== Test Results Summary ====="
 
