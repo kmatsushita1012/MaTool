@@ -13,9 +13,16 @@ FROM swift:6.2.0-amazonlinux2 AS build
 # Swift 環境の初期化
 WORKDIR /workspace
 
-# 依存関係の解決
-COPY Package.swift .
-COPY Package.resolved ./
+# --- Backend のパッケージ設定を root 扱いでコピーする ---
+COPY Backend/Package.swift ./Package.swift
+COPY Backend/Package.resolved ./Package.resolved
+
+# Shared を含むため最初にコピーしておく
+COPY Shared ./Shared
+
+# --- ソースコードコピー（Backend → Sources ）---
+COPY Backend/Sources ./Sources
+
 RUN swift package resolve
 
 # ソースコードコピー
