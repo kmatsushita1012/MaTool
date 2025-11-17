@@ -40,7 +40,7 @@ RUN swift build -c release --static-swift-stdlib
 FROM public.ecr.aws/lambda/provided:al2
 
 # Lambda が実行するエントリポイント（bootstrap）配置
-COPY --from=build /workspace/Backend/.build/release/MaToolAPI /var/runtime/bootstrap
+COPY --from=build /workspace/Backend/.build/release/Backend /var/runtime/bootstrap
 
 RUN chmod +x /var/runtime/bootstrap
 
