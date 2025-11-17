@@ -139,6 +139,25 @@ jobs:
             echo "♻️ Integration already exists: $INTEGRATION_ID"
           fi
 
+          API_GATEWAY_STAGE_NAME="\$default"
+          # --- Add permission for API Gateway to invoke Lambda alias ---
+          echo "🔑 Ensuring API Gateway can invoke Lambda alias..."
+          PERM_STATEMENT_ID="apigateway-v2-${API_GATEWAY_STAGE_NAME}"
+
+          aws lambda remove-permission \
+            --function-name "$LAMBDA_FUNCTION_NAME" \
+            --statement-id "$PERM_STATEMENT_ID" \
+            >/dev/null 2>&1 || true
+
+          aws lambda add-permission \
+            --function-name "$LAMBDA_FUNCTION_NAME" \
+            --statement-id "$PERM_STATEMENT_ID" \
+            --action lambda:InvokeFunction \
+            --principal apigateway.amazonaws.com \
+            --source-arn "arn:aws:execute-api:${AWS_REGION}:${ACCOUNT_ID}:${API_GATEWAY_ID}/*/*/${STAGE_NAME}/*"
+
+          echo "✅ Lambda permission refreshed"
+
           DEPLOY_ID=$(aws apigatewayv2 create-deployment \
             --api-id "$API_GATEWAY_ID" \
             --description "Deployment" \
