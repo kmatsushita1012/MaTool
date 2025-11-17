@@ -87,5 +87,13 @@ jobs:
               --api-id "$API_GATEWAY_ID" \
               --integration-id "$INTEGRATION_ID"
           fi
+
+          # --- Remove Permission ---
+          PERM_STATEMENT_ID="apigateway-v2-${STAGE_NAME}"
+
+          aws lambda remove-permission \
+            --function-name "${LAMBDA_FUNCTION_NAME}:${STAGE_NAME}" \
+            --statement-id "$PERM_STATEMENT_ID" \
+            >/dev/null 2>&1 || true
           
           echo "✅ Cleanup completed for $STAGE_NAME"
