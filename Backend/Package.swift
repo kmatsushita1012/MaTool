@@ -3,7 +3,7 @@
 import PackageDescription
 
 let package = Package(
-    name: "MaToolBackend",
+    name: "matool-backend",
     platforms: [
         .macOS(.v14)
     ],
