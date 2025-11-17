@@ -21,12 +21,11 @@ COPY Backend/Package.resolved ./Package.resolved
 COPY Shared ./Shared
 
 # --- ソースコードコピー（Backend → Sources ）---
-COPY Backend/Sources ./Sources
+COPY Backend ./Backend
+
+WORKDIR /workspace/Backend
 
 RUN swift package resolve
-
-# ソースコードコピー
-COPY . .
 
 # 最適化ビルド（Lambda向け、静的リンク）
 RUN swift build -c release --static-swift-stdlib
@@ -41,7 +40,7 @@ RUN swift build -c release --static-swift-stdlib
 FROM public.ecr.aws/lambda/provided:al2
 
 # Lambda が実行するエントリポイント（bootstrap）配置
-COPY --from=build /workspace/.build/release/MaToolAPI /var/runtime/bootstrap
+COPY --from=build /workspace/Backend/.build/release/MaToolAPI /var/runtime/bootstrap
 
 RUN chmod +x /var/runtime/bootstrap
 
