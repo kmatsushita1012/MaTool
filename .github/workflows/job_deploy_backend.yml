@@ -1,0 +1,171 @@
+name: Deploy Lambda
+
+on:
+  workflow_call:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    env:
+      AWS_REGION: ${{ secrets.AWS_REGION }}
+      LAMBDA_ARN: ${{ secrets.LAMBDA_ARN }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Build Lambda binary with Dockerfile
+        # build context はリポジトリルート（Shared を含める）
+        run: |
+          # Backend/Dockerfile を使ってルートをコンテキストにビルド
+          docker build -t matoolapi -f Backend/Dockerfile .
+
+          # イメージから bootstrap を抽出（Lambda用の最小実行ファイル名が bootstrap の場合）
+          docker create --name extract matoolapi
+          docker cp extract:/var/runtime/bootstrap ./bootstrap || true
+          docker rm extract || true
+
+          # 如果 bootstrap が PATH にない場合や、別の場所にあるなら Dockerfile 側で配置を合わせてください
+          if [ -f ./bootstrap ]; then
+            chmod +x ./bootstrap
+            zip -r lambda.zip bootstrap
+          else
+            echo "Error: bootstrap not found in image. Inspect Dockerfile and image layout."
+            exit 1
+          fi
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Set stage name
+        id: set_stage
+        run: |
+          BRANCH=${GITHUB_REF_NAME//\//-}
+          if [[ "$BRANCH" == backend-* ]]; then
+            STAGE_NAME="dev-${BRANCH#backend-}"
+          elif [[ "$BRANCH" == "release-backend" ]]; then
+            STAGE_NAME="prod"
+          elif [[ "$BRANCH" == "main" ]]; then
+            STAGE_NAME="dev"
+          else
+            STAGE_NAME="$BRANCH"
+          fi
+          echo "Resolved stage name: $STAGE_NAME"
+          echo "stage=$STAGE_NAME" >> $GITHUB_OUTPUT
+
+      - name: Deploy Lambda Function
+        run: |
+          FUNCTION_NAME="MaToolAPIv2"
+          STAGE_NAME=${{ steps.set_stage.outputs.stage }}
+
+          echo "Deploying Lambda: $FUNCTION_NAME"
+          aws lambda update-function-code \
+            --function-name "$FUNCTION_NAME" \
+            --zip-file fileb://lambda.zip
+
+          sleep 10
+
+          VERSION=$(aws lambda publish-version --function-name "$FUNCTION_NAME" --query 'Version' --output text)
+          echo "Published new version: $VERSION"
+
+          aws lambda update-alias \
+            --function-name "$FUNCTION_NAME" \
+            --name "$STAGE_NAME" \
+            --function-version "$VERSION" 2>/dev/null \
+            || aws lambda create-alias \
+              --function-name "$FUNCTION_NAME" \
+              --name "$STAGE_NAME" \
+              --function-version "$VERSION"
+
+          echo "Lambda alias '$STAGE_NAME' now points to version $VERSION"
+
+      - name: Deploy API Gateway Stage (v2)
+        env:
+          AWS_REGION: ${{ secrets.AWS_REGION }}
+          API_GATEWAY_ID: ${{ secrets.API_GATEWAY_ID }}
+          LAMBDA_FUNCTION_NAME: "MaToolAPIv2"
+          ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
+        run: |
+          set -e
+          STAGE_NAME=${{ steps.set_stage.outputs.stage }}
+          echo "🚀 Deploying API Gateway for stage: $STAGE_NAME"
+
+          FUNCTION_ALIAS_ARN=$(aws lambda get-alias \
+            --function-name "$LAMBDA_FUNCTION_NAME" \
+            --name "$STAGE_NAME" \
+            --query 'AliasArn' \
+            --output text)
+
+          echo "Lambda alias ARN: $FUNCTION_ALIAS_ARN"
+
+          INTEGRATION_ID=$(aws apigatewayv2 get-integrations \
+            --api-id "$API_GATEWAY_ID" \
+            --query "Items[?contains(IntegrationUri, ':${STAGE_NAME}/invocations')].IntegrationId" \
+            --output text)
+
+          echo "Existing Integration ID: $INTEGRATION_ID"
+
+          if [ -z "$INTEGRATION_ID" ]; then
+            echo "🆕 No integration found for $STAGE_NAME. Creating new one..."
+            INTEGRATION_ID=$(aws apigatewayv2 create-integration \
+              --api-id "$API_GATEWAY_ID" \
+              --integration-type AWS_PROXY \
+              --integration-method POST \
+              --integration-uri "arn:aws:apigateway:${AWS_REGION}:lambda:path/2015-03-31/functions/${FUNCTION_ALIAS_ARN}/invocations" \
+              --payload-format-version 2.0 \
+              --query 'IntegrationId' \
+              --output text)
+            echo "✅ Integration created: $INTEGRATION_ID"
+
+            if [ "$STAGE_NAME" = "prod" ]; then
+              ROUTE_KEY="ANY /{proxy+}"
+            else
+              ROUTE_KEY="ANY /${STAGE_NAME}/{proxy+}"
+            fi
+
+            aws apigatewayv2 create-route \
+              --api-id "$API_GATEWAY_ID" \
+              --route-key "$ROUTE_KEY" \
+              --target "integrations/${INTEGRATION_ID}"
+
+            echo "✅ Route created: $ROUTE_KEY"
+          else
+            echo "♻️ Integration already exists: $INTEGRATION_ID"
+          fi
+
+          # --- Add permission for API Gateway to invoke Lambda alias ---
+          echo "🔑 Ensuring API Gateway can invoke Lambda alias..."
+          PERM_STATEMENT_ID="apigateway-v2-${STAGE_NAME}"
+
+          aws lambda remove-permission \
+            --function-name "${LAMBDA_FUNCTION_NAME}:${STAGE_NAME}" \
+            --statement-id "$PERM_STATEMENT_ID" \
+            >/dev/null 2>&1 || true
+
+          aws lambda add-permission \
+            --function-name "${LAMBDA_FUNCTION_NAME}:${STAGE_NAME}" \
+            --statement-id "$PERM_STATEMENT_ID" \
+            --action lambda:InvokeFunction \
+            --principal apigateway.amazonaws.com \
+            --source-arn "arn:aws:execute-api:${AWS_REGION}:${ACCOUNT_ID}:${API_GATEWAY_ID}/*/*/${STAGE_NAME}/*"
+
+          echo "✅ Lambda permission refreshed"
+
+          DEPLOY_ID=$(aws apigatewayv2 create-deployment \
+            --api-id "$API_GATEWAY_ID" \
+            --description "Deployment" \
+            --query 'DeploymentId' \
+            --output text)
+
+          aws apigatewayv2 update-stage \
+            --api-id "$API_GATEWAY_ID" \
+            --stage-name '$default' \
+            --deployment-id "$DEPLOY_ID"
+
+          echo "✅ $default stage deployed successfully"

@@ -1,0 +1,31 @@
+{
+  "configurations" : [
+    {
+      "id" : "E086A052-3C2E-4D61-9B99-35BACBFFB5E0",
+      "name" : "Test Scheme Action",
+      "options" : {
+
+      }
+    }
+  ],
+  "defaultOptions" : {
+    "performanceAntipatternCheckerEnabled" : true
+  },
+  "testTargets" : [
+    {
+      "skippedTests" : {
+        "suites" : [
+          {
+            "name" : "DynamoDBStoreTest"
+          }
+        ]
+      },
+      "target" : {
+        "containerPath" : "container:",
+        "identifier" : "BackendTests",
+        "name" : "BackendTests"
+      }
+    }
+  ],
+  "version" : 2
+}
