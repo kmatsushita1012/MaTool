@@ -15,10 +15,10 @@
             buildForAnalyzing = "YES">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "298BD7992D71E46600CB63F1"
-               BuildableName = "MaTool.app"
-               BlueprintName = "iOSApp"
-               ReferencedContainer = "container:MaTool.xcodeproj">
+               BlueprintIdentifier = "Backend"
+               BuildableName = "Backend"
+               BlueprintName = "Backend"
+               ReferencedContainer = "container:">
             </BuildableReference>
          </BuildActionEntry>
       </BuildActionEntries>
@@ -27,13 +27,8 @@
       buildConfiguration = "Debug"
       selectedDebuggerIdentifier = "Xcode.DebuggerFoundation.Debugger.LLDB"
       selectedLauncherIdentifier = "Xcode.DebuggerFoundation.Launcher.LLDB"
-      shouldUseLaunchSchemeArgsEnv = "YES">
-      <TestPlans>
-         <TestPlanReference
-            reference = "container:iOSApp.xctestplan"
-            default = "YES">
-         </TestPlanReference>
-      </TestPlans>
+      shouldUseLaunchSchemeArgsEnv = "YES"
+      shouldAutocreateTestPlan = "YES">
    </TestAction>
    <LaunchAction
       buildConfiguration = "Debug"
@@ -49,10 +44,10 @@
          runnableDebuggingMode = "0">
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "298BD7992D71E46600CB63F1"
-            BuildableName = "MaTool.app"
-            BlueprintName = "iOSApp"
-            ReferencedContainer = "container:MaTool.xcodeproj">
+            BlueprintIdentifier = "Backend"
+            BuildableName = "Backend"
+            BlueprintName = "Backend"
+            ReferencedContainer = "container:">
          </BuildableReference>
       </BuildableProductRunnable>
    </LaunchAction>
@@ -66,10 +61,10 @@
          runnableDebuggingMode = "0">
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "298BD7992D71E46600CB63F1"
-            BuildableName = "MaTool.app"
-            BlueprintName = "iOSApp"
-            ReferencedContainer = "container:MaTool.xcodeproj">
+            BlueprintIdentifier = "Backend"
+            BuildableName = "Backend"
+            BlueprintName = "Backend"
+            ReferencedContainer = "container:">
          </BuildableReference>
       </BuildableProductRunnable>
    </ProfileAction>

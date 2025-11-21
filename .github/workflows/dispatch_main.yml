@@ -1,0 +1,28 @@
+name: Main Dispatch
+
+on:
+  push:
+    branches: 
+      - "main"
+
+jobs:
+  test_shared:
+    name: Run Shared App Tests
+    uses: ./.github/workflows/job_test_shared.yml
+    secrets: inherit
+
+  test_backend:
+    name: Run Backend Tests
+    uses: ./.github/workflows/job_test_backend.yml
+    secrets: inherit
+
+  test_iosapp:
+    name: Run iOS App Tests
+    uses: ./.github/workflows/job_test_iosapp.yml
+    secrets: inherit
+
+  deploy:
+    name: Deploy Backend API
+    needs: [test_backend, test_shared]
+    uses: ./.github/workflows/job_deploy_backend.yml
+    secrets: inherit
