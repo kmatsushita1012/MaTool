@@ -5,7 +5,7 @@ on:
 
 jobs:
   test-iosapp-library:
-    name: Test Swift Package
+    name: Run iOS App Tests
     runs-on: macos-26
 
     steps:
