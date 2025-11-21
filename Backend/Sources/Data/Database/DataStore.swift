@@ -21,7 +21,7 @@ extension DependencyValues {
     }
 }
 
-typealias DataStoreFactory = (String) -> DataStore
+typealias DataStoreFactory = @Sendable (String) -> DataStore
 
 // MARK: - DataStore
 protocol DataStore: Sendable {

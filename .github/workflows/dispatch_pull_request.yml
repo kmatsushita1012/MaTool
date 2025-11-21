@@ -1,0 +1,54 @@
+name: Pull Request
+
+on:
+  workflow_dispatch:
+  pull_request:
+    branches: 
+      - main
+
+jobs:
+  detect-changes:
+    runs-on: ubuntu-latest
+    outputs:
+      backend_changed: ${{ steps.filter.outputs.backend }}
+      iosapp_changed: ${{ steps.filter.outputs.iosapp }}
+      shared_changed: ${{ steps.filter.outputs.shared }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # 差分検出のため履歴が必要
+
+      - name: Detect changes
+        id: filter
+        uses: dorny/paths-filter@v3
+        with:
+          filters: |
+            backend:
+              - 'Backend/Sources/**'
+              - 'Backend/Tests/**'
+            iosapp:
+              - 'iOSApp/Sources/**'
+              - 'iOSApp/Tests/**'
+            shared:
+              - 'Shared/Sources/**'
+              - 'Shared/Tests/**'
+
+  # ==== 条件付きでBackendテスト ====
+  backend-tests:
+    needs: detect-changes
+    if: ${{ needs.detect-changes.outputs.backend_changed == 'true' }}
+    uses: ./.github/workflows/job_test_backend.yml
+
+  # ==== 条件付きでiOSAppテスト ====
+  iosapp-tests:
+    needs: detect-changes
+    if: ${{ needs.detect-changes.outputs.iosapp_changed == 'true' }}
+    uses: ./.github/workflows/job_test_iosapp.yml
+
+  # ==== 条件付きでSharedテスト ====
+  shared-tests:
+    needs: detect-changes
+    if: ${{ needs.detect-changes.outputs.shared_changed == 'true' }}
+    uses: ./.github/workflows/job_test_shared.yml

@@ -1,0 +1,15 @@
+#!/bin/sh
+# bootstrap: ランタイムのエントリーポイント
+# このスクリプトは Lambda がコンテナ内で実行するときに呼ばれます。
+# 単にビルドしたバイナリを実行するだけのシンプル実装。
+
+# 同じディレクトリに MaToolAPI バイナリがある想定
+BIN="./MaToolAPI"
+
+if [ ! -x "$BIN" ]; then
+  echo "ERROR: binary not found or not executable: $BIN" >&2
+  exit 1
+fi
+
+# exec で置き換える（プロセス継承）
+exec "$BIN"

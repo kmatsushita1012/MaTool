@@ -1,0 +1,10 @@
+name: Dev Backend Dispatch
+on:
+  push:
+    branches:
+      - 'backend/**'
+jobs:
+    deploy_backend:
+        name: Deploy Backend API
+        uses: ./.github/workflows/job_deploy_backend.yml
+        secrets: inherit
