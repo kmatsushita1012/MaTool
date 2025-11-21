@@ -11,17 +11,30 @@ jobs:
       LAMBDA_ARN: ${{ secrets.LAMBDA_ARN }}
 
     steps:
-      - name: Checkout
+      - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Build Lambda binary with Dockerfile
+        # build context はリポジトリルート（Shared を含める）
         run: |
-          docker build -t matoolapi .
+          # Backend/Dockerfile を使ってルートをコンテキストにビルド
+          docker build -t matoolapi -f Backend/Dockerfile .
+
+          # イメージから bootstrap を抽出（Lambda用の最小実行ファイル名が bootstrap の場合）
           docker create --name extract matoolapi
-          docker cp extract:/var/runtime/bootstrap ./bootstrap
-          docker rm extract
-          chmod +x bootstrap
-          zip lambda.zip bootstrap
+          docker cp extract:/var/runtime/bootstrap ./bootstrap || true
+          docker rm extract || true
+
+          # 如果 bootstrap が PATH にない場合や、別の場所にあるなら Dockerfile 側で配置を合わせてください
+          if [ -f ./bootstrap ]; then
+            chmod +x ./bootstrap
+            zip -r lambda.zip bootstrap
+          else
+            echo "Error: bootstrap not found in image. Inspect Dockerfile and image layout."
+            exit 1
+          fi
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
@@ -43,7 +56,6 @@ jobs:
           else
             STAGE_NAME="$BRANCH"
           fi
-
           echo "Resolved stage name: $STAGE_NAME"
           echo "stage=$STAGE_NAME" >> $GITHUB_OUTPUT
 
@@ -53,18 +65,15 @@ jobs:
           STAGE_NAME=${{ steps.set_stage.outputs.stage }}
 
           echo "Deploying Lambda: $FUNCTION_NAME"
-
           aws lambda update-function-code \
             --function-name "$FUNCTION_NAME" \
             --zip-file fileb://lambda.zip
 
           sleep 10
 
-          # 新しいバージョンを発行
           VERSION=$(aws lambda publish-version --function-name "$FUNCTION_NAME" --query 'Version' --output text)
           echo "Published new version: $VERSION"
 
-          # ブランチ名をエイリアスに紐付け
           aws lambda update-alias \
             --function-name "$FUNCTION_NAME" \
             --name "$STAGE_NAME" \
@@ -84,25 +93,22 @@ jobs:
           ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
         run: |
           set -e
-          
           STAGE_NAME=${{ steps.set_stage.outputs.stage }}
           echo "🚀 Deploying API Gateway for stage: $STAGE_NAME"
 
-          # --- Get Lambda alias ARN ---
           FUNCTION_ALIAS_ARN=$(aws lambda get-alias \
             --function-name "$LAMBDA_FUNCTION_NAME" \
             --name "$STAGE_NAME" \
             --query 'AliasArn' \
             --output text)
-          
+
           echo "Lambda alias ARN: $FUNCTION_ALIAS_ARN"
 
-          # --- Check if integration for this stage already exists ---
           INTEGRATION_ID=$(aws apigatewayv2 get-integrations \
             --api-id "$API_GATEWAY_ID" \
             --query "Items[?contains(IntegrationUri, ':${STAGE_NAME}/invocations')].IntegrationId" \
             --output text)
-          
+
           echo "Existing Integration ID: $INTEGRATION_ID"
 
           if [ -z "$INTEGRATION_ID" ]; then
@@ -117,8 +123,6 @@ jobs:
               --output text)
             echo "✅ Integration created: $INTEGRATION_ID"
 
-            echo "🆕 Creating route for stage: $STAGE_NAME"
-
             if [ "$STAGE_NAME" = "prod" ]; then
               ROUTE_KEY="ANY /{proxy+}"
             else
@@ -131,16 +135,31 @@ jobs:
               --target "integrations/${INTEGRATION_ID}"
 
             echo "✅ Route created: $ROUTE_KEY"
-            
           else
             echo "♻️ Integration already exists: $INTEGRATION_ID"
           fi
 
-          # --- Deploy $default stage (auto-deploy disabled systems) ---
-          echo "🚀 Deploying $default stage..."
+          # --- Add permission for API Gateway to invoke Lambda alias ---
+          echo "🔑 Ensuring API Gateway can invoke Lambda alias..."
+          PERM_STATEMENT_ID="apigateway-v2-${STAGE_NAME}"
+
+          aws lambda remove-permission \
+            --function-name "${LAMBDA_FUNCTION_NAME}:${STAGE_NAME}" \
+            --statement-id "$PERM_STATEMENT_ID" \
+            >/dev/null 2>&1 || true
+
+          aws lambda add-permission \
+            --function-name "${LAMBDA_FUNCTION_NAME}:${STAGE_NAME}" \
+            --statement-id "$PERM_STATEMENT_ID" \
+            --action lambda:InvokeFunction \
+            --principal apigateway.amazonaws.com \
+            --source-arn "arn:aws:execute-api:${AWS_REGION}:${ACCOUNT_ID}:${API_GATEWAY_ID}/*/*/${STAGE_NAME}/*"
+
+          echo "✅ Lambda permission refreshed"
+
           DEPLOY_ID=$(aws apigatewayv2 create-deployment \
             --api-id "$API_GATEWAY_ID" \
-            --description "Deployment for $" \
+            --description "Deployment" \
             --query 'DeploymentId' \
             --output text)
 
