@@ -7,9 +7,10 @@
 
 
 @main
-struct Backend {
-    static func main() async throws {
-        print("Hello from async main")
+struct MaToolAPI: APIGateway {
+    static let app = Application{
+        AuthMiddleware(path: "/name")
+        UserRouter()
     }
 }
 
