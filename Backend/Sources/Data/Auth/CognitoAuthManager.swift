@@ -9,9 +9,9 @@ import Dependencies
 import Shared
 @preconcurrency import AWSCognitoIdentityProvider
 
-actor CognitoAuthManager: AuthManager {
+struct CognitoAuthManager: AuthManager {
 
-    private let client: CognitoIdentityProviderClient?
+    private let client: CognitoIdentityProviderClient
     private let userPoolId: String
 
     init(client: CognitoIdentityProviderClient, userPoolId: String) {
@@ -24,7 +24,7 @@ actor CognitoAuthManager: AuthManager {
         self.userPoolId = ""
     }
 
-    func invite(username: String, email: String) async throws -> UserRole {
+    func create(username: String, email: String) async throws -> UserRole {
         // リクエスト作成
         let input = AdminCreateUserInput(
             desiredDeliveryMediums: [.email],
@@ -39,10 +39,10 @@ actor CognitoAuthManager: AuthManager {
         )
         
         //登録
-        let response = try await client?.adminCreateUser(input: input)
+        let response = try await client.adminCreateUser(input: input)
         
         // レスポンスを確認
-        guard let userReponse = response?.user else { throw APIError.unauthorized()}
+        guard let userReponse = response.user else { throw APIError.unauthorized()}
         let id = userReponse.username
         let attributes = userReponse.attributes
         let role = attributes?.first{ $0.name == "custom:role"}
@@ -50,4 +50,20 @@ actor CognitoAuthManager: AuthManager {
         let user: UserRole = .district(id)
         return user
     }
+
+    func get(username: String) async throws -> UserRole {
+        let input = AdminGetUserInput(
+            userPoolId: userPoolId,
+            username: username
+        )
+        let response = try await client.adminGetUser(input: input)
+        
+        let id = response.username
+        let attributes = response.userAttributes
+        let role = attributes?.first{ $0.name == "custom:role"}
+        guard let id, role?.value == "district" else { throw APIError.unauthorized() }
+        let user: UserRole = .district(id)
+        return user
+    }
 }
+
