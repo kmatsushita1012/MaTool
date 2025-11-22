@@ -11,7 +11,7 @@ import Shared
 typealias AuthManagerFactory = @Sendable () async throws -> AuthManager
 
 // MARK: - Dependencies
-enum AuthManagerFactoryKey: DependencyKey{
+enum AuthManagerFactoryKey: DependencyKey {
     static let liveValue: AuthManagerFactory = {
         return try await CognitoAuthManager()
     }
@@ -20,5 +20,6 @@ enum AuthManagerFactoryKey: DependencyKey{
 // MARK: - AuthManager
 protocol AuthManager: Sendable{
     func create(username: String, email: String) async throws -> UserRole
+    func get(accessToken: String) async throws -> UserRole
     func get(username: String) async throws -> UserRole
 }
