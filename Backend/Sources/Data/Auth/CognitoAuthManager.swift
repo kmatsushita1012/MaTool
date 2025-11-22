@@ -50,6 +50,16 @@ struct CognitoAuthManager: AuthManager {
         let user: UserRole = .district(id)
         return user
     }
+    
+    func get(accessToken: String) async throws -> UserRole {
+        let input = GetUserInput(
+            accessToken: accessToken
+        )
+        let response = try await client.getUser(input: input)
+        
+        let user = try parseUserRole(attributes: response.userAttributes, id: response.username)
+        return user
+    }
 
     func get(username: String) async throws -> UserRole {
         let input = AdminGetUserInput(
@@ -58,12 +68,21 @@ struct CognitoAuthManager: AuthManager {
         )
         let response = try await client.adminGetUser(input: input)
         
-        let id = response.username
-        let attributes = response.userAttributes
-        let role = attributes?.first{ $0.name == "custom:role"}
-        guard let id, role?.value == "district" else { throw APIError.unauthorized() }
-        let user: UserRole = .district(id)
+        let user = try parseUserRole(attributes: response.userAttributes, id: response.username)
         return user
+    }
+    
+    private func parseUserRole(attributes: [CognitoIdentityProviderClientTypes.AttributeType]?, id: String?) throws -> UserRole {
+        let role = attributes?.first{ $0.name == "custom:role"}?.value
+        guard let id, let role else { throw APIError.unauthorized() }
+        switch role {
+        case "district":
+            return .district(id)
+        case "region":
+            return .headquarter(id)
+        default:
+            throw APIError.unauthorized()
+        }
     }
 }
 
