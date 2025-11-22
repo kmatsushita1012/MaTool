@@ -24,6 +24,7 @@ let package = Package(
             dependencies: [
                 "Shared",
                 .product(name: "AWSDynamoDB", package: "aws-sdk-swift"),
+                .product(name: "AWSCognitoIdentityProvider", package: "aws-sdk-swift"),
                 .product(name: "Dependencies", package: "swift-dependencies"),
                 .product(name: "AWSLambdaRuntime", package: "swift-aws-lambda-runtime"),
                 .product(name: "AWSLambdaEvents", package: "swift-aws-lambda-events"),
