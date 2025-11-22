@@ -11,10 +11,15 @@ let package = Package(
     products: [
         .library(name: "Shared", targets: ["Shared"]),
     ],
-    dependencies: [],
+    dependencies: [
+                   .package(url: "https://github.com/pointfreeco/swift-case-paths.git", from: "1.7.2")
+    ],
     targets: [
         .target(
             name: "Shared",
+            dependencies: [
+                .product(name: "CasePaths", package: "swift-case-paths")
+            ],
             path: "Sources"
         ),
         .testTarget(
