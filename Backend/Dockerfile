@@ -11,24 +11,26 @@
 FROM swift:6.2.0-amazonlinux2 AS build
 
 # Swift 環境の初期化
-WORKDIR /workspace
+WORKDIR /workspace/Backend
 
-# --- Backend のパッケージ設定を root 扱いでコピーする ---
+# Backend の Package 設定を Backend 内にコピー
 COPY Backend/Package.swift ./Package.swift
 COPY Backend/Package.resolved ./Package.resolved
 COPY Backend/.env ./.env
 
-# Shared を含むため最初にコピーしておく
+# Shared をコピー
 COPY Shared ./Shared
 
-# --- ソースコードコピー（Backend → Sources ）---
-COPY Backend ./Backend
+# Backend のソースコードを Sources にコピー
+COPY Backend/Sources ./Sources
 
-WORKDIR /workspace/Backend
+# Tests をコピーしたい場合
+COPY Backend/Tests ./Tests
 
+# パッケージ解決
 RUN swift package resolve
 
-# 最適化ビルド（Lambda向け、静的リンク）
+# 最適化ビルド
 RUN swift build -c release --static-swift-stdlib
 
 # ============================================================
