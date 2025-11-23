@@ -14,7 +14,7 @@ enum DistrictUsecaseKey: DependencyKey {
 }
 
 // MARK: - DistrictUsecaseProtocol
-protocol DistrictUsecaseProtocol: Usecase {
+protocol DistrictUsecaseProtocol: Sendable {
     func query(by regionId: String) async throws -> [District]
     func get(_ id: String) async throws -> District
     func post(user: UserRole, headquarterId: String, newDistrictName: String, email: String) async throws -> District
@@ -35,25 +35,25 @@ struct DistrictUsecase: DistrictUsecaseProtocol {
     
     func get(_ id: String) async throws -> District {
         let item = try await repository.get(id: id)
-        guard let item else { throw APIError.notFound() }
+        guard let item else { throw Error.notFound() }
         return item
     }
     
     func post(user: UserRole, headquarterId: String, newDistrictName: String, email: String) async throws -> District {
         // 認可チェック
         guard case let .headquarter(id) = user, headquarterId == id  else {
-            throw APIError.unauthorized()
+            throw Error.unauthorized()
         }
 
         // 所属する祭典の取得
         guard let festival = try await festivalRepository.get(id: id) else {
-            throw APIError.notFound("所属する祭典が見つかりません")
+            throw Error.notFound("所属する祭典が見つかりません")
         }
 
         // ID生成 & 重複確認
         let districtId = makeDistrictId(name: newDistrictName, region: festival)
         if let _ = try await repository.get(id: districtId) {
-            throw APIError.conflict("この名前はすでに登録されています")
+            throw Error.conflict("この名前はすでに登録されています")
         }
 
         // 招待処理
@@ -82,7 +82,7 @@ struct DistrictUsecase: DistrictUsecaseProtocol {
     
     func put(id: String, item: District, user: UserRole) async throws -> District {
         guard case let .district(districtId) = user, id == districtId else {
-            throw APIError.unauthorized("アクセス権限がありません")
+            throw Error.unauthorized("アクセス権限がありません")
         }
         try await repository.put(id: item.id, item: item)
         return item
@@ -90,12 +90,12 @@ struct DistrictUsecase: DistrictUsecaseProtocol {
     
     func getTools(id: String, user: UserRole) async throws -> DistrictTool {
         // District取得
-        guard case let .district(districtId) = user, id == districtId else { throw APIError.unauthorized("アクセス権限がありません") }
+        guard case let .district(districtId) = user, id == districtId else { throw Error.unauthorized("アクセス権限がありません") }
         guard let district = try await repository.get(id: id) else {
-            throw APIError.notFound("指定された地区が見つかりません")
+            throw Error.notFound("指定された地区が見つかりません")
         }
         guard let festival = try await festivalRepository.get(id: district.festivalId) else {
-            throw APIError.notFound("指定された祭典が見つかりません")
+            throw Error.notFound("指定された祭典が見つかりません")
         }
 
         // performances → Information にマッピング
