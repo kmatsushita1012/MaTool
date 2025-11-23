@@ -35,16 +35,16 @@ jobs:
               - 'Shared/Sources/**'
               - 'Shared/Tests/**'
 
-  # ==== 条件付きでBackendテスト ====
+  # ==== Backend テスト (Backend 変更 or Shared 変更時) ====
   backend-tests:
     needs: detect-changes
-    if: ${{ needs.detect-changes.outputs.backend_changed == 'true' }}
+    if: ${{ needs.detect-changes.outputs.backend_changed == 'true' || needs.detect-changes.outputs.shared_changed == 'true' }}
     uses: ./.github/workflows/job_test_backend.yml
 
-  # ==== 条件付きでiOSAppテスト ====
+  # ==== iOSApp テスト (iOSApp 変更 or Shared 変更時) ====
   iosapp-tests:
     needs: detect-changes
-    if: ${{ needs.detect-changes.outputs.iosapp_changed == 'true' }}
+    if: ${{ needs.detect-changes.outputs.iosapp_changed == 'true' || needs.detect-changes.outputs.shared_changed == 'true' }}
     uses: ./.github/workflows/job_test_iosapp.yml
 
   # ==== 条件付きでSharedテスト ====

@@ -39,6 +39,7 @@ jobs:
 
       - name: Build&Test
         run: |
+          set -o pipefail
           mkdir -p build/reports
           xcodebuild \
             -project iOSApp/MaTool.xcodeproj \
