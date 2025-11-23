@@ -12,7 +12,7 @@ let package = Package(
         .library(name: "Shared", targets: ["Shared"]),
     ],
     dependencies: [
-                   .package(url: "https://github.com/pointfreeco/swift-case-paths.git", from: "1.7.2")
+        .package(url: "https://github.com/pointfreeco/swift-case-paths.git", from: "1.7.2")
     ],
     targets: [
         .target(
