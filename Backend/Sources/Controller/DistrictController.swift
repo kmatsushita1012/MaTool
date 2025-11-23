@@ -42,7 +42,7 @@ struct DistrictController: DistrictControllerProtocol {
             let body: String = try encode(item)
 			return .init(statusCode: 200, headers: [:], body: body)
 		} catch {
-            return error.response
+            return .init(error: error)
 		}
 	}
 
@@ -53,7 +53,7 @@ struct DistrictController: DistrictControllerProtocol {
 			let body: String = try encode(items)
 			return .init(statusCode: 200, headers: [:], body: body)
 		} catch {
-            return error.response
+            return .init(error: error)
 		}
 	}
 
@@ -64,7 +64,7 @@ struct DistrictController: DistrictControllerProtocol {
 			let body: String = try encode(tools)
 			return .init(statusCode: 200, headers: [:], body: body)
 		} catch {
-            return error.response
+            return .init(error: error)
 		}
 	}
 
@@ -83,7 +83,7 @@ struct DistrictController: DistrictControllerProtocol {
 			let body: String = try encode(result)
 			return .init(statusCode: 200, headers: [:], body: body)
 		} catch {
-            return error.response
+            return .init(error: error)
 		}
 	}
 
@@ -97,7 +97,7 @@ struct DistrictController: DistrictControllerProtocol {
 			let body: String = try encode(result)
 			return .init(statusCode: 200, headers: [:], body: body)
 		} catch {
-            return error.response
+            return .init(error: error)
 		}
 	}
 }
