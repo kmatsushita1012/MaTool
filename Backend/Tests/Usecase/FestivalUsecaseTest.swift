@@ -95,7 +95,41 @@ struct FestivalUsecaseTest {
         #expect(result == item)
         #expect(mock.putCount == 1)
     }
+    
+    @Test func test_put_ロールが違う() async throws {
+        let item = Festival(id: "p-id", name: "p-name", subname: "p-subname",prefecture: "p", city: "c", base: Coordinate(latitude: 0, longitude: 0))
+        let expected = APIError.unauthorized("アクセス権限がありません。")
+        let mock = FestivalRepositoryMock(putHandler: { _ in
+            throw expected
+        })
+        let subject = make(mock)
 
+
+        await #expect(throws: expected) {
+            let _ = try await subject.post(item, user: .district("different-id"))
+        }
+
+
+        #expect(mock.putCount == 0)
+    }
+    
+    @Test func test_put_idが違う() async throws {
+        let item = Festival(id: "p-id", name: "p-name", subname: "p-subname",prefecture: "p", city: "c", base: Coordinate(latitude: 0, longitude: 0))
+        let expected = APIError.unauthorized("アクセス権限がありません。")
+        let mock = FestivalRepositoryMock(putHandler: { _ in
+            throw expected
+        })
+        let subject = make(mock)
+
+
+        await #expect(throws: expected) {
+            let _ = try await subject.post(item, user: .headquarter("different-id"))
+        }
+
+
+        #expect(mock.putCount == 0)
+    }
+    
     @Test func test_put_異常() async throws {
         let item = Festival(id: "p-id", name: "p-name", subname: "p-subname",prefecture: "p", city: "c", base: Coordinate(latitude: 0, longitude: 0))
         let expected = APIError.internalServerError("put_failed")
