@@ -8,7 +8,7 @@
 import Foundation
 import AWSLambdaRuntime
 import AWSLambdaEvents
-
+import Shared
 
 
 
@@ -36,6 +36,16 @@ final class Application: @unchecked Sendable {
         let headers: [String: String]
         let body: String
     }
+    
+    enum Error: Swift.Error, Sendable, Equatable {
+        case notFound(String?)
+        case badRequest(String?)
+        case internalServerError(String?)
+        case unauthorized(String?)
+        case conflict(String?)
+        case encodingError(String?)
+        case decodingError(String?)
+    }
 
     enum PathComponent: Sendable {
         case constant(String)
@@ -48,9 +58,9 @@ final class Application: @unchecked Sendable {
         let middlewares: [Middleware]
     }
     
-    typealias Handler = @Sendable (Request) async -> Response
+    typealias Handler = @Sendable (Request) async throws -> Response
     
-    typealias Middleware = @Sendable (Request, Handler) async -> Response
+    typealias Middleware = @Sendable (Request, Handler) async throws -> Response
     
     private var layers: [Layer] = []
 
@@ -94,10 +104,15 @@ final class Application: @unchecked Sendable {
     }
 
     func handle(_ request: Request) async -> Response {
-        return await apply(layers)(request)
+        do {
+            return try await apply(layers)(request)
+        } catch {
+            return .error(error)
+        }
+        
     }
     
-    private func apply(_ layers: [Layer]) -> (Request) async -> Response {
+    private func apply(_ layers: [Layer]) -> Handler {
         @Sendable func makeMiddlewareChain(_ middlewares: [Middleware], _ idx: Int, _ nextLayer: @escaping Handler) -> Handler {
             guard idx < middlewares.count else {
                 return nextLayer
@@ -105,8 +120,8 @@ final class Application: @unchecked Sendable {
 
             let current = middlewares[idx]
             return { req in
-                await current(req) { nextReq in
-                    await makeMiddlewareChain(middlewares, idx + 1, nextLayer)(nextReq)
+                try await current(req) { nextReq in
+                    try await makeMiddlewareChain(middlewares, idx + 1, nextLayer)(nextReq)
                 }
             }
         }
@@ -121,7 +136,7 @@ final class Application: @unchecked Sendable {
                 guard layer.method == nil || layer.method == req.method,
                       let parameters = self.match(layer.path, req.path)
                 else {
-                    return await makeLayerChain(index + 1)(req)
+                    return try await makeLayerChain(index + 1)(req)
                 }
                 
                 var request = req
@@ -129,7 +144,7 @@ final class Application: @unchecked Sendable {
                 
                 let nextLayer = makeLayerChain(index + 1)
                 let middlewareChain = makeMiddlewareChain(layer.middlewares, 0, nextLayer)
-                return await middlewareChain(request)
+                return try await middlewareChain(request)
             }
         }
 
@@ -173,31 +188,5 @@ enum ApplicationBuilder {
     static func buildBlock(_ components: Router...) -> [Router] {
         components
     }
-}
-
-extension Application.Response {
-    static let encodeError: Self = Self(
-        statusCode: 500,
-        headers: [:],
-        body: "Encode error"
-    )
-    
-    static let decodeError: Self = Self(
-        statusCode: 500,
-        headers: [:],
-        body: "Decode error"
-    )
-    
-    static let internalServerError: Self = Self(
-        statusCode: 500,
-        headers: [:],
-        body: "Internal server error"
-    )
-    
-    static let badRequest: Self = Self(
-        statusCode: 400,
-        headers: [:],
-        body: "Bad request"
-    )
 }
 

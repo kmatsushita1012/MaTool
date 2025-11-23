@@ -14,15 +14,6 @@ protocol Router: Sendable{
     func body(_ app: Application) -> Void
 }
 
-// MARK: - Controller
-protocol Controller: Sendable, DependencyKey {}
-
-// MARK: - Usecase
-protocol Usecase: Sendable, DependencyKey  {}
-
-// MARK: - Repository
-protocol Repository: Sendable, DependencyKey  {}
-
 protocol MiddlewareComponent: Router {
     var path: String { get }
     var body: Middleware { get }
