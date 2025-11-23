@@ -20,7 +20,7 @@ extension APIError{
     var message: String{
         switch self {
         case .notFound(_):
-            return "Not Fount"
+            return "Not Found"
         case .badRequest(_):
             return "Bad Request"
         case .internalServerError(_):
