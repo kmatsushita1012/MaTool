@@ -176,28 +176,23 @@ enum ApplicationBuilder {
 }
 
 extension Application.Response {
-    static let encodeError: Self = Self(
-        statusCode: 500,
-        headers: [:],
-        body: "Encode error"
-    )
+    private static func makeErrorResponse(title: String, detail: String, statusCode: Int) -> Self {
+        let dict: [String: String] = [
+            "title": title,
+            "detail": detail
+        ]
+        let bodyData = try? JSONEncoder().encode(dict)
+        let bodyString = bodyData.flatMap { String(data: $0, encoding: .utf8) } ?? "{}"
+        
+        return Self(
+            statusCode: statusCode,
+            headers: ["Content-Type": "application/json"],
+            body: bodyString
+        )
+    }
     
-    static let decodeError: Self = Self(
-        statusCode: 500,
-        headers: [:],
-        body: "Decode error"
-    )
-    
-    static let internalServerError: Self = Self(
-        statusCode: 500,
-        headers: [:],
-        body: "Internal server error"
-    )
-    
-    static let badRequest: Self = Self(
-        statusCode: 400,
-        headers: [:],
-        body: "Bad request"
-    )
+    static func internalServerError(_ detail: String) -> Self {
+        makeErrorResponse(title: "Internal Server Error", detail: detail, statusCode: 500)
+    }    
 }
 
