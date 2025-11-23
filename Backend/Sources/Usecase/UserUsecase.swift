@@ -18,7 +18,7 @@ extension DependencyValues {
   }
 }
 
-extension UserUsecase {
+extension UserUsecase: DependencyKey {
     static let liveValue = {
         @Dependency(\.userRepository) var repository
         
