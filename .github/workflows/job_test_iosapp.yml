@@ -19,6 +19,11 @@ jobs:
 
       - name: Ensure SPM Cache Dir Exists
         run: mkdir -p iOSApp/Caches/org.swift.swiftpm
+
+      - name: Create empty .env
+        run: |
+          mkdir -p Backend
+          touch Backend/.env
       
       - name: Cache SPM
         uses: actions/cache@v3
