@@ -23,8 +23,9 @@ jobs:
       - name: Cache SPM
         uses: actions/cache@v3
         with:
-          path: iOSApp/Caches/org.swift.swiftpm
-          key: ${{ runner.os }}-spm-iOSApp-${{ hashFiles('iOSApp/Package.resolved') }}
+          path: |
+            ~/Library/Caches/org.swift.swiftpm/
+          key: ${{ runner.os }}-spm-iOSApp-26.0
           restore-keys: |
             ${{ runner.os }}-spm-iOSApp-
 
@@ -32,17 +33,18 @@ jobs:
         uses: actions/cache@v3
         with:
           path: iOSApp/.derivedData
-          key: ${{ runner.os }}-derived-${{ hashFiles('iOSApp/MaTool.xcodeproj/project.pbxproj', '**/*.swift', '**/*.h') }}
+          key: ${{ runner.os }}-derived-26.0
           restore-keys: |
             ${{ runner.os }}-derived-
 
       - name: Build&Test
         run: |
+          set -o pipefail
           mkdir -p build/reports
           xcodebuild \
             -project iOSApp/MaTool.xcodeproj \
             -scheme iOSApp \
-            -destination 'platform=iOS Simulator,name=iPhone 17,OS=26.1' \
+            -destination 'platform=iOS Simulator,name=iPhone 17,OS=26.0.1' \
             -configuration Debug \
             -derivedDataPath iOSApp/.derivedData \
             -enableCodeCoverage YES \
@@ -50,7 +52,7 @@ jobs:
             CODE_SIGNING_ALLOWED=NO \
             ENABLE_SWIFT_MACROS=YES \
             test \
-            | tee build/reports/test.log
+            | tee build/reports/test.log | xcpretty
 
       - name: Upload Test Results
         id: upload-tests
