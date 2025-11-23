@@ -5,6 +5,7 @@
 //  Created by 松下和也 on 2025/11/13.
 //
 
+import Dependencies
 @preconcurrency import AWSDynamoDB
 
 fileprivate typealias AttributeValue = DynamoDBClientTypes.AttributeValue
@@ -17,6 +18,8 @@ struct DynamoDBStore: DataStore {
     private let decoder = DynamoDBDecoder()
     
     init(region: String = "ap-northeast-1", tableName: String) throws {
+        @Dependency(Environment.self) var env
+        env.configure()
         self.client = try DynamoDBClient(region: region)
         self.tableName = tableName
     }
