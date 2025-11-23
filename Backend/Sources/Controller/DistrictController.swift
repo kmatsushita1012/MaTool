@@ -47,7 +47,7 @@ struct DistrictController: DistrictControllerProtocol {
 	}
 
 	func query(_ request: Request, next: Handler) async -> Response {
-		guard let regionId = request.parameters["regionId"] else { return .decodeError }
+		guard let regionId = request.parameters["festivalId"] else { return .decodeError }
 		do {
 			let items = try await usecase.query(by: regionId)
 			let body: String = try encode(items)
