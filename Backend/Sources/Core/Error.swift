@@ -7,7 +7,7 @@
 
 import Foundation
 
-enum APIError: Error {
+enum APIError: Error, Sendable, Equatable {
     case notFound(String?)
     case badRequest(String?)
     case internalServerError(String?)
