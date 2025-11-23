@@ -20,20 +20,24 @@ jobs:
     - name: Ensure SPM Cache Dir Exists
       run: mkdir -p Shared/Caches/org.swift.swiftpm
 
+     # --- SPM キャッシュ ---
     - name: Cache SPM
       uses: actions/cache@v3
       with:
-        path: Shared/Caches/org.swift.swiftpm
-        key: ${{ runner.os }}-spm-Shared-${{ hashFiles('Shared/Package.resolved') }}
+        path: |
+          ~/Library/Caches/org.swift.swiftpm/
+        key: ${{ runner.os }}-spm-Shared-26.0
         restore-keys: |
           ${{ runner.os }}-spm-Shared-
 
-    - name: Cache Xcode Derived Data
+    # --- DerivedData キャッシュ ---
+    - name: Cache DerivedData
       uses: actions/cache@v3
       with:
         path: Shared/.derivedData
-        key: ${{ runner.os }}-shared-derivedData-${{ hashFiles('Shared/Package.swift') }}
-        restore-keys: ${{ runner.os }}-shared-derivedData-
+        key: ${{ runner.os }}-derived-26.0
+        restore-keys: |
+          ${{ runner.os }}-derived-
 
     - name: Build & Test
       run: |
