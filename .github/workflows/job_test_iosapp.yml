@@ -51,8 +51,7 @@ jobs:
             CODE_SIGNING_ALLOWED=NO \
             ENABLE_SWIFT_MACROS=YES \
             test \
-            | xcpretty
-            | tee build/reports/test.log
+            | tee build/reports/test.log | xcpretty
 
       - name: Upload Test Results
         id: upload-tests
