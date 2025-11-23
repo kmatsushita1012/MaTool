@@ -24,7 +24,7 @@ struct AuthMiddleware: MiddlewareComponent {
 
         let token = String(authHeader.dropFirst("Bearer ".count))
         guard let result = try? await authManagerFactory().get(accessToken: token) else {
-            return APIError.unauthorized(message: "Couldn't get user from token").response
+            return .init(error: APIError.unauthorized(localizedDescription: "Couldn't get user from token"))
         }
         request.user = result
         print("Authorization exists \(result)")

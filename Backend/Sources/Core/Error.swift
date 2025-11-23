@@ -8,16 +8,16 @@
 import Foundation
 
 enum APIError: Error {
-    case notFound(message: String?)
-    case badRequest(message: String?)
-    case internalServerError(message: String?)
-    case unauthorized(message: String?)
-    case conflict(message: String?)
-    case encodingError(message: String?)
-    case decodingError(message: String?)
+    case notFound(String?)
+    case badRequest(String?)
+    case internalServerError(String?)
+    case unauthorized(String?)
+    case conflict(String?)
+    case encodingError(String?)
+    case decodingError(String?)
 }
 extension APIError{
-    var title: String{
+    var message: String{
         switch self {
         case .notFound(_):
             return "Not Fount"
@@ -47,24 +47,8 @@ extension APIError{
         }
     }
     
-    func response() -> Application.Response {
-        let dict: [String: String] = [
-            "title": self.title,
-            "detail": self.message ?? ""
-        ]
-        
-        let bodyData = try? JSONEncoder().encode(dict)
-        let bodyString = bodyData.flatMap { String(data: $0, encoding: .utf8) } ?? "{}"
-        
-        return Application.Response(
-            statusCode: self.statusCode,
-            headers: ["Content-Type": "application/json"],
-            body: bodyString
-        )
-    }
-    
     /// message を簡単に取得
-    private var message: String? {
+    var localizedDescription: String {
         switch self {
         case .notFound(let message),
              .badRequest(let message),
@@ -73,47 +57,65 @@ extension APIError{
              .conflict(let message),
              .encodingError(let message),
              .decodingError(let message):
-            return message
+            return message ?? "unknown"
         }
     }
 }
 
 extension APIError {
-    static func notFound(_ message: String? = nil) -> APIError {
-        .notFound(message: message)
+    static func notFound(localizedDescription: String? = nil) -> APIError {
+        .notFound(localizedDescription)
     }
 
-    static func badRequest(_ message: String? = nil) -> APIError {
-        .badRequest(message: message)
+    static func badRequest(localizedDescription: String? = nil) -> APIError {
+        .badRequest(localizedDescription)
     }
 
-    static func internalServerError(_ message: String? = nil) -> APIError {
-        .internalServerError(message: message)
+    static func internalServerError(localizedDescription: String? = nil) -> APIError {
+        .internalServerError(localizedDescription)
     }
 
-    static func unauthorized(_ message: String? = nil) -> APIError {
-        .unauthorized(message: message)
+    static func unauthorized(localizedDescription: String? = nil) -> APIError {
+        .unauthorized(localizedDescription)
     }
     
-    static func conflict(_ message: String? = nil) -> APIError {
-        .conflict(message: message)
+    static func conflict(localizedDescription: String? = nil) -> APIError {
+        .conflict(localizedDescription)
     }
     
-    static func encodingError(_ message: String? = nil) -> APIError {
-        .encodingError(message: message)
+    static func encodingError(localizedDescription: String? = nil) -> APIError {
+        .encodingError(localizedDescription)
     }
     
-    static func decodingError(_ message: String? = nil) -> APIError {
-        .decodingError(message: message)
+    static func decodingError(localizedDescription: String? = nil) -> APIError {
+        .decodingError(localizedDescription)
     }
 }
 
-extension Error {
-    var response: Application.Response {
-        print(self.localizedDescription)
-        if let apiError = self as? APIError {
-            return apiError.response
+extension Application.Response {
+    init(error: Error) {
+        if let apiError = error as? APIError {
+            let dict: [String: String] = [
+                "message": apiError.message,
+                "localizedDescription": apiError.localizedDescription
+            ]
+            
+            let bodyData = try? JSONEncoder().encode(dict)
+            
+            self.statusCode = apiError.statusCode
+            self.headers = ["Content-Type": "application/json"]
+            self.body = bodyData.flatMap { String(data: $0, encoding: .utf8) } ?? "{}"
+        } else {
+            let dict: [String: String] = [
+                "message": "Internal Server Error",
+                "localizedDescription": ""
+            ]
+            
+            let bodyData = try? JSONEncoder().encode(dict)
+            
+            self.statusCode = 500
+            self.headers = ["Content-Type": "application/json"]
+            self.body = bodyData.flatMap { String(data: $0, encoding: .utf8) } ?? "{}"
         }
-        return .internalServerError("不明なエラー")
     }
 }

@@ -82,7 +82,7 @@ struct DistrictUsecase: DistrictUsecaseProtocol {
     
     func put(id: String, item: District, user: UserRole) async throws -> District {
         guard case let .district(districtId) = user, id == districtId else {
-            throw APIError.unauthorized(message: "アクセス権限がありません")
+            throw APIError.unauthorized("アクセス権限がありません")
         }
         try await repository.put(id: item.id, item: item)
         return item
@@ -90,7 +90,7 @@ struct DistrictUsecase: DistrictUsecaseProtocol {
     
     func getTools(id: String, user: UserRole) async throws -> DistrictTool {
         // District取得
-        guard case let .district(districtId) = user, id == districtId else { throw APIError.unauthorized(message: "アクセス権限がありません") }
+        guard case let .district(districtId) = user, id == districtId else { throw APIError.unauthorized("アクセス権限がありません") }
         guard let district = try await repository.get(id: id) else {
             throw APIError.notFound("指定された地区が見つかりません")
         }
