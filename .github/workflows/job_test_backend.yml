@@ -7,6 +7,9 @@ jobs:
   test-backend:
     name: Run Backend Tests
     runs-on: macos-26
+    env:
+      AWS_REGION: ${{ secrets.AWS_REGION }}
+      LAMBDA_ARN: ${{ secrets.LAMBDA_ARN }}
 
     steps:
     - name: Checkout
