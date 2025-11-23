@@ -19,19 +19,19 @@ enum APIError: Error {
 extension APIError{
     var title: String{
         switch self {
-        case .notFound(let message):
+        case .notFound(_):
             return "Not Fount"
-        case .badRequest(let message):
+        case .badRequest(_):
             return "Bad Request"
-        case .internalServerError(let message):
+        case .internalServerError(_):
             return "Internal Server Error"
-        case .unauthorized(let message):
+        case .unauthorized(_):
             return "Unauthorized"
-        case .conflict(let message):
+        case .conflict(_):
             return "Conflict"
-        case .encodingError(let message):
+        case .encodingError(_):
             return "Encoding Error"
-        case .decodingError(let message):
+        case .decodingError(_):
             return "Decoding Error"
         }
     }
