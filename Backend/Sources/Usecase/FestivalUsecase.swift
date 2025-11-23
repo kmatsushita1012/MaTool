@@ -8,8 +8,13 @@
 import Dependencies
 import Shared
 
+// MARK: - Depencies
+enum FestivalUsecaseKey: DependencyKey {
+    static let liveValue = FestivalUsecase()
+}
+
 // MARK: - FestivalUsecaseProtocol
-protocol FestivalUsecaseProtocol: Usecase {
+protocol FestivalUsecaseProtocol: Sendable {
     func scan() async throws -> [Festival]
     func get(_ id: String) async throws -> Festival
     func post(_ festival: Festival, user: UserRole) async throws -> Festival
@@ -25,7 +30,7 @@ struct FestivalUsecase: FestivalUsecaseProtocol {
     
     func get(_ id: String) async throws -> Festival {
         guard let result = try await repository.get(id: id) else {
-            throw APIError.notFound("存在しない項目です。")
+            throw Error.notFound("存在しない項目です。")
         }
         return result
     }
@@ -33,7 +38,7 @@ struct FestivalUsecase: FestivalUsecaseProtocol {
     func post(_ item: Festival, user: UserRole) async throws -> Festival {
         guard case let .headquarter(headquarterId) = user,
               headquarterId == item.id else {
-            throw APIError.unauthorized("アクセス権限がありません。")
+            throw Error.unauthorized("アクセス権限がありません。")
         }
         let result = try await repository.put(item)
         return result

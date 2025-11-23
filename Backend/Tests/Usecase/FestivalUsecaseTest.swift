@@ -31,7 +31,7 @@ struct FestivalUsecaseTest {
     }
     
     @Test func test_get_異常() async throws {
-        let expected = APIError.internalServerError("get_failed")
+        let expected = Error.internalServerError("get_failed")
         var lastCalledId: String? = nil
         let mock = FestivalRepositoryMock(getHandler: { id in
             lastCalledId = id
@@ -66,7 +66,7 @@ struct FestivalUsecaseTest {
     }
 
     @Test func test_scan_異常() async throws {
-        let expected = APIError.internalServerError("scan_failed")
+        let expected = Error.internalServerError("scan_failed")
         let mock = FestivalRepositoryMock(scanHandler: {
             throw expected
         })
@@ -98,7 +98,7 @@ struct FestivalUsecaseTest {
     
     @Test func test_put_ロールが違う() async throws {
         let item = Festival(id: "p-id", name: "p-name", subname: "p-subname",prefecture: "p", city: "c", base: Coordinate(latitude: 0, longitude: 0))
-        let expected = APIError.unauthorized("アクセス権限がありません。")
+        let expected = Error.unauthorized("アクセス権限がありません。")
         let mock = FestivalRepositoryMock(putHandler: { _ in
             throw expected
         })
@@ -115,7 +115,7 @@ struct FestivalUsecaseTest {
     
     @Test func test_put_idが違う() async throws {
         let item = Festival(id: "p-id", name: "p-name", subname: "p-subname",prefecture: "p", city: "c", base: Coordinate(latitude: 0, longitude: 0))
-        let expected = APIError.unauthorized("アクセス権限がありません。")
+        let expected = Error.unauthorized("アクセス権限がありません。")
         let mock = FestivalRepositoryMock(putHandler: { _ in
             throw expected
         })
@@ -132,7 +132,7 @@ struct FestivalUsecaseTest {
     
     @Test func test_put_異常() async throws {
         let item = Festival(id: "p-id", name: "p-name", subname: "p-subname",prefecture: "p", city: "c", base: Coordinate(latitude: 0, longitude: 0))
-        let expected = APIError.internalServerError("put_failed")
+        let expected = Error.internalServerError("put_failed")
         let mock = FestivalRepositoryMock(putHandler: { _ in
             throw expected
         })
