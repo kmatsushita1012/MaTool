@@ -16,6 +16,12 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Create Backend/.env
+        run: |
+          mkdir -p Backend
+          echo "COGNITO_USER_POOL_ID=${{ secrets.AWS_COGNITO_USER_POOL_ID }}" >> Backend/.env
+          echo "COGNITO_TEST_EMAIL=${{ secrets.AWS_COGNITO_TEST_EMAIL }}" >> Backend/.env
+
       - name: Build Lambda binary with Dockerfile
         # build context はリポジトリルート（Shared を含める）
         run: |
