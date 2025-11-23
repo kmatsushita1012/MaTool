@@ -18,15 +18,16 @@ struct AuthMiddleware: MiddlewareComponent {
         
         guard let authHeader = request.headers["authorization"], authHeader.starts(with: "Bearer ") else {
             request.user = .guest
+            print("Authorization doesn't exist")
             return await next(request)
         }
 
         let token = String(authHeader.dropFirst("Bearer ".count))
         guard let result = try? await authManagerFactory().get(accessToken: token) else {
-            return Response(statusCode: 500, headers: [:], body: "Internal Server Error")
+            return APIError.unauthorized(message: "Couldn't get user from token").response
         }
         request.user = result
-        
+        print("Authorization exists \(result)")
         return await next(request)
     }
 }

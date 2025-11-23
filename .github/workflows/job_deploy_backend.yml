@@ -9,21 +9,14 @@ jobs:
     env:
       AWS_REGION: ${{ secrets.AWS_REGION }}
       LAMBDA_ARN: ${{ secrets.LAMBDA_ARN }}
+      COGNITO_USER_POOL_ID: ${{ secrets.COGNITO_USER_POOL_ID }}
+      COGNITO_TEST_EMAIL: ${{ secrets.COGNITO_TEST_EMAIL }}
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-
-      - name: Create Backend/.env
-        run: |
-          mkdir -p Backend
-          echo "COGNITO_USER_POOL_ID=${{ secrets.AWS_COGNITO_USER_POOL_ID }}" >> Backend/.env
-          echo "COGNITO_TEST_EMAIL=${{ secrets.AWS_COGNITO_TEST_EMAIL }}" >> Backend/.env
-          echo "AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }}" >> Backend/.env
-          echo "AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY}}" >> Backend/.env
-          echo "AWS_REGION=${{ secrets.AWS_REGION }}" >> Backend/.env
 
       - name: Build Lambda binary with Dockerfile
         # build context はリポジトリルート（Shared を含める）
