@@ -16,6 +16,7 @@ WORKDIR /workspace
 # --- Backend のパッケージ設定を root 扱いでコピーする ---
 COPY Backend/Package.swift ./Package.swift
 COPY Backend/Package.resolved ./Package.resolved
+COPY Backend/.env ./.env
 
 # Shared を含むため最初にコピーしておく
 COPY Shared ./Shared
