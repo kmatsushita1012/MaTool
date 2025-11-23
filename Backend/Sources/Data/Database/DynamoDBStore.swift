@@ -5,6 +5,7 @@
 //  Created by 松下和也 on 2025/11/13.
 //
 
+import Dependencies
 @preconcurrency import AWSDynamoDB
 
 fileprivate typealias AttributeValue = DynamoDBClientTypes.AttributeValue
