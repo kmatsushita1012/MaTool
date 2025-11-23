@@ -15,7 +15,7 @@ jobs:
       - name: Setup Xcode
         uses: maxim-lobanov/setup-xcode@v1
         with:
-          xcode-version: "26.0"
+          xcode-version: "26.1"
 
       - name: Ensure SPM Cache Dir Exists
         run: mkdir -p iOSApp/Caches/org.swift.swiftpm
