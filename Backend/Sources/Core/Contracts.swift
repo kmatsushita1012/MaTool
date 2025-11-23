@@ -18,7 +18,7 @@ protocol Router: Sendable{
 protocol Controller: Sendable, DependencyKey {}
 
 // MARK: - Usecase
-protocol Usecase: Sendable, DependencyKey  {}
+protocol Usecase: Sendable {}
 
 // MARK: - Repository
 protocol Repository: Sendable, DependencyKey  {}

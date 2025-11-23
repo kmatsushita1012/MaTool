@@ -1,35 +1,33 @@
 //
 //  MidleWare.swift
-//  MaToolAPI
+//  matool-backend
 //
 //  Created by 松下和也 on 2025/10/27.
 //
 
-enum UserRoleType: String, Sendable {
-    case guest, region, district
-}
+import AWSCognitoIdentityProvider
+import Dependencies
 
-struct UserRole: Sendable {
-    let type: UserRoleType
-    let id: String?
-}
-
+// MARK: - AuthMiddleware
 struct AuthMiddleware: MiddlewareComponent {
     var path: String
     
     var body: Middleware = { req, next in
         var request = req
-        if let auth = req.headers["authorization"] {
-            // ここで Cognito検証などを行う
-            if auth.contains("region") {
-                request.user = UserRole(type: .region, id: "user123")
-            } else {
-                request.user = UserRole(type: .guest, id: nil)
-            }
-        } else {
-            request.user = UserRole(type: .guest, id: nil)
+        @Dependency(AuthManagerFactoryKey.self) var authManagerFactory
+        
+        guard let authHeader = request.headers["authorization"], authHeader.starts(with: "Bearer ") else {
+            request.user = .guest
+            print("Authorization doesn't exist")
+            return await next(request)
         }
-        print("Authenticated as \(request.user?.type.rawValue ?? "unknown")")
+
+        let token = String(authHeader.dropFirst("Bearer ".count))
+        guard let result = try? await authManagerFactory().get(accessToken: token) else {
+            return .init(error: APIError.unauthorized(localizedDescription: "Couldn't get user from token"))
+        }
+        request.user = result
+        print("Authorization exists \(result)")
         return await next(request)
     }
 }
