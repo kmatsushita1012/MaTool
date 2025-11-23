@@ -41,6 +41,7 @@ jobs:
 
     - name: Build & Test
       run: |
+        set -o pipefail
         mkdir -p build/reports
         xcodebuild \
           -workspace MaTool.xcworkspace \
