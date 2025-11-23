@@ -110,6 +110,7 @@ extension APIError {
 
 extension Error {
     var response: Application.Response {
+        print(self.localizedDescription)
         if let apiError = self as? APIError {
             return apiError.response
         }
