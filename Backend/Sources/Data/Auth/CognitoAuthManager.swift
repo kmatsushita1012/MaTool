@@ -20,8 +20,9 @@ struct CognitoAuthManager: AuthManager {
     }
     
     init() async throws {
+        @Dependency(Environment.self) var env
         self.client = try await .init()
-        self.userPoolId = ""
+        self.userPoolId = env.cognitoPoolId
     }
 
     func create(username: String, email: String) async throws -> UserRole {
