@@ -1,6 +1,11 @@
 import Testing
 @testable import iOSApp
 
-@Test func example() async throws {
-    // Write your test here and use APIs like `#expect(...)` to check expected conditions.
+
+struct iOSAppTest {
+    @Test func example() async throws {
+        let sum = 1 + 2
+        #expect(sum == 3)
+    }
+
 }
