@@ -51,6 +51,7 @@ jobs:
           -configuration Debug \
           -derivedDataPath Shared/.derivedData \
           -enableCodeCoverage YES \
+          -skipMacroValidation \
           CODE_SIGNING_ALLOWED=NO \
           ENABLE_SWIFT_MACROS=YES \
           test \
