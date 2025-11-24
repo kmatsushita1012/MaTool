@@ -14,6 +14,7 @@ protocol Router: Sendable{
     func body(_ app: Application) -> Void
 }
 
+// MARK: - MiddlewareComponent
 protocol MiddlewareComponent: Router {
     var path: String { get }
     var body: Middleware { get }
@@ -29,6 +30,7 @@ extension MiddlewareComponent {
     }
 }
 
+// MARK: - Typealias
 typealias Request = Application.Request
 typealias Response = Application.Response
 typealias Handler = Application.Handler
