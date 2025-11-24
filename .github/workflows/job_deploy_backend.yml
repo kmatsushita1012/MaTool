@@ -15,6 +15,11 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+      
+      - name: Create empty .env
+        run: |
+          mkdir -p Backend
+          touch Backend/.env
 
       - name: Build Lambda binary with Dockerfile
         # build context はリポジトリルート（Shared を含める）
