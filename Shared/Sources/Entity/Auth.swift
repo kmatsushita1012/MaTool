@@ -6,9 +6,24 @@
 //
 
 import Foundation
+import CasePaths
 
+@CasePathable
 public enum UserRole: Entity {
     case headquarter(String)
     case district(String)
     case guest
+}
+
+extension UserRole{
+    var id: String? {
+        switch self {
+        case .headquarter(let id):
+            return id
+        case .district(let id):
+            return id
+        case .guest:
+            return nil
+        }
+    }
 }
