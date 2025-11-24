@@ -114,7 +114,7 @@ private extension DataStoreMock {
     }
 }
 
-enum DataStoreMockError<E, A>: Error, LocalizedError {
+enum DataStoreMockError<E, A>: LocalizedError {
     case notFound
     case typeMismatch(expected: E.Type, actual: A.Type)
     
