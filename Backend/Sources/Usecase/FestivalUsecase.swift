@@ -10,7 +10,7 @@ import Shared
 
 // MARK: - Depencies
 enum FestivalUsecaseKey: DependencyKey {
-    static let liveValue = FestivalUsecase()
+    static let liveValue: FestivalUsecaseProtocol = FestivalUsecase()
 }
 
 // MARK: - FestivalUsecaseProtocol
