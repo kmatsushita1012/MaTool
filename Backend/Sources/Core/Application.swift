@@ -15,14 +15,14 @@ import Shared
 // MARK: - Application
 final class Application: @unchecked Sendable {
     
-    enum Method: String {
+    enum Method: String, Decodable {
         case get = "GET"
         case put = "PUT"
         case post = "POST"
         case delete = "DELETE"
     }
     
-    struct Request: Sendable {
+    struct Request: Sendable, Decodable {
         let method: Method?
         let path: String
         let headers: [String: String]
@@ -31,7 +31,7 @@ final class Application: @unchecked Sendable {
         let body: String?
     }
 
-    struct Response: Sendable {
+    struct Response: Sendable, Encodable {
         let statusCode: Int
         let headers: [String: String]
         let body: String

@@ -8,11 +8,14 @@
 import Foundation
 
 extension Application.Response {
-    static func success(_ body: String) -> Self{
+    static func success<T: Encodable>(_ body: T) throws -> Self {
+        guard let json = try? body.toString() else {
+            throw Error.encodingError("エンコードに失敗しました。")
+        }
         return .init(
             statusCode: 200,
             headers: ["Content-Type": "application/json"],
-            body: body
+            body: json
         )
     }
 }
@@ -20,30 +23,26 @@ extension Application.Response {
 extension Application.Response {
     static func error(_ error: Swift.Error) -> Self {
         if let apiError = error as? Error {
-            let dict: [String: String] = [
+            let body: [String: String] = [
                 "message": apiError.message,
                 "localizedDescription": apiError.localizedDescription
             ]
             
-            let bodyData = try? JSONEncoder().encode(dict)
-            
             return Self(
                 statusCode: apiError.statusCode,
                 headers: ["Content-Type": "application/json"],
-                body: bodyData.flatMap { String(data: $0, encoding: .utf8) } ?? "{}"
+                body: (try? body.toString()) ?? "{}"
             )
         } else {
-            let dict: [String: String] = [
+            let body: [String: String] = [
                 "message": "Internal Server Error",
                 "localizedDescription": ""
             ]
             
-            let bodyData = try? JSONEncoder().encode(dict)
-            
             return Self(
                 statusCode: 500,
                 headers: ["Content-Type": "application/json"],
-                body: bodyData.flatMap { String(data: $0, encoding: .utf8) } ?? "{}"
+                body: (try? body.toString()) ?? "{}"
             )
         }
     }
