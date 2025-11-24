@@ -10,7 +10,6 @@
 struct MaToolAPI: APIGateway {
     static let app = Application{
         AuthMiddleware(path: "/name")
-        UserRouter()
     }
 }
 

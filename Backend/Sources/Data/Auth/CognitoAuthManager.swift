@@ -43,11 +43,11 @@ struct CognitoAuthManager: AuthManager {
         let response = try await client.adminCreateUser(input: input)
         
         // レスポンスを確認
-        guard let userReponse = response.user else { throw APIError.unauthorized()}
+        guard let userReponse = response.user else { throw Error.unauthorized()}
         let id = userReponse.username
         let attributes = userReponse.attributes
         let role = attributes?.first{ $0.name == "custom:role"}
-        guard let id, role?.value == "district" else { throw APIError.unauthorized() }
+        guard let id, role?.value == "district" else { throw Error.unauthorized() }
         let user: UserRole = .district(id)
         return user
     }
@@ -75,14 +75,14 @@ struct CognitoAuthManager: AuthManager {
     
     private func parseUserRole(attributes: [CognitoIdentityProviderClientTypes.AttributeType]?, id: String?) throws -> UserRole {
         let role = attributes?.first{ $0.name == "custom:role"}?.value
-        guard let id, let role else { throw APIError.unauthorized() }
+        guard let id, let role else { throw Error.unauthorized() }
         switch role {
         case "district":
             return .district(id)
         case "region":
             return .headquarter(id)
         default:
-            throw APIError.unauthorized()
+            throw Error.unauthorized()
         }
     }
 }
