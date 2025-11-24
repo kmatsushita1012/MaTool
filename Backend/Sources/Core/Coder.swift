@@ -13,20 +13,26 @@ extension Data {
     }
 }
 
-func encode<T: Encodable>(_ value: T) throws -> Data {
-    try JSONEncoder().encode(value)
+extension Encodable {
+    func toString() throws -> String {
+        let data: Data = try JSONEncoder().encode(self)
+        return String(data: data, encoding: .utf8)!
+    }
 }
 
-func encode<T: Encodable>(_ value: T) throws -> String {
-    let data: Data = try encode(value)
-    return String(data: data, encoding: .utf8)!
+extension Decodable {
+    static func from(_ string: String) throws -> Self {
+        let data = Data(string)
+        return try JSONDecoder().decode(Self.self, from: data)
+    }
 }
 
-func decode<T: Decodable>(_ type: T.Type, _ data: Data) throws -> T {
-    try JSONDecoder().decode(T.self, from: data)
-}
-
-func decode<T: Decodable>(_ type: T.Type, _ string: String) throws -> T {
-    let data = Data(string)
-    return try decode(type, data)
+extension LosslessStringConvertible {
+    static func from(_ string: String) throws -> Self {
+        if let value = Self(string) {
+            return value
+        } else {
+            throw Error.decodingError("文字列 '\(string)' を \(Self.self) に変換できませんでした。")
+        }
+    }
 }
