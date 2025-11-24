@@ -89,7 +89,7 @@ struct FestivalUsecaseTest {
         let subject = make(mock)
 
 
-        let result = try await subject.post(item, user: .headquarter("p-id"))
+        let result = try await subject.put(item, user: .headquarter("p-id"))
 
 
         #expect(result == item)
@@ -106,7 +106,7 @@ struct FestivalUsecaseTest {
 
 
         await #expect(throws: expected) {
-            let _ = try await subject.post(item, user: .district("different-id"))
+            let _ = try await subject.put(item, user: .district("different-id"))
         }
 
 
@@ -123,7 +123,7 @@ struct FestivalUsecaseTest {
 
 
         await #expect(throws: expected) {
-            let _ = try await subject.post(item, user: .headquarter("different-id"))
+            let _ = try await subject.put(item, user: .headquarter("different-id"))
         }
 
 
@@ -140,7 +140,7 @@ struct FestivalUsecaseTest {
 
 
         await #expect(throws: expected) {
-            let _ = try await subject.post(item, user: .headquarter("p-id"))
+            let _ = try await subject.put(item, user: .headquarter("p-id"))
         }
 
 
