@@ -13,37 +13,37 @@ import Shared
 // MARK: - FestivalRepositoryMock
 final class FestivalRepositoryMock: FestivalRepositoryProtocol, @unchecked Sendable {
     
-    init(getCallCount: Int = 0, getHandler: ((String) async throws -> Festival?)? = nil, scanCallCount: Int = 0, scanHandler: (() async throws -> [Festival])? = nil, putCount: Int = 0, putHandler: ((Festival) async throws -> Festival)? = nil) {
-        self.getCallCount = getCallCount
+    init(
+        getHandler: ((String) throws -> Festival?)? = nil,
+        scanHandler: (() throws -> [Festival])? = nil,
+        putHandler: ((Festival) throws -> Festival)? = nil) {
         self.getHandler = getHandler
-        self.scanCallCount = scanCallCount
         self.scanHandler = scanHandler
-        self.putCount = putCount
         self.putHandler = putHandler
     }
     
     private(set) var getCallCount = 0
-    private(set) var getHandler: ((String) async throws -> Festival?)?
+    private(set) var getHandler: ((String) throws -> Festival?)?
     func get(id: String) async throws -> Festival? {
         getCallCount+=1
-        guard let getHandler else { fatalError("Unimplemented")}
-        return try await getHandler(id)
+        guard let getHandler else { throw TestError.unimplemented }
+        return try getHandler(id)
     }
 
     private(set) var scanCallCount = 0
-    private(set) var scanHandler: (() async throws -> [Festival])?
+    private(set) var scanHandler: (() throws -> [Festival])?
     func scan() async throws -> [Festival] {
         scanCallCount+=1
-        guard let scanHandler else { fatalError("Unimplemented")}
-        return try await scanHandler()
+        guard let scanHandler else { throw TestError.unimplemented }
+        return try scanHandler()
     }
 
     private(set) var putCount = 0
-    private var putHandler: ((Festival) async throws -> Festival)?
+    private var putHandler: ((Festival) throws -> Festival)?
     func put(_ item: Festival) async throws -> Festival {
         putCount+=1
-        guard let putHandler else { fatalError("Unimplemented")}
-        return try await putHandler(item)
+        guard let putHandler else { throw TestError.unimplemented }
+        return try putHandler(item)
     }
 }
 
