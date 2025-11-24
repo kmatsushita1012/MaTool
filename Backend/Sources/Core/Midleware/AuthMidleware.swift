@@ -18,7 +18,7 @@ struct AuthMiddleware: MiddlewareComponent {
         
         guard let authHeader = request.headers["authorization"], authHeader.starts(with: "Bearer ") else {
             request.user = .guest
-            return await next(request)
+            return try await next(request)
         }
 
         let token = String(authHeader.dropFirst("Bearer ".count))
@@ -27,6 +27,6 @@ struct AuthMiddleware: MiddlewareComponent {
         }
         request.user = result
         
-        return await next(request)
+        return try await next(request)
     }
 }
