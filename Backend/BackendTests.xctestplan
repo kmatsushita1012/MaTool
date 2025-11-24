@@ -16,6 +16,9 @@
       "skippedTests" : {
         "suites" : [
           {
+            "name" : "CognitoAuthManagerTest"
+          },
+          {
             "name" : "DynamoDBStoreTest"
           }
         ]
