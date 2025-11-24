@@ -24,7 +24,7 @@ extension DependencyValues {
 protocol FestivalRepositoryProtocol: Sendable {
     func get(id: String) async throws -> Festival?
     func scan() async throws -> [Festival]
-    func put(_ item: Festival) async throws
+    func put(_ item: Festival) async throws -> Festival
 }
 
 // MARK: - FestivalRepository
@@ -44,8 +44,9 @@ struct FestivalRepository: FestivalRepositoryProtocol {
         try await store.scan(Festival.self)
     }
 
-    func put(_ item: Festival) async throws {
+    func put(_ item: Festival) async throws -> Festival {
         try await store.put(item)
+        return item
     }
 }
 
