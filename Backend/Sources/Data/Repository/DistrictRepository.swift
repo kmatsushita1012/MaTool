@@ -24,8 +24,8 @@ extension DependencyValues {
 protocol DistrictRepositoryProtocol: Sendable {
     func get(id: String) async throws -> District?
     func query(by festivalId: String) async throws -> [District]
-    func put(id: String, item: District) async throws
-    func post(item: District) async throws
+    func put(id: String, item: District) async throws -> District
+    func post(item: District) async throws -> District
 }
 
 // MARK: - DistrictRepository
@@ -49,11 +49,13 @@ struct DistrictRepository: DistrictRepositoryProtocol {
         )
     }
 
-    func put(id: String, item: District) async throws {
+    func put(id: String, item: District) async throws -> District  {
         try await store.put(item)
+        return item
     }
 
-    func post(item: District) async throws {
+    func post(item: District) async throws -> District  {
         try await store.put(item)
+        return item
     }
 }
