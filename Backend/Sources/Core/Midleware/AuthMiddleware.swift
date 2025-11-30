@@ -16,7 +16,7 @@ struct AuthMiddleware: MiddlewareComponent {
         var request = req
         @Dependency(AuthManagerFactoryKey.self) var authManagerFactory
         
-        guard let authHeader = request.headers["authorization"], authHeader.starts(with: "Bearer ") else {
+        guard let authHeader = request.headers["Authorization"], authHeader.starts(with: "Bearer ") else {
             request.user = .guest
             return try await next(request)
         }
@@ -25,6 +25,7 @@ struct AuthMiddleware: MiddlewareComponent {
         guard let result = try? await authManagerFactory().get(accessToken: token) else {
             return Response(statusCode: 500, headers: [:], body: "Internal Server Error")
         }
+        print("Auth User: \(result) ID: \(String(describing: result.id))")
         request.user = result
         
         return try await next(request)
