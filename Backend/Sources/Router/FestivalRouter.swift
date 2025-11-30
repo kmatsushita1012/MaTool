@@ -8,11 +8,14 @@
 import Dependencies
 
 struct FestivalRouter: Router {
-    @Dependency(FestivalControllerKey.self) var controller
+    @Dependency(FestivalControllerKey.self) var festivalController
+    @Dependency(DistrictControllerKey.self) var districtController
     
     func body(_ app: Application) {
-        app.get(path: "/festivals/:festivalId", controller.get)
-        app.get(path: "/festivals", controller.scan)
-        app.put(path: "/festivals", controller.put)
+        app.get(path: "/festivals/:festivalId/districts", districtController.query)
+        app.get(path: "/festivals/:festivalId", festivalController.get)
+        app.post(path: "/festivals/:festivalId", districtController.post)
+        app.get(path: "/festivals", festivalController.scan)
+        app.put(path: "/festivals", festivalController.put)
     }
 }
