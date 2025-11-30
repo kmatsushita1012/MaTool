@@ -24,7 +24,7 @@ final class FestivalUsecaseMock: FestivalUsecaseProtocol, @unchecked Sendable {
     private var scanHandler: (() throws -> [Festival])? = nil
     func scan() async throws -> [Festival] {
         scanCallCount+=1
-        guard let scanHandler else { fatalError("Unimplemented") }
+        guard let scanHandler else { throw TestError.unimplemented }
         return try scanHandler()
     }
     
@@ -32,7 +32,7 @@ final class FestivalUsecaseMock: FestivalUsecaseProtocol, @unchecked Sendable {
     private var getHandler: ((String) throws -> Shared.Festival)? = nil
     func get(_ id: String) async throws -> Shared.Festival {
         getCallCount+=1
-        guard let getHandler else { fatalError("Unimplemented")}
+        guard let getHandler else { throw TestError.unimplemented}
         return try getHandler(id)
         
     }
@@ -41,7 +41,7 @@ final class FestivalUsecaseMock: FestivalUsecaseProtocol, @unchecked Sendable {
     private var putHandler: ((Shared.Festival, Shared.UserRole) throws -> Shared.Festival)? = nil
     func put(_ festival: Shared.Festival, user: Shared.UserRole) async throws -> Shared.Festival {
         putCallCount+=1
-        guard let putHandler else { fatalError("Unimplemented")}
+        guard let putHandler else { throw TestError.unimplemented}
         return try putHandler(festival, user)
     }
 }
@@ -65,7 +65,7 @@ final class DistrictUsecaseMock: DistrictUsecaseProtocol, @unchecked Sendable {
     private var queryHandler: ((String) throws -> [Shared.District])? = nil
     func query(by regionId: String) async throws -> [Shared.District] {
         queryCallCount += 1
-        guard let queryHandler else { fatalError("Unimplemented") }
+        guard let queryHandler else { throw TestError.unimplemented }
         return try queryHandler(regionId)
     }
 
@@ -73,7 +73,7 @@ final class DistrictUsecaseMock: DistrictUsecaseProtocol, @unchecked Sendable {
     private var getHandler: ((String) throws -> Shared.District)? = nil
     func get(_ id: String) async throws -> Shared.District {
         getCallCount += 1
-        guard let getHandler else { fatalError("Unimplemented") }
+        guard let getHandler else { throw TestError.unimplemented }
         return try getHandler(id)
     }
 
@@ -81,7 +81,7 @@ final class DistrictUsecaseMock: DistrictUsecaseProtocol, @unchecked Sendable {
     private var postHandler: ((Shared.UserRole, String, String, String) throws -> Shared.District)? = nil
     func post(user: Shared.UserRole, headquarterId: String, newDistrictName: String, email: String) async throws -> Shared.District {
         postCallCount += 1
-        guard let postHandler else { fatalError("Unimplemented") }
+        guard let postHandler else { throw TestError.unimplemented }
         return try postHandler(user, headquarterId, newDistrictName, email)
     }
 
@@ -89,7 +89,7 @@ final class DistrictUsecaseMock: DistrictUsecaseProtocol, @unchecked Sendable {
     private var putHandler: ((String, Shared.District, Shared.UserRole) throws -> Shared.District)? = nil
     func put(id: String, item: Shared.District, user: Shared.UserRole) async throws -> Shared.District {
         putCallCount += 1
-        guard let putHandler else { fatalError("Unimplemented") }
+        guard let putHandler else { throw TestError.unimplemented }
         return try putHandler(id, item, user)
     }
 
@@ -97,7 +97,7 @@ final class DistrictUsecaseMock: DistrictUsecaseProtocol, @unchecked Sendable {
     private var getToolsHandler: ((String, Shared.UserRole) throws -> Shared.DistrictTool)? = nil
     func getTools(id: String, user: Shared.UserRole) async throws -> Shared.DistrictTool {
         getToolsCallCount += 1
-        guard let getToolsHandler else { fatalError("Unimplemented") }
+        guard let getToolsHandler else { throw TestError.unimplemented }
         return try getToolsHandler(id, user)
     }
 }
