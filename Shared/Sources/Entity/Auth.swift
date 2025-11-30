@@ -16,7 +16,7 @@ public enum UserRole: Entity {
 }
 
 extension UserRole{
-    var id: String? {
+    public var id: String? {
         switch self {
         case .headquarter(let id):
             return id
