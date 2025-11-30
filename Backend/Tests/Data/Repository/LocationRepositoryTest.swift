@@ -49,8 +49,8 @@ struct LocationRepositoryTest {
         #expect(item.timestamp == location.timestamp)
     }
     
-    @Test func test_getAll_正常() async throws {
-        let result = try await subject.getAll()
+    @Test func test_scan_正常() async throws {
+        let result = try await subject.scan()
         
         
         #expect(dataStore.scanCallCount == 1)
@@ -64,10 +64,11 @@ struct LocationRepositoryTest {
     }
     
     @Test func test_put_正常() async throws {
-        try await subject.put(location)
+        let result = try await subject.put(location)
         
         
         #expect(dataStore.putCallCount == 1)
+        #expect(result == location)
         let arg = try #require(dataStore.putArg)
         #expect(arg.districtId == "DISTRICT_ID")
         #expect(arg.coordinate.latitude == 1.23)

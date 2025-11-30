@@ -112,16 +112,47 @@ struct RouteRepositoryMock: RouteRepositoryProtocol {
 }
 
 // MARK: - LocationRepositoryMock
-struct LocationRepositoryMock: LocationRepositoryProtocol {
-    static let response = FloatLocation(
-        districtId: "districtId", coordinate: Coordinate(latitude: 0, longitude: 0),
-        timestamp: Date.now)
+final class LocationRepositoryMock: LocationRepositoryProtocol, @unchecked Sendable {
+    init(getHandler: ((String) async throws -> FloatLocation?)? = nil,
+         scanHandler: (() async throws -> [FloatLocation])? = nil,
+         putHandler: ((FloatLocation) async throws -> FloatLocation)? = nil,
+         deleteHandler: ((String) async throws -> Void)? = nil) {
+        self.getHandler = getHandler
+        self.scanHandler = scanHandler
+        self.putHandler = putHandler
+        self.deleteHandler = deleteHandler
+    }
 
-    func get(id: String) async throws -> FloatLocation? { Self.response }
+    private(set) var getCallCount = 0
+    private var getHandler: ((String) async throws -> FloatLocation?)?
+    func get(id: String) async throws -> FloatLocation? {
+        getCallCount += 1
+        guard let handler = getHandler else { throw TestError.unimplemented }
+        return try await handler(id)
+    }
 
-    func getAll() async throws -> [FloatLocation] { [Self.response] }
+    private(set) var scanCallCount = 0
+    private var scanHandler: (() async throws -> [FloatLocation])?
+    func scan() async throws -> [FloatLocation] {
+        scanCallCount += 1
+        guard let scanHandler else { throw TestError.unimplemented }
+        return try await scanHandler()
+    }
 
-    func put(_ location: FloatLocation) async throws {}
+    private(set) var putCallCount = 0
+    private var putHandler: ((FloatLocation) async throws -> FloatLocation)?
+    func put(_ location: FloatLocation) async throws -> FloatLocation {
+        putCallCount += 1
+        guard let putHandler else { throw TestError.unimplemented }
+        return try await putHandler(location)
+    }
 
-    func delete(districtId: String) async throws {}
+    private(set) var deleteCallCount = 0
+    private var deleteHandler: ((String) async throws -> Void)?
+    func delete(districtId: String) async throws {
+        deleteCallCount += 1
+        guard let deleteHandler else { throw TestError.unimplemented }
+        try await deleteHandler(districtId)
+        return
+    }
 }
