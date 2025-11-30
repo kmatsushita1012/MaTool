@@ -99,8 +99,8 @@ final class RouteRepositoryMock: RouteRepositoryProtocol, @unchecked Sendable {
     init(
         getHandler: ((String) async throws -> Route?)? = nil,
         queryHandler: ((String) async throws -> [Route])? = nil,
-        postHandler: ((Route) async throws -> Void)? = nil,
-        putHandler: ((Route) async throws -> Void)? = nil,
+        postHandler: ((Route) async throws -> Route)? = nil,
+        putHandler: ((Route) async throws -> Route)? = nil,
         deleteHandler: ((String) async throws -> Void)? = nil
     ) {
         self.getHandler = getHandler
@@ -127,19 +127,19 @@ final class RouteRepositoryMock: RouteRepositoryProtocol, @unchecked Sendable {
     }
     
     private(set) var postCallCount = 0
-    private(set) var postHandler: ((Route) async throws -> Void)?
-    func post(_ route: Route) async throws {
+    private(set) var postHandler: ((Route) async throws -> Route)?
+    func post(_ route: Route) async throws -> Route {
         postCallCount += 1
         guard let postHandler else { throw TestError.unimplemented }
-        try await postHandler(route)
+        return try await postHandler(route)
     }
     
     private(set) var putCallCount = 0
-    private(set) var putHandler: ((Route) async throws -> Void)?
-    func put(_ route: Route) async throws {
+    private(set) var putHandler: ((Route) async throws -> Route)?
+    func put(_ route: Route) async throws -> Route {
         putCallCount += 1
         guard let putHandler else { throw TestError.unimplemented }
-        try await putHandler(route)
+        return try await putHandler(route)
     }
     
     private(set) var deleteCallCount = 0
@@ -148,6 +148,7 @@ final class RouteRepositoryMock: RouteRepositoryProtocol, @unchecked Sendable {
         deleteCallCount += 1
         guard let deleteHandler else { throw TestError.unimplemented }
         try await deleteHandler(id)
+        return
     }
 }
 
