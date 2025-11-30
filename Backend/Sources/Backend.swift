@@ -9,9 +9,10 @@
 @main
 struct MaToolAPI: APIGateway {
     static let app = Application{
-        AuthMiddleware(path: "/name")
+        AuthMiddleware(path: "/")
         FestivalRouter()
         DistrictRouter()
+        RouteRouter()
     }
 }
 
