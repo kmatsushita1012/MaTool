@@ -42,4 +42,12 @@ public struct CurrentResponse: DTO {
     public let routes: [RouteItem]?
     public let current: Route?
     public let location: FloatLocationGetDTO?
+    
+    public init(districtId: String, districtName: String, routes: [RouteItem]? = nil, current: Route? = nil, location: FloatLocationGetDTO? = nil) {
+        self.districtId = districtId
+        self.districtName = districtName
+        self.routes = routes
+        self.current = current
+        self.location = location
+    }
 }
