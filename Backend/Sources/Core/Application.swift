@@ -22,7 +22,7 @@ final class Application: @unchecked Sendable {
         case delete = "DELETE"
     }
     
-    struct Request: Sendable, Decodable {
+    struct Request: Sendable, Decodable, Equatable {
         let method: Method?
         let path: String
         let headers: [String: String]
@@ -31,7 +31,7 @@ final class Application: @unchecked Sendable {
         let body: String?
     }
 
-    struct Response: Sendable, Encodable {
+    struct Response: Sendable, Encodable, Equatable {
         let statusCode: Int
         let headers: [String: String]
         let body: String
