@@ -24,8 +24,8 @@ extension DependencyValues {
 protocol RouteRepositoryProtocol: Sendable {
     func get(id: String) async throws -> Route?
     func query(by districtId: String) async throws -> [Route]
-    func post(_ route: Route) async throws
-    func put(_ route: Route) async throws
+    func post(_ route: Route) async throws -> Route
+    func put(_ route: Route) async throws -> Route
     func delete(id: String) async throws
 }
 
@@ -50,15 +50,18 @@ struct RouteRepository: RouteRepositoryProtocol {
         )
     }
 
-    func post(_ route: Route) async throws {
+    func post(_ route: Route) async throws -> Route {
         try await store.put(route)
+        return route
     }
 
-    func put(_ route: Route) async throws {
+    func put(_ route: Route) async throws -> Route {
         try await store.put(route)
+        return route
     }
 
     func delete(id: String) async throws {
         try await store.delete(key: id, keyName: "id")
+        return
     }
 }

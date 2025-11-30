@@ -12,6 +12,7 @@ struct MaToolAPI: APIGateway {
         AuthMiddleware(path: "/")
         FestivalRouter()
         DistrictRouter()
+        RouteRouter()
     }
 }
 
