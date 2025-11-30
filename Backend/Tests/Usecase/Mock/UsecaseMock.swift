@@ -8,6 +8,7 @@
 import Testing
 @testable import Backend
 import Shared
+import Foundation
 
 final class FestivalUsecaseMock: FestivalUsecaseProtocol, @unchecked Sendable {
     
