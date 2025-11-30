@@ -12,7 +12,7 @@ struct DistrictRouter: Router {
     
     func body(_ app: Application) {
         app.get(path: "/districts/:districtId/tools", controller.getTools)
-        app.get(path: "/districts/:districtId/", controller.get)
-        app.put(path: "/districts/:districtId/", controller.put)
+        app.get(path: "/districts/:districtId", controller.get)
+        app.put(path: "/districts/:districtId", controller.put)
     }
 }
