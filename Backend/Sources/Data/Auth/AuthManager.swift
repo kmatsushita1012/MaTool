@@ -18,7 +18,7 @@ enum AuthManagerFactoryKey: DependencyKey {
 }
 
 // MARK: - AuthManager
-protocol AuthManager: Sendable{
+protocol AuthManager: Sendable {
     func create(username: String, email: String) async throws -> UserRole
     func get(accessToken: String) async throws -> UserRole
     func get(username: String) async throws -> UserRole
