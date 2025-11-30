@@ -25,6 +25,7 @@ struct AuthMiddleware: MiddlewareComponent {
         guard let result = try? await authManagerFactory().get(accessToken: token) else {
             return Response(statusCode: 500, headers: [:], body: "Internal Server Error")
         }
+        print("Auth User: \(result) ID: \(String(describing: result.id))")
         request.user = result
         
         return try await next(request)
