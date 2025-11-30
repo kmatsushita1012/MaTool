@@ -143,6 +143,7 @@ extension FestivalRouterTest {
     func make(festivalController: FestivalControllerMock) -> Application {
         let router = withDependencies({
             $0[FestivalControllerKey.self] = festivalController
+            $0[DistrictControllerKey.self] = DistrictControllerMock()
         }){
             FestivalRouter()
         }

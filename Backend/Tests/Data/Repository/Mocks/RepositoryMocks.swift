@@ -13,56 +13,85 @@ import Shared
 // MARK: - FestivalRepositoryMock
 final class FestivalRepositoryMock: FestivalRepositoryProtocol, @unchecked Sendable {
     
-    init(getCallCount: Int = 0, getHandler: ((String) async throws -> Festival?)? = nil, scanCallCount: Int = 0, scanHandler: (() async throws -> [Festival])? = nil, putCount: Int = 0, putHandler: ((Festival) async throws -> Festival)? = nil) {
-        self.getCallCount = getCallCount
+    init(
+        getHandler: ((String) throws -> Festival?)? = nil,
+        scanHandler: (() throws -> [Festival])? = nil,
+        putHandler: ((Festival) throws -> Festival)? = nil) {
         self.getHandler = getHandler
-        self.scanCallCount = scanCallCount
         self.scanHandler = scanHandler
-        self.putCount = putCount
         self.putHandler = putHandler
     }
     
     private(set) var getCallCount = 0
-    private(set) var getHandler: ((String) async throws -> Festival?)?
+    private(set) var getHandler: ((String) throws -> Festival?)?
     func get(id: String) async throws -> Festival? {
         getCallCount+=1
-        guard let getHandler else { fatalError("Unimplemented")}
-        return try await getHandler(id)
+        guard let getHandler else { throw TestError.unimplemented }
+        return try getHandler(id)
     }
 
     private(set) var scanCallCount = 0
-    private(set) var scanHandler: (() async throws -> [Festival])?
+    private(set) var scanHandler: (() throws -> [Festival])?
     func scan() async throws -> [Festival] {
         scanCallCount+=1
-        guard let scanHandler else { fatalError("Unimplemented")}
-        return try await scanHandler()
+        guard let scanHandler else { throw TestError.unimplemented }
+        return try scanHandler()
     }
 
     private(set) var putCount = 0
-    private var putHandler: ((Festival) async throws -> Festival)?
+    private var putHandler: ((Festival) throws -> Festival)?
     func put(_ item: Festival) async throws -> Festival {
         putCount+=1
-        guard let putHandler else { fatalError("Unimplemented")}
-        return try await putHandler(item)
+        guard let putHandler else { throw TestError.unimplemented }
+        return try putHandler(item)
     }
 }
 
 // MARK: - DistrictRepositoryMock
-struct DistrictRepositoryMock: DistrictRepositoryProtocol {
-    static let response = District(
-        id: "id", name: "name", festivalId: "festivalId", visibility: .all)
-
+final class DistrictRepositoryMock: DistrictRepositoryProtocol, @unchecked Sendable {
+    
+    init(getCallCount: Int = 0, getHandler: ((String) async throws -> District?)? = nil, queryCallCount: Int = 0, queryHandler: ((String) async throws -> [District])? = nil, putCallCount: Int = 0, putHandler: ((String, District) async throws -> District)? = nil, postCallCount: Int = 0, postHandler: ((District) async throws -> District)? = nil) {
+        self.getCallCount = getCallCount
+        self.getHandler = getHandler
+        self.queryCallCount = queryCallCount
+        self.queryHandler = queryHandler
+        self.putCallCount = putCallCount
+        self.putHandler = putHandler
+        self.postCallCount = postCallCount
+        self.postHandler = postHandler
+    }
+    
+    private(set) var getCallCount = 0
+    private(set) var getHandler: ((String) async throws -> District?)?
     func get(id: String) async throws -> District? {
-        return Self.response
+        getCallCount+=1
+        guard let getHandler else { fatalError("Unimplemented") }
+        return try await getHandler(id)
     }
 
+    private(set) var queryCallCount = 0
+    private(set) var queryHandler: ((String) async throws -> [District])?
     func query(by festivalId: String) async throws -> [District] {
-        return [Self.response]
+        queryCallCount+=1
+        guard let queryHandler else { fatalError("Unimplemented") }
+        return try await queryHandler(festivalId)
     }
-
-    func put(id: String, item: District) async throws {}
-
-    func post(item: District) async throws {}
+    
+    private(set)  var putCallCount = 0
+    private(set) var putHandler: ((String, District) async throws -> District)?
+    func put(id: String, item: District) async throws -> District {
+        putCallCount+=1
+        guard let putHandler else { fatalError("Unimplemented") }
+        return try await putHandler(id, item)
+    }
+    
+    private(set) var postCallCount = 0
+    private(set) var postHandler: ((District) async throws -> District)?
+    func post(item: District) async throws -> District {
+        postCallCount+=1
+        guard let postHandler else { fatalError("Unimplemented") }
+        return try await postHandler(item)
+    }
 }
 
 // MARK: - RouteRepositoryMock
