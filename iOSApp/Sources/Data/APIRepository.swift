@@ -35,7 +35,7 @@ struct APIRepotiroy: Sendable {
     var getRouteIds: @Sendable () async -> Result<[String], APIError>
     var postRoute: @Sendable (_ route: Route) async -> Result<Route, APIError>
     var putRoute: @Sendable (_ route: Route) async -> Result<Route, APIError>
-    var deleteRoute: @Sendable (_ id: String) async -> Result<Route, APIError>
+    var deleteRoute: @Sendable (_ id: String) async -> Result<Empty, APIError>
     var getLocation: @Sendable (_ districtId: String) async -> Result<FloatLocationGetDTO, APIError>
     var getLocations: @Sendable (_ festivalId: String) async -> Result<[FloatLocationGetDTO], APIError>
     var putLocation: @Sendable (_ location: FloatLocation) async -> Result<FloatLocation, APIError>
@@ -144,7 +144,7 @@ extension APIRepotiroy: DependencyKey {
             getCurrentRoute: { districtId in
                 let accessToken = await authService.getAccessToken()
                 let response = await apiClient.get(
-                    path: "/v2/districts/\(districtId)/routes/current",
+                    path: "/districts/\(districtId)/routes/current",
                     accessToken: accessToken,
                     isCache: false
                 )
@@ -189,7 +189,7 @@ extension APIRepotiroy: DependencyKey {
                     path: "/routes/\(id)",
                     accessToken: accessToken
                 )
-                return decodeResponse(Route.self, from: response)
+                return .success(Empty())
             },
             getLocation: { districtId in
                 let accessToken = await authService.getAccessToken()
