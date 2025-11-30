@@ -38,7 +38,9 @@ JSON_PAYLOAD=$(jq -n \
     routeKey: ($method + " " + $rawPath),
     rawPath: $rawPath,
     rawQueryString: $rawQueryString,
-    headers: {},
+    headers: {
+      "authorization": "Bearer AUTH_TOKEN"
+    },
     queryStringParameters: $queryParams,
     pathParameters: $pathParams,
     body: $body,

@@ -24,7 +24,7 @@ struct AdminDistrictCreate {
         case binding(BindingAction<State>)
         case createTapped
         case cancelTapped
-        case received(Result<String,APIError>)
+        case received(Result<District,APIError>)
         case alert(PresentationAction<Alert.Action>)
     }
     

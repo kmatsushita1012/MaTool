@@ -23,23 +23,23 @@ struct APIRepotiroy: Sendable {
     
     var getFestivals: @Sendable () async  -> Result<[Festival], APIError>
     var getFestival: @Sendable (_ festivalId: String) async -> Result<Festival, APIError>
-    var putFestival: @Sendable (_ district: Festival) async -> Result<String, APIError>
+    var putFestival: @Sendable (_ district: Festival) async -> Result<Festival, APIError>
     var getDistricts: @Sendable (_ festivalId: String) async -> Result<[District], APIError>
     var getDistrict: @Sendable (_ districtId: String) async -> Result<District, APIError>
-    var postDistrict: @Sendable (_ festivalId: String, _ districtName: String, _ email: String) async -> Result<String, APIError>
-    var putDistrict: @Sendable (_ district: District) async -> Result<String, APIError>
+    var postDistrict: @Sendable (_ festivalId: String, _ districtName: String, _ email: String) async -> Result<District, APIError>
+    var putDistrict: @Sendable (_ district: District) async -> Result<District, APIError>
     var getTool: @Sendable (_ districtId: String) async -> Result<DistrictTool, APIError>
     var getRoutes: @Sendable (_ districtId: String) async -> Result<[RouteItem], APIError>
     var getRoute: @Sendable (_ id: String) async -> Result<Route, APIError>
     var getCurrentRoute: @Sendable (_ districtId: String) async -> Result<CurrentResponse, APIError>
     var getRouteIds: @Sendable () async -> Result<[String], APIError>
-    var postRoute: @Sendable (_ route: Route) async -> Result<String, APIError>
-    var putRoute: @Sendable (_ route: Route) async -> Result<String, APIError>
-    var deleteRoute: @Sendable (_ id: String) async -> Result<String, APIError>
+    var postRoute: @Sendable (_ route: Route) async -> Result<Route, APIError>
+    var putRoute: @Sendable (_ route: Route) async -> Result<Route, APIError>
+    var deleteRoute: @Sendable (_ id: String) async -> Result<Route, APIError>
     var getLocation: @Sendable (_ districtId: String) async -> Result<FloatLocationGetDTO, APIError>
     var getLocations: @Sendable (_ festivalId: String) async -> Result<[FloatLocationGetDTO], APIError>
-    var putLocation: @Sendable (_ location: FloatLocation) async -> Result<String, APIError>
-    var deleteLocation: @Sendable (_ districtId: String) async -> Result<String, APIError>
+    var putLocation: @Sendable (_ location: FloatLocation) async -> Result<FloatLocation, APIError>
+    var deleteLocation: @Sendable (_ districtId: String) async -> Result<FloatLocation, APIError>
 }
 
 // MARK: - APIRepository
@@ -51,13 +51,13 @@ extension APIRepotiroy: DependencyKey {
         return Self(
             getFestivals: {
                 let response = await apiClient.get(
-                    path: "/regions"
+                    path: "/festivals"
                 )
                 return decodeResponse([Festival].self, from: response)
             },
             getFestival: { id in
                 let response = await apiClient.get(
-                    path: "/regions/\(id)"
+                    path: "/festivals/\(id)"
                 )
                 return decodeResponse(Festival.self, from: response)
             },
@@ -67,16 +67,16 @@ extension APIRepotiroy: DependencyKey {
                 let accessToken = await authService.getAccessToken()
                 return await encodeResult.asyncFlatMap { body in
                     let response = await apiClient.put(
-                        path: "/regions/\(festival.id)",
+                        path: "/festivals/\(festival.id)",
                         body: body,
                         accessToken: accessToken
                     )
-                    return decodeResponse(String.self, from: response)
+                    return decodeResponse(Festival.self, from: response)
                 }
             },
             getDistricts: { festivalId in
                 let response = await apiClient.get(
-                    path: "/regions/\(festivalId)/districts"
+                    path: "/festivals/\(festivalId)/districts"
                 )
                 return decodeResponse([District].self, from: response)
             },
@@ -96,11 +96,11 @@ extension APIRepotiroy: DependencyKey {
                 let accessToken = await authService.getAccessToken()
                 return await encodeResult.asyncFlatMap { body in
                     let response = await apiClient.post(
-                        path: "/regions/\(festivalId)/districts",
+                        path: "/festivals/\(festivalId)/districts",
                         body: body,
                         accessToken: accessToken
                     )
-                    return decodeResponse(String.self, from: response)
+                    return decodeResponse(District.self, from: response)
                 }
             },
             putDistrict: { district in
@@ -112,7 +112,7 @@ extension APIRepotiroy: DependencyKey {
                         body: body,
                         accessToken: accessToken
                     )
-                    return decodeResponse(String.self, from: response)
+                    return decodeResponse(District.self, from: response)
                 }
             },
             getTool: { districtId in
@@ -168,7 +168,7 @@ extension APIRepotiroy: DependencyKey {
                         body: body,
                         accessToken: accessToken
                     )
-                    return decodeResponse(String.self, from: response)
+                    return decodeResponse(Route.self, from: response)
                 }
             },
             putRoute: { route in
@@ -180,7 +180,7 @@ extension APIRepotiroy: DependencyKey {
                         body: body,
                         accessToken: accessToken
                     )
-                    return decodeResponse(String.self, from: response)
+                    return decodeResponse(Route.self, from: response)
                 }
             },
             deleteRoute: { id in
@@ -189,7 +189,7 @@ extension APIRepotiroy: DependencyKey {
                     path: "/routes/\(id)",
                     accessToken: accessToken
                 )
-                return decodeResponse(String.self, from: response)
+                return decodeResponse(Route.self, from: response)
             },
             getLocation: { districtId in
                 let accessToken = await authService.getAccessToken()
@@ -203,7 +203,7 @@ extension APIRepotiroy: DependencyKey {
             getLocations: { festivalId in
                 let accessToken = await authService.getAccessToken()
                 let response = await apiClient.get(
-                    path: "/regions/\(festivalId)/locations",
+                    path: "/festivals/\(festivalId)/locations",
                     accessToken: accessToken,
                     isCache: false
                 )
@@ -218,7 +218,7 @@ extension APIRepotiroy: DependencyKey {
                         body: body,
                         accessToken: accessToken
                     )
-                    return decodeResponse(String.self, from: response)
+                    return decodeResponse(FloatLocation.self, from: response)
                 }
             },
             deleteLocation: { id in
@@ -227,7 +227,7 @@ extension APIRepotiroy: DependencyKey {
                     path: "/districts/\(id)/locations",
                     accessToken: accessToken
                 )
-                return decodeResponse(String.self, from: response)
+                return decodeResponse(FloatLocation.self, from: response)
             }
         )
     }()
