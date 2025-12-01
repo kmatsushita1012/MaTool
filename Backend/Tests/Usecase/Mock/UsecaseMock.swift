@@ -112,6 +112,7 @@ final class LocationUsecaseMock: LocationUsecaseProtocol, @unchecked Sendable {
         deleteHandler: ((String, Shared.UserRole) throws -> Void)? = nil
     ) {
         self.queryHandler = queryHandler
+        self.getHandler = getHandler
         self.putHandler = putHandler
         self.deleteHandler = deleteHandler
     }
