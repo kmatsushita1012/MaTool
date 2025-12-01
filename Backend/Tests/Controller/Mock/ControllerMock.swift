@@ -100,3 +100,52 @@ final class DistrictControllerMock: DistrictControllerProtocol, @unchecked Senda
         return try putHandler(request, next)
     }
 }
+
+// MARK: - LocationControllerMock
+
+final class LocationControllerMock: LocationControllerProtocol, @unchecked Sendable {
+
+    init(
+        getHandler: ((Request, Handler) throws -> Response)? = nil,
+        queryHandler: ((Request, Handler) throws -> Response)? = nil,
+        putHandler: ((Request, Handler) throws -> Response)? = nil,
+        deleteHandler: ((Request, Handler) throws -> Response)? = nil
+    ) {
+        self.getHandler = getHandler
+        self.queryHandler = queryHandler
+        self.putHandler = putHandler
+        self.deleteHandler = deleteHandler
+    }
+
+    var getCallCount: Int = 0
+    var getHandler: ((Request, Handler) throws -> Response)?
+    func get(_ request: Request, next: Handler) async throws -> Backend.Response {
+        getCallCount += 1
+        guard let getHandler else { throw TestError.unimplemented }
+        return try getHandler(request, next)
+    }
+
+    var queryCallCount: Int = 0
+    var queryHandler: ((Request, Handler) throws -> Response)?
+    func query(_ request: Request, next: Handler) async throws -> Backend.Response {
+        queryCallCount += 1
+        guard let queryHandler else { throw TestError.unimplemented }
+        return try queryHandler(request, next)
+    }
+
+    var putCallCount: Int = 0
+    var putHandler: ((Request, Handler) throws -> Response)?
+    func put(_ request: Request, next: Handler) async throws -> Backend.Response {
+        putCallCount += 1
+        guard let putHandler else { throw TestError.unimplemented }
+        return try putHandler(request, next)
+    }
+
+    var deleteCallCount: Int = 0
+    var deleteHandler: ((Request, Handler) throws -> Response)?
+    func delete(_ request: Request, next: Handler) async throws -> Backend.Response {
+        deleteCallCount += 1
+        guard let deleteHandler else { throw TestError.unimplemented }
+        return try deleteHandler(request, next)
+    }
+}
