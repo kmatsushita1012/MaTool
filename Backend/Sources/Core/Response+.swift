@@ -36,7 +36,7 @@ extension Application.Response {
         } else {
             let body: [String: String] = [
                 "message": "Internal Server Error",
-                "localizedDescription": ""
+                "localizedDescription": "\(error)"
             ]
             
             return Self(
