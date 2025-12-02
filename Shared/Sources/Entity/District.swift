@@ -65,3 +65,11 @@ public struct Performance: Entity {
 }
 
 extension Performance: Identifiable {}
+
+extension Performance {
+    public static let stub: Self = .init(
+        id: "1",
+        name: "sample",
+        performer: "sample"
+    )
+}
