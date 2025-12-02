@@ -8,7 +8,7 @@
 import Dependencies
 
 // MARK: - Dependencies
-enum DataStreFactoryKey: DependencyKey {
+enum DataStoreFactoryKey: DependencyKey {
     static let liveValue: DataStoreFactory = { tableName in
         DynamoDBStore.make(tableName: tableName)
     }
@@ -16,8 +16,8 @@ enum DataStreFactoryKey: DependencyKey {
 
 extension DependencyValues {
     var dataStoreFactory: DataStoreFactory {
-        get { self[DataStreFactoryKey.self] }
-        set { self[DataStreFactoryKey.self] = newValue }
+        get { self[DataStoreFactoryKey.self] }
+        set { self[DataStoreFactoryKey.self] = newValue }
     }
 }
 
