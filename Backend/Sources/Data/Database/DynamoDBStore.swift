@@ -30,8 +30,11 @@ struct DynamoDBStore: DataStore {
     
     // MARK: get
     func get<T: Codable, K: Codable>(key: K, keyName: String, as type: T.Type) async throws -> T? {
-        let keyAttrs = try encoder.encode(["\(keyName)": key])
-        let input = GetItemInput(key: keyAttrs, tableName: tableName)
+        let keyAttr = try encoder.encodeKey(key)
+        let input = GetItemInput(
+            key: [ keyName: keyAttr ],
+            tableName: tableName
+        )
         let output = try await client.getItem(input: input)
         guard let item = output.item else { return nil }
         return try decoder.decode(item, as: T.self)
@@ -62,12 +65,12 @@ struct DynamoDBStore: DataStore {
         as type: T.Type
     ) async throws -> [T] {
         
-        let (keyExpr, keyValues) = keyCondition.toExpression()
+        let (keyExpr, keyValues) = try keyCondition.toExpression()
         var expressionValues = keyValues
         var filterExpression: String? = nil
         
         if let filter = filter {
-            let (filterExpr, filterValues) = filter.toExpression()
+            let (filterExpr, filterValues) = try filter.toExpression()
             filterExpression = filterExpr
             expressionValues.merge(filterValues) { $1 }
         }
@@ -106,31 +109,31 @@ struct DynamoDBStore: DataStore {
 
 // MARK: - QueryCondition +
 fileprivate extension QueryCondition {
-    func toExpression() -> (String, [String: AttributeValue]) {
+    func toExpression() throws -> (String, [String: AttributeValue]) {
         let encoder = DynamoDBEncoder()
         switch self {
         case .equals(let field, let value):
-            return ("#\(field) = :\(field)", [":\(field)": encoder.toAttributeValue(value)])
+            return ("#\(field) = :\(field)", [":\(field)": try encoder.encodeKey(value)])
         case .beginsWith(let field, let prefix):
-            return ("begins_with(#\(field), :\(field))", [":\(field)": encoder.toAttributeValue(prefix)])
+            return ("begins_with(#\(field), :\(field))", [":\(field)": try encoder.encodeKey(prefix)])
         case .between(let field, let lower, let upper):
             return ("#\(field) BETWEEN :lower AND :upper",
-                    [":lower": encoder.toAttributeValue(lower), ":upper": encoder.toAttributeValue(upper)])
+                    [":lower": try encoder.encodeKey(lower), ":upper": try encoder.encodeKey(upper)])
         }
     }
 }
 
 // MARK: - FilterCondition +
 fileprivate extension FilterCondition {
-    func toExpression() -> (String, [String: AttributeValue]) {
+    func toExpression() throws -> (String, [String: AttributeValue]) {
         let encoder = DynamoDBEncoder()
         switch self {
         case .equals(let field, let value):
-            return ("#\(field) = :\(field)", [":\(field)": encoder.toAttributeValue(value)])
+            return ("#\(field) = :\(field)", [":\(field)": try encoder.encodeKey(value)])
         case .beginsWith(let field, let prefix):
-            return ("begins_with(#\(field), :\(field))", [":\(field)": encoder.toAttributeValue(prefix)])
+            return ("begins_with(#\(field), :\(field))", [":\(field)": try encoder.encodeKey(prefix)])
         case .contains(let field, let substring):
-            return ("contains(#\(field), :\(field))", [":\(field)": encoder.toAttributeValue(substring)])
+            return ("contains(#\(field), :\(field))", [":\(field)": try encoder.encodeKey(substring)])
         }
     }
 }
