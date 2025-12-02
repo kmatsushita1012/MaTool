@@ -20,6 +20,9 @@
           },
           {
             "name" : "DynamoDBStoreTest"
+          },
+          {
+            "name" : "RouteMigrator"
           }
         ]
       },
