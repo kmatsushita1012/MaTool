@@ -23,7 +23,7 @@ extension Application.Response {
         return .init(
             statusCode: 200,
             headers: ["Content-Type": "application/json"],
-            body: ""
+            body: "{}"
         )
     }
 }
