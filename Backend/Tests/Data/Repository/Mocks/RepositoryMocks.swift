@@ -154,47 +154,46 @@ final class RouteRepositoryMock: RouteRepositoryProtocol, @unchecked Sendable {
 
 // MARK: - LocationRepositoryMock
 final class LocationRepositoryMock: LocationRepositoryProtocol, @unchecked Sendable {
-    init(
-        getHandler: ((String) async throws -> FloatLocation?)? = nil,
-        getAllHandler: (() async throws -> [FloatLocation])? = nil,
-        putHandler: ((FloatLocation) async throws -> Void)? = nil,
-        deleteHandler: ((String) async throws -> Void)? = nil
-    ) {
+    init(getHandler: ((String) async throws -> FloatLocation?)? = nil,
+         scanHandler: (() async throws -> [FloatLocation])? = nil,
+         putHandler: ((FloatLocation) async throws -> FloatLocation)? = nil,
+         deleteHandler: ((String) async throws -> Void)? = nil) {
         self.getHandler = getHandler
-        self.getAllHandler = getAllHandler
+        self.scanHandler = scanHandler
         self.putHandler = putHandler
         self.deleteHandler = deleteHandler
     }
-    
+
     private(set) var getCallCount = 0
-    private(set) var getHandler: ((String) async throws -> FloatLocation?)?
+    private var getHandler: ((String) async throws -> FloatLocation?)?
     func get(id: String) async throws -> FloatLocation? {
         getCallCount += 1
-        guard let getHandler else { throw TestError.unimplemented }
-        return try await getHandler(id)
+        guard let handler = getHandler else { throw TestError.unimplemented }
+        return try await handler(id)
     }
-    
-    private(set) var getAllCallCount = 0
-    private(set) var getAllHandler: (() async throws -> [FloatLocation])?
-    func getAll() async throws -> [FloatLocation] {
-        getAllCallCount += 1
-        guard let getAllHandler else { throw TestError.unimplemented }
-        return try await getAllHandler()
+
+    private(set) var scanCallCount = 0
+    private var scanHandler: (() async throws -> [FloatLocation])?
+    func scan() async throws -> [FloatLocation] {
+        scanCallCount += 1
+        guard let scanHandler else { throw TestError.unimplemented }
+        return try await scanHandler()
     }
-    
+
     private(set) var putCallCount = 0
-    private(set) var putHandler: ((FloatLocation) async throws -> Void)?
-    func put(_ location: FloatLocation) async throws {
+    private var putHandler: ((FloatLocation) async throws -> FloatLocation)?
+    func put(_ location: FloatLocation) async throws -> FloatLocation {
         putCallCount += 1
         guard let putHandler else { throw TestError.unimplemented }
-        try await putHandler(location)
+        return try await putHandler(location)
     }
-    
+
     private(set) var deleteCallCount = 0
-    private(set) var deleteHandler: ((String) async throws -> Void)?
+    private var deleteHandler: ((String) async throws -> Void)?
     func delete(districtId: String) async throws {
         deleteCallCount += 1
         guard let deleteHandler else { throw TestError.unimplemented }
         try await deleteHandler(districtId)
+        return
     }
 }

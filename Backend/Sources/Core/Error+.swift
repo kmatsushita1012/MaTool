@@ -17,6 +17,8 @@ extension Error{
             return "Not Found"
         case .badRequest(_):
             return "Bad Request"
+        case .forbidden(_):
+            return "Forbidden"
         case .internalServerError(_):
             return "Internal Server Error"
         case .unauthorized(_):
@@ -34,6 +36,7 @@ extension Error{
         switch self {
         case .notFound: return 404
         case .badRequest: return 400
+        case .forbidden: return 403
         case .internalServerError: return 500
         case .unauthorized: return 401
         case .conflict: return 409
@@ -46,6 +49,7 @@ extension Error{
         switch self {
         case .notFound(let message),
              .badRequest(let message),
+             .forbidden(let message),
              .internalServerError(let message),
              .unauthorized(let message),
              .conflict(let message),
@@ -63,6 +67,10 @@ extension Error {
 
     static func badRequest(localizedDescription: String? = nil) -> Error {
         .badRequest(localizedDescription)
+    }
+    
+    static func forbidden(localizedDescription: String? = nil) -> Error {
+        .forbidden(localizedDescription)
     }
 
     static func internalServerError(localizedDescription: String? = nil) -> Error {

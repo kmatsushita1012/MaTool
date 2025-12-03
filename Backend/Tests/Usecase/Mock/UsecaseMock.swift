@@ -137,7 +137,6 @@ final class RouteUsecaseMock: RouteUsecaseProtocol, @unchecked Sendable {
         guard let getHandler else { throw TestError.unimplemented }
         return try getHandler(id, user)
     }
-
     private(set) var postCallCount = 0
     private var postHandler: ((String, Shared.Route, Shared.UserRole) throws -> Shared.Route)? = nil
     func post(districtId: String, route: Shared.Route, user: Shared.UserRole) async throws -> Shared.Route {
@@ -177,5 +176,53 @@ final class RouteUsecaseMock: RouteUsecaseProtocol, @unchecked Sendable {
         getAllRouteIdsCallCount += 1
         guard let getAllRouteIdsHandler else { throw TestError.unimplemented }
         return try getAllRouteIdsHandler(user)
+    }
+}
+
+final class LocationUsecaseMock: LocationUsecaseProtocol, @unchecked Sendable {
+    
+    init(
+        queryHandler: ((String, UserRole, Date) throws -> [Shared.FloatLocationGetDTO])? = nil,
+        getHandler: ((String, UserRole) throws -> Shared.FloatLocationGetDTO)? = nil,
+        putHandler: ((Shared.FloatLocation, Shared.UserRole) throws -> Shared.FloatLocation)? = nil,
+        deleteHandler: ((String, Shared.UserRole) throws -> Void)? = nil
+    ) {
+        self.queryHandler = queryHandler
+        self.getHandler = getHandler
+        self.putHandler = putHandler
+        self.deleteHandler = deleteHandler
+    }
+
+    private(set) var queryCallCount = 0
+    private var queryHandler: ((String, UserRole, Date) throws -> [Shared.FloatLocationGetDTO])? = nil
+    func  query(by festivalId: String, user: Shared.UserRole, now: Date) async throws -> [Shared.FloatLocationGetDTO] {
+        queryCallCount += 1
+        guard let queryHandler else { throw TestError.unimplemented }
+        return try queryHandler(festivalId, user, now)
+    }
+
+    private(set) var getCallCount = 0
+    private var getHandler: ((String, UserRole) throws -> Shared.FloatLocationGetDTO)? = nil
+    func get(_ id: String, user: UserRole) async throws -> Shared.FloatLocationGetDTO {
+        getCallCount += 1
+        guard let getHandler else { throw TestError.unimplemented }
+        return try getHandler(id, user)
+    }
+
+    private(set) var putCallCount = 0
+    private var putHandler: ((Shared.FloatLocation, Shared.UserRole) throws -> Shared.FloatLocation)? = nil
+    func put(_ location: Shared.FloatLocation, user: Shared.UserRole) async throws -> Shared.FloatLocation {
+        putCallCount += 1
+        guard let putHandler else { throw TestError.unimplemented }
+        return try putHandler(location, user)
+    }
+
+    private(set) var deleteCallCount = 0
+    private var deleteHandler: ((String, Shared.UserRole) throws -> Void)? = nil
+    func delete(_ id: String, user: Shared.UserRole) async throws {
+        deleteCallCount += 1
+        guard let deleteHandler else { throw TestError.unimplemented }
+        try deleteHandler(id, user)
+        return
     }
 }
