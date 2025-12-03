@@ -40,6 +40,7 @@ final class Application: @unchecked Sendable {
     enum Error: Swift.Error, Sendable, Equatable {
         case notFound(String?)
         case badRequest(String?)
+        case forbidden(String?)
         case internalServerError(String?)
         case unauthorized(String?)
         case conflict(String?)
