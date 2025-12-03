@@ -18,6 +18,14 @@ extension Application.Response {
             body: json
         )
     }
+    
+    static func success() throws -> Self {
+        return .init(
+            statusCode: 200,
+            headers: ["Content-Type": "application/json"],
+            body: ""
+        )
+    }
 }
 
 extension Application.Response {
@@ -36,7 +44,7 @@ extension Application.Response {
         } else {
             let body: [String: String] = [
                 "message": "Internal Server Error",
-                "localizedDescription": ""
+                "localizedDescription": "\(error)"
             ]
             
             return Self(
