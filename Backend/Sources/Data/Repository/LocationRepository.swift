@@ -23,8 +23,8 @@ extension DependencyValues {
 // MARK: - LocationRepositoryProtocol
 protocol LocationRepositoryProtocol: Sendable {
     func get(id: String) async throws -> FloatLocation?
-    func getAll() async throws -> [FloatLocation]
-    func put(_ location: FloatLocation) async throws
+    func scan() async throws -> [FloatLocation]
+    func put(_ location: FloatLocation) async throws -> FloatLocation
     func delete(districtId: String) async throws
 }
 
@@ -41,12 +41,13 @@ struct LocationRepository: LocationRepositoryProtocol {
         try await store.get(key: id, keyName: "district_id", as: FloatLocation.self)
     }
 
-    func getAll() async throws -> [FloatLocation] {
+    func scan() async throws -> [FloatLocation] {
         try await store.scan(FloatLocation.self)
     }
 
-    func put(_ location: FloatLocation) async throws {
+    func put(_ location: FloatLocation) async throws -> FloatLocation {
         try await store.put(location)
+        return location
     }
 
     func delete(districtId: String) async throws {
