@@ -80,6 +80,7 @@ actor AuthService {
         if case .failure(let error) = signOutResult{
             return .failure(error)
         }
+        userRole = .guest
         return .success(userRole)
     }
     
