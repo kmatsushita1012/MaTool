@@ -101,6 +101,7 @@ final class DistrictControllerMock: DistrictControllerProtocol, @unchecked Senda
     }
 }
 
+// MARK: - RouteControllerMock
 final class RouteControllerMock: RouteControllerProtocol, @unchecked Sendable {
 
     init(
@@ -131,7 +132,7 @@ final class RouteControllerMock: RouteControllerProtocol, @unchecked Sendable {
 
     var queryCallCount: Int = 0
     var queryHandler: ((Request, Handler) throws -> Response)?
-    func query(_ request: Backend.Request, next: @Sendable (Backend.Application.Request) async throws -> Backend.Application.Response) async throws -> Backend.Response {
+    func query(_ request: Request, next: Handler) async throws -> Backend.Response {
         queryCallCount += 1
         guard let queryHandler else { throw TestError.unimplemented }
         return try queryHandler(request, next)
@@ -139,7 +140,7 @@ final class RouteControllerMock: RouteControllerProtocol, @unchecked Sendable {
 
     var getCurrentCallCount: Int = 0
     var getCurrentHandler: ((Request, Handler) throws -> Response)?
-    func getCurrent(_ request: Backend.Request, next: @Sendable (Backend.Application.Request) async throws -> Backend.Application.Response) async throws -> Backend.Response {
+    func getCurrent(_ request: Request, next: Handler) async throws -> Backend.Response {
         getCurrentCallCount += 1
         guard let getCurrentHandler else { throw TestError.unimplemented }
         return try getCurrentHandler(request, next)
@@ -147,7 +148,7 @@ final class RouteControllerMock: RouteControllerProtocol, @unchecked Sendable {
 
     var getIdsCallCount: Int = 0
     var getIdsHandler: ((Request, Handler) throws -> Response)?
-    func getIds(_ request: Backend.Request, next: @Sendable (Backend.Application.Request) async throws -> Backend.Application.Response) async throws -> Backend.Response {
+    func getIds(_ request: Request, next: Handler) async throws -> Backend.Response {
         getIdsCallCount += 1
         guard let getIdsHandler else { throw TestError.unimplemented }
         return try getIdsHandler(request, next)
@@ -155,7 +156,7 @@ final class RouteControllerMock: RouteControllerProtocol, @unchecked Sendable {
 
     var postCallCount: Int = 0
     var postHandler: ((Request, Handler) throws -> Response)?
-    func post(_ request: Backend.Request, next: @Sendable (Backend.Application.Request) async throws -> Backend.Application.Response) async throws -> Backend.Response {
+    func post(_ request: Request, next: Handler) async throws -> Backend.Response {
         postCallCount += 1
         guard let postHandler else { throw TestError.unimplemented }
         return try postHandler(request, next)
@@ -163,17 +164,66 @@ final class RouteControllerMock: RouteControllerProtocol, @unchecked Sendable {
 
     var putCallCount: Int = 0
     var putHandler: ((Request, Handler) throws -> Response)?
-    func put(_ request: Backend.Request, next: @Sendable (Backend.Application.Request) async throws -> Backend.Application.Response) async throws -> Backend.Response {
+    func put(_ request: Request, next: Handler) async throws -> Backend.Response {
         putCallCount += 1
         guard let putHandler else { throw TestError.unimplemented }
         return try putHandler(request, next)
     }
-    
+
     var deleteCallCount: Int = 0
     var deleteHandler: ((Request, Handler) throws -> Response)?
-    func delete(_ request: Request, next: @Sendable (Application.Request) async throws -> Application.Response) async throws -> Response {
-        deleteCallCount+=1
+    func delete(_ request: Request, next: Handler) async throws -> Backend.Response {
+        deleteCallCount += 1
         guard let deleteHandler else { throw TestError.unimplemented }
         return try deleteHandler(request, next)
     }
 }
+ 
+// MARK: - LocationControllerMock
+final class LocationControllerMock: LocationControllerProtocol, @unchecked Sendable {
+
+    init(
+        getHandler: ((Request, Handler) throws -> Response)? = nil,
+        queryHandler: ((Request, Handler) throws -> Response)? = nil,
+        putHandler: ((Request, Handler) throws -> Response)? = nil,
+        deleteHandler: ((Request, Handler) throws -> Response)? = nil
+    ) {
+        self.getHandler = getHandler
+        self.queryHandler = queryHandler
+        self.putHandler = putHandler
+        self.deleteHandler = deleteHandler
+    }
+
+    var getCallCount: Int = 0
+    var getHandler: ((Request, Handler) throws -> Response)?
+    func get(_ request: Request, next: Handler) async throws -> Backend.Response {
+        getCallCount += 1
+        guard let getHandler else { throw TestError.unimplemented }
+        return try getHandler(request, next)
+    }
+
+    var queryCallCount: Int = 0
+    var queryHandler: ((Request, Handler) throws -> Response)?
+    func query(_ request: Request, next: Handler) async throws -> Backend.Response {
+        queryCallCount += 1
+        guard let queryHandler else { throw TestError.unimplemented }
+        return try queryHandler(request, next)
+    }
+
+    var putCallCount: Int = 0
+    var putHandler: ((Request, Handler) throws -> Response)?
+    func put(_ request: Request, next: Handler) async throws -> Backend.Response {
+        putCallCount += 1
+        guard let putHandler else { throw TestError.unimplemented }
+        return try putHandler(request, next)
+    }
+
+    var deleteCallCount: Int = 0
+    var deleteHandler: ((Request, Handler) throws -> Response)?
+    func delete(_ request: Request, next: Handler) async throws -> Backend.Response {
+        deleteCallCount += 1
+        guard let deleteHandler else { throw TestError.unimplemented }
+        return try deleteHandler(request, next)
+    }
+}
+
