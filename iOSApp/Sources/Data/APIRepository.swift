@@ -39,7 +39,7 @@ struct APIRepotiroy: Sendable {
     var getLocation: @Sendable (_ districtId: String) async -> Result<FloatLocationGetDTO, APIError>
     var getLocations: @Sendable (_ festivalId: String) async -> Result<[FloatLocationGetDTO], APIError>
     var putLocation: @Sendable (_ location: FloatLocation) async -> Result<FloatLocation, APIError>
-    var deleteLocation: @Sendable (_ districtId: String) async -> Result<FloatLocation, APIError>
+    var deleteLocation: @Sendable (_ districtId: String) async -> Result<Empty, APIError>
 }
 
 // MARK: - APIRepository
@@ -227,7 +227,7 @@ extension APIRepotiroy: DependencyKey {
                     path: "/districts/\(id)/locations",
                     accessToken: accessToken
                 )
-                return decodeResponse(FloatLocation.self, from: response)
+                return .success(.init())
             }
         )
     }()
@@ -236,11 +236,6 @@ extension APIRepotiroy: DependencyKey {
         switch response {
         case .success(let data):
             let decoder = JSONDecoder()
-            decoder.dateDecodingStrategy = .custom { decoder in
-                let container = try decoder.singleValueContainer()
-                let seconds = try container.decode(Double.self)
-                return Date(timeIntervalSince1970: seconds)
-            }
             do{
                 let decodedObject = try decoder.decode(type, from: data)
                 return Result.success(decodedObject)
@@ -254,11 +249,6 @@ extension APIRepotiroy: DependencyKey {
     static private func encodeRequest<T: Encodable>(_ object: T) -> Result<Data, APIError> {
         let encoder = JSONEncoder()
         encoder.outputFormatting = .prettyPrinted
-        encoder.dateEncodingStrategy = .custom { date, encoder in
-            var container = encoder.singleValueContainer()
-            let seconds = Int64(date.timeIntervalSince1970)
-            try container.encode(seconds)
-        }
         do {
             let data = try encoder.encode(object)
             return .success(data)
