@@ -127,7 +127,7 @@ extension LocationUsecase {
         }
 
         let now = Date()
-        guard festival.periods.first{ $0.contains(now) } != nil else { throw Error.unauthorized("アクセス権限がありません") }
+        guard festival.periods.first(where: { $0.contains(now) }) != nil else { throw Error.unauthorized("アクセス権限がありません") }
 
         return try await locationRepository.get(id: district.id)
     }
