@@ -10,17 +10,6 @@ public struct InfoItem: Entity {
     public let description: String?
 }
 
-public struct Information: Entity, Identifiable{
-    public let id: String
-    public var name: String = ""
-    @NullEncodable public var description: String? = nil
-    
-    public init(id: String, name: String = "", description: String? = nil) {
-        self.id = id
-        self.name = name
-        self.description = description
-    }
-}
 
 struct Segment: Codable{
     let id: String
