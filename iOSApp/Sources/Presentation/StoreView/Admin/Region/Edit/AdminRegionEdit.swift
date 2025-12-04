@@ -31,7 +31,7 @@ struct AdminFestivalEdit {
         case binding(BindingAction<State>)
         case saveTapped
         case cancelTapped
-        case putReceived(Result<String, APIError>)
+        case putReceived(Result<Festival, APIError>)
         case onSpanEdit(Span)
         case onSpanAdd
         case onMilestoneEdit(Information)

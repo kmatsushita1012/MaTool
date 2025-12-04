@@ -26,7 +26,13 @@ struct ConstantValues:Sendable {
 
 extension ConstantValues: DependencyKey {
     static let liveValue = Self(
-        apiBaseUrl: "https://eqp8rvam4h.execute-api.ap-northeast-1.amazonaws.com",
+        apiBaseUrl: {
+            #if DEBUG
+                ""
+            #else
+                ""
+            #endif
+        }(),
         appStatusUrl: "https://studiomk-app-assets.s3.ap-northeast-1.amazonaws.com/MaTool/app-config.json",
         defaultFestivalKey: "region",
         defaultDistrictKey: "district",
