@@ -37,7 +37,7 @@ struct AdminDistrictEdit {
         case areaTapped
         case performanceAddTapped
         case performanceEditTapped(Performance)
-        case postReceived(Result<String,APIError>)
+        case postReceived(Result<District,APIError>)
         case destination(PresentationAction<Destination.Action>)
         case alert(PresentationAction<Alert.Action>)
     }
