@@ -18,7 +18,7 @@ struct DistrictRouterTest {
     let route = Route(id: "r-id", districtId: "d-id", start: SimpleTime(hour: 10, minute: 0), goal: SimpleTime(hour: 11, minute: 0))
     let currentResponse: CurrentResponse
     let district = District(id: "d-id", name: "d-name", festivalId: "f-id", visibility: .all)
-    let tool = DistrictTool(districtId: "d-id", districtName: "d-name", festivalId: "f-id", festivalName: "f-name", checkpoints: [], base: Coordinate(latitude: 0.0, longitude: 0.0), spans: [])
+    let tool = DistrictTool(districtId: "d-id", districtName: "d-name", festivalId: "f-id", festivalName: "f-name", checkpoints: [], base: Coordinate(latitude: 0.0, longitude: 0.0), periods: [])
     let error = Error.internalServerError("test-error")
     let headers = ["Content-Type": "application/json"]
     

@@ -997,8 +997,8 @@ struct RouteUsecaseTest {
         let district = District(id: districtId, name: "district-name", festivalId: festivalId, visibility: .all)
         let route = Route(id: "route-id", districtId: districtId, start: SimpleTime(hour: 10, minute: 0), goal: SimpleTime(hour: 11, minute: 0))
         let location = FloatLocation(districtId: districtId, coordinate: Coordinate(latitude: 1.0, longitude: 2.0), timestamp: Date())
-        let fixedDate = makeDate(year: 2023, month: 11, day: 15) // 2023-11-15 00:00:00 UTC
-        let festival = Festival(id: festivalId, name: "festival", subname: "sub", prefecture: "p", city: "c", base: Coordinate(latitude: 0, longitude: 0), periods: [])
+        let fixedDate = makeDate(year: 2023, month: 11, day: 15, hour: 0, minute: 1) // 2023-11-15 00:01:00 UTC
+        let festival = Festival(id: festivalId, name: "festival", subname: "sub", prefecture: "p", city: "c", base: Coordinate(latitude: 0, longitude: 0), periods: [.init(id: "p-id", title: "p-title", date: .init(year: 2023, month: 11, day: 15), start: .init(hour: 0, minute: 0), end: .init(hour: 0, minute: 2))])
         
         let districtRepositoryMock = DistrictRepositoryMock(getHandler: { _ in district })
         let routeRepositoryMock = RouteRepositoryMock(queryHandler: { _ in [route] })
@@ -1026,9 +1026,7 @@ struct RouteUsecaseTest {
         let district = District(id: districtId, name: "district-name", festivalId: festivalId, visibility: .all)
         let route = Route(id: "route-id", districtId: districtId, start: SimpleTime(hour: 10, minute: 0), goal: SimpleTime(hour: 11, minute: 0))
         let fixedDate = makeDate(year: 2023, month: 11, day: 15) // 2023-11-15 00:00:00 UTC
-        let pastDate = fixedDate.addingTimeInterval(-86400 * 2)
-        let futureDate = fixedDate.addingTimeInterval(-86400)
-        let festival = Festival(id: festivalId, name: "festival", subname: "sub", prefecture: "p", city: "c", base: Coordinate(latitude: 0, longitude: 0), periods: [])
+        let festival = Festival(id: festivalId, name: "festival", subname: "sub", prefecture: "p", city: "c", base: Coordinate(latitude: 0, longitude: 0), periods: [.init(id: "p-id", title: "p-title", date: .init(year: 2023, month: 11, day: 15), start: .init(hour: 0, minute: 1), end: .init(hour: 0, minute: 2))])
         
         let districtRepositoryMock = DistrictRepositoryMock(getHandler: { _ in district })
         let routeRepositoryMock = RouteRepositoryMock(queryHandler: { _ in [route] })
@@ -1217,8 +1215,8 @@ struct RouteUsecaseTest {
         let festivalId = "festival-id"
         let district = District(id: districtId, name: "district-name", festivalId: festivalId, visibility: .all)
         let route = Route(id: "route-id", districtId: districtId, start: SimpleTime(hour: 10, minute: 0), goal: SimpleTime(hour: 11, minute: 0))
-        let fixedDate = Date(timeIntervalSince1970: 1700000000)
-        let festival = Festival(id: festivalId, name: "festival", subname: "sub", prefecture: "p", city: "c", base: Coordinate(latitude: 0, longitude: 0), periods: [])
+        let fixedDate = makeDate(year: 2023, month: 11, day: 15, hour: 0, minute: 2)
+        let festival = Festival(id: festivalId, name: "festival", subname: "sub", prefecture: "p", city: "c", base: Coordinate(latitude: 0, longitude: 0), periods: [.init(id: "p-id", title: "p-title", date: .init(year: 2023, month: 11, day: 15), start: .init(hour: 0, minute: 0), end: .init(hour: 0, minute: 2))])
         
         let districtRepositoryMock = DistrictRepositoryMock(getHandler: { _ in district })
         let routeRepositoryMock = RouteRepositoryMock(queryHandler: { _ in [route] })
@@ -1313,8 +1311,8 @@ struct RouteUsecaseTest {
         let festivalId = "festival-id"
         let district = District(id: districtId, name: "district-name", festivalId: festivalId, visibility: .all)
         let route = Route(id: "route-id", districtId: districtId, start: SimpleTime(hour: 10, minute: 0), goal: SimpleTime(hour: 11, minute: 0))
-        let fixedDate = Date(timeIntervalSince1970: 1700000000)
-        let festival = Festival(id: festivalId, name: "festival", subname: "sub", prefecture: "p", city: "c", base: Coordinate(latitude: 0, longitude: 0), periods: [])
+        let fixedDate = makeDate(year: 2023, month: 11, day: 15, hour: 0, minute: 0)
+        let festival = Festival(id: festivalId, name: "festival", subname: "sub", prefecture: "p", city: "c", base: Coordinate(latitude: 0, longitude: 0), periods: [.init(id: "p-id", title: "p-title", date: .init(year: 2023, month: 11, day: 15), start: .init(hour: 0, minute: 0), end: .init(hour: 0, minute: 2))])
         let districtRepositoryMock = DistrictRepositoryMock(getHandler: { _ in district })
         let routeRepositoryMock = RouteRepositoryMock(queryHandler: { _ in [route] })
         let locationRepositoryMock = LocationRepositoryMock(getHandler: { _ in
@@ -1398,13 +1396,5 @@ fileprivate func makeDate(
     minute: Int = 0,
     second: Int = 0
 ) -> Date {
-    var calendar = Calendar.current
-    var comps = DateComponents()
-    comps.year = year
-    comps.month = month
-    comps.day = day
-    comps.hour = hour
-    comps.minute = minute
-    comps.second = second
-    return calendar.date(from: comps)!
+    return Date.combine(date: .init(year: year, month: month, day: day), time: .init(hour: hour, minute: minute))
 }
