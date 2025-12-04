@@ -27,6 +27,7 @@ struct AdminRouteEditStoreView: View {
                 contentBeforeLiquidGlass
             }
         }
+        .dismissible(backButton: isLiquidGlassEnabled, edgeSwipe: false)
         .sheet(item: $store.whole) { item in
             PreviewView(item: item)
         }
@@ -38,12 +39,11 @@ struct AdminRouteEditStoreView: View {
                 AdminPointEditStoreView(store: store)
                     .dismissible(backButton: false, edgeSwipe: false)
             }
-            .presentationDetents([.fraction(0.3), .large], selection: $selectedDetent)
+            .presentationDetents([.fraction(0.3), .fraction(0.5), .large], selection: $selectedDetent)
             .interactiveDismissDisabled()
         }
         .alert($store.scope(state: \.alert?.notice, action: \.alert.notice))
         .alert($store.scope(state: \.alert?.delete, action: \.alert.delete))
-        .dismissible(backButton: isLiquidGlassEnabled, edgeSwipe: false)
     }
 }
 
@@ -115,9 +115,10 @@ extension AdminRouteEditStoreView {
         .safeAreaInset(edge: .top) {
             tab
                 .glassEffect(.regular)
-                .padding()
+                .padding(.horizontal)
+                .padding(.vertical, 8)
         }
-        .navigationTitle("タイトル")
+        .navigationTitle(store.title)
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             toolbarAfterLiquidGlass
@@ -127,9 +128,6 @@ extension AdminRouteEditStoreView {
     @ToolbarContentBuilder
     @available(iOS 26.0, *)
     var toolbarAfterLiquidGlass: some ToolbarContent {
-//        ToolbarItem(placement: .principal){
-//            tab
-//        }
         ToolbarItemGroup(placement: .primaryAction){
             Button(systemImage: "checkmark") {
                 store.send(.saveTapped)
@@ -285,3 +283,4 @@ struct PreviewView: View {
         }
     }
 }
+
