@@ -44,7 +44,7 @@ extension ConstantValues: DependencyKey {
         contactURL: "https://forms.gle/ppaAwkqrFPKiC9mr8",
         isLiquidGlassEnabled: {
             let uiDesignRequiresCompatibility = Bundle.main.object(forInfoDictionaryKey: "UIDesignRequiresCompatibility") as? Bool ?? false
-            if #available(iOS 26, *), !uiDesignRequiresCompatibility {
+            if #available(iOS 26.0, *), !uiDesignRequiresCompatibility {
                 return true
             } else {
                 return false
