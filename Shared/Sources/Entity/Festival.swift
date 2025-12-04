@@ -45,7 +45,6 @@ public struct Festival: Codable {
 
     public init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
-
         self.id         = try container.decode(String.self, forKey: .id)
         self.name       = try container.decode(String.self, forKey: .name)
         self.subname    = try container.decode(String.self, forKey: .subname)
@@ -53,17 +52,14 @@ public struct Festival: Codable {
         self.prefecture = try container.decode(String.self, forKey: .prefecture)
         self.city       = try container.decode(String.self, forKey: .city)
         self.base       = try container.decode(Coordinate.self, forKey: .base)
-        self.periods = try container.decodeIfPresent([Period].self, forKey: .periods)
-            ?? []
-
-        // レガシーキー用コンテナ
         let legacy = try? decoder.container(keyedBy: LegacyKeys.self)
-
-        // checkpoints 新 → 旧 → 空
         self.checkpoints =
             try container.decodeIfPresent([Checkpoint].self, forKey: .checkpoints)
             ?? (try legacy?.decodeIfPresent([Checkpoint].self, forKey: .milestones))
             ?? []
+        self.periods = try container.decodeIfPresent([Period].self, forKey: .periods)
+        ?? (try legacy?.decodeIfPresent([Legacy.Span].self, forKey: .spans))?.map{ $0.toPeriod() }
+        ?? []
 
         self.imagePath = try container.decodeIfPresent(String.self, forKey: .imagePath)
     }
