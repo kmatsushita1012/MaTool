@@ -127,8 +127,8 @@ struct AdminRouteEdit{
         case deleteTapped
         case wholeTapped
         case partialTapped
-        case postReceived(Result<String, APIError>)
-        case deleteReceived(Result<String, APIError>)
+        case postReceived(Result<Route, APIError>)
+        case deleteReceived(Result<Empty, APIError>)
         case wholePrepared(ExportedItem?)
         case partialPrepared(ExportedItem?)
         case point(PresentationAction<AdminPointEdit.Action>)
@@ -330,7 +330,7 @@ struct AdminRouteEdit{
                     state.isLoading = true
                     return .run { [route = state.route] send in
                         let result = await apiRepository.deleteRoute(route.id)
-                        await send(.postReceived(result))
+                        await send(.deleteReceived(result))
                     }
                 }
             case .alert(.dismiss):

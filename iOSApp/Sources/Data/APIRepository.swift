@@ -23,23 +23,23 @@ struct APIRepotiroy: Sendable {
     
     var getFestivals: @Sendable () async  -> Result<[Festival], APIError>
     var getFestival: @Sendable (_ festivalId: String) async -> Result<Festival, APIError>
-    var putFestival: @Sendable (_ district: Festival) async -> Result<String, APIError>
+    var putFestival: @Sendable (_ district: Festival) async -> Result<Festival, APIError>
     var getDistricts: @Sendable (_ festivalId: String) async -> Result<[District], APIError>
     var getDistrict: @Sendable (_ districtId: String) async -> Result<District, APIError>
-    var postDistrict: @Sendable (_ festivalId: String, _ districtName: String, _ email: String) async -> Result<String, APIError>
-    var putDistrict: @Sendable (_ district: District) async -> Result<String, APIError>
+    var postDistrict: @Sendable (_ festivalId: String, _ districtName: String, _ email: String) async -> Result<District, APIError>
+    var putDistrict: @Sendable (_ district: District) async -> Result<District, APIError>
     var getTool: @Sendable (_ districtId: String) async -> Result<DistrictTool, APIError>
     var getRoutes: @Sendable (_ districtId: String) async -> Result<[RouteItem], APIError>
     var getRoute: @Sendable (_ id: String) async -> Result<Route, APIError>
     var getCurrentRoute: @Sendable (_ districtId: String) async -> Result<CurrentResponse, APIError>
     var getRouteIds: @Sendable () async -> Result<[String], APIError>
-    var postRoute: @Sendable (_ route: Route) async -> Result<String, APIError>
-    var putRoute: @Sendable (_ route: Route) async -> Result<String, APIError>
-    var deleteRoute: @Sendable (_ id: String) async -> Result<String, APIError>
+    var postRoute: @Sendable (_ route: Route) async -> Result<Route, APIError>
+    var putRoute: @Sendable (_ route: Route) async -> Result<Route, APIError>
+    var deleteRoute: @Sendable (_ id: String) async -> Result<Empty, APIError>
     var getLocation: @Sendable (_ districtId: String) async -> Result<FloatLocationGetDTO, APIError>
     var getLocations: @Sendable (_ festivalId: String) async -> Result<[FloatLocationGetDTO], APIError>
-    var putLocation: @Sendable (_ location: FloatLocation) async -> Result<String, APIError>
-    var deleteLocation: @Sendable (_ districtId: String) async -> Result<String, APIError>
+    var putLocation: @Sendable (_ location: FloatLocation) async -> Result<FloatLocation, APIError>
+    var deleteLocation: @Sendable (_ districtId: String) async -> Result<Empty, APIError>
 }
 
 // MARK: - APIRepository
@@ -50,222 +50,166 @@ extension APIRepotiroy: DependencyKey {
         
         return Self(
             getFestivals: {
-                let response = await apiClient.get(
-                    path: "/regions"
+                let response: Result<[Festival], APIError> = await apiClient.get(
+                    path: "/festivals"
                 )
-                return decodeResponse([Festival].self, from: response)
+                return response
             },
             getFestival: { id in
-                let response = await apiClient.get(
-                    path: "/regions/\(id)"
+                let response: Result<Festival, APIError> = await apiClient.get(
+                    path: "/festivals/\(id)"
                 )
-                return decodeResponse(Festival.self, from: response)
+                return response
             },
             putFestival: { festival in
-                let encodeResult = encodeRequest(festival)
-                    .mapError { APIError.encoding(message: $0.localizedDescription) }
                 let accessToken = await authService.getAccessToken()
-                return await encodeResult.asyncFlatMap { body in
-                    let response = await apiClient.put(
-                        path: "/regions/\(festival.id)",
-                        body: body,
-                        accessToken: accessToken
-                    )
-                    return decodeResponse(String.self, from: response)
-                }
+                let response: Result<Festival, APIError> = await apiClient.put(
+                    path: "/festivals/\(festival.id)",
+                    body: festival,
+                    accessToken: accessToken
+                )
+                return response
             },
             getDistricts: { festivalId in
-                let response = await apiClient.get(
-                    path: "/regions/\(festivalId)/districts"
+                let response: Result<[District], APIError> = await apiClient.get(
+                    path: "/festivals/\(festivalId)/districts"
                 )
-                return decodeResponse([District].self, from: response)
+                return response
             },
             getDistrict: { id in
-                let response = await apiClient.get(
+                let response: Result<District, APIError> = await apiClient.get(
                     path: "/districts/\(id)"
                 )
-                return decodeResponse(District.self, from: response)
+                return response
             },
             postDistrict: { festivalId, districtName, email in
-                let encodeResult = encodeRequest(
-                    [
-                        "name": districtName,
-                        "email": email
-                    ]
-                )
-                let accessToken = await authService.getAccessToken()
-                return await encodeResult.asyncFlatMap { body in
-                    let response = await apiClient.post(
-                        path: "/regions/\(festivalId)/districts",
-                        body: body,
-                        accessToken: accessToken
-                    )
-                    return decodeResponse(String.self, from: response)
+                struct DistrictCreateBody: Encodable {
+                    let name: String
+                    let email: String
                 }
+                let body = DistrictCreateBody(name: districtName, email: email)
+                let accessToken = await authService.getAccessToken()
+                let response: Result<District, APIError> = await apiClient.post(
+                    path: "/festivals/\(festivalId)/districts",
+                    body: body,
+                    accessToken: accessToken
+                )
+                return response
             },
             putDistrict: { district in
                 let accessToken = await authService.getAccessToken()
-                let encodeResult = encodeRequest(district)
-                return await encodeResult.asyncFlatMap { body in
-                    let response = await apiClient.put(
-                        path: "/districts/\(district.id)",
-                        body: body,
-                        accessToken: accessToken
-                    )
-                    return decodeResponse(String.self, from: response)
-                }
+                let response: Result<District, APIError> = await apiClient.put(
+                    path: "/districts/\(district.id)",
+                    body: district,
+                    accessToken: accessToken
+                )
+                return response
             },
             getTool: { districtId in
                 let accessToken = await authService.getAccessToken()
-                let response = await apiClient.get(
+                let response: Result<DistrictTool, APIError> = await apiClient.get(
                     path: "/districts/\(districtId)/tools",
                     accessToken: accessToken
                 )
-                return decodeResponse(DistrictTool.self, from: response)
+                return response
             },
             getRoutes: { districtId in
                 let accessToken = await authService.getAccessToken()
-                let response = await apiClient.get(
+                let response: Result<[RouteItem], APIError> = await apiClient.get(
                     path: "/districts/\(districtId)/routes",
                     accessToken: accessToken,
                     isCache: true
                 )
-                return decodeResponse([RouteItem].self, from: response)
+                return response
             },
             getRoute: { id in
                 let accessToken = await authService.getAccessToken()
-                let response = await apiClient.get(
+                let response: Result<Route, APIError> = await apiClient.get(
                     path: "/routes/\(id)",
                     accessToken: accessToken,
                     isCache: false
                 )
-                return decodeResponse(Route.self, from: response)
+                return response
             },
             getCurrentRoute: { districtId in
                 let accessToken = await authService.getAccessToken()
-                let response = await apiClient.get(
-                    path: "/v2/districts/\(districtId)/routes/current",
+                let response: Result<CurrentResponse, APIError> = await apiClient.get(
+                    path: "/districts/\(districtId)/routes/current",
                     accessToken: accessToken,
                     isCache: false
                 )
-                return decodeResponse(CurrentResponse.self, from: response)
+                return response
             },
             getRouteIds: {
                 let accessToken = await authService.getAccessToken()
-                let response = await apiClient.get(
+                let response: Result<[String], APIError> = await apiClient.get(
                     path: "/routes",
                     accessToken: accessToken,
                     isCache: false
                 )
-                return decodeResponse([String].self, from: response)
+                return response
             },
             postRoute: { route in
-                let encodeResult = encodeRequest(route)
                 let accessToken = await authService.getAccessToken()
-                return await encodeResult.asyncFlatMap { body in
-                    let response = await apiClient.post(
-                        path: "/districts/\(route.districtId)/routes",
-                        body: body,
-                        accessToken: accessToken
-                    )
-                    return decodeResponse(String.self, from: response)
-                }
+                let response: Result<Route, APIError> = await apiClient.post(
+                    path: "/districts/\(route.districtId)/routes",
+                    body: route,
+                    accessToken: accessToken
+                )
+                return response
             },
             putRoute: { route in
-                let encodeResult = encodeRequest(route)
                 let accessToken = await authService.getAccessToken()
-                return await encodeResult.asyncFlatMap { body in
-                    let response = await apiClient.put(
-                        path: "/routes/\(route.id)",
-                        body: body,
-                        accessToken: accessToken
-                    )
-                    return decodeResponse(String.self, from: response)
-                }
+                let response: Result<Route, APIError> = await apiClient.put(
+                    path: "/routes/\(route.id)",
+                    body: route,
+                    accessToken: accessToken
+                )
+                return response
             },
             deleteRoute: { id in
                 let accessToken = await authService.getAccessToken()
-                let response = await apiClient.delete(
+                let response: Result<Empty, APIError> = await apiClient.delete(
                     path: "/routes/\(id)",
                     accessToken: accessToken
                 )
-                return decodeResponse(String.self, from: response)
+                return response
             },
             getLocation: { districtId in
                 let accessToken = await authService.getAccessToken()
-                let response = await apiClient.get(
+                let response: Result<FloatLocationGetDTO, APIError> = await apiClient.get(
                     path: "/districts/\(districtId)/locations",
                     accessToken: accessToken,
                     isCache: false
                 )
-                return decodeResponse(FloatLocationGetDTO.self, from: response)
+                return response
             },
             getLocations: { festivalId in
                 let accessToken = await authService.getAccessToken()
-                let response = await apiClient.get(
-                    path: "/regions/\(festivalId)/locations",
+                let response: Result<[FloatLocationGetDTO], APIError> = await apiClient.get(
+                    path: "/festivals/\(festivalId)/locations",
                     accessToken: accessToken,
                     isCache: false
                 )
-                return decodeResponse([FloatLocationGetDTO].self, from: response)
+                return response
             },
             putLocation: { location in
-                let encodeResult = encodeRequest(location)
                 let accessToken = await authService.getAccessToken()
-                return await encodeResult.asyncFlatMap { body in
-                    let response = await apiClient.put(
-                        path: "/districts/\(location.districtId)/locations",
-                        body: body,
-                        accessToken: accessToken
-                    )
-                    return decodeResponse(String.self, from: response)
-                }
+                let response: Result<FloatLocation, APIError> = await apiClient.put(
+                    path: "/districts/\(location.districtId)/locations",
+                    body: location,
+                    accessToken: accessToken
+                )
+                return response
             },
             deleteLocation: { id in
                 let accessToken = await authService.getAccessToken()
-                let response = await apiClient.delete(
+                let response: Result<Empty, APIError> = await apiClient.delete(
                     path: "/districts/\(id)/locations",
                     accessToken: accessToken
                 )
-                return decodeResponse(String.self, from: response)
+                return response
             }
         )
     }()
-    
-    static private func decodeResponse<T:Codable>(_ type:T.Type, from response: Result<Data,APIError>) -> Result<T,APIError>{
-        switch response {
-        case .success(let data):
-            let decoder = JSONDecoder()
-            decoder.dateDecodingStrategy = .custom { decoder in
-                let container = try decoder.singleValueContainer()
-                let seconds = try container.decode(Double.self)
-                return Date(timeIntervalSince1970: seconds)
-            }
-            do{
-                let decodedObject = try decoder.decode(type, from: data)
-                return Result.success(decodedObject)
-            }catch{
-                return Result.failure(APIError.decoding(message: "レスポンスの解析に失敗しました"))
-            }
-        case .failure(let error):
-            return .failure(error)
-        }
-    }
-    static private func encodeRequest<T: Encodable>(_ object: T) -> Result<Data, APIError> {
-        let encoder = JSONEncoder()
-        encoder.outputFormatting = .prettyPrinted
-        encoder.dateEncodingStrategy = .custom { date, encoder in
-            var container = encoder.singleValueContainer()
-            let seconds = Int64(date.timeIntervalSince1970)
-            try container.encode(seconds)
-        }
-        do {
-            let data = try encoder.encode(object)
-            return .success(data)
-        } catch {
-            return .failure(.encoding(message: "リクエストの生成に失敗しました"))
-        }
-    }
 }
-
-
