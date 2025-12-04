@@ -17,6 +17,7 @@ public struct Festival: Entity {
     public var base: Coordinate
     public var periods: [Period]
     public var checkpoints: [Checkpoint]
+    public var hazardSections: [HazardSection]
     @NullEncodable public var imagePath: String?
 
     public init(
@@ -29,6 +30,7 @@ public struct Festival: Entity {
         base: Coordinate,
         periods: [Period] = [],
         checkpoints: [Checkpoint] = [],
+        hazardSection: [HazardSection] = [],
         imagePath: String? = nil
     ) {
         self.id = id
@@ -40,6 +42,7 @@ public struct Festival: Entity {
         self.base = base
         self.periods = periods
         self.checkpoints = checkpoints
+        self.hazardSections = hazardSection
         self.imagePath = imagePath
     }
 
@@ -60,6 +63,8 @@ public struct Festival: Entity {
         self.periods = try container.decodeIfPresent([Period].self, forKey: .periods)
         ?? (try legacy?.decodeIfPresent([Legacy.Span].self, forKey: .spans))?.map{ $0.toPeriod() }
         ?? []
+        
+        self.hazardSections = try container.decodeIfPresent([HazardSection].self, forKey: .hazardSections) ?? []
 
         self.imagePath = try container.decodeIfPresent(String.self, forKey: .imagePath)
     }
@@ -74,6 +79,7 @@ public struct Festival: Entity {
         case base
         case periods
         case checkpoints
+        case hazardSections
         case imagePath
     }
 
@@ -128,5 +134,18 @@ public struct Checkpoint: Entity, Identifiable {
         self.id = id
         self.name = name
         self.description = description
+    }
+}
+
+// MARK: - HazardSection
+public struct HazardSection: Entity {
+    public let id: String
+    public var title: String
+    public var coordinates: [Coordinate]
+    
+    public init(id: String, title: String, coordinates: [Coordinate]) {
+        self.id = id
+        self.title = title
+        self.coordinates = coordinates
     }
 }

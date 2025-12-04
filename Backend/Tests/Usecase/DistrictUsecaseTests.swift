@@ -240,7 +240,7 @@ struct DistrictUsecaseTests{
         let now = Date()
         let district = District(id: "district-id", name: "district-name", festivalId: "festival-id", visibility: .all)
         let festival = Festival(id: "festival-id", name: "festival-name", subname: "festival-subname", prefecture: "p", city: "c", base: Coordinate(latitude: 1.23, longitude: 4.56), periods: [])
-        let tool = DistrictTool(districtId: "district-id", districtName: "district-name", festivalId: "festival-id", festivalName: "festival-name", checkpoints: [], base: Coordinate(latitude: 1.23, longitude: 4.56), periods: [])
+        let tool = DistrictTool(districtId: "district-id", districtName: "district-name", festivalId: "festival-id", festivalName: "festival-name", checkpoints: [], base: Coordinate(latitude: 1.23, longitude: 4.56), periods: [], hazardSections: [])
         
         var lastCalledDistrictId: String? = nil
         var lastCalledFestivalId: String? = nil
