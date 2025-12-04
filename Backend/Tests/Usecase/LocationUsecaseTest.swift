@@ -6,7 +6,7 @@ import Shared
 
 struct LocationUsecaseTest {
     
-    let festival = Festival(id: "festival-id", name: "festival-name", subname: "sub", prefecture: "p", city: "c", base: Coordinate(latitude: 0, longitude: 0), periods: [Period(id: "s", start: Date().addingTimeInterval(-3600), end: Date().addingTimeInterval(3600))])
+    let festival = Festival(id: "festival-id", name: "festival-name", subname: "sub", prefecture: "p", city: "c", base: Coordinate(latitude: 0, longitude: 0), periods: [])
     let district = District(id: "district-id", name: "district-name", festivalId: "festival-id", visibility: .all)
     let location = FloatLocation(districtId: "district-id", coordinate: Coordinate(latitude: 0.0, longitude: 0.0), timestamp: Date(timeIntervalSince1970: 0))
     let dto = FloatLocationGetDTO(districtId: "district-id", districtName: "district-name", coordinate: Coordinate(latitude: 0.0, longitude: 0.0), timestamp: Date(timeIntervalSince1970: 0))
