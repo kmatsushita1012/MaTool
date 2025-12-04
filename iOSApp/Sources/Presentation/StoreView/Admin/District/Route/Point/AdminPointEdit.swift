@@ -22,15 +22,12 @@ struct AdminPointEdit{
     enum Action: BindableAction, Equatable {
         case binding(BindingAction<State>)
         case doneTapped
-        case cancelTapped
         case moveTapped
         case insertTapped
         case deleteTapped
         case titleFieldFocused
         case titleOptionSelected(Checkpoint)
     }
-    
-    @Dependency(\.dismiss) var dismiss
     
     var body: some ReducerOf<AdminPointEdit> {
         BindingReducer()
@@ -40,10 +37,6 @@ struct AdminPointEdit{
                 return .none
             case .doneTapped:
                 return .none
-            case .cancelTapped:
-                return .run { _ in
-                    await dismiss()
-                }
             case .moveTapped:
                return .none
            case .insertTapped:
