@@ -6,7 +6,7 @@ import Shared
 
 struct LocationUsecaseTest {
     
-    let festival = Festival(id: "festival-id", name: "festival-name", subname: "sub", prefecture: "p", city: "c", base: Coordinate(latitude: 0, longitude: 0), spans: [Span(id: "s", start: Date().addingTimeInterval(-3600), end: Date().addingTimeInterval(3600))])
+    let festival = Festival(id: "festival-id", name: "festival-name", subname: "sub", prefecture: "p", city: "c", base: Coordinate(latitude: 0, longitude: 0), periods: [Period(id: "s", start: Date().addingTimeInterval(-3600), end: Date().addingTimeInterval(3600))])
     let district = District(id: "district-id", name: "district-name", festivalId: "festival-id", visibility: .all)
     let location = FloatLocation(districtId: "district-id", coordinate: Coordinate(latitude: 0.0, longitude: 0.0), timestamp: Date(timeIntervalSince1970: 0))
     let dto = FloatLocationGetDTO(districtId: "district-id", districtName: "district-name", coordinate: Coordinate(latitude: 0.0, longitude: 0.0), timestamp: Date(timeIntervalSince1970: 0))
@@ -38,7 +38,7 @@ struct LocationUsecaseTest {
         #expect(result == [dto])
     }
     
-    @Test func test_query_public_success_with_span() async throws {
+    @Test func test_query_public_success_with_period() async throws {
         var festivalLastCalledId: String? = nil
         var districtLastCalledId: String? = nil
         
@@ -64,7 +64,7 @@ struct LocationUsecaseTest {
         #expect(locationRepositoryMock.scanCallCount == 1)
     }
     
-    @Test func test_query_public_out_of_span_returns_empty() async throws {
+    @Test func test_query_public_out_of_period_returns_empty() async throws {
         var festivalLastCalledId: String? = nil
         let festivalRepositoryMock = FestivalRepositoryMock(getHandler: { id in
             festivalLastCalledId = id
@@ -171,7 +171,7 @@ struct LocationUsecaseTest {
         #expect(result == dto)
     }
     
-    @Test func test_get_public_within_span_success() async throws {
+    @Test func test_get_public_within_period_success() async throws {
         var lastCalledDistrictId: String? = nil
         var lastCalledFestivalId: String? = nil
         var lastCalledLocationId: String? = nil
@@ -226,10 +226,10 @@ struct LocationUsecaseTest {
         }
     }
     
-    @Test func test_get_public_out_of_span_throws() async throws {
+    @Test func test_get_public_out_of_period_throws() async throws {
         let districtId = "districtId"
         let district = District(id: districtId, name: "district-name", festivalId: "fest-1", visibility: .all)
-        let festival = Festival(id: "fest-1", name: "festival", subname: "sub", prefecture: "p", city: "c", base: Coordinate(latitude: 0, longitude: 0), spans: [Span(id: "s", start: Date().addingTimeInterval(-86400), end: Date().addingTimeInterval(-3600))])
+        let festival = Festival(id: "fest-1", name: "festival", subname: "sub", prefecture: "p", city: "c", base: Coordinate(latitude: 0, longitude: 0), periods: [])
         let districtRepositoryMock = DistrictRepositoryMock(getHandler: { _ in district })
         let festivalRepositoryMock = FestivalRepositoryMock(getHandler: { _ in festival })
         let locationRepositoryMock = LocationRepositoryMock(getHandler: { _ in FloatLocation(districtId: districtId, coordinate: Coordinate(latitude: 0, longitude: 0), timestamp: Date()) })

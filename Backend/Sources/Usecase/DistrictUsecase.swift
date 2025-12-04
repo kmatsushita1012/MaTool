@@ -97,9 +97,9 @@ struct DistrictUsecase: DistrictUsecaseProtocol {
             throw Error.notFound("指定された祭典が見つかりません")
         }
 
-        // performances → Information にマッピング
-        let performances: [Information] = district.performances.map { performance in
-            Information(
+        // performances → Checkpoint にマッピング
+        let performances: [Checkpoint] = district.performances.map { performance in
+            Checkpoint(
                 id: performance.id,
                 name: performance.name,
                 description: "演者 \(performance.performer) \(performance.description ?? "")"
@@ -112,9 +112,9 @@ struct DistrictUsecase: DistrictUsecaseProtocol {
             districtName: district.name,
             festivalId: festival.id,
             festivalName: festival.name,
-            milestones: festival.milestones + performances,
+            checkpoints: festival.checkpoints + performances,
             base: district.base ?? festival.base,
-            spans: festival.spans
+            periods: festival.periods
         )
 
         return item

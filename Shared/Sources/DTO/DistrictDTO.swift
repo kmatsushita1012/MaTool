@@ -11,18 +11,18 @@ public struct DistrictTool: DTO {
     public let districtName: String
     public let festivalId: String
     public let festivalName: String
-    public let milestones: [Information]
+    public let checkpoints: [Checkpoint]
     public let base: Coordinate
-    public let spans: [Span]
+    public let periods: [Period]
     
-    public init(districtId: String, districtName: String, festivalId: String, festivalName: String, milestones: [Information], base: Coordinate, spans: [Span]) {
+    public init(districtId: String, districtName: String, festivalId: String, festivalName: String, checkpoints: [Checkpoint], base: Coordinate, periods: [Period]) {
         self.districtId = districtId
         self.districtName = districtName
         self.festivalId = festivalId
         self.festivalName = festivalName
-        self.milestones = milestones
+        self.checkpoints = checkpoints
         self.base = base
-        self.spans = spans
+        self.periods = periods
     }
 }
 
