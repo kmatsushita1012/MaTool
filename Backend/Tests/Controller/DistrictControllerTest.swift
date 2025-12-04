@@ -87,7 +87,7 @@ struct DistrictControllerTest {
 
     @Test func test_getTools_正常() async throws {
         let now = Date()
-        let expected = DistrictTool(districtId: "district-id", districtName: "district-name", festivalId: "festival-id", festivalName: "festival-name", checkpoints: [], base: Coordinate(latitude: 1.0, longitude: 2.0), periods: [])
+        let expected = DistrictTool(districtId: "district-id", districtName: "district-name", festivalId: "festival-id", festivalName: "festival-name", checkpoints: [], base: Coordinate(latitude: 1.0, longitude: 2.0), periods: [], hazardSections: [])
         var lastCalledId: String?
         var lastCalledUser: UserRole?
         let mock = DistrictUsecaseMock(getToolsHandler: { id, user in

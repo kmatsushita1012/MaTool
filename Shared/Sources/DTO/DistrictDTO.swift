@@ -14,8 +14,9 @@ public struct DistrictTool: DTO {
     public let checkpoints: [Checkpoint]
     public let base: Coordinate
     public let periods: [Period]
+    public let hazardSections: [HazardSection]
     
-    public init(districtId: String, districtName: String, festivalId: String, festivalName: String, checkpoints: [Checkpoint], base: Coordinate, periods: [Period]) {
+    public init(districtId: String, districtName: String, festivalId: String, festivalName: String, checkpoints: [Checkpoint], base: Coordinate, periods: [Period], hazardSections: [HazardSection]) {
         self.districtId = districtId
         self.districtName = districtName
         self.festivalId = festivalId
@@ -23,6 +24,7 @@ public struct DistrictTool: DTO {
         self.checkpoints = checkpoints
         self.base = base
         self.periods = periods
+        self.hazardSections = hazardSections
     }
 }
 
