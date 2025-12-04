@@ -2,6 +2,20 @@
 METHOD=${1:-GET}
 RAW_PATH=${2:-/}
 BODY=${3:-""}
+AUTH_ENABLED=false
+
+# --- オプション解析 ---
+while [[ "$1" =~ ^- ]]; do
+  case "$1" in
+    --auth)
+      AUTH_ENABLED=true
+      shift
+      ;;
+    *)
+      shift
+      ;;
+  esac
+done
 
 # --- クエリ文字列とパスを分離 ---
 PATH_ONLY=$(echo "$RAW_PATH" | cut -d'?' -f1)
@@ -26,6 +40,11 @@ else
 fi
 
 # --- JSON ペイロード作成 ---
+HEADERS_JSON="{}"
+if [ "$AUTH_ENABLED" = true ]; then
+  HEADERS_JSON=$(jq -n '{"authorization": "Bearer AUTH_TOKEN"}')
+fi
+
 JSON_PAYLOAD=$(jq -n \
   --arg method "$METHOD" \
   --arg rawPath "$PATH_ONLY" \
@@ -33,14 +52,13 @@ JSON_PAYLOAD=$(jq -n \
   --arg body "$BODY" \
   --argjson pathParams "$PATH_PARAMS_JSON" \
   --argjson queryParams "$QUERY_JSON" \
+  --argjson headers "$HEADERS_JSON" \
   '{
     version: "2.0",
     routeKey: ($method + " " + $rawPath),
     rawPath: $rawPath,
     rawQueryString: $rawQueryString,
-    headers: {
-      "authorization": "Bearer AUTH_TOKEN"
-    },
+    headers: $headers,
     queryStringParameters: $queryParams,
     pathParameters: $pathParams,
     body: $body,
