@@ -7,7 +7,7 @@
 
 import Foundation
 
-public struct Festival: Codable {
+public struct Festival: Entity {
     public let id: String
     public var name: String
     public var subname: String
