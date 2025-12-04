@@ -101,8 +101,8 @@ extension LocationUsecase {
         }
 
         var foundFlag = false
-        for span in festival.spans {
-            if span.start <= now && now <= span.end {
+        for period in festival.periods {
+            if period.start.toDate <= now && now <= period.end.toDate {
                 foundFlag = true
                 break
             }
@@ -127,17 +127,7 @@ extension LocationUsecase {
         }
 
         let now = Date()
-        var foundFlag = false
-        for span in festival.spans {
-            if span.start <= now && now <= span.end {
-                foundFlag = true
-                break
-            }
-        }
-
-        if !foundFlag {
-            throw Error.unauthorized("アクセス権限がありません")
-        }
+        guard festival.periods.first{ $0.contains(now) } != nil else { throw Error.unauthorized("アクセス権限がありません") }
 
         return try await locationRepository.get(id: district.id)
     }

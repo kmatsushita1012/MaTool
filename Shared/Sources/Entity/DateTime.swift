@@ -85,7 +85,7 @@ public extension SimpleDate {
         return calendar.date(from: components) ?? Date()
     }
     
-    static func fromDate(_ date: Date) -> SimpleDate {
+    static func from(_ date: Date) -> SimpleDate {
         var calendar = Calendar.current
         calendar.timeZone = japanTimeZone
         let comps = calendar.dateComponents([.year, .month, .day], from: date)
@@ -93,7 +93,7 @@ public extension SimpleDate {
     }
     
     static var today: SimpleDate {
-        return fromDate(Date())
+        return from(Date())
     }
     
     /// 曜日 (1=日曜, 2=月曜 ... 7=土曜)
@@ -116,7 +116,7 @@ public extension SimpleTime {
         return calendar.date(from: components) ?? now
     }
     
-    static func fromDate(_ date: Date) -> SimpleTime {
+    static func from(_ date: Date) -> SimpleTime {
         var calendar = Calendar.current
         calendar.timeZone = japanTimeZone
         let components = calendar.dateComponents([.hour, .minute], from: date)

@@ -14,7 +14,7 @@ struct InformationEdit {
     @ObservableState
     struct State: Equatable{
         let title: String
-        var item: Information
+        var item: Checkpoint
     }
     
     @CasePathable

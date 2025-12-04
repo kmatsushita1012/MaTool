@@ -22,8 +22,8 @@ struct FestivalRepositoryTest {
         base: Coordinate(
             latitude: 0.0, longitude: 0.0
         ),
-        spans: [],
-        milestones: [],
+        periods: [],
+        checkpoints: [],
         imagePath: "IMAGE_PATH"
     )
     let dataStore: DataStoreMock<String, Festival>
