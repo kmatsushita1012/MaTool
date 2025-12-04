@@ -12,6 +12,8 @@ import Shared
 
 @available(iOS 17.0, *)
 struct AdminPointEditStoreView: View {
+    
+    @Dependency(\.values.isLiquidGlassEnabled) var isLiquidGlassEnabled: Bool
     @SwiftUI.Bindable var store: StoreOf<AdminPointEdit>
     
     var body: some View {
@@ -88,25 +90,34 @@ struct AdminPointEditStoreView: View {
         .navigationTitle("地点")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
-            ToolbarItem(placement: .topBarLeading) {
-                Button{
-                    store.send(.cancelTapped)
-                } label: {
-                    Text("キャンセル")
-                }
-                .padding(.horizontal, 8)
-            }
-            ToolbarItem(placement: .topBarTrailing) {
-                Button{
-                    store.send(.doneTapped)
-                } label: {
-                    Text("完了")
-                        .bold()
-                }
-                .padding(.horizontal, 8)
+            if #available(iOS 26.0, *), isLiquidGlassEnabled{
+                toolbarAfterLiquidGlass
+            } else {
+                toolbarBeforeLiquidGlass
             }
         }
-        
+    }
+    
+    @ToolbarContentBuilder
+    var toolbarBeforeLiquidGlass: some ToolbarContent {
+        ToolbarItem(placement: .confirmationAction) {
+            Button{
+                store.send(.doneTapped)
+            } label: {
+                Text("完了")
+                    .bold()
+            }
+            .padding(.horizontal, 8)
+        }
+    }
+    
+    @ToolbarContentBuilder
+    var toolbarAfterLiquidGlass: some ToolbarContent {
+        ToolbarItem(placement: .confirmationAction) {
+            Button(systemImage: "xmark"){
+                store.send(.doneTapped)
+            }
+        }
     }
 }
 
