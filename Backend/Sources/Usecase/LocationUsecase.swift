@@ -99,14 +99,14 @@ extension LocationUsecase {
         guard let festival = try await festivalRepository.get(id: id) else {
             throw Error.notFound("指定された地域が見つかりません")
         }
-
+        // TODO: Period修正
         var foundFlag = false
-        for period in festival.periods {
-            if period.start.toDate <= now && now <= period.end.toDate {
-                foundFlag = true
-                break
-            }
-        }
+//        for period in festival.periods {
+//            if period.start.toDate <= now && now <= period.end.toDate {
+//                foundFlag = true
+//                break
+//            }
+//        }
         
         guard foundFlag else { throw Error.forbidden("祭典期間外のため配信を停止しています。") }
 
@@ -127,8 +127,9 @@ extension LocationUsecase {
         }
 
         let now = Date()
-        guard festival.periods.first(where: { $0.contains(now) }) != nil else { throw Error.unauthorized("アクセス権限がありません") }
-
+        // TODO: Period修正
+//        guard festival.periods.first(where: { $0.contains(now) }) != nil else { throw Error.unauthorized("アクセス権限がありません") }
+        throw Error.unauthorized("アクセス権限がありません")
         return try await locationRepository.get(id: district.id)
     }
 
