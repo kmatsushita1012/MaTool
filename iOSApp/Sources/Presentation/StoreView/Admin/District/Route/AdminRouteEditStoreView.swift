@@ -260,6 +260,7 @@ extension AdminRouteEditStoreView {
 struct PreviewView: View {
     let item: ExportedItem
     
+    @Dependency(\.values.isLiquidGlassEnabled) var isLiquidGlassEnabled: Bool
     @Environment(\.dismiss) private var dismiss
     
     var body: some View {
@@ -268,18 +269,43 @@ struct PreviewView: View {
                 .navigationTitle("プレビュー")
                 .navigationBarTitleDisplayMode(.inline)
                 .toolbar {
-                    ToolbarItem(placement: .cancellationAction) {
-                        Button("閉じる") {
-                            dismiss()
-                        }
-                    }
-                    ToolbarItem(placement: .primaryAction) {
-                        ShareLink(item: item.pdf) {
-                            Image(systemName: "square.and.arrow.up")
-                                .imageScale(.large)
-                        }
+                    if isLiquidGlassEnabled {
+                        toolbarAfterLiquidGlass
+                    } else {
+                        toolbarBeforeLiquidGlass
                     }
                 }
+        }
+    }
+    
+    @ToolbarContentBuilder
+    var toolbarBeforeLiquidGlass: some ToolbarContent {
+        ToolbarItem(placement: .cancellationAction) {
+            Button("閉じる") {
+                dismiss()
+            }
+        }
+        ToolbarItem(placement: .primaryAction) {
+            ShareLink(item: item.pdf) {
+                Image(systemName: "square.and.arrow.up")
+                    .imageScale(.large)
+            }
+        }
+    }
+    
+    @ToolbarContentBuilder
+    var toolbarAfterLiquidGlass: some ToolbarContent {
+        ToolbarItem(placement: .cancellationAction) {
+            Button(systemImage: "xmark") {
+                dismiss()
+            }
+        }
+        ToolbarItem(placement: .primaryAction) {
+            ShareLink(item: item.pdf) {
+                Image(systemName: "square.and.arrow.up")
+                    .imageScale(.large)
+                    .tint(.accentColor)
+            }
         }
     }
 }
