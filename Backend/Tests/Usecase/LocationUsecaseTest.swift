@@ -6,7 +6,7 @@ import Shared
 
 struct LocationUsecaseTest {
     
-    let festival = Festival(id: "festival-id", name: "festival-name", subname: "sub", prefecture: "p", city: "c", base: Coordinate(latitude: 0, longitude: 0), periods: [.init(id: "p-id", title: "p-title", date: .init(year: 2023, month: 11, day: 15), start: .init(hour: 0, minute: 0), end: .init(hour: 0, minute: 2))])
+    let festival = Festival(id: "festival-id", name: "festival-name", subname: "sub", prefecture: "p", city: "c", base: Coordinate(latitude: 0, longitude: 0))
     let district = District(id: "district-id", name: "district-name", festivalId: "festival-id", visibility: .all)
     let location = FloatLocation(districtId: "district-id", coordinate: Coordinate(latitude: 0.0, longitude: 0.0), timestamp: Date(timeIntervalSince1970: 0))
     let dto = FloatLocationGetDTO(districtId: "district-id", districtName: "district-name", coordinate: Coordinate(latitude: 0.0, longitude: 0.0), timestamp: Date(timeIntervalSince1970: 0))
@@ -231,7 +231,7 @@ struct LocationUsecaseTest {
     @Test func test_get_public_out_of_period_throws() async throws {
         let districtId = "districtId"
         let district = District(id: districtId, name: "district-name", festivalId: "fest-1", visibility: .all)
-        let festival = Festival(id: "fest-1", name: "festival", subname: "sub", prefecture: "p", city: "c", base: Coordinate(latitude: 0, longitude: 0), periods: [])
+        let festival = Festival(id: "fest-1", name: "festival", subname: "sub", prefecture: "p", city: "c", base: Coordinate(latitude: 0, longitude: 0))
         let districtRepositoryMock = DistrictRepositoryMock(getHandler: { _ in district })
         let festivalRepositoryMock = FestivalRepositoryMock(getHandler: { _ in festival })
         let locationRepositoryMock = LocationRepositoryMock(getHandler: { _ in FloatLocation(districtId: districtId, coordinate: Coordinate(latitude: 0, longitude: 0), timestamp: Date()) })

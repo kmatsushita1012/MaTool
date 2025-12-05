@@ -15,7 +15,6 @@ public struct Festival: Entity {
     public var prefecture: String
     public var city: String
     public var base: Coordinate
-    public var periods: [Period]
     public var checkpoints: [Checkpoint]
     public var hazardSections: [HazardSection]
     @NullEncodable public var imagePath: String?
@@ -28,7 +27,6 @@ public struct Festival: Entity {
         prefecture: String,
         city: String,
         base: Coordinate,
-        periods: [Period] = [],
         checkpoints: [Checkpoint] = [],
         hazardSection: [HazardSection] = [],
         imagePath: String? = nil
@@ -40,7 +38,6 @@ public struct Festival: Entity {
         self.prefecture = prefecture
         self.city = city
         self.base = base
-        self.periods = periods
         self.checkpoints = checkpoints
         self.hazardSections = hazardSection
         self.imagePath = imagePath
@@ -60,9 +57,6 @@ public struct Festival: Entity {
             try container.decodeIfPresent([Checkpoint].self, forKey: .checkpoints)
             ?? (try legacy?.decodeIfPresent([Checkpoint].self, forKey: .milestones))
             ?? []
-        self.periods = try container.decodeIfPresent([Period].self, forKey: .periods)
-        ?? (try legacy?.decodeIfPresent([Legacy.Span].self, forKey: .spans))?.map{ $0.toPeriod() }
-        ?? []
         
         self.hazardSections = try container.decodeIfPresent([HazardSection].self, forKey: .hazardSections) ?? []
 
@@ -77,7 +71,6 @@ public struct Festival: Entity {
         case prefecture
         case city
         case base
-        case periods
         case checkpoints
         case hazardSections
         case imagePath
@@ -85,44 +78,10 @@ public struct Festival: Entity {
 
     private enum LegacyKeys: String, CodingKey {
         case milestones
-        case spans
     }
 }
 
 extension Festival: Identifiable {}
-
-// MARK: - Period
-public struct Period: Entity {
-    public let id: String
-    public var date: SimpleDate
-    public var title: String
-    public var start: SimpleTime
-    public var end: SimpleTime
-    
-    public init(id: String, title: String = "", date: SimpleDate, start: SimpleTime, end: SimpleTime) {
-        self.id = id
-        self.date = date
-        self.title = title
-        self.start = start
-        self.end = end
-    }
-}
-
-extension Period: Identifiable {}
-
-extension Period: Comparable {
-    public static func < (lhs: Period, rhs: Period) -> Bool {
-        return Date.combine(date: lhs.date, time: lhs.start) < Date.combine(date: rhs.date, time: rhs.start)
-    }
-}
-
-public extension Period {
-    func contains(_ datetime: Date) -> Bool {
-        let startDateTime = Date.combine(date: date, time: start)
-        let endDateTime = Date.combine(date: date, time: end)
-        return startDateTime <= datetime && datetime <= endDateTime
-    }
-}
 
 // MARK: - Checkpoint
 public struct Checkpoint: Entity, Identifiable {
