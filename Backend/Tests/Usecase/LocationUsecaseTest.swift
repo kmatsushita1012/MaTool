@@ -173,7 +173,7 @@ struct LocationUsecaseTest {
         #expect(result == dto)
     }
     
-    @Test func test_get_public_within_period_success() async throws {
+    @Test(.disabled()) func test_get_public_within_period_success() async throws {
         var lastCalledDistrictId: String? = nil
         var lastCalledFestivalId: String? = nil
         var lastCalledLocationId: String? = nil

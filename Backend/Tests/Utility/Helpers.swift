@@ -5,6 +5,8 @@
 //  Created by 松下和也 on 2025/12/04.
 //
 
+import Foundation
+
 func makeDate(
     year: Int,
     month: Int,
