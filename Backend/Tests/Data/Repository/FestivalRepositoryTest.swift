@@ -22,7 +22,6 @@ struct FestivalRepositoryTest {
         base: Coordinate(
             latitude: 0.0, longitude: 0.0
         ),
-        periods: [],
         checkpoints: [],
         imagePath: "IMAGE_PATH"
     )

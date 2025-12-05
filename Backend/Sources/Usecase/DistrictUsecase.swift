@@ -114,7 +114,7 @@ struct DistrictUsecase: DistrictUsecaseProtocol {
             festivalName: festival.name,
             checkpoints: festival.checkpoints + performances,
             base: district.base ?? festival.base,
-            periods: festival.periods,
+            periods: [],
             hazardSections: festival.hazardSections
         )
 
