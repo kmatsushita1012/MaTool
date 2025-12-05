@@ -14,7 +14,48 @@ struct AdminDistrictView: View{
     @SwiftUI.Bindable var store: StoreOf<AdminDistrictTop>
     
     var body: some View {
-        List{
+        content
+        .navigationTitle(
+            store.district.name
+        )
+        .toolbar {
+            ToolbarItem(placement: .topBarLeading) {
+                Button(action: {
+                    store.send(.homeTapped)
+                }) {
+                    Image(systemName: "house")
+                        .foregroundColor(.black)
+                }
+                .padding(.horizontal, 8)
+            }
+        }
+        .dismissible(backButton: false)
+        .navigationDestination(item: $store.scope(state: \.destination?.edit, action: \.destination.edit)) { store in
+            AdminDistrictEditView(store: store)
+        }
+        .navigationDestination(item: $store.scope(state: \.destination?.location, action: \.destination.location)) { store in
+            LocationAdminView(store: store)
+        }
+        .navigationDestination(item: $store.scope(state: \.destination?.route, action: \.destination.route)) { store in
+            AdminRouteEditStoreView(store: store)
+        }
+        .navigationDestination(
+            item: $store.scope(state: \.destination?.changePassword, action: \.destination.changePassword)
+        ) { store in
+            ChangePasswordStoreView(store: store)
+        }
+        .navigationDestination(
+            item: $store.scope(state: \.destination?.updateEmail, action: \.destination.updateEmail)
+        ) { store in
+            UpdateEmailStoreView(store: store)
+        }
+        .alert($store.scope(state: \.alert, action: \.alert))
+        .loadingOverlay(store.isLoading)
+    }
+    
+    @ViewBuilder
+    var content: some View {
+        List {
             Section {
                 NavigationItemView(
                     title: "地区情報",
@@ -66,41 +107,5 @@ struct AdminDistrictView: View{
                 }
             }
         }
-        .navigationTitle(
-            store.district.name
-        )
-        .toolbar {
-            ToolbarItem(placement: .topBarLeading) {
-                Button(action: {
-                    store.send(.homeTapped)
-                }) {
-                    Image(systemName: "house")
-                        .foregroundColor(.black)
-                }
-                .padding(.horizontal, 8)
-            }
-        }
-        .dismissible(backButton: false)
-        .navigationDestination(item: $store.scope(state: \.destination?.edit, action: \.destination.edit)) { store in
-            AdminDistrictEditView(store: store)
-        }
-        .navigationDestination(item: $store.scope(state: \.destination?.location, action: \.destination.location)) { store in
-            LocationAdminView(store: store)
-        }
-        .navigationDestination(item: $store.scope(state: \.destination?.route, action: \.destination.route)) { store in
-            AdminRouteEditStoreView(store: store)
-        }
-        .navigationDestination(
-            item: $store.scope(state: \.destination?.changePassword, action: \.destination.changePassword)
-        ) { store in
-            ChangePasswordStoreView(store: store)
-        }
-        .navigationDestination(
-            item: $store.scope(state: \.destination?.updateEmail, action: \.destination.updateEmail)
-        ) { store in
-            UpdateEmailStoreView(store: store)
-        }
-        .alert($store.scope(state: \.alert, action: \.alert))
-        .loadingOverlay(store.isLoading)
     }
 }
