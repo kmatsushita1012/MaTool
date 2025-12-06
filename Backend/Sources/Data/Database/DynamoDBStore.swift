@@ -29,21 +29,22 @@ struct DynamoDBStore: DataStore {
     }
     
     // MARK: get
-    func get<T: Codable, K: Codable>(key: K, keyName: String, as type: T.Type) async throws -> T? {
-        let keyAttr = try encoder.encodeKey(key)
+    func get<T: Codable>(keys: [String: Codable], as type: T.Type) async throws -> T? {
+        let key = try keys.toExpression()
         let input = GetItemInput(
-            key: [ keyName: keyAttr ],
+            key: key,
             tableName: tableName
         )
+        
         let output = try await client.getItem(input: input)
         guard let item = output.item else { return nil }
         return try decoder.decode(item, as: T.self)
     }
     
     // MARK: delete
-    func delete<K: Codable>(key: K, keyName: String) async throws {
-        let keyAttrs = try encoder.encode(["\(keyName)": key])
-        let input = DeleteItemInput(key: keyAttrs, tableName: tableName)
+    func delete(keys: [String: Codable]) async throws {
+        let key = try keys.toExpression()
+        let input = DeleteItemInput(key: key, tableName: tableName)
         let _ = try await client.deleteItem(input: input)
     }
     
@@ -97,7 +98,7 @@ struct DynamoDBStore: DataStore {
         guard let items = output.items else { return [] }
         return try items.map { try decoder.decode($0, as: T.self) }
     }
-    
+
     static func make(tableName: String) -> DynamoDBStore {
         guard let store = try? DynamoDBStore(tableName: tableName) else {
             fatalError("DynamoDBStore could not be initialized.")
@@ -135,5 +136,17 @@ fileprivate extension FilterCondition {
         case .contains(let field, let substring):
             return ("contains(#\(field), :\(field))", [":\(field)": try encoder.encodeKey(substring)])
         }
+    }
+}
+fileprivate extension Dictionary where Key == String, Value == Codable {
+    func toExpression() throws -> [String: AttributeValue] {
+        let encoder = DynamoDBEncoder()
+        var keyDict: [String: DynamoDBClientTypes.AttributeValue] = [:]
+        for (key, value) in self {
+            let encoded = try encoder.encodeKey(value)
+            keyDict[key] = encoded
+        }
+        
+        return keyDict
     }
 }
