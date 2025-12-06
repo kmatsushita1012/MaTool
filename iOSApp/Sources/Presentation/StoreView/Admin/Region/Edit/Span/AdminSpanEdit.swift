@@ -19,30 +19,18 @@ struct AdminSpanEdit {
     @ObservableState
     struct State: Equatable{
         let mode: Mode
-        let id: String
-        var date: Date
-        var start: Date
-        var end: Date
         @Presents var alert: Alert.State? = nil
         
-        var span: Span {
-            return Span(id: id, start: Date.combine(date: date, time: start), end: Date.combine(date: date, time: end))
-        }
+        var period: Period
         
-        init(_ span :Span){
-            id = span.id
-            date = span.start
-            start = span.start
-            end = span.end
+        init(_ period :Period){
+            self.period = period
             mode = .edit
         }
         
         init(){
-            id = UUID().uuidString
             let now = Date()
-            date = now
-            start = Date.theDayAt(date: now, hour: 9, minute: 0, second: 0)
-            end = Date.theDayAt(date: now, hour: 18, minute: 0, second: 0)
+            period = .init(id: UUID().uuidString, date: .from(now), start: .from(now), end: .from(now))
             mode = .create
         }
     }

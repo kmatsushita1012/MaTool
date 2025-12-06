@@ -131,7 +131,7 @@ struct AdminDistrictTop {
                             mode: .update,
                             route: route,
                             districtName: tool.districtName,
-                            milestones: tool.milestones,
+                            checkpoints: tool.checkpoints,
                             origin: tool.base
                         )
                     )
@@ -149,11 +149,11 @@ struct AdminDistrictTop {
                             route: Route(
                                 id: UUID().uuidString,
                                 districtId: tool.districtId,
-                                start: SimpleTime.fromDate(Date.now),
-                                goal: SimpleTime.fromDate(Date.now),
+                                start: SimpleTime.from(Date.now),
+                                goal: SimpleTime.from(Date.now),
                             ),
                             districtName: tool.districtName,
-                            milestones: tool.milestones,
+                            checkpoints: tool.checkpoints,
                             origin: tool.base
                         )
                     )
