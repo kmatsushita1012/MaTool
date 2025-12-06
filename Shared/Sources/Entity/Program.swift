@@ -9,13 +9,11 @@ import Foundation
 
 // MARK: - Program
 public struct Program: Entity {
-    public let id: String
     public let festivalId: String
     public let year: Int
     public var periods: [Period]
     
-    public init(id: String, festivalId: String, year: Int, periods: [Period]) {
-        self.id = id
+    public init(festivalId: String, year: Int, periods: [Period]) {
         self.festivalId = festivalId
         self.year = year
         self.periods = periods
@@ -28,6 +26,11 @@ extension Program: Comparable {
     }
 }
 
+extension Program: Identifiable {
+    public var id : String {
+        return "\(festivalId)_\(year)"
+    }
+}
 
 // MARK: - Period
 public struct Period: Entity {
