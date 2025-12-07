@@ -226,3 +226,72 @@ final class LocationUsecaseMock: LocationUsecaseProtocol, @unchecked Sendable {
         return
     }
 }
+
+// MARK: - ProgramUsecaseMock
+
+final class ProgramUsecaseMock: ProgramUsecaseProtocol, @unchecked Sendable {
+    init(
+        getLatestHandler: ((String) throws -> Shared.Program)? = nil,
+        getByYearHandler: ((String, Int) throws -> Shared.Program)? = nil,
+        queryHandler: ((String) throws -> [Shared.Program])? = nil,
+        postHandler: ((String, Shared.Program, Shared.UserRole) throws -> Shared.Program)? = nil,
+        putHandler: ((String, Int, Shared.Program, Shared.UserRole) throws -> Shared.Program)? = nil,
+        deleteHandler: ((String, Int, Shared.UserRole) throws -> Void)? = nil
+    ) {
+        self.getLatestHandler = getLatestHandler
+        self.getByYearHandler = getByYearHandler
+        self.queryHandler = queryHandler
+        self.postHandler = postHandler
+        self.putHandler = putHandler
+        self.deleteHandler = deleteHandler
+    }
+
+    private(set) var getLatestCallCount = 0
+    private var getLatestHandler: ((String) throws -> Shared.Program)? = nil
+    func get(festivalId: String) async throws -> Shared.Program {
+        getLatestCallCount += 1
+        guard let getLatestHandler else { throw TestError.unimplemented }
+        return try getLatestHandler(festivalId)
+    }
+
+    private(set) var getByYearCallCount = 0
+    private var getByYearHandler: ((String, Int) throws -> Shared.Program)? = nil
+    func get(festivalId: String, year: Int) async throws -> Shared.Program {
+        getByYearCallCount += 1
+        guard let getByYearHandler else { throw TestError.unimplemented }
+        return try getByYearHandler(festivalId, year)
+    }
+
+    private(set) var queryCallCount = 0
+    private var queryHandler: ((String) throws -> [Shared.Program])? = nil
+    func query(festivalId: String) async throws -> [Shared.Program] {
+        queryCallCount += 1
+        guard let queryHandler else { throw TestError.unimplemented }
+        return try queryHandler(festivalId)
+    }
+
+    private(set) var postCallCount = 0
+    private var postHandler: ((String, Shared.Program, Shared.UserRole) throws -> Shared.Program)? = nil
+    func post(festivalId: String, program: Shared.Program, user: Shared.UserRole) async throws -> Shared.Program {
+        postCallCount += 1
+        guard let postHandler else { throw TestError.unimplemented }
+        return try postHandler(festivalId, program, user)
+    }
+
+    private(set) var putCallCount = 0
+    private var putHandler: ((String, Int, Shared.Program, Shared.UserRole) throws -> Shared.Program)? = nil
+    func put(festivalId: String, year: Int, program: Shared.Program, user: Shared.UserRole) async throws -> Shared.Program {
+        putCallCount += 1
+        guard let putHandler else { throw TestError.unimplemented }
+        return try putHandler(festivalId, year, program, user)
+    }
+
+    private(set) var deleteCallCount = 0
+    private var deleteHandler: ((String, Int, Shared.UserRole) throws -> Void)? = nil
+    func delete(festivalId: String, year: Int, user: Shared.UserRole) async throws {
+        deleteCallCount += 1
+        guard let deleteHandler else { throw TestError.unimplemented }
+        try deleteHandler(festivalId, year, user)
+        return
+    }
+}
