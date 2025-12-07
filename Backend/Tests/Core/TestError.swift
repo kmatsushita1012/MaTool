@@ -8,4 +8,5 @@
 
 enum TestError: Error, Equatable, Sendable{
     case unimplemented
+    case intentional
 }
