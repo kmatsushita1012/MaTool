@@ -227,3 +227,70 @@ final class LocationControllerMock: LocationControllerProtocol, @unchecked Senda
     }
 }
 
+// MARK: - ProgramControllerMock
+final class ProgramControllerMock: ProgramControllerProtocol, @unchecked Sendable {
+    init(
+        getLatestHandler: ((Request, Handler) throws -> Response)? = nil,
+        getHandler: ((Request, Handler) throws -> Response)? = nil,
+        queryHandler: ((Request, Handler) throws -> Response)? = nil,
+        postHandler: ((Request, Handler) throws -> Response)? = nil,
+        putHandler: ((Request, Handler) throws -> Response)? = nil,
+        deleteHandler: ((Request, Handler) throws -> Response)? = nil
+    ) {
+        self.getLatestHandler = getLatestHandler
+        self.getHandler = getHandler
+        self.queryHandler = queryHandler
+        self.postHandler = postHandler
+        self.putHandler = putHandler
+        self.deleteHandler = deleteHandler
+    }
+
+    private(set) var getLatestCallCount: Int = 0
+    private var getLatestHandler: ((Request, Handler) throws -> Response)?
+    func getLatest(request: Backend.Request, next: @Sendable (Backend.Application.Request) async throws -> Backend.Application.Response) async throws -> Backend.Response {
+        getLatestCallCount += 1
+        guard let getLatestHandler else { throw TestError.unimplemented }
+        return try getLatestHandler(request, next)
+    }
+
+    private(set) var getCallCount: Int = 0
+    private var getHandler: ((Request, Handler) throws -> Response)?
+    func get(request: Backend.Request, next: @Sendable (Backend.Application.Request) async throws -> Backend.Application.Response) async throws -> Backend.Response {
+        getCallCount += 1
+        guard let getHandler else { throw TestError.unimplemented }
+        return try getHandler(request, next)
+    }
+
+    private(set) var queryCallCount: Int = 0
+    private var queryHandler: ((Request, Handler) throws -> Response)?
+    func query(request: Backend.Request, next: @Sendable (Backend.Application.Request) async throws -> Backend.Application.Response) async throws -> Backend.Response {
+        queryCallCount += 1
+        guard let queryHandler else { throw TestError.unimplemented }
+        return try queryHandler(request, next)
+    }
+
+    private(set) var postCallCount: Int = 0
+    private var postHandler: ((Request, Handler) throws -> Response)?
+    func post(request: Backend.Request, next: @Sendable (Backend.Application.Request) async throws -> Backend.Application.Response) async throws -> Backend.Response {
+        postCallCount += 1
+        guard let postHandler else { throw TestError.unimplemented }
+        return try postHandler(request, next)
+    }
+
+    private(set) var putCallCount: Int = 0
+    private var putHandler: ((Request, Handler) throws -> Response)?
+    func put(request: Backend.Request, next: @Sendable (Backend.Application.Request) async throws -> Backend.Application.Response) async throws -> Backend.Response {
+        putCallCount += 1
+        guard let putHandler else { throw TestError.unimplemented }
+        return try putHandler(request, next)
+    }
+
+    private(set) var deleteCallCount: Int = 0
+    private var deleteHandler: ((Request, Handler) throws -> Response)?
+    func delete(request: Backend.Request, next: @Sendable (Backend.Application.Request) async throws -> Backend.Application.Response) async throws -> Backend.Response {
+        deleteCallCount += 1
+        guard let deleteHandler else { throw TestError.unimplemented }
+        return try deleteHandler(request, next)
+    }
+}
+
