@@ -11,11 +11,13 @@ import Foundation
 public struct Program: Entity {
     public let festivalId: String
     public let year: Int
+    public var title: String
     public var periods: [Period]
     
-    public init(festivalId: String, year: Int, periods: [Period]) {
+    public init(festivalId: String, year: Int, title: String = "", periods: [Period]) {
         self.festivalId = festivalId
         self.year = year
+        self.title = title
         self.periods = periods
     }
 }
