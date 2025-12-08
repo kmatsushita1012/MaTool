@@ -40,6 +40,14 @@ struct APIRepotiroy: Sendable {
     var getLocations: @Sendable (_ festivalId: String) async -> Result<[FloatLocationGetDTO], APIError>
     var putLocation: @Sendable (_ location: FloatLocation) async -> Result<FloatLocation, APIError>
     var deleteLocation: @Sendable (_ districtId: String) async -> Result<Empty, APIError>
+    //MARK: - Program
+    var getLatestProgram: @Sendable (_ festivalId: String) async -> Result<Program, APIError>
+    var getProgram: @Sendable (_ festivalId: String, _ year: Int) async -> Result<Program, APIError>
+    var getPrograms: @Sendable (_ festivalId: String) async -> Result<[Program], APIError>
+    var postProgram: @Sendable (_ program: Program) async -> Result<Program, APIError>
+    var putProgram: @Sendable (_ program: Program) async -> Result<Program, APIError>
+    var deleteProgram: @Sendable (_ festivalId: String, _ year: Int) async -> Result<Empty, APIError>
+    
 }
 
 // MARK: - APIRepository
@@ -206,6 +214,50 @@ extension APIRepotiroy: DependencyKey {
                 let accessToken = await authService.getAccessToken()
                 let response: Result<Empty, APIError> = await apiClient.delete(
                     path: "/districts/\(id)/locations",
+                    accessToken: accessToken
+                )
+                return response
+            },
+            getLatestProgram: { festivalId in
+                let response: Result<Program, APIError> = await apiClient.get(
+                    path: "/festivals/\(festivalId)/programs/latest"
+                )
+                return response
+            },
+            getProgram: { festivalId, year in
+                let response: Result<Program, APIError> = await apiClient.get(
+                    path: "/festivals/\(festivalId)/programs/\(year)"
+                )
+                return response
+            },
+            getPrograms: { festivalId in
+                let response: Result<[Program], APIError> = await apiClient.get(
+                    path: "/festivals/\(festivalId)/programs"
+                )
+                return response
+            },
+            postProgram: { program in
+                let accessToken = await authService.getAccessToken()
+                let response: Result<Program, APIError> = await apiClient.post(
+                    path: "/festivals/\(program.festivalId)/programs",
+                    body: program,
+                    accessToken: accessToken
+                )
+                return response
+            },
+            putProgram: { program in
+                let accessToken = await authService.getAccessToken()
+                let response: Result<Program, APIError> = await apiClient.put(
+                    path: "/festivals/\(program.festivalId)/programs/\(program.year)",
+                    body: program,
+                    accessToken: accessToken
+                )
+                return response
+            },
+            deleteProgram: { festivalId, year in
+                let accessToken = await authService.getAccessToken()
+                let response: Result<Empty, APIError> = await apiClient.delete(
+                    path: "/festivals/\(festivalId)/programs/\(year)",
                     accessToken: accessToken
                 )
                 return response
