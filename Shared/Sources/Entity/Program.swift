@@ -43,7 +43,14 @@ public struct Period: Entity {
     public var start: SimpleTime
     public var end: SimpleTime
     
-    public init(id: String, festivalId: String = "", title: String = "", date: SimpleDate, start: SimpleTime, end: SimpleTime) {
+    public init(
+        id: String = UUID().uuidString,
+        festivalId: String = "",
+        title: String = "",
+        date: SimpleDate,
+        start: SimpleTime = .now,
+        end: SimpleTime = .now
+    ) {
         self.id = id
         self.festivalId = festivalId
         self.date = date
