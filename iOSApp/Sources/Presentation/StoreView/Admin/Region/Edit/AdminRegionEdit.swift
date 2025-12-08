@@ -14,8 +14,7 @@ struct AdminFestivalEdit {
     
     @Reducer
     enum Destination {
-        case span(AdminSpanEdit)
-        case milestone(InformationEdit)
+        case checkpoint(InformationEdit)
     }
     
     @ObservableState
@@ -32,11 +31,9 @@ struct AdminFestivalEdit {
         case saveTapped
         case cancelTapped
         case putReceived(Result<Festival, APIError>)
-        case onSpanEdit(Span)
-        case onSpanAdd
-        case onMilestoneEdit(Information)
-        case onMilestoneDelete(Information)
-        case onMilestoneAdd
+        case onCheckpointEdit(Checkpoint)
+        case onCheckpointDelete(Checkpoint)
+        case onCheckpointAdd
         case destination(PresentationAction<Destination.Action>)
         case alert(PresentationAction<Alert.Action>)
     }
@@ -66,30 +63,22 @@ struct AdminFestivalEdit {
                     state.alert = Alert.error("保存に失敗しました。\(error.localizedDescription)")
                 }
                 return .none
-            case .onSpanEdit(let item):
-                state.destination = .span(
-                    AdminSpanEdit.State(item)
-                )
-                return .none
-            case .onSpanAdd:
-                state.destination = .span(AdminSpanEdit.State())
-                return .none
-            case .onMilestoneEdit(let item):
-                state.destination = .milestone(
+            case .onCheckpointEdit(let item):
+                state.destination = .checkpoint(
                     InformationEdit.State(
                         title: "経由地",
                         item: item
                     )
                 )
                 return .none
-            case .onMilestoneDelete(let item):
-                state.item.milestones.removeAll(where: {$0.id == item.id})
+            case .onCheckpointDelete(let item):
+                state.item.checkpoints.removeAll(where: {$0.id == item.id})
                 return .none
-            case .onMilestoneAdd:
-                state.destination = .milestone(
+            case .onCheckpointAdd:
+                state.destination = .checkpoint(
                     InformationEdit.State(
                         title: "経由地",
-                        item: Information(
+                        item: Checkpoint(
                             id: UUID().uuidString
                         )
                     )
@@ -97,31 +86,16 @@ struct AdminFestivalEdit {
                 return .none
             case .destination(.presented(let action)):
                 switch action {
-                    case .span(.doneTapped):
-                        if case let .span(spanState) = state.destination {
-                            state.item.spans.upsert(spanState.span)
-                            state.item.spans.sort()
+                    case .checkpoint(.doneTapped):
+                        if case let .checkpoint(checkpointState) = state.destination {
+                            state.item.checkpoints.upsert(checkpointState.item)
                         }
                         state.destination = nil
                         return .none
-                    case .milestone(.doneTapped):
-                        if case let .milestone(milestoneState) = state.destination {
-                            state.item.milestones.upsert(milestoneState.item)
-                        }
+                    case .checkpoint(.cancelTapped):
                         state.destination = nil
                         return .none
-                    case.span(.cancelTapped),
-                        .milestone(.cancelTapped):
-                        state.destination = nil
-                        return .none
-                    case .span(.alert(.presented(.okTapped))):
-                        if case let .span(spanState) = state.destination {
-                            state.item.spans.removeAll(where: {$0.id == spanState.span.id})
-                        }
-                        state.destination = nil
-                        return .none
-                    case .span,
-                        .milestone:
+                    case .checkpoint:
                         return .none
                 }
             case .destination(.dismiss):

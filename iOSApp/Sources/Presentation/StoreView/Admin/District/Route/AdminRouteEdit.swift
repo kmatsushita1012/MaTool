@@ -47,7 +47,7 @@ struct AdminRouteEdit{
     struct State: Equatable{
         let mode: EditMode
         let districtName: String
-        let milestones: [Information]
+        let checkpoints: [Checkpoint]
         var manager: EditManager<Route>
         
         var operation: Operation = .add
@@ -96,11 +96,11 @@ struct AdminRouteEdit{
             }
         }
         
-        init(mode: EditMode, route: Route, districtName: String, milestones: [Information], origin: Coordinate){
+        init(mode: EditMode, route: Route, districtName: String, checkpoints: [Checkpoint], origin: Coordinate){
             self.mode = mode
             self.manager = EditManager(route)
             self.districtName = districtName
-            self.milestones = milestones
+            self.checkpoints = checkpoints
             if !route.points.isEmpty{
                 self.region = makeRegion(route.points.map{ $0.coordinate })
             }else{
@@ -173,7 +173,7 @@ struct AdminRouteEdit{
                     return .none
                 }
             case .pointTapped(let point):
-                state.point = AdminPointEdit.State(item: point, milestones: state.milestones)
+                state.point = AdminPointEdit.State(item: point, checkpoints: state.checkpoints)
                 state.operation = .add
                 return .none
             case .undoTapped:

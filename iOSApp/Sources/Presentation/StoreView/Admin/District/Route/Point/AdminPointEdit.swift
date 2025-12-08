@@ -15,7 +15,7 @@ struct AdminPointEdit{
     struct State: Equatable{
         var item: Point
         var showPopover: Bool = false
-        var milestones: [Information]
+        var checkpoints: [Checkpoint]
     }
     
     @CasePathable
@@ -27,7 +27,7 @@ struct AdminPointEdit{
         case insertTapped
         case deleteTapped
         case titleFieldFocused
-        case titleOptionSelected(Information)
+        case titleOptionSelected(Checkpoint)
     }
     
     @Dependency(\.dismiss) var dismiss
