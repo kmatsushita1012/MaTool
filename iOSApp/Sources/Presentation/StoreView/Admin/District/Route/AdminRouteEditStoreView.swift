@@ -129,7 +129,7 @@ extension AdminRouteEditStoreView {
     @available(iOS 26.0, *)
     var toolbarAfterLiquidGlass: some ToolbarContent {
         ToolbarItemGroup(placement: .primaryAction){
-            Button(systemImage: "checkmark") {
+            Button(systemImage: "checkmark", role: .confirm) {
                 store.send(.saveTapped)
             }
             .tint(.accentColor)
@@ -155,7 +155,7 @@ extension AdminRouteEditStoreView {
     var info: some View {
         List{
             Section(header: Text("日付")){
-                DatePicker(
+                DateTimePicker(
                     "日付を選択",
                     selection: $store.route.date.fullDate,
                     displayedComponents: [.date]
@@ -170,13 +170,13 @@ extension AdminRouteEditStoreView {
                     .frame(height:120)
             }
             Section(header: Text("時刻") ) {
-                DatePicker(
+                DateTimePicker(
                     "開始時刻",
                     selection: $store.route.start.fullDate,
                     displayedComponents: [.hourAndMinute]
                 )
                 .datePickerStyle(.compact)
-                DatePicker(
+                DateTimePicker(
                     "終了時刻",
                     selection: $store.route.goal.fullDate,
                     displayedComponents: [.hourAndMinute]
