@@ -28,3 +28,24 @@ extension Pair where Element == Point {
         return polyline
     }
 }
+
+extension Period {
+    var text: String {
+        String(
+            format: "%d/%d %@ %02d:%02d〜%02d:%02d",
+            date.month,
+            date.day,
+            title,
+            start.hour,
+            start.minute,
+            end.hour,
+            end.minute
+        )
+    }
+}
+
+extension Program {
+    var text: String {
+        "\(year)年"
+    }
+}
