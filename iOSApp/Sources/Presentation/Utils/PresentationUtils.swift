@@ -106,3 +106,17 @@ extension Color {
     static let onboarding = Color(red: 179 / 255, green: 38 / 255, blue: 30 / 255)
     static let annotation = Color(red: 255/255, green: 108/255, blue: 76/255)
 }
+
+enum Mode: Equatable {
+    case update
+    case create
+}
+
+extension Mode {
+    var title: String {
+        switch self {
+        case .update: return "更新"
+        case .create: return "新規作成"
+        }
+    }
+}
