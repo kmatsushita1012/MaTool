@@ -16,7 +16,7 @@ struct AdminSpanView:View{
     var body: some View {
         List {
             Section(header: Text("日付")) {
-                DatePicker(
+                DateTimePicker(
                     "日付",
                     selection: $store.period.date.fullDate,
                     displayedComponents: [.date]
@@ -24,12 +24,12 @@ struct AdminSpanView:View{
                 .environment(\.locale, Locale(identifier: "ja_JP"))
             }
             Section(header: Text("時刻")) {
-                DatePicker(
+                DateTimePicker(
                     "開始時刻",
                     selection: $store.period.start.fullDate,
                     displayedComponents: [.hourAndMinute]
                 )
-                DatePicker(
+                DateTimePicker(
                     "終了時刻",
                     selection:  $store.period.end.fullDate,
                     displayedComponents: [.hourAndMinute]
