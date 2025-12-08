@@ -1,5 +1,5 @@
 //
-//  AdminFestivalTop.swift
+//  FestivalDashboardFeature.swift
 //  MaTool
 //
 //  Created by 松下和也 on 2025/05/09.
@@ -10,13 +10,14 @@ import Foundation
 import Shared
 
 @Reducer
-struct AdminFestivalTop {
+struct FestivalDashboardFeature {
     
     @Reducer
     enum Destination {
         case edit(AdminFestivalEdit)
         case districtInfo(AdminDistrictList)
         case districtCreate(AdminDistrictCreate)
+        case programs(ProgramListFeature)
         case changePassword(ChangePassword)
         case updateEmail(UpdateEmail)
     }
@@ -41,6 +42,7 @@ struct AdminFestivalTop {
     enum Action: Equatable, BindableAction {
         case binding(BindingAction<State>)
         case onEdit
+        case programTapped
         case onDistrictInfo(District)
         case onCreateDistrict
         case homeTapped
@@ -51,6 +53,7 @@ struct AdminFestivalTop {
         case festivalReceived(Result<Festival,APIError>)
         case districtsReceived(Result<[District],APIError>)
         case districtInfoPrepared(District, Result<[RouteItem],APIError>)
+        case programsPrepared(Result<[Program], APIError>)
         case signOutReceived(Result<UserRole,AuthError>)
         case batchExportPrepared(Result<[URL], APIError>)
         case destination(PresentationAction<Destination.Action>)
@@ -61,7 +64,7 @@ struct AdminFestivalTop {
     @Dependency(\.authService) var authService
     @Dependency(\.dismiss) var dismiss
     
-    var body: some ReducerOf<AdminFestivalTop> {
+    var body: some ReducerOf<FestivalDashboardFeature> {
         BindingReducer()
         Reduce { state, action in
             switch action {
@@ -70,6 +73,9 @@ struct AdminFestivalTop {
             case .onEdit:
                 state.destination = .edit(AdminFestivalEdit.State(item: state.festival))
                 return .none
+            case .programTapped:
+                state.isApiLoading = true
+                return getProgramsEffect(state)
             case .onDistrictInfo(let district):
                 state.isApiLoading = true
                 return .run { send in
@@ -110,10 +116,6 @@ struct AdminFestivalTop {
                 state.isApiLoading = false
                 state.districts = value
                 return .none
-            case .districtsReceived(.failure(let error)):
-                state.isApiLoading = false
-                state.alert = Alert.error("情報の取得に失敗しました。\(error.localizedDescription)")
-                return .none
             case .districtInfoPrepared(let district, .success(let routes)):
                 state.isApiLoading = false
                 state.destination = .districtInfo(
@@ -124,7 +126,13 @@ struct AdminFestivalTop {
                     )
                 )
                 return .none
-            case .districtInfoPrepared(_, .failure(let error)):
+            case .programsPrepared(.success(let programs)):
+                state.isApiLoading = false
+                state.destination = .programs(.init(festivalId: state.festival.id, programs: programs))
+                return .none
+            case .districtsReceived(.failure(let error)),
+                    .districtInfoPrepared(_, .failure(let error)),
+                    .programsPrepared(.failure(let error)):
                 state.isApiLoading = false
                 state.alert = Alert.error("情報の取得に失敗しました \(error.localizedDescription)")
                 return .none
@@ -165,7 +173,8 @@ struct AdminFestivalTop {
                     .districtInfo,
                     .districtCreate,
                     .changePassword,
-                    .updateEmail:
+                    .updateEmail,
+                    .programs(_):
                     return .none
                 }
             case .destination(.dismiss):
@@ -183,6 +192,13 @@ struct AdminFestivalTop {
         .run { send in
             let result = await apiRepository.getFestival(id)
             await send(.festivalReceived(result))
+        }
+    }
+    
+    func getProgramsEffect(_ state: State) -> Effect<Action> {
+        .run { [state] send in
+            let result = await apiRepository.getPrograms(state.festival.id)
+            await send(.programsPrepared(result))
         }
     }
     
@@ -209,6 +225,6 @@ struct AdminFestivalTop {
     }
 }
 
-extension AdminFestivalTop.Destination.State: Equatable {}
-extension AdminFestivalTop.Destination.Action: Equatable {}
+extension FestivalDashboardFeature.Destination.State: Equatable {}
+extension FestivalDashboardFeature.Destination.Action: Equatable {}
 
