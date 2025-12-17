@@ -120,3 +120,9 @@ extension Mode {
         }
     }
 }
+
+extension View {
+    func roundedRect(_ radius: CGFloat = 12) -> some View {
+        clipShape(.rect(cornerRadius: radius, style: .continuous))
+    }
+}
