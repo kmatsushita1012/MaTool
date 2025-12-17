@@ -10,7 +10,7 @@ import Dependencies
 import Shared
 @testable import Backend
 
-@Suite(.disabled)
+@Suite(.disabled())
 struct DistrictRepositoryTest {
     let district = District(id: "ID", name: "NAME", festivalId: "FESTIVAL_ID", visibility: .all)
     let dataStore: DataStoreMock<String, District>
