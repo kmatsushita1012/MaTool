@@ -14,7 +14,7 @@ struct FestivalDashboardFeature {
     
     @Reducer
     enum Destination {
-        case edit(AdminFestivalEdit)
+        case edit(FestivalEditFeature)
         case districtInfo(AdminDistrictList)
         case districtCreate(AdminDistrictCreate)
         case programs(ProgramListFeature)
@@ -71,7 +71,7 @@ struct FestivalDashboardFeature {
             case .binding:
                 return .none
             case .onEdit:
-                state.destination = .edit(AdminFestivalEdit.State(item: state.festival))
+                state.destination = .edit(FestivalEditFeature.State(item: state.festival))
                 return .none
             case .programTapped:
                 state.isApiLoading = true
