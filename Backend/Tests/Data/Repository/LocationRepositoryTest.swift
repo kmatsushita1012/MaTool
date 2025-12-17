@@ -11,7 +11,7 @@ import Shared
 @testable import Backend
 import Foundation
 
-@Suite(.disabled)
+@Suite(.disabled())
 struct LocationRepositoryTest {
 
     let location = FloatLocation(
