@@ -224,6 +224,10 @@ final class PathPolyline: MKPolyline {
         self.init(coordinates: coordinates, count: coordinates.count)
     }
     
+    convenience init(_ coordinates: [Coordinate]) {
+        self.init(coordinates: coordinates.map{ $0.toCL() }, count: coordinates.count)
+    }
+    
     func renderer() -> MKOverlayRenderer {
         let renderer = MKPolylineRenderer(overlay: self)
         renderer.strokeColor = .systemBlue
