@@ -10,11 +10,12 @@ import ComposableArchitecture
 import Shared
 
 @Reducer
-struct AdminFestivalEdit {
+struct FestivalEditFeature {
     
     @Reducer
     enum Destination {
-        case checkpoint(InformationEdit)
+        case checkpoint(CheckpointEditFeature)
+        case hazard(HazardSectionFeature)
     }
     
     @ObservableState
@@ -32,8 +33,9 @@ struct AdminFestivalEdit {
         case cancelTapped
         case putReceived(Result<Festival, APIError>)
         case onCheckpointEdit(Checkpoint)
-        case onCheckpointDelete(Checkpoint)
         case onCheckpointAdd
+        case hazardTapped(HazardSection)
+        case hazardCreateTapped
         case destination(PresentationAction<Destination.Action>)
         case alert(PresentationAction<Alert.Action>)
     }
@@ -41,7 +43,7 @@ struct AdminFestivalEdit {
     @Dependency(\.apiRepository) var apiRepository
     @Dependency(\.dismiss) var dismiss
     
-    var body: some ReducerOf<AdminFestivalEdit> {
+    var body: some ReducerOf<FestivalEditFeature> {
         BindingReducer()
         Reduce{ state, action in
             switch action {
@@ -65,18 +67,15 @@ struct AdminFestivalEdit {
                 return .none
             case .onCheckpointEdit(let item):
                 state.destination = .checkpoint(
-                    InformationEdit.State(
+                    CheckpointEditFeature.State(
                         title: "経由地",
                         item: item
                     )
                 )
                 return .none
-            case .onCheckpointDelete(let item):
-                state.item.checkpoints.removeAll(where: {$0.id == item.id})
-                return .none
             case .onCheckpointAdd:
                 state.destination = .checkpoint(
-                    InformationEdit.State(
+                    CheckpointEditFeature.State(
                         title: "経由地",
                         item: Checkpoint(
                             id: UUID().uuidString
@@ -84,27 +83,36 @@ struct AdminFestivalEdit {
                     )
                 )
                 return .none
-            case .destination(.presented(let action)):
-                switch action {
-                    case .checkpoint(.doneTapped):
-                        if case let .checkpoint(checkpointState) = state.destination {
-                            state.item.checkpoints.upsert(checkpointState.item)
-                        }
-                        state.destination = nil
-                        return .none
-                    case .checkpoint(.cancelTapped):
-                        state.destination = nil
-                        return .none
-                    case .checkpoint:
-                        return .none
-                }
-            case .destination(.dismiss):
+            case .hazardTapped(let hazard):
+                let mapRegion = {
+                    if hazard.coordinates.isEmpty{ makeRegion(origin: state.item.base, spanDelta: spanDelta) }
+                    else { makeRegion(hazard.coordinates) }
+                }()
+                state.destination = .hazard(.init(hazard, mapRegion: mapRegion))
+                return .none
+            case .hazardCreateTapped:
+                state.destination = .hazard(.init(mapRegion: makeRegion(origin: state.item.base, spanDelta: spanDelta)))
+                return .none
+            case .destination(.presented(.checkpoint(.doneTapped))):
+                guard let item = state.destination?.checkpoint?.item else { return .none }
+                state.item.checkpoints.upsert(item)
+                state.destination = nil
+                return .none
+            case .destination(.presented(.hazard(.doneTapped))):
+                guard state.destination?.hazard?.isValid ?? false,
+                    let item = state.destination?.hazard?.item else { return .none }
+                state.item.hazardSections.upsert(item)
+                state.destination = nil
+                return .none
+            case .destination(.presented(.hazard(.deleteTapped))):
+                guard let item = state.destination?.hazard?.item else { return .none }
+                state.item.hazardSections.removeAll(of: item)
                 state.destination = nil
                 return .none
             case .alert(.presented(.okTapped)):
                 state.alert = nil
                 return .none
-            case .alert(_):
+            default:
                 return .none
             }
         }
@@ -113,5 +121,5 @@ struct AdminFestivalEdit {
     }
 }
 
-extension AdminFestivalEdit.Destination.State: Equatable{}
-extension AdminFestivalEdit.Destination.Action: Equatable{}
+extension FestivalEditFeature.Destination.State: Equatable{}
+extension FestivalEditFeature.Destination.Action: Equatable{}

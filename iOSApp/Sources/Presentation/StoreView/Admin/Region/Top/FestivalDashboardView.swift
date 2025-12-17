@@ -22,7 +22,7 @@ struct FestivalDashboardView: View {
         .navigationDestination(
             item: $store.scope(state: \.destination?.edit, action: \.destination.edit)
         ) { store in
-            AdminFestivalEditView(store: store)
+            FestivalEditView(store: store)
         }
         .navigationDestination(
             item: $store.scope(state: \.destination?.districtInfo, action: \.destination.districtInfo)
