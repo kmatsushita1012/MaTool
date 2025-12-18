@@ -128,12 +128,10 @@ extension AdminRouteEditStoreView {
     @ToolbarContentBuilder
     @available(iOS 26.0, *)
     var toolbarAfterLiquidGlass: some ToolbarContent {
-        ToolbarItemGroup(placement: .primaryAction){
-            Button(systemImage: "checkmark", role: .confirm) {
+        ToolbarItemGroup(placement: .confirmationAction) {
+            Button(systemImage: "checkmark") {
                 store.send(.saveTapped)
             }
-            .tint(.accentColor)
-            .buttonStyle(.borderedProminent)
         }
         ToolbarItemGroup(placement: .bottomBar) {
             undoButton
