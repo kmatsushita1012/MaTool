@@ -22,6 +22,9 @@
             "name" : "DynamoDBStoreTest"
           },
           {
+            "name" : "ProgramMigrator"
+          },
+          {
             "name" : "RouteMigrator"
           }
         ]
