@@ -9,8 +9,7 @@
 public struct Route: Entity {
     public let id: String
     public let districtId: String
-    public var date:SimpleDate = .today
-    public var title: String = ""
+    public let periodId: String
     public var visibility: Visibility = .all
     @NullEncodable public var description: String?
     public var points: [Point] = []
@@ -18,16 +17,14 @@ public struct Route: Entity {
     public init(
         id: String,
         districtId: String,
-        date: SimpleDate = .today,
-        title: String = "",
+        periodId: String,
         visibility: Visibility = .all,
         description: String? = nil,
         points: [Point] = [],
     ) {
         self.id = id
         self.districtId = districtId
-        self.date = date
-        self.title = title
+        self.periodId = periodId
         self.visibility = visibility
         self.description = description
         self.points = points
