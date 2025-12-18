@@ -5,6 +5,7 @@
 //  Created by 松下和也 on 2025/11/12.
 //
 import Dependencies
+import Foundation
 
 extension DependencyValues {
   var values: ConstantValues {
@@ -22,6 +23,7 @@ struct ConstantValues:Sendable {
     let hasLaunchedBeforeKey: String
     let userGuideUrl: String
     let contactURL: String
+    let isLiquidGlassEnabled: Bool
 }
 
 extension ConstantValues: DependencyKey {
@@ -39,7 +41,15 @@ extension ConstantValues: DependencyKey {
         loginIdKey: "login",
         hasLaunchedBeforeKey: "hasLaunchedBefore",
         userGuideUrl: "https://s3.ap-northeast-1.amazonaws.com/studiomk.documents/userguides/matool.pdf",
-        contactURL: "https://forms.gle/ppaAwkqrFPKiC9mr8"
+        contactURL: "https://forms.gle/ppaAwkqrFPKiC9mr8",
+        isLiquidGlassEnabled: {
+            let uiDesignRequiresCompatibility = Bundle.main.object(forInfoDictionaryKey: "UIDesignRequiresCompatibility") as? Bool ?? false
+            if #available(iOS 26.0, *), !uiDesignRequiresCompatibility {
+                return true
+            } else {
+                return false
+            }
+        }()
     )
 }
 
