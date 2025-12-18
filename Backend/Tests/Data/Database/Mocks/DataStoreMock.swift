@@ -30,11 +30,22 @@ final class DataStoreMock<KeyType: Sendable & Codable ,DataType: Sendable & Coda
         return try castOrThrow(response)
     }
     
+    // TODO: 正規化
+    func get<T>(keys: [String : any Codable], as type: T.Type) async throws -> T? where T : Decodable, T : Encodable {
+        getCallCount += 1
+        return try castOrThrow(response)
+    }
+    
     nonisolated(unsafe) private(set) var deleteCallCount: Int = 0
     nonisolated(unsafe) private(set) var deleteArg: (KeyType, String)? = nil
     func delete<K>(key: K, keyName: String) async throws  {
         deleteCallCount += 1
         deleteArg = (try castOrThrow(key), keyName)
+    }
+    
+    // TODO: 正規化
+    func delete(keys: [String : any Codable]) async throws {
+        deleteCallCount += 1
     }
     
     nonisolated(unsafe) private(set) var scanCallCount: Int = 0
