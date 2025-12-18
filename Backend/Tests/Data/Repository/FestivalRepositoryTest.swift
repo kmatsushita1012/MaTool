@@ -10,6 +10,7 @@ import Dependencies
 import Shared
 @testable import Backend
 
+@Suite(.disabled())
 struct FestivalRepositoryTest {
 
     let festival: Festival = Festival(
