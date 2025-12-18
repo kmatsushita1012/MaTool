@@ -36,7 +36,7 @@ extension Binding where Value == SimpleTime {
     var fullDate: Binding<Date> {
         Binding<Date>(
             get: { self.wrappedValue.toDate },
-            set: { self.wrappedValue = SimpleTime.fromDate($0) }
+            set: { self.wrappedValue = SimpleTime.from($0) }
         )
     }
 }
@@ -45,7 +45,7 @@ extension Binding where Value == SimpleTime? {
     var fullDate: Binding<Date> {
         Binding<Date>(
             get: { self.wrappedValue?.toDate ?? Date() },
-            set: { self.wrappedValue = SimpleTime.fromDate($0) }
+            set: { self.wrappedValue = SimpleTime.from($0) }
         )
     }
 }
@@ -54,7 +54,7 @@ extension Binding where Value == SimpleDate {
     var fullDate: Binding<Date> {
         Binding<Date>(
             get: { self.wrappedValue.toDate },
-            set: { self.wrappedValue = SimpleDate.fromDate($0) }
+            set: { self.wrappedValue = SimpleDate.from($0) }
         )
     }
 }
