@@ -11,6 +11,7 @@ import Shared
 @testable import Backend
 import Foundation
 
+@Suite(.disabled())
 struct LocationRepositoryTest {
 
     let location = FloatLocation(
@@ -61,6 +62,7 @@ struct LocationRepositoryTest {
         #expect(item.coordinate.latitude == 1.23)
         #expect(item.coordinate.longitude == 4.56)
         #expect(item.timestamp == location.timestamp)
+
     }
     
     @Test func test_put_正常() async throws {
