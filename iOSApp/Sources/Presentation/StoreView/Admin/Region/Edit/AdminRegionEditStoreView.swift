@@ -26,37 +26,21 @@ struct AdminFestivalEditView: View{
             Section(header: Text("市区町村")) {
                 TextField("市区町村を入力",text: $store.item.city)
             }
-            Section(header: Text("開催日程")) {
-                ForEach(store.item.spans) { span in
-                    NavigationItemView(
-                        title: span.text(year:false),
-                        onTap: {
-                            store.send(.onSpanEdit(span))
-                        }
-                    )
-                }
-                Button(action: {
-                    store.send(.onSpanAdd)
-                }) {
-                    Label("追加", systemImage: "plus.circle")
-                        .frame(maxWidth: .infinity, alignment: .center)
-                }
-            }
             Section(header: Text("経由地")) {
-                ForEach(store.item.milestones) { milestone in
+                ForEach(store.item.checkpoints) { checkpoint in
                     EditableListItemView(
-                        text: milestone.name,
+                        text: checkpoint.name,
                         onEdit: {
-                            store.send(.onMilestoneEdit(milestone))
+                            store.send(.onCheckpointEdit(checkpoint))
                         },
                         onDelete: {
-                            store.send(.onMilestoneDelete(milestone))
+                            store.send(.onCheckpointDelete(checkpoint))
                         }
                     )
                     .padding(0)
                 }
                 Button(action: {
-                    store.send(.onMilestoneAdd)
+                    store.send(.onCheckpointAdd)
                 }) {
                     Label("追加", systemImage: "plus.circle")
                         .frame(maxWidth: .infinity, alignment: .center)
@@ -85,12 +69,7 @@ struct AdminFestivalEditView: View{
         .loadingOverlay(store.isLoading)
         .dismissible(backButton: false, edgeSwipe: false)
         .navigationDestination(
-            item: $store.scope(state: \.destination?.span, action: \.destination.span)
-        ) { store in
-            AdminSpanView(store: store)
-        }
-        .navigationDestination(
-            item: $store.scope(state: \.destination?.milestone, action:  \.destination.milestone)
+            item: $store.scope(state: \.destination?.checkpoint, action:  \.destination.checkpoint)
         ) { store in
             InformationEditStoreView(store: store)
         }

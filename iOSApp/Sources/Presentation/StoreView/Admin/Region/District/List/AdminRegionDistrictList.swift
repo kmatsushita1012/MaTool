@@ -60,7 +60,7 @@ struct AdminDistrictList {
                     mode: .preview,
                     route: route,
                     districtName: state.district.name,
-                    milestones: state.festival.milestones,
+                    checkpoints: state.festival.checkpoints,
                     origin: Coordinate(latitude: 0, longitude: 0)
                 )
                 return .none

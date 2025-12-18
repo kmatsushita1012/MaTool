@@ -20,7 +20,7 @@ struct AdminPointEditStoreView: View {
                 HStack{
                     TextField("イベントを入力", text: $store.item.title.nonOptional)
                         .popover(isPresented: $store.showPopover, content: {
-                            Popover(items: store.milestones, textClosure: { $0.name }, onTapGesture: { option in
+                            Popover(items: store.checkpoints, textClosure: { $0.name }, onTapGesture: { option in
                                 store.send(.titleOptionSelected(option))
                             }).presentationCompactAdaptation(PresentationAdaptation.popover)
                         })
@@ -46,7 +46,7 @@ struct AdminPointEditStoreView: View {
                     set: { hasTime in
                         store.send(.binding(.set(
                             \.item.time,
-                             hasTime ? SimpleTime.fromDate(Date()) : nil
+                             hasTime ? SimpleTime.from(Date()) : nil
                         )))
                     }
                 ))

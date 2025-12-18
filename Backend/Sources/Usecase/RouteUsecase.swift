@@ -303,16 +303,9 @@ extension RouteUsecase {
     }
     
     private func getForPublic(district: District, festival: Festival, now: Date = Date()) async throws -> FloatLocation {
-        var foundFlag = false
-        for span in festival.spans {
-            if span.start <= now && now <= span.end {
-                foundFlag = true
-                break
-            }
-        }
-        if !foundFlag {
-            throw Error.unauthorized("アクセス権限がありません")
-        }
+        // TODO: Period修正
+        throw Error.unauthorized("アクセス権限がありません")
+//        guard festival.periods.first(where: { $0.contains(now) }) != nil else { throw Error.unauthorized("アクセス権限がありません") }
         guard let location = try await locationRepository.get(id: district.id) else {
             throw Error.notFound("位置情報が見つかりません")
         }
