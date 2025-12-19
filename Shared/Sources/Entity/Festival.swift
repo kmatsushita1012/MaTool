@@ -108,3 +108,5 @@ public struct HazardSection: Entity {
         self.coordinates = coordinates
     }
 }
+
+extension HazardSection: Identifiable {}
