@@ -1,5 +1,5 @@
 //
-//  InformationEdit.swift
+//  CheckpointEditFeature.swift
 //  MaTool
 //
 //  Created by 松下和也 on 2025/06/25.
@@ -9,10 +9,10 @@ import ComposableArchitecture
 import Shared
 
 @Reducer
-struct InformationEdit {
+struct CheckpointEditFeature {
     
     @ObservableState
-    struct State: Equatable{
+    struct State: Equatable {
         let title: String
         var item: Checkpoint
     }
@@ -26,7 +26,7 @@ struct InformationEdit {
     
     @Dependency(\.dismiss) var dismiss
     
-    var body: some ReducerOf<InformationEdit>{
+    var body: some ReducerOf<CheckpointEditFeature>{
         BindingReducer()
         Reduce { state, action in
             switch action {
