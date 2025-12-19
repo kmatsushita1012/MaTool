@@ -44,6 +44,12 @@ extension SimpleDate: Comparable {
     }
 }
 
+public extension SimpleDate {
+    static var now: Self {
+        .from(.now)
+    }
+}
+
 // MARK: - SimpleTime
 public struct SimpleTime: Entity {
     public let hour: Int
@@ -67,6 +73,12 @@ extension SimpleTime: Comparable {
        }else{
            return lhs.minute < rhs.minute
        }
+    }
+}
+
+public extension SimpleTime {
+    static var now: Self {
+        .from(.now)
     }
 }
 
