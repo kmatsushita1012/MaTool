@@ -10,6 +10,7 @@
 struct MaToolAPI: APIGateway {
     static let app = Application{
         AuthMiddleware(path: "/")
+        PeriodRouter()
         FestivalRouter()
         DistrictRouter()
         RouteRouter()
