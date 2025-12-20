@@ -141,7 +141,9 @@ final class Application: @unchecked Sendable {
                 }
                 
                 var request = req
-                request.parameters = parameters
+                request.parameters.merge(parameters) { current, new in
+                    new
+                }
                 
                 let nextLayer = makeLayerChain(index + 1)
                 let middlewareChain = makeMiddlewareChain(layer.middlewares, 0, nextLayer)
