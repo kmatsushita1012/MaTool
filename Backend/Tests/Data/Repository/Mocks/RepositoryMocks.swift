@@ -198,61 +198,72 @@ final class LocationRepositoryMock: LocationRepositoryProtocol, @unchecked Senda
     }
 }
 
-// MARK: - ProgramRepository
-final class ProgramRepositoryMock: ProgramRepositoryProtocol, @unchecked Sendable {
-    // MARK: Init
+// MARK: - PeriodRepository
+final class PeriodRepositoryMock: PeriodRepositoryProtocol, @unchecked Sendable {
+    
     init(
-        getHandler: ((String, Int) async throws -> Program?)? = nil,
-        queryHandler: ((String, Int?) async throws -> [Program])? = nil,
-        postHandler: ((Program) async throws -> Program)? = nil,
-        putHandler: ((Program) async throws -> Program)? = nil,
-        deleteHandler: ((String, Int) async throws -> Void)? = nil
+        getHandler: ((String) async throws -> Period?)? = nil,
+        queryByFestivalHandler: ((String) async throws -> [Period])? = nil,
+        queryByYearHandler: ((String, Int) async throws -> [Period])? = nil,
+        postHandler: ((Period) async throws -> Period)? = nil,
+        putHandler: ((Period) async throws -> Period)? = nil,
+        deleteHandler: ((String) async throws -> Void)? = nil
     ) {
         self.getHandler = getHandler
-        self.queryHandler = queryHandler
+        self.queryByFestivalHandler = queryByFestivalHandler
+        self.queryByYearHandler = queryByYearHandler
         self.postHandler = postHandler
         self.putHandler = putHandler
         self.deleteHandler = deleteHandler
     }
 
     private(set) var getCallCount = 0
-    private(set) var getHandler: ((String, Int) async throws -> Program?)?
-    func get(festivalId: String, year: Int) async throws -> Program? {
+    private let getHandler: ((String) async throws -> Period?)?
+    func get(id: String) async throws -> Period? {
         getCallCount += 1
         guard let getHandler else { throw TestError.unimplemented }
-        return try await getHandler(festivalId, year)
+        return try await getHandler(id)
+    }
+    
+    private(set) var queryByFestivalCallCount = 0
+    private let queryByFestivalHandler: ((String) async throws -> [Period])?
+    func query(festivalId: String) async throws -> [Period] {
+        queryByFestivalCallCount += 1
+        guard let queryByFestivalHandler else { throw TestError.unimplemented }
+        return try await queryByFestivalHandler(festivalId)
     }
 
-    private(set) var queryCallCount = 0
-    private(set) var queryHandler: ((String, Int?) async throws -> [Program])?
-    func query(by festivalId: String, limit: Int?) async throws -> [Program] {
-        queryCallCount += 1
-        guard let queryHandler else { throw TestError.unimplemented }
-        return try await queryHandler(festivalId, limit)
+    private(set) var queryByYearCallCount = 0
+    private let queryByYearHandler: ((String, Int) async throws -> [Period])?
+    func query(festivalId: String, year: Int) async throws -> [Period] {
+        queryByYearCallCount += 1
+        guard let queryByYearHandler else { throw TestError.unimplemented }
+        return try await queryByYearHandler(festivalId, year)
     }
-
+    
     private(set) var postCallCount = 0
-    private(set) var postHandler: ((Program) async throws -> Program)?
-    func post(_ program: Program) async throws -> Program {
+    private let postHandler: ((Period) async throws -> Period)?
+    func post(_ item: Period) async throws -> Period {
         postCallCount += 1
         guard let postHandler else { throw TestError.unimplemented }
-        return try await postHandler(program)
+        return try await postHandler(item)
     }
 
     private(set) var putCallCount = 0
-    private(set) var putHandler: ((Program) async throws -> Program)?
-    func put(_ program: Program) async throws -> Program {
+    private let putHandler: ((Period) async throws -> Period)?
+    func put(_ item: Period) async throws -> Period {
         putCallCount += 1
         guard let putHandler else { throw TestError.unimplemented }
-        return try await putHandler(program)
+        return try await putHandler(item)
     }
 
     private(set) var deleteCallCount = 0
-    private(set) var deleteHandler: ((String, Int) async throws -> Void)?
-    func delete(festivalId: String, year: Int) async throws {
+    private let deleteHandler: ((String) async throws -> Void)?
+    func delete(id: String) async throws {
         deleteCallCount += 1
         guard let deleteHandler else { throw TestError.unimplemented }
-        try await deleteHandler(festivalId, year)
+        try await deleteHandler(id)
         return
     }
 }
+
