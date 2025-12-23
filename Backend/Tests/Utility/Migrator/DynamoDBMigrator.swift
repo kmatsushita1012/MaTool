@@ -49,7 +49,6 @@ struct DynamoDBMigrator {
         let items = try await store.query(
             indexName: indexName,
             keyCondition: queryCondition,
-            filter: filter,
             as: oldType
         )
         for oldItem in items {

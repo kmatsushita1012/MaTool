@@ -53,7 +53,7 @@ struct AdminPointEditStoreView: View {
                     }
                 ))
                 if store.item.time != nil {
-                    DatePicker(
+                    DateTimePicker(
                         "時刻を選択",
                         selection: $store.item.time.fullDate,
                         displayedComponents: [.hourAndMinute]

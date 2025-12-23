@@ -8,133 +8,139 @@
 @testable import Backend
 import Foundation
 
-final class DataStoreMock<KeyType: Sendable & Codable ,DataType: Sendable & Codable>: DataStore {
-    let response: DataType
-    
-    init(response: DataType) {
-        self.response = response
-    }
-    
-    nonisolated(unsafe) private(set) var putCallCount: Int = 0
-    nonisolated(unsafe) private(set) var putArg: DataType? = nil
-    func put<T>(_ item: T) async throws {
-        putCallCount += 1
-        putArg = try castOrThrow(item)
-    }
-    
-    nonisolated(unsafe) private(set) var getCallCount: Int = 0
-    nonisolated(unsafe) private(set) var getArg: (KeyType, String, DataType.Type)? = nil
-    func get<T, K>(key: K, keyName: String, as type: T.Type) async throws -> T? {
-        getCallCount += 1
-        getArg = (try castOrThrow(key), keyName, try castOrThrow(type))
-        return try castOrThrow(response)
-    }
-    
-    // TODO: 正規化
-    func get<T>(keys: [String : any Codable], as type: T.Type) async throws -> T? where T : Decodable, T : Encodable {
-        getCallCount += 1
-        return try castOrThrow(response)
-    }
-    
-    nonisolated(unsafe) private(set) var deleteCallCount: Int = 0
-    nonisolated(unsafe) private(set) var deleteArg: (KeyType, String)? = nil
-    func delete<K>(key: K, keyName: String) async throws  {
-        deleteCallCount += 1
-        deleteArg = (try castOrThrow(key), keyName)
-    }
-    
-    // TODO: 正規化
-    func delete(keys: [String : any Codable]) async throws {
-        deleteCallCount += 1
-    }
-    
-    nonisolated(unsafe) private(set) var scanCallCount: Int = 0
-    nonisolated(unsafe) private(set) var scanArg: DataType.Type? = nil
-    func scan<T>(_ type: T.Type) async throws -> [T] where T : Decodable, T : Encodable {
-        scanCallCount += 1
-        scanArg = try castOrThrow(type)
-        return [try castOrThrow(response)]
-    }
-    
-    nonisolated(unsafe) private(set) var queryCallCount: Int = 0
-    nonisolated(unsafe) private(set) var queryArg: (
+final class DataStoreMock: DataStore, @unchecked Sendable {
+
+    // MARK: - Handlers（constructor injection）
+    let putHandler: ((Any) async throws -> Void)?
+    let getHandler: (([String: Codable], Any.Type) async throws -> Any?)?
+    let deleteHandler: (([String: Codable]) async throws -> Void)?
+    let scanHandler: ((Any.Type) async throws -> Any)?
+    let queryHandler: ((
         String?,
-        QueryCondition,
-        FilterCondition?,
+        [QueryCondition],
+        [FilterCondition],
         Int?,
         Bool,
-        DataType.Type
-    )? = nil
-    func query<T>(indexName: String?, keyCondition: QueryCondition, filter: FilterCondition?, limit: Int?, ascending: Bool, as type: T.Type) async throws -> [T]  {
+        Any.Type
+    ) async throws -> Any)?
+
+    // MARK: - Call counts
+    private(set) var putCallCount = 0
+    private(set) var getCallCount = 0
+    private(set) var deleteCallCount = 0
+    private(set) var scanCallCount = 0
+    private(set) var queryCallCount = 0
+
+    // MARK: - Init
+    init(
+        putHandler: ((Any) async throws -> Void)? = nil,
+        getHandler: (([String: Codable], Any.Type) async throws -> Any?)? = nil,
+        deleteHandler: (([String: Codable]) async throws -> Void)? = nil,
+        scanHandler: ((Any.Type) async throws -> Any)? = nil,
+        queryHandler: ((
+            String?,
+            [QueryCondition],
+            [FilterCondition],
+            Int?,
+            Bool,
+            Any.Type
+        ) async throws -> Any)? = nil
+    ) {
+        self.putHandler = putHandler
+        self.getHandler = getHandler
+        self.deleteHandler = deleteHandler
+        self.scanHandler = scanHandler
+        self.queryHandler = queryHandler
+    }
+
+    // MARK: - put
+    func put<T: Codable>(_ item: T) async throws {
+        putCallCount += 1
+        guard let handler = putHandler else {
+            throw TestError.unimplemented
+        }
+        try await handler(item)
+    }
+
+    // MARK: - get
+    func get<T: Codable>(
+        keys: [String: Codable],
+        as type: T.Type
+    ) async throws -> T? {
+        getCallCount += 1
+        guard let handler = getHandler else {
+            throw TestError.unimplemented
+        }
+
+        let result = try await handler(keys, type)
+        guard let result else { return nil }
+
+        guard let typed = result as? T else {
+            throw TestError.typeUnmatched(
+                expected: T.self,
+                actual: Swift.type(of: result)
+            )
+        }
+        return typed
+    }
+
+    // MARK: - delete
+    func delete(keys: [String: Codable]) async throws {
+        deleteCallCount += 1
+        guard let handler = deleteHandler else {
+            throw TestError.unimplemented
+        }
+        try await handler(keys)
+    }
+
+    // MARK: - scan
+    func scan<T: Codable>(_ type: T.Type) async throws -> [T] {
+        scanCallCount += 1
+        guard let handler = scanHandler else {
+            throw TestError.unimplemented
+        }
+
+        let result = try await handler(type)
+
+        guard let typed = result as? [T] else {
+            throw TestError.typeUnmatched(
+                expected: [T].self,
+                actual: Swift.type(of: result)
+            )
+        }
+        return typed
+    }
+
+    // MARK: - query
+    func query<T: Codable>(
+        indexName: String?,
+        keyConditions: [QueryCondition],
+        filterConditions: [FilterCondition],
+        limit: Int?,
+        ascending: Bool,
+        as type: T.Type
+    ) async throws -> [T] {
+
         queryCallCount += 1
-        queryArg = (
+        guard let handler = queryHandler else {
+            throw TestError.unimplemented
+        }
+
+        let result = try await handler(
             indexName,
-            keyCondition,
-            filter,
+            keyConditions,
+            filterConditions,
             limit,
             ascending,
-            try castOrThrow(type)
+            type
         )
-        return [try castOrThrow(response)]
-    }
-}
 
-private extension DataStoreMock {
-    func castOrThrow<T>(_ item: T) throws -> KeyType {
-        if let value = item as? KeyType {
-            return value
-        } else {
-            throw DataStoreMockError.typeMismatch(
-                expected: KeyType.self,
-                actual: T.self
+        guard let typed = result as? [T] else {
+            throw TestError.typeUnmatched(
+                expected: [T].self,
+                actual: Swift.type(of: result)
             )
         }
-    }
-    
-    func castOrThrow<T>(_ item: T.Type) throws -> DataType.Type {
-        if let value = item as? DataType.Type {
-            return value
-        } else {
-            throw DataStoreMockError.typeMismatch(
-                expected: DataType.Type.self,
-                actual: T.Type.self
-            )
-        }
-    }
-
-    func castOrThrow<T>(_ item: T) throws -> DataType {
-        if let value = item as? DataType {
-            return value
-        } else {
-            throw DataStoreMockError.typeMismatch(
-                expected: DataType.self,
-                actual: T.self
-            )
-        }
-    }
-    
-    func castOrThrow<T>(_ item: DataType) throws -> T {
-        if let value = item as? T {
-            return value
-        } else {
-            throw DataStoreMockError.typeMismatch(
-                expected: T.self,
-                actual: DataType.self
-            )
-        }
-    }
-}
-
-enum DataStoreMockError<E, A>: LocalizedError {
-    case notFound
-    case typeMismatch(expected: E.Type, actual: A.Type)
-    
-    var errorDescription: String? {
-        switch self {
-        case .notFound:
-            return "Requested item was not found in the mock."
-        case .typeMismatch(let expected, let actual):
-            return "Type mismatch: expected \(expected), but got \(actual)."
-        }
+        return typed
     }
 }

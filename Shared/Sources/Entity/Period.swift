@@ -7,33 +7,6 @@
 
 import Foundation
 
-// MARK: - Program
-public struct Program: Entity {
-    public let festivalId: String
-    public let year: Int
-    public var title: String
-    public var periods: [Period]
-    
-    public init(festivalId: String, year: Int, title: String = "", periods: [Period]) {
-        self.festivalId = festivalId
-        self.year = year
-        self.title = title
-        self.periods = periods
-    }
-}
-
-extension Program: Comparable {
-    public static func < (lhs: Program, rhs: Program) -> Bool {
-        return lhs.year < rhs.year
-    }
-}
-
-extension Program: Identifiable {
-    public var id : String {
-        return "\(festivalId)_\(year)"
-    }
-}
-
 // MARK: - Period
 public struct Period: Entity {
     public let id: String
