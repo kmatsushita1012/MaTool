@@ -40,14 +40,14 @@ struct APIRepotiroy: Sendable {
     var getLocations: @Sendable (_ festivalId: String) async -> Result<[FloatLocationGetDTO], APIError>
     var putLocation: @Sendable (_ location: FloatLocation) async -> Result<FloatLocation, APIError>
     var deleteLocation: @Sendable (_ districtId: String) async -> Result<Empty, APIError>
-    //MARK: - Program
-    var getLatestProgram: @Sendable (_ festivalId: String) async -> Result<Program, APIError>
-    var getProgram: @Sendable (_ festivalId: String, _ year: Int) async -> Result<Program, APIError>
-    var getPrograms: @Sendable (_ festivalId: String) async -> Result<[Program], APIError>
-    var postProgram: @Sendable (_ program: Program) async -> Result<Program, APIError>
-    var putProgram: @Sendable (_ program: Program) async -> Result<Program, APIError>
-    var deleteProgram: @Sendable (_ festivalId: String, _ year: Int) async -> Result<Empty, APIError>
-    
+    //MARK: - Period
+    var getLatestPeriods: @Sendable (_ festivalId: String) async -> Result<[Period], APIError>
+    var getPeriodByYear: @Sendable (_ festivalId: String, _ year: Int) async -> Result<[Period], APIError>
+    var getPeriodsByFestivalId: @Sendable (_ festivalId: String) async -> Result<[Period], APIError>
+    var getPeriod: @Sendable (_ periodId: String) async -> Result<Period, APIError>
+    var postPeriod: @Sendable (_ period: Period) async -> Result<Period, APIError>
+    var putPeriod: @Sendable (_ period: Period) async -> Result<Period, APIError>
+    var deletePeriod: @Sendable (_ periodId: String) async -> Result<Empty, APIError>
 }
 
 // MARK: - APIRepository
@@ -218,46 +218,62 @@ extension APIRepotiroy: DependencyKey {
                 )
                 return response
             },
-            getLatestProgram: { festivalId in
-                let response: Result<Program, APIError> = await apiClient.get(
-                    path: "/festivals/\(festivalId)/programs/latest"
+            // MARK: Period
+            getLatestPeriods: { festivalId in
+                let response: Result<[Period], APIError> = await apiClient.get(
+                    path: "/periods",
+                    query: ["festivalId": festivalId]
                 )
                 return response
             },
-            getProgram: { festivalId, year in
-                let response: Result<Program, APIError> = await apiClient.get(
-                    path: "/festivals/\(festivalId)/programs/\(year)"
+            getPeriodByYear: { festivalId, year in
+                let response: Result<[Period], APIError> = await apiClient.get(
+                    path: "/periods",
+                    query: [
+                        "festivalId": festivalId,
+                        "year": year
+                    ]
                 )
                 return response
             },
-            getPrograms: { festivalId in
-                let response: Result<[Program], APIError> = await apiClient.get(
-                    path: "/festivals/\(festivalId)/programs"
+            getPeriodsByFestivalId: { festivalId in
+                let response: Result<[Period], APIError> = await apiClient.get(
+                    path: "/periods",
+                    query: [
+                        "festivalId": festivalId,
+                        "all": true
+                    ]
                 )
                 return response
             },
-            postProgram: { program in
+            getPeriod: { periodId in
+                let response: Result<Period, APIError> = await apiClient.get(
+                    path: "/periods/\(periodId)"
+                )
+                return response
+            },
+            postPeriod: { period in
                 let accessToken = await authService.getAccessToken()
-                let response: Result<Program, APIError> = await apiClient.post(
-                    path: "/festivals/\(program.festivalId)/programs",
-                    body: program,
+                let response: Result<Period, APIError> = await apiClient.post(
+                    path: "/periods",
+                    body: period,
                     accessToken: accessToken
                 )
                 return response
             },
-            putProgram: { program in
+            putPeriod: { period in
                 let accessToken = await authService.getAccessToken()
-                let response: Result<Program, APIError> = await apiClient.put(
-                    path: "/festivals/\(program.festivalId)/programs/\(program.year)",
-                    body: program,
+                let response: Result<Period, APIError> = await apiClient.put(
+                    path: "/periods/\(period.id)",
+                    body: period,
                     accessToken: accessToken
                 )
                 return response
             },
-            deleteProgram: { festivalId, year in
+            deletePeriod: { periodId in
                 let accessToken = await authService.getAccessToken()
                 let response: Result<Empty, APIError> = await apiClient.delete(
-                    path: "/festivals/\(festivalId)/programs/\(year)",
+                    path: "/periods/\(periodId)",
                     accessToken: accessToken
                 )
                 return response
