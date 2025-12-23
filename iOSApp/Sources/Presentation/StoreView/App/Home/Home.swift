@@ -18,7 +18,7 @@ struct Home {
         case info(InfoList)
         case login(Login)
         case adminDistrict(AdminDistrictTop)
-        case adminFestival(AdminFestivalTop)
+        case adminFestival(FestivalDashboardFeature)
         case settings(Settings)
     }
     
@@ -232,7 +232,7 @@ struct Home {
             case .adminFestivalPrepared(let festivalResult, let districtsResult):
                 if case let .success(festival) = festivalResult,
                    case let .success(districts) = districtsResult{
-                    state.destination = .adminFestival(AdminFestivalTop.State(festival: festival, districts: districts))
+                    state.destination = .adminFestival(FestivalDashboardFeature.State(festival: festival, districts: districts))
                 }else{
                     state.alert = Alert.error("情報の取得に失敗しました")
                 }

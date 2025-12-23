@@ -1,5 +1,5 @@
 //
-//  InformationEditStoreView.swift
+//  CheckpointEditView.swift
 //  MaTool
 //
 //  Created by 松下和也 on 2025/06/25.
@@ -10,9 +10,9 @@ import ComposableArchitecture
 import NavigationSwipeControl
 
 @available(iOS 17.0, *)
-struct InformationEditStoreView: View {
+struct CheckpointEditView: View {
     
-    @SwiftUI.Bindable var store: StoreOf<InformationEdit>
+    @SwiftUI.Bindable var store: StoreOf<CheckpointEditFeature>
     
     var body: some View {
         List {

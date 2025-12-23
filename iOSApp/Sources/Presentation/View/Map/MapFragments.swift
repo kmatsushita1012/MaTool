@@ -224,6 +224,10 @@ final class PathPolyline: MKPolyline {
         self.init(coordinates: coordinates, count: coordinates.count)
     }
     
+    convenience init(_ coordinates: [Coordinate]) {
+        self.init(coordinates: coordinates.map{ $0.toCL() }, count: coordinates.count)
+    }
+    
     func renderer() -> MKOverlayRenderer {
         let renderer = MKPolylineRenderer(overlay: self)
         renderer.strokeColor = .systemBlue
@@ -261,5 +265,108 @@ fileprivate extension UIImage {
             cgContext.scaleBy(x: scale, y: scale)
             self.draw(at: .zero)
         }
+    }
+}
+
+extension CLLocationCoordinate2D: @retroactive Equatable {
+    public static func == (lhs: Self, rhs: Self) -> Bool {
+        lhs.latitude == rhs.latitude && lhs.longitude == rhs.longitude
+    }
+}
+
+protocol MapViewRepresentable: UIViewRepresentable {
+    var region: MKCoordinateRegion? { get set }
+}
+
+extension MapViewRepresentable {
+    func update(points: [PointAnnotation]?, in mapView: MKMapView, ) {
+        let oldAnnotations = mapView.annotations.compactMap { $0 as? PointAnnotation }
+        let newPoints = points ?? []
+        
+        for point in newPoints where !oldAnnotations.contains(where: { $0 == point }) {
+            mapView.addAnnotation(point)
+        }
+        let toRemove = oldAnnotations.filter { !newPoints.contains($0) }
+        mapView.removeAnnotations(toRemove)
+    }
+    
+    func update(polylines: [PathPolyline]?, in mapView: MKMapView, ) {
+        let oldPolylines = mapView.overlays.compactMap { $0 as? PathPolyline }
+        let newPolylines = polylines ?? []
+        for polyline in newPolylines where !oldPolylines.contains(where: { $0 == polyline }) {
+            mapView.addOverlay(polyline)
+        }
+        let toRemovePoly = oldPolylines.filter { polyline in
+            return !newPolylines.contains(polyline)
+        }
+        mapView.removeOverlays(toRemovePoly)
+    }
+    
+    func update(float: FloatAnnotation?, in mapView: MKMapView) {
+        let old = mapView.annotations.compactMap { $0 as? FloatAnnotation }
+        let toRemove = old.filter { $0 != float }
+        if let float, !old.contains(where: { $0 == float }) {
+            mapView.removeAnnotations(toRemove)
+            mapView.addAnnotation(float)
+        } else {
+            mapView.removeAnnotations(toRemove)
+        }
+    }
+    
+    func update(coordinates: [Coordinate], in mapView: MKMapView) {
+        let newCoordinates = coordinates.map { $0.toCL() }
+        
+        let oldAnnotations = mapView.annotations.compactMap { $0 as? MKPointAnnotation }
+        
+        for coordinate in newCoordinates where !oldAnnotations.contains(where: { $0.coordinate == coordinate }) {
+            let annotation = MKPointAnnotation()
+            annotation.coordinate = coordinate
+            mapView.addAnnotation(annotation)
+        }
+        let toRemove = oldAnnotations.filter {
+            !newCoordinates.contains($0.coordinate)
+        }
+
+        mapView.removeAnnotations(toRemove)
+    }
+}
+
+class MapCoordinator<Parent: MapViewRepresentable>: NSObject, MKMapViewDelegate {
+    var parent: Parent
+    
+    init(_ parent: Parent) {
+        self.parent = parent
+    }
+    
+    //MARK: - MKMapViewDelegate
+    func mapView(_ mapView: MKMapView, viewFor annotation: MKAnnotation) -> MKAnnotationView? {
+        if annotation is MKUserLocation {
+            return nil
+        }
+        if let pointAnnotation = annotation as? PointAnnotation {
+            return PointAnnotationView.view(for: mapView, annotation: pointAnnotation)
+        }
+        if let FloatCurrentAnnotation = annotation as? FloatAnnotation {
+            return FloatAnnotationView.view(for: mapView, annotation: FloatCurrentAnnotation)
+        }
+        return nil
+    }
+    
+    func mapView(_ mapView: MKMapView, didSelect view: MKAnnotationView) {
+        // 膨らみ防止
+        if let annotation = view.annotation {
+            mapView.deselectAnnotation(annotation, animated: false)
+        }
+    }
+    
+    func mapView(_ mapView: MKMapView, rendererFor overlay: MKOverlay) -> MKOverlayRenderer {
+        if let polyline = overlay as? PathPolyline {
+            return polyline.renderer()
+        }
+        return MKOverlayRenderer()
+    }
+    
+    func mapView(_ mapView: MKMapView, regionDidChangeAnimated animated: Bool) {
+        parent.region = mapView.region
     }
 }

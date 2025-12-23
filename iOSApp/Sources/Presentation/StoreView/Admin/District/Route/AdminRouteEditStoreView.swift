@@ -128,12 +128,10 @@ extension AdminRouteEditStoreView {
     @ToolbarContentBuilder
     @available(iOS 26.0, *)
     var toolbarAfterLiquidGlass: some ToolbarContent {
-        ToolbarItemGroup(placement: .primaryAction){
+        ToolbarItemGroup(placement: .confirmationAction) {
             Button(systemImage: "checkmark") {
                 store.send(.saveTapped)
             }
-            .tint(.accentColor)
-            .buttonStyle(.borderedProminent)
         }
         ToolbarItemGroup(placement: .bottomBar) {
             undoButton
@@ -155,7 +153,7 @@ extension AdminRouteEditStoreView {
     var info: some View {
         List{
             Section(header: Text("日付")){
-                DatePicker(
+                DateTimePicker(
                     "日付を選択",
                     selection: $store.route.date.fullDate,
                     displayedComponents: [.date]
@@ -170,13 +168,13 @@ extension AdminRouteEditStoreView {
                     .frame(height:120)
             }
             Section(header: Text("時刻") ) {
-                DatePicker(
+                DateTimePicker(
                     "開始時刻",
                     selection: $store.route.start.fullDate,
                     displayedComponents: [.hourAndMinute]
                 )
                 .datePickerStyle(.compact)
-                DatePicker(
+                DateTimePicker(
                     "終了時刻",
                     selection: $store.route.goal.fullDate,
                     displayedComponents: [.hourAndMinute]
