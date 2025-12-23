@@ -35,9 +35,9 @@ struct FestivalDashboardView: View {
             AdminCreateDistrictView(store: store)
         }
         .navigationDestination(
-            item: $store.scope(state: \.destination?.programs, action: \.destination.programs)
+            item: $store.scope(state: \.destination?.periods, action: \.destination.periods)
         ) { store in
-            ProgramListView(store: store)
+            PeriodListView(store: store)
         }
         .navigationDestination(
             item: $store.scope(state: \.destination?.changePassword, action: \.destination.changePassword)
@@ -64,7 +64,7 @@ struct FestivalDashboardView: View {
                 NavigationItemView(
                     title: "日程",
                     iconName: "calendar" ,
-                    onTap: { store.send(.programTapped) })
+                    onTap: { store.send(.periodTapped) })
             }
             Section(header: Text("参加町")){
                 ForEach(store.districts) { district in

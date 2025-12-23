@@ -17,7 +17,7 @@ struct FestivalDashboardFeature {
         case edit(FestivalEditFeature)
         case districtInfo(AdminDistrictList)
         case districtCreate(AdminDistrictCreate)
-        case programs(ProgramListFeature)
+        case periods(PeriodListFeature)
         case changePassword(ChangePassword)
         case updateEmail(UpdateEmail)
     }
@@ -42,7 +42,7 @@ struct FestivalDashboardFeature {
     enum Action: Equatable, BindableAction {
         case binding(BindingAction<State>)
         case onEdit
-        case programTapped
+        case periodTapped
         case onDistrictInfo(District)
         case onCreateDistrict
         case homeTapped
@@ -53,7 +53,7 @@ struct FestivalDashboardFeature {
         case festivalReceived(Result<Festival,APIError>)
         case districtsReceived(Result<[District],APIError>)
         case districtInfoPrepared(District, Result<[RouteItem],APIError>)
-        case programsPrepared(Result<[Program], APIError>)
+        case periodsPrepared(Result<[Period], APIError>)
         case signOutReceived(Result<UserRole,AuthError>)
         case batchExportPrepared(Result<[URL], APIError>)
         case destination(PresentationAction<Destination.Action>)
@@ -73,9 +73,9 @@ struct FestivalDashboardFeature {
             case .onEdit:
                 state.destination = .edit(FestivalEditFeature.State(item: state.festival))
                 return .none
-            case .programTapped:
+            case .periodTapped:
                 state.isApiLoading = true
-                return getProgramsEffect(state)
+                return getPeriodsEffect(state)
             case .onDistrictInfo(let district):
                 state.isApiLoading = true
                 return .run { send in
@@ -126,13 +126,13 @@ struct FestivalDashboardFeature {
                     )
                 )
                 return .none
-            case .programsPrepared(.success(let programs)):
+            case .periodsPrepared(.success(let periods)):
                 state.isApiLoading = false
-                state.destination = .programs(.init(festivalId: state.festival.id, programs: programs))
+                state.destination = .periods(.init(festivalId: state.festival.id, periods: periods))
                 return .none
             case .districtsReceived(.failure(let error)),
                     .districtInfoPrepared(_, .failure(let error)),
-                    .programsPrepared(.failure(let error)):
+                    .periodsPrepared(.failure(let error)):
                 state.isApiLoading = false
                 state.alert = Alert.error("情報の取得に失敗しました \(error.localizedDescription)")
                 return .none
@@ -174,7 +174,7 @@ struct FestivalDashboardFeature {
                     .districtCreate,
                     .changePassword,
                     .updateEmail,
-                    .programs(_):
+                    .periods(_):
                     return .none
                 }
             case .destination(.dismiss):
@@ -195,10 +195,10 @@ struct FestivalDashboardFeature {
         }
     }
     
-    func getProgramsEffect(_ state: State) -> Effect<Action> {
+    func getPeriodsEffect(_ state: State) -> Effect<Action> {
         .run { [state] send in
-            let result = await apiRepository.getPrograms(state.festival.id)
-            await send(.programsPrepared(result))
+            let result = await apiRepository.getPeriodsByFestivalId(state.festival.id)
+            await send(.periodsPrepared(result))
         }
     }
     
