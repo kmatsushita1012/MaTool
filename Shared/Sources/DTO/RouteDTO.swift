@@ -6,48 +6,89 @@
 //
 
 
-public struct RouteItem: DTO {
-    public let id: String
+public struct RouteResponse: DTO {
     public let districtId: String
-    public let date:SimpleDate
-    public let title: String
-    public let start: SimpleTime
-}
-
-extension RouteItem: Comparable {
-    public static func < (lhs: RouteItem, rhs: RouteItem) -> Bool {
-        if(lhs.date != rhs.date){
-            return lhs.date < rhs.date
-        }else{
-            return lhs.start < rhs.start
-        }
+    public let districtName: String
+    public let period: Period
+    public let route: Route
+    
+    public init(
+        districtId: String,
+        districtName: String,
+        period: Period,
+        route: Route
+    ) {
+        self.districtId = districtId
+        self.districtName = districtName
+        self.period = period
+        self.route = route
     }
 }
 
-extension RouteItem: Identifiable {}
-
-public extension RouteItem{
-    init(from route: Route) {
-        self.id = route.id
-        self.districtId = route.districtId
-        self.date = route.date
-        self.title = route.title
-        self.start = route.start
+public struct RoutesResponse: DTO {
+    public let districtId: String
+    public let districtName: String
+    public let items: [Item]
+    
+    public struct Item: DTO {
+        public let routeId: String?
+        public let isVisible: Bool
+        public let period: Period
+        
+        public init(routeId: String?, isVisible: Bool,  period: Period) {
+            self.routeId = routeId
+            self.isVisible = isVisible
+            self.period = period
+        }
+    }
+    
+    public init(districtId: String, districtName: String, items: [Item]) {
+        self.districtId = districtId
+        self.districtName = districtName
+        self.items = items
     }
 }
 
 public struct CurrentResponse: DTO {
     public let districtId: String
     public let districtName: String
-    public let routes: [RouteItem]?
-    public let current: Route?
-    public let location: FloatLocationGetDTO?
+    public let items: [RouteItem]
+    public let detail: RouteDetail?
+    public let location: FloatLocation?
+    public let message: String?
     
-    public init(districtId: String, districtName: String, routes: [RouteItem]? = nil, current: Route? = nil, location: FloatLocationGetDTO? = nil) {
+    public struct RouteItem: DTO {
+        public let routeId: String?
+        public let isVisible: Bool
+        public let period: Period
+        
+        public init(routeId: String?, isVisible: Bool,  period: Period) {
+            self.routeId = routeId
+            self.isVisible = isVisible
+            self.period = period
+        }
+    }
+    
+    public struct RouteDetail: DTO {
+        public let period: Period
+        public let route: Route
+        public let checkpoints: [Checkpoint]
+        public let performances: [Performance]
+        
+        public init(period: Period, route: Route, checkpoints: [Checkpoint], performances: [Performance]) {
+            self.period = period
+            self.route = route
+            self.checkpoints = checkpoints
+            self.performances = performances
+        }
+    }
+    
+    public init(districtId: String, districtName: String, items: [RouteItem], detail: RouteDetail?, location: FloatLocation?, message: String?) {
         self.districtId = districtId
         self.districtName = districtName
-        self.routes = routes
-        self.current = current
+        self.items = items
+        self.detail = detail
         self.location = location
+        self.message = message
     }
 }
