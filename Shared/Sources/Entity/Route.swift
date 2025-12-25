@@ -33,6 +33,20 @@ public struct Route: Entity {
 
 extension Route: Identifiable {}
 
+public extension Route {
+    var startTime: SimpleTime? {
+        guard case let .anchor(first) = points.first,
+              first.role == .start else { return nil }
+        return first.time
+    }
+    
+    var endTime: SimpleTime? {
+        guard case let .anchor(end) = points.last,
+              end.role == .end else { return nil }
+        return end.time
+    }
+}
+
 
 // MARK: - Point
 public enum Point: Entity{
@@ -116,7 +130,7 @@ public extension Point {
             return performance.time
         case .anchor(let anchor):
             return anchor.time
-        case .waypoint(let waypoint):
+        case .waypoint(_):
             return nil
         }
     }
