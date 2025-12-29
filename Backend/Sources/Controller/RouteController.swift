@@ -41,8 +41,14 @@ struct RouteController: RouteControllerProtocol {
 
 	func query(_ request: Request, next: Handler) async throws -> Response {
 		let districtId = try request.parameter("districtId", as: String.self)
+        let year = try? request.parameter("year", as: Int.self)
 		let user = request.user ?? .guest
-		let result = try await usecase.query(by: districtId, user: user)
+        let result: RoutesResponse
+        if let year {
+            result = try await usecase.query(by: districtId, year: year, user: user)
+        } else {
+            result = try await usecase.query(by: districtId, user: user)
+        }
 		return try .success(result)
 	}
 
@@ -71,6 +77,7 @@ struct RouteController: RouteControllerProtocol {
     
     func getCurrent(_ request: Request, next: Handler) async throws -> Response {
         let districtId = try request.parameter("districtId", as: String.self)
+        let periodId = try? request.parameter("periodId", as: String.self)
         let user = request.user ?? .guest
         let result = try await sceneUsecase.getMapRoute(districtId: districtId, user: user, now: .now)
         return try .success(result)
