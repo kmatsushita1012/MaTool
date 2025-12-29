@@ -73,6 +73,21 @@ extension DataStore {
         )
     }
     
+    func query<T: Codable>(
+        indexName: String? = nil,
+        keyConditions: [QueryCondition],
+        as type: T.Type
+    ) async throws -> [T] {
+        return try await query(
+            indexName: indexName,
+            keyConditions: keyConditions,
+            filterConditions: [],
+            limit: nil,
+            ascending: true,
+            as: type
+        )
+    }
+    
     func get<T: Codable, K: Codable>(key: K, keyName: String, as type: T.Type) async throws -> T? {
         try await get(keys: [keyName: key], as: type)
     }
