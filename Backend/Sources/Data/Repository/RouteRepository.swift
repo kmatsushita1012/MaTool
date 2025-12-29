@@ -22,10 +22,12 @@ extension DependencyValues {
 
 // MARK: - RouteRepositoryProtocol
 protocol RouteRepositoryProtocol: Sendable {
-    func get(id: String) async throws -> Route?
-    func query(by districtId: String) async throws -> [Route]
-    func post(_ route: Route) async throws -> Route
-    func put(_ route: Route) async throws -> Route
+    func get(id: String) async throws -> RouteRecord?
+    func get(districtId: String, periodId: String) async throws -> RouteRecord?
+    func query(by districtId: String) async throws -> [RouteRecord]
+    func query(by districtId: String, year: Int) async throws -> [RouteRecord]
+    func post(_ route: RouteRecord) async throws -> RouteRecord
+    func put(_ route: RouteRecord) async throws -> RouteRecord
     func delete(id: String) async throws
 }
 
@@ -38,24 +40,40 @@ struct RouteRepository: RouteRepositoryProtocol {
         self.store = storeFactory("matool_routes")
     }
 
-    func get(id: String) async throws -> Route? {
-        try await store.get(key: id, keyName: "id", as: Route.self)
+    func get(id: String) async throws -> RouteRecord? {
+        try await store.get(key: id, keyName: "id", as: RouteRecord.self)
+    }
+    
+    func get(districtId: String, periodId: String) async throws -> RouteRecord? {
+        try await store.query(
+            indexName: "district_id-period",
+            keyConditions: [.equals("district_id", districtId), .equals("period_id", periodId)],
+            as: RouteRecord.self
+        ).first
     }
 
-    func query(by districtId: String) async throws -> [Route] {
+    func query(by districtId: String) async throws -> [RouteRecord] {
         try await store.query(
             indexName: "district_id-index",
             keyCondition: .equals("district_id", districtId),
-            as: Route.self
+            as: RouteRecord.self
+        )
+    }
+    
+    func query(by districtId: String, year: Int) async throws -> [RouteRecord] {
+        try await store.query(
+            indexName: "district_id-year",
+            keyConditions: [.equals("district_id", districtId), .equals("year", year)],
+            as: RouteRecord.self
         )
     }
 
-    func post(_ route: Route) async throws -> Route {
+    func post(_ route: RouteRecord) async throws -> RouteRecord {
         try await store.put(route)
         return route
     }
 
-    func put(_ route: Route) async throws -> Route {
+    func put(_ route: RouteRecord) async throws -> RouteRecord {
         try await store.put(route)
         return route
     }
