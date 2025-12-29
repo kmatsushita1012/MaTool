@@ -17,17 +17,18 @@ enum RouteControllerKey: DependencyKey {
 protocol RouteControllerProtocol: Sendable {
 	func get(_ request: Request, next: Handler) async throws -> Response
 	func query(_ request: Request, next: Handler) async throws -> Response
-	func getCurrent(_ request: Request, next: Handler) async throws -> Response
-	func getIds(_ request: Request, next: Handler) async throws -> Response
 	func post(_ request: Request, next: Handler) async throws -> Response
 	func put(_ request: Request, next: Handler) async throws -> Response
 	func delete(_ request: Request, next: Handler) async throws -> Response
+    func getCurrent(_ request: Request, next: Handler) async throws -> Response
+    func getIds(_ request: Request, next: Handler) async throws -> Response
 }
 
 // MARK: - RouteController
 struct RouteController: RouteControllerProtocol {
 
 	@Dependency(RouteUsecaseKey.self) var usecase
+    @Dependency(SceneUsecaseKey.self) var sceneUsecase
 
 	init() {}
 
@@ -42,19 +43,6 @@ struct RouteController: RouteControllerProtocol {
 		let districtId = try request.parameter("districtId", as: String.self)
 		let user = request.user ?? .guest
 		let result = try await usecase.query(by: districtId, user: user)
-		return try .success(result)
-	}
-
-	func getCurrent(_ request: Request, next: Handler) async throws -> Response {
-		let districtId = try request.parameter("districtId", as: String.self)
-		let user = request.user ?? .guest
-        let result = try await usecase.getCurrent(districtId: districtId, user: user, now: .now)
-		return try .success(result)
-	}
-
-	func getIds(_ request: Request, next: Handler) async throws -> Response {
-		let user = request.user ?? .guest
-		let result = try await usecase.getAllRouteIds(user: user)
 		return try .success(result)
 	}
 
@@ -80,5 +68,18 @@ struct RouteController: RouteControllerProtocol {
 		try await usecase.delete(id: id, user: user)
 		return try .success()
 	}
+    
+    func getCurrent(_ request: Request, next: Handler) async throws -> Response {
+        let districtId = try request.parameter("districtId", as: String.self)
+        let user = request.user ?? .guest
+        let result = try await sceneUsecase.getMapRoute(districtId: districtId, user: user, now: .now)
+        return try .success(result)
+    }
+
+    func getIds(_ request: Request, next: Handler) async throws -> Response {
+        let user = request.user ?? .guest
+        let result = try await sceneUsecase.getAllRouteIds(user: user)
+        return try .success(result)
+    }
 }
 
