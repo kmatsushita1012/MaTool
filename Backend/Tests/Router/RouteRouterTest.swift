@@ -12,7 +12,7 @@ import Dependencies
 import Shared
 
 struct RouteRouterTest {
-    let route = Route(id: "r-id", districtId: "d-id", start: SimpleTime(hour: 10, minute: 0), goal: SimpleTime(hour: 11, minute: 0))
+    let route = Route(id: "r-id", districtId: "d-id", periodId: "p-id")
     let error = Error.internalServerError("test-error")
 
     @Test("GET /routes/:routeId 正常")

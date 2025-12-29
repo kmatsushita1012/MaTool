@@ -104,39 +104,47 @@ final class DistrictUsecaseMock: DistrictUsecaseProtocol, @unchecked Sendable {
 }
 
 final class RouteUsecaseMock: RouteUsecaseProtocol, @unchecked Sendable {
+    
     init(
-        queryHandler: ((String, UserRole) throws -> [Shared.RouteItem])? = nil,
-        getHandler: ((String, UserRole) throws -> Shared.Route)? = nil,
+        getHandler: ((String, Shared.UserRole) throws -> Shared.RouteResponse)? = nil,
+        queryByDistrictIdHandler: ((String, Shared.UserRole) throws -> Shared.RoutesResponse)? = nil,
+        queryByYearHandler: ((String, Int, Shared.UserRole) throws -> Shared.RoutesResponse)? = nil,
         postHandler: ((String, Shared.Route, Shared.UserRole) throws -> Shared.Route)? = nil,
         putHandler: ((String, Shared.Route, Shared.UserRole) throws -> Shared.Route)? = nil,
-        deleteHandler: ((String, Shared.UserRole) throws -> Void)? = nil,
-        getCurrentHandler: ((String, Shared.UserRole, Date) throws -> Shared.CurrentResponse)? = nil,
-        getAllRouteIdsHandler: ((Shared.UserRole) throws -> [String])? = nil
+        deleteHandler: ((String, Shared.UserRole) throws -> Void)? = nil
     ) {
-        self.queryHandler = queryHandler
         self.getHandler = getHandler
+        self.queryByDistrictIdHandler = queryByDistrictIdHandler
+        self.queryByYearHandler = queryByYearHandler
         self.postHandler = postHandler
         self.putHandler = putHandler
         self.deleteHandler = deleteHandler
-        self.getCurrentHandler = getCurrentHandler
-        self.getAllRouteIdsHandler = getAllRouteIdsHandler
-    }
-
-    private(set) var queryCallCount = 0
-    private var queryHandler: ((String, UserRole) throws -> [Shared.RouteItem])? = nil
-    func query(by districtId: String, user: Shared.UserRole) async throws -> [Shared.RouteItem] {
-        queryCallCount += 1
-        guard let queryHandler else { throw TestError.unimplemented }
-        return try queryHandler(districtId, user)
     }
     
     private(set) var getCallCount = 0
-    private var getHandler: ((String, UserRole) throws -> Shared.Route)? = nil
-    func get(id: String, user: UserRole) async throws -> Shared.Route {
+    private var getHandler: ((String, Shared.UserRole) throws -> Shared.RouteResponse)? = nil
+    func get(id: String, user: Shared.UserRole) async throws -> Shared.RouteResponse {
         getCallCount += 1
         guard let getHandler else { throw TestError.unimplemented }
         return try getHandler(id, user)
     }
+
+    private(set) var queryByDistrictIdCallCount = 0
+    private var queryByDistrictIdHandler: ((String, Shared.UserRole) throws -> Shared.RoutesResponse)? = nil
+    func query(by districtId: String, user: Shared.UserRole) async throws -> Shared.RoutesResponse {
+        queryByDistrictIdCallCount += 1
+        guard let queryByDistrictIdHandler else { throw TestError.unimplemented }
+        return try queryByDistrictIdHandler(districtId, user)
+    }
+    
+    private(set) var queryByYearCallCount = 0
+    private var queryByYearHandler: ((String, Int, Shared.UserRole) throws -> Shared.RoutesResponse)? = nil
+    func query(by districtId: String, year: Int, user: Shared.UserRole) async throws -> Shared.RoutesResponse {
+        queryByYearCallCount += 1
+        guard let queryByYearHandler else { throw TestError.unimplemented }
+        return try queryByYearHandler(districtId, year, user)
+    }
+    
     private(set) var postCallCount = 0
     private var postHandler: ((String, Shared.Route, Shared.UserRole) throws -> Shared.Route)? = nil
     func post(districtId: String, route: Shared.Route, user: Shared.UserRole) async throws -> Shared.Route {
@@ -162,21 +170,6 @@ final class RouteUsecaseMock: RouteUsecaseProtocol, @unchecked Sendable {
         return
     }
     
-    private(set) var getCurrentCallCount = 0
-    private var getCurrentHandler: ((String, Shared.UserRole, Date) throws -> Shared.CurrentResponse)? = nil
-    func getCurrent(districtId: String, user: Shared.UserRole, now: Date) async throws -> Shared.CurrentResponse {
-        getCurrentCallCount += 1
-        guard let getCurrentHandler else { throw TestError.unimplemented }
-        return try getCurrentHandler(districtId, user, now)
-    }
-
-    private(set) var getAllRouteIdsCallCount = 0
-    private var getAllRouteIdsHandler: ((Shared.UserRole) throws -> [String])? = nil
-    func getAllRouteIds(user: Shared.UserRole) async throws -> [String] {
-        getAllRouteIdsCallCount += 1
-        guard let getAllRouteIdsHandler else { throw TestError.unimplemented }
-        return try getAllRouteIdsHandler(user)
-    }
 }
 
 final class LocationUsecaseMock: LocationUsecaseProtocol, @unchecked Sendable {

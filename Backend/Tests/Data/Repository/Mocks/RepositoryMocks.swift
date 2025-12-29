@@ -96,47 +96,68 @@ final class DistrictRepositoryMock: DistrictRepositoryProtocol, @unchecked Senda
 
 // MARK: - RouteRepositoryMock
 final class RouteRepositoryMock: RouteRepositoryProtocol, @unchecked Sendable {
+    
     init(
-        getHandler: ((String) async throws -> Route?)? = nil,
-        queryHandler: ((String) async throws -> [Route])? = nil,
-        postHandler: ((Route) async throws -> Route)? = nil,
-        putHandler: ((Route) async throws -> Route)? = nil,
-        deleteHandler: ((String) async throws -> Void)? = nil
+        getHandler: ((String) async throws -> RouteRecord?)? = nil,
+        queryHandler: ((String) async throws -> [RouteRecord])? = nil,
+        postHandler: ((RouteRecord) async throws -> RouteRecord)? = nil,
+        putHandler: ((RouteRecord) async throws -> RouteRecord)? = nil,
+        deleteHandler: ((String) async throws -> Void)? = nil,
+        getByDistrictAndPeriodHandler: ((String, String) async throws -> RouteRecord?)? = nil,
+        queryByDistrictAndYearHandler: ((String, Int) async throws -> [RouteRecord])? = nil
     ) {
         self.getHandler = getHandler
         self.queryHandler = queryHandler
         self.postHandler = postHandler
         self.putHandler = putHandler
         self.deleteHandler = deleteHandler
+        self.getByDistrictAndPeriodHandler = getByDistrictAndPeriodHandler
+        self.queryByDistrictAndYearHandler = queryByDistrictAndYearHandler
     }
     
     private(set) var getCallCount = 0
-    private(set) var getHandler: ((String) async throws -> Route?)?
-    func get(id: String) async throws -> Route? {
+    private(set) var getHandler: ((String) async throws -> RouteRecord?)?
+    func get(id: String) async throws -> RouteRecord? {
         getCallCount += 1
         guard let getHandler else { throw TestError.unimplemented }
         return try await getHandler(id)
     }
     
+    private(set) var getByDistrictAndPeriodCallCount = 0
+    private(set) var getByDistrictAndPeriodHandler: ((String, String) async throws -> RouteRecord?)?
+    func get(districtId: String, periodId: String) async throws -> Backend.RouteRecord? {
+        getByDistrictAndPeriodCallCount += 1
+        guard let getByDistrictAndPeriodHandler else { throw TestError.unimplemented }
+        return try await getByDistrictAndPeriodHandler(districtId, periodId)
+    }
+    
     private(set) var queryCallCount = 0
-    private(set) var queryHandler: ((String) async throws -> [Route])?
-    func query(by districtId: String) async throws -> [Route] {
+    private(set) var queryHandler: ((String) async throws -> [RouteRecord])?
+    func query(by districtId: String) async throws -> [RouteRecord] {
         queryCallCount += 1
         guard let queryHandler else { throw TestError.unimplemented }
         return try await queryHandler(districtId)
     }
     
+    private(set) var queryByDistrictAndYearCallCount = 0
+    private(set) var queryByDistrictAndYearHandler: ((String, Int) async throws -> [RouteRecord])?
+    func query(by districtId: String, year: Int) async throws -> [Backend.RouteRecord] {
+        queryByDistrictAndYearCallCount += 1
+        guard let queryByDistrictAndYearHandler else { throw TestError.unimplemented }
+        return try await queryByDistrictAndYearHandler(districtId, year)
+    }
+    
     private(set) var postCallCount = 0
-    private(set) var postHandler: ((Route) async throws -> Route)?
-    func post(_ route: Route) async throws -> Route {
+    private(set) var postHandler: ((RouteRecord) async throws -> RouteRecord)?
+    func post(_ route: RouteRecord) async throws -> RouteRecord {
         postCallCount += 1
         guard let postHandler else { throw TestError.unimplemented }
         return try await postHandler(route)
     }
     
     private(set) var putCallCount = 0
-    private(set) var putHandler: ((Route) async throws -> Route)?
-    func put(_ route: Route) async throws -> Route {
+    private(set) var putHandler: ((RouteRecord) async throws -> RouteRecord)?
+    func put(_ route: RouteRecord) async throws -> RouteRecord {
         putCallCount += 1
         guard let putHandler else { throw TestError.unimplemented }
         return try await putHandler(route)
