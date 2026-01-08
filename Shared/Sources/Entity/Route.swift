@@ -5,77 +5,63 @@
 //  Created by 松下和也 on 2025/10/30.
 //
 
+import SQLiteData
+
 // MARK: - Route
-public struct Route: Entity {
+@Table public struct Route: Entity, Identifiable {
     public let id: String
-    public let districtId: String
-    public var date:SimpleDate = .today
-    public var title: String = ""
+    public let districtId: District.ID
+    public let periodId: Period.ID
     public var visibility: Visibility = .all
     @NullEncodable public var description: String?
-    public var points: [Point] = []
-    public var start: SimpleTime
-    public var goal: SimpleTime
     
     public init(
         id: String,
-        districtId: String,
-        date: SimpleDate = .today,
-        title: String = "",
+        districtId: District.ID,
+        periodId: Period.ID,
         visibility: Visibility = .all,
-        description: String? = nil,
-        points: [Point] = [],
-        start: SimpleTime,
-        goal: SimpleTime
+        description: String? = nil
     ) {
         self.id = id
         self.districtId = districtId
-        self.date = date
-        self.title = title
+        self.periodId = periodId
         self.visibility = visibility
         self.description = description
-        self.points = points
-        self.start = start
-        self.goal = goal
     }
 }
-
-extension Route: Identifiable {}
 
 
 // MARK: - Point
-public struct Point: Entity {
+@Table public struct Point: Entity, Identifiable {
     public let id: String
+    @Column(as: Coordinate.JSONRepresentation.self)
     public var coordinate: Coordinate
-    @NullEncodable public var title: String?
-    @NullEncodable public var description: String?
+    @Column(as: SimpleTime?.JSONRepresentation.self)
     @NullEncodable public var time: SimpleTime?
-    public var isPassed: Bool
-    public var shouldExport: Bool
+    // マスターデータID　いずれか1つがnon-null 全てnullなら捨てピン
+    public let checkpointId: Checkpoint.ID?
+    public let performanceId: Performance.ID?
+    public let anchor: Anchor?
     
-    public init(
-        id: String,
-        coordinate: Coordinate,
-        title: String? = nil,
-        description: String? = nil,
-        time: SimpleTime? = nil,
-        isPassed: Bool = false,
-        shouldExport: Bool = false
-    ) {
+    public init(id: String, coordinate: Coordinate, time: SimpleTime? = nil, checkpointId: Checkpoint.ID?, performanceId: Performance.ID?, anchor: Anchor?) {
         self.id = id
         self.coordinate = coordinate
-        self.title = title
-        self.description = description
         self.time = time
-        self.isPassed = isPassed
-        self.shouldExport = shouldExport
+        self.checkpointId = checkpointId
+        self.performanceId = performanceId
+        self.anchor = anchor
     }
 }
 
-extension Point: Identifiable {}
+// MARK: - Anchor
+public enum Anchor: String, Entity, QueryBindable {
+    case start
+    case end
+    case rest
+}
 
 // MARK: - Visisbility
-public enum Visibility: String, Entity {
+public enum Visibility: String, Entity, QueryBindable {
     case admin
     case route
     case all
@@ -85,15 +71,4 @@ extension Visibility: CaseIterable {}
 
 extension Visibility: Identifiable{
     public var id: Self { self }
-}
-
-public extension Visibility {
-    var isTimeHidden: Bool {
-        switch self {
-        case .admin, .route:
-            return true
-        case .all:
-            return false
-        }
-    }
 }
