@@ -23,7 +23,7 @@ public struct ImagePath: Entity {
     public let light: String?
     public let dark: String?
     
-    public init(light: String?, dark: String?) {
+    public init(light: String? = nil, dark: String? = nil) {
         self.light = light
         self.dark = dark
     }
