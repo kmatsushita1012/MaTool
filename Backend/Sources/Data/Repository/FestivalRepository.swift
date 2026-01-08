@@ -37,15 +37,18 @@ struct FestivalRepository: FestivalRepositoryProtocol {
     }
 
     func get(id: String) async throws -> Festival? {
-        try await store.get(key: id, keyName: "id", as: Festival.self)
+        let record = try await store.get(key: id, keyName: "id", as: Record<Festival>.self)
+        return record?.content
     }
 
     func scan() async throws -> [Festival] {
-        try await store.scan(Festival.self)
+        let records = try await store.scan(Record<Festival>.self)
+        return records.map{ $0.content }
     }
 
     func put(_ item: Festival) async throws -> Festival {
-        try await store.put(item)
+        let record = Record(item)
+        try await store.put(record)
         return item
     }
 }
