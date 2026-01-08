@@ -38,24 +38,28 @@ struct DistrictRepository: DistrictRepositoryProtocol {
     }
 
     func get(id: String) async throws -> District? {
-        try await store.get(key: id, keyName: "id", as: District.self)
+        let record = try await store.get(key: id, keyName: "id", as: Record<District>.self)
+        return record?.content
     }
 
     func query(by festivalId: String) async throws -> [District] {
-        try await store.query(
+        let records = try await store.query(
             indexName: "region_id-index",
             keyCondition: .equals("region_id", festivalId),
-            as: District.self
+            as: Record<District>.self
         )
+        return records.map{ $0.content }
     }
 
     func put(id: String, item: District) async throws -> District  {
-        try await store.put(item)
+        let record = Record(item)
+        try await store.put(record)
         return item
     }
 
     func post(item: District) async throws -> District  {
-        try await store.put(item)
+        let record = Record(item)
+        try await store.put(record)
         return item
     }
 }

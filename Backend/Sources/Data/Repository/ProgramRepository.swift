@@ -37,21 +37,25 @@ struct ProgramRepository: ProgramRepositoryProtocol {
     }
 
     func get(festivalId: String, year: Int) async throws -> Program? {
-        return try await dataStore.get(keys: ["festival_id": festivalId, "year": year], as: Program.self)
+        let record = try await dataStore.get(keys: ["festival_id": festivalId, "year": year], as: Record<Program>.self)
+        return record?.content
     }
 
     func query(by festivalId: String, limit: Int?) async throws -> [Program] {
-        return try await dataStore.query(keyCondition: .equals("festival_id", festivalId), limit: limit, ascending: false, as: Program.self)
+        let records =  try await dataStore.query(keyCondition: .equals("festival_id", festivalId), limit: limit, ascending: false, as: Record<Program>.self)
+        return records.map{ $0.content }
     }
 
-    func post(_ Program: Program) async throws -> Program {
-        try await dataStore.put(Program)
-        return Program
+    func post(_ item: Program) async throws -> Program {
+        let record = Record(item)
+        try await dataStore.put(record)
+        return item
     }
 
-    func put(_ Program: Program) async throws -> Program {
-        try await dataStore.put(Program)
-        return Program
+    func put(_ item: Program) async throws -> Program {
+        let record = Record(item)
+        try await dataStore.put(record)
+        return item
     }
 
     func delete(festivalId: String, year: Int) async throws {
