@@ -124,31 +124,71 @@ struct DynamoDBStore: DataStore {
 
 // MARK: - QueryCondition +
 fileprivate extension QueryCondition {
-    func toExpression() throws -> (String, [String: AttributeValue]) {
+    func toExpression() throws -> (
+        expr: String,
+        names: [String: String],
+        values: [String: AttributeValue]
+    ) {
         let encoder = DynamoDBEncoder()
+        
         switch self {
         case .equals(let field, let value):
-            return ("#\(field) = :\(field)", [":\(field)": try encoder.encodeKey(value)])
+            return (
+                "#\(field) = :\(field)",
+                ["#\(field)": field],
+                [":\(field)": try encoder.encodeKey(value)]
+            )
+            
         case .beginsWith(let field, let prefix):
-            return ("begins_with(#\(field), :\(field))", [":\(field)": try encoder.encodeKey(prefix)])
+            return (
+                "begins_with(#\(field), :\(field))",
+                ["#\(field)": field],
+                [":\(field)": try encoder.encodeKey(prefix)]
+            )
+            
         case .between(let field, let lower, let upper):
-            return ("#\(field) BETWEEN :lower AND :upper",
-                    [":lower": try encoder.encodeKey(lower), ":upper": try encoder.encodeKey(upper)])
+            return (
+                "#\(field) BETWEEN :\(field)_l AND :\(field)_u",
+                ["#\(field)": field],
+                [
+                    ":\(field)_l": try encoder.encodeKey(lower),
+                    ":\(field)_u": try encoder.encodeKey(upper)
+                ]
+            )
         }
     }
 }
 
 // MARK: - FilterCondition +
 fileprivate extension FilterCondition {
-    func toExpression() throws -> (String, [String: AttributeValue]) {
+    func toExpression() throws -> (
+        expr: String,
+        names: [String: String],
+        values: [String: AttributeValue]
+    ) {
         let encoder = DynamoDBEncoder()
+        
         switch self {
         case .equals(let field, let value):
-            return ("#\(field) = :\(field)", [":\(field)": try encoder.encodeKey(value)])
+            return (
+                "#\(field) = :\(field)",
+                ["#\(field)": field],
+                [":\(field)": try encoder.encodeKey(value)]
+            )
+            
         case .beginsWith(let field, let prefix):
-            return ("begins_with(#\(field), :\(field))", [":\(field)": try encoder.encodeKey(prefix)])
+            return (
+                "begins_with(#\(field), :\(field))",
+                ["#\(field)": field],
+                [":\(field)": try encoder.encodeKey(prefix)]
+            )
+            
         case .contains(let field, let substring):
-            return ("contains(#\(field), :\(field))", [":\(field)": try encoder.encodeKey(substring)])
+            return (
+                "contains(#\(field), :\(field))",
+                ["#\(field)": field],
+                [":\(field)": try encoder.encodeKey(substring)]
+            )
         }
     }
 }
