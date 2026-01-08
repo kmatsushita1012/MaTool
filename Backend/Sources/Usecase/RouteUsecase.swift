@@ -16,12 +16,11 @@ enum RouteUsecaseKey: DependencyKey {
 
 // MARK: - RouteUsecaseProtocol
 protocol RouteUsecaseProtocol: Sendable {
-    func query(by districtId: String, user: UserRole) async throws -> [RouteItem]
+    func query(by districtId: String, user: UserRole) async throws -> [Route]
     func get(id: String, user: UserRole) async throws -> Route
     func post(districtId: String, route: Route, user: UserRole) async throws -> Route
     func put(id: String, route: Route, user: UserRole) async throws -> Route
     func getAllRouteIds(user: UserRole) async throws -> [String]
-    func getCurrent(districtId: String, user: UserRole, now: Date) async throws -> CurrentResponse
     func delete(id: String, user: UserRole) async throws
 }
 
@@ -32,7 +31,7 @@ struct RouteUsecase: RouteUsecaseProtocol {
     @Dependency(LocationRepositoryKey.self) var locationRepository
     @Dependency(FestivalRepositoryKey.self) var festivalRepository
     
-    func query(by districtId: String, user: UserRole) async throws -> [RouteItem] {
+    func query(by districtId: String, user: UserRole) async throws -> [Route] {
         guard let district = try await districtRepository.get(id: districtId) else {
             throw Error.notFound("指定された地区が見つかりません")
         }
@@ -52,10 +51,7 @@ struct RouteUsecase: RouteUsecaseProtocol {
             }
         }
         let routes = try await routeRepository.query(by: districtId)
-        let items = routes.map { route in
-            RouteItem(from: route)
-        }
-        return items
+        return routes
     }
     
     func get(id: String, user: UserRole) async throws -> Route {
@@ -149,86 +145,6 @@ struct RouteUsecase: RouteUsecaseProtocol {
         }
         
         return ids
-    }
-    
-    func getCurrent(districtId: String, user: UserRole, now: Date = Date()) async throws -> CurrentResponse {
-        guard let district = try await districtRepository.get(id: districtId) else {
-            throw Error.notFound("指定された地区が見つかりません")
-        }
-        let hasRouteAccess: Bool
-        if district.visibility == .admin {
-            switch user {
-            case .guest:
-                hasRouteAccess = false
-            case .district(let id):
-                hasRouteAccess = id == districtId
-            case .headquarter(let id):
-                hasRouteAccess = id == district.festivalId
-            }
-        } else {
-            hasRouteAccess = true
-        }
-        
-        let routeList: [Route]?
-        if hasRouteAccess {
-            routeList = try? await routeRepository.query(by: districtId)
-        } else {
-            routeList = nil
-        }
-        
-        let routes: [RouteItem]? = routeList?.map { RouteItem(from: $0) }
-        let current: Route? = routeList.flatMap { selectCurrentItem(items: $0, now: now) }
-        
-        let hasAdminAccess: Bool
-        switch user {
-        case .headquarter(let festivalId):
-            hasAdminAccess = festivalId == district.festivalId
-        case .district(let id):
-            hasAdminAccess = id == districtId
-        case .guest:
-            hasAdminAccess = false
-        }
-        
-        let location: FloatLocationGetDTO?
-        if hasAdminAccess {
-            if let loc = try? await getForAdmin(districtId: districtId) {
-                location = FloatLocationGetDTO(
-                    districtId: loc.districtId,
-                    districtName: district.name,
-                    coordinate: loc.coordinate,
-                    timestamp: loc.timestamp
-                )
-            } else {
-                location = nil
-            }
-        } else {
-            if let festival = try? await festivalRepository.get(id: district.festivalId),
-               let loc = try? await getForPublic(district: district, festival: festival, now: now) {
-                location = FloatLocationGetDTO(
-                    districtId: loc.districtId,
-                    districtName: district.name,
-                    coordinate: loc.coordinate,
-                    timestamp: loc.timestamp
-                )
-            } else {
-                location = nil
-            }
-        }
-        
-        let processedCurrent: Route?
-        if let currentRoute = current {
-            processedCurrent = removeTimeIfNeeded(district: district, route: currentRoute, user: user)
-        } else {
-            processedCurrent = nil
-        }
-        
-        return CurrentResponse(
-            districtId: district.id,
-            districtName: district.name,
-            routes: routes,
-            current: processedCurrent,
-            location: location
-        )
     }
 }
 

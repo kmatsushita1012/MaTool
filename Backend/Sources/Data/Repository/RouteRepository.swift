@@ -39,25 +39,29 @@ struct RouteRepository: RouteRepositoryProtocol {
     }
 
     func get(id: String) async throws -> Route? {
-        try await store.get(key: id, keyName: "id", as: Route.self)
+        let record = try await store.get(key: id, keyName: "id", as: Record<Route>.self)
+        return record?.content
     }
 
     func query(by districtId: String) async throws -> [Route] {
-        try await store.query(
+        let records = try await store.query(
             indexName: "district_id-index",
             keyCondition: .equals("district_id", districtId),
-            as: Route.self
+            as: Record<Route>.self
         )
+        return records.map{ $0.content }
     }
 
-    func post(_ route: Route) async throws -> Route {
-        try await store.put(route)
-        return route
+    func post(_ item: Route) async throws -> Route {
+        let record = Record(item)
+        try await store.put(record)
+        return item
     }
 
-    func put(_ route: Route) async throws -> Route {
-        try await store.put(route)
-        return route
+    func put(_ item: Route) async throws -> Route {
+        let record = Record(item)
+        try await store.put(record)
+        return item
     }
 
     func delete(id: String) async throws {
