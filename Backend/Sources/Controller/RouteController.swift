@@ -17,7 +17,6 @@ enum RouteControllerKey: DependencyKey {
 protocol RouteControllerProtocol: Sendable {
 	func get(_ request: Request, next: Handler) async throws -> Response
 	func query(_ request: Request, next: Handler) async throws -> Response
-	func getCurrent(_ request: Request, next: Handler) async throws -> Response
 	func getIds(_ request: Request, next: Handler) async throws -> Response
 	func post(_ request: Request, next: Handler) async throws -> Response
 	func put(_ request: Request, next: Handler) async throws -> Response
@@ -42,13 +41,6 @@ struct RouteController: RouteControllerProtocol {
 		let districtId = try request.parameter("districtId", as: String.self)
 		let user = request.user ?? .guest
 		let result = try await usecase.query(by: districtId, user: user)
-		return try .success(result)
-	}
-
-	func getCurrent(_ request: Request, next: Handler) async throws -> Response {
-		let districtId = try request.parameter("districtId", as: String.self)
-		let user = request.user ?? .guest
-        let result = try await usecase.getCurrent(districtId: districtId, user: user, now: .now)
 		return try .success(result)
 	}
 
