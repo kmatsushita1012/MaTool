@@ -31,8 +31,8 @@ protocol DataStore: Sendable {
     func scan<T: RecordProtocol>(_ type: T.Type) async throws -> [T]
     func query<T: RecordProtocol>(
         indexName: String?,
-        keyCondition: QueryCondition,
-        filter: FilterCondition?,
+        keyConditions: [QueryCondition],
+        filterConditions: [FilterCondition],
         limit: Int?,
         ascending: Bool,
         as type: T.Type
@@ -65,8 +65,8 @@ extension DataStore {
     ) async throws -> [T] {
         try await query(
             indexName: indexName,
-            keyCondition: keyCondition,
-            filter: filter,
+            keyConditions: [keyCondition],
+            filterConditions: filter != nil ? [filter!] : [],
             limit: limit,
             ascending: ascending,
             as: type
@@ -79,5 +79,35 @@ extension DataStore {
     
     func delete<K: Codable>(key: K, keyName: String) async throws {
         try await delete(keys: [keyName: key])
+    }
+}
+
+extension DataStore {
+    func get<T: RecordProtocol>(pk: String, sk: String, as type: T.Type) async throws -> T? {
+        let keys = [ "pk": pk, "sk": sk ]
+        return try await get(keys: keys, as: type)
+    }
+    
+    func delete(pk: String, sk: String) async throws {
+        let keys = [ "pk": pk, "sk": sk ]
+        try await delete(keys: keys)
+    }
+    
+    func query<T: RecordProtocol>(
+        pk: QueryCondition,
+        sk: QueryCondition,
+        filterConditions: [FilterCondition] = [],
+        limit: Int? = nil,
+        ascending: Bool = true,
+        as type: T.Type
+    ) async throws -> [T] {
+        try await query(
+            indexName: nil,
+            keyConditions: [sk, pk],
+            filterConditions: filterConditions,
+            limit: limit,
+            ascending: ascending,
+            as: type
+        )
     }
 }
