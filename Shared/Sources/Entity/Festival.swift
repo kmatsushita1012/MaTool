@@ -25,10 +25,10 @@ import SQLiteData
         name: String,
         subname: String,
         description: String? = nil,
-        prefecture: String,
-        city: String,
+        prefecture: String = "",
+        city: String = "",
         base: Coordinate,
-        image: ImagePath
+        image: ImagePath = .init()
     ) {
         self.id = id
         self.name = name
@@ -65,7 +65,7 @@ public struct HazardSection: Entity, Identifiable {
     @Column(as: [Coordinate].JSONRepresentation.self)
     public var coordinates: [Coordinate]
     
-    public init(id: String, title: String = "", festivalId: Festival.ID, coordinates: [Coordinate]) {
+    public init(id: String, title: String = "", festivalId: Festival.ID, coordinates: [Coordinate] = []) {
         self.id = id
         self.title = title
         self.festivalId = festivalId
