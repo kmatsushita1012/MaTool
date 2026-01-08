@@ -20,7 +20,7 @@ let package = Package(
             name: "Shared",
             dependencies: [
                 .product(name: "CasePaths", package: "swift-case-paths"),
-                .product(name: "SQLiteData", package: "sqlite-data.")
+                .product(name: "SQLiteData", package: "sqlite-data")
             ],
             path: "Sources"
         ),
