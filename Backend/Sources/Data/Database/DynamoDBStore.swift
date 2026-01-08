@@ -22,14 +22,14 @@ struct DynamoDBStore: DataStore {
     }
     
     // MARK: put
-    func put<T: Codable>(_ item: T) async throws {
-        let attrs = try encoder.encode(item)
+    func put<R: RecordProtocol>(_ record: R) async throws {
+        let attrs = try encoder.encode(record)
         let input = PutItemInput(item: attrs, tableName: tableName)
         let _ = try await client.putItem(input: input)
     }
     
     // MARK: get
-    func get<T: Codable>(keys: [String: Codable], as type: T.Type) async throws -> T? {
+    func get<T: RecordProtocol>(keys: [String: Codable], as type: T.Type) async throws -> T? {
         let key = try keys.toExpression()
         let input = GetItemInput(
             key: key,
@@ -49,7 +49,7 @@ struct DynamoDBStore: DataStore {
     }
     
     // MARK: scan
-    func scan<T: Codable>(_ type: T.Type) async throws -> [T] {
+    func scan<T: RecordProtocol>(_ type: T.Type) async throws -> [T] {
         let input = ScanInput(tableName: tableName)
         let output = try await client.scan(input: input)
         guard let items = output.items else { return [] }
@@ -57,7 +57,7 @@ struct DynamoDBStore: DataStore {
     }
     
     // MARK: query
-    func query<T: Codable>(
+    func query<T: RecordProtocol>(
         indexName: String? = nil,
         keyCondition: QueryCondition,
         filter: FilterCondition? = nil,
