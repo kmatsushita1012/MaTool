@@ -25,11 +25,11 @@ typealias DataStoreFactory = @Sendable (String) -> DataStore
 
 // MARK: - DataStore
 protocol DataStore: Sendable {
-    func put<T: Codable>(_ item: T) async throws
-    func get<T: Codable>(keys: [String: Codable], as type: T.Type) async throws -> T?
+    func put<T: RecordProtocol>(_ item: T) async throws
+    func get<T: RecordProtocol>(keys: [String: Codable], as type: T.Type) async throws -> T?
     func delete(keys: [String: Codable]) async throws
-    func scan<T: Codable>(_ type: T.Type) async throws -> [T]
-    func query<T: Codable>(
+    func scan<T: RecordProtocol>(_ type: T.Type) async throws -> [T]
+    func query<T: RecordProtocol>(
         indexName: String?,
         keyCondition: QueryCondition,
         filter: FilterCondition?,
@@ -55,7 +55,7 @@ enum FilterCondition: Sendable {
 
 // MARK: - DataStore +
 extension DataStore {
-    func query<T: Codable>(
+    func query<T: RecordProtocol>(
         indexName: String? = nil,
         keyCondition: QueryCondition,
         filter: FilterCondition? = nil,
@@ -73,7 +73,7 @@ extension DataStore {
         )
     }
     
-    func get<T: Codable, K: Codable>(key: K, keyName: String, as type: T.Type) async throws -> T? {
+    func get<T: RecordProtocol, K: Codable>(key: K, keyName: String, as type: T.Type) async throws -> T? {
         try await get(keys: [keyName: key], as: type)
     }
     
