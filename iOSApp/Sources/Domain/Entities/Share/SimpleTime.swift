@@ -12,5 +12,9 @@ extension SimpleTime {
     var text: String {
         return String(format: "%02d:%02d", hour, minute)
     }
+    
+    static var now: Self {
+        .from(.now)
+    }
 }
 

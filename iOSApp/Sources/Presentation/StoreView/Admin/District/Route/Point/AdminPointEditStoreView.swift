@@ -18,49 +18,25 @@ struct AdminPointEditStoreView: View {
     
     var body: some View {
         Form {
-            Section(header: Text("イベント")) {
-                HStack{
-                    TextField("イベントを入力", text: $store.item.title.nonOptional)
-                        .popover(isPresented: $store.showPopover, content: {
-                            Popover(items: store.checkpoints, textClosure: { $0.name }, onTapGesture: { option in
-                                store.send(.titleOptionSelected(option))
-                            }).presentationCompactAdaptation(PresentationAdaptation.popover)
-                        })
-                    Button(action: {
-                        store.send(.titleFieldFocused)
-                        }) {
-                            Image(systemName: "ellipsis")
-                                .font(.title2)
-                        }
+            Section(){
+                Picker("種類", selection: $store.type) {
+                    ForEach(PointType.allCases, id: \.self) { type in
+                        Text(type.title)
+                    }
                 }
-            }
-            Section(header: Text("詳細")) {
-                TextEditor(text: $store.item.description.nonOptional)
-                    .frame(height:60)
             }
             
-            Section(
-                header: Text("時刻"),
-                footer: Text("先頭および末尾の地点は「経路図（PDF）への出力」がオフでも自動的に経路図に出力されます。時刻は前画面で設定した開始時刻もしくは終了時刻が適用されます。オンの場合はこの画面の「時刻を設定」で設定した時刻が適用されます。")
-            ) {
-                Toggle("時刻を設定", isOn: Binding(
-                    get: { store.item.time != nil },
-                    set: { hasTime in
-                        store.send(.binding(.set(
-                            \.item.time,
-                             hasTime ? SimpleTime.from(Date()) : nil
-                        )))
-                    }
-                ))
-                if store.item.time != nil {
-                    DatePicker(
-                        "時刻を選択",
-                        selection: $store.item.time.fullDate,
-                        displayedComponents: [.hourAndMinute]
-                    )
-                    .datePickerStyle(.compact)
-                }
-                Toggle("経路図（PDF）への出力", isOn: $store.item.shouldExport)
+            switch store.type {
+            case .checkpoint:
+                checkpointForm
+            case .performance:
+                performanceForm
+            case .start,
+                .end,
+                .rest:
+                anchorForm
+            case .waypoint:
+                EmptyView()
             }
             
             Section {
@@ -94,6 +70,66 @@ struct AdminPointEditStoreView: View {
                 toolbarAfterLiquidGlass
             } else {
                 toolbarBeforeLiquidGlass
+            }
+        }
+    }
+    
+    @ViewBuilder
+    var checkpointForm: some View {
+        Section("重要地点"){
+            Picker("重要地点の種類", selection: $store.selectedCheckpoint) {
+                ForEach(store.checkpoints) { checkpoint in
+                    Text(checkpoint.name)
+                }
+            }
+        }
+        timeSection
+    }
+    
+    @ViewBuilder
+    var performanceForm: some View {
+        Section("余興"){
+            Picker("余興の種類", selection: $store.selectedPerformance) {
+                ForEach(store.performances) { performance in
+                    Text(performance.name)
+                }
+            }
+        }
+        nullableTimeSection
+    }
+    
+    @ViewBuilder
+    var anchorForm: some View {
+        timeSection
+    }
+    
+    @ViewBuilder
+    var timePicker: some View {
+        DatePicker(
+            "時刻を選択",
+            selection: $store.time.fullDate,
+            displayedComponents: [.hourAndMinute]
+        )
+        .datePickerStyle(.compact)
+    }
+    
+    @ViewBuilder
+    var timeSection: some View {
+        Section(
+            header: Text("時刻")
+        ) {
+            timePicker
+        }
+    }
+    
+    @ViewBuilder
+    var nullableTimeSection: some View {
+        Section(
+            header: Text("時刻")
+        ) {
+            Toggle("時刻を設定", isOn: $store.time.isPresent(default: { .now }))
+            if store.time != nil {
+                timePicker
             }
         }
     }

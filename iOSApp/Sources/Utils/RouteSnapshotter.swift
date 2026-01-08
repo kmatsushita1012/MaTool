@@ -10,29 +10,30 @@ import UIKit
 import Shared
 
 struct RouteSnapshotter: Equatable {
-    let districtName: String
-    let route: Route
-    let filter: PointFilter
+    private let item: RouteResponse
     
-    init(_ route: Route, districtName : String, filter: PointFilter = .export){
-        self.route = route
-        self.districtName = districtName
-        self.filter = filter
+    private var route: Route {
+        item.route
     }
     
-    init(_ route: Route, filter: PointFilter = .export){
-        self.route = route
-        //TODO: DistrictName指定
-        self.districtName = ""
-        self.filter = filter
+    private var name: String {
+        item.districtName
+    }
+    
+    private var period: Period {
+        item.period
     }
     
     var points:[Point] {
-        filter.apply(to: route)
+        route.points
     }
     
     var coordinates: [Coordinate] {
         points.map { $0.coordinate }
+    }
+    
+    init(_ item: RouteResponse) {
+        self.item = item
     }
     
     
@@ -56,8 +57,8 @@ struct RouteSnapshotter: Equatable {
                         continuation.resume(throwing: error)
                         return
                     }
-                    guard let snapshot = snapshot else {
-                        continuation.resume(returning: nil)
+                    guard let snapshot else {
+                        continuation.resume(throwing: ShapShotError())
                         return
                     }
                     
@@ -73,11 +74,16 @@ struct RouteSnapshotter: Equatable {
                     //FIXME: v3.0.0
                     drawSlopePoint(on: snapshot, drawnRects: &drawnRects)
                     
+                    guard let startTime = route.startTime?.text,
+                          let endTime = route.endTime?.text else {
+                        return
+                    }
+                    
                     let titleText = """
-                    \(districtName)
-                    \(route.date.text(format: "m月d日")) \(route.title)
-                    開始時刻 \(route.start.text)
-                    終了時刻 \(route.goal.text)
+                    \(name)
+                    \(period.date.text(format: "m月d日")) \(period.title)
+                    開始時刻 \(startTime)
+                    終了時刻 \(endTime)
                     """
                     drawTitleTextBlock(text: titleText, in: options, drawnRects: &drawnRects)
                     
@@ -87,7 +93,7 @@ struct RouteSnapshotter: Equatable {
                     continuation.resume(returning: image)
                 }
             }
-        } ?? nil
+        }
     }
     
     private func drawPolylines(on snapshot: MKMapSnapshotter.Snapshot, color: UIColor, lineWidth: CGFloat ) {
@@ -308,3 +314,5 @@ struct RouteSnapshotter: Equatable {
         drawPolyline(on: snapshot, coordinates: shinmeiCoordinates, color: .orange, lineWidth: 8)
     }
 }
+
+fileprivate struct ShapShotError: Error {}

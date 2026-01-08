@@ -15,9 +15,9 @@ class PointAnnotation: MKPointAnnotation {
         case simple
         case time(Int)
     }
-    let point: Point
+    let point: PointViewState
     
-    init(_ point: Point,type: TitleType) {
+    init(_ point: PointViewState, type: TitleType) {
         self.point = point
         super.init()
         self.coordinate = point.coordinate.toCL()
@@ -77,9 +77,9 @@ class FloatAnnotation: MKPointAnnotation {
 }
 
 final class FloatCurrentAnnotation: FloatAnnotation {
-    let location: FloatLocationGetDTO
+    let location: FloatViewState
     
-    init(location: FloatLocationGetDTO) {
+    init(_ location: FloatViewState) {
         self.location = location
         super.init()
         self.title = location.districtName

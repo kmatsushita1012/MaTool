@@ -9,7 +9,7 @@ import Foundation
 import Shared
 
 
-extension RouteItem{
+extension RoutesResponse.Item{
     func text(format: String) -> String {
         var result = ""
         var i = format.startIndex
@@ -23,27 +23,27 @@ extension RouteItem{
 
             switch char {
             case "T":
-                result += title
+                result += period.title
             case "y":
-                result += String(date.year)
+                result += String(period.date.year)
             case "m":
                 if nextChar == "2" {
-                    result += String(format: "%02d", date.month)
+                    result += String(format: "%02d", period.date.month)
                     i = format.index(after: nextIndex) // "m2" 消費
                     continue
                 } else {
-                    result += String(date.month)
+                    result += String(period.date.month)
                 }
             case "d":
                 if nextChar == "2" {
-                    result += String(format: "%02d", date.day)
+                    result += String(format: "%02d", period.date.day)
                     i = format.index(after: nextIndex) // "d2" 消費
                     continue
                 } else {
-                    result += String(date.day)
+                    result += String(period.date.day)
                 }
             case "w":
-                result += date.weekdaySymbol ?? ""
+                result += period.date.weekdaySymbol ?? ""
             default:
                 result += String(char)
             }

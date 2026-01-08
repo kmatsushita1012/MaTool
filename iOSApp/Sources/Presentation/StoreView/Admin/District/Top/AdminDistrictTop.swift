@@ -24,7 +24,7 @@ struct AdminDistrictTop {
     @ObservableState
     struct State:Equatable {
         var district: District
-        var routes: [RouteItem]
+        var routes: [RoutesResponse.Item]
         var isDistrictLoading: Bool = false
         var isRoutesLoading: Bool = false
         var isRouteLoading: Bool = false
@@ -40,13 +40,13 @@ struct AdminDistrictTop {
     enum Action: Equatable {
         case onEdit
         case onRouteAdd
-        case onRouteEdit(RouteItem)
+        case onRouteEdit(RoutesResponse.Item)
         case changePasswordTapped
         case updateEmailTapped
         case getDistrictReceived(Result<District,APIError>)
-        case getRoutesReceived(Result<[RouteItem],APIError>)
+        case getRoutesReceived(Result<[RoutesResponse.Item],APIError>)
         case editPrepared(Result<DistrictTool,APIError>)
-        case routeEditPrepared(Result<Route,APIError>,Result<DistrictTool,APIError>)
+        case routeEditPrepared(Result<RouteResponse, APIError>, Result<DistrictTool, APIError>)
         case routeCreatePrepared(Result<DistrictTool,APIError>)
         case locationPrepared(isTracking: Bool, Interval: Interval?)
         case onLocation
@@ -58,6 +58,7 @@ struct AdminDistrictTop {
     }
     
     @Dependency(\.apiRepository) var apiRepository
+    @Dependency(RouteRemoteRepositoryKey.self) var routeRepository
     @Dependency(\.locationService) var locationService
     @Dependency(\.authService) var authService
     @Dependency(\.dismiss) var dismiss
@@ -77,11 +78,13 @@ struct AdminDistrictTop {
                     let result = await apiRepository.getTool(id)
                     await send(.routeCreatePrepared(result))
                 }
-            case .onRouteEdit(let route):
+            case .onRouteEdit(let item):
                 state.isRouteLoading = true
+                guard let id = item.routeId else { return .none }
+                let districtId = state.district.id
                 return .run { send in
-                    let routeResult = await apiRepository.getRoute(route.id)
-                    let toolResult = await apiRepository.getTool(route.districtId)
+                    let routeResult = await routeRepository.get(routeId: id)
+                    let toolResult = await apiRepository.getTool(districtId)
                     await send(.routeEditPrepared(routeResult, toolResult))
                 }
             case .changePasswordTapped:
@@ -103,7 +106,7 @@ struct AdminDistrictTop {
                 state.isRoutesLoading = false
                 switch result {
                 case .success(let value):
-                    state.routes = value.sorted()
+                    state.routes = value
                 case .failure(let error):
                     state.alert = Alert.error("情報の取得に失敗しました。 \(error.localizedDescription)")
                 }
@@ -124,12 +127,12 @@ struct AdminDistrictTop {
                 return .none
             case .routeEditPrepared(let routeResult, let toolResult):
                 state.isRouteLoading = false
-                if case let .success(route) = routeResult,
+                if case let .success(response) = routeResult,
                    case let .success(tool) = toolResult{
                     state.destination = .route(
                         AdminRouteEdit.State(
                             mode: .update,
-                            route: route,
+                            route: response.route,
                             districtName: tool.districtName,
                             checkpoints: tool.checkpoints,
                             origin: tool.base
@@ -149,6 +152,7 @@ struct AdminDistrictTop {
                             route: Route(
                                 id: UUID().uuidString,
                                 districtId: tool.districtId,
+                                periodId: "",
                                 start: SimpleTime.from(Date.now),
                                 goal: SimpleTime.from(Date.now),
                             ),

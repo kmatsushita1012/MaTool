@@ -15,8 +15,8 @@ struct PublicRoute {
     
     @CasePathable
     enum Detail: Equatable{
-        case point(Point)
-        case location(FloatLocationGetDTO)
+        case point(PointViewState)
+        case location(FloatViewState)
     }
     
     @CasePathable
@@ -31,10 +31,19 @@ struct PublicRoute {
     struct State: Equatable {
         let districtId: String
         let name: String
-        let items: [RouteItem]?
-        var selectedItem: RouteItem?
-        var route: Route?
-        var location: FloatLocationGetDTO? {
+        let items: [CurrentResponse.RouteItem]?
+        var selectedId: String?
+        let checkpoints: [Checkpoint]
+        let performances: [Performance]
+        
+        var route: Route? {
+            didSet {
+                points = .from(route, checkpoints: checkpoints, performances: performances)
+            }
+        }
+        
+        var points: [PointViewState]
+        var location: FloatViewState? {
             didSet {
                 if let location {
                     floatAnnotation = FloatCurrentAnnotation(location: location)
@@ -44,30 +53,28 @@ struct PublicRoute {
             }
         }
         var floatAnnotation: FloatCurrentAnnotation?
+       
         var isMenuExpanded: Bool = false
-        @Shared var mapRegion: MKCoordinateRegion
-        var detail: Detail?
         var replay: Replay = .initial
+        @Shared var mapRegion: MKCoordinateRegion
+        
+        var detail: Detail?
         @Presents var alert: Alert.State?
         
+        
         init(
-            districtId: String,
-            name: String,
-            routes: [RouteItem]? = nil,
-            selectedRoute: Route? = nil,
-            location: FloatLocationGetDTO? = nil,
+            _ response: CurrentResponse,
             mapRegion: Shared<MKCoordinateRegion>
         ){
-            self.districtId = districtId
-            self.name = name
-            self.items = routes
-            if let selectedRoute {
-                self.selectedItem = RouteItem(from: selectedRoute)
-            }
-            self.route = selectedRoute
-            self.location = location
-            if let location {
-                floatAnnotation = FloatCurrentAnnotation(location: location)
+            self.districtId = response.districtId
+            self.name = response.districtName
+            self.items = response.items
+            self.selectedId = response.detail?.route.id
+            self.route = response.detail?.route
+            if let location = response.location {
+                let viewState: FloatViewState = .init(location, districtName: name)
+                self.location = viewState
+                floatAnnotation = FloatCurrentAnnotation(viewState)
             }
             self._mapRegion = mapRegion
         }
@@ -77,13 +84,13 @@ struct PublicRoute {
     enum Action: Equatable, BindableAction {
         case binding(BindingAction<State>)
         case menuTapped
-        case itemSelected(RouteItem)
-        case pointTapped(Point)
+        case itemSelected(CurrentResponse.RouteItem)
+        case pointTapped(PointViewState)
         case locationTapped
         case userFocusTapped
         case floatFocusTapped
-        case routeReceived(Result<Route, APIError>)
-        case locationReceived(Result<FloatLocationGetDTO, APIError>)
+        case routeReceived(Result<RouteResponse, APIError>)
+        case locationReceived(Result<FloatViewState, APIError>)
         case userLocationReceived(Coordinate)
         case replayTapped
         case replayEnded
@@ -93,22 +100,21 @@ struct PublicRoute {
     
     @Dependency(\.locationProvider) var locationProvider
     @Dependency(\.apiRepository) var apiRepository
+    @Dependency(RouteRemoteRepositoryKey.self) var routeRepository
     
     var body: some ReducerOf<PublicRoute> {
         BindingReducer()
         Reduce{ state, action in
             switch action {
-            case .binding:
-                return .none
             case .menuTapped:
                 state.isMenuExpanded = true
                 return .none
             case .itemSelected(let value):
                 state.isMenuExpanded = false
-                state.selectedItem = value
+                guard let routeId = value.routeId else { return .none }
+                state.selectedId = routeId
                 return .run { send in
-                    
-                    let result = await apiRepository.getRoute(value.id)
+                    let result = await routeRepository.get(routeId: routeId)
                     await send(.routeReceived(result))
                 }
             case .pointTapped(let value):
@@ -124,9 +130,9 @@ struct PublicRoute {
                     await send(.locationReceived(result))
                 }
             case .routeReceived(.success(let value)):
-                state.route = value
+                state.route = value.route
                 state.replay = .initial
-                state.$mapRegion.withLock { $0 = makeRegion(value.points.map{ $0.coordinate })}
+                state.$mapRegion.withLock { $0 = makeRegion(value.route.points.map{ $0.coordinate })}
                 return .none
             case .routeReceived(.failure(let error)):
                 state.alert = Alert.error(error.localizedDescription)
@@ -169,32 +175,23 @@ struct PublicRoute {
             case .alert:
                 state.alert = nil
                 return .none
+            default:
+                return .none
             }
         }
     }
 }
 
 extension PublicRoute.State {
-    var pinPoints: [Point]? {
-        if let route {
-            PointFilter.pub.apply(to: route)
-        } else {
-            nil
-        }
-    }
     
-    var points: [Point]? {
-        route?.points
-    }
-    
-    var others: [RouteItem]? {
-        items?.filter {
-            if let selectedItem {
-                $0.id != selectedItem.id
-            } else {
-                false
+    var others: [CurrentResponse.RouteItem]? {
+        if let selectedId {
+            items?.filter {
+                $0.routeId != selectedId
             }
-        }.sorted()
+        } else {
+            items
+        }
     }
     
     var isReplayEnable: Bool {

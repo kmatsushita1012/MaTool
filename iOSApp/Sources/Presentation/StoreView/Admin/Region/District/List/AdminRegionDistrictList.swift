@@ -16,7 +16,7 @@ struct AdminDistrictList {
     struct State: Equatable {
         let festival: Festival
         let district: District
-        let routes: [RouteItem]
+        let routes: [RoutesResponse.Item]
         var isApiLoading: Bool = false
         var isExportLoading: Bool = false
         var folder: ExportedFolder? = nil
@@ -30,7 +30,7 @@ struct AdminDistrictList {
     @CasePathable
     enum Action: Equatable, BindableAction {
         case binding(BindingAction<State>)
-        case exportTapped(RouteItem)
+        case exportTapped(RoutesResponse)
         case exportPrepared(Result<Route,APIError>)
         case dismissTapped
         case batchExportTapped

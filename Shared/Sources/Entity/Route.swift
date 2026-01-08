@@ -65,6 +65,13 @@ public enum Point: Entity{
         public var coordinate: Coordinate
         public var time: SimpleTime
         public var checkpointId: String
+        
+        public init(id: String, coordinate: Coordinate, time: SimpleTime, checkpointId: String) {
+            self.id = id
+            self.coordinate = coordinate
+            self.time = time
+            self.checkpointId = checkpointId
+        }
     }
     
     public struct Performance: Content {
@@ -72,6 +79,13 @@ public enum Point: Entity{
         public var coordinate: Coordinate
         @NullEncodable public var time: SimpleTime?
         public var performanceId: String
+        
+        public init(id: String, coordinate: Coordinate, time: SimpleTime? = nil, performanceId: String) {
+            self.id = id
+            self.coordinate = coordinate
+            self.time = time
+            self.performanceId = performanceId
+        }
     }
     
     public struct Anchor: Content {
@@ -85,11 +99,23 @@ public enum Point: Entity{
             case end
             case rest
         }
+        
+        public init(id: String, coordinate: Coordinate, time: SimpleTime, role: Role) {
+            self.id = id
+            self.coordinate = coordinate
+            self.time = time
+            self.role = role
+        }
     }
     
     public struct Waypoint: Content {
         public let id: String
         public var coordinate: Coordinate
+        
+        public init(id: String, coordinate: Coordinate) {
+            self.id = id
+            self.coordinate = coordinate
+        }
     }
 }
 

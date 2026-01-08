@@ -29,13 +29,6 @@ struct APIRepotiroy: Sendable {
     var postDistrict: @Sendable (_ festivalId: String, _ districtName: String, _ email: String) async -> Result<District, APIError>
     var putDistrict: @Sendable (_ district: District) async -> Result<District, APIError>
     var getTool: @Sendable (_ districtId: String) async -> Result<DistrictTool, APIError>
-    var getRoutes: @Sendable (_ districtId: String) async -> Result<[RouteItem], APIError>
-    var getRoute: @Sendable (_ id: String) async -> Result<Route, APIError>
-    var getCurrentRoute: @Sendable (_ districtId: String) async -> Result<CurrentResponse, APIError>
-    var getRouteIds: @Sendable () async -> Result<[String], APIError>
-    var postRoute: @Sendable (_ route: Route) async -> Result<Route, APIError>
-    var putRoute: @Sendable (_ route: Route) async -> Result<Route, APIError>
-    var deleteRoute: @Sendable (_ id: String) async -> Result<Empty, APIError>
     var getLocation: @Sendable (_ districtId: String) async -> Result<FloatLocationGetDTO, APIError>
     var getLocations: @Sendable (_ festivalId: String) async -> Result<[FloatLocationGetDTO], APIError>
     var putLocation: @Sendable (_ location: FloatLocation) async -> Result<FloatLocation, APIError>
@@ -109,68 +102,6 @@ extension APIRepotiroy: DependencyKey {
                 let accessToken = await authService.getAccessToken()
                 let response: Result<DistrictTool, APIError> = await apiClient.get(
                     path: "/districts/\(districtId)/tools",
-                    accessToken: accessToken
-                )
-                return response
-            },
-            getRoutes: { districtId in
-                let accessToken = await authService.getAccessToken()
-                let response: Result<[RouteItem], APIError> = await apiClient.get(
-                    path: "/districts/\(districtId)/routes",
-                    accessToken: accessToken,
-                    isCache: true
-                )
-                return response
-            },
-            getRoute: { id in
-                let accessToken = await authService.getAccessToken()
-                let response: Result<Route, APIError> = await apiClient.get(
-                    path: "/routes/\(id)",
-                    accessToken: accessToken,
-                    isCache: false
-                )
-                return response
-            },
-            getCurrentRoute: { districtId in
-                let accessToken = await authService.getAccessToken()
-                let response: Result<CurrentResponse, APIError> = await apiClient.get(
-                    path: "/districts/\(districtId)/routes/current",
-                    accessToken: accessToken,
-                    isCache: false
-                )
-                return response
-            },
-            getRouteIds: {
-                let accessToken = await authService.getAccessToken()
-                let response: Result<[String], APIError> = await apiClient.get(
-                    path: "/routes",
-                    accessToken: accessToken,
-                    isCache: false
-                )
-                return response
-            },
-            postRoute: { route in
-                let accessToken = await authService.getAccessToken()
-                let response: Result<Route, APIError> = await apiClient.post(
-                    path: "/districts/\(route.districtId)/routes",
-                    body: route,
-                    accessToken: accessToken
-                )
-                return response
-            },
-            putRoute: { route in
-                let accessToken = await authService.getAccessToken()
-                let response: Result<Route, APIError> = await apiClient.put(
-                    path: "/routes/\(route.id)",
-                    body: route,
-                    accessToken: accessToken
-                )
-                return response
-            },
-            deleteRoute: { id in
-                let accessToken = await authService.getAccessToken()
-                let response: Result<Empty, APIError> = await apiClient.delete(
-                    path: "/routes/\(id)",
                     accessToken: accessToken
                 )
                 return response

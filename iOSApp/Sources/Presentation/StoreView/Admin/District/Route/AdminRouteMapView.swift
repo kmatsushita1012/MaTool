@@ -12,7 +12,6 @@ import Shared
 
 struct AdminRouteMapView: UIViewRepresentable {
     @Binding var route: Route
-    var filter: PointFilter = .none
     var onMapLongPress: (Coordinate) -> Void
     var pointTapped: (Point) -> Void
     @Binding var region: MKCoordinateRegion?

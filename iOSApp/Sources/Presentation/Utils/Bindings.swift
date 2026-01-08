@@ -58,3 +58,23 @@ extension Binding where Value == SimpleDate {
         )
     }
 }
+
+extension Binding {
+    func isPresent<T>(
+        default defaultValue: @escaping () -> T,
+        cache: Bool = true
+    ) -> Binding<Bool> where Value == T? {
+        var cached: T? = self.wrappedValue
+        return Binding<Bool>(
+            get: { (self.wrappedValue != nil) },
+            set: { isOn in
+                if isOn {
+                    self.wrappedValue = self.wrappedValue ?? cached ?? defaultValue()
+                } else {
+                    cached = self.wrappedValue
+                    self.wrappedValue = nil
+                }
+            }
+        )
+    }
+}
