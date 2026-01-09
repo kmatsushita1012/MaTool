@@ -98,6 +98,7 @@ extension DataStore {
     }
     
     func query<T: RecordProtocol>(
+        indexName: String? = nil,
         queryConditions: [QueryCondition],
         filterConditions: [FilterCondition] = [],
         limit: Int? = nil,
