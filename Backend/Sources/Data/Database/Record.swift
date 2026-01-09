@@ -12,7 +12,8 @@ protocol RecordProtocol: Entity {
     associatedtype Content: Entity
     
     var pk: String { get }
-    var sk: String { get }    
+    var sk: String { get }
+    var type: String { get }
     var content: Content { get }
 }
 
