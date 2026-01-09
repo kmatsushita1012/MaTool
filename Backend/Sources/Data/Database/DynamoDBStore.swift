@@ -49,11 +49,15 @@ struct DynamoDBStore: DataStore {
     }
     
     // MARK: scan
-    func scan<T: RecordProtocol>(_ type: T.Type) async throws -> [T] {
+    func scan<T: RecordProtocol>(_ type: T.Type, ignoreDecodeError: Bool) async throws -> [T] {
         let input = ScanInput(tableName: tableName)
         let output = try await client.scan(input: input)
         guard let items = output.items else { return [] }
-        return try items.map { try decoder.decode($0, as: T.self) }
+        if ignoreDecodeError {
+            return items.compactMap { try? decoder.decode($0, as: T.self) }
+        } else {
+            return try items.map { try decoder.decode($0, as: T.self) }
+        }
     }
     
     // MARK: query
