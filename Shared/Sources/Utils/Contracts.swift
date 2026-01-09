@@ -8,3 +8,5 @@
 public typealias Entity = Codable & Sendable & Hashable & Equatable
 
 public typealias DTO = Codable & Sendable & Hashable & Equatable
+
+public typealias Pack = Codable & Sendable & Hashable & Equatable
