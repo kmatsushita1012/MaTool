@@ -28,7 +28,7 @@ protocol DataStore: Sendable {
     func put<T: RecordProtocol>(_ item: T) async throws
     func get<T: RecordProtocol>(keys: [String: Codable], as type: T.Type) async throws -> T?
     func delete(keys: [String: Codable]) async throws
-    func scan<T: RecordProtocol>(_ type: T.Type) async throws -> [T]
+    func scan<T: RecordProtocol>(_ type: T.Type, ignoreDecodeError: Bool) async throws -> [T]
     func query<T: RecordProtocol>(
         indexName: String?,
         keyConditions: [QueryCondition],
@@ -80,6 +80,10 @@ extension DataStore {
     func delete<K: Codable>(key: K, keyName: String) async throws {
         try await delete(keys: [keyName: key])
     }
+    
+    func scan<T: RecordProtocol>(_ type: T.Type) async throws -> [T] {
+        try await scan(type, ignoreDecodeError: false)
+    }
 }
 
 extension DataStore {
@@ -94,8 +98,7 @@ extension DataStore {
     }
     
     func query<T: RecordProtocol>(
-        pk: QueryCondition,
-        sk: QueryCondition,
+        queryConditions: [QueryCondition],
         filterConditions: [FilterCondition] = [],
         limit: Int? = nil,
         ascending: Bool = true,
@@ -103,7 +106,7 @@ extension DataStore {
     ) async throws -> [T] {
         try await query(
             indexName: nil,
-            keyConditions: [sk, pk],
+            keyConditions: queryConditions,
             filterConditions: filterConditions,
             limit: limit,
             ascending: ascending,
