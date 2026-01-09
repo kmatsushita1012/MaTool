@@ -18,17 +18,23 @@ protocol RecordProtocol: Entity {
 
 // MARK: - Record
 struct Record<Content: Entity>: RecordProtocol {
-    let pk:  String
+    let pk: String
     let sk: String
+    let type: String
     let content: Content
-    
-    init(pk: String, sk: String, content: Content) {
+
+    init(
+        pk: String,
+        sk: String,
+        type: String? = nil, // デフォルトは Content の型名大文字
+        content: Content
+    ) {
         self.pk = pk
         self.sk = sk
+        self.type = type ?? String(describing: Content.self).uppercased()
         self.content = content
     }
 }
-
 // TODO: マイグレーション後に削除
 extension Record where Content: Identifiable {
     init(_ content: Content){
