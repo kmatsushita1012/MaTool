@@ -48,15 +48,15 @@ struct DistrictController: DistrictControllerProtocol {
     
 	func post(_ request: Request, next: Handler) async throws -> Response {
         let regionId = try request.parameter("festivalId", as: String.self)
-//        let body = try request.body(as: District.self)
+        let body = try request.body(as: DistrictCreateForm.self)
         let user = request.user ?? .guest
-        let result = try await usecase.post(user: user, headquarterId: regionId, newDistrictName: "", email: "")
+        let result = try await usecase.post(user: user, headquarterId: regionId, newDistrictName: body.name, email: body.email)
         return try .success(result)
 	}
 
     func put(_ request: Request, next: Handler) async throws -> Response {
         let id = try request.parameter("districtId", as: String.self)
-        let body = try request.body(as: District.self)
+        let body = try request.body(as: DistrictPack.self)
         let user = request.user ?? .guest
         let result = try await usecase.put(id: id, item: body, user: user)
         return try .success(result)
