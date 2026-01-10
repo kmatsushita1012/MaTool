@@ -44,5 +44,11 @@ let package = Package(
             dependencies: ["Backend"],
             path: "Tests"
         ),
+        // 初期データ注入　マイグレーション等を実行
+        .testTarget(
+            name: "BackendBootstrap",
+            dependencies: ["Backend"],
+            path: "Bootstrap"
+        ),
     ]
 )
