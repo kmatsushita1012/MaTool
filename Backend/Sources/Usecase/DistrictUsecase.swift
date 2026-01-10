@@ -18,9 +18,7 @@ protocol DistrictUsecaseProtocol: Sendable {
     func query(by regionId: String) async throws -> [District]
     func get(_ id: String) async throws -> District
     func post(user: UserRole, headquarterId: String, newDistrictName: String, email: String) async throws -> District
-    func put(id: String, item: District, user: UserRole) async throws -> District
-    func getTools(id: String, user: UserRole) async throws -> DistrictTool
-}
+    func put(id: String, item: District, user: UserRole) async throws -> District}
 
 // MARK: - DistrictUsecase
 struct DistrictUsecase: DistrictUsecaseProtocol {
@@ -83,42 +81,6 @@ struct DistrictUsecase: DistrictUsecaseProtocol {
             throw Error.unauthorized("アクセス権限がありません")
         }
         return try await repository.put(id: item.id, item: item)
-    }
-    
-    func getTools(id: String, user: UserRole) async throws -> DistrictTool {
-        // District取得
-        guard case let .district(districtId) = user, id == districtId else {
-            throw Error.unauthorized("アクセス権限がありません")
-        }
-        guard let district = try await repository.get(id: id) else {
-            throw Error.notFound("指定された地区が見つかりません")
-        }
-        guard let festival = try await festivalRepository.get(id: district.festivalId) else {
-            throw Error.notFound("指定された祭典が見つかりません")
-        }
-
-        // performances → Checkpoint にマッピング
-        let performances: [Checkpoint] = district.performances.map { performance in
-            Checkpoint(
-                id: performance.id,
-                name: performance.name,
-                description: "演者 \(performance.performer) \(performance.description ?? "")"
-            )
-        }
-
-        // DistrictTool を生成
-        let item = DistrictTool(
-            districtId: district.id,
-            districtName: district.name,
-            festivalId: festival.id,
-            festivalName: festival.name,
-            checkpoints: festival.checkpoints + performances,
-            base: district.base ?? festival.base,
-            periods: [],
-            hazardSections: festival.hazardSections
-        )
-
-        return item
     }
 }
 
