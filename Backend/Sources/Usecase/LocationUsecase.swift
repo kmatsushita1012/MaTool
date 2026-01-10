@@ -16,8 +16,8 @@ enum LocationUsecaseKey: DependencyKey {
 
 // MARK: - LocationUsecaseProtocol
 protocol LocationUsecaseProtocol: Sendable {
-    func query(by festivalId: String, user: UserRole, now: Date) async throws -> [FloatLocationGetDTO]
-    func get(_ districtId: String, user: UserRole) async throws -> FloatLocationGetDTO
+    func query(by festivalId: String, user: UserRole, now: Date) async throws -> [FloatLocation]
+    func get(_ districtId: String, user: UserRole) async throws -> FloatLocation?
     func put(_ location: FloatLocation, user: UserRole) async throws -> FloatLocation
     func delete(_ id: String, user: UserRole) async throws
 }
@@ -28,7 +28,7 @@ struct LocationUsecase: LocationUsecaseProtocol {
     @Dependency(DistrictRepositoryKey.self) var districtRepository
     @Dependency(FestivalRepositoryKey.self) var festivalRepository
     
-    func query(by festivalId: String, user: UserRole, now: Date) async throws -> [FloatLocationGetDTO] {
+    func query(by festivalId: String, user: UserRole, now: Date) async throws -> [FloatLocation] {
         let locations: [FloatLocation]
         
         if case let .headquarter(userId) = user, userId == festivalId {
@@ -44,15 +44,11 @@ struct LocationUsecase: LocationUsecaseProtocol {
         
         let districtMap: [String: District] = Dictionary(uniqueKeysWithValues: districts.map { ($0.id, $0) })
         // compactMapでqueryと同時に処理
-        let publicLocations = locations.compactMap { location -> FloatLocationGetDTO? in
-            guard let district = districtMap[location.districtId] else { return nil }
-            return FloatLocationGetDTO(districtId: location.districtId, districtName: district.name, coordinate: location.coordinate, timestamp: location.timestamp)
-        }
         
-        return publicLocations
+        return locations
     }
     
-    func get(_ districtId: String, user: UserRole) async throws -> FloatLocationGetDTO {
+    func get(_ districtId: String, user: UserRole) async throws -> FloatLocation? {
         
         
         guard let district = try await districtRepository.get(id: districtId) else {
@@ -74,7 +70,7 @@ struct LocationUsecase: LocationUsecaseProtocol {
             throw Error.notFound("位置情報が見つかりません")
         }
 
-        return FloatLocationGetDTO(districtId: loc.districtId, districtName: district.name, coordinate: loc.coordinate, timestamp: loc.timestamp)
+        return location
     }
     
     func put(_ location: FloatLocation, user: UserRole) async throws -> FloatLocation {
