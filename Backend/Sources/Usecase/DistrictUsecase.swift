@@ -16,14 +16,16 @@ enum DistrictUsecaseKey: DependencyKey {
 // MARK: - DistrictUsecaseProtocol
 protocol DistrictUsecaseProtocol: Sendable {
     func query(by regionId: String) async throws -> [District]
-    func get(_ id: String) async throws -> District
-    func post(user: UserRole, headquarterId: String, newDistrictName: String, email: String) async throws -> District
-    func put(id: String, item: District, user: UserRole) async throws -> District}
+    func get(_ id: String) async throws -> DistrictPack
+    func post(user: UserRole, headquarterId: String, newDistrictName: String, email: String) async throws -> DistrictPack
+    func put(id: String, item: DistrictPack, user: UserRole) async throws -> DistrictPack
+}
 
 // MARK: - DistrictUsecase
 struct DistrictUsecase: DistrictUsecaseProtocol {
     @Dependency(DistrictRepositoryKey.self) var repository
     @Dependency(FestivalRepositoryKey.self) var festivalRepository
+    @Dependency(PerformanceRepositoryKey.self) var peformanceRepository
     @Dependency(AuthManagerFactoryKey.self) var managerFactory
     
     func query(by regionId: String) async throws -> [District] {
@@ -31,13 +33,16 @@ struct DistrictUsecase: DistrictUsecaseProtocol {
         return items
     }
     
-    func get(_ id: String) async throws -> District {
-        let item = try await repository.get(id: id)
-        guard let item else { throw Error.notFound("指定された地区が見つかりません") }
-        return item
+    func get(_ id: String) async throws -> DistrictPack {
+        let district = try await repository.get(id: id)
+        guard let district else { throw Error.notFound("指定された地区が見つかりません") }
+        
+        let performances = try await peformanceRepository.query(by: id)
+        
+        return .init(district: district, performances: performances)
     }
     
-    func post(user: UserRole, headquarterId: String, newDistrictName: String, email: String) async throws -> District {
+    func post(user: UserRole, headquarterId: String, newDistrictName: String, email: String) async throws -> DistrictPack {
         // 認可チェック
         guard case let .headquarter(id) = user, headquarterId == id  else {
             throw Error.unauthorized()
@@ -61,26 +66,26 @@ struct DistrictUsecase: DistrictUsecaseProtocol {
         )
 
         // District生成
-        let district = District(
+        let item = District(
             id: districtId,
             name: newDistrictName,
             festivalId: headquarterId,
-            description: nil,
-            base: nil,
-            area: [],
-            imagePath: nil,
-            performances: [],
-            visibility: .all
         )
 
-        return try await repository.post(item: district)
+        let district = try await repository.post(item: item)
+        return .init(district: district, performances: [])
     }
     
-    func put(id: String, item: District, user: UserRole) async throws -> District {
+    func put(id: String, item: DistrictPack, user: UserRole) async throws -> DistrictPack {
         guard case let .district(districtId) = user, id == districtId else {
             throw Error.unauthorized("アクセス権限がありません")
         }
-        return try await repository.put(id: item.id, item: item)
+        let district = try await repository.put(id: id, item: item.district)
+        
+        let oldPerformances = try await peformanceRepository.query(by: districtId)
+        let performances = try await oldPerformances.update(with: item.performances, repository: peformanceRepository)
+        
+        return .init(district: district, performances: performances)
     }
 }
 
