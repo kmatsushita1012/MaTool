@@ -26,7 +26,7 @@ struct DistrictInjector {
     
     @Test
     func inject_performance() async throws {
-        let district = Performance(id: "test_district", name: "テスト町", districtId: "test_region")
+        let district = Performance(id: UUID().uuidString, name: "テスト町", districtId: "test_district")
         let subject = withDependencies({
             $0[DataStoreFactoryKey.self] = { try! DynamoDBStore(tableName: $0) }
         }) {
