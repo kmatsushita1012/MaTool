@@ -38,15 +38,18 @@ struct LocationRepository: LocationRepositoryProtocol {
     }
 
     func get(id: String) async throws -> FloatLocation? {
-        try await store.get(key: id, keyName: "district_id", as: FloatLocation.self)
+        let record = try await store.get(key: id, keyName: "district_id", as: Record<FloatLocation>.self)
+        return record?.content
     }
 
     func scan() async throws -> [FloatLocation] {
-        try await store.scan(FloatLocation.self)
+        let records = try await store.scan(Record<FloatLocation>.self)
+        return records.map{ $0.content }
     }
 
     func put(_ location: FloatLocation) async throws -> FloatLocation {
-        try await store.put(location)
+        let record = Record(location)
+        try await store.put(record)
         return location
     }
 
