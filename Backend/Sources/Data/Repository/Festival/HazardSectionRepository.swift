@@ -87,6 +87,6 @@ fileprivate extension Record where Content == HazardSection {
     static let pkPrefix: String = "FESTIVAL#"
     static let skPrefix: String = "HAZARDSECTION#"
     static let type = String(describing: HazardSection.self).uppercased()
-    static let indexName = "index-\(type)"
+    static let indexName = "index-TYPE"
 }
 

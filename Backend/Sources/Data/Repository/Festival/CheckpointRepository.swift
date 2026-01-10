@@ -96,6 +96,6 @@ fileprivate extension Record where Content == Checkpoint {
     static private let pkPrefix: String = "FESTIVAL#"
     static private let skPrefix: String = "CHECKPOINT#"
     static private let type = String(describing: Checkpoint.self).uppercased()
-    static private let indexName: String = "index-\(type)"
+    static private let indexName: String = "index-TYPE"
 }
 
