@@ -106,7 +106,7 @@ extension DataStore {
         as type: T.Type
     ) async throws -> [T] {
         try await query(
-            indexName: nil,
+            indexName: indexName,
             keyConditions: queryConditions,
             filterConditions: filterConditions,
             limit: limit,
