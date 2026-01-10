@@ -31,8 +31,8 @@ protocol DataStore: Sendable {
     func scan<T: Codable>(_ type: T.Type) async throws -> [T]
     func query<T: Codable>(
         indexName: String?,
-        keyCondition: QueryCondition,
-        filter: FilterCondition?,
+        keyConditions: [QueryCondition],
+        filterConditions: [FilterCondition],
         limit: Int?,
         ascending: Bool,
         as type: T.Type
@@ -58,17 +58,32 @@ extension DataStore {
     func query<T: Codable>(
         indexName: String? = nil,
         keyCondition: QueryCondition,
-        filter: FilterCondition? = nil,
+        filterCondition: FilterCondition? = nil,
         limit: Int? = nil,
         ascending: Bool = true,
         as type: T.Type
     ) async throws -> [T] {
-        try await query(
+        return try await query(
             indexName: indexName,
-            keyCondition: keyCondition,
-            filter: filter,
+            keyConditions: [keyCondition],
+            filterConditions: filterCondition != nil ? [filterCondition!] : [],
             limit: limit,
             ascending: ascending,
+            as: type
+        )
+    }
+    
+    func query<T: Codable>(
+        indexName: String? = nil,
+        keyConditions: [QueryCondition],
+        as type: T.Type
+    ) async throws -> [T] {
+        return try await query(
+            indexName: indexName,
+            keyConditions: keyConditions,
+            filterConditions: [],
+            limit: nil,
+            ascending: true,
             as: type
         )
     }

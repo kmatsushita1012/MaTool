@@ -20,6 +20,34 @@ enum Legacy {
             self.end = end
         }
     }
+    
+    public struct Point: Entity {
+        public let id: String
+        public var coordinate: Coordinate
+        @NullEncodable public var title: String?
+        @NullEncodable public var description: String?
+        @NullEncodable public var time: SimpleTime?
+        public var isPassed: Bool
+        public var shouldExport: Bool
+        
+        public init(
+            id: String,
+            coordinate: Coordinate,
+            title: String? = nil,
+            description: String? = nil,
+            time: SimpleTime? = nil,
+            isPassed: Bool = false,
+            shouldExport: Bool = false
+        ) {
+            self.id = id
+            self.coordinate = coordinate
+            self.title = title
+            self.description = description
+            self.time = time
+            self.isPassed = isPassed
+            self.shouldExport = shouldExport
+        }
+    }
 }
 
 extension Legacy.Span {

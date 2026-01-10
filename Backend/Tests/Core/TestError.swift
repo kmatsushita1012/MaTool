@@ -9,4 +9,9 @@
 enum TestError: Error, Equatable, Sendable{
     case unimplemented
     case intentional
+    case typeUnmatched(expected: String, actual: String)
+    
+    static func typeUnmatched(expected: Any.Type, actual: Any.Type) -> Self{
+        .typeUnmatched(expected: "\(expected)", actual: "\(actual)")
+    }
 }
