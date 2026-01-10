@@ -74,5 +74,5 @@ fileprivate extension Record where Content == Festival {
     static private let pkPrefix: String = "FESTIVAL#"
     static private let skPrefix: String = "METADATA"
     static private let type = String(describing: Festival.self).uppercased()
-    static private let indexName = "index-\(type)"
+    static private let indexName = "index-TYPE"
 }
