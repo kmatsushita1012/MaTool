@@ -79,7 +79,7 @@ extension Record where Content == District {
     }
     
     static func makeKeys(_ id: String) -> (indexName: String, pk: QueryCondition, sk: QueryCondition) {
-        (indexName: "index-TYPE", pk: .equals("type", "\(type)"), sk: .beginsWith("sk", "\(skPrefix)\(id)"))
+        (indexName: "index-TYPE", pk: .equals("type", "\(type)"), sk: .equals("sk", "\(skPrefix)\(id)"))
     }
     
     static let pkPrefix = "FESTIVAL#"
