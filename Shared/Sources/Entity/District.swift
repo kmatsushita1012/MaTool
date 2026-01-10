@@ -13,7 +13,7 @@ public struct District: Entity, Identifiable {
     public var name: String
     public let festivalId: Festival.ID
     public var order: Int
-    public var group: String?
+    @NullEncodable public var group: String?
     @NullEncodable public var description: String?
     @Column(as: Coordinate.JSONRepresentation.self)
     @NullEncodable public var base: Coordinate?
