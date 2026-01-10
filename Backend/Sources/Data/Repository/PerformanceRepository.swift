@@ -37,7 +37,7 @@ struct PerformanceRepository: PerformanceRepositoryProtocol {
     }
 
     func query(by districtId: String) async throws -> [Performance] {
-        let keys = PRecord.makeKeys(districtId)
+        let keys = PRecord.makeKeys(districtId: districtId)
         let records = try await store.query(queryConditions: [keys.pk, keys.sk], as: PRecord.self)
         return records.map(\.content)
     }
