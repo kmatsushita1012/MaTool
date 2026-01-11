@@ -19,7 +19,7 @@ protocol PerformanceRepositoryProtocol: Repository where Content == Performance 
     func query(by festivalId: String) async throws -> [Performance]
     func put(_ item: Performance) async throws -> Performance
     func post(_ item: Performance) async throws -> Performance
-    func delete(_ id: String) async throws -> Void
+    func delete(_ item: Performance) async throws -> Void
 }
 
 struct PerformanceRepository: PerformanceRepositoryProtocol {
@@ -54,9 +54,8 @@ struct PerformanceRepository: PerformanceRepositoryProtocol {
         return record.content
     }
     
-    func delete(_ id: String) async throws -> Void {
-        guard let target = try await get(id: id) else { return }
-        let keys = PRecord.makeKeys(id, districtId: target.districtId)
+    func delete(_ item: Performance) async throws -> Void {
+        let keys = PRecord.makeKeys(item.id, districtId: item.districtId)
         try await store.delete(pk: keys.pk, sk: keys.sk)
     }
 }
