@@ -17,4 +17,6 @@ public enum DomainError: Error, Equatable {
     case startAnchorNotFirst
     case endAnchorNotLast
     case nonMonotonicTime
+    
+    case unknown(String)
 }
