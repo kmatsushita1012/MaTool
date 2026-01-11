@@ -10,6 +10,5 @@ protocol Repository: Sendable {
     
     func put(_ item: Content) async throws -> Content
     func post(_ item: Content) async throws -> Content
-    func delete(_ id: Content.ID) async throws
-    
+    func delete(_ item: Content) async throws
 }
