@@ -20,7 +20,7 @@ protocol HazardSectionRepositoryProtocol: Repository where Content == HazardSect
     func query(by festivalId: String) async throws -> [HazardSection]
     func put(_ item: HazardSection) async throws -> HazardSection
     func post(_ item: HazardSection) async throws -> HazardSection
-    func delete(_ id: String) async throws
+    func delete(_ item: HazardSection) async throws
 }
 
 // MARK: - Repository
@@ -59,9 +59,8 @@ struct HazardSectionRepository: HazardSectionRepositoryProtocol {
         return item
     }
 
-    func delete(_ id: String) async throws {
-        guard let target = try await get(id: id) else { return }
-        let keys = HSRecord.makeKeys(target.id, festivalId: target.festivalId)
+    func delete(_ item: HazardSection) async throws {
+        let keys = HSRecord.makeKeys(item.id, festivalId: item.festivalId)
         try await store.delete(pk: keys.pk, sk: keys.sk)
     }
 }
