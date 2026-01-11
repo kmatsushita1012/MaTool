@@ -21,3 +21,8 @@ extension Array where Element: Equatable & Identifiable {
     }
 }
 
+extension SimpleDate {
+    var sortableKey: String {
+        "\(year)-\(String(format: "%02d", month))-\(String(format: "%02d", day))"
+    }
+}
