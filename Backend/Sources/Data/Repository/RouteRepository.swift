@@ -118,7 +118,7 @@ extension RouteRecord {
     }
     
     static func makeKeys(districtId: String, year: Int) -> (indexName: String, pk: QueryCondition, sk: QueryCondition){
-        (indexName: dateIndexName, pk: .equals("type", type), sk: .equals("date", "\(datePrefix)\(year)"))
+        (indexName: dateIndexName, pk: .equals("pk", "\(pkPrefix)\(districtId)"), sk: .equals("date", "\(skPrefix)\(datePrefix)\(year)"))
     }
     
     static func makeKeys(_ id: String) -> (indexName: String, pk: QueryCondition, sk: QueryCondition){
@@ -130,5 +130,5 @@ extension RouteRecord {
     static let datePrefix: String = "DATE#"
     static let type = String(describing: Route.self).uppercased()
     static let typeIndexName = "index-TYPE"
-    static let dateIndexName = "index-ROUTE-DATE"
+    static let dateIndexName = "index-DATE"
 }
