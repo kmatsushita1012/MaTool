@@ -34,22 +34,26 @@ import SQLiteData
 // MARK: - Point
 @Table public struct Point: Entity, Identifiable {
     public let id: String
+    public let routeId: Route.ID
     @Column(as: Coordinate.JSONRepresentation.self)
     public var coordinate: Coordinate
     @Column(as: SimpleTime?.JSONRepresentation.self)
     @NullEncodable public var time: SimpleTime?
     // マスターデータID　いずれか1つがnon-null 全てnullなら捨てピン
-    public let checkpointId: Checkpoint.ID?
-    public let performanceId: Performance.ID?
-    public let anchor: Anchor?
+    public var checkpointId: Checkpoint.ID?
+    public var performanceId: Performance.ID?
+    public var anchor: Anchor?
+    public var index: Int
     
-    public init(id: String, coordinate: Coordinate, time: SimpleTime? = nil, checkpointId: Checkpoint.ID?, performanceId: Performance.ID?, anchor: Anchor?) {
+    public init(id: String, routeId: Route.ID, coordinate: Coordinate, time: SimpleTime? = nil, checkpointId: Checkpoint.ID?, performanceId: Performance.ID?, anchor: Anchor?, index: Int = 0) {
         self.id = id
+        self.routeId = routeId
         self.coordinate = coordinate
         self.time = time
         self.checkpointId = checkpointId
         self.performanceId = performanceId
         self.anchor = anchor
+        self.index = index
     }
 }
 

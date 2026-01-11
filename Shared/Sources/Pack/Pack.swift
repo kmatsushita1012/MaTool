@@ -10,3 +10,14 @@ struct FestivalPack: Pack {
     let checkpoints: [Checkpoint]
     let hazardSections: [HazardSection]
 }
+
+
+public struct RouteDetailPack: Pack {
+    public let route: Route
+    public let points: [Point]
+    
+    public init(route: Route, points: [Point]) {
+        self.route = route
+        self.points = points
+    }
+}
