@@ -7,16 +7,9 @@
 
 public extension Array where Element: Identifiable & Equatable & Sendable {
 
-    /// 配列差分を検出して処理、更新後の配列を返す
-    /// - Parameters:
-    ///   - with: 新しい配列
-    ///   - onAdd: 追加されたアイテムを受け取り、新しいアイテムを返す async throws
-    ///   - onUpdate: 更新されたアイテムを受け取り、新しいアイテムを返す async throws
-    ///   - onDelete: 削除されたアイテムを受け取る async throws
-    /// - Returns: 差分反映後の配列
-    /// - Throws: SharedError.unknown にまとめて throw
     func diff(
         with new: [Element],
+        separateDeleteAndUpdate: Bool = false,
         onAdd: @Sendable @escaping (Element) async throws -> Element,
         onUpdate: @Sendable @escaping (Element) async throws -> Element,
         onDelete: @Sendable @escaping (Element) async throws -> Void
@@ -24,11 +17,59 @@ public extension Array where Element: Identifiable & Equatable & Sendable {
 
         let oldDict = Dictionary(uniqueKeysWithValues: self.map { ($0.id, $0) })
         let newDict = Dictionary(uniqueKeysWithValues: new.map { ($0.id, $0) })
-        
+
+        let results: [Result<Element, Error>]
+        if separateDeleteAndUpdate {
+            results = try await diffTwoPhase(
+                old: self,
+                new: new,
+                oldDict: oldDict,
+                newDict: newDict,
+                onAdd: onAdd,
+                onUpdate: onUpdate,
+                onDelete: onDelete
+            )
+        } else {
+            results = await diffSinglePhase(
+                old: self,
+                new: new,
+                oldDict: oldDict,
+                newDict: newDict,
+                onAdd: onAdd,
+                onUpdate: onUpdate,
+                onDelete: onDelete
+            )
+        }
+
+        let errors = results.compactMap {
+            if case .failure(let err) = $0 { return err.localizedDescription }
+            return nil
+        }
+
+        if !errors.isEmpty {
+            throw DomainError.unknown(errors.joined(separator: "\n"))
+        }
+
+        return results.compactMap {
+            if case .success(let item) = $0 { return item }
+            return nil
+        }
+    }
+    
+    private func diffSinglePhase(
+        old: [Element],
+        new: [Element],
+        oldDict: [Element.ID: Element],
+        newDict: [Element.ID: Element],
+        onAdd: @Sendable @escaping (Element) async throws -> Element,
+        onUpdate: @Sendable @escaping (Element) async throws -> Element,
+        onDelete: @Sendable @escaping (Element) async throws -> Void
+    ) async -> [Result<Element, Error>]
+    where Element: Identifiable & Equatable & Sendable {
+
         var results = [Result<Element, Error>]()
-        
+
         await withTaskGroup(of: Result<Element, Error>?.self) { group in
-            // 追加 or 更新
             for newItem in new {
                 if let oldItem = oldDict[newItem.id] {
                     if oldItem != newItem {
@@ -46,38 +87,90 @@ public extension Array where Element: Identifiable & Equatable & Sendable {
                     }
                 }
             }
-            
-            // 削除
-            for oldItem in self where newDict[oldItem.id] == nil {
+
+            for oldItem in old where newDict[oldItem.id] == nil {
                 group.addTask {
                     do { try await onDelete(oldItem) }
                     catch { return .failure(error) }
-                    return nil // 削除は結果配列に入れない
+                    return nil
                 }
             }
-            
-            // 集約
+
             for await result in group {
                 if let result = result {
                     results.append(result)
                 }
             }
         }
-        
-        // エラー集約
-        let errors = results.compactMap { result -> String? in
-            if case .failure(let err) = result { return err.localizedDescription }
-            return nil
+
+        return results
+    }
+    
+    private func diffTwoPhase(
+        old: [Element],
+        new: [Element],
+        oldDict: [Element.ID: Element],
+        newDict: [Element.ID: Element],
+        onAdd: @Sendable @escaping (Element) async throws -> Element,
+        onUpdate: @Sendable @escaping (Element) async throws -> Element,
+        onDelete: @Sendable @escaping (Element) async throws -> Void
+    ) async throws -> [Result<Element, Error>]
+    where Element: Identifiable & Equatable & Sendable {
+
+        var results = [Result<Element, Error>]()
+
+        // --- Delete phase ---
+        await withTaskGroup(of: Error?.self) { group in
+            for oldItem in old where newDict[oldItem.id] == nil {
+                group.addTask {
+                    do {
+                        try await onDelete(oldItem)
+                        return nil
+                    } catch {
+                        return error
+                    }
+                }
+            }
+
+            for await error in group {
+                if let error = error {
+                    results.append(.failure(error))
+                }
+            }
         }
-        
-        if !errors.isEmpty {
-            throw SharedError.unknown(message: errors.joined(separator: "\n"))
+
+        if results.contains(where: {
+            if case .failure = $0 { return true }
+            return false
+        }) {
+            return results
         }
-        
-        // 成功アイテムだけ返す
-        return results.compactMap { result in
-            if case .success(let item) = result { return item }
-            return nil
+
+        // --- Add / Update phase ---
+        await withTaskGroup(of: Result<Element, Error>.self) { group in
+            for newItem in new {
+                if let oldItem = oldDict[newItem.id] {
+                    if oldItem != newItem {
+                        group.addTask {
+                            do { return .success(try await onUpdate(newItem)) }
+                            catch { return .failure(error) }
+                        }
+                    } else {
+                        group.addTask { .success(oldItem) }
+                    }
+                } else {
+                    group.addTask {
+                        do { return .success(try await onAdd(newItem)) }
+                        catch { return .failure(error) }
+                    }
+                }
+            }
+
+            for await result in group {
+                results.append(result)
+            }
         }
+
+        return results
     }
 }
