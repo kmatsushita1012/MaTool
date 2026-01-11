@@ -16,103 +16,87 @@ enum RouteUsecaseKey: DependencyKey {
 
 // MARK: - RouteUsecaseProtocol
 protocol RouteUsecaseProtocol: Sendable {
-    func query(by districtId: String, user: UserRole) async throws -> [Route]
-    func get(id: String, user: UserRole) async throws -> Route
-    func post(districtId: String, route: Route, user: UserRole) async throws -> Route
-    func put(id: String, route: Route, user: UserRole) async throws -> Route
-    func getAllRouteIds(user: UserRole) async throws -> [String]
+    func get(id: String, user: UserRole) async throws -> RouteDetailPack
+    func query(by districtId: String, type: RouteQueryType, now: SimpleDate, user: UserRole) async throws -> [Route]
+    func post(districtId: String, pack: RouteDetailPack, user: UserRole) async throws -> RouteDetailPack
+    func put(id: String, pack: RouteDetailPack, user: UserRole) async throws -> RouteDetailPack
     func delete(id: String, user: UserRole) async throws
+}
+
+extension RouteUsecaseProtocol {
+    func query(by districtId: String, type: RouteQueryType, user: UserRole) async throws -> [Route] {
+        try await query(by: districtId, type: type, now: .now, user: user)
+    }
 }
 
 // MARK: - RouteUsecase
 struct RouteUsecase: RouteUsecaseProtocol {
     @Dependency(RouteRepositoryKey.self) var routeRepository
     @Dependency(DistrictRepositoryKey.self) var districtRepository
-    @Dependency(LocationRepositoryKey.self) var locationRepository
-    @Dependency(FestivalRepositoryKey.self) var festivalRepository
+    @Dependency(PointRepositoryKey.self) var pointRepository
     
-    func query(by districtId: String, user: UserRole) async throws -> [Route] {
-        guard let district = try await districtRepository.get(id: districtId) else {
-            throw Error.notFound("指定された地区が見つかりません")
-        }
-        if district.visibility == .admin {
-            let hasAccess: Bool
-            switch user {
-            case .guest:
-                hasAccess = false
-            case .district(let id):
-                hasAccess = id == districtId
-            case .headquarter(let id):
-                hasAccess = id == district.festivalId
-            }
-            
-            if !hasAccess {
-                throw Error.unauthorized("アクセス権限がありません")
-            }
-        }
-        let routes = try await routeRepository.query(by: districtId)
-        return routes
-    }
-    
-    func get(id: String, user: UserRole) async throws -> Route {
+    func get(id: String, user: UserRole) async throws -> RouteDetailPack {
         guard let route = try await routeRepository.get(id: id) else {
             throw Error.notFound("指定されたルートが見つかりません")
         }
-        guard let district = try await districtRepository.get(id: route.districtId) else {
-            throw Error.notFound("指定された地区が見つかりません")
+        let district = try await getDistrict(route.districtId)
+        let isVisible = isVisible(visibility: route.visibility, user: user, district: district)
+        if !isVisible {
+            throw Error.forbidden("アクセス権限がありせん。このルートは非公開です。")
         }
-        if district.visibility == .admin {
-            let hasAccess: Bool
-            switch user {
-            case .guest:
-                hasAccess = false
-            case .district(let districtId):
-                hasAccess = districtId == district.id
-            case .headquarter(let festivalId):
-                hasAccess = festivalId == district.festivalId
-            }
-            if !hasAccess {
-                throw Error.unauthorized("アクセス権限がありません")
-            }
-        }
-        if district.visibility == .route {
-            let hasAccess: Bool
-            switch user {
-            case .guest:
-                hasAccess = false
-            case .district(let districtId):
-                hasAccess = districtId == district.id
-            case .headquarter(let festivalId):
-                hasAccess = festivalId == district.festivalId
-            }
-            if !hasAccess {
-                return removeTime(route)
-            }
-        }
-        return route
+        let points = try await pointRepository.query(by: route.id)
+        
+        return .init(route: route, points: points)
     }
     
-    func post(districtId: String, route: Route, user: UserRole) async throws -> Route {
+    func query(by districtId: String, type: RouteQueryType, now: SimpleDate, user: UserRole) async throws -> [Route] {
+        let district = try await getDistrict(districtId)
+        let routes = try await {
+            switch type {
+            case .all:
+                return try await routeRepository.query(by: districtId)
+            case .year(let year):
+                return try await routeRepository.query(by: districtId, year: year)
+            case .latest:
+                let nextYearRoutes = try await routeRepository.query(by: districtId, year: now.year + 1)
+                if nextYearRoutes.isEmpty {
+                    let thisYearRoutes = try await routeRepository.query(by: districtId, year: now.year)
+                    return thisYearRoutes
+                } else {
+                    return nextYearRoutes
+                }
+            }
+        }()
+        let filtered = routes.filter{
+            isVisible(visibility: $0.visibility, user: user, district: district)
+        }
+        return routes
+    }
+    
+    func post(districtId: String, pack: RouteDetailPack, user: UserRole) async throws -> RouteDetailPack {
         guard districtId == user.id,
-              route.districtId == user.id else {
+              pack.route.districtId == user.id else {
             throw Error.unauthorized("アクセス権限がありません")
         }
-        
-        let result = try await routeRepository.post(route)
-        return result
+        let oldPoints = try await pointRepository.query(by: pack.route.id)
+        let route = try await routeRepository.post(pack.route)
+        let points = try await oldPoints.update(with: pack.points, separateDeleteAndUpdate: true, repository: pointRepository)
+        return .init(route: route, points: points)
     }
     
-    func put(id: String, route: Route, user: UserRole) async throws -> Route {
+    func put(id: String, pack: RouteDetailPack, user: UserRole) async throws -> RouteDetailPack {
         guard let old = try await routeRepository.get(id: id) else {
             throw Error.notFound("指定されたルートが見つかりません")
         }
-        guard route.districtId == user.id,
+        guard pack.route.districtId == user.id,
               old.districtId == user.id else {
             throw Error.unauthorized("アクセス権限がありません")
         }
         
-        let result = try await routeRepository.put(route)
-        return result
+        let oldPoints = try await pointRepository.query(by: pack.route.id)
+        let route = try await routeRepository.post(pack.route)
+        let points = try await oldPoints.update(with: pack.points, separateDeleteAndUpdate: true, repository: pointRepository)
+        return .init(route: route, points: points)
     }
     
     func delete(id: String, user: UserRole) async throws {
@@ -123,45 +107,36 @@ struct RouteUsecase: RouteUsecaseProtocol {
             throw Error.unauthorized("アクセス権限がありません")
         }
         try await routeRepository.delete(id: id)
+        let points = try await pointRepository.query(by: id)
+        
         return
-    }
-    
-    func getAllRouteIds(user: UserRole) async throws -> [String] {
-        guard case let .headquarter(festivalId) = user else {
-            throw Error.unauthorized("アクセス権限がありません")
-        }
-        
-        let districts = try await districtRepository.query(by: festivalId)
-        
-        if districts.isEmpty {
-            throw Error.unauthorized("アクセス権限がありません")
-        }
-        
-        var ids: [String] = []
-        
-        for district in districts {
-            let routes = try await routeRepository.query(by: district.id)
-            ids.append(contentsOf: routes.map { $0.id })
-        }
-        
-        return ids
     }
 }
 
 extension RouteUsecase {
-    private func removeTime(_ route: Route) -> Route {
-        var modifiedRoute = route
-        modifiedRoute.start = SimpleTime(hour: 0, minute: 0)
-        modifiedRoute.goal = SimpleTime(hour: 0, minute: 0)
-        modifiedRoute.points = route.points.map { point in
-            var modifiedPoint = point
-            modifiedPoint.time = nil
-            return modifiedPoint
+    private func isVisible(visibility: Visibility, user: UserRole, district: District) -> Bool {
+        if visibility == .admin {
+            switch user {
+            case .guest:
+                false
+            case .district(let id):
+                id == district.id
+            case .headquarter(let id):
+                id == district.festivalId
+            }
+        } else {
+            true
         }
-        return modifiedRoute
     }
     
-    private func removeTimeIfNeeded(district: District, route: Route, user: UserRole) -> Route {
+    private func getDistrict(_ id: District.ID) async throws -> District {
+        guard let district = try await districtRepository.get(id: id) else {
+            throw Error.notFound("指定された地区が見つかりません")
+        }
+        return district
+    }
+    
+    private func removeTimeIfNeeded(district: District, points: [Point], user: UserRole) -> [Point] {
         if district.visibility == .route {
             let hasAccess: Bool
             switch user {
@@ -174,65 +149,19 @@ extension RouteUsecase {
             }
             
             if !hasAccess {
-                return removeTime(route)
+                return points.map{
+                    var point = $0
+                    point.time = nil
+                    return point
+                }
             }
         }
-        return route
-    }
-    
-    private func selectCurrentItem(items: [Route], now: Date) -> Route? {
-        if items.isEmpty {
-            return nil
-        }
-        
-        // 昇順ソート（古い → 新しい）
-        let sortedItems = items.sorted { a, b in
-            let dateA = convertDate(date: a.date, time: a.start)
-            let dateB = convertDate(date: b.date, time: b.start)
-            return dateA < dateB
-        }
-        
-        for item in sortedItems {
-            let start = convertDate(date: item.date, time: item.start)
-            let goal = convertDate(date: item.date, time: item.goal)
-            let diffOfStart = start.timeIntervalSince(now)
-            let diffOfGoal = goal.timeIntervalSince(now)
-            if diffOfStart <= 0 && diffOfGoal > 0 {
-                return item
-            }
-            if diffOfStart > 0 {
-                return item
-            }
-        }
-        return sortedItems.first
-    }
-    
-    private func convertDate(date: SimpleDate, time: SimpleTime) -> Date {
-        var components = DateComponents()
-        components.year = date.year
-        components.month = date.month
-        components.day = date.day
-        components.hour = time.hour
-        components.minute = time.minute
-        components.second = 0
-        return Calendar.current.date(from: components) ?? Date()
-    }
-    
-    private func getForPublic(district: District, festival: Festival, now: Date = Date()) async throws -> FloatLocation {
-        // TODO: Period修正
-        throw Error.unauthorized("アクセス権限がありません")
-//        guard festival.periods.first(where: { $0.contains(now) }) != nil else { throw Error.unauthorized("アクセス権限がありません") }
-        guard let location = try await locationRepository.get(id: district.id) else {
-            throw Error.notFound("位置情報が見つかりません")
-        }
-        return location
-    }
-    
-    private func getForAdmin(districtId: String) async throws -> FloatLocation {
-        guard let location = try await locationRepository.get(id: districtId) else {
-            throw Error.notFound("位置情報が見つかりません")
-        }
-        return location
+        return points
     }
 }
 
+enum RouteQueryType {
+    case all
+    case year(Int)
+    case latest
+}
