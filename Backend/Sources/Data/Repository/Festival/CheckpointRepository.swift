@@ -28,7 +28,7 @@ protocol CheckpointRepositoryProtocol: Repository where Content == Checkpoint {
     func query(by festivalId: Festival.ID) async throws -> [Checkpoint]
     func put(_ item: Checkpoint) async throws -> Checkpoint
     func post(_ item: Checkpoint) async throws -> Checkpoint
-    func delete(_ id: Checkpoint.ID) async throws
+    func delete(_ item: Checkpoint) async throws
 }
 
 // MARK: - Repository
@@ -68,9 +68,8 @@ struct CheckpointRepository: CheckpointRepositoryProtocol {
         return item
     }
 
-    func delete(_ id: String) async throws {
-        guard let target = try await get(id: id) else { return }
-        let keys = CRecord.make(target.id, festivalId: target.festivalId)
+    func delete(_ item: Checkpoint) async throws {
+        let keys = CRecord.make(item.id, festivalId: item.festivalId)
         try await store.delete(pk: keys.pk, sk: keys.sk)
     }
 }
