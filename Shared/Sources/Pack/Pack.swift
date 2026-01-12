@@ -36,3 +36,14 @@ public struct DistrictCreateForm: Pack {
         self.email = email
     }
 }
+
+public struct RouteDetailPack: Pack {
+    public let route: Route
+    public let points: [Point]
+    
+    public init(route: Route, points: [Point]) {
+        self.route = route
+        self.points = points
+    }
+}
+
