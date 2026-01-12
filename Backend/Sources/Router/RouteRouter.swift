@@ -15,6 +15,5 @@ struct RouteRouter: Router {
         app.get(path: "/routes/:routeId", routeController.get)
         app.put(path: "/routes/:routeId", routeController.put)
         app.delete(path: "/routes/:routeId", routeController.delete)
-        app.get(path: "/routes", routeController.getIds)
     }
 }
