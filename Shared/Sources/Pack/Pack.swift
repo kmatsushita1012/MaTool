@@ -11,6 +11,25 @@ struct FestivalPack: Pack {
     let hazardSections: [HazardSection]
 }
 
+public struct DistrictPack: Pack {
+    public let district: District
+    public let performances: [Performance]
+    
+    public init(district: District, performances: [Performance]){
+        self.district = district
+        self.performances = performances
+    }
+}
+
+public struct DistrictCreateForm: Pack {
+    public let name: String
+    public let email: String
+    
+    public init(name: String, email: String) {
+        self.name = name
+        self.email = email
+    }
+}
 
 public struct RouteDetailPack: Pack {
     public let route: Route
@@ -21,3 +40,4 @@ public struct RouteDetailPack: Pack {
         self.points = points
     }
 }
+
