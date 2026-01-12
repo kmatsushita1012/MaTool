@@ -89,7 +89,7 @@ extension PeriodRecord {
     }
     
     static func makeKeys(festivalId: String, date: SimpleDate) -> (pk: String, sk: String){
-        (pk: "\(pkPrefix)\(festivalId)", "\(skPrefix)\(date.sk)" )
+        (pk: "\(pkPrefix)\(festivalId)", "\(skPrefix)\(date.sortableKey)" )
     }
     
     static func makeKeys(festivalId: String, year: Int) -> (pk: QueryCondition, sk: QueryCondition){
@@ -110,8 +110,3 @@ extension PeriodRecord {
     static let indexName = "index-type-id"
 }
 
-fileprivate extension SimpleDate {
-    var sk: String {
-        "\(year)-\(String(format: "%02d", month))-\(String(format: "%02d", day))"
-    }
-}
