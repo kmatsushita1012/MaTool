@@ -70,7 +70,7 @@ struct RouteUsecase: RouteUsecaseProtocol {
         let filtered = routes.filter{
             isVisible(visibility: $0.visibility, user: user, district: district)
         }
-        return routes
+        return filtered
     }
     
     func post(districtId: String, pack: RouteDetailPack, user: UserRole) async throws -> RouteDetailPack {
