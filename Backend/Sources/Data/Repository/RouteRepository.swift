@@ -56,7 +56,7 @@ struct RouteRepository: RouteRepositoryProtocol {
     
     func query(by districtId: String, year: Int) async throws -> [Route] {
         let keys = RouteRecord.makeKeys(districtId: districtId, year: year)
-        let records = try await store.query(queryConditions: [ keys.pk, keys.sk ], as: RouteRecord.self)
+        let records = try await store.query(indexName: keys.indexName, queryConditions: [ keys.pk, keys.sk ], as: RouteRecord.self)
         return records.map(\.content)
     }
 
@@ -114,11 +114,11 @@ extension RouteRecord {
     }
     
     static func makeKeys(districtId: String) -> (pk: QueryCondition, sk: QueryCondition){
-        (pk: .equals("pk", "\(pkPrefix)\(districtId)"), sk: .equals("sk", "\(skPrefix)"))
+        (pk: .equals("pk", "\(pkPrefix)\(districtId)"), sk: .beginsWith("sk", "\(skPrefix)"))
     }
     
     static func makeKeys(districtId: String, year: Int) -> (indexName: String, pk: QueryCondition, sk: QueryCondition){
-        (indexName: dateIndexName, pk: .equals("pk", "\(pkPrefix)\(districtId)"), sk: .equals("date", "\(skPrefix)\(datePrefix)\(year)"))
+        (indexName: dateIndexName, pk: .equals("pk", "\(pkPrefix)\(districtId)"), sk: .beginsWith("date", "\(skPrefix)\(datePrefix)\(year)"))
     }
     
     static func makeKeys(_ id: String) -> (indexName: String, pk: QueryCondition, sk: QueryCondition){
