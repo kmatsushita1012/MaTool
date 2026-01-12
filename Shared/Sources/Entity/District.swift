@@ -8,15 +8,16 @@
 import SQLiteData
 
 // MARK: - District
-public struct District: Entity, Identifiable {
+@Table public struct District: Entity, Identifiable {
     public let id: String
     public var name: String
     public let festivalId: Festival.ID
     public var order: Int
     public var group: String?
     @NullEncodable public var description: String?
-    @Column(as: Coordinate.JSONRepresentation.self)
+    @Column(as: Coordinate?.JSONRepresentation.self)
     @NullEncodable public var base: Coordinate?
+    @Column(as: [Coordinate].JSONRepresentation.self)
     public var area: [Coordinate]
     @Column(as: ImagePath.JSONRepresentation.self)
     public var image: ImagePath
@@ -51,7 +52,7 @@ public struct District: Entity, Identifiable {
 }
 
 // MARK: - Performance
-public struct Performance: Entity {
+@Table public struct Performance: Entity {
     public let id: String
     public var name: String = ""
     public let districtId: District.ID
