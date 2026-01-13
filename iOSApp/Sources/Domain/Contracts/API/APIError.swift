@@ -16,6 +16,7 @@ enum APIError: Error, Equatable, Hashable {
     case decoding(message: String)
     case encoding(message: String)
     case unknown(message: String)
+    case cache(message: String)
     
     init(_ error: Error) {
         if let nsError = error as NSError? {
