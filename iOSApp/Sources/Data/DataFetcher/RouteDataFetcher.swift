@@ -1,0 +1,109 @@
+//
+//  RouteDataFetcher.swift
+//  MaTool
+//
+//  Created by 松下和也 on 2026/01/13.
+//
+
+import Shared
+import Dependencies
+import SQLiteData
+
+enum RouteDataFetcherKey: DependencyKey {
+    static let liveValue: any RouteDataFetcherProtocol = RouteDataFetcher()
+}
+
+protocol RouteDataFetcherProtocol: Sendable {
+    associatedtype QueryType = RouteDataFetcher.Query
+    func fetchAll(districtID: District.ID, query: QueryType) async throws
+    func fetch(routeID: Route.ID) async throws
+    func update(_ route: Route, points: [Point]) async throws
+    func create(districtID: District.ID, route: Route, points: [Point]) async throws
+    func delete(_ routeID: Route.ID) async throws
+}
+
+struct RouteDataFetcher: RouteDataFetcherProtocol {
+    enum Query: Sendable, Equatable {
+        case all
+        case year(Int)
+        case latest
+
+        var queryItems: [String: Any] {
+            switch self {
+            case .all:
+                return [:]
+            case .year(let y):
+                return ["year": y]
+            case .latest:
+                return ["year": "latest"]
+            }
+        }
+    }
+
+    @Dependency(HTTPClientKey.self) var client
+    @Dependency(RouteStoreKey.self) var routeStore
+    @Dependency(PointStoreKey.self) var pointStore
+    @Dependency(\.defaultDatabase) var database
+
+    func fetchAll(districtID: District.ID, query: Query) async throws {
+        let path = "/districts/\(districtID)/routes"
+        let routes: [Route] = try await client.get(path: path, query: query.queryItems)
+        try await syncAll(routes)
+    }
+
+    func fetch(routeID: Route.ID) async throws {
+        let pack: RouteDetailPack = try await client.get(path: "/routes/\(routeID)")
+        try await syncPack(pack)
+    }
+
+    func update(_ route: Route, points: [Point]) async throws {
+        @Dependency(AuthServiceKey.self) var authService
+        guard let token = await authService.getAccessToken() else { throw APIError.unauthorized(message: "") }
+        let draft: RouteDetailPack = .init(route: route, points: points)
+        let pack: RouteDetailPack = try await client.put(path: "/routes/\(route.id)", body: draft, accessToken: token)
+        try await syncPack(pack)
+    }
+
+    func create(districtID: District.ID, route: Route, points: [Point]) async throws {
+        @Dependency(AuthServiceKey.self) var authService
+        guard let token = await authService.getAccessToken() else { throw APIError.unauthorized(message: "") }
+        let draft: RouteDetailPack = .init(route: route, points: points)
+        let pack: RouteDetailPack = try await client.post(path: "/districts/\(districtID)/routes", body: draft, query: [:], accessToken: token)
+        try await syncPack(pack)
+    }
+
+    func delete(_ routeID: Route.ID) async throws {
+        @Dependency(AuthServiceKey.self) var authService
+        guard let token = await authService.getAccessToken() else { throw APIError.unauthorized(message: "") }
+        let _: EmptyResponse = try await client.delete(path: "/routes/\(routeID)", query: [:], accessToken: token)
+        try await database.write { db in
+            try routeStore.deleteAll([routeID], from: db)
+        }
+    }
+
+    private func syncPack(_ pack: RouteDetailPack) async throws {
+        let id = pack.route.id
+        try await database.write { db in
+            let oldPoints = try pointStore.fetchAll(where: { $0.routeId == id }, from: db)
+            let (insertedPoints, deletedPointIds) = oldPoints.diff(with: pack.points)
+            try pointStore.deleteAll(deletedPointIds, from: db)
+            try routeStore.insert(pack.route, at: db)
+            try pointStore.insert(insertedPoints, at: db)
+        }
+    }
+
+    private func syncAll(_ routes: [Route]) async throws {
+        try await database.write { db in
+            try routeStore.insert(routes, at: db)
+        }
+    }
+}
+
+extension DependencyValues {
+    var routeDataFetcher: RouteDataFetcherProtocol {
+        get { self[RouteDataFetcherKey.self] }
+        set { self[RouteDataFetcherKey.self] = newValue }
+    }
+}
+
+private struct EmptyResponse: Decodable {}
