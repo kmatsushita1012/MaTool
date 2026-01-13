@@ -8,6 +8,7 @@
 //state 共通
 import ComposableArchitecture
 import Shared
+import SQLiteData
 
 @Reducer
 struct AdminDistrictEdit {
@@ -21,13 +22,15 @@ struct AdminDistrictEdit {
     
     @ObservableState
     struct State: Equatable{
-        var item: District
-//        var image: PhotosPickerItem?
+        var district: District
+        var performances: [Performance]
+        
         var isLoading: Bool = false
-        let tool: DistrictTool
         @Presents var destination: Destination.State?
         @Presents var alert: Alert.State?
+        @FetchOne var base: Coordinate
     }
+    
     @CasePathable
     enum Action: BindableAction, Equatable {
         case binding(BindingAction<State>)
@@ -43,7 +46,7 @@ struct AdminDistrictEdit {
     }
     
     @Dependency(\.authService) var authService
-    @Dependency(\.apiRepository) var apiRepository
+    @Dependency(DistrictDataFetcherKey.self) var dataFetcher
     @Dependency(\.dismiss) var dismiss
     
     var body: some ReducerOf<AdminDistrictEdit>{
@@ -58,22 +61,21 @@ struct AdminDistrictEdit {
                 }
             case .saveTapped:
                 state.isLoading = true
-                return .run{ [item = state.item] send in
-                    let result = await apiRepository.putDistrict(item)
-                    await send(.postReceived(result))
+                return .run{ [state] send in
+                    let _ = try? await dataFetcher.update(district: state.district, performances: state.performances)
                 }
             case .baseTapped:
-                if let base = state.item.base{
+                if let base = state.district.base{
                     state.destination = .base(AdminBaseEdit.State(base: base))
                 } else {
-                    state.destination = .base(AdminBaseEdit.State(origin: state.tool.base))
+                    state.destination = .base(AdminBaseEdit.State(origin: state.base))
                 }
                 return .none
             case .areaTapped:
                 state.destination = .area(
                     AdminAreaEdit.State(
-                        coordinates: state.item.area,
-                        origin: state.item.base ?? state.tool.base
+                        coordinates: state.district.area,
+                        origin: state.district.base ?? state.base
                     )
                 )
                 return .none
@@ -92,27 +94,27 @@ struct AdminDistrictEdit {
             case .destination(.presented(let childAction)):
                 switch childAction {
                 case .base(.doneTapped):
-                    if case let .base(baseState) = state.destination {
-                        state.item.base = baseState.coordinate
+                    if let coordinate = state.destination?.base?.coordinate {
+                        state.district.base = coordinate
                     }
                     state.destination = nil
                     return .none
                 case .area(.doneTapped):
-                    if case let .area(areaState) = state.destination {
-                        state.item.area = areaState.coordinates
+                    if let coordinates = state.destination?.area?.coordinates {
+                        state.district.area = coordinates
                     }
                     state.destination = nil
                     return .none
                 case .performance(.doneTapped):
-                    if case let .performance(performanceState) = state.destination {
-                        state.item.performances.upsert(performanceState.item)
+                    if let item = state.destination?.performance?.item {
+                        state.performances.upsert(item)
                     }
                     state.destination = nil
                     return .none
 
                 case .performance(.deleteTapped):
-                    if case let .performance(performanceState) = state.destination {
-                        state.item.performances.removeAll(where: { $0.id == performanceState.item.id })
+                    if let item = state.destination?.performance?.item {
+                        state.performances.removeAll(where: { $0.id == item.id })
                     }
                     state.destination = nil
                     return .none
@@ -135,6 +137,14 @@ struct AdminDistrictEdit {
 
 extension AdminDistrictEdit.Destination.State: Equatable {}
 extension AdminDistrictEdit.Destination.Action: Equatable {}
+
+extension AdminDistrictEdit.State {
+    init(_ district: District) {
+        self.district = district
+        self.performances = FetchAll(Performance.where{ $0.districtId == district.id }).wrappedValue
+        self._base = FetchOne(wrappedValue: .init(latitude: 0, longitude: 0), Festival.where{ $0.id == district.festivalId }.select(\.base))
+    }
+}
 
 //            case .binding(\.image):
 //                guard let item = state.selectedItem else { return .none }
