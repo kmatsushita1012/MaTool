@@ -34,6 +34,31 @@ extension Array where Element: Identifiable & Equatable {
     }
 }
 
+extension Array where Element: Equatable & Identifiable {
+
+    func diff(
+        with newElements: [Element],
+    ) -> (insertions: [Element], deletions: [Element.ID]) {
+        // old / new を辞書化（PrimaryKey 基準）
+        let oldDict = Dictionary(uniqueKeysWithValues: self.map { ($0.id, $0) })
+        let newDict = Dictionary(uniqueKeysWithValues: newElements.map { ($0.id, $0) })
+
+        // 削除対象：old にあって new にない
+        let deleteIds: [Element.ID] = oldDict.keys.filter { newDict[$0] == nil }
+        // 追加 or 更新対象
+        let upsertItems: [Element] = newElements.compactMap { newItem in
+            guard let oldItem = oldDict[newItem.id] else {
+                // 新規
+                return newItem
+            }
+            // 更新
+            return oldItem == newItem ? nil : newItem
+        }
+        return (insertions: upsertItems, deletions: deleteIds)
+    }
+}
+
+
 extension Array where Element: Equatable {
     mutating func removeAll(of element: Element){
         removeAll(where: { $0 == element })
@@ -95,6 +120,7 @@ extension MKCoordinateRegion: @retroactive Equatable {
     }
 }
 
+
 extension Result {
     var value: Success? {
         switch self {
@@ -121,5 +147,23 @@ extension Result {
         case .failure(let error):
             return .failure(error)
         }
+    }
+}
+
+struct VoidSuccess: Equatable {
+    init() {}
+}
+
+typealias VoidResult<Failure: Swift.Error> = Result<VoidSuccess, Failure>
+
+extension VoidResult where Success == VoidSuccess {
+    static func success() -> Self {
+        .success(.init())
+    }
+}
+
+extension Result {
+    func mapVoid() -> VoidResult<Failure>{
+        self.map{ _ in .init()}
     }
 }
