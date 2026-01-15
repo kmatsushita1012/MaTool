@@ -7,6 +7,7 @@
 
 import Dependencies
 import Shared
+import Foundation
 
 // MARK: - Dependencies
 enum LocationControllerKey: DependencyKey {
@@ -31,14 +32,14 @@ struct LocationController: LocationControllerProtocol {
 	func get(_ request: Request, next: Handler) async throws -> Response {
 		let districtId = try request.parameter("districtId", as: String.self)
 		let user = request.user ?? .guest
-		let result = try await usecase.get(districtId, user: user)
+        let result = try await usecase.get(districtId: districtId, user: user, now: Date())
 		return try .success(result)
 	}
 
 	func query(_ request: Request, next: Handler) async throws -> Response {
 		let festivalId = try request.parameter("festivalId", as: String.self)
 		let user = request.user ?? .guest
-		let result = try await usecase.query(by: festivalId, user: user, now: .now)
+		let result = try await usecase.query(by: festivalId, user: user, now: Date())
 		return try .success(result)
 	}
 
@@ -52,7 +53,7 @@ struct LocationController: LocationControllerProtocol {
 	func delete(_ request: Request, next: Handler) async throws -> Response {
 		let districtId = try request.parameter("districtId", as: String.self)
 		let user = request.user ?? .guest
-		try await usecase.delete(districtId, user: user)
+        try await usecase.delete(districtId: districtId, user: user)
         return try .success()
 	}
 }
