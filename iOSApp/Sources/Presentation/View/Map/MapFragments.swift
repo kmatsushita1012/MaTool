@@ -23,14 +23,15 @@ class PointAnnotation: MKPointAnnotation {
         self.coordinate = point.coordinate.toCL()
         switch type {
         case .simple:
-            self.title = point.title
+            self.title = "" //point.title
         case .time(let index):
-            let hasSuffix = (point.title?.isEmpty == false) || (point.time != nil)
-            let titleText = [point.title, point.time?.text]
-                .compactMap { $0 }
-                .joined(separator: " ")
-
-            self.title = hasSuffix ? "\(index+1): \(titleText)" : "\(index+1)"
+//            let hasSuffix = (point.title?.isEmpty == false) || (point.time != nil)
+//            let titleText = [point.title, point.time?.text]
+//                .compactMap { $0 }
+//                .joined(separator: " ")
+//
+//            self.title = hasSuffix ? "\(index+1): \(titleText)" : "\(index+1)"
+            self.title = ""
         }
         
     }
@@ -77,12 +78,12 @@ class FloatAnnotation: MKPointAnnotation {
 }
 
 final class FloatCurrentAnnotation: FloatAnnotation {
-    let location: FloatLocationGetDTO
+    let location: FloatLocation
     
-    init(location: FloatLocationGetDTO) {
+    init(location: FloatLocation) {
         self.location = location
         super.init()
-        self.title = location.districtName
+        self.title = "" //location.districtName
         self.coordinate = location.coordinate.toCL()
     }
 }
