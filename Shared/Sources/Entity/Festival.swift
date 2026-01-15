@@ -58,7 +58,7 @@ import SQLiteData
 }
 
 // MARK: - HazardSection
-public struct HazardSection: Entity, Identifiable {
+@Table public struct HazardSection: Entity, Identifiable {
     public let id: String
     public var title: String
     public let festivalId: Festival.ID

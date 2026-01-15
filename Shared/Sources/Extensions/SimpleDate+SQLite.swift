@@ -1,8 +1,8 @@
 //
 //  SimpleDate+SQLite.swift
-//  MaTool
+//  matool-shared
 //
-//  Created by 松下和也 on 2026/01/13.
+//  Created by 松下和也 on 2026/01/15.
 //
 
 import SQLiteData
