@@ -13,11 +13,14 @@ struct DistrictRouter: Router {
     @Dependency(LocationControllerKey.self) var locationController
     
     func body(_ app: Application) {
+        // MARK: - Route
         app.get(path: "/districts/:districtId/routes", routeController.query)
         app.post(path: "/districts/:districtId/routes", routeController.post)
+        // MARK: - Location
         app.get(path: "/districts/:districtId/locations", locationController.get)
         app.put(path: "/districts/:districtId/locations", locationController.put)
         app.delete(path: "/districts/:districtId/locations", locationController.delete)
+        // MARK: - District
         app.get(path: "/districts/:districtId", districtController.get)
         app.put(path: "/districts/:districtId", districtController.put)
     }
