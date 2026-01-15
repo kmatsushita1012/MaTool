@@ -74,15 +74,9 @@ struct AdminDistrictView: View{
             Section(header: Text("行動")){
                 ForEach(store.routes) { pair in
                     AdminRouteItem(
-                        text: pair.period.text,
+                        text: pair.period.shortText,
                         onEdit: { store.send(.onRouteEdit(pair)) }
                     )
-                }
-                Button(action: {
-                    store.send(.onRouteAdd)
-                }) {
-                    Label("追加", systemImage: "plus.circle")
-                        .frame(maxWidth: .infinity, alignment: .center)
                 }
             }
             Section {

@@ -8,16 +8,17 @@
 import Foundation
 import ComposableArchitecture
 import Shared
+import SQLiteData
 
 @Reducer
 struct Settings {
     
     @ObservableState
     struct State: Equatable {
-        let isOfflineMode: Bool
-        var festivals: [Festival] = []
+        var isOfflineMode: Bool = false
+        @FetchAll var festivals: [Festival]
         var selectedFestival: Festival? = nil
-        var districts: [District] = []
+        @FetchAll var districts: [District]
         var selectedDistrict: District? = nil
         var isLoading: Bool = false
         var userGuide: URL = {
@@ -33,6 +34,15 @@ struct Settings {
         var isDismissEnabled: Bool {
             selectedFestival != nil || isOfflineMode
         }
+        
+        init() {
+            @Dependency(\.userDefaultsClient) var userDefaultsClient
+            @Dependency(\.values.defaultFestivalKey) var defaultFestivalKey
+            @Dependency(\.values.defaultDistrictKey) var defaultDistrictKey
+            self.selectedFestival = FetchOne(Festival.where{ $0.id ==  userDefaultsClient.string(defaultFestivalKey)}).wrappedValue
+            self.selectedDistrict = FetchOne(District.where{ $0.id ==  userDefaultsClient.string(defaultDistrictKey)}).wrappedValue
+            self._districts = FetchAll(District.where{ $0.festivalId == selectedFestival?.id })
+        }
     }
 
     @CasePathable
@@ -41,13 +51,13 @@ struct Settings {
         case dismissTapped
         case signOutTapped
         case signOutReceived(Result<UserRole,AuthError>)
-        case districtsReceived(Result<[District], APIError>)
+        case districtsReceived(VoidResult<APIError>)
         case alert(PresentationAction<Alert.Action>)
     }
     
     @Dependency(\.dismiss) var dismiss
     @Dependency(\.authService) var authService
-    @Dependency(\.apiRepository) var apiRepository
+    @Dependency(DistrictDataFetcherKey.self) var districtDataFetcher
     @Dependency(\.userDefaultsClient) var userDefaultsClient
     @Dependency(\.values.defaultFestivalKey) var defaultFestivalKey
     @Dependency(\.values.defaultDistrictKey) var defaultDistrictKey
@@ -57,16 +67,13 @@ struct Settings {
         Reduce{ state, action in
             switch action {
             case .binding(\.selectedFestival):
-                state.districts = []
                 state.selectedDistrict = nil
                 userDefaultsClient.setString(state.selectedDistrict?.id, defaultDistrictKey)
                 userDefaultsClient.setString(state.selectedFestival?.id, defaultFestivalKey)
-                guard let festival = state.selectedFestival else {
-                    return .none
-                }
+                guard let festival = state.selectedFestival else { return .none }
                 state.isLoading = true
                 return .run { send in
-                    let result = await apiRepository.getDistricts(festival.id)
+                    let result = await task { try await districtDataFetcher.fetchAll(festivalID: festival.id) }
                     await send(.districtsReceived(result))
                 }
             case .binding(\.selectedDistrict):
@@ -85,8 +92,7 @@ struct Settings {
             case .signOutReceived(.failure(let error)):
                 state.alert = Alert.error("情報の取得に失敗しました \(error.localizedDescription)")
                 return .none
-            case .districtsReceived(.success(let value)):
-                state.districts = value
+            case .districtsReceived(.success):
                 state.isLoading = false
                 return .none
             case .districtsReceived(.failure(let error)):
