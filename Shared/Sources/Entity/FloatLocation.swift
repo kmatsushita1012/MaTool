@@ -15,7 +15,7 @@ import SQLiteData
     public let coordinate: Coordinate
     public let timestamp: Date
     
-    public init(id: String, districtId: String, coordinate: Coordinate, timestamp: Date = .now) {
+    public init(id: String, districtId: District.ID, coordinate: Coordinate, timestamp: Date = .now) {
         self.id = id
         self.districtId = districtId
         self.coordinate = coordinate
