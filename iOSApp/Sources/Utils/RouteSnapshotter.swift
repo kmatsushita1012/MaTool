@@ -8,30 +8,29 @@
 import UIKit
 @preconcurrency import MapKit
 import Shared
+import SQLiteData
 
 struct RouteSnapshotter: Equatable {
-    let districtName: String
-    let route: Route
-    let filter: PointFilter
+    var route: Route
+    var period: Period
+    var points: [Point]
+    var district: District
+    var checkpoints: [Checkpoint]
+    var hazardSections: [HazardSection]
     
-    init(_ route: Route, districtName : String, filter: PointFilter = .export){
+    init? (_ route: Route){
+        guard let district: District = FetchOne(District.where{ $0.id == route.districtId }).wrappedValue,
+              let period: Period = FetchOne(Period.where{ $0.id == route.periodId }).wrappedValue else { return nil }
+        self.district = district
+        self.period = period
         self.route = route
-        self.districtName = districtName
-        self.filter = filter
+        self.points = FetchAll(Point.where{ $0.routeId == route.id }).wrappedValue
+        let festivalId = district.festivalId
+        self.checkpoints = FetchAll(Checkpoint.where{ $0.festivalId == festivalId }).wrappedValue
+        self.hazardSections = FetchAll(HazardSection.where{ $0.festivalId == festivalId }).wrappedValue
     }
     
-    init(_ route: Route, filter: PointFilter = .export){
-        self.route = route
-        //TODO: DistrictName指定
-        self.districtName = ""
-        self.filter = filter
-    }
-    
-    var points:[Point] {
-        filter.apply(to: route)
-    }
-    
-    var coordinates: [Coordinate] {
+    private var coordinates: [Coordinate] {
         points.map { $0.coordinate }
     }
     
@@ -74,10 +73,10 @@ struct RouteSnapshotter: Equatable {
                     drawSlopePoint(on: snapshot, drawnRects: &drawnRects)
                     
                     let titleText = """
-                    \(districtName)
-                    \(route.date.text(format: "m月d日")) \(route.title)
-                    開始時刻 \(route.start.text)
-                    終了時刻 \(route.goal.text)
+                    \(district.name)
+                    \(period.date.text(format: "y年m月d日")) \(period.title)
+                    開始時刻 \(points.first?.time?.text ?? period.start.text)
+                    終了時刻 \(points.first?.time?.text ?? period.end.text)
                     """
                     drawTitleTextBlock(text: titleText, in: options, drawnRects: &drawnRects)
                     
@@ -127,7 +126,7 @@ struct RouteSnapshotter: Equatable {
             )
             let caption: String = {
                 var caption = "\(index + 1)"
-                if let title = point.title {
+                if let title = makeTitle(point) {
                     caption += ":\(title)"
                 }
                 if let time = point.time?.text {
@@ -138,6 +137,18 @@ struct RouteSnapshotter: Equatable {
 
             drawCaption(for: caption, at: pointInSnapshot, pinImage: pinImage, drawnRects: &drawnRects)
         }
+    }
+    
+    func makeTitle(_ point: Point) -> String? {
+        if let checkpointId = point.checkpointId,
+           let checkpoint = checkpoints.first(where: { $0.id == checkpointId }) {
+            checkpoint.name
+        } else if let anchor = point.anchor{
+            anchor.text
+        } else {
+            nil
+        }
+
     }
 
     private func drawCaption(for text: String, at location: CGPoint, pinImage: UIImage, drawnRects: inout [CGRect]) {
