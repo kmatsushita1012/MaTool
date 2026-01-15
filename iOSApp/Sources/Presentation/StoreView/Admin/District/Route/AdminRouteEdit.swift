@@ -154,7 +154,7 @@ struct AdminRouteEdit{
                 return .none
             case .wholeTapped:
                 guard let snapshotter = RouteSnapshotter(state.route) else { return .none } //FIXME:
-                let path = "\(state.district.name)_\(state.period.date.text())_\(state.period.title).pdf"
+                let path = "\(state.district.name)_\(state.period.shortText).pdf"
                 return .run { send in
                     if let image = try? await snapshotter.take(),
                        let pdf = snapshotter.createPDF(
@@ -172,7 +172,7 @@ struct AdminRouteEdit{
                       return .none
                 }
                 guard let snapshotter = RouteSnapshotter(state.route) else { return .none }// FIXME:
-                let path =  "\(state.district.name)_\(state.period.date.text())_\(state.period.title)_part_\(Date().stamp).pdf"
+                let path =  "\(state.district.name)_\(state.period.shortText).pdf"
                 return .run {  send in
                     if let image = try? await snapshotter.take(of: region, size: size),
                        let pdf = snapshotter.createPDF(with: image, path: path) {

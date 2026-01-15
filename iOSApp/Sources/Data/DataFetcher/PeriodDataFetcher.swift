@@ -55,7 +55,7 @@ struct PeriodDataFetcher: PeriodDataFetcherProtocol {
     
     func delete(_ id: Period.ID) async throws {
         let token = try await getToken()
-        let result: Empty = try await client.delete(path: "/periods/\(id)", accessToken: token)
+        let _: Empty = try await client.delete(path: "/periods/\(id)", accessToken: token)
         try await database.write{ db in
             try periodStore.delete(id, from: db)
         }

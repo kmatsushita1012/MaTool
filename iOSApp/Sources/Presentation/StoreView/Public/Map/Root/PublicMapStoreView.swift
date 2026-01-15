@@ -18,7 +18,7 @@ struct PublicMapStoreView: View {
                 picker()
                 if let routeStore = store.scope(state: \.destination?.route, action: \.destination.route) {
                     PublicRouteMapStoreView(store: routeStore)
-                        .id(routeStore.districtId)
+                        .id(routeStore.district.id)
                 } else if let store = store.scope(state: \.destination?.locations, action: \.destination.locations) {
                     PublicLocationsMapStoreView(store: store)
                 } else {

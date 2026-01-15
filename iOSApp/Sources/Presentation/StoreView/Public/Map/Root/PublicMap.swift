@@ -8,13 +8,14 @@
 import MapKit
 import ComposableArchitecture
 import Shared
+import SQLiteData
 
 @Reducer
 struct PublicMap{
     
     enum Content: Equatable{
-        case locations(id: String, name: String, origin: Coordinate)
-        case route(id: String, name: String, origin: Coordinate)
+        case locations(Festival)
+        case route(District)
     }
     
     @Reducer
@@ -40,16 +41,11 @@ struct PublicMap{
         case binding(BindingAction<State>)
         case homeTapped
         case contentSelected(Content)
-        case routePrepared(Result<CurrentResponse, APIError>)
-        case locationsPrepared(
-            id: String,
-            locationsResult: Result<[FloatLocationGetDTO],APIError>
-        )
+        case routePrepared(District, Route.ID)
         case destination(PresentationAction<Destination.Action>)
         case alert(PresentationAction<Alert.Action>)
     }
     
-    @Dependency(\.apiRepository) var apiRepository
     @Dependency(\.locationProvider) var locationProvider
     @Dependency(\.dismiss) var dismiss
     
@@ -57,14 +53,11 @@ struct PublicMap{
         Reduce{ state, action in
             switch action {
             case .onAppear:
-                if case .route(let routeState) = state.destination,
-                   routeState.items?.isEmpty ?? true,
-                    routeState.route == nil,
-                    routeState.location == nil {
+                if state.destination?.route?.routes.isEmpty ?? false,
+                    state.destination?.route?.location == nil {
                     state.alert = Alert.notice("配信停止中です。")
-                } else if case .locations(let locationState) = state.destination,
-                          locationState.locations.isEmpty {
-                state.alert = Alert.notice("配信停止中です。")
+                } else if state.destination?.locations?.floatAnnotations.isEmpty ?? false {
+                    state.alert = Alert.notice("配信停止中です。")
                 }
                 return .run{ send in
                     await locationProvider.requestPermission()
@@ -85,70 +78,26 @@ struct PublicMap{
                 state.selectedContent = value
                 state.isLoading = true
                 switch value {
-                case .locations(let id, _ , _):
-                    return locationsEffect(id)
-                case .route(let id, _ , _):
-                    return routeEffect(id)
+                case .locations(let festival):
+                    state.destination = .locations(
+                        PublicLocations.State(
+                            festival,
+                            mapRegion: state.$mapRegion
+                        )
+                    )
+                    return .none
+                case .route(let district):
+                    return routeEffect(district)
                 }
-            case .routePrepared(.success(let value)):
+            case .routePrepared(let district, let routeId):
                 state.isLoading = false
-                let id = value.districtId
-                let name = value.districtName
-                let routes = value.routes
-                let current = value.current
-                let location = value.location
-                if  routes?.isEmpty ?? true && current == nil && location == nil {
-                    state.alert = Alert.notice("配信停止中です。")
-                }
-                let mapRegion = makeRegion(
-                    route: current,
-                    location: location,
-                    origin: state.selectedContent.origin,
-                    spanDelta: spanDelta
-                )
-                state.$mapRegion.withLock{ $0 = mapRegion }
                 state.destination = .route(
                     PublicRoute.State(
-                        districtId: id,
-                        name: name,
-                        routes: routes,
-                        selectedRoute: current,
-                        location: location,
+                        district,
+                        routeId: routeId,
                         mapRegion: state.$mapRegion
                     )
                 )
-                return .none
-            case .routePrepared(.failure(let error)):
-                state.isLoading = false
-                if case .forbidden = error {
-                    state.alert = Alert.error("配信停止中です。")
-                } else {
-                    state.alert = Alert.error(error.localizedDescription)
-                }
-                state.destination = .route(
-                    PublicRoute.State(
-                        districtId: state.selectedContent.id,
-                        name: state.selectedContent.name,
-                        mapRegion: state.$mapRegion
-                    )
-                )
-                return .none
-            case .locationsPrepared(let id, .success(let value)):
-                state.isLoading = false
-                if value.isEmpty {
-                    state.alert = Alert.notice("配信停止中です。")
-                }
-                state.destination = .locations(
-                    PublicLocations.State(
-                        festivalId: id,
-                        locations: value,
-                        mapRegion: state.$mapRegion
-                    )
-                )
-                return .none
-            case .locationsPrepared(_, .failure(let error)):
-                state.isLoading = false
-                state.alert = Alert.error(error.localizedDescription)
                 return .none
             case .destination:
                 return .none
@@ -160,21 +109,10 @@ struct PublicMap{
         .ifLet(\.$destination, action: \.destination)
     }
     
-    func routeEffect(_ id: String) -> Effect<Action> {
+    func routeEffect(_ district: District) -> Effect<Action> {
         .run { send in
-            let currentResult = await apiRepository.getCurrentRoute(id)
-            await send(.routePrepared(currentResult))
-        }
-    }
-    
-    
-    func locationsEffect(_ id: String) -> Effect<Action> {
-        .run { send in
-            
-            
-            let locationsResult = await apiRepository.getLocations(id)
-            
-            await send(.locationsPrepared(id: id, locationsResult: locationsResult))
+//            let result = try await apiRepository.getCurrentRoute(id)
+            await send(.routePrepared(district, "routeid"))
         }
     }
 }
@@ -185,19 +123,19 @@ extension PublicMap.Destination.Action: Equatable {}
 extension PublicMap.Content: Identifiable, Hashable  {
     var id:String {
         switch self {
-        case .locations(let id, _, _):
-            return id
-        case .route(let id, _, _):
-            return id
+        case .locations(let festival):
+            return festival.id
+        case .route(let district):
+            return district.id
         }
     }
     
     var name: String {
         switch self {
-        case .locations(_, _, _):
-            return id
-        case .route(_, let name, _):
-            return name
+        case .locations(let festival):
+            return festival.name
+        case .route(let district):
+            return district.name
         }
     }
     
@@ -205,62 +143,40 @@ extension PublicMap.Content: Identifiable, Hashable  {
         switch self {
         case .locations:
             return "現在地一覧"
-        case .route(_,let name , _):
-            return name
+        case .route(let district):
+            return district.name
         }
     }
     
     var origin: Coordinate {
         switch self {
-        case .locations(_, _, let origin):
-            return origin
-        case .route(_,_, let origin):
-            return origin
+        case .locations(let festival):
+            return festival.base
+        case .route(let district):
+            return district.base ?? Coordinate(latitude: 0, longitude: 0)
         }
-    }
-    
-    static func from(festival: Festival) -> Self {
-        return .locations(
-            id: festival.id,
-            name: festival.name,
-            origin: festival.base
-        )
-    }
-    static func from(district: District, origin: Coordinate) -> Self{
-        return .route(
-            id: district.id,
-            name: district.name,
-            origin: district.base ?? origin
-        )
     }
 }
 
 extension PublicMap.State {
-    init(
-        festival: Festival,
-        districts: [District],
-        id: String,
-        routes: [RouteItem]?,
-        current: Route?,
-        location: FloatLocationGetDTO?
-    ) {
-        let locations = PublicMap.Content.from(festival: festival)
+    init(festival: Festival, district: District, routeId: Route.ID) {
+        let districts: [District] = FetchAll(District.where{ $0.festivalId == festival.id }).wrappedValue
+        let locations: PublicMap.Content = .locations(festival)
         let contents = [locations]
-            + districts
-            .map{ PublicMap.Content.from(district: $0, origin: festival.base) }
-            .prioritizing(by: \.id, match: id)
-        let selected = contents.first(where: \.id, equals: id) ?? locations
+            + districts.prioritizing(by: \.id, match: district.id)
+            .map{ PublicMap.Content.route($0) }
+            
+        let selected = contents.first ?? locations
         self.contents = contents
         self.selectedContent = selected
-        let mapRegion = Shared(value: makeRegion(route: current, location: location, origin: selected.origin, spanDelta: spanDelta))
+        
+//        let mapRegion = Shared(value: makeRegion(route: current, location: location, origin: selected.origin, spanDelta: spanDelta))
+        let mapRegion = Shared(value: makeRegion(origin: .init(latitude: 0, longitude: 0), spanDelta: spanDelta))
         self._mapRegion = mapRegion
         self.destination = .route(
             PublicRoute.State(
-                districtId: id,
-                name: selected.name,
-                routes: routes,
-                selectedRoute: current,
-                location: location,
+                district,
+                routeId: routeId,
                 mapRegion: mapRegion
             )
         )
@@ -268,21 +184,20 @@ extension PublicMap.State {
     
     init(
         festival: Festival,
-        districts: [District],
-        locations: [FloatLocationGetDTO]
+        districts: [District]
     ){
-        let selected = PublicMap.Content.from(festival: festival)
-        let contents = [selected] + districts.map{ PublicMap.Content.from(district: $0, origin: festival.base) }
+        let selected: PublicMap.Content = .locations(festival)
+        let contents = [selected] + districts.map{ PublicMap.Content.route($0) }
         
         self.contents = contents
         self.selectedContent = selected
         
-        let mapRegion = Shared(value: makeRegion(locations: locations, origin: festival.base))
+//        let mapRegion = Shared(value: makeRegion(locations: locations, origin: festival.base)) FIXME
+        let mapRegion = Shared(value: makeRegion(origin: .init(latitude: 0, longitude: 0), spanDelta: spanDelta))
         self._mapRegion = mapRegion
         self.destination = .locations(
             PublicLocations.State(
-                festivalId: festival.id,
-                locations: locations,
+                festival,
                 mapRegion: mapRegion
             )
         )
