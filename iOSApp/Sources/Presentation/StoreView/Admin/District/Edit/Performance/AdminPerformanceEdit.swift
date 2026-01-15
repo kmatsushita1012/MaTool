@@ -24,8 +24,8 @@ struct AdminPerformanceEdit{
             self.item = item
             mode = .edit
         }
-        init(){
-            item = Performance(id: UUID().uuidString)
+        init(districtId: District.ID){
+            item = Performance(id: UUID().uuidString, districtId: districtId)
             mode = .create
         }
     }
