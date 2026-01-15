@@ -16,7 +16,7 @@ struct PeriodEditView: View {
     
     var body: some View {
         content
-            .dismissible(backButton: false, edgeSwipe: true)
+            .navigationTitle(store.mode.title)
             .toolbar{
                 if #available(iOS 26.0, *), isLiquidGlassEnabled {
                     toolbarAfterLiquidGlass
@@ -24,6 +24,8 @@ struct PeriodEditView: View {
                     toolbarBeforeLiquidGlass
                 }
             }
+            .loadingOverlay(store.isLoading)
+            .alert($store.scope(state: \.alert, action: \.alert))
     }
     
     @ViewBuilder
@@ -53,8 +55,8 @@ struct PeriodEditView: View {
     
     @ToolbarContentBuilder
     var toolbarBeforeLiquidGlass: some ToolbarContent {
-        ToolbarItem(placement: .primaryAction) {
-            Button(systemImage: "checkmark") {
+        ToolbarItem(placement: .confirmationAction) {
+            Button("完了") {
                 store.send(.doneTapped)
             }
         }
@@ -62,7 +64,7 @@ struct PeriodEditView: View {
     
     @ToolbarContentBuilder
     var toolbarAfterLiquidGlass: some ToolbarContent {
-        ToolbarItem( placement: .primaryAction) {
+        ToolbarItem( placement: .confirmationAction) {
             Button(systemImage: "checkmark") {
                 store.send(.doneTapped)
             }
