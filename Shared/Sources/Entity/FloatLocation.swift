@@ -6,21 +6,19 @@
 //
 
 import Foundation
+import SQLiteData
 
-public struct FloatLocation: Entity{
+@Table public struct FloatLocation: Entity, Identifiable {
+    public let id: String
     public let districtId: String
+    @Column(as: Coordinate.JSONRepresentation.self)
     public let coordinate: Coordinate
     public let timestamp: Date
     
-    public init(districtId: String, coordinate: Coordinate, timestamp: Date) {
+    public init(id: String, districtId: String, coordinate: Coordinate, timestamp: Date = .now) {
+        self.id = id
         self.districtId = districtId
         self.coordinate = coordinate
         self.timestamp = timestamp
-    }
-}
-
-extension FloatLocation: Identifiable {
-    public var id: String {
-        districtId
     }
 }
