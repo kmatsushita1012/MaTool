@@ -7,15 +7,17 @@
 
 import ComposableArchitecture
 import Shared
+import SQLiteData
 
 @Reducer
 struct AdminPointEdit{
     
     @ObservableState
     struct State: Equatable{
-        var item: Point
+        var point: Point
         var showPopover: Bool = false
-        var checkpoints: [Checkpoint]
+        @FetchAll var checkpoints: [Checkpoint]
+        @FetchAll var performances: [Performance]
     }
     
     @CasePathable
@@ -47,8 +49,6 @@ struct AdminPointEdit{
                 state.showPopover = true
                 return .none
             case .titleOptionSelected(let option):
-                state.item.title = option.name
-                state.item.description = option.description
                 state.showPopover = false
                 return .none
             }
@@ -57,4 +57,19 @@ struct AdminPointEdit{
     }
 }
 
-
+extension AdminPointEdit.State {
+    init(_ point: Point){
+        self.point = point
+        let checkpointsQuery = Point
+            .join(Route.all) { $0.routeId.eq($1.id) }
+            .join(District.all) { $1.districtId.eq($2.id) }
+            .join(Checkpoint.all) { $2.festivalId.eq($3.festivalId) }
+            .select { $3  }
+        self._checkpoints = FetchAll(checkpointsQuery)
+        let performancesQuery = Point
+            .join(Route.all) { $0.routeId.eq($1.id) }
+            .join(Performance.all) { $1.districtId.eq($2.id) }
+            .select { $2  }
+        self._performances = FetchAll(performancesQuery)
+    }
+}
