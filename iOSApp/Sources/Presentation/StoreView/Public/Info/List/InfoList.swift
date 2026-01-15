@@ -44,7 +44,7 @@ struct InfoList {
                 state.destination = .festival(FestivalInfo.State(item: state.festival))
                 return .none
             case .districtTapped(let district):// FIXME: Performancesの読み込み
-                state.destination = .district(DistrictInfo.State(item: district))
+                state.destination = .district(DistrictInfo.State(district))
                 return .none
             case .homeTapped:
                 if #available(iOS 17.0, *) {
