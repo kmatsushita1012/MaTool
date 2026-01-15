@@ -93,3 +93,7 @@ public extension TableColumn where QueryValue == SimpleDate.ISODateRepresentatio
         return between(range.start, and: range.end)
     }
 }
+
+extension SimpleDate {
+    var key: String { "\(year)-\(month)-\(day)" }
+}
