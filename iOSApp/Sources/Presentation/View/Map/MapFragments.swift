@@ -78,13 +78,13 @@ class FloatAnnotation: MKPointAnnotation {
 }
 
 final class FloatCurrentAnnotation: FloatAnnotation {
-    let float: PublicLocations.State.Float
+    let location: FloatLocation
     
-    init(_ float : PublicLocations.State.Float) {
-        self.float = float
+    init(_ title: String, location: FloatLocation) {
+        self.location = location
         super.init()
-        self.title = float.district.name //location.districtName
-        self.coordinate = float.location.coordinate.toCL()
+        self.title = title
+        self.coordinate = location.coordinate.toCL()
     }
 }
 

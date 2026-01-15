@@ -46,7 +46,6 @@ struct AdminDistrictTop {
     @CasePathable
     enum Action: Equatable {
         case onEdit
-        case onRouteAdd(State.Item)
         case onRouteEdit(State.Item)
         case changePasswordTapped
         case updateEmailTapped
@@ -63,7 +62,7 @@ struct AdminDistrictTop {
     
     @Dependency(\.locationService) var locationService
     @Dependency(\.authService) var authService
-    @Dependency(\.routeDataFetcher) var routeDateFetcher
+    @Dependency(RouteDataFetcherKey.self) var routeDateFetcher
     @Dependency(\.dismiss) var dismiss
     
     var body: some ReducerOf<AdminDistrictTop> {
@@ -72,24 +71,25 @@ struct AdminDistrictTop {
             case .onEdit:
                 state.isDistrictLoading = true
                 return .none
-            case .onRouteAdd(let item):
-                let route = Route(id: UUID().uuidString, districtId: state.district.id, periodId: item.period.id)
-                state.destination = .route(
-                    AdminRouteEdit.State(
-                        mode: .create,
-                        route: route,
-                        district: state.district,
-                        period: item.period
-                    )
-                )
-                return .none
             case .onRouteEdit(let item):
                 state.isRouteLoading = true
-                guard let route = item.route else { return .none }
-                return .run { send in
-                    let result = await task{ try await routeDateFetcher.fetch(routeID: route.id) }
-                    // TODO: エラーハンドリング
-                    await send(.routeEditPrepared(item))
+                if let route = item.route {
+                    return .run { send in
+                        let result = await task{ try await routeDateFetcher.fetch(routeID: route.id) }
+                        // TODO: エラーハンドリング
+                        await send(.routeEditPrepared(item))
+                    }
+                } else {
+                    let route = Route(id: UUID().uuidString, districtId: state.district.id, periodId: item.period.id)
+                    state.destination = .route(
+                        AdminRouteEdit.State(
+                            mode: .create,
+                            route: route,
+                            district: state.district,
+                            period: item.period
+                        )
+                    )
+                    return .none
                 }
             case .changePasswordTapped:
                 state.destination = .changePassword(ChangePassword.State())

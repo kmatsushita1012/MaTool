@@ -59,7 +59,7 @@ struct AdminDistrictList {
                 guard let route = item.route else { return .none }
                 state.isApiLoading = true
                 return .run{ send in
-                    let result = await task { try await dataFetcher.fetch(routeID: route.id) }
+                    _ = await task { try await dataFetcher.fetch(routeID: route.id) }
                     await send(.exportPrepared(item)) // FIXME
                 }
             case .exportPrepared(let item):

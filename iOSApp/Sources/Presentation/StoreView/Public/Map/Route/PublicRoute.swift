@@ -30,6 +30,11 @@ struct PublicRoute {
 
     @ObservableState
     struct State: Equatable {
+        @Selection struct Float: Equatable {
+            let district: District
+            let location: FloatLocation
+        }
+        
         @FetchOne var district: District
         @FetchAll var routes: [Route]
 
@@ -39,7 +44,7 @@ struct PublicRoute {
         @FetchOne var location: FloatLocation? {
             mutating didSet {
                 if let location {
-                    floatAnnotation = FloatCurrentAnnotation(location: location)
+                    floatAnnotation = FloatCurrentAnnotation(district.name, location: location)
                 } else {
                     floatAnnotation = nil
                 }
@@ -66,7 +71,7 @@ struct PublicRoute {
             self._points = FetchAll(Point.where { $0.routeId == selected?.id })
             self._location = FetchOne(FloatLocation.where{ $0.districtId == district.id } )
             if let location {
-                floatAnnotation = FloatCurrentAnnotation(location: location)
+                floatAnnotation = FloatCurrentAnnotation(district.name, location: location)
             }
         }
     }

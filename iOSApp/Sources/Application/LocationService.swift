@@ -133,6 +133,7 @@ actor LocationService: LocationServiceProtocol {
             appendHistory(.locationError(Date()))
         case .success(let cllocation):
             let location = FloatLocation(
+                id: UUID().uuidString,
                 districtId: id,
                 coordinate: Coordinate.fromCL(cllocation.coordinate),
                 timestamp: Date.now

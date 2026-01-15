@@ -20,7 +20,10 @@ struct PublicLocations {
         }
         
         let festival: Festival
-        @FetchAll var floats: [Float]
+        @FetchAll private var floats: [Float]
+        
+        var floatAnnotations: [FloatCurrentAnnotation] { floats.map{ FloatCurrentAnnotation($0.district.name, location: $0.location) } }
+        
         @Shared var mapRegion: MKCoordinateRegion
         var detail: FloatLocation?
     }
@@ -28,8 +31,8 @@ struct PublicLocations {
     @CasePathable
     enum Action: Equatable, BindableAction {
         case binding(BindingAction<State>)
-        case locationTapped(State.Float)
-        case floatFocusSelected(State.Float)
+        case locationTapped(FloatCurrentAnnotation)
+        case floatFocusSelected(FloatCurrentAnnotation)
         case userFocusTapped
         case userLocationReceived(Coordinate)
         case reloadTapped
@@ -44,11 +47,11 @@ struct PublicLocations {
             switch action {
             case .binding(_):
                 return .none
-            case .locationTapped(let float):
-                state.detail = float.location
+            case .locationTapped(let annotation):
+                state.detail = annotation.location
                 return .none
-            case .floatFocusSelected(let float):
-                state.$mapRegion.withLock { $0 = makeRegion(origin: float.location.coordinate, spanDelta: spanDelta)}
+            case .floatFocusSelected(let annotation):
+                state.$mapRegion.withLock { $0 = makeRegion(origin: annotation.location.coordinate, spanDelta: spanDelta)}
                 return .none
             case .reloadTapped:
                 return .run{ [id = state.festival.id ] send in

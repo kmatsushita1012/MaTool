@@ -36,7 +36,7 @@ struct PeriodListFeature {
             }
         }
         
-        var archives: [YearlyPeriods]
+        var archives: [YearlyPeriods] = []
         var latests: YearlyPeriods?
         
         var isLoading = false
@@ -142,6 +142,9 @@ extension PeriodListFeature.State {
     init(festivalId: String) {
         self.festivalId = festivalId
         self._periods = FetchAll(Period.where{ $0.festivalId == festivalId })
+        let items = makePeriodsStates(from: periods)
+        self.latests = items.first
+        self.archives = .init(items.dropFirst())
     }
     
     private func makePeriodsStates(from periods: [Period]) -> [YearlyPeriods] {
