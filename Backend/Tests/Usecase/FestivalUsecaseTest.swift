@@ -10,14 +10,16 @@ import Dependencies
 @testable import Backend
 import Shared
 
+// TODO: テスト
 struct FestivalUsecaseTest {
     @Test func test_get_正常() async throws {
-        let expected = Festival(id: "g-id", name: "g-name", subname: "g-subname", prefecture: "p", city: "c", base: Coordinate(latitude: 0.0, longitude: 0.0))
+        let festival = Festival(id: "g-id", name: "g-name", subname: "g-subname", prefecture: "p", city: "c", base: Coordinate(latitude: 0.0, longitude: 0.0))
+        let expected = FestivalPack(festival: festival, checkpoints: [], hazardSections: [])
         
         var lastCalledId: String? = nil
         let mock = FestivalRepositoryMock(getHandler: { id in
             lastCalledId = id
-            return expected
+            return festival
         })
         let subject = make(mock)
         
@@ -82,22 +84,24 @@ struct FestivalUsecaseTest {
     }
 
     @Test func test_put_正常() async throws {
-        let item = Festival(id: "p-id", name: "p-name", subname: "p-subname", prefecture: "p", city: "c", base: Coordinate(latitude: 0, longitude: 0))
+        let festival = Festival(id: "p-id", name: "p-name", subname: "p-subname", prefecture: "p", city: "c", base: Coordinate(latitude: 0, longitude: 0))
+        let pack = FestivalPack(festival: festival, checkpoints: [], hazardSections: [])
         let mock = FestivalRepositoryMock(putHandler: { festival in
             return festival
         })
         let subject = make(mock)
 
 
-        let result = try await subject.put(item, user: .headquarter("p-id"))
+        let result = try await subject.put(pack, user: .headquarter("p-id"))
 
 
-        #expect(result == item)
+        #expect(result == pack)
         #expect(mock.putCount == 1)
     }
     
     @Test func test_put_ロールが違う() async throws {
-        let item = Festival(id: "p-id", name: "p-name", subname: "p-subname",prefecture: "p", city: "c", base: Coordinate(latitude: 0, longitude: 0))
+        let festival = Festival(id: "p-id", name: "p-name", subname: "p-subname", prefecture: "p", city: "c", base: Coordinate(latitude: 0, longitude: 0))
+        let pack = FestivalPack(festival: festival, checkpoints: [], hazardSections: [])
         let expected = Error.unauthorized("アクセス権限がありません。")
         let mock = FestivalRepositoryMock(putHandler: { _ in
             throw expected
@@ -106,7 +110,7 @@ struct FestivalUsecaseTest {
 
 
         await #expect(throws: expected) {
-            let _ = try await subject.put(item, user: .district("different-id"))
+            let _ = try await subject.put(pack, user: .district("different-id"))
         }
 
 
@@ -114,7 +118,8 @@ struct FestivalUsecaseTest {
     }
     
     @Test func test_put_idが違う() async throws {
-        let item = Festival(id: "p-id", name: "p-name", subname: "p-subname",prefecture: "p", city: "c", base: Coordinate(latitude: 0, longitude: 0))
+        let festival = Festival(id: "p-id", name: "p-name", subname: "p-subname", prefecture: "p", city: "c", base: Coordinate(latitude: 0, longitude: 0))
+        let pack = FestivalPack(festival: festival, checkpoints: [], hazardSections: [])
         let expected = Error.unauthorized("アクセス権限がありません。")
         let mock = FestivalRepositoryMock(putHandler: { _ in
             throw expected
@@ -123,7 +128,7 @@ struct FestivalUsecaseTest {
 
 
         await #expect(throws: expected) {
-            let _ = try await subject.put(item, user: .headquarter("different-id"))
+            let _ = try await subject.put(pack, user: .headquarter("different-id"))
         }
 
 
@@ -131,7 +136,8 @@ struct FestivalUsecaseTest {
     }
     
     @Test func test_put_異常() async throws {
-        let item = Festival(id: "p-id", name: "p-name", subname: "p-subname",prefecture: "p", city: "c", base: Coordinate(latitude: 0, longitude: 0))
+        let festival = Festival(id: "p-id", name: "p-name", subname: "p-subname", prefecture: "p", city: "c", base: Coordinate(latitude: 0, longitude: 0))
+        let pack = FestivalPack(festival: festival, checkpoints: [], hazardSections: [])
         let expected = Error.internalServerError("put_failed")
         let mock = FestivalRepositoryMock(putHandler: { _ in
             throw expected
@@ -140,7 +146,7 @@ struct FestivalUsecaseTest {
 
 
         await #expect(throws: expected) {
-            let _ = try await subject.put(item, user: .headquarter("p-id"))
+            let _ = try await subject.put(pack, user: .headquarter("p-id"))
         }
 
 

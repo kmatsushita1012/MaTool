@@ -38,7 +38,7 @@ struct FestivalController: FestivalControllerProtocol {
     }
 
     public func put(_ request: Request, next: Handler) async throws -> Response {
-        let body = try request.body(as: Festival.self)
+        let body = try request.body(as: FestivalPack.self)
         let user = request.user ?? .guest
         let result = try await usecase.put(body, user: user)
         return try .success(result)

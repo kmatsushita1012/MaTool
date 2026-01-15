@@ -19,12 +19,7 @@ struct FestivalRepositoryTest {
         subname: "SUBNAME",
         description: "DESCRIPTION",
         prefecture: "PREFECTURE",
-        city: "CITY",
-        base: Coordinate(
-            latitude: 0.0, longitude: 0.0
-        ),
-        checkpoints: [],
-        imagePath: "IMAGE_PATH"
+        city: "CITY", base: .init(latitude: 0, longitude: 0)
     )
     let dataStore: DataStoreMock<String, Festival>
     let subject: FestivalRepository

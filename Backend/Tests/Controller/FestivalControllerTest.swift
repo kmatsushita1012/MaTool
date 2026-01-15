@@ -49,7 +49,7 @@ struct FestivalControllerTest {
     }
 
     @Test func test_get_正常() async throws {
-        let expected = Festival(id: "g-id", name: "g-name", subname: "g-subname", prefecture: "p", city: "c", base: Coordinate(latitude: 0.0, longitude: 0.0))
+        let expected = FestivalPack(festival: Festival(id: "g-id", name: "g-name", subname: "g-subname", prefecture: "p", city: "c", base: Coordinate(latitude: 0.0, longitude: 0.0)), checkpoints: [], hazardSections: [])
         var lastCalledId: String? = nil
         let mock = FestivalUsecaseMock(getHandler: { id in
             lastCalledId = id
@@ -86,7 +86,7 @@ struct FestivalControllerTest {
     }
     
     @Test func test_put_正常() async throws {
-        let expected = Festival(id: "p-id", name: "p-name", subname: "p-subname", prefecture: "p", city: "c", base: Coordinate(latitude: 0.0, longitude: 0.0))
+        let expected = FestivalPack(festival: Festival(id: "g-id", name: "g-name", subname: "g-subname", prefecture: "p", city: "c", base: Coordinate(latitude: 0.0, longitude: 0.0)), checkpoints: [], hazardSections: [])
         var lastCalledItem: Festival? = nil
         var lastCalledUser: UserRole? = nil
         let mock = FestivalUsecaseMock(putHandler: { festival, user in
@@ -111,7 +111,7 @@ struct FestivalControllerTest {
     }
 
     @Test func test_put_異常() async throws {
-        let item = Festival(id: "p-id", name: "p-name", subname: "p-subname", prefecture: "p", city: "c", base: Coordinate(latitude: 0.0, longitude: 0.0))
+        let item = FestivalPack(festival: Festival(id: "g-id", name: "g-name", subname: "g-subname", prefecture: "p", city: "c", base: Coordinate(latitude: 0.0, longitude: 0.0)), checkpoints: [], hazardSections: [])
         let expectedBody: String = try item.toString()
         let expected = Error.internalServerError("put_failed")
         let mock = FestivalUsecaseMock(putHandler: { _, _ in throw expected })
