@@ -9,6 +9,7 @@ import ComposableArchitecture
 import Foundation
 import MapKit
 import Shared
+import SQLiteData
 
 @Reducer
 struct AdminRouteEdit{
@@ -45,74 +46,24 @@ struct AdminRouteEdit{
     
     @ObservableState
     struct State: Equatable{
-        let mode: EditMode
-        let districtName: String
-        let checkpoints: [Checkpoint]
-        var manager: EditManager<Route>
+        var manager: EditManager<[Point]>
+        var route: Route
         
+        @FetchOne var district: District
+        @FetchOne var period: Period
+        
+        let mode: EditMode
         var operation: Operation = .add
         var isLoading: Bool = false
         var tab: Tab
-        
         var region: MKCoordinateRegion?
         var size: CGSize?
         
+        // Navigation
         @Presents var point: AdminPointEdit.State?
         @Presents var alert: AlertDestination.State? = nil
         var whole: ExportedItem? = nil
         var partial: ExportedItem? = nil
-        
-        var canUndo: Bool { manager.canUndo }
-        var canRedo: Bool{ manager.canRedo }
-        var isSaveable: Bool { mode != .preview }
-        var isDeleteable: Bool { mode == .update}
-        var isPartialEnable: Bool { tab != .info }
-        var title: String {
-            switch mode {
-            case .create:
-                return "新規作成"
-            case .update:
-                return "編集"
-            case .preview:
-                return "修正"
-            }
-        }
-        
-        var route: Route {
-            get {
-                manager.value
-            }
-            set {
-                manager.apply { $0 = newValue }
-            }
-        }
-        
-        var filter: PointFilter{
-            switch tab {
-            case .info, .map:
-                return .none
-            case .pub:
-                return .pub
-            }
-        }
-        
-        init(mode: EditMode, route: Route, districtName: String, checkpoints: [Checkpoint], origin: Coordinate){
-            self.mode = mode
-            self.manager = EditManager(route)
-            self.districtName = districtName
-            self.checkpoints = checkpoints
-            if !route.points.isEmpty{
-                self.region = makeRegion(route.points.map{ $0.coordinate })
-            }else{
-                self.region = makeRegion(origin: origin, spanDelta: spanDelta)
-            }
-            if mode == .preview {
-                self.tab = .map
-            }else{
-                self.tab = .info
-            }
-            
-        }
     }
     
     @CasePathable
@@ -135,45 +86,33 @@ struct AdminRouteEdit{
         case alert(PresentationAction<AlertDestination.Action>)
     }
     
-    @Dependency(\.apiRepository) var apiRepository
+    @Dependency(RouteDataFetcherKey.self) var dataFetcher
     @Dependency(\.dismiss) var dismiss
     
     var body: some ReducerOf<AdminRouteEdit> {
         BindingReducer()
         Reduce{ state, action in
             switch action {
-            case .binding:
-                return .none
             case .mapLongPressed(let coordinate):
                 switch state.operation {
                 case .add:
-                    let point = Point(id: UUID().uuidString, coordinate: coordinate, title: nil, description: nil, time: nil, isPassed: false)
-                    state.manager.apply{
-                        guard let last = $0.points.last else {
-                            $0.points.append(point)
-                            return
-                        }
-                        $0.points.append(point)
-                    }
+                    let point = Point(id: UUID().uuidString, routeId: state.route.id, coordinate: coordinate)
+                    state.points.append(point)
                     return .none
                 case .move(let index):
-                    if index < 0 || index >= state.route.points.count { return .none }
-                    state.manager.apply{
-                        $0.points[index].coordinate = coordinate
-                    }
+                    if index < 0 || index >= state.points.count { return .none }
+                    state.points[index].coordinate = coordinate
                     state.operation = .add
                     return .none
                 case .insert(let index):
-                    if index < 0 || index >= state.route.points.count { return .none }
-                    let point = Point(id: UUID().uuidString, coordinate: coordinate)
-                    state.manager.apply{
-                        $0.points.insert(point, at: index)
-                    }
+                    if index < 0 || index >= state.points.count { return .none }
+                    let point = Point(id: UUID().uuidString, routeId: state.route.id, coordinate: coordinate)
+                    state.points.insert(point, at: index)
                     state.operation = .add
                     return .none
                 }
             case .pointTapped(let point):
-                state.point = AdminPointEdit.State(item: point, checkpoints: state.checkpoints)
+                state.point = AdminPointEdit.State(point)
                 state.operation = .add
                 return .none
             case .undoTapped:
@@ -188,28 +127,16 @@ struct AdminRouteEdit{
                 if !state.isSaveable {
                     state.alert = .notice(Alert.error("権限がありません"))
                     return .none
-                } else if state.route.title.isEmpty {
-                    state.alert = .notice(Alert.error("タイトルは1文字以上を指定してください。"))
-                    return .none
-                } else if state.route.title.contains("/") {
-                    state.alert = .notice(Alert.error("タイトルに\"/\"を含むことはできません"))
-                    return .none
-                } else if state.route.start >= state.route.goal{
-                    state.alert = .notice(Alert.error("終了時刻は開始時刻より前に設定してください"))
-                    return .none
                 }
                 state.isLoading = true
                 return .run { [
-                    route = state.route,
-                    mode = state.mode
+                    state
                 ] send in
-                    switch mode {
+                    switch state.mode {
                     case .create:
-                        let result = await apiRepository.postRoute(route)
-                        await send(.postReceived(result))
+                        try await dataFetcher.create(districtID: state.route.districtId, route: state.route, points: state.points)
                     case .update:
-                        let result = await apiRepository.putRoute(route)
-                        await send(.postReceived(result))
+                        try await dataFetcher.update(state.route, points: state.points)
                     case .preview:
                         break
                     }
@@ -226,15 +153,13 @@ struct AdminRouteEdit{
                 state.alert = .delete(Alert.delete())
                 return .none
             case .wholeTapped:
-                return .run {[
-                    route = state.route,
-                    districtName = state.districtName
-                ] send in
-                    let snapshotter = RouteSnapshotter(route, districtName: districtName)
+                guard let snapshotter = RouteSnapshotter(state.route) else { return .none } //FIXME:
+                let path = "\(state.district.name)_\(state.period.date.text())_\(state.period.title).pdf"
+                return .run { send in
                     if let image = try? await snapshotter.take(),
                        let pdf = snapshotter.createPDF(
                         with: image,
-                        path: "\(districtName)_\(route.text(format: "y-m-d_T")).pdf"
+                        path: path
                        ) {
                         await send(.wholePrepared(ExportedItem(image: image, pdf: pdf)))
                     }else {
@@ -246,13 +171,11 @@ struct AdminRouteEdit{
                   let size = state.size else {
                       return .none
                 }
-                return .run { [
-                    districtName = state.districtName,
-                    route = state.route
-                ] send in
-                    let snapshotter = RouteSnapshotter(route, districtName: districtName)
+                guard let snapshotter = RouteSnapshotter(state.route) else { return .none }// FIXME:
+                let path =  "\(state.district.name)_\(state.period.date.text())_\(state.period.title)_part_\(Date().stamp).pdf"
+                return .run {  send in
                     if let image = try? await snapshotter.take(of: region, size: size),
-                       let pdf = snapshotter.createPDF(with: image, path: "\(districtName)_\(route.text(format: "y-m-d_T"))_part_\(Date().stamp).pdf") {
+                       let pdf = snapshotter.createPDF(with: image, path: path) {
                         await send(.partialPrepared(ExportedItem(image: image, pdf: pdf)))
                     } else {
                         await send(.partialPrepared(nil))
@@ -279,47 +202,37 @@ struct AdminRouteEdit{
             case .point(.presented(let childAction)):
                 switch childAction {
                 case .moveTapped:
-                    if let pointState = state.point,
-                       let index = state.route.points.firstIndex(where: { $0.id == pointState.item.id }){
-                        state.manager.apply {
-                            $0.points[index] = pointState.item
-                        }
+                    if let point = state.point?.point,
+                       let index = state.points.firstIndex(where: { $0.id == point.id }){
+                        state.points[index] = point
                         state.operation = .move(index)
                     }
                     state.point = nil
                     return .none
                 case .insertTapped:
-                    if let pointState = state.point,
-                       let index = state.route.points.firstIndex(where: { $0.id == pointState.item.id }){
-                        state.manager.apply {
-                            $0.points[index] = pointState.item
-                        }
+                    if let point = state.point?.point,
+                       let index = state.points.firstIndex(where: { $0.id == point.id }){
+                        state.points[index] = point
                         state.operation = .insert(index)
                     }
                     state.point = nil
                     return .none
                 case .deleteTapped:
-                    if let pointState = state.point,
-                       let index = state.route.points.firstIndex(where: { $0.id == pointState.item.id }){
-                        state.manager.apply {
-                            $0.points.remove(at: index)
-                        }
+                    if let point = state.point?.point,
+                       let index = state.points.firstIndex(where: { $0.id == point.id }){
+                        state.points.remove(at: index)
                     }
                     state.point = nil
                     return .none
                 case .doneTapped:
-                    if let pointState = state.point{
-                        state.manager.apply {
-                            $0.points.upsert(pointState.item)
-                        }
+                    if let point = state.point?.point{
+                        state.points.upsert(point)
                     }
                     state.point = nil
                     return .none
                 default:
                     return .none
                 }
-            case .point(.dismiss):
-                return .none
             case .alert(.presented(let destination)):
                 switch destination {
                 case .notice(.okTapped):
@@ -329,11 +242,10 @@ struct AdminRouteEdit{
                     state.alert = nil
                     state.isLoading = true
                     return .run { [route = state.route] send in
-                        let result = await apiRepository.deleteRoute(route.id)
-                        await send(.deleteReceived(result))
+                        try? await dataFetcher.delete(route.id)
                     }
                 }
-            case .alert(.dismiss):
+            default:
                 return .none
             }
         }
@@ -351,4 +263,52 @@ struct ExportedItem: Identifiable, Equatable {
     let id = UUID()
     let image: UIImage
     let pdf: URL
+}
+
+extension AdminRouteEdit.State {
+    var canUndo: Bool { manager.canUndo }
+    var canRedo: Bool{ manager.canRedo }
+    var isSaveable: Bool { mode != .preview }
+    var isDeleteable: Bool { mode == .update}
+    var isPartialEnable: Bool { tab != .info }
+    var title: String {
+        switch mode {
+        case .create:
+            return "新規作成"
+        case .update:
+            return "編集"
+        case .preview:
+            return "修正"
+        }
+    }
+    
+    var points: [Point] {
+        get {
+            manager.value
+        }
+        set {
+            manager.apply { $0 = newValue }
+        }
+    }
+    
+    init(mode: AdminRouteEdit.EditMode, route: Route, district: District, period: Period){
+        self.mode = mode
+        let points: [Point] = FetchAll(Point.where{ $0.routeId == route.id }).wrappedValue
+        self.manager = EditManager(points)
+        self.route = route
+        self._district = FetchOne(wrappedValue: district)
+        self._period = FetchOne(wrappedValue: period)
+        
+        if !points.isEmpty{
+            self.region = makeRegion(points.map{ $0.coordinate })
+        }else{
+            let origin: Coordinate = district.base ?? FetchOne(wrappedValue: .init(latitude: 0.0, longitude: 0.0), Festival.where{ $0.id == district.festivalId }.select(\.base)).wrappedValue
+            self.region = makeRegion(origin: origin, spanDelta: spanDelta)
+        }
+        if mode == .preview {
+            self.tab = .map
+        }else{
+            self.tab = .info
+        }
+    }
 }

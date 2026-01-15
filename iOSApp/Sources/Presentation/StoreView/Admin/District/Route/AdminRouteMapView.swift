@@ -11,8 +11,7 @@ import SwiftUI
 import Shared
 
 struct AdminRouteMapView: UIViewRepresentable {
-    @Binding var route: Route
-    var filter: PointFilter = .none
+    var points: [Point]
     var onMapLongPress: (Coordinate) -> Void
     var pointTapped: (Point) -> Void
     @Binding var region: MKCoordinateRegion?
@@ -20,7 +19,7 @@ struct AdminRouteMapView: UIViewRepresentable {
 
 
     func makeCoordinator() -> Coordinator {
-        Coordinator(self, route: $route)
+        Coordinator(self, points: Binding(get: { self.points }, set: { _ in }))
     }
 
     func makeUIView(context: Context) -> MKMapView {
@@ -50,14 +49,14 @@ struct AdminRouteMapView: UIViewRepresentable {
         mapView.removeOverlays(mapView.overlays)
         
         // アノテーション追加
-        for (index, point) in filter.apply(to: route).enumerated() {
-            let type: PointAnnotation.TitleType = filter == .export ? .time(index) : .simple
-            let annotation = PointAnnotation(point, type: type)
-            annotation.coordinate = point.coordinate.toCL()
-            mapView.addAnnotation(annotation)
-        }
+//        for (index, point) in filter.apply(to: route).enumerated() {
+//            let type: PointAnnotation.TitleType = filter == .export ? .time(index) : .simple
+//            let annotation = PointAnnotation(point, type: type)
+//            annotation.coordinate = point.coordinate.toCL()
+//            mapView.addAnnotation(annotation)
+//        }
         
-        let coordinates = route.points.map { $0.coordinate.toCL() }
+        let coordinates = points.map { $0.coordinate.toCL() }
         let polyline = MKPolyline(coordinates: coordinates, count: coordinates.count)
         mapView.addOverlay(polyline)
         
@@ -72,11 +71,11 @@ struct AdminRouteMapView: UIViewRepresentable {
 
     class Coordinator: NSObject, MKMapViewDelegate {
         var parent: AdminRouteMapView
-        var route: Binding<Route>
+        var points: Binding<[Point]>
 
-        init(_ parent: AdminRouteMapView, route: Binding<Route>) {
+        init(_ parent: AdminRouteMapView, points: Binding<[Point]>) {
             self.parent = parent
-            self.route = route
+            self.points = points
         }
 
         @objc func handleLongPress(_ gesture: UILongPressGestureRecognizer) {
@@ -111,9 +110,8 @@ struct AdminRouteMapView: UIViewRepresentable {
         }
         
         func mapView(_ mapView: MKMapView, didSelect view: MKAnnotationView) {
-            let route = route.wrappedValue
             if let annotation = view.annotation as? PointAnnotation,
-               let point = route.points.first(matching: annotation.point.id) {
+               let point = points.wrappedValue.first(matching: annotation.point.id) {
                 parent.pointTapped(point)
             }
         }
