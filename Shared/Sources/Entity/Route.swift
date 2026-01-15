@@ -5,6 +5,8 @@
 //  Created by 松下和也 on 2025/10/30.
 //
 
+import SQLiteData
+
 // MARK: - Route
 public struct Route: Entity {
     public let id: String
@@ -75,7 +77,7 @@ public struct Point: Entity {
 extension Point: Identifiable {}
 
 // MARK: - Visisbility
-public enum Visibility: String, Entity {
+public enum Visibility: String, Entity, QueryBindable {
     case admin
     case route
     case all
