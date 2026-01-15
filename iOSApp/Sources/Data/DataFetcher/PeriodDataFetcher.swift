@@ -14,11 +14,13 @@ enum PeriodDataFetcherKey: DependencyKey {
     static let liveValue: any PeriodDataFetcherProtocol = PeriodDataFetcher()
 }
 
-protocol PeriodDataFetcherProtocol: Sendable {
+protocol PeriodDataFetcherProtocol: DataFetcher {
     associatedtype QueryType = PeriodDataFetcher.Query
     func fetchAll(festivalID: Festival.ID, query: QueryType) async throws
-    func fetch(periodID: Period.ID) async throws
+    func fetch(_ id: Period.ID) async throws
     func update(_ period: Period) async throws
+    func create(_ period: Period) async throws
+    func delete(_ id: Period.ID) async throws
 }
 
 
@@ -52,20 +54,33 @@ struct PeriodDataFetcher: PeriodDataFetcherProtocol {
     }
 
     func update(_ period: Period) async throws {
-        @Dependency(AuthServiceKey.self) var authService
-        guard let token = await authService.getAccessToken() else { throw APIError.unauthorized(message: "") }
+        let token = try await getToken()
         let period: Period = try await client.put(path: "/periods/\(period.id)", body: period, accessToken: token)
         try await sync(period)
     }
-
-    func fetch(periodID: Period.ID) async throws {
-        let period: Period = try await client.get(path: "/periods/\(periodID)")
+    
+    func create(_ period: Period) async throws {
+        let token = try await getToken()
+        let period: Period = try await client.post(path: "/festivals/\(period.festivalId)/periods", body: period, accessToken: token)
         try await sync(period)
+    }
+
+    func fetch(_ id: Period.ID) async throws {
+        let period: Period = try await client.get(path: "/periods/\(id)")
+        try await sync(period)
+    }
+    
+    func delete(_ id: Period.ID) async throws {
+        let token = try await getToken()
+        let result: Empty = try await client.delete(path: "/periods/\(id)", accessToken: token)
+        try await database.write{ db in
+            try periodStore.delete(id, from: db)
+        }
     }
 
     private func syncAll(_ periods: [Period], festivalId: Festival.ID, query: Query) async throws {
         try await database.write { db in
-            var oldPeriods: [Period] = try fetchOldPeriods(festivalId: festivalId, query: query, maxYear: periods.map(keyPath: \.date.year).max(), db: db)
+            let oldPeriods: [Period] = try fetchOldPeriods(festivalId: festivalId, query: query, maxYear: periods.map(keyPath: \.date.year).max(), db: db)
             let (insertedPeriods, deletedPeriodIds) = oldPeriods.diff(with: periods)
             try periodStore.deleteAll(deletedPeriodIds, from: db)
             try routeStore.deleteAll(where: { $0.periodId.in(deletedPeriodIds) }, from: db)
