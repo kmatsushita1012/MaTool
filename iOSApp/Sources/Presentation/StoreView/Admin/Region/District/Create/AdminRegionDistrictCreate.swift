@@ -24,6 +24,7 @@ struct AdminDistrictCreate {
         case binding(BindingAction<State>)
         case createTapped
         case cancelTapped
+        case received(VoidResult<APIError>)
         case alert(PresentationAction<Alert.Action>)
     }
     
@@ -42,14 +43,20 @@ struct AdminDistrictCreate {
                 }
                 state.isLoading = true
                 return .run { [state] send in
-                    try? await dataFetcher.create(name: state.name, email: state.email, festivalId: state.festivalId)
+                    let result = await task{ try await dataFetcher.create(name: state.name, email: state.email, festivalId: state.festivalId) }
                 }
             case .cancelTapped:
                 return .run { _ in
                     await dismiss()
                 }
+            case .received(.failure(let error)):
+                state.isLoading = false
+                state.alert = Alert.error(error.localizedDescription)
+                return .none
             case .alert:
                 state.alert = nil
+                return .none
+            default:
                 return .none
             }
         }

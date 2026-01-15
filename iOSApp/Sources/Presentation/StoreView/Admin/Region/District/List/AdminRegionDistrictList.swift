@@ -120,7 +120,7 @@ struct AdminDistrictList {
 }
 
 extension AdminDistrictList.State{
-    init(district: District){
+    init(_ district: District){
         self._district = FetchOne(wrappedValue: district)
         let maxYear: Int = FetchAll(Period.where{ $0.festivalId == district.festivalId }).wrappedValue.map(\.date.year).max() ?? SimpleDate.now.year
         let routeQuery = Period
