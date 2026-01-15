@@ -18,3 +18,20 @@ extension DataFetcher {
         return token
     }
 }
+
+enum Query: Sendable, Equatable {
+    case all
+    case year(Int)
+    case latest
+
+    var queryItems: [String: Any] {
+        switch self {
+        case .all:
+            return [:]
+        case .year(let y):
+            return ["year": y]
+        case .latest:
+            return ["year": "latest"]
+        }
+    }
+}

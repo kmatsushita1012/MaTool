@@ -15,8 +15,7 @@ enum PeriodDataFetcherKey: DependencyKey {
 }
 
 protocol PeriodDataFetcherProtocol: DataFetcher {
-    associatedtype QueryType = PeriodDataFetcher.Query
-    func fetchAll(festivalID: Festival.ID, query: QueryType) async throws
+    func fetchAll(festivalID: Festival.ID, query: Query) async throws
     func fetch(_ id: Period.ID) async throws
     func update(_ period: Period) async throws
     func create(_ period: Period) async throws
@@ -25,22 +24,6 @@ protocol PeriodDataFetcherProtocol: DataFetcher {
 
 
 struct PeriodDataFetcher: PeriodDataFetcherProtocol {
-    enum Query: Sendable, Equatable {
-        case all
-        case year(Int)
-        case latest
-
-        var queryItems: [String: Any] {
-            switch self {
-            case .all:
-                return [:]
-            case .year(let y):
-                return ["year": y]
-            case .latest:
-                return ["year": "latest"]
-            }
-        }
-    }
 
     @Dependency(HTTPClientKey.self) var client
     @Dependency(PeriodStoreKey.self) var periodStore
