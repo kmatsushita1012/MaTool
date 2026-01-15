@@ -45,7 +45,7 @@ import SQLiteData
     public var anchor: Anchor?
     public var index: Int
     
-    public init(id: String, routeId: Route.ID, coordinate: Coordinate, time: SimpleTime? = nil, checkpointId: Checkpoint.ID?, performanceId: Performance.ID?, anchor: Anchor?, index: Int = 0) {
+    public init(id: String, routeId: Route.ID, coordinate: Coordinate, time: SimpleTime? = nil, checkpointId: Checkpoint.ID? = nil, performanceId: Performance.ID? = nil, anchor: Anchor? = nil, index: Int = 0) {
         self.id = id
         self.routeId = routeId
         self.coordinate = coordinate
