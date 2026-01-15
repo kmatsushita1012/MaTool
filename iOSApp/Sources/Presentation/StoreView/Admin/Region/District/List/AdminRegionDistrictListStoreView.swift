@@ -15,12 +15,12 @@ struct AdminDistrictListView: View {
     
     var body: some View {
         List {
-            Section(header: Text("行動")) {
-                ForEach(store.routes) { route in
+            Section(header: Text("ルート")) {
+                ForEach(store.routes) { pair in
                     NavigationItemView(
-                        title: route.text(format: "m/d T"),
+                        title: pair.period.shortText,
                         onTap: {
-                            store.send(.exportTapped(route))
+                            store.send(.exportTapped(pair))
                         }
                     )
                 }
@@ -35,8 +35,7 @@ struct AdminDistrictListView: View {
         }
         .navigationTitle(store.district.name)
         .navigationBarTitleDisplayMode(.inline)
-        .sheet(item: $store.folder)
-        { folder in
+        .sheet(item: $store.folder){ folder in
             ShareSheet(folder.files)
         }
         .navigationDestination(

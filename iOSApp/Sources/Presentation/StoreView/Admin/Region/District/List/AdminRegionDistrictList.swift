@@ -8,15 +8,21 @@
 import ComposableArchitecture
 import Foundation
 import Shared
+import SQLiteData
 
 @Reducer
 struct AdminDistrictList {
     
     @ObservableState
     struct State: Equatable {
-        let festival: Festival
-        let district: District
-        let routes: [RouteItem]
+        @Selection struct Item: Equatable{
+            let period: Period
+            let route: Route?
+        }
+        
+        @FetchOne var district: District
+        @FetchAll var routes: [Item]
+        
         var isApiLoading: Bool = false
         var isExportLoading: Bool = false
         var folder: ExportedFolder? = nil
@@ -30,8 +36,8 @@ struct AdminDistrictList {
     @CasePathable
     enum Action: Equatable, BindableAction {
         case binding(BindingAction<State>)
-        case exportTapped(RouteItem)
-        case exportPrepared(Result<Route,APIError>)
+        case exportTapped(State.Item)
+        case exportPrepared(State.Item)
         case dismissTapped
         case batchExportTapped
         case batchExportPrepared(Result<[URL], APIError>)
@@ -40,6 +46,7 @@ struct AdminDistrictList {
     }
     
     @Dependency(\.apiRepository) var apiRepository
+    @Dependency(RouteDataFetcherKey.self) var dataFetcher
     @Dependency(\.dismiss) var dismiss
     
     var body: some ReducerOf<AdminDistrictList> {
@@ -48,25 +55,22 @@ struct AdminDistrictList {
             switch action {
             case .binding:
                 return .none
-            case .exportTapped(let route):
+            case .exportTapped(let item):
+                guard let route = item.route else { return .none }
                 state.isApiLoading = true
                 return .run{ send in
-                    let result = await apiRepository.getRoute(route.id)
-                    await send(.exportPrepared(result))
+                    let result = await task { try await dataFetcher.fetch(routeID: route.id) }
+                    await send(.exportPrepared(item)) // FIXME
                 }
-            case .exportPrepared(.success(let route)):
+            case .exportPrepared(let item):
                 state.isApiLoading = false
+                guard let route = item.route else { return .none }
                 state.export = AdminRouteEdit.State(
                     mode: .preview,
                     route: route,
-                    districtName: state.district.name,
-                    checkpoints: state.festival.checkpoints,
-                    origin: Coordinate(latitude: 0, longitude: 0)
+                    district: state.district,
+                    period: item.period
                 )
-                return .none
-            case .exportPrepared(.failure(let error)):
-                state.isApiLoading = false
-                state.alert = Alert.error("情報の取得に失敗しました。\n\(error.localizedDescription)")
                 return .none
             case .dismissTapped:
                 return .run { _ in
@@ -95,20 +99,40 @@ struct AdminDistrictList {
         .ifLet(\.$alert, action: \.alert)
     }
     
-    func batchExportEffect(_ items: [RouteItem]) -> Effect<Action> {
+    func batchExportEffect(_ items: [State.Item]) -> Effect<Action> {
         .run { send in
-            
-            var urls: [URL] = []
             //非同期並列にするとBEでアクセス過多
-            for item in items {
-                let routeResult = await apiRepository.getRoute(item.id)
-                guard let route = routeResult.value else { continue }
-                let snapshotter = RouteSnapshotter(route)
-                guard let image = try? await snapshotter.take() else { continue }
-                guard let url = snapshotter.createPDF(with: image, path: "\(route.text(format: "D_y-m-d_T")).pdf") else { continue }
-                urls.append(url)
-            }
-            await send(.batchExportPrepared(.success(urls)))
+            let result = await task({
+                var urls: [URL] = []
+                for item in items {
+                    guard let route = item.route,
+                          let _ = try? await dataFetcher.fetch(routeID: route.id),
+                          let snapshotter = RouteSnapshotter(route),
+                          let image = try? await snapshotter.take(),
+                          let url = snapshotter.createPDF(with: image, path: "") else { continue } //FIXME
+                    urls.append(url)
+                }
+                return urls
+            }, defaultError: APIError.unknown(message: ""))
+            await send(.batchExportPrepared(result))
         }
     }
+}
+
+extension AdminDistrictList.State{
+    init(district: District){
+        self._district = FetchOne(wrappedValue: district)
+        let maxYear: Int = FetchAll(Period.where{ $0.festivalId == district.festivalId }).wrappedValue.map(\.date.year).max() ?? SimpleDate.now.year
+        let routeQuery = Period
+            .where{ $0.festivalId == district.festivalId && $0.date.inYear(maxYear) }
+            .leftJoin(Route.all){ $0.id.eq($1.periodId)}
+            .select{
+                Item.Columns(period: $0, route: $1)
+            }
+        self._routes = FetchAll(routeQuery)
+    }
+}
+
+extension AdminDistrictList.State.Item: Identifiable {
+    var id: String { period.id }
 }
