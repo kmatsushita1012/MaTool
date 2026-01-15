@@ -12,7 +12,7 @@ import SQLiteData
 @Table public struct Period: Entity, Identifiable {
     public let id: String
     public let festivalId: Festival.ID
-    @Column(as: SimpleDate.JSONRepresentation.self)
+    @Column(as: SimpleDate.ISODateRepresentation.self)
     public var date: SimpleDate
     public var title: String
     @Column(as: SimpleTime.JSONRepresentation.self)
