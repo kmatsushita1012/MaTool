@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		29C674182EB37948003DCA4C /* amplifyconfiguration.json in Resources */ = {isa = PBXBuildFile; fileRef = 29C674172EB37948003DCA4C /* amplifyconfiguration.json */; };
+		29CC9E422F1523B800C4CD50 /* SQLiteData in Frameworks */ = {isa = PBXBuildFile; productRef = 29CC9E412F1523B800C4CD50 /* SQLiteData */; };
 		29F7B72C2EC871D30099607E /* ComposableArchitecture in Frameworks */ = {isa = PBXBuildFile; productRef = 29F7B72B2EC871D30099607E /* ComposableArchitecture */; };
 		29F7B72F2EC871F10099607E /* AWSCognitoAuthPlugin in Frameworks */ = {isa = PBXBuildFile; productRef = 29F7B72E2EC871F10099607E /* AWSCognitoAuthPlugin */; };
 		29F7B7322EC872E80099607E /* NavigationSwipeControl in Frameworks */ = {isa = PBXBuildFile; productRef = 29F7B7312EC872E80099607E /* NavigationSwipeControl */; };
@@ -53,6 +54,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				29CC9E422F1523B800C4CD50 /* SQLiteData in Frameworks */,
 				29F7B7382EC8C06D0099607E /* Shared in Frameworks */,
 				29F7B72C2EC871D30099607E /* ComposableArchitecture in Frameworks */,
 				29F7B7352EC8730E0099607E /* Kingfisher in Frameworks */,
@@ -128,6 +130,7 @@
 				29F7B7312EC872E80099607E /* NavigationSwipeControl */,
 				29F7B7342EC8730E0099607E /* Kingfisher */,
 				29F7B7372EC8C06D0099607E /* Shared */,
+				29CC9E412F1523B800C4CD50 /* SQLiteData */,
 			);
 			productName = MaTool;
 			productReference = 291604FD2EB3665900E6C6E3 /* MaTool.app */;
@@ -211,6 +214,7 @@
 				29F7B7302EC872E80099607E /* XCRemoteSwiftPackageReference "NavigationSwipeControl" */,
 				29F7B7332EC8730E0099607E /* XCRemoteSwiftPackageReference "Kingfisher" */,
 				29F7B7362EC8C06D0099607E /* XCLocalSwiftPackageReference "../Shared" */,
+				29CC9E402F1523B800C4CD50 /* XCRemoteSwiftPackageReference "sqlite-data" */,
 			);
 			productRefGroup = 298BD7912D71E46600CB63F1;
 			projectDirPath = "";
@@ -616,6 +620,14 @@
 /* End XCLocalSwiftPackageReference section */
 
 /* Begin XCRemoteSwiftPackageReference section */
+		29CC9E402F1523B800C4CD50 /* XCRemoteSwiftPackageReference "sqlite-data" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/pointfreeco/sqlite-data.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 1.4.3;
+			};
+		};
 		29F7B72A2EC871D30099607E /* XCRemoteSwiftPackageReference "swift-composable-architecture" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/pointfreeco/swift-composable-architecture";
@@ -651,6 +663,11 @@
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
+		29CC9E412F1523B800C4CD50 /* SQLiteData */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 29CC9E402F1523B800C4CD50 /* XCRemoteSwiftPackageReference "sqlite-data" */;
+			productName = SQLiteData;
+		};
 		29F7B72B2EC871D30099607E /* ComposableArchitecture */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = 29F7B72A2EC871D30099607E /* XCRemoteSwiftPackageReference "swift-composable-architecture" */;
