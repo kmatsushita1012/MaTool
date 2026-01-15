@@ -8,25 +8,18 @@
 import ComposableArchitecture
 import MapKit
 import Shared
+import SQLiteData
 
 @Reducer
 struct DistrictInfo {
     
     @ObservableState
     struct State: Equatable {
-        let item: District
+        @FetchOne var district: District
+        @FetchAll var performances: [Performance]
         var region: MKCoordinateRegion?
         var isLoading: Bool = false
         var isDismissed:Bool = false
-        
-        init(item: District){
-            self.item = item
-            if let base = item.base, item.area.isEmpty{
-                region = makeRegion(origin: base, spanDelta: spanDelta)
-            }else{
-                region = makeRegion(item.area)
-            }
-        }
     }
     
     @CasePathable
@@ -58,6 +51,18 @@ struct DistrictInfo {
                 state.isLoading = true
                 return .none
             }
+        }
+    }
+}
+
+extension DistrictInfo.State {
+    init(_ district: District){
+        self._district = FetchOne(wrappedValue: district)
+        self._performances = FetchAll(Performance.where{ $0.districtId == district.id })
+        if let base = district.base, district.area.isEmpty{
+            region = makeRegion(origin: base, spanDelta: spanDelta)
+        }else{
+            region = makeRegion(district.area)
         }
     }
 }
