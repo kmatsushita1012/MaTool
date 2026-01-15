@@ -14,8 +14,7 @@ enum RouteDataFetcherKey: DependencyKey {
 }
 
 protocol RouteDataFetcherProtocol: Sendable {
-    associatedtype QueryType = RouteDataFetcher.Query
-    func fetchAll(districtID: District.ID, query: QueryType) async throws
+    func fetchAll(districtID: District.ID, query: Query) async throws
     func fetch(routeID: Route.ID) async throws
     func update(_ route: Route, points: [Point]) async throws
     func create(districtID: District.ID, route: Route, points: [Point]) async throws
@@ -23,22 +22,6 @@ protocol RouteDataFetcherProtocol: Sendable {
 }
 
 struct RouteDataFetcher: RouteDataFetcherProtocol {
-    enum Query: Sendable, Equatable {
-        case all
-        case year(Int)
-        case latest
-
-        var queryItems: [String: Any] {
-            switch self {
-            case .all:
-                return [:]
-            case .year(let y):
-                return ["year": y]
-            case .latest:
-                return ["year": "latest"]
-            }
-        }
-    }
 
     @Dependency(HTTPClientKey.self) var client
     @Dependency(RouteStoreKey.self) var routeStore
@@ -75,7 +58,7 @@ struct RouteDataFetcher: RouteDataFetcherProtocol {
     func delete(_ routeID: Route.ID) async throws {
         @Dependency(AuthServiceKey.self) var authService
         guard let token = await authService.getAccessToken() else { throw APIError.unauthorized(message: "") }
-        let _: EmptyResponse = try await client.delete(path: "/routes/\(routeID)", query: [:], accessToken: token)
+        let _: Empty = try await client.delete(path: "/routes/\(routeID)", query: [:], accessToken: token)
         try await database.write { db in
             try routeStore.deleteAll([routeID], from: db)
         }
@@ -98,12 +81,3 @@ struct RouteDataFetcher: RouteDataFetcherProtocol {
         }
     }
 }
-
-extension DependencyValues {
-    var routeDataFetcher: RouteDataFetcherProtocol {
-        get { self[RouteDataFetcherKey.self] }
-        set { self[RouteDataFetcherKey.self] = newValue }
-    }
-}
-
-private struct EmptyResponse: Decodable {}
