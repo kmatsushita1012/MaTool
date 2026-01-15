@@ -7,18 +7,25 @@
 
 import SwiftUI
 import Shared
+import SQLiteData
 
 struct PointView: View {
+    let point: Point
+    @FetchOne var performance: Performance?
     
-    let item: Point
+    var title: String {
+        point.anchor?.text ?? performance?.name ?? "情報なし"
+    }
+    
+    init(_ point: Point) {
+        self.point = point
+        self._performance = FetchOne(Performance.where{ $0.id == point.performanceId })
+    }
     
     var body: some View {
         VStack(alignment: .leading, spacing: 16){
-            BulletItem(text: item.title ?? "情報なし")
-            if let description = item.description {
-                BulletItem(text: description)
-            }
-            if let time = item.time {
+            BulletItem(text: title)
+            if let time = point.time {
                 BulletItem(text: time.text)
             }
             Spacer()

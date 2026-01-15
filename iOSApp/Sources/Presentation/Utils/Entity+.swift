@@ -43,9 +43,3 @@ extension Period {
         )
     }
 }
-
-extension Program {
-    var text: String {
-        "\(year)年"
-    }
-}

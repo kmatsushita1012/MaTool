@@ -7,6 +7,7 @@
 
 import ComposableArchitecture
 import Shared
+import SQLiteData
 
 @Reducer
 struct InfoList {
@@ -42,9 +43,8 @@ struct InfoList {
             case .festivalTapped:
                 state.destination = .festival(FestivalInfo.State(item: state.festival))
                 return .none
-            case .districtTapped(let value):
-                print(value)
-                state.destination = .district(DistrictInfo.State(item: value))
+            case .districtTapped(let district):// FIXME: Performancesの読み込み
+                state.destination = .district(DistrictInfo.State(item: district))
                 return .none
             case .homeTapped:
                 if #available(iOS 17.0, *) {
