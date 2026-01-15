@@ -40,7 +40,7 @@ struct AdminDistrictEdit {
         case areaTapped
         case performanceAddTapped
         case performanceEditTapped(Performance)
-        case postReceived(Result<District,APIError>)
+        case postReceived(VoidResult<APIError>)
         case destination(PresentationAction<Destination.Action>)
         case alert(PresentationAction<Alert.Action>)
     }
@@ -80,7 +80,7 @@ struct AdminDistrictEdit {
                 )
                 return .none
             case .performanceAddTapped:
-                state.destination = .performance(AdminPerformanceEdit.State())
+                state.destination = .performance(AdminPerformanceEdit.State(districtId: state.district.id))
                 return .none
             case .performanceEditTapped(let item):
                 state.destination = .performance(AdminPerformanceEdit.State(item: item))
