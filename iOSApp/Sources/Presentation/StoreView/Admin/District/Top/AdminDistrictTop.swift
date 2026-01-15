@@ -8,6 +8,7 @@
 import ComposableArchitecture
 import Foundation
 import Shared
+import SQLiteData
 
 @Reducer
 struct AdminDistrictTop {
@@ -23,31 +24,34 @@ struct AdminDistrictTop {
     
     @ObservableState
     struct State:Equatable {
-        var district: District
-        var routes: [RouteItem]
+        @Selection struct Item: Equatable{
+            let period: Period
+            let route: Route?
+        }
+        
+        @FetchOne var district: District
+        @FetchAll var routes: [Item]
+        @FetchAll var periods: [Period]
+        
         var isDistrictLoading: Bool = false
         var isRoutesLoading: Bool = false
         var isRouteLoading: Bool = false
         var isAWSLoading: Bool = false
+        
+        // Navigation
         @Presents var destination: Destination.State?
         @Presents var alert: Alert.State?
-        var isLoading: Bool {
-            isDistrictLoading || isRoutesLoading || isAWSLoading || isRouteLoading
-        }
     }
     
     @CasePathable
     enum Action: Equatable {
         case onEdit
-        case onRouteAdd
-        case onRouteEdit(RouteItem)
+        case onRouteAdd(State.Item)
+        case onRouteEdit(State.Item)
         case changePasswordTapped
         case updateEmailTapped
-        case getDistrictReceived(Result<District,APIError>)
-        case getRoutesReceived(Result<[RouteItem],APIError>)
-        case editPrepared(Result<DistrictTool,APIError>)
-        case routeEditPrepared(Result<Route,APIError>,Result<DistrictTool,APIError>)
-        case routeCreatePrepared(Result<DistrictTool,APIError>)
+        case routeEditPrepared(State.Item)
+        case routeCreatePrepared
         case locationPrepared(isTracking: Bool, Interval: Interval?)
         case onLocation
         case destination(PresentationAction<Destination.Action>)
@@ -57,9 +61,9 @@ struct AdminDistrictTop {
         case alert(PresentationAction<Alert.Action>)
     }
     
-    @Dependency(\.apiRepository) var apiRepository
     @Dependency(\.locationService) var locationService
     @Dependency(\.authService) var authService
+    @Dependency(\.routeDataFetcher) var routeDateFetcher
     @Dependency(\.dismiss) var dismiss
     
     var body: some ReducerOf<AdminDistrictTop> {
@@ -67,22 +71,25 @@ struct AdminDistrictTop {
             switch action {
             case .onEdit:
                 state.isDistrictLoading = true
-                return .run {[id = state.district.id] send in
-                    let result = await apiRepository.getTool(id)
-                    await send(.editPrepared(result))
-                }
-            case .onRouteAdd:
+                return .none
+            case .onRouteAdd(let item):
+                let route = Route(id: UUID().uuidString, districtId: state.district.id, periodId: item.period.id)
+                state.destination = .route(
+                    AdminRouteEdit.State(
+                        mode: .create,
+                        route: route,
+                        district: state.district,
+                        period: item.period
+                    )
+                )
+                return .none
+            case .onRouteEdit(let item):
                 state.isRouteLoading = true
-                return .run {[id = state.district.id] send in
-                    let result = await apiRepository.getTool(id)
-                    await send(.routeCreatePrepared(result))
-                }
-            case .onRouteEdit(let route):
-                state.isRouteLoading = true
+                guard let route = item.route else { return .none }
                 return .run { send in
-                    let routeResult = await apiRepository.getRoute(route.id)
-                    let toolResult = await apiRepository.getTool(route.districtId)
-                    await send(.routeEditPrepared(routeResult, toolResult))
+                    let result = await task{ try await routeDateFetcher.fetch(routeID: route.id) }
+                    // TODO: エラーハンドリング
+                    await send(.routeEditPrepared(item))
                 }
             case .changePasswordTapped:
                 state.destination = .changePassword(ChangePassword.State())
@@ -90,76 +97,12 @@ struct AdminDistrictTop {
             case .updateEmailTapped:
                 state.destination = .updateEmail(UpdateEmail.State())
                 return .none
-            case .getDistrictReceived(let result):
-                state.isDistrictLoading = false
-                switch result {
-                case .success(let value):
-                    state.district = value
-                case .failure(let error):
-                    state.alert = Alert.error("情報の取得に失敗しました。 \(error.localizedDescription)")
-                }
-                return .none
-            case .getRoutesReceived(let result):
-                state.isRoutesLoading = false
-                switch result {
-                case .success(let value):
-                    state.routes = value.sorted()
-                case .failure(let error):
-                    state.alert = Alert.error("情報の取得に失敗しました。 \(error.localizedDescription)")
-                }
-                return .none
-            case .editPrepared(let result):
-                state.isDistrictLoading = false
-                switch result {
-                case .success(let tool):
-                    state.destination = .edit(
-                        AdminDistrictEdit.State(
-                            item: state.district,
-                            tool: tool
-                        )
-                    )
-                case .failure(let error):
-                    state.alert = Alert.error("情報の取得に失敗しました。 \(error.localizedDescription)")
-                }
-                return .none
-            case .routeEditPrepared(let routeResult, let toolResult):
+            case .routeEditPrepared(let target):
                 state.isRouteLoading = false
-                if case let .success(route) = routeResult,
-                   case let .success(tool) = toolResult{
-                    state.destination = .route(
-                        AdminRouteEdit.State(
-                            mode: .update,
-                            route: route,
-                            districtName: tool.districtName,
-                            checkpoints: tool.checkpoints,
-                            origin: tool.base
-                        )
-                    )
-                } else {
-                    state.alert = Alert.error("情報の取得に失敗しました。")
-                }
-                return .none
-            case .routeCreatePrepared(let result):
-                state.isRouteLoading = false
-                switch result {
-                case .success(let tool):
-                    state.destination = .route(
-                        AdminRouteEdit.State(
-                            mode: .create,
-                            route: Route(
-                                id: UUID().uuidString,
-                                districtId: tool.districtId,
-                                start: SimpleTime.from(Date.now),
-                                goal: SimpleTime.from(Date.now),
-                            ),
-                            districtName: tool.districtName,
-                            checkpoints: tool.checkpoints,
-                            origin: tool.base
-                        )
-                    )
-                case .failure(let error):
-                    state.alert = Alert.error("情報の取得に失敗しました。 \(error.localizedDescription)")
-                }
+                guard let route = target.route else { return .none }
+                state.destination = .route(
+                    AdminRouteEdit.State(mode: .update, route: route, district: state.district, period: target.period)
+                )
                 return .none
             case .locationPrepared(isTracking: let isTracking, Interval: let interval):
                 state.destination = .location(
@@ -182,31 +125,14 @@ struct AdminDistrictTop {
                     .route(.postReceived(.success)),
                     .route(.deleteReceived(.success)):
                     state.destination = nil
-                    state.isDistrictLoading = true
-                    state.isRoutesLoading = true
-                    return .merge(
-                        .run {[id = state.district.id] send in
-                            let result = await apiRepository.getDistrict(id)
-                            await send(.getDistrictReceived(result))
-                        },
-                        .run {[id = state.district.id] send in
-                            let result = await apiRepository.getRoutes(id)
-                            await send(.getRoutesReceived(result))
-                        }
-                    )
+                    return .none
                 case .changePassword(.received(.success)):
                     state.destination = nil
                     state.alert = Alert.success("パスワードが変更されました")
                     return .none
-                case .edit,
-                    .route,
-                    .location,
-                    .changePassword,
-                    .updateEmail:
+                default:
                     return .none
                 }
-            case .destination(.dismiss):
-                return .none
             case .signOutTapped:
                 state.isAWSLoading = true
                 return .run { send in
@@ -226,7 +152,7 @@ struct AdminDistrictTop {
             case .alert(.presented(.okTapped)):
                 state.alert = nil
                 return .none
-            case .alert(_):
+            default:
                 return .none
             }
         }
@@ -237,3 +163,25 @@ struct AdminDistrictTop {
 
 extension AdminDistrictTop.Destination.State: Equatable {}
 extension AdminDistrictTop.Destination.Action: Equatable {}
+
+extension AdminDistrictTop.State{
+    var isLoading: Bool {
+        isDistrictLoading || isRoutesLoading || isAWSLoading || isRouteLoading
+    }
+    
+    init(_ district: District){
+        self._district = FetchOne(wrappedValue: district)
+        let maxYear: Int = FetchAll(Period.where{ $0.festivalId == district.festivalId }).wrappedValue.map(\.date.year).max() ?? SimpleDate.now.year
+        let routeQuery = Period
+            .where{ $0.festivalId == district.festivalId && $0.date.inYear(maxYear) }
+            .leftJoin(Route.all){ $0.id.eq($1.periodId)}
+            .select{
+                Item.Columns(period: $0, route: $1)
+            }
+        self._routes = FetchAll(routeQuery)
+    }
+}
+
+extension AdminDistrictTop.State.Item: Identifiable {
+    var id: String { period.id }
+}
