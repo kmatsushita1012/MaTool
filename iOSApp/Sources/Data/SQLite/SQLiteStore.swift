@@ -43,6 +43,10 @@ enum PointStoreKey: DependencyKey {
     static let liveValue: any SQLiteStoreProtocol<Point> = SQLiteStore<Point>()
 }
 
+enum FloatLocationStoreKey: DependencyKey {
+    static let liveValue: any SQLiteStoreProtocol<FloatLocation> = SQLiteStore<FloatLocation>()
+}
+
 protocol SQLiteStoreProtocol<Content>: Sendable {
     associatedtype Content: PrimaryKeyedTable & Sendable & Identifiable
     
@@ -81,8 +85,8 @@ struct SQLiteStore<Content: PrimaryKeyedTable & Sendable & Identifiable>: SQLite
 
 extension SQLiteStoreProtocol {
     
-    func delete(_ id: Content.PrimaryKey, from db: Database) async throws {
-        try deleteAll(where: { $0.primaryKey == id }, from: db)
+    func delete(_ id: Content.PrimaryKey, from db: Database) throws {
+        try deleteAll([id], from: db)
     }
     
     func fetchAll(@QueryFragmentBuilder<Bool> where predicate: (Content.TableColumns) -> [QueryFragment]) async throws -> [Content] {
