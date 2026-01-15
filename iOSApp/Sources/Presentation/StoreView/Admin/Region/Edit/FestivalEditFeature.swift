@@ -8,6 +8,7 @@
 import Foundation
 import ComposableArchitecture
 import Shared
+import SQLiteData
 
 @Reducer
 struct FestivalEditFeature {
@@ -33,7 +34,7 @@ struct FestivalEditFeature {
         case binding(BindingAction<State>)
         case saveTapped
         case cancelTapped
-        case putReceived(Result<Festival, APIError>)
+        case putReceived(VoidResult<APIError>)
         case onCheckpointEdit(Checkpoint)
         case onCheckpointAdd
         case hazardTapped(HazardSection)
@@ -54,7 +55,8 @@ struct FestivalEditFeature {
             case .saveTapped:
                 state.isLoading = true
                 return .run { [state] send in
-                    try? await festivalDataFetcher.update(festival: state.festival, checkPoints: state.checkpoints, hazardSections: state.hazardSections)
+                    let result = await task{ try await festivalDataFetcher.update(festival: state.festival, checkPoints: state.checkpoints, hazardSections: state.hazardSections) }
+                    await send(.putReceived(result))
                 }
             case .cancelTapped:
                 return .run { _ in
@@ -122,3 +124,11 @@ struct FestivalEditFeature {
 
 extension FestivalEditFeature.Destination.State: Equatable{}
 extension FestivalEditFeature.Destination.Action: Equatable{}
+
+extension FestivalEditFeature.State{
+    init(_ festival: Festival){
+        self.festival = festival
+        self._checkpoints = FetchAll(Checkpoint.where{ $0.festivalId == festival.id }).wrappedValue
+        self._hazardSections = FetchAll(HazardSection.where{ $0.festivalId == festival.id }).wrappedValue
+    }
+}
