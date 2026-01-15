@@ -88,9 +88,7 @@ struct HazardSectionFeature {
                 state.mode = .add
                 return .none
             case .clearTapped:
-                state.manager.apply{
-                    $0.coordinates = []
-                }
+                state.item.coordinates = []
                 state.mode = .add
                 return .none
             case .insertBeforeTapped(let coordinate):
@@ -122,9 +120,9 @@ struct HazardSectionFeature {
 }
 
 extension HazardSectionFeature.State {
-    init(mapRegion: MKCoordinateRegion) {
+    init(mapRegion: MKCoordinateRegion, festivalId: Festival.ID) {
         let item = HazardSection(id: UUID().uuidString
-                                 , title: "", coordinates: [])
+                                 , title: "", festivalId: festivalId, coordinates: [])
         self.manager = .init(item)
         self.mapRegion = mapRegion
     }

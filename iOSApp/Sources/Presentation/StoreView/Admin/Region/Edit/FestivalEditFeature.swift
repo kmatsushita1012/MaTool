@@ -20,7 +20,9 @@ struct FestivalEditFeature {
     
     @ObservableState
     struct State: Equatable {
-        var item: Festival
+        var festival: Festival
+        var checkpoints: [Checkpoint]
+        var hazardSections: [HazardSection]
         var isLoading: Bool = false
         @Presents var destination: Destination.State?
         @Presents var alert: Alert.State?
@@ -40,7 +42,7 @@ struct FestivalEditFeature {
         case alert(PresentationAction<Alert.Action>)
     }
     
-    @Dependency(\.apiRepository) var apiRepository
+    @Dependency(FestivalDataFetcherKey.self) var festivalDataFetcher
     @Dependency(\.dismiss) var dismiss
     
     var body: some ReducerOf<FestivalEditFeature> {
@@ -51,9 +53,8 @@ struct FestivalEditFeature {
                 return .none
             case .saveTapped:
                 state.isLoading = true
-                return .run { [festival = state.item] send in
-                    let result = await apiRepository.putFestival(festival)
-                    await send(.putReceived(result))
+                return .run { [state] send in
+                    try? await festivalDataFetcher.update(festival: state.festival, checkPoints: state.checkpoints, hazardSections: state.hazardSections)
                 }
             case .cancelTapped:
                 return .run { _ in
@@ -77,36 +78,34 @@ struct FestivalEditFeature {
                 state.destination = .checkpoint(
                     CheckpointEditFeature.State(
                         title: "経由地",
-                        item: Checkpoint(
-                            id: UUID().uuidString
-                        )
+                        item: .init(id: UUID().uuidString, festivalId: state.festival.id)
                     )
                 )
                 return .none
             case .hazardTapped(let hazard):
                 let mapRegion = {
-                    if hazard.coordinates.isEmpty{ makeRegion(origin: state.item.base, spanDelta: spanDelta) }
+                    if hazard.coordinates.isEmpty{ makeRegion(origin: state.festival.base, spanDelta: spanDelta) }
                     else { makeRegion(hazard.coordinates) }
                 }()
                 state.destination = .hazard(.init(hazard, mapRegion: mapRegion))
                 return .none
             case .hazardCreateTapped:
-                state.destination = .hazard(.init(mapRegion: makeRegion(origin: state.item.base, spanDelta: spanDelta)))
+                state.destination = .hazard(.init(.init(id: UUID().uuidString, festivalId: state.festival.id), mapRegion: makeRegion(origin: state.festival.base, spanDelta: spanDelta)))
                 return .none
             case .destination(.presented(.checkpoint(.doneTapped))):
                 guard let item = state.destination?.checkpoint?.item else { return .none }
-                state.item.checkpoints.upsert(item)
+                state.checkpoints.upsert(item)
                 state.destination = nil
                 return .none
             case .destination(.presented(.hazard(.doneTapped))):
                 guard state.destination?.hazard?.isValid ?? false,
                     let item = state.destination?.hazard?.item else { return .none }
-                state.item.hazardSections.upsert(item)
+                state.hazardSections.upsert(item)
                 state.destination = nil
                 return .none
             case .destination(.presented(.hazard(.deleteTapped))):
                 guard let item = state.destination?.hazard?.item else { return .none }
-                state.item.hazardSections.removeAll(of: item)
+                state.hazardSections.removeAll(of: item)
                 state.destination = nil
                 return .none
             case .alert(.presented(.okTapped)):
