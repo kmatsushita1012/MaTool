@@ -13,7 +13,7 @@ struct AdminDistrictCreate {
     
     @ObservableState
     struct State: Equatable {
-        let festival: Festival
+        let festivalId: Festival.ID
         var name: String = ""
         var email: String = ""
         var isLoading: Bool = false
@@ -24,11 +24,10 @@ struct AdminDistrictCreate {
         case binding(BindingAction<State>)
         case createTapped
         case cancelTapped
-        case received(Result<District,APIError>)
         case alert(PresentationAction<Alert.Action>)
     }
     
-    @Dependency(\.apiRepository) var apiRepository
+    @Dependency(DistrictDataFetcherKey.self) var dataFetcher
     @Dependency(\.dismiss) var dismiss
     
     var body: some ReducerOf<AdminDistrictCreate> {
@@ -42,21 +41,13 @@ struct AdminDistrictCreate {
                     return .none
                 }
                 state.isLoading = true
-                return .run { [festival = state.festival, name = state.name, email = state.email] send in
-                    let result = await apiRepository.postDistrict(festival.id, name, email)
-                    await send(.received(result))
+                return .run { [state] send in
+                    try? await dataFetcher.create(name: state.name, email: state.email, festivalId: state.festivalId)
                 }
             case .cancelTapped:
                 return .run { _ in
                     await dismiss()
                 }
-            case .received(.success(_)):
-                state.isLoading = false
-                return .none
-            case .received(.failure(let error)):
-                state.isLoading = false
-                state.alert = Alert.error("作成に失敗しました。\n\(error.localizedDescription)")
-                return .none
             case .alert:
                 state.alert = nil
                 return .none
