@@ -42,4 +42,13 @@ extension Period {
             end.minute
         )
     }
+    
+    var shortText: String{
+        String(
+            format: "%d/%d %@",
+            date.month,
+            date.day,
+            title,
+        )
+    }
 }
