@@ -6,30 +6,29 @@
 //
 
 import Foundation
+import SQLiteData
 
-public struct Festival: Entity {
+@Table public struct Festival: Entity, Identifiable {
     public let id: String
     public var name: String
     public var subname: String
     @NullEncodable public var description: String?
     public var prefecture: String
     public var city: String
+    @Column(as: Coordinate.JSONRepresentation.self)
     public var base: Coordinate
-    public var checkpoints: [Checkpoint]
-    public var hazardSections: [HazardSection]
-    @NullEncodable public var imagePath: String?
+    @Column(as: ImagePath.JSONRepresentation.self)
+    public var image: ImagePath
 
     public init(
         id: String,
         name: String,
         subname: String,
         description: String? = nil,
-        prefecture: String,
-        city: String,
+        prefecture: String = "",
+        city: String = "",
         base: Coordinate,
-        checkpoints: [Checkpoint] = [],
-        hazardSection: [HazardSection] = [],
-        imagePath: String? = nil
+        image: ImagePath = .init()
     ) {
         self.id = id
         self.name = name
@@ -38,75 +37,38 @@ public struct Festival: Entity {
         self.prefecture = prefecture
         self.city = city
         self.base = base
-        self.checkpoints = checkpoints
-        self.hazardSections = hazardSection
-        self.imagePath = imagePath
-    }
-
-    public init(from decoder: Decoder) throws {
-        let container = try decoder.container(keyedBy: CodingKeys.self)
-        self.id         = try container.decode(String.self, forKey: .id)
-        self.name       = try container.decode(String.self, forKey: .name)
-        self.subname    = try container.decode(String.self, forKey: .subname)
-        self.description = try container.decodeIfPresent(String.self, forKey: .description)
-        self.prefecture = try container.decode(String.self, forKey: .prefecture)
-        self.city       = try container.decode(String.self, forKey: .city)
-        self.base       = try container.decode(Coordinate.self, forKey: .base)
-        let legacy = try? decoder.container(keyedBy: LegacyKeys.self)
-        self.checkpoints =
-            try container.decodeIfPresent([Checkpoint].self, forKey: .checkpoints)
-            ?? (try legacy?.decodeIfPresent([Checkpoint].self, forKey: .milestones))
-            ?? []
-        
-        self.hazardSections = try container.decodeIfPresent([HazardSection].self, forKey: .hazardSections) ?? []
-
-        self.imagePath = try container.decodeIfPresent(String.self, forKey: .imagePath)
-    }
-
-    private enum CodingKeys: String, CodingKey {
-        case id
-        case name
-        case subname
-        case description
-        case prefecture
-        case city
-        case base
-        case checkpoints
-        case hazardSections
-        case imagePath
-    }
-
-    private enum LegacyKeys: String, CodingKey {
-        case milestones
+        self.image = image
     }
 }
 
-extension Festival: Identifiable {}
 
 // MARK: - Checkpoint
-public struct Checkpoint: Entity, Identifiable {
+@Table public struct Checkpoint: Entity, Identifiable {
     public let id: String
-    public var name: String = ""
+    public let festivalId: Festival.ID
+    public var name: String
     @NullEncodable public var description: String? = nil
     
-    public init(id: String, name: String = "", description: String? = nil) {
+    public init(id: String, name: String = "", festivalId:Festival.ID, description: String? = nil) {
         self.id = id
         self.name = name
+        self.festivalId = festivalId
         self.description = description
     }
 }
 
 // MARK: - HazardSection
-public struct HazardSection: Entity {
+@Table public struct HazardSection: Entity, Identifiable {
     public let id: String
     public var title: String
+    public let festivalId: Festival.ID
+    @Column(as: [Coordinate].JSONRepresentation.self)
     public var coordinates: [Coordinate]
     
-    public init(id: String, title: String, coordinates: [Coordinate]) {
+    public init(id: String, title: String = "", festivalId: Festival.ID, coordinates: [Coordinate] = []) {
         self.id = id
         self.title = title
+        self.festivalId = festivalId
         self.coordinates = coordinates
     }
 }
-
-extension HazardSection: Identifiable {}
