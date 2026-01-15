@@ -6,10 +6,9 @@
 //
 
 import Foundation
-import Combine
-import ComposableArchitecture
 import MapKit
 import SwiftUI
+import Shared
 
 extension Array where Element: Identifiable & Equatable {
     mutating func upsert(_ element: Element) {
@@ -165,5 +164,18 @@ extension VoidResult where Success == VoidSuccess {
 extension Result {
     func mapVoid() -> VoidResult<Failure>{
         self.map{ _ in .init()}
+    }
+}
+
+extension Shared.Anchor {
+    var text: String {
+        switch self {
+        case .start:
+            "出発"
+        case .end:
+            "到着"
+        case .rest:
+            "休憩"
+        }
     }
 }
