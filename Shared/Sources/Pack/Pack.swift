@@ -47,3 +47,53 @@ public struct RouteDetailPack: Pack {
     }
 }
 
+// MARK: - ScenePack
+// 起動時/ Default-Festival設定変更時に取得
+// Default-Festival基準
+public struct LaunchFestivalPack: Pack {
+    public let festival: Festival
+    public let districts: [District]
+    public let periods: [Period] // Adminなら全期間 Publicならlatest
+    public let locations: [FloatLocation]
+    public let checkpoints: [Checkpoint] // Adminのみ
+    public let hazardSections: [HazardSection] // Adminのみ
+    
+    public init(festival: Festival, districts: [District], periods: [Period], locations: [FloatLocation], checkpoints: [Checkpoint], hazardSections: [HazardSection]) {
+        self.festival = festival
+        self.districts = districts
+        self.periods = periods
+        self.locations = locations
+        self.checkpoints = checkpoints
+        self.hazardSections = hazardSections
+    }
+}
+
+// District基準
+// 起動時&Default-District設定変更時に取得
+// Default-Districtが決まってない場合は取得しない
+public struct LaunchDistrictPack: Pack {
+    public let performances: [Performance]
+    public let routes: [Route]
+    public let points: [Point]
+    public let currentRouteId: Route.ID
+    
+    public init(performances: [Performance], routes: [Route], points: [Point], currentRouteId: Route.ID) {
+        self.performances = performances
+        self.routes = routes
+        self.points = points
+        self.currentRouteId = currentRouteId
+    }
+}
+
+// 管理者のLaterログイン時に取得
+public struct LoginPack: Pack {
+    public let checkpoints: [Checkpoint]
+    public let hazardSections: [HazardSection]
+    public let periods: [Period] //過去全て
+    
+    public init(checkpoints: [Checkpoint], hazardSections: [HazardSection], periods: [Period]) {
+        self.checkpoints = checkpoints
+        self.hazardSections = hazardSections
+        self.periods = periods
+    }
+}
