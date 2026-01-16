@@ -9,16 +9,21 @@ enum SceneUsecaseKey: DependencyKey {
 
 // MARK: - SceneUsecaseProtocol
 protocol SceneUsecaseProtocol: Sendable {
-    func fetchLaunchFestivalPack(festivalId: String, user: UserRole, now: Date) async throws -> LaunchFestivalPack
-    func fetchLaunchDistrictPack(districtId: String, user: UserRole, now: Date) async throws -> LaunchDistrictPack
-    func fetchLoginPack(user: UserRole) async throws -> LoginPack
+    func fetchLaunchFestivalPack(festivalId: Festival.ID, user: UserRole, now: Date) async throws -> LaunchFestivalPack
+    func fetchLaunchFestivalPack(districtId: District.ID, user: UserRole, now: Date) async throws -> LaunchFestivalPack
+    func fetchLaunchDistrictPack(districtId: District.ID, user: UserRole, now: Date) async throws -> LaunchDistrictPack
 }
 
 extension SceneUsecaseProtocol {
-    func fetchLaunchFestivalPack(festivalId: String, user: UserRole) async throws -> LaunchFestivalPack {
+    func fetchLaunchFestivalPack(festivalId: Festival.ID, user: UserRole) async throws -> LaunchFestivalPack {
         try await fetchLaunchFestivalPack(festivalId: festivalId, user: user, now: .now)
     }
-    func fetchLaunchDistrictPack(districtId: String, user: UserRole) async throws -> LaunchDistrictPack {
+    
+    func fetchLaunchFestivalPack(districtId: District.ID, user: UserRole) async throws -> LaunchFestivalPack {
+        try await fetchLaunchFestivalPack(districtId: districtId, user: user, now: .now)
+    }
+    
+    func fetchLaunchDistrictPack(districtId: District.ID, user: UserRole) async throws -> LaunchDistrictPack {
         try await fetchLaunchDistrictPack(districtId: districtId, user: user, now: .now)
     }
 }
@@ -35,7 +40,7 @@ struct SceneUsecase: SceneUsecaseProtocol {
     @Dependency(RouteRepositoryKey.self) var routeRepository
     @Dependency(PointRepositoryKey.self) var pointRepository
 
-    func fetchLaunchFestivalPack(festivalId: String, user: UserRole, now: Date) async throws -> LaunchFestivalPack {
+    func fetchLaunchFestivalPack(festivalId: Festival.ID, user: UserRole, now: Date) async throws -> LaunchFestivalPack {
         let isAdmin = (user != .guest)
 
         guard let festival = try await festivalRepository.get(id: festivalId) else {
@@ -47,6 +52,13 @@ struct SceneUsecase: SceneUsecaseProtocol {
         } else {
             return try await fetchUserLaunchPack(festival: festival, now: now)
         }
+    }
+    
+    func fetchLaunchFestivalPack(districtId: District.ID, user: UserRole, now: Date) async throws -> LaunchFestivalPack {
+        guard let district = try await districtRepository.get(id: districtId) else {
+            throw Error.notFound("District \(districtId) が見つかりません")
+        }
+        return try await fetchLaunchFestivalPack(festivalId: district.festivalId, user: user, now: now)
     }
 
     // MARK: - Private: 管理者用
@@ -95,7 +107,7 @@ struct SceneUsecase: SceneUsecaseProtocol {
         return currentYear + nextYear
     }
 
-    func fetchLaunchDistrictPack(districtId: String, user: UserRole, now: Date) async throws -> LaunchDistrictPack {
+    func fetchLaunchDistrictPack(districtId: District.ID, user: UserRole, now: Date) async throws -> LaunchDistrictPack {
         let district = try await getDistrict(districtId)
         async let performances = performanceRepository.query(by: districtId)
         
@@ -141,24 +153,6 @@ struct SceneUsecase: SceneUsecaseProtocol {
             points: [],
             currentRouteId: nil
         )
-    }
-
-    func fetchLoginPack(user: UserRole) async throws -> LoginPack {
-        let festivalId: Festival.ID = try await {
-            switch user {
-            case .headquarter(let festivalId):
-                return festivalId
-            case .district(let districtId):
-                guard let district = try await districtRepository.get(id: districtId) else { throw Error.badRequest("IDが不正です") }
-                return district.festivalId
-            case .guest:
-                throw Error.unauthorized("アクセス権限がありません。")
-            }
-        }()
-        async let periods = periodRepository.query(by: festivalId)
-        async let checkpoints = checkpointRepository.query(by: festivalId)
-        async let hazardSections = hazardRepository.query(by: festivalId)
-        return try await .init(checkpoints: checkpoints, hazardSections: hazardSections, periods: periods)
     }
 }
 
