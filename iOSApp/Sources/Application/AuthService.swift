@@ -10,11 +10,11 @@ import Shared
 
 // MARK: - Dependencies
 enum AuthServiceKey: DependencyKey {
-    static let liveValue = AuthService()
+    static let liveValue: AuthServiceProtocol = AuthService()
 }
 
 extension DependencyValues {
-    var authService: AuthService {
+    var authService: AuthServiceProtocol {
         get { self[AuthServiceKey.self] }
         set { self[AuthServiceKey.self] = newValue }
     }
@@ -22,7 +22,7 @@ extension DependencyValues {
 
 // MARK: - AuthServiceProtocol
 protocol AuthServiceProtocol: Sendable {
-    func initialize() -> Result<Shared.Empty, AuthError>
+    nonisolated func initialize() throws
     func signIn(_ username: String, password: String) async -> SignInResult
     func confirmSignIn(password: String) async -> Result<UserRole,AuthError>
     func signOut() async -> Result<UserRole, AuthError>
@@ -37,13 +37,14 @@ protocol AuthServiceProtocol: Sendable {
 }
 
 // MARK: - AuthService
-actor AuthService {
+actor AuthService: AuthServiceProtocol {
     @Dependency(\.authProvider) var authProvider
     
     private var userRole: UserRole = .guest
     
-    func initialize() -> Result<Shared.Empty, AuthError> {
-        return authProvider.initialize()
+    nonisolated func initialize() throws {
+        @Dependency(\.authProvider) var authProvider
+        return try authProvider.initialize()
     }
     
     func signIn(_ username: String, password: String) async -> SignInResult {

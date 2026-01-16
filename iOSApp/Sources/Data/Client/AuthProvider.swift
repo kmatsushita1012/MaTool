@@ -20,7 +20,7 @@ extension DependencyValues {
 
 // MARK: - AuthProvider(Protocol)
 struct AuthProvider: Sendable {
-    var initialize: @Sendable () -> Result<Empty, AuthError>
+    nonisolated var initialize: @Sendable () throws -> Void
     var signIn: @Sendable (_ username: String, _ password: String) async -> SignInResponse
     var confirmSignIn: @Sendable (_ newPassword: String) async -> Result<Empty, AuthError>
     var getUserRole: @Sendable () async -> Result<UserRole, AuthError>
@@ -43,14 +43,10 @@ extension AuthProvider: DependencyKey {
                 do {
                     try Amplify.add(plugin: AWSCognitoAuthPlugin())
                     try Amplify.configure()
-                    return .success(Empty())
-                } catch let error as AuthError {
-                    return .failure(error)
                 } catch {
-                    return .failure(.unknown(error.localizedDescription))
+                    throw AuthError.unknown(error.localizedDescription)
                 }
             },
-            
             signIn: { username, password in
                 do {
                     let result = try await withTimeout(seconds: timeout) {

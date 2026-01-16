@@ -55,6 +55,7 @@ protocol SQLiteStoreProtocol<Content>: Sendable {
     func insert(_ items: [Content], at db: Database) throws
     func deleteAll(@QueryFragmentBuilder<Bool> where predicate: (Content.TableColumns) -> [QueryFragment], from db: Database) throws
     func deleteAll(_ primaryKeys: some Sequence<some QueryExpression<Content.PrimaryKey>> , from db: Database) throws
+    func deleteAll(from db: Database) throws
 }
 
 struct SQLiteStore<Content: PrimaryKeyedTable & Sendable & Identifiable>: SQLiteStoreProtocol {
@@ -80,6 +81,10 @@ struct SQLiteStore<Content: PrimaryKeyedTable & Sendable & Identifiable>: SQLite
         _ primaryKeys: some Sequence<some QueryExpression<Content.PrimaryKey>>, from db: Database
     ) throws {
         _ = try Content.find(primaryKeys).delete().execute(db)
+    }
+    
+    func deleteAll(from db: Database) throws {
+        _ = try Content.delete().execute(db)
     }
 }
 
