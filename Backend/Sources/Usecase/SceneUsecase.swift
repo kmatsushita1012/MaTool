@@ -9,12 +9,15 @@ enum SceneUsecaseKey: DependencyKey {
 
 // MARK: - SceneUsecaseProtocol
 protocol SceneUsecaseProtocol: Sendable {
-    func fetchLaunchFestivalPack(festivalId: String, user: UserRole) async throws -> LaunchFestivalPack
-    func fetchLaunchDistrictPack(districtId: String, user: UserRole, now: SimpleDate) async throws -> LaunchDistrictPack
+    func fetchLaunchFestivalPack(festivalId: String, user: UserRole, now: Date) async throws -> LaunchFestivalPack
+    func fetchLaunchDistrictPack(districtId: String, user: UserRole, now: Date) async throws -> LaunchDistrictPack
     func fetchLoginPack(user: UserRole) async throws -> LoginPack
 }
 
 extension SceneUsecaseProtocol {
+    func fetchLaunchFestivalPack(festivalId: String, user: UserRole) async throws -> LaunchFestivalPack {
+        try await fetchLaunchFestivalPack(festivalId: festivalId, user: user, now: .now)
+    }
     func fetchLaunchDistrictPack(districtId: String, user: UserRole) async throws -> LaunchDistrictPack {
         try await fetchLaunchDistrictPack(districtId: districtId, user: user, now: .now)
     }
@@ -32,7 +35,7 @@ struct SceneUsecase: SceneUsecaseProtocol {
     @Dependency(RouteRepositoryKey.self) var routeRepository
     @Dependency(PointRepositoryKey.self) var pointRepository
 
-    func fetchLaunchFestivalPack(festivalId: String, user: UserRole) async throws -> LaunchFestivalPack {
+    func fetchLaunchFestivalPack(festivalId: String, user: UserRole, now: Date) async throws -> LaunchFestivalPack {
         let isAdmin = (user != .guest)
 
         guard let festival = try await festivalRepository.get(id: festivalId) else {
@@ -42,7 +45,7 @@ struct SceneUsecase: SceneUsecaseProtocol {
         if isAdmin {
             return try await fetchAdminLaunchPack(festival: festival)
         } else {
-            return try await fetchUserLaunchPack(festival: festival)
+            return try await fetchUserLaunchPack(festival: festival, now: now)
         }
     }
 
@@ -65,10 +68,10 @@ struct SceneUsecase: SceneUsecaseProtocol {
     }
 
     // MARK: - Private: 一般ユーザー用
-    private func fetchUserLaunchPack(festival: Festival) async throws -> LaunchFestivalPack {
+    private func fetchUserLaunchPack(festival: Festival, now: Date) async throws -> LaunchFestivalPack {
         async let districts = districtRepository.query(by: festival.id)
         async let locations = floatLocationRepository.query(by: festival.id)
-        let periods = try await fetchLatestPeriods(festivalId: festival.id)
+        let periods = try await fetchLatestPeriods(festivalId: festival.id, now: now)
 
         return LaunchFestivalPack(
             festival: festival,
@@ -81,49 +84,62 @@ struct SceneUsecase: SceneUsecaseProtocol {
     }
 
     // MARK: - Private: latest 年取得
-    private func fetchLatestPeriods(festivalId: String) async throws -> [Period] {
-        let nowYear = SimpleDate.now.year
+    private func fetchLatestPeriods(festivalId: String, now: Date) async throws -> [Period] {
+        let nowYear = SimpleDate.from(now).year
 
         async let nextYearPeriods = periodRepository.query(by: festivalId, year: nowYear + 1)
         async let currentYearPeriods = periodRepository.query(by: festivalId, year: nowYear)
 
         let (nextYear, currentYear) = try await (nextYearPeriods, currentYearPeriods)
 
-        if !nextYear.isEmpty {
-            return nextYear
-        } else if !currentYear.isEmpty {
-            return currentYear
-        } else {
-            return []
-        }
+        return currentYear + nextYear
     }
 
-    func fetchLaunchDistrictPack(districtId: String, user: UserRole, now: SimpleDate) async throws -> LaunchDistrictPack {
+    func fetchLaunchDistrictPack(districtId: String, user: UserRole, now: Date) async throws -> LaunchDistrictPack {
         let district = try await getDistrict(districtId)
         async let performances = performanceRepository.query(by: districtId)
         
-        let routesAll: [Route] = try await {
-            let nextYear = now.year + 1
+        let (routes, periods): ([Route], [Period]) = try await {
+            let nowYear = SimpleDate.from(now).year
+            let nextYear = nowYear + 1
             let nextYearRoutes = try await routeRepository.query(by: districtId, year: nextYear)
             if nextYearRoutes.isEmpty {
-                return try await routeRepository.query(by: districtId, year: now.year)
+                async let routes = routeRepository.query(by: districtId, year: nowYear)
+                async let periods = periodRepository.query(by: district.festivalId, year: nowYear)
+                return (routesAll: try await routes, periods: try await periods)
             } else {
-                return nextYearRoutes
+                let periods = try await periodRepository.query(by: district.festivalId, year: nextYear)
+                return (routes: nextYearRoutes, periods: periods)
             }
         }()
 
-        let filtered = routesAll.filter { isVisible(visibility: $0.visibility, user: user, district: district) }
-        guard let currentRouteId = filtered.first?.id else {
-            throw Error.notFound("利用可能なルートが見つかりません")
-        } // TODO: Currentのロジック
-
-        let points = try await pointRepository.query(by: currentRouteId)
-
+        let filtered = routes.filter { isVisible(visibility: $0.visibility, user: user, district: district) }
+        
+        let currentPeriod: Period? = {
+            if let between = periods.first(where: { $0.contains(now) }){
+                between
+            } else if let before = periods.sorted().first(where: { $0.before(now) }) {
+                before
+            } else {
+                periods.first
+            }
+        }()
+        
+        if let currentPeriod ,
+            let currentRoute = filtered.first(where: { currentPeriod.id == $0.periodId }) {
+            let points = try await pointRepository.query(by: currentRoute.id)
+            return .init(
+                performances: try await performances,
+                routes: filtered,
+                points: points,
+                currentRouteId: currentRoute.id
+            )
+        }
         return .init(
             performances: try await performances,
             routes: filtered,
-            points: points,
-            currentRouteId: currentRouteId
+            points: [],
+            currentRouteId: nil
         )
     }
 
