@@ -16,6 +16,7 @@ struct DistrictRouter: Router {
     func body(_ app: Application) {
         // MARK: - Scene
         app.get(path: "/districts/:districtId/launch", sceneController.launchDistrict)
+        app.get(path: "/districts/:districtId/launch-festival", sceneController.launchFestival)
         // MARK: - Route
         app.get(path: "/districts/:districtId/routes", routeController.query)
         app.post(path: "/districts/:districtId/routes", routeController.post)

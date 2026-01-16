@@ -84,16 +84,3 @@ public struct LaunchDistrictPack: Pack {
         self.currentRouteId = currentRouteId
     }
 }
-
-// 管理者のLaterログイン時に取得
-public struct LoginPack: Pack {
-    public let checkpoints: [Checkpoint]
-    public let hazardSections: [HazardSection]
-    public let periods: [Period] //過去全て
-    
-    public init(checkpoints: [Checkpoint], hazardSections: [HazardSection], periods: [Period]) {
-        self.checkpoints = checkpoints
-        self.hazardSections = hazardSections
-        self.periods = periods
-    }
-}
