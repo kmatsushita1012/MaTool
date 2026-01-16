@@ -75,9 +75,9 @@ public struct LaunchDistrictPack: Pack {
     public let performances: [Performance]
     public let routes: [Route]
     public let points: [Point]
-    public let currentRouteId: Route.ID
+    public let currentRouteId: Route.ID?
     
-    public init(performances: [Performance], routes: [Route], points: [Point], currentRouteId: Route.ID) {
+    public init(performances: [Performance], routes: [Route], points: [Point], currentRouteId: Route.ID?) {
         self.performances = performances
         self.routes = routes
         self.points = points
