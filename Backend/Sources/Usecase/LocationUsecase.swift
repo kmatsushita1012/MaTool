@@ -17,9 +17,9 @@ enum LocationUsecaseKey: DependencyKey {
 // MARK: - LocationUsecaseProtocol
 protocol LocationUsecaseProtocol: Sendable {
     func query(by festivalId: String, user: UserRole, now: Date) async throws -> [FloatLocation]
-    func get(_ districtId: String, user: UserRole) async throws -> FloatLocation?
+    func get(districtId: String, user: UserRole, now: Date) async throws -> FloatLocation?
     func put(_ location: FloatLocation, user: UserRole) async throws -> FloatLocation
-    func delete(_ id: String, user: UserRole) async throws
+    func delete(districtId: District.ID, user: UserRole) async throws
 }
 
 // MARK: - LocationUsecase
@@ -27,49 +27,34 @@ struct LocationUsecase: LocationUsecaseProtocol {
     @Dependency(LocationRepositoryKey.self) var locationRepository
     @Dependency(DistrictRepositoryKey.self) var districtRepository
     @Dependency(FestivalRepositoryKey.self) var festivalRepository
+    @Dependency(PeriodRepositoryKey.self) var periodRepository
     
     func query(by festivalId: String, user: UserRole, now: Date) async throws -> [FloatLocation] {
         let locations: [FloatLocation]
         
         if case let .headquarter(userId) = user, userId == festivalId {
-            locations = try await scanForAdmin(festivalId)
+            locations = try await queryForAdmin(festivalId)
         } else {
-            locations = try await scanForPublic(festivalId, now: now)
+            locations = try await queryForPublic(festivalId: festivalId, now: now)
         }
-        
-        let districts = try await districtRepository.query(by: festivalId)
-        if districts.isEmpty {
-            throw Error.notFound("指定された地区が見つかりません")
-        }
-        
-        let districtMap: [String: District] = Dictionary(uniqueKeysWithValues: districts.map { ($0.id, $0) })
-        // compactMapでqueryと同時に処理
-        
         return locations
     }
     
-    func get(_ districtId: String, user: UserRole) async throws -> FloatLocation? {
-        
-        
+    func get(districtId: String, user: UserRole, now: Date) async throws -> FloatLocation? {
         guard let district = try await districtRepository.get(id: districtId) else {
             throw Error.notFound("指定された地区が見つかりません")
         }
 
         let location: FloatLocation?
-
-        // admin when headquarter matches festival id OR the user is district owner
+        
         if case let .headquarter(headId) = user, headId == district.festivalId {
-            location = try await getForAdmin(districtId)
+            location = try await getForAdmin(festivalId: headId, districtId: district.id)
         } else if case let .district(dId) = user, dId == districtId {
-            location = try await getForAdmin(districtId)
+            location = try await getForAdmin(festivalId: district.festivalId, districtId: district.id)
         } else {
-            location = try await getForPublic(district)
+            location = try await getForPublic(festivalId: district.festivalId, districtId: district.id, now: now)
         }
-
-        guard let loc = location else {
-            throw Error.notFound("位置情報が見つかりません")
-        }
-
+        guard let location else { throw Error.notFound("位置情報が見つかりません") }
         return location
     }
     
@@ -77,56 +62,47 @@ struct LocationUsecase: LocationUsecaseProtocol {
         guard user.id == location.districtId else {
             throw Error.unauthorized("アクセス権限がありません")
         }
-        return try await locationRepository.put(location)
+        guard let district = try await districtRepository.get(id: location.districtId) else {
+            throw Error.notFound("地区が見つかりません")
+        }
+        return try await locationRepository.put(location, festivalId: district.festivalId)
     }
     
-    func delete(_ id: String, user: UserRole) async throws {
-        guard user.id == id else {
+    func delete(districtId: District.ID, user: UserRole) async throws {
+        guard user.id == districtId else {
             throw Error.unauthorized("アクセス権限がありません")
         }
-
-        try await locationRepository.delete(districtId: id)
+        guard let district = try await districtRepository.get(id: districtId) else {
+            throw Error.notFound("地区が見つかりません")
+        }
+        try await locationRepository.delete(festivalId: district.festivalId, districtId: district.id)
     }
     
 }
 
 extension LocationUsecase {
-    private func scanForPublic(_ id: String, now: Date) async throws -> [FloatLocation] {
-        guard let festival = try await festivalRepository.get(id: id) else {
-            throw Error.notFound("指定された地域が見つかりません")
-        }
+    private func queryForPublic(festivalId: Festival.ID, now: Date) async throws -> [FloatLocation] {
+        let periods = try await periodRepository.query(by: festivalId, year: SimpleDate.now.year)
         // TODO: Period修正
-        var foundFlag = false
-//        for period in festival.periods {
-//            if period.start.toDate <= now && now <= period.end.toDate {
-//                foundFlag = true
-//                break
-//            }
-//        }
+        guard periods.first(where: { $0.contains(now) }) != nil else { throw Error.unauthorized("時間外のため配信を停止しています。") }
+
+        return try await locationRepository.query(by: festivalId)
+    }
+
+    private func queryForAdmin(_ id: Festival.ID) async throws -> [FloatLocation] {
+        return try await locationRepository.query(by: id)
+    }
+
+    private func getForAdmin(festivalId: String, districtId: District.ID) async throws -> FloatLocation? {
+        return try await locationRepository.get(festivalId: festivalId, districtId: districtId)
+    }
+
+    private func getForPublic(festivalId: String, districtId: District.ID, now: Date) async throws -> FloatLocation? {
+        let periods = try await periodRepository.query(by: festivalId, year: SimpleDate.now.year)
+        // TODO: Period修正
+        guard periods.first(where: { $0.contains(now) }) != nil else { throw Error.unauthorized("時間外のため配信を停止しています。") }
         
-        guard foundFlag else { throw Error.forbidden("祭典期間外のため配信を停止しています。") }
-
-        return try await locationRepository.scan()
-    }
-
-    private func scanForAdmin(_ id: String) async throws -> [FloatLocation] {
-        return try await locationRepository.scan()
-    }
-
-    private func getForAdmin(_ districtId: String) async throws -> FloatLocation? {
-        return try await locationRepository.get(id: districtId)
-    }
-
-    private func getForPublic(_ district: District) async throws -> FloatLocation? {
-        guard let festival = try await festivalRepository.get(id: district.festivalId) else {
-            throw Error.notFound("指定された地域が見つかりません")
-        }
-
-        let now = Date()
-        // TODO: Period修正
-//        guard festival.periods.first(where: { $0.contains(now) }) != nil else { throw Error.unauthorized("アクセス権限がありません") }
-        throw Error.unauthorized("アクセス権限がありません")
-        return try await locationRepository.get(id: district.id)
+        return try await locationRepository.get(festivalId: festivalId, districtId: districtId)
     }
 
 }

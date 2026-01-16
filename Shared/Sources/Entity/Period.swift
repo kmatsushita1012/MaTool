@@ -50,3 +50,10 @@ public extension Period {
         return startDateTime <= datetime && datetime <= endDateTime
     }
 }
+
+public extension Period {
+    func before(_ datetime: Date) -> Bool {
+        let startDateTime = Date.combine(date: date, time: start)
+        return datetime <= startDateTime
+    }
+}
