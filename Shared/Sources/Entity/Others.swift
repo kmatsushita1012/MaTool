@@ -15,7 +15,7 @@ public struct Pair<Element: Equatable>: Equatable {
     public let second: Element
 }
 
-public struct Empty: Equatable, Codable {
+public struct Empty: Equatable, Codable, Sendable {
     public init(){}
 }
 
