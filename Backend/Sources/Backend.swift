@@ -12,6 +12,5 @@ struct MaToolAPI: APIGateway {
         FestivalRouter()
         DistrictRouter()
         RouteRouter()
-        OtherRouter()
     }
 }
