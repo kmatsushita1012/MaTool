@@ -51,3 +51,41 @@ extension UserDefaultsClient: DependencyKey {
   }()
 }
 
+struct UserDefaltsManager: Sendable {
+    enum Key: String {
+        case defaultFestivalId = "region"
+        case defaultDistrictId = "district"
+    }
+    let defaults = UserDefaults(suiteName: "matool")!
+}
+
+protocol UserDefalutsManagerProtocol: Sendable {
+    var defaultFestivalId: String? { get set }
+    var defaultDistrictId: String? { get set }
+}
+
+extension UserDefaltsManager: UserDefalutsManagerProtocol {
+    var defaultFestivalId: String? {
+        get {
+            defaults.string(forKey: Key.defaultFestivalId.rawValue)
+        }
+        set {
+            defaults.set(newValue, forKey: Key.defaultFestivalId.rawValue)
+        }
+    }
+    
+    var defaultDistrictId: String? {
+        get {
+            defaults.string(forKey: Key.defaultDistrictId.rawValue)
+        }
+        set {
+            defaults.set(newValue, forKey: Key.defaultDistrictId.rawValue)
+        }
+    }
+}
+
+enum UserDefaltsManagerKey: DependencyKey {
+    static let liveValue: UserDefalutsManagerProtocol = UserDefaltsManager()
+}
+
+extension UserDefaults: @retroactive @unchecked Sendable {}
