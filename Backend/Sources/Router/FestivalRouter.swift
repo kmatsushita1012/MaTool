@@ -12,8 +12,11 @@ struct FestivalRouter: Router {
     @Dependency(DistrictControllerKey.self) var districtController
     @Dependency(LocationControllerKey.self) var locationController
     @Dependency(PeriodControllerKey.self) var periodController
+    @Dependency(SceneControllerKey.self) var sceneController
     
     func body(_ app: Application) {
+        // MARK: - Scene
+        app.get(path: "/festivals/:festivalId/launch", sceneController.launchFestival)
         // MARK: - District
         app.get(path: "/festivals/:festivalId/districts", districtController.query)
         app.post(path: "/festivals/:festivalId/districts", districtController.post)
