@@ -37,7 +37,7 @@ struct AdminDistrictList {
     enum Action: Equatable, BindableAction {
         case binding(BindingAction<State>)
         case exportTapped(State.Item)
-        case exportPrepared(State.Item)
+        case exportPrepared(Result<State.Item, APIError>)
         case dismissTapped
         case batchExportTapped
         case batchExportPrepared(Result<[URL], APIError>)
@@ -59,10 +59,10 @@ struct AdminDistrictList {
                 guard let route = item.route else { return .none }
                 state.isApiLoading = true
                 return .run{ send in
-                    _ = await task { try await dataFetcher.fetch(routeID: route.id) }
-                    await send(.exportPrepared(item)) // FIXME
+                    let result = await task { try await dataFetcher.fetch(routeID: route.id) }
+                    await send(.exportPrepared(result.map{ _ in item }))
                 }
-            case .exportPrepared(let item):
+            case .exportPrepared(.success(let item)):
                 state.isApiLoading = false
                 guard let route = item.route else { return .none }
                 state.export = AdminRouteEdit.State(
@@ -71,6 +71,9 @@ struct AdminDistrictList {
                     district: state.district,
                     period: item.period
                 )
+                return .none
+            case .exportPrepared(.failure(let error)):
+                state.alert = Alert.error("情報の取得に失敗しました。\n\(error.localizedDescription)")
                 return .none
             case .dismissTapped:
                 return .run { _ in

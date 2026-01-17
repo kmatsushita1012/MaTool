@@ -153,7 +153,10 @@ struct AdminRouteEdit{
                 state.alert = .delete(Alert.delete())
                 return .none
             case .wholeTapped:
-                guard let snapshotter = RouteSnapshotter(state.route) else { return .none } //FIXME:
+                guard let snapshotter = RouteSnapshotter(state.route) else {
+                    state.alert = Alert.error("時間帯の取得に失敗しました。")
+                    return .none
+                }
                 let path = "\(state.district.name)_\(state.period.shortText).pdf"
                 return .run { send in
                     if let image = try? await snapshotter.take(),
@@ -169,9 +172,13 @@ struct AdminRouteEdit{
             case .partialTapped:
                 guard let region = state.region,
                   let size = state.size else {
+                    state.alert = Alert.error("描画範囲の取得に失敗しました。")
                       return .none
                 }
-                guard let snapshotter = RouteSnapshotter(state.route) else { return .none }// FIXME:
+                guard let snapshotter = RouteSnapshotter(state.route) else {
+                    state.alert = Alert.error("時間帯の取得に失敗しました。")
+                    return .none
+                }
                 let path =  "\(state.district.name)_\(state.period.shortText).pdf"
                 return .run {  send in
                     if let image = try? await snapshotter.take(of: region, size: size),
