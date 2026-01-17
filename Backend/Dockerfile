@@ -15,13 +15,13 @@ RUN dnf update -y && \
     dnf install -y \
         swiftlang \
         sqlite-devel \
+        openssl-devel \
         clang \
         git \
         tar \
         gzip \
         libicu \
     && dnf clean all
-
 # Swift 環境の初期化
 WORKDIR /workspace
 
