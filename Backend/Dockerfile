@@ -1,42 +1,62 @@
-# ============================================================
-# Stage 1 — Build Swift Lambda binary
-# ============================================================
+# ============================
+# Stage 1: Build Swift Lambda binary (AL2023)
+# ============================
+FROM amazonlinux:2023 AS build
 
-# ⚙️ 現在は Amazon Linux 2 ベース
-#    → Swift for Amazon Linux 2023 が出たらこの行だけ差し替え！
-# FROM swift:6.2.0-amazonlinux2 AS build
-# ↓ 公式提供後はこちらに変更予定：
-# FROM swift:6.2.0-amazonlinux2023 AS build
+# 必要なツールとライブラリをインストール
+RUN dnf update -y && \
+    dnf install -y \
+        swiftlang \
+        gcc \
+        make \
+        tar \
+        gzip \
+        git \
+        openssl-devel \
+        libxml2-devel \
+        libcurl-devel \
+        binutils \
+    && dnf clean all
 
-FROM swift:6.2.0-amazonlinux2 AS build
-
-# Swift 環境の初期化
 WORKDIR /workspace
 
-# Backend のパッケージ設定とソース
+# SQLite ソースを取得して snapshot 有効でビルド
+RUN curl -L -O https://www.sqlite.org/2026/sqlite-autoconf-3510200.tar.gz && \
+    tar xzf sqlite-autoconf-3510200.tar.gz && \
+    cd sqlite-autoconf-3510200 && \
+    CFLAGS="-DSQLITE_ENABLE_SNAPSHOT" ./configure --prefix=/usr/local --disable-shared && \
+    make && make install
+
+# パスにインストールディレクトリを追加
+ENV PATH="/usr/local/bin:${PATH}"
+ENV LD_LIBRARY_PATH="/usr/local/lib:${LD_LIBRARY_PATH}"
+
+# Backend と Shared をコピー
+COPY Shared ./Shared
 COPY Backend ./Backend
 
-# Shared は並列でコピー
-COPY Shared ./Shared
-
-# Backend 内でビルド
 WORKDIR /workspace/Backend
+
+# Swift Package の依存解決
 RUN swift package resolve
+
+# Swift build（静的ライブラリ込み）
 RUN swift build -c release --static-swift-stdlib
 
-# ============================================================
-# Stage 2 — Lambda Runtime (provided.al2 / provided.al2023)
-# ============================================================
+RUN ls -lh .build/release/Backend
+# デバッグシンボルを削除してサイズ圧縮
+RUN strip .build/release/Backend
 
-# ⚙️ 現在は provided.al2 で運用
-#    → AL2023 へ移行する際はこの1行を置き換えるだけ
-# FROM public.ecr.aws/lambda/provided:al2023
-FROM public.ecr.aws/lambda/provided:al2
+RUN ls -lh .build/release/Backend
 
-# Lambda が実行するエントリポイント（bootstrap）配置
+# ============================
+# Stage 2: Lambda Runtime (AL2023)
+# ============================
+FROM public.ecr.aws/lambda/provided:al2023
+
+# ビルド済みバイナリをコピー
 COPY --from=build /workspace/Backend/.build/release/Backend /var/runtime/bootstrap
 
 RUN chmod +x /var/runtime/bootstrap
 
-# Lambda の起動エントリポイント
 ENTRYPOINT ["/var/runtime/bootstrap"]
