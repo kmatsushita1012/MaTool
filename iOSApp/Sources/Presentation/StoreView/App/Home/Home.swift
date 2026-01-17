@@ -26,7 +26,7 @@ struct Home {
     @ObservableState
     struct State: Equatable {
         var userRole: UserRole = .guest
-        var isAuthLoading: Bool = false
+        var currentRouteId: Route.ID?
         var isDestinationLoading: Bool = false
         var isLoading: Bool {
             isDestinationLoading
@@ -34,6 +34,10 @@ struct Home {
         var status: StatusCheckResult? = nil
         @Presents var destination: Destination.State?
         @Presents var alert: Alert.State?
+        
+        init(currentRouteId: Route.ID? = nil){
+            self.currentRouteId = currentRouteId
+        }
     }
     
 
@@ -45,9 +49,7 @@ struct Home {
         case infoTapped
         case adminTapped
         case settingsTapped
-        case skipTapped
         case statusReceived(StatusCheckResult?)
-        case awsInitializeReceived(Result<UserRole, AuthError>)
         case adminDistrictPrepared(VoidResult<APIError>)
         case adminFestivalPrepared(VoidResult<APIError>)
         
@@ -57,11 +59,8 @@ struct Home {
     }
     
     @Dependency(\.authService) var authService
-    @Dependency(\.userDefaultsClient) var userDefaultsClient
+    @Dependency(UserDefaltsManagerKey.self) var userDefaults
     @Dependency(\.appStatusClient) var appStatusClient
-    @Dependency(\.values.defaultFestivalKey) var defaultFestivalKey
-    @Dependency(\.values.defaultDistrictKey) var defaultDistrictKey
-    @Dependency(\.values.loginIdKey) var loginIdKey
     @Dependency(FestivalDataFetcherKey.self) var festivalDataFetcher
     
     var body: some ReducerOf<Home> {
@@ -71,66 +70,49 @@ struct Home {
             case .binding:
                 return .none
             case .initialize:
-                state.isAuthLoading = true
                 return .merge(
                     .run { send in
                         let result = await appStatusClient.checkStatus()
                         await send(.statusReceived(result))
                     },
-                    .run { send in
-                        let result = await authService.getUserRole()
-                        await send(.awsInitializeReceived(result))
-                    }
-                    .cancellable(id: "AuthInitialize")
                 )
             case .statusReceived(let value):
                 state.status = value
                 return .none
             case .mapTapped:
-                let festivalId = userDefaultsClient.string(defaultFestivalKey)
-                let districtId = userDefaultsClient.string(defaultDistrictKey)
-                
-                if let festivalId, let districtId {
+                guard let festivalId = userDefaults.defaultFestivalId,
+                      let festival = FetchOne(Festival.find(festivalId)).wrappedValue else{
+                      state.alert = Alert.error("設定画面で参加する祭典を選択してください")
+                        return .none
+                }
+                if let districtId = userDefaults.defaultDistrictId,
+                   let district = FetchOne(District.find(districtId)).wrappedValue
+                {
                     state.isDestinationLoading = true
-                    state.destination = .map(.init(festival: <#T##Festival#>, district: <#T##District#>, routeId: <#T##Route.ID#>))
+                    state.destination = .map(.init(festival: festival, district: district, routeId: state.currentRouteId))
                     return .none// FIXME:
-                } else if let festivalId {
+                } else {
                     state.isDestinationLoading = true
+                    state.destination = .map(.init(festival: festival))
                     return .none// FIXME:
                 }
-                state.alert = Alert.error("設定画面で参加する祭典を選択してください")
-                return .none
+                
             case .infoTapped:
-                guard let festivalId = userDefaultsClient.string(defaultFestivalKey) else {
+                guard let festivalId = userDefaults.defaultFestivalId,
+                      let festival = FetchOne(Festival.find(festivalId)).wrappedValue else {
                     state.alert = Alert.error("設定画面から祭典を選択してください。")
                     return .none
                 }
-                state.isDestinationLoading = true
+                state.destination = .info(.init(festival: festival))
                 return .none //FIXME
             case .adminTapped:
                 return adminTapped(state: &state, action: action)
             case .settingsTapped:
                 state.isDestinationLoading = true
-                let festivalId = userDefaultsClient.string(defaultFestivalKey)
-                let districtId = userDefaultsClient.string(defaultDistrictKey)
                 return .run {send in 
                     let result = await task{ try await festivalDataFetcher.fetchAll()}
                     //FIXME:
                 }
-            case .skipTapped:
-                state.isAuthLoading = false
-                let effect = adminTapped(state: &state, action: action)
-                return .merge(
-                    .cancel(id: "AuthInitialize"),
-                    effect
-                )
-            case .awsInitializeReceived(.success(let userRole)):
-                state.userRole = userRole
-                state.isAuthLoading = false
-                return .none
-            case .awsInitializeReceived(.failure(_)):
-                state.isAuthLoading = false
-                return .none
             case .destination(.presented(let childAction)):
                 switch childAction {
                 case .login(.received(.success(let userRole))),
@@ -149,12 +131,11 @@ struct Home {
                 case .login(.received(.failure(_))):
                     return .none
                 case .info(.destination(.presented(.district(.mapTapped)))):
-                    guard let districtId = state.destination?.info?.destination?.district?.district.id,
-                        let festivalId = userDefaultsClient.string(defaultFestivalKey)  else {
+                    guard let districtId = state.destination?.info?.destination?.district?.district.id else {
                         return .none
                     }
                     if #available(iOS 17, *) {
-                        return .none
+                        return .none // FIXME:
                     }else{
                         state.isDestinationLoading = true
                         state.destination = nil
@@ -183,10 +164,6 @@ struct Home {
     }
     
     func adminTapped(state: inout State, action: Action) -> Effect<Action> {
-        if state.isAuthLoading {
-            state.alert = Alert.error("認証中です。もう一度お試しください。再度このエラーが出る場合は設定画面から強制ログアウトをお試しください。")
-            return .none
-        }
         switch state.userRole {
         case .headquarter(let id):
             state.isDestinationLoading = true
@@ -195,8 +172,7 @@ struct Home {
             state.isDestinationLoading = true
             return .none // FIXME:
         case .guest:
-            let id = userDefaultsClient.string(loginIdKey) ?? ""
-            state.destination = .login(Login.State(id: id))
+            state.destination = .login(Login.State(id: ""))
             return .none
         }
     }

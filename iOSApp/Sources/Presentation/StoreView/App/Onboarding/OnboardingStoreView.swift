@@ -61,11 +61,9 @@ struct OnboardingStoreView: View {
                             .frame(maxWidth: .infinity, alignment: .leading)
                             .padding(.horizontal)
                         Menu {
-                            if let districts = store.districts {
-                                ForEach(districts, id: \.self) { district in
-                                    Button(district.name) {
-                                        store.send(.districtSelected(district))
-                                    }
+                            ForEach(store.districts, id: \.self) { district in
+                                Button(district.name) {
+                                    store.send(.districtSelected(district))
                                 }
                             }
                         } label: {
@@ -92,10 +90,6 @@ struct OnboardingStoreView: View {
                 }
                 .padding()
             }
-            .onAppear(){
-                store.send(.onAppear)
-            }
-            
             .loadingOverlay(store.isLoading)
         }
     }

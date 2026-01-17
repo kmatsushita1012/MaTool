@@ -159,7 +159,7 @@ extension PublicMap.Content: Identifiable, Hashable  {
 }
 
 extension PublicMap.State {
-    init(festival: Festival, district: District, routeId: Route.ID) {
+    init(festival: Festival, district: District, routeId: Route.ID?) {
         let districts: [District] = FetchAll(District.where{ $0.festivalId == festival.id }).wrappedValue
         let locations: PublicMap.Content = .locations(festival)
         let contents = [locations]
@@ -183,9 +183,9 @@ extension PublicMap.State {
     }
     
     init(
-        festival: Festival,
-        districts: [District]
+        festival: Festival
     ){
+        let districts = FetchAll(District.where{ $0.festivalId == festival.id }).wrappedValue
         let selected: PublicMap.Content = .locations(festival)
         let contents = [selected] + districts.map{ PublicMap.Content.route($0) }
         

@@ -21,10 +21,15 @@ struct InfoList {
     
     @ObservableState
     struct State: Equatable {
-        let festival: Festival
-        let districts: [District]
+        @FetchOne var festival: Festival
+        @FetchAll var districts: [District]
         var isDismissed: Bool = false
         @Presents var destination: Destination.State? = nil
+        
+        init(festival: Festival) {
+            self._festival = FetchOne(wrappedValue: festival)
+            self._districts = FetchAll(District.where{ $0.festivalId == festival.id })
+        }
     }
     
     @CasePathable

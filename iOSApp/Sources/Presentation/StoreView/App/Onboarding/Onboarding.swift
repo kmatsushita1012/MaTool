@@ -8,97 +8,99 @@
 import ComposableArchitecture
 import Foundation
 import Shared
+import SQLiteData
 
 @Reducer
 struct OnboardingFeature {
     
     @ObservableState
     struct State: Equatable {
-        var festivals: [Festival]?
-        var selectedFestival: Festival?
-        var districts: [District]?
+        @FetchAll var festivals: [Festival]
+        @FetchAll var districts: [District]
+        
+        var selectedFestival: Festival? {
+            didSet {
+                self._districts = FetchAll(District.where{ $0.festivalId == selectedFestival?.id })
+            }
+        }
+        @Shared var launchState: LaunchState
+        
         var festivalErrorMessaage: String?
-        var isFestivalsLoading: Bool = false
-        var isDistrictsLoading: Bool = false
-        var isLoading: Bool { isFestivalsLoading || isDistrictsLoading }
+        var isLoading: Bool = false
+        
+        init(launchState: Shared<LaunchState>) {
+            self._launchState = launchState
+        }
     }
     
     @CasePathable
     enum Action: Equatable, BindableAction {
         case binding(BindingAction<State>)
-        case onAppear
         case externalGuestTapped
         case adminTapped
         case districtSelected(District)
-        case festivalsReceived(Result<[Festival], APIError>)
-        case districtsReceived(Result<[District], APIError>)
+        case festivalDidSet(VoidResult<APIError>)
+        case districtDidSet(Result<Route.ID?, APIError>)
     }
     
-    @Dependency(\.apiRepository) var apiRepository
-    @Dependency(\.userDefaultsClient) var userDefaultsClient
-    @Dependency(\.values.defaultFestivalKey) var defaultFestivalKey
-    @Dependency(\.values.defaultDistrictKey) var defaultDistrictKey
-    @Dependency(\.values.hasLaunchedBeforeKey) var hasLaunchedBeforeKey
+    @Dependency(SceneUsecaseKey.self) var sceneUsecase
     
     var body: some ReducerOf<OnboardingFeature> {
         BindingReducer()
         Reduce { state, action in
             switch action {
             case .binding(\.selectedFestival):
-                guard let festival = state.selectedFestival else {
-                    state.districts = nil
-                    return .none
-                }
-                state.isDistrictsLoading = true
+                guard let festival = state.selectedFestival else { return .none }
+                state.isLoading = true
                 return .run { send in
-                    let result = await apiRepository.getDistricts(festival.id)
-                    await send(.districtsReceived(result))
+                    do{
+                        try await sceneUsecase.select(festivalId: festival.id)
+                        await send(.festivalDidSet(.success))
+                    } catch let error as APIError {
+                        await send(.festivalDidSet(.failure(error)))
+                    } catch {
+                        await send(.festivalDidSet(.failure(.unknown(message: error.localizedDescription))))
+                    }
                 }
             case .binding:
                 return .none
-            case .onAppear:
-                state.isFestivalsLoading = true
-                return .run { send in
-                    let result = await apiRepository.getFestivals()
-                    await send(.festivalsReceived(result))
-                }
             case .externalGuestTapped,
                 .adminTapped:
                 guard let festival = state.selectedFestival else {
                     state.festivalErrorMessaage = "祭典を選択してください。"
                     return .none
                 }
-                userDefaultsClient.setString(festival.id, defaultFestivalKey)
-                userDefaultsClient.setBool(true, hasLaunchedBeforeKey)
+                state.$launchState.withLock{ $0 = .festival }
                 return .none
             case .districtSelected(let district):
-                guard let festival = state.selectedFestival else {
+                guard let festival = state.selectedFestival,district.festivalId == festival.id  else {
                     state.festivalErrorMessaage = "祭典を選択してください。"
                     return .none
                 }
-                userDefaultsClient.setString(festival.id, defaultFestivalKey)
-                if(district.festivalId != festival.id){
-                    return .none
+                return .run { send in
+                    do{
+                        let routeId = try await sceneUsecase.select(districtId: festival.id)
+                        await send(.districtDidSet(.success(routeId)))
+                    } catch let error as APIError {
+                        await send(.districtDidSet(.failure(error)))
+                    } catch {
+                        await send(.districtDidSet(.failure(.unknown(message: error.localizedDescription))))
+                    }
                 }
-                userDefaultsClient.setString(district.id, defaultDistrictKey)
-                userDefaultsClient.setBool(true, hasLaunchedBeforeKey)
+            case .festivalDidSet(.success):
+                state.isLoading = false
                 return .none
-            case .festivalsReceived(.success(let value)):
-                state.festivals = value
-                state.isFestivalsLoading = false
+            case .festivalDidSet(.failure(_)):
+                state.isLoading = false
                 return .none
-            case .festivalsReceived(.failure(_)):
-                state.isFestivalsLoading = false
+            case .districtDidSet(.success(let routeId)):
+                state.isLoading = false
+                state.$launchState.withLock{ $0 = .district(routeId) }
                 return .none
-            case .districtsReceived(.success(let value)):
-                state.districts = value
-                state.isDistrictsLoading = false
-                return .none
-            case .districtsReceived(.failure(_)):
-                state.isDistrictsLoading = false
+            case .districtDidSet(.failure(_)):
+                state.isLoading = false
                 return .none
             }
         }
     }
 }
-

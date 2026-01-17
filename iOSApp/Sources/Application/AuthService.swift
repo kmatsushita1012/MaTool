@@ -66,14 +66,14 @@ actor AuthService: AuthServiceProtocol {
         }
     }
     
-    func confirmSignIn(password: String) async -> Result<UserRole,AuthError> {
+    func confirmSignIn(password: String) async -> Result<UserRole, AuthError> {
         let confirmSignInResult = await authProvider.confirmSignIn(password)
         if case .failure(let error) = confirmSignInResult {
             let _ = await authProvider.signOut()
             return .failure(error)
         }
         let userRoleResult = await authProvider.getUserRole()
-        return userRoleResult
+        return userRoleResult.mapError{ $0 }
     }
     
     func signOut() async -> Result<UserRole, AuthError> {

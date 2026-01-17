@@ -11,40 +11,63 @@ import ComposableArchitecture
 import Dependencies
 import SwiftUI
 
-public struct AppInitializer {
-    @Dependency(\.authService) var authService: AuthService
-    public init() {}
-
-    public func initializeEnvironment() {
-        // AmplifyなどのAuth初期化
-        Task{
-            let result = await authService.initialize()
-            print("Auth init result:", result)
-        }
-    }
-}
-
 public struct RootSceneView: View {
-    @AppStorage("hasLaunchedBefore", store: UserDefaults(suiteName: "matool")) private var hasLaunchedBefore = false
-    private let store: Store<Home.State, Home.Action>
+    @Shared var launchState: LaunchState
+    @Dependency(SceneUsecaseKey.self) var sceneUsecase
 
     public init() {
-        store = Store(initialState: Home.State()) { Home() }
         if #available(iOS 17.0, *){
             isPerceptionCheckingEnabled = false
+        }
+        self._launchState = Shared(value: .loading)
+        Task { [self] in
+            let launchState = await sceneUsecase.launch()
+            self.$launchState.withLock { $0 = launchState }
         }
     }
 
     public var body: some View {
         Group {
-            if hasLaunchedBefore {
+            switch launchState {
+            case .district(let routeId):
+                let store = Store(initialState: Home.State(currentRouteId: routeId)) { Home() }
                 HomeStoreView(store: store)
                     .task {
                         store.send(.initialize)
                     }
-            } else {
-                OnboardingStoreView(store: .init(initialState: OnboardingFeature.State()) { OnboardingFeature() })
+            case .festival:
+                let store = Store(initialState: Home.State()) { Home() }
+                HomeStoreView(store: Store(initialState: Home.State()) { Home() })
+                    .task {
+                        store.send(.initialize)
+                    }
+            case .onboarding:
+                OnboardingStoreView(store: .init(initialState: OnboardingFeature.State(launchState: $launchState)) { OnboardingFeature() })
+            case .loading:
+                loadingView
+            case .error(let message):
+                errorView(message)
             }
+        }
+    }
+    
+    @ViewBuilder
+    var loadingView: some View {
+        VStack {
+            Spacer()
+            ProgressView()
+                .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                .scaleEffect(2)
+            Spacer()
+        }
+    }
+    
+    @ViewBuilder
+    func errorView(_ message: String) -> some View {
+        VStack {
+            Spacer()
+            Text("エラー　\(message)")
+            Spacer()
         }
     }
 }
