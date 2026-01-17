@@ -36,6 +36,7 @@ jobs:
           if [ -f ./bootstrap ]; then
             chmod +x ./bootstrap
             zip -r lambda.zip bootstrap
+            ls -l lambda.zip
           else
             echo "Error: bootstrap not found in image. Inspect Dockerfile and image layout."
             exit 1
@@ -51,16 +52,22 @@ jobs:
       - name: Set stage name
         id: set_stage
         run: |
-          BRANCH=${GITHUB_REF_NAME//\//-}
-          if [[ "$BRANCH" == backend-* ]]; then
-            STAGE_NAME="dev-${BRANCH#backend-}"
-          elif [[ "$BRANCH" == "release-backend" ]]; then
+          RAW_BRANCH="${GITHUB_REF_NAME}"
+          # まず / を - に置換
+          BRANCH_NAME="${RAW_BRANCH//\//-}"
+          # Lambda alias に使えない文字をすべて - に置換
+          # （正規表現: [^a-zA-Z0-9_-] を - に）
+          STAGE_NAME=$(echo "$BRANCH_NAME" | sed 's/[^a-zA-Z0-9_-]/-/g')
+
+          # dev/prod 判定（必要に応じて調整）
+          if [[ "$STAGE_NAME" == backend-* ]]; then
+            STAGE_NAME="dev-${STAGE_NAME#backend-}"
+          elif [[ "$STAGE_NAME" == "release-backend" ]]; then
             STAGE_NAME="prod"
-          elif [[ "$BRANCH" == "main" ]]; then
+          elif [[ "$STAGE_NAME" == "main" ]]; then
             STAGE_NAME="dev"
-          else
-            STAGE_NAME="$BRANCH"
           fi
+
           echo "Resolved stage name: $STAGE_NAME"
           echo "stage=$STAGE_NAME" >> $GITHUB_OUTPUT
 
