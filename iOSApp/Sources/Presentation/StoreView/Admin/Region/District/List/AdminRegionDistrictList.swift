@@ -15,13 +15,8 @@ struct AdminDistrictList {
     
     @ObservableState
     struct State: Equatable {
-        @Selection struct Item: Equatable{
-            let period: Period
-            let route: Route?
-        }
-        
         @FetchOne var district: District
-        @FetchAll var routes: [Item]
+        @FetchAll var routes: [RouteSlot]
         
         var isApiLoading: Bool = false
         var isExportLoading: Bool = false
@@ -36,8 +31,8 @@ struct AdminDistrictList {
     @CasePathable
     enum Action: Equatable, BindableAction {
         case binding(BindingAction<State>)
-        case exportTapped(State.Item)
-        case exportPrepared(Result<State.Item, APIError>)
+        case exportTapped(RouteSlot)
+        case exportPrepared(Result<RouteSlot, APIError>)
         case dismissTapped
         case batchExportTapped
         case batchExportPrepared(Result<[URL], APIError>)
@@ -102,7 +97,7 @@ struct AdminDistrictList {
         .ifLet(\.$alert, action: \.alert)
     }
     
-    func batchExportEffect(_ items: [State.Item]) -> Effect<Action> {
+    func batchExportEffect(_ items: [RouteSlot]) -> Effect<Action> {
         .run { send in
             //非同期並列にするとBEでアクセス過多
             let result = await task({
@@ -125,17 +120,6 @@ struct AdminDistrictList {
 extension AdminDistrictList.State{
     init(_ district: District){
         self._district = FetchOne(wrappedValue: district)
-        let maxYear: Int = FetchAll(Period.where{ $0.festivalId == district.festivalId }).wrappedValue.map(\.date.year).max() ?? SimpleDate.now.year
-        let routeQuery = Period
-            .where{ $0.festivalId == district.festivalId && $0.date.inYear(maxYear) }
-            .leftJoin(Route.all){ $0.id.eq($1.periodId)}
-            .select{
-                Item.Columns(period: $0, route: $1)
-            }
-        self._routes = FetchAll(routeQuery)
+        self._routes = .init(districtId: district.id, latest: true)
     }
-}
-
-extension AdminDistrictList.State.Item: Identifiable {
-    var id: String { period.id }
 }

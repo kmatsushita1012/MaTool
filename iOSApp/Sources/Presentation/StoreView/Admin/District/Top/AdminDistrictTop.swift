@@ -24,17 +24,11 @@ struct AdminDistrictTop {
     
     @ObservableState
     struct State:Equatable {
-        @Selection struct Item: Equatable{
-            let period: Period
-            let route: Route?
-        }
         
         @FetchOne var district: District
-        @FetchAll var routes: [Item]
+        @FetchAll var routes: [RouteSlot]
         @FetchAll var periods: [Period]
         
-        var isDistrictLoading: Bool = false
-        var isRoutesLoading: Bool = false
         var isRouteLoading: Bool = false
         var isAWSLoading: Bool = false
         
@@ -46,10 +40,10 @@ struct AdminDistrictTop {
     @CasePathable
     enum Action: Equatable {
         case onEdit
-        case onRouteEdit(State.Item)
+        case onRouteEdit(RouteSlot)
         case changePasswordTapped
         case updateEmailTapped
-        case routeEditPrepared(State.Item)
+        case routeEditPrepared(RouteSlot)
         case routeCreatePrepared
         case locationPrepared(isTracking: Bool, Interval: Interval?)
         case onLocation
@@ -69,11 +63,10 @@ struct AdminDistrictTop {
         Reduce{ state, action in
             switch action {
             case .onEdit:
-                state.isDistrictLoading = true
                 return .none
             case .onRouteEdit(let item):
-                state.isRouteLoading = true
                 if let route = item.route {
+                    state.isRouteLoading = true
                     return .run { send in
                         let result = await task{ try await routeDateFetcher.fetch(routeID: route.id) }
                         // TODO: エラーハンドリング
@@ -166,22 +159,11 @@ extension AdminDistrictTop.Destination.Action: Equatable {}
 
 extension AdminDistrictTop.State{
     var isLoading: Bool {
-        isDistrictLoading || isRoutesLoading || isAWSLoading || isRouteLoading
+        isAWSLoading || isRouteLoading
     }
     
     init(_ district: District){
         self._district = FetchOne(wrappedValue: district)
-        let maxYear: Int = FetchAll(Period.where{ $0.festivalId == district.festivalId }).wrappedValue.map(\.date.year).max() ?? SimpleDate.now.year
-        let routeQuery = Period
-            .where{ $0.festivalId == district.festivalId && $0.date.inYear(maxYear) }
-            .leftJoin(Route.all){ $0.id.eq($1.periodId)}
-            .select{
-                Item.Columns(period: $0, route: $1)
-            }
-        self._routes = FetchAll(routeQuery)
+        self._routes = .init(districtId: district.id, latest: true)
     }
-}
-
-extension AdminDistrictTop.State.Item: Identifiable {
-    var id: String { period.id }
 }
