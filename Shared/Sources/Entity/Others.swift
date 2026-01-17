@@ -18,3 +18,13 @@ public struct Pair<Element: Equatable>: Equatable {
 public struct Empty: Equatable, Codable {
     public init(){}
 }
+
+public struct ImagePath: Entity {
+    public let light: String?
+    public let dark: String?
+    
+    public init(light: String? = nil, dark: String? = nil) {
+        self.light = light
+        self.dark = dark
+    }
+}
