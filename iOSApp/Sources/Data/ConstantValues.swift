@@ -30,7 +30,7 @@ extension ConstantValues: DependencyKey {
     static let liveValue = Self(
         apiBaseUrl: {
             #if DEBUG
-                "-normalization"
+                ""
             #else
                 ""
             #endif
