@@ -10,11 +10,6 @@
 
 FROM swift:6.2.0-amazonlinux2 AS build
 
-# ✅ SQLite 開発ヘッダを追加
-RUN yum update -y && \
-    yum install -y sqlite-devel && \
-    yum clean all
-
 # Swift 環境の初期化
 WORKDIR /workspace
 
