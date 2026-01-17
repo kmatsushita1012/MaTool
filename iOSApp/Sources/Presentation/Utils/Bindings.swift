@@ -58,3 +58,23 @@ extension Binding where Value == SimpleDate {
         )
     }
 }
+
+extension Binding where Value == SimpleTime? {
+    var toggle: Binding<Bool> {
+        Binding<Bool>(
+            get: { self.wrappedValue != nil },
+            set: { hasTime in
+                if hasTime {
+                    // nil から非 nil にする場合は、前回の値を復元
+                    // それが無ければ現在時刻
+                    if self.wrappedValue == nil {
+                        self.wrappedValue = .now
+                    }
+                } else {
+                    // 非 nil から nil にする前に cache を保持
+                    self.wrappedValue = nil
+                }
+            }
+        )
+    }
+}

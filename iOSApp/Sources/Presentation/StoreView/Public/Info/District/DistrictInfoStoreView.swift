@@ -19,13 +19,13 @@ struct DistrictInfoStoreView: View {
                 ScrollView {
                     VStack(spacing: 16) {
                         TitleView(
-                            text: store.item.name,
+                            text: store.district.name,
                             image: "InfoBackground"
                         ) {
                             store.send(.dismissTapped)
                         }
                         
-                        if let imagePath = store.item.imagePath {
+                        if let imagePath = store.district.image.light {
                             VStack{
                                 WebImageView(imagePath: imagePath, contentMode: .fit)
                             }
@@ -33,7 +33,7 @@ struct DistrictInfoStoreView: View {
                             .padding(.horizontal)
                         }
                         
-                        if let description = store.item.description {
+                        if let description = store.district.description {
                             VStack{
                                 ScrollableTextView(description, maxHeight: 192)
                                     .padding()
@@ -43,7 +43,7 @@ struct DistrictInfoStoreView: View {
                             .padding(.horizontal)
                         }
                         // 横スクロール（上で修正したもの）
-                        if !store.item.performances.isEmpty{
+                        if !store.performances.isEmpty{
                             VStack(alignment: .leading){
                                 Text("余興")
                                     .font(.headline)
@@ -51,7 +51,7 @@ struct DistrictInfoStoreView: View {
                                     .padding(.horizontal)
                                 ScrollView(.horizontal, showsIndicators: false) {
                                     HStack(spacing: 16) {
-                                        ForEach(store.item.performances) { item in
+                                        ForEach(store.performances) { item in
                                             WithPerceptionTracking {
                                                 performance(item)
                                             }
@@ -63,8 +63,8 @@ struct DistrictInfoStoreView: View {
                         }
                         VStack{
                             PublicDistrictMapView(
-                                base: store.item.base,
-                                area: store.item.area,
+                                base: store.district.base,
+                                area: store.district.area,
                                 region: $store.region
                             )
                             .clipShape(RoundedRectangle(cornerRadius: 12))
