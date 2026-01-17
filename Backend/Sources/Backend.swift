@@ -5,7 +5,6 @@
 //  Created by 松下和也 on 2025/11/14.
 //
 
-
 @main
 struct MaToolAPI: APIGateway {
     static let app = Application{
@@ -15,5 +14,3 @@ struct MaToolAPI: APIGateway {
         RouteRouter()
     }
 }
-
-//差分注入
