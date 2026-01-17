@@ -14,13 +14,14 @@ FROM amazonlinux:2023 AS build
 RUN dnf update -y && \
     dnf install -y \
         swiftlang \
+        clang \
         sqlite-devel \
         openssl-devel \
-        clang \
+        libxml2-devel \
+        libicu \
         git \
         tar \
         gzip \
-        libicu \
     && dnf clean all
 # Swift 環境の初期化
 WORKDIR /workspace
