@@ -7,6 +7,7 @@
 
 import ComposableArchitecture
 import Shared
+import SQLiteData
 
 @Reducer
 struct InfoList {
@@ -20,10 +21,15 @@ struct InfoList {
     
     @ObservableState
     struct State: Equatable {
-        let festival: Festival
-        let districts: [District]
+        @FetchOne var festival: Festival
+        @FetchAll var districts: [District]
         var isDismissed: Bool = false
         @Presents var destination: Destination.State? = nil
+        
+        init(festival: Festival) {
+            self._festival = FetchOne(wrappedValue: festival)
+            self._districts = FetchAll(District.where{ $0.festivalId == festival.id })
+        }
     }
     
     @CasePathable
@@ -42,9 +48,8 @@ struct InfoList {
             case .festivalTapped:
                 state.destination = .festival(FestivalInfo.State(item: state.festival))
                 return .none
-            case .districtTapped(let value):
-                print(value)
-                state.destination = .district(DistrictInfo.State(item: value))
+            case .districtTapped(let district):// FIXME: Performancesの読み込み
+                state.destination = .district(DistrictInfo.State(district))
                 return .none
             case .homeTapped:
                 if #available(iOS 17.0, *) {

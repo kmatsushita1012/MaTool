@@ -47,12 +47,6 @@ struct HomeStoreView: View {
                                             .onTapGesture {
                                                 store.send(.adminTapped)
                                             }
-                                            .loadingOverlay(
-                                                store.isAuthLoading,
-                                                message: "スキップ"
-                                            ) {
-                                                store.send(.skipTapped)
-                                            }
                                     } else {
                                         disabledCard("管理者用ページはお使いの端末（iOS 16）では利用できません")
                                             .frame(height: geometry.size.height * 3 / 5 )

@@ -42,10 +42,13 @@ extension Period {
             end.minute
         )
     }
-}
-
-extension Program {
-    var text: String {
-        "\(year)年"
+    
+    var shortText: String{
+        String(
+            format: "%d/%d %@",
+            date.month,
+            date.day,
+            title,
+        )
     }
 }

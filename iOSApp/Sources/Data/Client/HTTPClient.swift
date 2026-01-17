@@ -1,5 +1,5 @@
 //
-//  APIClient.swift
+//  HTTPClient.swift
 //  MaTool
 //
 //  Created by 松下和也 on 2025/08/19.
@@ -9,24 +9,24 @@ import Foundation
 import Dependencies
 
 //MARK: - Dependencies
-enum APIClientKey: DependencyKey {
-    static let liveValue: any APIClientProtocol = {
+enum HTTPClientKey: DependencyKey {
+    static let liveValue: any HTTPClientProtocol = {
         @Dependency(\.values.apiBaseUrl) var apiBaseUrl
-        return APIClient.withDefaultTimeout(
+        return HTTPClient.withDefaultTimeout(
             base: apiBaseUrl
         )
     }()
 }
 
 extension DependencyValues {
-    var apiClient: any APIClientProtocol {
-        get { self[APIClientKey.self] }
-        set { self[APIClientKey.self] = newValue }
+    var httpClient: any HTTPClientProtocol {
+        get { self[HTTPClientKey.self] }
+        set { self[HTTPClientKey.self] = newValue }
     }
 }
 
 // MARK: - APIClientProtocol
-protocol APIClientProtocol: Sendable {
+protocol HTTPClientProtocol: Sendable {
     func request<Response: Decodable, Body: Encodable>(
         path: String,
         method: String,
@@ -73,7 +73,7 @@ protocol APIClientProtocol: Sendable {
 }
 
 // MARK: - APIClient
-actor APIClient: APIClientProtocol {
+actor HTTPClient: HTTPClientProtocol {
     private let base: String
     private let session: URLSession
     private let cache = NSCache<NSString, NSData>()
@@ -252,16 +252,16 @@ actor APIClient: APIClientProtocol {
         }
     }
 
-    static func withDefaultTimeout(base: String) -> APIClient {
+    static func withDefaultTimeout(base: String) -> HTTPClient {
         let config = URLSessionConfiguration.default
         config.timeoutIntervalForRequest = 10
         config.timeoutIntervalForResource = 30
-        return APIClient(base: base, session: URLSession(configuration: config))
+        return HTTPClient(base: base, session: URLSession(configuration: config))
     }
 }
 
 // MARK: - APIClientProtocol+
-extension APIClientProtocol {
+extension HTTPClientProtocol {
     // デフォルト値付き request
     func request<Response: Decodable, Body: Encodable>(
         path: String,
@@ -349,6 +349,120 @@ extension APIClientProtocol {
             query: query,
             accessToken: accessToken
         )
+    }
+}
+
+// MARK: - APIClientProtocol (async throws variants)
+extension HTTPClientProtocol {
+    func request<Response: Decodable, Body: Encodable>(
+        path: String,
+        method: String,
+        query: [String: Any] = [:],
+        body: Body? = nil,
+        accessToken: String? = nil,
+        isCache: Bool = true
+    ) async throws -> Response {
+        let result: Result<Response, APIError> = await self.request(
+            path: path,
+            method: method,
+            query: query,
+            body: body,
+            accessToken: accessToken,
+            isCache: isCache
+        )
+        switch result {
+        case .success(let value): return value
+        case .failure(let error): throw error
+        }
+    }
+    func request<Response: Decodable>(
+        path: String,
+        method: String,
+        query: [String: Any] = [:],
+        accessToken: String? = nil,
+        isCache: Bool = true
+    ) async throws -> Response {
+        let result: Result<Response, APIError> = await self.request(
+            path: path,
+            method: method,
+            query: query,
+            accessToken: accessToken,
+            isCache: isCache
+        )
+        switch result {
+        case .success(let value): return value
+        case .failure(let error): throw error
+        }
+    }
+
+    func get<Response: Decodable>(
+        path: String,
+        query: [String: Any] = [:],
+        accessToken: String? = nil,
+        isCache: Bool = true
+    ) async throws -> Response {
+        let result: Result<Response, APIError> = await self.get(
+            path: path,
+            query: query,
+            accessToken: accessToken,
+            isCache: isCache
+        )
+        switch result {
+        case .success(let value): return value
+        case .failure(let error): throw error
+        }
+    }
+
+    func post<Response: Decodable, Body: Encodable>(
+        path: String,
+        body: Body,
+        query: [String: Any] = [:],
+        accessToken: String? = nil
+    ) async throws -> Response {
+        let result: Result<Response, APIError> = await self.post(
+            path: path,
+            body: body,
+            query: query,
+            accessToken: accessToken
+        )
+        switch result {
+        case .success(let value): return value
+        case .failure(let error): throw error
+        }
+    }
+
+    func put<Response: Decodable, Body: Encodable>(
+        path: String,
+        body: Body,
+        query: [String: Any] = [:],
+        accessToken: String? = nil
+    ) async throws -> Response {
+        let result: Result<Response, APIError> = await self.put(
+            path: path,
+            body: body,
+            query: query,
+            accessToken: accessToken
+        )
+        switch result {
+        case .success(let value): return value
+        case .failure(let error): throw error
+        }
+    }
+
+    func delete<Response: Decodable>(
+        path: String,
+        query: [String: Any] = [:],
+        accessToken: String? = nil
+    ) async throws -> Response {
+        let result: Result<Response, APIError> = await self.delete(
+            path: path,
+            query: query,
+            accessToken: accessToken
+        )
+        switch result {
+        case .success(let value): return value
+        case .failure(let error): throw error
+        }
     }
 }
 

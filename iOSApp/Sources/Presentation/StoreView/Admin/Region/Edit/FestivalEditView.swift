@@ -53,17 +53,17 @@ struct FestivalEditView: View{
     var content: some View {
         List {
             Section(header: Text("説明")) {
-                TextEditor(text: $store.item.description.nonOptional)
+                TextEditor(text: $store.festival.description.nonOptional)
                     .frame(height:120)
             }
             Section(header: Text("都道府県")) {
-                TextField("都道府県を入力",text: $store.item.prefecture)
+                TextField("都道府県を入力",text: $store.festival.prefecture)
             }
             Section(header: Text("市区町村")) {
-                TextField("市区町村を入力",text: $store.item.city)
+                TextField("市区町村を入力",text: $store.festival.city)
             }
             Section(header: Text("経由地")) {
-                ForEach(store.item.checkpoints) { checkpoint in
+                ForEach(store.checkpoints) { checkpoint in
                     NavigationItemView(
                         title: checkpoint.name,
                         onTap: {
@@ -76,7 +76,7 @@ struct FestivalEditView: View{
                 }
             }
             Section(header: Text("注釈をつける区間")) {
-                ForEach(Array(store.item.hazardSections.enumerated()), id: \.offset) { index, hazard in
+                ForEach(Array(store.hazardSections.enumerated()), id: \.offset) { index, hazard in
                     NavigationItemView(
                         title: "\(String(index+1)). \(hazard.title)",
                         onTap: {

@@ -18,49 +18,21 @@ struct AdminPointEditStoreView: View {
     
     var body: some View {
         Form {
-            Section(header: Text("イベント")) {
-                HStack{
-                    TextField("イベントを入力", text: $store.item.title.nonOptional)
-                        .popover(isPresented: $store.showPopover, content: {
-                            Popover(items: store.checkpoints, textClosure: { $0.name }, onTapGesture: { option in
-                                store.send(.titleOptionSelected(option))
-                            }).presentationCompactAdaptation(PresentationAdaptation.popover)
-                        })
-                    Button(action: {
-                        store.send(.titleFieldFocused)
-                        }) {
-                            Image(systemName: "ellipsis")
-                                .font(.title2)
-                        }
-                }
-            }
-            Section(header: Text("詳細")) {
-                TextEditor(text: $store.item.description.nonOptional)
-                    .frame(height:60)
-            }
+            // TODO: イベントタイプを選択
             
             Section(
                 header: Text("時刻"),
                 footer: Text("先頭および末尾の地点は「経路図（PDF）への出力」がオフでも自動的に経路図に出力されます。時刻は前画面で設定した開始時刻もしくは終了時刻が適用されます。オンの場合はこの画面の「時刻を設定」で設定した時刻が適用されます。")
             ) {
-                Toggle("時刻を設定", isOn: Binding(
-                    get: { store.item.time != nil },
-                    set: { hasTime in
-                        store.send(.binding(.set(
-                            \.item.time,
-                             hasTime ? SimpleTime.from(Date()) : nil
-                        )))
-                    }
-                ))
-                if store.item.time != nil {
+                Toggle("時刻を設定", isOn: $store.point.time.toggle)
+                if store.point.time != nil {
                     DateTimePicker(
                         "時刻を選択",
-                        selection: $store.item.time.fullDate,
+                        selection: $store.point.time.fullDate,
                         displayedComponents: [.hourAndMinute]
                     )
                     .datePickerStyle(.compact)
                 }
-                Toggle("経路図（PDF）への出力", isOn: $store.item.shouldExport)
             }
             
             Section {

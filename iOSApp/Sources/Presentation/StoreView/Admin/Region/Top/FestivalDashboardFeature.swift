@@ -7,42 +7,44 @@
 
 import ComposableArchitecture
 import Foundation
+import SQLiteData
 import Shared
 
 @Reducer
 struct FestivalDashboardFeature {
-    
+
     @Reducer
     enum Destination {
         case edit(FestivalEditFeature)
         case districtInfo(AdminDistrictList)
         case districtCreate(AdminDistrictCreate)
-        case programs(ProgramListFeature)
+        case periods(PeriodListFeature)
         case changePassword(ChangePassword)
         case updateEmail(UpdateEmail)
     }
-    
+
     @ObservableState
     struct State: Equatable {
-        var festival: Festival
-        var districts: [District]
+        @FetchOne var festival: Festival
+        @FetchAll var districts: [District]
+
         var isApiLoading: Bool = false
         var isAuthLoading: Bool = false
         var isExportLoading: Bool = false
         var folder: ExportedFolder? = nil
-        
+
         @Presents var destination: Destination.State? = nil
         @Presents var alert: Alert.State? = nil
         var isLoading: Bool {
             isApiLoading || isAuthLoading || isExportLoading
         }
     }
-    
+
     @CasePathable
     enum Action: Equatable, BindableAction {
         case binding(BindingAction<State>)
         case onEdit
-        case programTapped
+        case periodTapped
         case onDistrictInfo(District)
         case onCreateDistrict
         case homeTapped
@@ -50,40 +52,39 @@ struct FestivalDashboardFeature {
         case updateEmailTapped
         case signOutTapped
         case batchExportTapped
-        case festivalReceived(Result<Festival,APIError>)
-        case districtsReceived(Result<[District],APIError>)
-        case districtInfoPrepared(District, Result<[RouteItem],APIError>)
-        case programsPrepared(Result<[Program], APIError>)
-        case signOutReceived(Result<UserRole,AuthError>)
+        case districtInfoPrepared(District)
+        case signOutReceived(Result<UserRole, AuthError>)
         case batchExportPrepared(Result<[URL], APIError>)
         case destination(PresentationAction<Destination.Action>)
         case alert(PresentationAction<Alert.Action>)
     }
-    
+
     @Dependency(\.apiRepository) var apiRepository
+    @Dependency(RouteDataFetcherKey.self) var routeDataFetcher
     @Dependency(\.authService) var authService
     @Dependency(\.dismiss) var dismiss
-    
+
     var body: some ReducerOf<FestivalDashboardFeature> {
         BindingReducer()
         Reduce { state, action in
             switch action {
-            case .binding:
-                return .none
             case .onEdit:
-                state.destination = .edit(FestivalEditFeature.State(item: state.festival))
+                state.destination = .edit(FestivalEditFeature.State(state.festival))
                 return .none
-            case .programTapped:
-                state.isApiLoading = true
-                return getProgramsEffect(state)
+            case .periodTapped:
+                state.destination = .periods(PeriodListFeature.State(festivalId: state.festival.id))
+                return .none
             case .onDistrictInfo(let district):
                 state.isApiLoading = true
                 return .run { send in
-                    let result = await apiRepository.getRoutes(district.id)
-                    await send(.districtInfoPrepared(district, result))
+                    let _ = await task {
+                        try await routeDataFetcher.fetchAll(districtID: district.id, query: .latest)
+                    }
+                    await send(.districtInfoPrepared(district))
                 }
             case .onCreateDistrict:
-                state.destination = .districtCreate(AdminDistrictCreate.State(festival: state.festival))
+                state.destination = .districtCreate(
+                    AdminDistrictCreate.State(festivalId: state.festival.id))
                 return .none
             case .homeTapped:
                 return .run { _ in
@@ -103,38 +104,10 @@ struct FestivalDashboardFeature {
                 }
             case .batchExportTapped:
                 state.isExportLoading = true
-                return batchExportEffect()
-            case .festivalReceived(.success(let value)):
+                return batchExportEffect(state)
+            case .districtInfoPrepared(let district):
                 state.isApiLoading = false
-                state.festival = value
-                return .none
-            case .festivalReceived(.failure(let error)):
-                state.isApiLoading = false
-                state.alert = Alert.error("情報の取得に失敗しました。\(error.localizedDescription)")
-                return .none
-            case .districtsReceived(.success(let value)):
-                state.isApiLoading = false
-                state.districts = value
-                return .none
-            case .districtInfoPrepared(let district, .success(let routes)):
-                state.isApiLoading = false
-                state.destination = .districtInfo(
-                    AdminDistrictList.State(
-                        festival: state.festival,
-                        district: district,
-                        routes: routes.sorted()
-                    )
-                )
-                return .none
-            case .programsPrepared(.success(let programs)):
-                state.isApiLoading = false
-                state.destination = .programs(.init(festivalId: state.festival.id, programs: programs))
-                return .none
-            case .districtsReceived(.failure(let error)),
-                    .districtInfoPrepared(_, .failure(let error)),
-                    .programsPrepared(.failure(let error)):
-                state.isApiLoading = false
-                state.alert = Alert.error("情報の取得に失敗しました \(error.localizedDescription)")
+                state.destination = .districtInfo(AdminDistrictList.State(district))
                 return .none
             case .signOutReceived(.success):
                 state.isAuthLoading = false
@@ -151,74 +124,48 @@ struct FestivalDashboardFeature {
                 state.isExportLoading = false
                 state.alert = Alert.error("出力に失敗しました　\(error.localizedDescription)")
                 return .none
-            case .destination(.presented(let childAction)):
-                switch childAction{
-                case .edit(.putReceived(.success)):
-                    state.destination = nil
-                    state.isApiLoading = true
-                    return getFestivalEffect(state.festival.id)
-                case .districtCreate(.received(.success)):
-                    state.isApiLoading = true
-                    state.destination = nil
-                    state.alert = Alert.success("参加町の追加が完了しました")
-                    return .run {[festivalId = state.festival.id] send in
-                        let result  = await apiRepository.getDistricts(festivalId)
-                        await send(.districtsReceived(result))
-                    }
-                case .changePassword(.received(.success)):
-                    state.destination = nil
-                    state.alert = Alert.success("パスワードが変更されました")
-                    return .none
-                case .edit,
-                    .districtInfo,
-                    .districtCreate,
-                    .changePassword,
-                    .updateEmail,
-                    .programs(_):
-                    return .none
-                }
-            case .destination(.dismiss):
+            case .destination(.presented(.edit(.putReceived(.success)))):
+                state.destination = nil
+                return .none
+            case .destination(.presented(.districtCreate(.received(.success)))):
+                state.destination = nil
+                state.alert = Alert.success("参加町の追加が完了しました")
+                return .none
+            case .destination(.presented(.changePassword(.received(.success)))):
+                state.destination = nil
+                state.alert = Alert.success("パスワードが変更されました")
                 return .none
             case .alert:
                 state.alert = nil
+                return .none
+            default:
                 return .none
             }
         }
         .ifLet(\.$destination, action: \.destination)
         .ifLet(\.$alert, action: \.alert)
     }
-    
-    func getFestivalEffect(_ id: String) -> Effect<Action> {
+
+    func batchExportEffect(_ state: State) -> Effect<Action> {
         .run { send in
-            let result = await apiRepository.getFestival(id)
-            await send(.festivalReceived(result))
-        }
-    }
-    
-    func getProgramsEffect(_ state: State) -> Effect<Action> {
-        .run { [state] send in
-            let result = await apiRepository.getPrograms(state.festival.id)
-            await send(.programsPrepared(result))
-        }
-    }
-    
-    func batchExportEffect() -> Effect<Action> {
-        .run { send in
-            
-            let idsResult = await apiRepository.getRouteIds()
-            guard let ids = idsResult.value else{
-                await send(.batchExportPrepared(.failure(idsResult.error!)))
-                return
-            }
+            let districtIds = state.districts.map(\.id)
             var urls: [URL] = []
             //非同期並列にするとBEでアクセス過多
-            for id in ids {
-                let routeResult = await apiRepository.getRoute(id)
-                guard let route = routeResult.value else { continue }
-                let snapshotter = RouteSnapshotter(route)
-                guard let image = try? await snapshotter.take() else { continue }
-                guard let url = snapshotter.createPDF(with: image, path: "\(route.text(format: "D_y-m-d_T"))_full.pdf") else { continue }
-                urls.append(url)
+            let _ = await task {
+                for districtId in districtIds {
+                    guard let _ =  try? await routeDataFetcher.fetchAll(districtID: districtId, query: .latest) else { continue }
+                    let routes: [Route] = FetchAll(Route.where { $0.districtId == districtId })
+                        .wrappedValue
+                    for route in routes {
+                        guard let period: Period = FetchOne(Period.find(route.periodId)).wrappedValue,
+                              (try? await routeDataFetcher.fetch(routeID: route.id)) != nil,
+                              let snapshotter = RouteSnapshotter(route),
+                              let image = try? await snapshotter.take(),
+                              let url = snapshotter.createPDF(with: image, path: "\(period.text)")
+                        else { continue }
+                        urls.append(url)
+                    }
+                }
             }
             await send(.batchExportPrepared(.success(urls)))
         }
@@ -228,3 +175,9 @@ struct FestivalDashboardFeature {
 extension FestivalDashboardFeature.Destination.State: Equatable {}
 extension FestivalDashboardFeature.Destination.Action: Equatable {}
 
+extension FestivalDashboardFeature.State {
+    init(_ festival: Festival) {
+        self._festival = FetchOne(wrappedValue: festival)
+        self._districts = FetchAll(District.where { $0.festivalId == festival.id })
+    }
+}

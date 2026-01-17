@@ -16,6 +16,7 @@ enum APIError: Error, Equatable, Hashable {
     case decoding(message: String)
     case encoding(message: String)
     case unknown(message: String)
+    case cache(message: String)
     
     init(_ error: Error) {
         if let nsError = error as NSError? {
@@ -51,6 +52,8 @@ enum APIError: Error, Equatable, Hashable {
             return "データの変換に失敗しました。 \n\(message)"
         case .unknown(let message):
             return "予期せぬエラーが発生しました。 \n\(message)"
+        case .cache(message: let message):
+            return "キャッシュでエラーが発生しました \n\(message)"
         }
     }
 }

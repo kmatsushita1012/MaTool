@@ -21,10 +21,10 @@ struct AdminDistrictEditView: View {
                 header: Text("町名"),
                 footer: Text("IDは更新できません")
             ) {
-                TextField("町名を入力",text: $store.item.name)
+                TextField("町名を入力",text: $store.district.name)
             }
             Section(header: Text("紹介文")) {
-                TextEditor(text: $store.item.description.nonOptional)
+                TextEditor(text: $store.district.description.nonOptional)
                     .frame(height:120)
             }
             Section(header: Text("会所")) {
@@ -44,7 +44,7 @@ struct AdminDistrictEditView: View {
                 }
             }
             Section(header: Text("ルート")) {
-                Picker("公開範囲を選択", selection: $store.item.visibility) {
+                Picker("デフォルトの公開範囲を選択（すでに作成済のルートには反映されません）", selection: $store.district.visibility) {
                     ForEach(Visibility.allCases) { option in
                         Text(option.label).tag(option)
                     }
@@ -52,7 +52,7 @@ struct AdminDistrictEditView: View {
                 .pickerStyle(.menu)
             }
             Section(header: Text("余興")) {
-                ForEach(store.item.performances) { item in
+                ForEach(store.performances) { item in
                     NavigationItemView(
                         title: item.name,
                         onTap: {

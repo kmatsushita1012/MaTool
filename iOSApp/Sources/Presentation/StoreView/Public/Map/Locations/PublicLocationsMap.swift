@@ -11,16 +11,16 @@ import MapKit
 import Shared
 
 struct PublicLocationsMap: UIViewRepresentable {
-    var items: [FloatLocationGetDTO]
-    var onTap: (FloatLocationGetDTO)->Void
+    var locations: [FloatCurrentAnnotation]
+    var onTap: (FloatCurrentAnnotation)->Void
     @Binding var region: MKCoordinateRegion
     
     init(
-        items: [FloatLocationGetDTO],
-        onTap: @escaping (FloatLocationGetDTO) -> Void,
+        _ locations: [FloatCurrentAnnotation],
+        onTap: @escaping (FloatCurrentAnnotation) -> Void,
         region: Binding<MKCoordinateRegion>
     ) {
-        self.items = items
+        self.locations = locations
         self.onTap = onTap
         self._region = region
     }
@@ -38,7 +38,7 @@ struct PublicLocationsMap: UIViewRepresentable {
     }
 
     func updateUIView(_ mapView: MKMapView, context: Context) {
-        updateFloatAnnotations(on: mapView, with: items)
+        updateFloatAnnotations(on: mapView, with: locations)
         
         if region.center.latitude != mapView.region.center.latitude
             || region.center.longitude != mapView.region.center.longitude {
@@ -48,19 +48,17 @@ struct PublicLocationsMap: UIViewRepresentable {
     
     func updateFloatAnnotations(
         on mapView: MKMapView,
-        with items: [FloatLocationGetDTO]
+        with annotations: [FloatCurrentAnnotation]
     ) {
         let existingAnnotations = mapView.annotations.compactMap { $0 as? FloatCurrentAnnotation }
-        let existingLocations = existingAnnotations.map { $0.location }
 
         // 削除
-        let toRemove = existingAnnotations.filter { !items.contains($0.location) }
+        let toRemove = existingAnnotations.filter { !locations.contains($0) }
         mapView.removeAnnotations(toRemove)
 
         // 追加
-        let toAdd = items.filter { !existingLocations.contains($0) }
-        for location in toAdd {
-            let annotation = FloatCurrentAnnotation(location: location)
+        let toAdd = annotations.filter { !existingAnnotations.contains($0) }
+        for annotation in toAdd {
             mapView.addAnnotation(annotation)
         }
     }
@@ -78,8 +76,8 @@ struct PublicLocationsMap: UIViewRepresentable {
                 return nil
             }
             
-            if let FloatCurrentAnnotation = annotation as? FloatCurrentAnnotation {
-                return FloatAnnotationView.view(for: mapView, annotation: FloatCurrentAnnotation)
+            if let annotation = annotation as? FloatCurrentAnnotation {
+                return FloatAnnotationView.view(for: mapView, annotation: annotation)
             }
 
             return nil
@@ -90,7 +88,7 @@ struct PublicLocationsMap: UIViewRepresentable {
                 mapView.deselectAnnotation(annotation, animated: false)
             }
             if let  annotation = view.annotation as? FloatCurrentAnnotation {
-                parent.onTap(annotation.location)
+                parent.onTap(annotation)
             }
         }
         
