@@ -1,24 +1,6 @@
 {
-  "originHash" : "80df290bf8fcff7ae570fc8d7e640292b4964e1867d1ad7d4a5670e5724597bf",
+  "originHash" : "755094acb1935f25e06b4ebf2a6c6bd6859fd6bee746b1e8d6a47eb7e403b156",
   "pins" : [
-    {
-      "identity" : "amplify-ios",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/aws-amplify/amplify-ios.git",
-      "state" : {
-        "revision" : "ee6b2fad1d06e694845d74738316749ef81f292d",
-        "version" : "2.52.1"
-      }
-    },
-    {
-      "identity" : "amplify-swift-utils-notifications",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/aws-amplify/amplify-swift-utils-notifications.git",
-      "state" : {
-        "revision" : "959eec669ba97c7d923b963c3e66ca8a0b2737f6",
-        "version" : "1.1.1"
-      }
-    },
     {
       "identity" : "aws-crt-swift",
       "kind" : "remoteSourceControl",
@@ -65,24 +47,6 @@
       }
     },
     {
-      "identity" : "kingfisher",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/onevcat/Kingfisher.git",
-      "state" : {
-        "revision" : "d30a5fad881137e2267f96a8e3fc35c58999bb94",
-        "version" : "8.6.2"
-      }
-    },
-    {
-      "identity" : "navigationswipecontrol",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/kmatsushita1012/NavigationSwipeControl.git",
-      "state" : {
-        "revision" : "3f0348c7fc4923dc3daf433d61562338e3703c23",
-        "version" : "0.2.1"
-      }
-    },
-    {
       "identity" : "opentelemetry-swift",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/open-telemetry/opentelemetry-swift",
@@ -107,24 +71,6 @@
       "state" : {
         "revision" : "a6cac0739d76ef08e2d927febc682d9898e76fe2",
         "version" : "0.152.0"
-      }
-    },
-    {
-      "identity" : "sqlite-data",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/pointfreeco/sqlite-data.git",
-      "state" : {
-        "revision" : "57274d587b564a0b420bd4fa2bec479aac5323a2",
-        "version" : "1.5.0"
-      }
-    },
-    {
-      "identity" : "sqlite.swift",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/stephencelis/SQLite.swift.git",
-      "state" : {
-        "revision" : "a95fc6df17d108bd99210db5e8a9bac90fe984b8",
-        "version" : "0.15.3"
       }
     },
     {
@@ -236,15 +182,6 @@
       }
     },
     {
-      "identity" : "swift-composable-architecture",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/pointfreeco/swift-composable-architecture",
-      "state" : {
-        "revision" : "5b0890fabfd68a2d375d68502bc3f54a8548c494",
-        "version" : "1.23.1"
-      }
-    },
-    {
       "identity" : "swift-concurrency-extras",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/pointfreeco/swift-concurrency-extras",
@@ -332,15 +269,6 @@
       "state" : {
         "revision" : "0743a9364382629da3bf5677b46a2c4b1ce5d2a6",
         "version" : "2.7.1"
-      }
-    },
-    {
-      "identity" : "swift-navigation",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/pointfreeco/swift-navigation",
-      "state" : {
-        "revision" : "bf498690e1f6b4af790260f542e8428a4ba10d78",
-        "version" : "2.6.0"
       }
     },
     {
