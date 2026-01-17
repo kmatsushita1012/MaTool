@@ -25,7 +25,7 @@ struct Home {
     
     @ObservableState
     struct State: Equatable {
-        var userRole: UserRole = .guest
+        var userRole: UserRole
         var currentRouteId: Route.ID?
         var isDestinationLoading: Bool = false
         var isLoading: Bool {
@@ -35,7 +35,8 @@ struct Home {
         @Presents var destination: Destination.State?
         @Presents var alert: Alert.State?
         
-        init(currentRouteId: Route.ID? = nil){
+        init(userRole: UserRole, currentRouteId: Route.ID? = nil){
+            self.userRole = userRole
             self.currentRouteId = currentRouteId
         }
     }
@@ -87,16 +88,13 @@ struct Home {
                 if let districtId = userDefaults.defaultDistrictId,
                    let district = FetchOne(District.find(districtId)).wrappedValue
                 {
-                    state.isDestinationLoading = true
                     state.destination = .map(.init(festival: festival, district: district, routeId: state.currentRouteId))
                     return .none
                 } else {
-                    state.isDestinationLoading = true
                     state.destination = .map(.init(festival: festival))
                     return .none
                     
                 }
-                
             case .infoTapped:
                 guard let festivalId = userDefaults.defaultFestivalId,
                       let festival = FetchOne(Festival.find(festivalId)).wrappedValue else {
@@ -114,6 +112,7 @@ struct Home {
                     await send(.settingsPrepared(result))
                 }
             case .settingsPrepared(.success):
+                state.isDestinationLoading = false
                 state.destination = .settings(.init())
                 return .none
             case .settingsPrepared(.failure(let error)):
@@ -126,16 +125,12 @@ struct Home {
                     state.userRole = userRole
                     switch state.userRole {
                     case .headquarter(let id):
-                        state.isDestinationLoading = true
-                        return .none
+                        return adminFestivalPrepared(state: &state, action: action, festivalId: id)
                     case .district(let id):
-                        state.isDestinationLoading = true
-                        return .none
+                        return adminDistrictPrepared(state: &state, action: action, districtId: id)
                     case .guest:
                         return .none
                     }
-                case .login(.received(.failure(_))):
-                    return .none
                 case .info(.destination(.presented(.district(.mapTapped)))):
                     guard let districtId = state.destination?.info?.destination?.district?.district.id else {
                         return .none
@@ -172,15 +167,31 @@ struct Home {
     func adminTapped(state: inout State, action: Action) -> Effect<Action> {
         switch state.userRole {
         case .headquarter(let id):
-            state.isDestinationLoading = true
-            return .none // FIXME:
+            return adminFestivalPrepared(state: &state, action: action, festivalId: id)
         case .district(let id):
-            state.isDestinationLoading = true
-            return .none // FIXME:
+            return adminDistrictPrepared(state: &state, action: action, districtId: id)
         case .guest:
-            state.destination = .login(Login.State(id: ""))
+            state.destination = .login(Login.State(id: ""))// FIXME
             return .none
         }
+    }
+    
+    func adminFestivalPrepared(state: inout State, action: Action, festivalId: Festival.ID) -> Effect<Action> {
+        guard  let festival = FetchOne(Festival.find(festivalId)).wrappedValue else {
+            state.alert = Alert.error("情報の取得に失敗しました")
+            return .none
+        }
+        state.destination = .adminFestival(.init(festival))
+        return .none
+    }
+    
+    func adminDistrictPrepared(state: inout State, action: Action, districtId: District.ID) -> Effect<Action> {
+        guard  let district = FetchOne(District.find(districtId)).wrappedValue else {
+            state.alert = Alert.error("情報の取得に失敗しました")
+            return .none
+        }
+        state.destination = .adminDistrict(.init(district))
+        return .none
     }
 }
 

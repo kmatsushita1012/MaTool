@@ -110,12 +110,12 @@ extension AuthProvider: DependencyKey {
                     case .success(let tokens):
                         return .success(tokens.accessToken)
                     case .failure(let error):
-                        return .failure(.unknown(""))
+                        return .failure(.unknown(error.errorDescription))
                     case .none:
                         return .failure(.unknown(""))
                     }
                 } catch {
-                    return .failure(.unknown(""))
+                    return .failure(.unknown(error.localizedDescription))
                 }
             },
             signOut: {

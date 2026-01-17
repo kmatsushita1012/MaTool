@@ -70,16 +70,16 @@ struct OnboardingFeature {
                     state.festivalErrorMessaage = "祭典を選択してください。"
                     return .none
                 }
-                state.$launchState.withLock{ $0 = .festival }
+                state.$launchState.withLock{ $0 = .festival(.guest) }
                 return .none
             case .districtSelected(let district):
-                guard let festival = state.selectedFestival,district.festivalId == festival.id  else {
+                guard let festival = state.selectedFestival, district.festivalId == festival.id  else {
                     state.festivalErrorMessaage = "祭典を選択してください。"
                     return .none
                 }
                 return .run { send in
                     do{
-                        let routeId = try await sceneUsecase.select(districtId: festival.id)
+                        let routeId = try await sceneUsecase.select(districtId: district.id)
                         await send(.districtDidSet(.success(routeId)))
                     } catch let error as APIError {
                         await send(.districtDidSet(.failure(error)))
@@ -95,7 +95,7 @@ struct OnboardingFeature {
                 return .none
             case .districtDidSet(.success(let routeId)):
                 state.isLoading = false
-                state.$launchState.withLock{ $0 = .district(routeId) }
+                state.$launchState.withLock{ $0 = .district(.guest, routeId) }
                 return .none
             case .districtDidSet(.failure(_)):
                 state.isLoading = false

@@ -71,7 +71,7 @@ struct SceneDataFetcher: SceneDataFetcherProtocol {
             try routeStore.deleteAll(from: db)
             try pointStore.deleteAll(from: db)
         }
-        let pack: LaunchDistrictPack = try await client.get(path: "/festivals\(districtId)/launch", accessToken: token)
+        let pack: LaunchDistrictPack = try await client.get(path: "/districts/\(districtId)/launch", accessToken: token)
         try await deleteTask
         try await database.write{ db in
             try performanceStore.insert(pack.performances, at: db)

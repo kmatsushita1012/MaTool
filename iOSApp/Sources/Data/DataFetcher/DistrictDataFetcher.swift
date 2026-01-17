@@ -29,7 +29,7 @@ struct DistrictDataFetcher: DistrictDataFetcherProtocol {
     func create(name: String, email: String, festivalId: String) async throws {
         let draft: DistrictCreateForm = .init(name: name, email: email)
         guard let token = await getAccessToken() else { throw APIError.unauthorized(message: "") }
-        let result: DistrictPack = try await client.post(path: "/festivals/\(festivalId)", body: draft, accessToken: token)
+        let result: DistrictPack = try await client.post(path: "/festivals/\(festivalId)/districts", body: draft, accessToken: token)
         try await syncPack(result)
     }
 
