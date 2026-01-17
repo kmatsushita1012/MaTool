@@ -8,8 +8,21 @@
 # ↓ 公式提供後はこちらに変更予定：
 # FROM swift:6.2.0-amazonlinux2023 AS build
 
-FROM swift:6.2.0-amazonlinux2 AS build
+FROM amazonlinux:2023 AS build
 
+# 基本ツール
+RUN dnf update -y && \
+    dnf install -y \
+        swiftlang \
+        clang \
+        sqlite-devel \
+        openssl-devel \
+        libxml2-devel \
+        libcurl-devel \
+        git \
+        tar \
+        gzip \
+    && dnf clean all
 # Swift 環境の初期化
 WORKDIR /workspace
 
@@ -30,8 +43,7 @@ RUN swift build -c release --static-swift-stdlib
 
 # ⚙️ 現在は provided.al2 で運用
 #    → AL2023 へ移行する際はこの1行を置き換えるだけ
-# FROM public.ecr.aws/lambda/provided:al2023
-FROM public.ecr.aws/lambda/provided:al2
+FROM public.ecr.aws/lambda/provided:al2023
 
 # Lambda が実行するエントリポイント（bootstrap）配置
 COPY --from=build /workspace/Backend/.build/release/Backend /var/runtime/bootstrap
