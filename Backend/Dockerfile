@@ -18,7 +18,7 @@ RUN dnf update -y && \
         sqlite-devel \
         openssl-devel \
         libxml2-devel \
-        libicu \
+        libcurl-devel \
         git \
         tar \
         gzip \
