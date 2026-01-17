@@ -145,7 +145,7 @@ struct PublicRoute {
                     state.alert = Alert.notice("現在地の配信は停止中です。")
                 } else {
                     state.alert = Alert.error(error.localizedDescription)
-                }
+                }P
                 return .none
             case .replayTapped:
                 if state.replay.isRunning {

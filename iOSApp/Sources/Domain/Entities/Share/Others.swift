@@ -20,8 +20,8 @@ public extension Coordinate {
 import Shared
 
 enum LaunchState: Entity {
-    case district(Route.ID?) // ホーム画面&町登録あり
-    case festival // ホーム画面&町登録なし
+    case district(UserRole ,Route.ID?) // ホーム画面&町登録あり
+    case festival(UserRole) // ホーム画面&町登録なし
     case onboarding
     case loading
     case error(String)
