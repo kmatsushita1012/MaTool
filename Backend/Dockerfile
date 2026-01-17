@@ -15,6 +15,7 @@ RUN dnf update -y && \
         openssl-devel \
         libxml2-devel \
         libcurl-devel \
+        binutils \
     && dnf clean all
 
 WORKDIR /workspace
@@ -42,6 +43,12 @@ RUN swift package resolve
 # Swift build（静的ライブラリ込み）
 RUN swift build -c release --static-swift-stdlib
 
+RUN ls -lh .build/release/Backend
+# デバッグシンボルを削除してサイズ圧縮
+RUN strip .build/release/Backend
+
+RUN ls -lh .build/release/Backend
+
 # ============================
 # Stage 2: Lambda Runtime (AL2023)
 # ============================
@@ -49,11 +56,6 @@ FROM public.ecr.aws/lambda/provided:al2023
 
 # ビルド済みバイナリをコピー
 COPY --from=build /workspace/Backend/.build/release/Backend /var/runtime/bootstrap
-
-# デバッグシンボルを削除してサイズ圧縮
-RUN strip /var/runtime/bootstrap
-
-RUN ls -l /var/runtime/bootstrap
 
 RUN chmod +x /var/runtime/bootstrap
 
