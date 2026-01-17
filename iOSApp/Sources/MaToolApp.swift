@@ -9,11 +9,7 @@ import SwiftUI
 
 @main
 struct MaToolApp: App {
-    private let appInitializer = AppInitializer()
 
-    init() {
-        appInitializer.initializeEnvironment()
-    }
 
     var body: some Scene {
         WindowGroup {

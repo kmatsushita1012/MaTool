@@ -156,7 +156,7 @@ struct VoidSuccess: Equatable {
 typealias VoidResult<Failure: Swift.Error> = Result<VoidSuccess, Failure>
 
 extension VoidResult where Success == VoidSuccess {
-    static func success() -> Self {
+    static var success: Self {
         .success(.init())
     }
 }
