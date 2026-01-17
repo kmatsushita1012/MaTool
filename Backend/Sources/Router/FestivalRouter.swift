@@ -27,7 +27,6 @@ struct FestivalRouter: Router {
         app.delete(path: "/festivals/:festivalId/periods/:periodId", periodController.delete)
         app.get(path: "/festivals/:festivalId/periods", periodController.query)
         app.post(path: "/festivals/:festivalId/periods", periodController.post)
-        app.put(path: "/festivals/:festivalId/periods", periodController.put)
         // MARK: - Festival
         app.get(path: "/festivals/:festivalId", festivalController.get)
         app.get(path: "/festivals", festivalController.scan)
