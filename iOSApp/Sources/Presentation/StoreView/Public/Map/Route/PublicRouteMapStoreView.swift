@@ -96,18 +96,18 @@ struct PublicRouteMapStoreView: View {
     var menu: some View {
         VStack(spacing: 8)  {
             if let selected = store.selected {
-                ToggleSelectedItem(title: "", isExpanded: $store.isMenuExpanded) // FIXME
+                ToggleSelectedItem(title: selected.text, isExpanded: $store.isMenuExpanded) // FIXME
                     .padding(8)
                     .background(.white)
                     .cornerRadius(8)
                     .shadow(radius: 3)
             }
             if store.isMenuExpanded  {
-                ForEach(store.others) { route in
+                ForEach(store.others) { entry in
                     WithPerceptionTracking{
                         ToggleOptionItem(
-                            title: "", // FIXME
-                            onTap: { store.send(.selected(route)) }
+                            title: entry.text,
+                            onTap: { store.send(.selected(entry)) }
                         )
                         .padding(8)
                         .background(Color(UIColor.systemGray5))
