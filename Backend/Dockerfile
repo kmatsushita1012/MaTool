@@ -50,6 +50,11 @@ FROM public.ecr.aws/lambda/provided:al2023
 # ビルド済みバイナリをコピー
 COPY --from=build /workspace/Backend/.build/release/Backend /var/runtime/bootstrap
 
+# デバッグシンボルを削除してサイズ圧縮
+RUN strip /var/runtime/bootstrap
+
+RUN ls -l /var/runtime/bootstrap
+
 RUN chmod +x /var/runtime/bootstrap
 
 ENTRYPOINT ["/var/runtime/bootstrap"]
