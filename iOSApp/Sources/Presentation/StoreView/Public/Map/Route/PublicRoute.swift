@@ -36,9 +36,13 @@ struct PublicRoute {
         }
         
         @FetchOne var district: District
-        @FetchAll var routes: [Route]
+        @FetchAll var routes: [RouteEntry]
 
-        var selected: Route?
+        var selected: RouteEntry? {
+            didSet {
+                self._points = FetchAll(Point.where { $0.routeId == selected?.route.id })
+            }
+        }
         @FetchAll var points: [Point]
 
         @FetchOne var location: FloatLocation? {
@@ -66,9 +70,9 @@ struct PublicRoute {
         ) {
             self._mapRegion = mapRegion
             self._district = FetchOne(wrappedValue: district)
-            self._routes = FetchAll(Route.where { $0.districtId == district.id })
-            self.selected = routes.first { $0.id == routeId }
-            self._points = FetchAll(Point.where { $0.routeId == selected?.id })
+            self._routes = .init(districtId: district.id, latest: true)
+            self.selected = routes.first { $0.route.id == routeId }
+            self._points = FetchAll(Point.where { $0.routeId == selected?.route.id })
             self._location = FetchOne(FloatLocation.where{ $0.districtId == district.id } )
             if let location {
                 floatAnnotation = FloatCurrentAnnotation(district.name, location: location)
@@ -80,7 +84,7 @@ struct PublicRoute {
     enum Action: Equatable, BindableAction {
         case binding(BindingAction<State>)
         case menuTapped
-        case selected(Route)
+        case selected(RouteEntry)
         case pointTapped(Point)
         case locationTapped
         case userFocusTapped
@@ -106,11 +110,11 @@ struct PublicRoute {
             case .menuTapped:
                 state.isMenuExpanded = true
                 return .none
-            case .selected(let route):
+            case .selected(let entry):
                 state.isMenuExpanded = false
-                state.selected = route
+                state.selected = entry
                 return .run { send in
-                    let result = await task { try await dataFetcher.fetch(routeID: route.id) }
+                    let result = await task { try await dataFetcher.fetch(routeID: entry.route.id) }
                     await send(.routeReceived(result))
                 }
             case .pointTapped(let value):
@@ -145,7 +149,7 @@ struct PublicRoute {
                     state.alert = Alert.notice("現在地の配信は停止中です。")
                 } else {
                     state.alert = Alert.error(error.localizedDescription)
-                }P
+                }
                 return .none
             case .replayTapped:
                 if state.replay.isRunning {
@@ -181,7 +185,7 @@ struct PublicRoute {
 
 extension PublicRoute.State {
 
-    var others: [Route] {
+    var others: [RouteEntry] {
         routes.filter {
             if let selected {
                 $0.id != selected.id

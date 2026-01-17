@@ -69,6 +69,7 @@ struct RouteDataFetcher: RouteDataFetcherProtocol {
         try await database.write { db in
             let oldPoints = try pointStore.fetchAll(where: { $0.routeId == id }, from: db)
             let (insertedPoints, deletedPointIds) = oldPoints.diff(with: pack.points)
+            try routeStore.delete(pack.route.id, from: db)
             try pointStore.deleteAll(deletedPointIds, from: db)
             try routeStore.insert(pack.route, at: db)
             try pointStore.insert(insertedPoints, at: db)
