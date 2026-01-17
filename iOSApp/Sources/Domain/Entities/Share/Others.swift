@@ -16,3 +16,13 @@ public extension Coordinate {
         return Coordinate(latitude: coordinate.latitude, longitude: coordinate.longitude)
     }
 }
+
+import Shared
+
+enum LaunchState: Entity {
+    case district(UserRole ,Route.ID?) // ホーム画面&町登録あり
+    case festival(UserRole) // ホーム画面&町登録なし
+    case onboarding
+    case loading
+    case error(String)
+}
