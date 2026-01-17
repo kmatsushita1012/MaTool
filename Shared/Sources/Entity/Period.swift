@@ -6,46 +6,23 @@
 //
 
 import Foundation
-
-// MARK: - Program
-public struct Program: Entity {
-    public let festivalId: String
-    public let year: Int
-    public var title: String
-    public var periods: [Period]
-    
-    public init(festivalId: String, year: Int, title: String = "", periods: [Period]) {
-        self.festivalId = festivalId
-        self.year = year
-        self.title = title
-        self.periods = periods
-    }
-}
-
-extension Program: Comparable {
-    public static func < (lhs: Program, rhs: Program) -> Bool {
-        return lhs.year < rhs.year
-    }
-}
-
-extension Program: Identifiable {
-    public var id : String {
-        return "\(festivalId)_\(year)"
-    }
-}
+import SQLiteData
 
 // MARK: - Period
-public struct Period: Entity {
+@Table public struct Period: Entity, Identifiable {
     public let id: String
-    public let festivalId: String
+    public let festivalId: Festival.ID
+    @Column(as: SimpleDate.ISODateRepresentation.self)
     public var date: SimpleDate
     public var title: String
+    @Column(as: SimpleTime.JSONRepresentation.self)
     public var start: SimpleTime
+    @Column(as: SimpleTime.JSONRepresentation.self)
     public var end: SimpleTime
     
     public init(
         id: String = UUID().uuidString,
-        festivalId: String = "",
+        festivalId: Festival.ID = "",
         title: String = "",
         date: SimpleDate,
         start: SimpleTime = .now,
@@ -60,8 +37,6 @@ public struct Period: Entity {
     }
 }
 
-extension Period: Identifiable {}
-
 extension Period: Comparable {
     public static func < (lhs: Period, rhs: Period) -> Bool {
         return Date.combine(date: lhs.date, time: lhs.start) < Date.combine(date: rhs.date, time: rhs.start)
@@ -73,5 +48,12 @@ public extension Period {
         let startDateTime = Date.combine(date: date, time: start)
         let endDateTime = Date.combine(date: date, time: end)
         return startDateTime <= datetime && datetime <= endDateTime
+    }
+}
+
+public extension Period {
+    func before(_ datetime: Date) -> Bool {
+        let startDateTime = Date.combine(date: date, time: start)
+        return datetime <= startDateTime
     }
 }
