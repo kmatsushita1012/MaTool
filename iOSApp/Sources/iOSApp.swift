@@ -20,6 +20,12 @@ public struct RootSceneView: View {
             isPerceptionCheckingEnabled = false
         }
         self._launchState = Shared(value: .loading)
+        prepareDependencies {
+            if let database = try? setupDatabase() {
+                $0.defaultDatabase = database
+            }
+        }
+        
         Task { [self] in
             let launchState = await sceneUsecase.launch()
             self.$launchState.withLock { $0 = launchState }
@@ -29,15 +35,15 @@ public struct RootSceneView: View {
     public var body: some View {
         Group {
             switch launchState {
-            case .district(let routeId):
-                let store = Store(initialState: Home.State(currentRouteId: routeId)) { Home() }
+            case .district(let userRole, let routeId):
+                let store = Store(initialState: Home.State(userRole: userRole, currentRouteId: routeId)) { Home() }
                 HomeStoreView(store: store)
                     .task {
                         store.send(.initialize)
                     }
-            case .festival:
-                let store = Store(initialState: Home.State()) { Home() }
-                HomeStoreView(store: Store(initialState: Home.State()) { Home() })
+            case .festival(let userRole):
+                let store = Store(initialState: Home.State(userRole: userRole)) { Home() }
+                HomeStoreView(store: store)
                     .task {
                         store.send(.initialize)
                     }

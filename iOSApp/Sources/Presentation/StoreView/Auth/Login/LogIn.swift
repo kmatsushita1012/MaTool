@@ -36,10 +36,7 @@ struct Login {
     }
     
     @Dependency(\.userDefaultsClient) var userDefaultsClient
-    @Dependency(\.authService) var authService
-    @Dependency(\.values.defaultFestivalKey) var defaultFestivalKey
-    @Dependency(\.values.defaultDistrictKey) var defaultDistrictKey
-    @Dependency(\.values.loginIdKey) var loginIdKey
+    @Dependency(SceneUsecaseKey.self) var sceneUsecase
     @Dependency(\.dismiss) var dismiss
     
     var body: some ReducerOf<Login> {
@@ -51,8 +48,13 @@ struct Login {
             case .signInTapped:
                 state.isLoading = true
                 return .run {[id = state.id, password = state.password] send in
-                    let result = await authService.signIn(id, password: password)
-                    await send(.received(result))
+                    do {
+                        let result = try await sceneUsecase.signIn(username: id, password: password)
+                        await send(.received(result))
+                    }catch {
+                        print(error)
+                        // FIXME: Error
+                    }
                 }
             case .homeTapped:
                 return .run { _ in
@@ -65,13 +67,8 @@ struct Login {
                 state.errorMessage = nil
                 switch userRole {
                 case .headquarter(let id):
-                    userDefaultsClient.setString(id, defaultFestivalKey)
-                    userDefaultsClient.setString(nil, defaultDistrictKey)
-                    userDefaultsClient.setString(id, loginIdKey)
                     return .none
                 case .district(let id):
-                    userDefaultsClient.setString(id, defaultDistrictKey)
-                    userDefaultsClient.setString(id, loginIdKey)
                     return .none
                 case .guest:
                     return .none

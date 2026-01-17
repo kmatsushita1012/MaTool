@@ -166,7 +166,7 @@ extension PublicMap.State {
             + districts.prioritizing(by: \.id, match: district.id)
             .map{ PublicMap.Content.route($0) }
             
-        let selected = contents.first ?? locations
+        let selected = contents[1]
         self.contents = contents
         self.selectedContent = selected
         

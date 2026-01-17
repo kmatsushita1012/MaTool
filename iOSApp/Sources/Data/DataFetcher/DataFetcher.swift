@@ -11,10 +11,10 @@ protocol DataFetcher: Sendable {}
 
 
 extension DataFetcher {
-    func getToken() async throws -> String {
+    func getToken() async throws -> String? {
         @Dependency(AuthServiceKey.self) var authService
         
-        guard let token = await authService.getAccessToken() else { throw APIError.unauthorized(message: "ログインセッションが切れました。もう一度ログインしてください") }
+        let token = await authService.getAccessToken()
         return token
     }
 }
