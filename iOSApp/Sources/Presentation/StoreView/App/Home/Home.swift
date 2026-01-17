@@ -52,8 +52,7 @@ struct Home {
         case statusReceived(StatusCheckResult?)
         case adminDistrictPrepared(VoidResult<APIError>)
         case adminFestivalPrepared(VoidResult<APIError>)
-        
-        case settingsPrepared
+        case settingsPrepared(VoidResult<APIError>)
         case destination(PresentationAction<Destination.Action>)
         case alert(PresentationAction<Alert.Action>)
     }
@@ -90,11 +89,12 @@ struct Home {
                 {
                     state.isDestinationLoading = true
                     state.destination = .map(.init(festival: festival, district: district, routeId: state.currentRouteId))
-                    return .none// FIXME:
+                    return .none
                 } else {
                     state.isDestinationLoading = true
                     state.destination = .map(.init(festival: festival))
-                    return .none// FIXME:
+                    return .none
+                    
                 }
                 
             case .infoTapped:
@@ -104,15 +104,21 @@ struct Home {
                     return .none
                 }
                 state.destination = .info(.init(festival: festival))
-                return .none //FIXME
+                return .none
             case .adminTapped:
                 return adminTapped(state: &state, action: action)
             case .settingsTapped:
                 state.isDestinationLoading = true
                 return .run {send in 
                     let result = await task{ try await festivalDataFetcher.fetchAll()}
-                    //FIXME:
+                    await send(.settingsPrepared(result))
                 }
+            case .settingsPrepared(.success):
+                state.destination = .settings(.init())
+                return .none
+            case .settingsPrepared(.failure(let error)):
+                state.alert = Alert.error("設定画面の準備に失敗しました。\n\(error)")
+                return .none
             case .destination(.presented(let childAction)):
                 switch childAction {
                 case .login(.received(.success(let userRole))),

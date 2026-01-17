@@ -148,21 +148,23 @@ struct FestivalDashboardFeature {
 
     func batchExportEffect(_ state: State) -> Effect<Action> {
         .run { send in
-            let idsResult = await apiRepository.getRouteIds()  // FIXME
             let districtIds = state.districts.map(\.id)
-            let routes: [Route] = FetchAll(Route.where { $0.districtId.in(districtIds) })
-                .wrappedValue
             var urls: [URL] = []
             //非同期並列にするとBEでアクセス過多
             let _ = await task {
-                for route in routes {
-                    guard let period: Period = FetchOne(Period.find(route.periodId)).wrappedValue,
-                        (try? await routeDataFetcher.fetch(routeID: route.id)) != nil,
-                        let snapshotter = RouteSnapshotter(route),
-                        let image = try? await snapshotter.take(),
-                        let url = snapshotter.createPDF(with: image, path: "\(period.text)")
-                    else { continue }
-                    urls.append(url)
+                for districtId in districtIds {
+                    guard let _ =  try? await routeDataFetcher.fetchAll(districtID: districtId, query: .latest) else { continue }
+                    let routes: [Route] = FetchAll(Route.where { $0.districtId == districtId })
+                        .wrappedValue
+                    for route in routes {
+                        guard let period: Period = FetchOne(Period.find(route.periodId)).wrappedValue,
+                              (try? await routeDataFetcher.fetch(routeID: route.id)) != nil,
+                              let snapshotter = RouteSnapshotter(route),
+                              let image = try? await snapshotter.take(),
+                              let url = snapshotter.createPDF(with: image, path: "\(period.text)")
+                        else { continue }
+                        urls.append(url)
+                    }
                 }
             }
             await send(.batchExportPrepared(.success(urls)))
