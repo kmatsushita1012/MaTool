@@ -30,7 +30,7 @@ extension ConstantValues: DependencyKey {
     static let liveValue = Self(
         apiBaseUrl: {
             #if DEBUG
-                "https://soc2st3vh2.execute-api.ap-northeast-1.amazonaws.com/dev"
+                "https://soc2st3vh2.execute-api.ap-northeast-1.amazonaws.com/dev-normalization"
             #else
                 "https://soc2st3vh2.execute-api.ap-northeast-1.amazonaws.com"
             #endif
