@@ -8,7 +8,19 @@
 # ↓ 公式提供後はこちらに変更予定：
 # FROM swift:6.2.0-amazonlinux2023 AS build
 
-FROM swift:6.2.0-amazonlinux2 AS build
+FROM amazonlinux:2023 AS build
+
+# 基本ツール
+RUN dnf update -y && \
+    dnf install -y \
+        swiftlang \
+        sqlite-devel \
+        clang \
+        git \
+        tar \
+        gzip \
+        libicu \
+    && dnf clean all
 
 # Swift 環境の初期化
 WORKDIR /workspace
