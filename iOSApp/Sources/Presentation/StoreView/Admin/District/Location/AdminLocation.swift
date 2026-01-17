@@ -35,7 +35,6 @@ struct AdminLocation{
         case dismissTapped
     }
     
-    @Dependency(\.apiRepository) var apiRepository
     @Dependency(\.locationService) var locationService
     @Dependency(\.dismiss) var dismiss
     

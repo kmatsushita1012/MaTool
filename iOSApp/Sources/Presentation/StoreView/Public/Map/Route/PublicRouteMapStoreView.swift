@@ -16,7 +16,7 @@ struct PublicRouteMapStoreView: View {
         self.store = store
         _replayController = StateObject(
             wrappedValue: ReplayController(
-                name: store.name,
+                name: store.district.name,
                 stepDistance: 10,
                 interval: 0.1,
                 onEnd: { store.send(.replayEnded) }
@@ -37,8 +37,8 @@ struct PublicRouteMapStoreView: View {
         WithPerceptionTracking{
             ZStack{
                 PublicRouteMap(
-                    points: store.pinPoints,
-                    polylines: store.points?.pair,
+                    points: store.points,
+                    polylines: store.points.pair,
                     float: floatAnnotation,
                     region: $store.mapRegion,
                     pointTapped: { store.send(.pointTapped($0))},
@@ -46,59 +46,68 @@ struct PublicRouteMapStoreView: View {
                 )
                 .equatable()
                 .ignoresSafeArea(edges: .bottom)
-                VStack{
-                    Spacer()
-                    HStack(spacing: 16){
-                        if store.replay.isRunning {
-                            slider()
-                        }else{
-                            Spacer()
-                        }
-                        buttons()
-                    }
-                    .padding()
-                }
-                VStack{
-                    menu()
-                        .padding()
-                    Spacer()
-                }
-                .tapOutside(isShown: $store.isMenuExpanded)
+                toolbarLayer
+                menuLayer
             }
             .alert($store.scope(state: \.alert, action: \.alert))
             .sheet(item: $store.detail) { detail in
                 switch detail{
                 case .point(let item):
-                    PointView(item: item)
+                    PointView(item)
                         .presentationDetents([.fraction(0.3), .medium, .large])
                 case .location(let item):
-                    LocationView(item: item)
+                    LocationView(item)
                         .presentationDetents([.fraction(0.3), .medium, .large])
                 }
             }
             .onAppear{ updateReplay() }
-            .onChange(of: store.route) { _ in updateReplay() }
+            .onChange(of: store.selected) { _ in updateReplay() }
             .onChange(of: store.replay) { _ in updateReplay() }
         }
     }
     
     @ViewBuilder
-    func menu()-> some View {
+    var toolbarLayer: some View {
+        VStack{
+            Spacer()
+            HStack(spacing: 16){
+                if store.replay.isRunning {
+                    slider
+                }else{
+                    Spacer()
+                }
+                buttons
+            }
+            .padding()
+        }
+    }
+    
+    @ViewBuilder
+    var menuLayer: some View {
+        VStack{
+            menu
+                .padding()
+            Spacer()
+        }
+        .tapOutside(isShown: $store.isMenuExpanded)
+    }
+    
+    @ViewBuilder
+    var menu: some View {
         VStack(spacing: 8)  {
-            if let selected = store.selectedItem {
-                ToggleSelectedItem(title: selected.text(format:"m/d(w) T"), isExpanded: $store.isMenuExpanded)
+            if let selected = store.selected {
+                ToggleSelectedItem(title: "", isExpanded: $store.isMenuExpanded) // FIXME
                     .padding(8)
                     .background(.white)
                     .cornerRadius(8)
                     .shadow(radius: 3)
             }
-            if store.isMenuExpanded,
-               let others = store.others {
-                ForEach(others) { route in
+            if store.isMenuExpanded  {
+                ForEach(store.others) { route in
                     WithPerceptionTracking{
                         ToggleOptionItem(
-                            title: route.text(format:"m/d(w) T"),
-                            onTap: { store.send(.itemSelected(route)) }
+                            title: "", // FIXME
+                            onTap: { store.send(.selected(route)) }
                         )
                         .padding(8)
                         .background(Color(UIColor.systemGray5))
@@ -111,7 +120,7 @@ struct PublicRouteMapStoreView: View {
     }
     
     @ViewBuilder
-    func buttons() -> some View {
+    var buttons: some View {
         HStack {
             FloatingIconButton(icon: "location.fill"){
                 store.send(.userFocusTapped)
@@ -148,7 +157,7 @@ struct PublicRouteMapStoreView: View {
     }
     
     @ViewBuilder
-    func slider() -> some View {
+    var slider: some View {
         Slider(
             value: Binding(
                 get: { replayController.seekValue },
@@ -165,7 +174,7 @@ struct PublicRouteMapStoreView: View {
     func updateReplay() {
         switch store.replay {
         case .initial:
-            replayController.prepare(coordinates: store.points?.map{ $0.coordinate })
+            replayController.prepare(coordinates: store.points.map{ $0.coordinate })
         case .start:
             replayController.start()
         case let .seek(progress):

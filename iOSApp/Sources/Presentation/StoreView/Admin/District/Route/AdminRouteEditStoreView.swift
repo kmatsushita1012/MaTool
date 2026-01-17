@@ -8,6 +8,7 @@
 import ComposableArchitecture
 import SwiftUI
 import NavigationSwipeControl
+import Shared
 
 @available(iOS 17.0, *)
 struct AdminRouteEditStoreView: View {
@@ -152,35 +153,29 @@ extension AdminRouteEditStoreView {
     @ViewBuilder
     var info: some View {
         List{
-            Section(header: Text("日付")){
-                DateTimePicker(
-                    "日付を選択",
-                    selection: $store.route.date.fullDate,
-                    displayedComponents: [.date]
-                )
-                .environment(\.locale, Locale(identifier: "ja_JP"))
-            }
-            Section(header: Text("タイトル")) {
-                TextField("タイトルを入力（例：午前）",text: $store.route.title)
-            }
+//            Section(header: Text("日付")){
+//                DateTimePicker(
+//                    "日付を選択",
+//                    selection: $store.period.date.fullDate,
+//                    displayedComponents: [.date]
+//                )
+//                .environment(\.locale, Locale(identifier: "ja_JP"))
+//            }
             Section(header: Text("説明")) {
                 TextEditor(text: $store.route.description.nonOptional)
                     .frame(height:120)
             }
-            Section(header: Text("時刻") ) {
-                DateTimePicker(
-                    "開始時刻",
-                    selection: $store.route.start.fullDate,
-                    displayedComponents: [.hourAndMinute]
-                )
-                .datePickerStyle(.compact)
-                DateTimePicker(
-                    "終了時刻",
-                    selection: $store.route.goal.fullDate,
-                    displayedComponents: [.hourAndMinute]
-                )
-                .datePickerStyle(.compact)
+            Section(header: Text("ルート")) {
+                Picker(selection: $store.route.visibility) {
+                    ForEach(Visibility.allCases, id: \.self) { option in
+                        Text(option.label).tag(option)
+                    }
+                } label: {
+                    Text("公開範囲を選択")
+                }
+                .pickerStyle(.menu)
             }
+            
             if store.isDeleteable {
                 Section {
                     Button(action: {
@@ -197,8 +192,7 @@ extension AdminRouteEditStoreView {
     @ViewBuilder
     var map: some View {
         AdminRouteMapView(
-            route: $store.route.readonly,
-            filter: store.filter,
+            points: store.points,
             onMapLongPress: { store.send(.mapLongPressed($0)) },
             pointTapped: { store.send(.pointTapped($0)) },
             region: $store.region,

@@ -9,7 +9,7 @@ import Foundation
 import Shared
 
 extension SimpleDate {
-    func text(format: String) -> String {
+    func text(format: String = "y/m/d") -> String {
         var result = ""
         var i = format.startIndex
 
