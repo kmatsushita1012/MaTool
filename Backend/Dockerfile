@@ -43,8 +43,7 @@ RUN swift build -c release --static-swift-stdlib
 
 # ⚙️ 現在は provided.al2 で運用
 #    → AL2023 へ移行する際はこの1行を置き換えるだけ
-# FROM public.ecr.aws/lambda/provided:al2023
-FROM public.ecr.aws/lambda/provided:al2
+FROM public.ecr.aws/lambda/provided:al2023
 
 # Lambda が実行するエントリポイント（bootstrap）配置
 COPY --from=build /workspace/Backend/.build/release/Backend /var/runtime/bootstrap
