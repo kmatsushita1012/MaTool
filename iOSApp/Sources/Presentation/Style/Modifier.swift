@@ -38,3 +38,11 @@ extension View {
         }
     }
 }
+
+extension View {
+    func apply(
+        @ViewBuilder _ style: (Self) -> some View
+    ) -> some View {
+        style(self)
+    }
+}
