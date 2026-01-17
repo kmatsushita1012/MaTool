@@ -73,9 +73,9 @@ struct AdminDistrictView: View{
             }
             Section(header: Text("行動")){
                 ForEach(store.routes) { pair in
-                    AdminRouteItem(
-                        text: pair.period.shortText,
-                        onEdit: { store.send(.onRouteEdit(pair)) }
+                    RouteSlotView(
+                        pair,
+                        onTap: { store.send(.onRouteEdit(pair)) }
                     )
                 }
             }
