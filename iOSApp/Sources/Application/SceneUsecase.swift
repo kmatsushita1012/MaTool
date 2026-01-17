@@ -39,15 +39,24 @@ actor SceneUsecase: SceneUsecaseProtocol {
                 try await festivalDataFetcher.fetchAll()
                 return .onboarding
             }
+            let userRole = await {
+                let result = await authService.getUserRole()
+                switch result {
+                case .success(let userRole):
+                    return userRole
+                case .failure:
+                    return .guest
+                }
+            }()
             
             async let festivalTask: () = dataFetcher.launchFestival(festivalId: festivalId)
             if let districtId = userDefaults.defaultDistrictId {
                 async let districtTask = dataFetcher.launchDistrict(districtId: districtId)
                 let (_, routeId) = try await(festivalTask, districtTask)
-                return .district(routeId)
+                return .district(userRole, routeId)
             } else {
                 try await festivalTask
-                return .festival
+                return .festival(userRole)
             }
         } catch {
             return .error(error.localizedDescription)
@@ -87,9 +96,9 @@ actor SceneUsecase: SceneUsecaseProtocol {
     }
     
     func select(festivalId: Shared.Festival.ID) async throws {
+        try await dataFetcher.launchFestival(festivalId: festivalId)
         userDefaults.defaultFestivalId = festivalId
         userDefaults.defaultDistrictId = nil
-        try await dataFetcher.launchFestival(festivalId: festivalId)
         return
     }
     
@@ -97,9 +106,8 @@ actor SceneUsecase: SceneUsecaseProtocol {
         guard let district = FetchOne(District.find(districtId)).wrappedValue else {
             throw APIError.notFound(message: "指定された町が存在しません。")
         }
-        
-        userDefaults.defaultDistrictId = district.id
         let currentRouteId = try await dataFetcher.launchDistrict(districtId: districtId)
+        userDefaults.defaultDistrictId = district.id
         return currentRouteId
     }
 }
