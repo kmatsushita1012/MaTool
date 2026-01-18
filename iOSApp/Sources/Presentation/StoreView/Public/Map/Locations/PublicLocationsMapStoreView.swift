@@ -14,11 +14,7 @@ struct PublicLocationsMapStoreView: View {
     var body: some View {
         WithPerceptionTracking{
             ZStack{
-                PublicLocationsMap(
-                    store.floatAnnotations,
-                    onTap: { store.send(.locationTapped($0)) },
-                    region: $store.mapRegion
-                )
+                MapView(style: .public, floats: store.floats, region: $store.mapRegion, floatTapped: { store.send(.floatTapped($0)) })
                 .ignoresSafeArea(edges: .bottom)
                 VStack{
                     Spacer()
@@ -45,8 +41,8 @@ struct PublicLocationsMapStoreView: View {
             Divider()
             FloatingIconMenu(
                 icon: "mappin.and.ellipse",
-                items: store.floatAnnotations,
-                itemLabel: { Text( $0.title ?? "" ) }
+                items: store.floats,
+                itemLabel: { Text( $0.district.name ) }
             ){
                 store.send(.floatFocusSelected($0))
             }
