@@ -63,7 +63,7 @@ final class ReplayController: ObservableObject {
     func start() {
         guard !coords.isEmpty else { return }
         state = .playing(Double(index) / Double(max(coords.count-1,1)))
-        annotation = FloatReplayAnnotation(name: name, coordinate: coords[index])
+        annotation = FloatReplayAnnotation(title: name, coordinate: coords[index])
         startTimer()
     }
     
