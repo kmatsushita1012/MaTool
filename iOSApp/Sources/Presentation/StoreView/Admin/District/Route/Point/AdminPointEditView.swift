@@ -19,27 +19,22 @@ struct AdminPointEditView: View {
     var body: some View {
         Form {
             Section {
-                Picker("種類", selection: $store.pointType) {
+                Picker("地点の種類", selection: $store.pointType) {
                     ForEach(AdminPointEdit.PointType.allCases, id: \.self){ type in
                         Text(type.text).tag(type)
                     }
                 }
                 .pickerStyle(.menu)
-            }
-            
-            
-            Section(
-                header: Text("時刻"),
-                footer: Text("先頭および末尾の地点は「経路図（PDF）への出力」がオフでも自動的に経路図に出力されます。時刻は前画面で設定した開始時刻もしくは終了時刻が適用されます。オンの場合はこの画面の「時刻を設定」で設定した時刻が適用されます。")
-            ) {
-                Toggle("時刻を設定", isOn: $store.point.time.toggle)
-                if store.point.time != nil {
-                    DateTimePicker(
-                        "時刻を選択",
-                        selection: $store.point.time.fullDate,
-                        displayedComponents: [.hourAndMinute]
-                    )
-                    .datePickerStyle(.compact)
+                
+                switch store.pointType {
+                case .checkpoint:
+                    checkpoint
+                case .performance:
+                    performance
+                case .start, .end, .rest:
+                    timePicker
+                case .none:
+                    EmptyView()
                 }
             }
             
@@ -79,13 +74,67 @@ struct AdminPointEditView: View {
     }
     
     @ViewBuilder
-    var checkpointMenu: some View {
-        Section {
+    var checkpoint: some View {
+        if #available(iOS 18.0, *) {
             Picker("重要地点", selection: $store.point.checkpointId) {
                 ForEach(store.checkpoints){ checkpoint in
-                    Text(checkpoint.name).tag(checkpoint.id)
+                    Text(checkpoint.name).tag(Optional(checkpoint.id))
+                }
+            } currentValueLabel: {
+                Text(store.selectedCheckpoint?.name ?? "未選択")
+            }
+            .pickerStyle(.menu)
+        } else {
+            Picker("重要地点", selection: $store.point.checkpointId) {
+                ForEach(store.checkpoints){ checkpoint in
+                    Text(checkpoint.name).tag(Optional(checkpoint.id))
                 }
             }
+            .pickerStyle(.menu)
+        }
+        timePicker
+    }
+    
+    @ViewBuilder
+    var performance: some View {
+        if #available(iOS 18.0, *) {
+            Picker("余興", selection: $store.point.performanceId) {
+                ForEach(store.performances){ performance in
+                    Text(performance.name).tag(Optional(performance.id))
+                }
+            } currentValueLabel: {
+                Text(store.selectedPerformance?.name ?? "未選択")
+            }
+            .pickerStyle(.menu)
+        } else {
+            Picker(
+                "余興",
+                selection: $store.point.performanceId
+            ) {
+                ForEach(store.performances){ performance in
+                    Text(performance.name).tag(Optional(performance.id))
+                }
+            }
+            .pickerStyle(.menu)
+        }
+        optionalTimePicker
+    }
+    
+    @ViewBuilder
+    var timePicker: some View {
+        DateTimePicker(
+            "時刻を選択",
+            selection: $store.point.time.fullDate,
+            displayedComponents: [.hourAndMinute]
+        )
+        .datePickerStyle(.compact)
+    }
+    
+    @ViewBuilder
+    var optionalTimePicker: some View {
+        Toggle("時刻を設定", isOn: $store.point.time.toggle)
+        if store.point.time != nil {
+            timePicker
         }
     }
     
@@ -104,51 +153,13 @@ struct AdminPointEditView: View {
     
     @ToolbarContentBuilder
     var toolbarAfterLiquidGlass: some ToolbarContent {
-        ToolbarItem(placement: .confirmationAction) {
+        ToolbarItem(placement: .primaryAction) {
             Button(systemImage: "xmark"){
                 store.send(.doneTapped)
             }
         }
     }
 }
-
-
-struct Popover<T: Hashable> : View{
-    let items: [T]
-    let textClosure: (T)->String
-    let onTapGesture: (T)->Void
-    
-    var body: some View {
-        ScrollView {
-            VStack(spacing: 0) {
-                ForEach(items.indices, id: \.self) { index in
-                    let item = items[index]
-                    
-                    VStack(spacing: 0) {
-                        Text(textClosure(item))
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .padding(8)
-                            .contentShape(Rectangle())
-                            .onTapGesture {
-                                onTapGesture(item)
-                            }
-                        if index != items.count - 1 {
-                            Divider()
-                        }
-                    }
-                }
-            }
-            .background(Color.white)
-            .clipShape(RoundedRectangle(cornerRadius: 8))
-            .overlay(
-                RoundedRectangle(cornerRadius: 8)
-                    .stroke(Color.gray.opacity(0.2))
-            )
-        }
-        .frame(maxHeight: 300)
-    }
-}
-
 
 fileprivate extension AdminPointEdit.PointType {
     var text: String {

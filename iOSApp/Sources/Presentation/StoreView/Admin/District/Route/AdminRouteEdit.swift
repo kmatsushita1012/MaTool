@@ -298,7 +298,7 @@ extension AdminRouteEdit.State {
     }
     
     var pointEntries: [PointEntry] {
-        points.map{ PointEntry(point: $0, checkpoint: nil, performance: nil) }
+        points.map{ PointEntry($0) }
     }
     
     init(mode: AdminRouteEdit.EditMode, route: Route, district: District, period: Period){

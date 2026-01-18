@@ -37,7 +37,7 @@ struct AdminRouteEditStoreView: View {
         }
         .sheet(item: $store.scope(state: \.point, action: \.point)){ store in
             NavigationStack{
-                AdminPointEditStoreView(store: store)
+                AdminPointEditView(store: store)
                     .dismissible(backButton: false, edgeSwipe: false)
             }
             .presentationDetents([.fraction(0.3), .fraction(0.5), .large], selection: $selectedDetent)
@@ -153,19 +153,14 @@ extension AdminRouteEditStoreView {
     @ViewBuilder
     var info: some View {
         List{
-//            Section(header: Text("日付")){
-//                DateTimePicker(
-//                    "日付を選択",
-//                    selection: $store.period.date.fullDate,
-//                    displayedComponents: [.date]
-//                )
-//                .environment(\.locale, Locale(identifier: "ja_JP"))
-//            }
+            Section {
+                Text(store.period.shortText)
+            }
             Section(header: Text("説明")) {
                 TextEditor(text: $store.route.description.nonOptional)
-                    .frame(height:120)
+                    .frame(height:64)
             }
-            Section(header: Text("ルート")) {
+            Section {
                 Picker(selection: $store.route.visibility) {
                     ForEach(Visibility.allCases, id: \.self) { option in
                         Text(option.label).tag(option)
