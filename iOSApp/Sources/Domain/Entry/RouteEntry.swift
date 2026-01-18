@@ -72,13 +72,17 @@ extension FetchAll where Element == RouteSlot {
     let route: Route
 }
 
-extension RouteEntry: Identifiable {
+extension RouteEntry: Identifiable, Comparable {
     var id: String {
         route.id
     }
     
     var text: String {
         period.shortText
+    }
+    
+    static func < (lhs: RouteEntry, rhs: RouteEntry) -> Bool {
+        lhs.period < rhs.period
     }
 }
 
