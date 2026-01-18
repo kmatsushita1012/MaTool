@@ -29,9 +29,6 @@ struct AdminPointEdit{
         
         
         var pointType: PointType
-        var selectedCheckpoint: Checkpoint?
-        var selectedPerformance: Performance?
-        var selectedAnchor: Anchor?
     }
     
     @CasePathable
@@ -52,25 +49,15 @@ struct AdminPointEdit{
             case .binding(\.pointType):
                 state.point.checkpointId = nil
                 state.point.performanceId = nil
-                state.point.anchor = nil
-                return .none
-            case .binding(\.selectedCheckpoint):
-                if state.pointType == .checkpoint {
-                    state.point.checkpointId = state.selectedCheckpoint?.id
-                }
-                return .none
-            case .binding(\.selectedPerformance):
-                if state.pointType == .performance {
-                    state.point.performanceId = state.selectedPerformance?.id
-                }
-                return .none
-            case .binding(\.selectedAnchor):
-                if state.pointType == .start {
+                switch state.pointType{
+                case .start:
                     state.point.anchor = .start
-                } else if state.pointType == .end {
+                case .end:
                     state.point.anchor = .end
-                } else if state.pointType == .rest {
+                case .rest:
                     state.point.anchor = .rest
+                default:
+                    state.point.anchor = nil
                 }
                 return .none
             case .binding:
@@ -98,18 +85,27 @@ struct AdminPointEdit{
 extension AdminPointEdit.State {
     init(_ point: Point){
         self.point = point
-        let checkpointsQuery = Point
+        let district = FetchOne(Point
             .join(Route.all) { $0.routeId.eq($1.id) }
             .join(District.all) { $1.districtId.eq($2.id) }
-            .join(Checkpoint.all) { $2.festivalId.eq($3.festivalId) }
-            .select { $3  }
-        self._checkpoints = FetchAll(checkpointsQuery)
-        let performancesQuery = Point
-            .join(Route.all) { $0.routeId.eq($1.id) }
-            .join(Performance.all) { $1.districtId.eq($2.id) }
-            .select { $2  }
-        self._performances = FetchAll(performancesQuery)
+            .select { $2 }).wrappedValue
+        self._checkpoints = FetchAll(Checkpoint.where{ $0.festivalId == district?.festivalId })
+        self._performances = FetchAll(Performance.where{ $0.districtId == district?.id })
         self.pointType = .init(point: point)
+    }
+    
+    var selectedCheckpoint: Checkpoint? {
+        guard case .checkpoint = pointType, let checkpointId = point.checkpointId else {
+            return nil
+        }
+        return checkpoints.first(where: { $0.id == checkpointId })
+    }
+    
+    var selectedPerformance: Performance? {
+        guard case .performance = pointType, let performanceId = point.performanceId else {
+            return nil
+        }
+        return performances.first(where: { $0.id == performanceId })
     }
 }
 
