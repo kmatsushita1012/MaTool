@@ -21,6 +21,20 @@ extension PointEntry: Identifiable {
     
     var coordinate: Coordinate { point.coordinate }
     var time: SimpleTime? { point.time }
+    
+    init(_ point: Point){
+        self.point = point
+        if let checkpointId = point.checkpointId {
+            self.checkpoint = FetchOne(Checkpoint.find(checkpointId)).wrappedValue
+        } else {
+            self.checkpoint = nil
+        }
+        if let performanceId = point.performanceId {
+            self.performance = FetchOne(Performance.find(performanceId)).wrappedValue
+        } else {
+            self.performance = nil
+        }
+    }
 }
 
 extension FetchAll where Element == PointEntry {
