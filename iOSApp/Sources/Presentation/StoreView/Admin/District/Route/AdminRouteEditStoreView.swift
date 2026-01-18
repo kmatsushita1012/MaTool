@@ -191,12 +191,13 @@ extension AdminRouteEditStoreView {
     
     @ViewBuilder
     var map: some View {
-        AdminRouteMapView(
-            points: store.points,
-            onMapLongPress: { store.send(.mapLongPressed($0)) },
-            pointTapped: { store.send(.pointTapped($0)) },
+        MapView(
+            style: store.tab == .public ? .public : .edit,
+            points: store.pointEntries,
             region: $store.region,
-            size: $store.size
+            size: $store.size,
+            pointTapped: { store.send(.pointTapped($0)) },
+            onLongPress: { store.send(.mapLongPressed($0)) },
         )
     }
     
@@ -208,10 +209,10 @@ extension AdminRouteEditStoreView {
                 .tag(Tab.info)
             Text("ルート")
                 .font(.title)
-                .tag(Tab.map)
+                .tag(Tab.edit)
             Text("公開")
                 .font(.title)
-                .tag(Tab.pub)
+                .tag(Tab.`public`)
         }
         .pickerStyle(.segmented)
         .frame(maxWidth: .infinity)
