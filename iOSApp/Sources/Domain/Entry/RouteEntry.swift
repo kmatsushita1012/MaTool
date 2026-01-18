@@ -30,7 +30,7 @@ extension FetchAll where Element == RouteSlot {
         self.init(
             Period
                 .where{ $0.festivalId == district?.festivalId && $0.date.inYear(year) }
-                .leftJoin(Route.all ){ $0.id.eq($1.periodId).and($1.districtId.eq(district?.id ?? "") )}
+                .leftJoin(Route.all){ $0.id.eq($1.periodId).and($1.districtId.eq(district?.id ?? "") )}
                 .select{
                     Element.Columns(period: $0, route: $1)
                 }
@@ -74,7 +74,7 @@ extension FetchAll where Element == RouteSlot {
 
 extension RouteEntry: Identifiable {
     var id: String {
-        period.id
+        route.id
     }
     
     var text: String {
