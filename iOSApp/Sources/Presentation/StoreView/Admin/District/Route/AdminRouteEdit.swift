@@ -28,8 +28,8 @@ struct AdminRouteEdit{
     
     enum Tab: Equatable {
         case info
-        case map
-        case pub
+        case edit
+        case `public`
     }
     
     enum Operation: Equatable{
@@ -56,7 +56,7 @@ struct AdminRouteEdit{
         var operation: Operation = .add
         var isLoading: Bool = false
         var tab: Tab
-        var region: MKCoordinateRegion?
+        var region: MKCoordinateRegion
         var size: CGSize?
         
         // Navigation
@@ -70,7 +70,7 @@ struct AdminRouteEdit{
     enum Action: Equatable, BindableAction{
         case binding(BindingAction<State>)
         case mapLongPressed(Coordinate)
-        case pointTapped(Point)
+        case pointTapped(PointEntry)
         case undoTapped
         case redoTapped
         case saveTapped
@@ -111,8 +111,8 @@ struct AdminRouteEdit{
                     state.operation = .add
                     return .none
                 }
-            case .pointTapped(let point):
-                state.point = AdminPointEdit.State(point)
+            case .pointTapped(let entry):
+                state.point = AdminPointEdit.State(entry.point)
                 state.operation = .add
                 return .none
             case .undoTapped:
@@ -170,8 +170,7 @@ struct AdminRouteEdit{
                     }
                 }
             case .partialTapped:
-                guard let region = state.region,
-                  let size = state.size else {
+                guard  let size = state.size else {
                     state.alert = .notice(Alert.error("描画範囲の取得に失敗しました。"))
                       return .none
                 }
@@ -180,7 +179,7 @@ struct AdminRouteEdit{
                     return .none
                 }
                 let path =  "\(state.district.name)_\(state.period.shortText).pdf"
-                return .run {  send in
+                return .run { [region = state.region] send in
                     if let image = try? await snapshotter.take(of: region, size: size),
                        let pdf = snapshotter.createPDF(with: image, path: path) {
                         await send(.partialPrepared(ExportedItem(image: image, pdf: pdf)))
@@ -298,6 +297,10 @@ extension AdminRouteEdit.State {
         }
     }
     
+    var pointEntries: [PointEntry] {
+        points.map{ PointEntry(point: $0, checkpoint: nil, performance: nil) }
+    }
+    
     init(mode: AdminRouteEdit.EditMode, route: Route, district: District, period: Period){
         self.mode = mode
         let points: [Point] = FetchAll(Point.where{ $0.routeId == route.id }).wrappedValue
@@ -313,7 +316,7 @@ extension AdminRouteEdit.State {
             self.region = makeRegion(origin: origin, spanDelta: spanDelta)
         }
         if mode == .preview {
-            self.tab = .map
+            self.tab = .edit
         }else{
             self.tab = .info
         }
