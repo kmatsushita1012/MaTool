@@ -11,6 +11,14 @@ import SQLiteData
 
 @Reducer
 struct AdminPointEdit{
+    enum PointType: Equatable, CaseIterable {
+        case checkpoint
+        case performance
+        case start
+        case end
+        case rest
+        case none
+    }
     
     @ObservableState
     struct State: Equatable{
@@ -18,6 +26,12 @@ struct AdminPointEdit{
         var showPopover: Bool = false
         @FetchAll var checkpoints: [Checkpoint]
         @FetchAll var performances: [Performance]
+        
+        
+        var pointType: PointType
+        var selectedCheckpoint: Checkpoint?
+        var selectedPerformance: Performance?
+        var selectedAnchor: Anchor?
     }
     
     @CasePathable
@@ -35,6 +49,30 @@ struct AdminPointEdit{
         BindingReducer()
         Reduce { state, action in
             switch action{
+            case .binding(\.pointType):
+                state.point.checkpointId = nil
+                state.point.performanceId = nil
+                state.point.anchor = nil
+                return .none
+            case .binding(\.selectedCheckpoint):
+                if state.pointType == .checkpoint {
+                    state.point.checkpointId = state.selectedCheckpoint?.id
+                }
+                return .none
+            case .binding(\.selectedPerformance):
+                if state.pointType == .performance {
+                    state.point.performanceId = state.selectedPerformance?.id
+                }
+                return .none
+            case .binding(\.selectedAnchor):
+                if state.pointType == .start {
+                    state.point.anchor = .start
+                } else if state.pointType == .end {
+                    state.point.anchor = .end
+                } else if state.pointType == .rest {
+                    state.point.anchor = .rest
+                }
+                return .none
             case .binding:
                 return .none
             case .doneTapped:
@@ -71,5 +109,25 @@ extension AdminPointEdit.State {
             .join(Performance.all) { $1.districtId.eq($2.id) }
             .select { $2  }
         self._performances = FetchAll(performancesQuery)
+        self.pointType = .init(point: point)
     }
 }
+
+extension AdminPointEdit.PointType {
+    init(point: Point){
+        if point.checkpointId != nil {
+            self = .checkpoint
+        } else if point.performanceId != nil {
+            self = .performance
+        } else if point.anchor == .start {
+            self = .start
+        } else if point.anchor == .end {
+            self = .end
+        } else if point.anchor == .rest {
+            self = .rest
+        } else {
+            self = .none
+        }
+    }
+}
+

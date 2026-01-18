@@ -11,14 +11,22 @@ import NavigationSwipeControl
 import Shared
 
 @available(iOS 17.0, *)
-struct AdminPointEditStoreView: View {
+struct AdminPointEditView: View {
     
     @Dependency(\.values.isLiquidGlassEnabled) var isLiquidGlassEnabled: Bool
     @SwiftUI.Bindable var store: StoreOf<AdminPointEdit>
     
     var body: some View {
         Form {
-            // TODO: イベントタイプを選択
+            Section {
+                Picker("種類", selection: $store.pointType) {
+                    ForEach(AdminPointEdit.PointType.allCases, id: \.self){ type in
+                        Text(type.text).tag(type)
+                    }
+                }
+                .pickerStyle(.menu)
+            }
+            
             
             Section(
                 header: Text("時刻"),
@@ -66,6 +74,17 @@ struct AdminPointEditStoreView: View {
                 toolbarAfterLiquidGlass
             } else {
                 toolbarBeforeLiquidGlass
+            }
+        }
+    }
+    
+    @ViewBuilder
+    var checkpointMenu: some View {
+        Section {
+            Picker("重要地点", selection: $store.point.checkpointId) {
+                ForEach(store.checkpoints){ checkpoint in
+                    Text(checkpoint.name).tag(checkpoint.id)
+                }
             }
         }
     }
@@ -130,3 +149,22 @@ struct Popover<T: Hashable> : View{
     }
 }
 
+
+fileprivate extension AdminPointEdit.PointType {
+    var text: String {
+        switch self {
+        case .checkpoint:
+            return "重要地点（交差点等）"
+        case .performance:
+            return "余興"
+        case .start:
+            return "出発地点"
+        case .end:
+            return "到着地点"
+        case .rest:
+            return "休憩"
+        case .none:
+            return "なし"
+        }
+    }
+}
