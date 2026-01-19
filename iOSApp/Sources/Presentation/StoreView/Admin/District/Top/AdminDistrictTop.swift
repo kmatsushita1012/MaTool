@@ -114,9 +114,7 @@ struct AdminDistrictTop {
                 }
             case .destination(.presented(let childAction)):
                 switch childAction {
-                case .edit(.postReceived(.success)),
-                    .route(.postReceived(.success)),
-                    .route(.deleteReceived(.success)):
+                case .edit(.postReceived(.success)):
                     state.destination = nil
                     return .none
                 case .changePassword(.received(.success)):
