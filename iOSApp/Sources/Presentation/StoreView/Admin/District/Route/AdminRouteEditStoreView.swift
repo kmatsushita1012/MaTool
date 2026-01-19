@@ -43,6 +43,13 @@ struct AdminRouteEditStoreView: View {
             .presentationDetents([.fraction(0.3), .fraction(0.5), .large], selection: $selectedDetent)
             .interactiveDismissDisabled()
         }
+        .sheet(isPresented: $store.history){
+            NavigationStack {
+                RouteHistoryView(.init(districtId: store.district.id) {
+                    store.send(.sourceSelected($0))
+                })
+            }
+        }
         .alert($store.scope(state: \.alert?.notice, action: \.alert.notice))
         .alert($store.scope(state: \.alert?.delete, action: \.alert.delete))
     }
@@ -169,6 +176,12 @@ extension AdminRouteEditStoreView {
                     Text("公開範囲を選択")
                 }
                 .pickerStyle(.menu)
+            }
+            
+            Section {
+                Button("過去のルートからコピー"){
+                    store.send(.copyTapped)
+                }
             }
             
             if store.isDeleteable {
