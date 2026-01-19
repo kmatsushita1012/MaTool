@@ -62,6 +62,7 @@ struct AdminRouteEdit{
         // Navigation
         @Presents var point: AdminPointEdit.State?
         @Presents var alert: AlertDestination.State? = nil
+        var history: Bool = false
         var whole: ExportedItem? = nil
         var partial: ExportedItem? = nil
     }
@@ -78,8 +79,11 @@ struct AdminRouteEdit{
         case deleteTapped
         case wholeTapped
         case partialTapped
-        case postReceived(Result<Route, APIError>)
-        case deleteReceived(Result<Empty, APIError>)
+        case copyTapped
+        case sourceSelected(RouteEntry)
+        case copyPrepared(Route.ID)
+        case taskFinished
+        case apiErrorCatched(APIError)
         case wholePrepared(ExportedItem?)
         case partialPrepared(ExportedItem?)
         case point(PresentationAction<AdminPointEdit.Action>)
@@ -132,13 +136,21 @@ struct AdminRouteEdit{
                 return .run { [
                     state
                 ] send in
-                    switch state.mode {
-                    case .create:
-                        try await dataFetcher.create(districtID: state.route.districtId, route: state.route, points: state.points)
-                    case .update:
-                        try await dataFetcher.update(state.route, points: state.points)
-                    case .preview:
-                        break
+                    let result = await task{
+                        switch state.mode {
+                        case .create:
+                            try await dataFetcher.create(districtID: state.route.districtId, route: state.route, points: state.points)
+                        case .update:
+                            try await dataFetcher.update(state.route, points: state.points)
+                        case .preview:
+                            throw APIError.unknown(message: "権限がありません")
+                        }
+                    }
+                    switch result {
+                    case .success:
+                        await dismiss
+                    case .failure(let error):
+                        await send(.apiErrorCatched(error))
                     }
                 }
             case .cancelTapped:
@@ -146,12 +158,14 @@ struct AdminRouteEdit{
                     await dismiss()
                 }
             case .deleteTapped:
-                if !state.isSaveable {
+                if !state.isDeleteable {
                     state.alert = .notice(Alert.error("権限がありません"))
                     return .none
                 }
                 state.alert = .delete(Alert.delete())
-                return .none
+                return .run { [state] send in
+                    let result = await task{ try await dataFetcher.delete(state.route.id) }
+                }
             case .wholeTapped:
                 guard let snapshotter = RouteSnapshotter(state.route) else {
                     state.alert = .notice(Alert.error("時間帯の取得に失敗しました。"))
@@ -187,17 +201,31 @@ struct AdminRouteEdit{
                         await send(.partialPrepared(nil))
                     }
                 }
-            case .postReceived(let result):
-                state.isLoading = false
-                if case let .failure(error) = result {
-                    state.alert = .notice(Alert.error("情報の取得に失敗しました。 \(error.localizedDescription)"))
-                }
+            case .copyTapped:
+                state.history = true
                 return .none
-            case .deleteReceived(let result):
-                state.isLoading = false
-                if case let .failure(error) = result {
-                    state.alert = .notice(Alert.error("情報の取得に失敗しました。 \(error.localizedDescription)"))
+            case .sourceSelected(let route):
+                state.isLoading = true
+                state.history = false
+                return .run { [state] send in
+                    let result = await task{ try await dataFetcher.fetch(routeID: state.route.id) }
+                    switch result {
+                    case .success:
+                        await send(.copyPrepared(route.id))
+                    case .failure(let error):
+                        await send(.apiErrorCatched(error))
+                    }
                 }
+            case .copyPrepared(let routeId):
+                guard let sourceRoute: Route = FetchOne(Route.find(routeId)).wrappedValue else { return .none }
+                let sourcePoints: [Point] = FetchAll(routeId: sourceRoute.id).wrappedValue
+                state.route = sourceRoute.copyWith(districtId: state.district.id, periodId: state.period.id)
+                state.points = sourcePoints.copyWith(routeId: state.route.id)
+                state.isLoading = false
+                return .none
+            case .apiErrorCatched(let error):
+                state.isLoading = false
+                state.alert = .notice(Alert.error("情報の取得に失敗しました。 \(error.localizedDescription)"))
                 return .none
             case .wholePrepared(let item):
                 state.whole = item
