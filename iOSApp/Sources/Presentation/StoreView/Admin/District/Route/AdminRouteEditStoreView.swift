@@ -261,13 +261,15 @@ extension AdminRouteEditStoreView {
 
 struct PreviewView: View {
     let item: ExportedItem
+    @State var isZooming: Bool = false
     
     @Dependency(\.values.isLiquidGlassEnabled) var isLiquidGlassEnabled: Bool
     @Environment(\.dismiss) private var dismiss
     
     var body: some View {
         NavigationStack{
-            ZoomableImage(image: item.image)
+            ZoomableImage(image: item.image, isZooming: $isZooming)
+                .ignoresSafeArea(isZooming ? .all : [])
                 .navigationTitle("プレビュー")
                 .navigationBarTitleDisplayMode(.inline)
                 .toolbar {

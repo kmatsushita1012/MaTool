@@ -340,12 +340,9 @@ extension AdminRouteEdit.State {
         self._district = FetchOne(wrappedValue: district, District.find(district.id))
         self._period = FetchOne(wrappedValue: period, Period.find(period.id))
         
-        if !points.isEmpty{
-            self.region = makeRegion(points.map{ $0.coordinate })
-        }else{
-            let origin: Coordinate = district.base ?? FetchOne(wrappedValue: .init(latitude: 0.0, longitude: 0.0), Festival.where{ $0.id == district.festivalId }.select(\.base)).wrappedValue
-            self.region = makeRegion(origin: origin, spanDelta: spanDelta)
-        }
+        let origin: Coordinate = district.base ?? FetchOne(wrappedValue: .init(latitude: 0.0, longitude: 0.0), Festival.where{ $0.id == district.festivalId }.select(\.base)).wrappedValue
+
+        self.region = makeRegion(points: points, origin: origin, spanDelta: spanDelta)
         if mode == .preview {
             self.tab = .edit
         }else{

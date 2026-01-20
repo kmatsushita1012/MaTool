@@ -36,6 +36,18 @@ func makeRegion(origin: Coordinate, spanDelta: CLLocationDegrees) -> MKCoordinat
     )
 }
 
+func makeRegion(_ points: [Point], ratio: Double = 1.1) -> MKCoordinateRegion {
+    makeRegion(points.map(\.coordinate))
+}
+
+func makeRegion(points: [Point], origin: Coordinate, spanDelta: CLLocationDegrees) -> MKCoordinateRegion {
+    if !points.isEmpty {
+        makeRegion(points)
+    } else {
+        makeRegion(origin: origin, spanDelta: spanDelta)
+    }
+}
+
 func makeRegion(
     points: [Point], location: FloatLocation?, origin: Coordinate, spanDelta: CLLocationDegrees
 ) -> MKCoordinateRegion {
