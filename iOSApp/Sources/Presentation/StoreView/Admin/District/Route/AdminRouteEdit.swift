@@ -153,7 +153,7 @@ struct AdminRouteEdit{
                     }
                     switch result {
                     case .success:
-                        await dismiss
+                        await dismiss()
                     case .failure(let error):
                         await send(.apiErrorCatched(error))
                     }
@@ -168,18 +168,13 @@ struct AdminRouteEdit{
                     return .none
                 }
                 state.alert = .delete(Alert.delete())
-                return .run { [state] send in
-                    let result = await task{ try await dataFetcher.delete(state.route.id) }
-                }
+                return .none
             case .wholeTapped:
-                guard let snapshotter = RouteSnapshotter(state.route) else {
-                    state.alert = .notice(Alert.error("時間帯の取得に失敗しました。"))
-                    return .none
-                }
-                let path = "\(state.district.name)_\(state.period.shortText).pdf"
-                return .run { send in
-                    if let image = try? await snapshotter.take(),
-                       let pdf = snapshotter.createPDF(
+                let path = "\(state.district.name)_\(state.period.path).pdf"
+                return .run { [state] send in
+                    if let snapshotter = await RouteSnapshotter(route: state.route, points: state.points),
+                        let image = try? await snapshotter.take(),
+                       let pdf = await snapshotter.createPDF(
                         with: image,
                         path: path
                        ) {
@@ -193,14 +188,11 @@ struct AdminRouteEdit{
                     state.alert = .notice(Alert.error("描画範囲の取得に失敗しました。"))
                       return .none
                 }
-                guard let snapshotter = RouteSnapshotter(state.route) else {
-                    state.alert = .notice(Alert.error("時間帯の取得に失敗しました。"))
-                    return .none
-                }
-                let path =  "\(state.district.name)_\(state.period.shortText).pdf"
-                return .run { [region = state.region] send in
-                    if let image = try? await snapshotter.take(of: region, size: size),
-                       let pdf = snapshotter.createPDF(with: image, path: path) {
+                let path =  "\(state.district.name)-\(state.period.path).pdf"
+                return .run { [state] send in
+                    if let snapshotter = await RouteSnapshotter(route: state.route, points: state.points),
+                       let image = try? await snapshotter.take(of: state.region, size: size),
+                       let pdf = await snapshotter.createPDF(with: image, path: path) {
                         await send(.partialPrepared(ExportedItem(image: image, pdf: pdf)))
                     } else {
                         await send(.partialPrepared(nil))
@@ -212,8 +204,8 @@ struct AdminRouteEdit{
             case .sourceSelected(let route):
                 state.isLoading = true
                 state.history = false
-                return .run { [state] send in
-                    let result = await task{ try await dataFetcher.fetch(routeID: state.route.id) }
+                return .run { send in
+                    let result = await task{ try await dataFetcher.fetch(routeID: route.id) }
                     switch result {
                     case .success:
                         await send(.copyPrepared(route.id))
@@ -226,6 +218,7 @@ struct AdminRouteEdit{
                 let sourcePoints: [Point] = FetchAll(routeId: sourceRoute.id).wrappedValue
                 state.route = sourceRoute.copyWith(districtId: state.district.id, periodId: state.period.id)
                 state.points = sourcePoints.copyWith(routeId: state.route.id)
+                state.region = makeRegion(state.points.map(\.coordinate))
                 state.isLoading = false
                 return .none
             case .apiErrorCatched(let error):
@@ -234,9 +227,15 @@ struct AdminRouteEdit{
                 return .none
             case .wholePrepared(let item):
                 state.whole = item
+                if item == nil {
+                    state.alert = .notice(Alert.error("描画に失敗しました"))
+                }
                 return .none
             case .partialPrepared(let item):
                 state.partial = item
+                if item == nil {
+                    state.alert = .notice(Alert.error("描画に失敗しました"))
+                }
                 return .none
             case .point(.presented(.moveTapped)):
                 if let (point, index) = findPointIndex(state){
