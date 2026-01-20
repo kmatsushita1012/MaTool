@@ -23,12 +23,12 @@ struct AdminPointEdit{
     @ObservableState
     struct State: Equatable{
         var point: Point
-        var showPopover: Bool = false
+        
         @FetchAll var checkpoints: [Checkpoint]
         @FetchAll var performances: [Performance]
         
-        
         var pointType: PointType
+        @Presents var alert: Alert.State?
     }
     
     @CasePathable
@@ -38,8 +38,7 @@ struct AdminPointEdit{
         case moveTapped
         case insertTapped
         case deleteTapped
-        case titleFieldFocused
-        case titleOptionSelected(Checkpoint)
+        case alert(PresentationAction<Alert.Action>)
     }
     
     var body: some ReducerOf<AdminPointEdit> {
@@ -50,34 +49,39 @@ struct AdminPointEdit{
                 state.point.checkpointId = nil
                 state.point.performanceId = nil
                 switch state.pointType{
+                case .checkpoint:
+                    state.point.anchor = nil
+                    state.point.time = .now
+                case .performance:
+                    state.point.anchor = nil
                 case .start:
                     state.point.anchor = .start
+                    state.point.time = .now
                 case .end:
                     state.point.anchor = .end
+                    state.point.time = .now
                 case .rest:
                     state.point.anchor = .rest
-                default:
-                    state.point.anchor = nil
+                    state.point.time = .now
+                case .none:
+                    state.point.time = nil
                 }
                 return .none
-            case .binding:
+            case .doneTapped,
+                .moveTapped,
+                .insertTapped:
+                do {
+                    try state.validate()
+                } catch  {
+                    state.alert = Alert.error(error.localizedDescription)
+                }
                 return .none
-            case .doneTapped:
+            case .alert:
+                state.alert = nil
                 return .none
-            case .moveTapped:
-               return .none
-           case .insertTapped:
-               return .none
-           case .deleteTapped:
-               return .none
-            case .titleFieldFocused:
-                state.showPopover = true
-                return .none
-            case .titleOptionSelected(let option):
-                state.showPopover = false
+            default:
                 return .none
             }
-        
         }
     }
 }
@@ -106,6 +110,22 @@ extension AdminPointEdit.State {
             return nil
         }
         return performances.first(where: { $0.id == performanceId })
+    }
+    
+    func validate() throws {
+        try point.validate()
+        switch pointType {
+        case .checkpoint:
+            if point.checkpointId == nil {
+                throw Point.Error.unknown("重要地点の種類が選択されていません")
+            }
+        case .performance:
+            if point.performanceId == nil {
+                throw Point.Error.unknown("余興の種類が選択されていません")
+            }
+        default:
+            return
+        }
     }
 }
 
