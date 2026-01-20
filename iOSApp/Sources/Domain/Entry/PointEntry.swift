@@ -22,6 +22,10 @@ extension PointEntry: Identifiable {
     var coordinate: Coordinate { point.coordinate }
     var time: SimpleTime? { point.time }
     
+    var title: String? {
+        checkpoint?.name ?? performance?.name ?? anchor?.text ?? nil
+    }
+    
     init(_ point: Point){
         self.point = point
         if let checkpointId = point.checkpointId {
