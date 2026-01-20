@@ -21,17 +21,11 @@ class PointAnnotation: MKPointAnnotation {
         self.entry = entry
         super.init()
         self.coordinate = entry.coordinate.toCL()
-        var title: String? = nil
-        if let checkpoint = entry.checkpoint {
-            title = checkpoint.name
-        }
-        if let performance = entry.performance{
-            title = performance.name
-        }
         switch style {
         case .simple:
-            self.title = "" //point.title
+            self.title = entry.title
         case .time(let index):
+            let title = entry.title
             let hasSuffix = (title?.isEmpty == false) || (entry.time != nil)
             let titleText = [title, entry.time?.text]
                 .compactMap { $0 }

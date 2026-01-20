@@ -52,6 +52,7 @@ struct AdminRouteEditStoreView: View {
         }
         .alert($store.scope(state: \.alert?.notice, action: \.alert.notice))
         .alert($store.scope(state: \.alert?.delete, action: \.alert.delete))
+        .loadingOverlay(store.isLoading)
     }
 }
 
