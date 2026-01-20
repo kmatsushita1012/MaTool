@@ -101,6 +101,10 @@ struct MapView: UIViewRepresentable {
         if latDiff > epsilon || lonDiff > epsilon {
             mapView.setRegion(region, animated: true)
         }
+        
+        if size != mapView.frame.size{
+            size = mapView.frame.size
+        }
     }
 
     class Coordinator: NSObject, MKMapViewDelegate {

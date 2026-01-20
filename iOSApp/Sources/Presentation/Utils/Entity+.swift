@@ -31,4 +31,8 @@ extension Period {
             title,
         )
     }
+    
+    var path: String {
+        "\(date.year)-\(date.month)-\(date.day)-\(title)"
+    }
 }
