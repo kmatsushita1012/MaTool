@@ -10,23 +10,32 @@ import UIKit
 import Shared
 import SQLiteData
 
+@MainActor
 struct RouteSnapshotter: Equatable {
+    enum Error: Swift.Error {
+        case snapshotterNotAvailable
+        case imageCreationFailed
+    }
+    
     var route: Route
     var period: Period
     var points: [Point]
     var district: District
-    var checkpoints: [Checkpoint]
     var hazardSections: [HazardSection]
     
-    init? (_ route: Route){
-        guard let district: District = FetchOne(District.where{ $0.id == route.districtId }).wrappedValue,
-              let period: Period = FetchOne(Period.where{ $0.id == route.periodId }).wrappedValue else { return nil }
+    init? (_ route: Route) {
+        let points: [Point] = FetchAll(routeId: route.id).wrappedValue
+        self.init(route: route, points: points)
+    }
+    
+    init? (route: Route, points: [Point]){
+        guard let district: District = FetchOne(District.find(route.districtId)).wrappedValue,
+              let period: Period = FetchOne(Period.find(route.periodId)).wrappedValue else { return nil }
         self.district = district
         self.period = period
         self.route = route
-        self.points = FetchAll(Point.where{ $0.routeId == route.id }).wrappedValue
+        self.points = points
         let festivalId = district.festivalId
-        self.checkpoints = FetchAll(Checkpoint.where{ $0.festivalId == festivalId }).wrappedValue
         self.hazardSections = FetchAll(HazardSection.where{ $0.festivalId == festivalId }).wrappedValue
     }
     
@@ -41,13 +50,13 @@ struct RouteSnapshotter: Equatable {
         return image
     }
     
-    func take(of region: MKCoordinateRegion, size: CGSize) async throws -> UIImage? {
+    func take(of region: MKCoordinateRegion, size: CGSize) async throws -> UIImage {
         let options = MKMapSnapshotter.Options()
         options.region = region
         options.pointOfInterestFilter = .excludingAll
         options.size = size == .zero ? CGSize(width: 594, height: 420) : size
         
-        return try? await withCheckedThrowingContinuation { continuation in
+        let image: UIImage = try await withCheckedThrowingContinuation { continuation in
             let snapshotter = MKMapSnapshotter(options: options)
             withExtendedLifetime(snapshotter) {
                 snapshotter.start { snapshot, error in
@@ -56,12 +65,15 @@ struct RouteSnapshotter: Equatable {
                         return
                     }
                     guard let snapshot = snapshot else {
-                        continuation.resume(returning: nil)
+                        continuation.resume(throwing: Self.Error.snapshotterNotAvailable)
                         return
                     }
                     
                     var drawnRects: [CGRect] = []
                     UIGraphicsBeginImageContextWithOptions(options.size, true, 0)
+                    defer {
+                        UIGraphicsEndImageContext()
+                    }
                     snapshot.image.draw(at: .zero)
                     //FIXME: v3.0.0
                     drawSlopePolyline(on: snapshot)
@@ -76,17 +88,20 @@ struct RouteSnapshotter: Equatable {
                     \(district.name)
                     \(period.date.text(format: "y年m月d日")) \(period.title)
                     開始時刻 \(points.first?.time?.text ?? period.start.text)
-                    終了時刻 \(points.first?.time?.text ?? period.end.text)
+                    終了時刻 \(points.last?.time?.text ?? period.end.text)
                     """
                     drawTitleTextBlock(text: titleText, in: options, drawnRects: &drawnRects)
                     
-                    let image = UIGraphicsGetImageFromCurrentImageContext()
-                    UIGraphicsEndImageContext()
+                    guard let image = UIGraphicsGetImageFromCurrentImageContext() else {
+                        continuation.resume(throwing: Self.Error.imageCreationFailed)
+                        return
+                    }
                     
                     continuation.resume(returning: image)
                 }
             }
-        } ?? nil
+        }
+        return image
     }
     
     private func drawPolylines(on snapshot: MKMapSnapshotter.Snapshot, color: UIColor, lineWidth: CGFloat ) {
@@ -118,7 +133,9 @@ struct RouteSnapshotter: Equatable {
                 .draw(in: CGRect(origin: .zero, size: smallSize))
         }
         
-        for (index, point) in points.enumerated() {
+        let filtered = points.filter{ $0.checkpointId != nil || $0.anchor != nil }
+        
+        for (index, point) in filtered.enumerated() {
             let pointInSnapshot = snapshot.point(for: point.coordinate.toCL())
             pinImage.draw(at:
                 CGPoint(x: pointInSnapshot.x - pinImage.size.width / 2,
@@ -141,7 +158,7 @@ struct RouteSnapshotter: Equatable {
     
     func makeTitle(_ point: Point) -> String? {
         if let checkpointId = point.checkpointId,
-           let checkpoint = checkpoints.first(where: { $0.id == checkpointId }) {
+           let checkpoint = FetchOne(Checkpoint.find(checkpointId)).wrappedValue {
             checkpoint.name
         } else if let anchor = point.anchor{
             anchor.text
