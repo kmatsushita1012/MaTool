@@ -105,9 +105,9 @@ struct AdminDistrictList {
                 for item in items {
                     guard let route = item.route,
                           let _ = try? await dataFetcher.fetch(routeID: route.id),
-                          let snapshotter = RouteSnapshotter(route),
+                          let snapshotter = await RouteSnapshotter(route),
                           let image = try? await snapshotter.take(),
-                          let url = snapshotter.createPDF(with: image, path: "") else { continue } //FIXME
+                          let url = await snapshotter.createPDF(with: image, path: "") else { continue } //FIXME
                     urls.append(url)
                 }
                 return urls
