@@ -78,7 +78,7 @@ struct RouteUsecase: RouteUsecaseProtocol {
               pack.route.districtId == user.id else {
             throw Error.unauthorized("アクセス権限がありません")
         }
-        let sorted = pack.sorted()
+        let sorted = pack.points.sorted()
         try pack.points.validate()
         let oldPoints = try await pointRepository.query(by: pack.route.id)
         let route = try await routeRepository.post(pack.route)
