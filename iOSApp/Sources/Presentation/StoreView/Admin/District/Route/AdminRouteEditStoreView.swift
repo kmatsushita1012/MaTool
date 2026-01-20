@@ -63,6 +63,7 @@ extension AdminRouteEditStoreView {
     var contentBeforeLiquidGlass: some View {
         VStack {
             tab
+                .padding(.horizontal)
             if store.tab == .info {
                 info
             } else {
