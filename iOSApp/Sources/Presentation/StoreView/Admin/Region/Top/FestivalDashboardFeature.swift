@@ -159,9 +159,9 @@ struct FestivalDashboardFeature {
                     for route in routes {
                         guard let period: Period = FetchOne(Period.find(route.periodId)).wrappedValue,
                               (try? await routeDataFetcher.fetch(routeID: route.id)) != nil,
-                              let snapshotter = RouteSnapshotter(route),
+                              let snapshotter = await RouteSnapshotter(route),
                               let image = try? await snapshotter.take(),
-                              let url = snapshotter.createPDF(with: image, path: "\(period.text)")
+                              let url = await snapshotter.createPDF(with: image, path: "\(period.text)")
                         else { continue }
                         urls.append(url)
                     }
