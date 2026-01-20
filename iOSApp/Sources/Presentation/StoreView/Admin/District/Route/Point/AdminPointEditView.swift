@@ -64,6 +64,7 @@ struct AdminPointEditView: View {
         }
         .navigationTitle("地点")
         .navigationBarTitleDisplayMode(.inline)
+        .alert($store.scope(state: \.alert, action: \.alert))
         .toolbar {
             if #available(iOS 26.0, *), isLiquidGlassEnabled{
                 toolbarAfterLiquidGlass
@@ -76,19 +77,15 @@ struct AdminPointEditView: View {
     @ViewBuilder
     var checkpoint: some View {
         if #available(iOS 18.0, *) {
-            Picker("重要地点", selection: $store.point.checkpointId) {
-                ForEach(store.checkpoints){ checkpoint in
-                    Text(checkpoint.name).tag(Optional(checkpoint.id))
-                }
+            Picker("重要地点の種類", selection: $store.point.checkpointId) {
+                checkpointPickerContent
             } currentValueLabel: {
                 Text(store.selectedCheckpoint?.name ?? "未選択")
             }
             .pickerStyle(.menu)
         } else {
-            Picker("重要地点", selection: $store.point.checkpointId) {
-                ForEach(store.checkpoints){ checkpoint in
-                    Text(checkpoint.name).tag(Optional(checkpoint.id))
-                }
+            Picker("重要地点の種類", selection: $store.point.checkpointId) {
+               checkpointPickerContent
             }
             .pickerStyle(.menu)
         }
@@ -96,28 +93,38 @@ struct AdminPointEditView: View {
     }
     
     @ViewBuilder
+    var checkpointPickerContent: some View {
+        ForEach(store.checkpoints){ checkpoint in
+            Text(checkpoint.name).tag(Optional(checkpoint.id))
+        }
+    }
+    
+    @ViewBuilder
     var performance: some View {
         if #available(iOS 18.0, *) {
-            Picker("余興", selection: $store.point.performanceId) {
-                ForEach(store.performances){ performance in
-                    Text(performance.name).tag(Optional(performance.id))
-                }
+            Picker("余興の種類", selection: $store.point.performanceId) {
+                performancePickerContent
             } currentValueLabel: {
                 Text(store.selectedPerformance?.name ?? "未選択")
             }
             .pickerStyle(.menu)
         } else {
             Picker(
-                "余興",
+                "余興の種類",
                 selection: $store.point.performanceId
             ) {
-                ForEach(store.performances){ performance in
-                    Text(performance.name).tag(Optional(performance.id))
-                }
+                performancePickerContent
             }
             .pickerStyle(.menu)
         }
         optionalTimePicker
+    }
+    
+    @ViewBuilder
+    var performancePickerContent: some View {
+        ForEach(store.performances){ performance in
+            Text(performance.name).tag(Optional(performance.id))
+        }
     }
     
     @ViewBuilder
