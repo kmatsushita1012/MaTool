@@ -128,6 +128,11 @@ struct AdminRouteEdit{
                 state.operation = .add
                 return .none
             case .saveTapped:
+                do {
+                    try state.points.validate()
+                } catch {
+                    state.alert = .notice(Alert.error(error.localizedDescription))
+                }
                 if !state.isSaveable {
                     state.alert = .notice(Alert.error("権限がありません"))
                     return .none
@@ -233,40 +238,33 @@ struct AdminRouteEdit{
             case .partialPrepared(let item):
                 state.partial = item
                 return .none
-            case .point(.presented(let childAction)):
-                switch childAction {
-                case .moveTapped:
-                    if let point = state.point?.point,
-                       let index = state.points.firstIndex(where: { $0.id == point.id }){
-                        state.points[index] = point
-                        state.operation = .move(index)
-                    }
+            case .point(.presented(.moveTapped)):
+                if let (point, index) = findPointIndex(state){
+                    state.points[index] = point
+                    state.operation = .move(index)
                     state.point = nil
-                    return .none
-                case .insertTapped:
-                    if let point = state.point?.point,
-                       let index = state.points.firstIndex(where: { $0.id == point.id }){
-                        state.points[index] = point
-                        state.operation = .insert(index)
-                    }
-                    state.point = nil
-                    return .none
-                case .deleteTapped:
-                    if let point = state.point?.point,
-                       let index = state.points.firstIndex(where: { $0.id == point.id }){
-                        state.points.remove(at: index)
-                    }
-                    state.point = nil
-                    return .none
-                case .doneTapped:
-                    if let point = state.point?.point{
-                        state.points.upsert(point)
-                    }
-                    state.point = nil
-                    return .none
-                default:
-                    return .none
                 }
+                return .none
+            case .point(.presented(.insertTapped)):
+                if let (point, index) = findPointIndex(state){
+                    state.points[index] = point
+                    state.operation = .insert(index)
+                    state.point = nil
+                }
+                return .none
+            case .point(.presented(.deleteTapped)):
+                if let (point, index) = findPointIndex(state, ignoreValidation: true){
+                    state.points[index] = point
+                    state.points.remove(at: index)
+                    state.point = nil
+                }
+                return .none
+            case .point(.presented(.doneTapped)):
+                if let (point, _) = findPointIndex(state) {
+                    state.points.upsert(point)
+                    state.point = nil
+                }
+                return .none
             case .alert(.presented(let destination)):
                 switch destination {
                 case .notice(.okTapped):
@@ -275,8 +273,14 @@ struct AdminRouteEdit{
                 case .delete(.okTapped):
                     state.alert = nil
                     state.isLoading = true
-                    return .run { [route = state.route] send in
-                        try? await dataFetcher.delete(route.id)
+                    return .run { [state] send in
+                        let result = await task{ try await dataFetcher.delete(state.route.id) }
+                        switch result {
+                        case .success:
+                            await dismiss()
+                        case .failure(let error):
+                            await send(.apiErrorCatched(error))
+                        }
                     }
                 }
             default:
@@ -334,8 +338,8 @@ extension AdminRouteEdit.State {
         let points: [Point] = FetchAll(Point.where{ $0.routeId == route.id }).wrappedValue
         self.manager = EditManager(points)
         self.route = route
-        self._district = FetchOne(wrappedValue: district)
-        self._period = FetchOne(wrappedValue: period)
+        self._district = FetchOne(wrappedValue: district, District.find(district.id))
+        self._period = FetchOne(wrappedValue: period, Period.find(period.id))
         
         if !points.isEmpty{
             self.region = makeRegion(points.map{ $0.coordinate })
@@ -348,5 +352,33 @@ extension AdminRouteEdit.State {
         }else{
             self.tab = .info
         }
+    }
+}
+
+extension AdminRouteEdit {
+    func findPointIndex(
+        _ state: State,
+        ignoreValidation: Bool = false
+    ) -> (point: Point, index: Int)? {
+
+        guard let wrapper = state.point else {
+            return nil
+        }
+
+        if !ignoreValidation {
+            do {
+                try wrapper.validate()
+            } catch {
+                return nil
+            }
+        }
+
+        let point = wrapper.point
+
+        guard let index = state.points.firstIndex(where: { $0.id == point.id }) else {
+            return nil
+        }
+
+        return (point, index)
     }
 }
