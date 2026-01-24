@@ -16,13 +16,13 @@ struct PublicRoute {
 
     @CasePathable
     enum Detail: Equatable {
-        case point(Point)
-        case location(FloatLocation)
+        case point(PointEntry)
+        case location(FloatEntry)
     }
 
     @CasePathable
     enum Replay: Equatable {
-        case initial
+        case initial(Route.ID?)
         case start
         case seek(Double)
         case stop
@@ -40,24 +40,15 @@ struct PublicRoute {
 
         var selected: RouteEntry? {
             didSet {
-                self._points = FetchAll(Point.where { $0.routeId == selected?.route.id })
+                self._points = FetchAll(routeId: selected?.id)
             }
         }
-        @FetchAll var points: [Point]
+        @FetchAll var points: [PointEntry]
 
-        @FetchOne var location: FloatLocation? {
-            mutating didSet {
-                if let location {
-                    floatAnnotation = FloatCurrentAnnotation(district.name, location: location)
-                } else {
-                    floatAnnotation = nil
-                }
-            }
-        }
-        var floatAnnotation: FloatCurrentAnnotation?
+        @FetchOne var float: FloatEntry?
         var isMenuExpanded: Bool = false
         @Shared var mapRegion: MKCoordinateRegion
-        var replay: Replay = .initial
+        var replay: Replay
 
         // Navigation
         var detail: Detail?
@@ -70,13 +61,13 @@ struct PublicRoute {
         ) {
             self._mapRegion = mapRegion
             self._district = FetchOne(wrappedValue: district)
-            self._routes = .init(districtId: district.id, latest: true)
-            self.selected = routes.first { $0.route.id == routeId }
-            self._points = FetchAll(Point.where { $0.routeId == selected?.route.id })
-            self._location = FetchOne(FloatLocation.where{ $0.districtId == district.id } )
-            if let location {
-                floatAnnotation = FloatCurrentAnnotation(district.name, location: location)
-            }
+            let routeQuery: FetchAll<RouteEntry> = .init(districtId: district.id, latest: true)
+            self._routes = routeQuery
+            let selected = routeQuery.wrappedValue.first { $0.route.id == routeId }
+            self.selected = selected
+            self.replay = .initial(selected?.id)
+            self._points = FetchAll(routeId: selected?.id)
+            self._float = FetchOne.init(districtId: district.id)
         }
     }
 
@@ -85,8 +76,8 @@ struct PublicRoute {
         case binding(BindingAction<State>)
         case menuTapped
         case selected(RouteEntry)
-        case pointTapped(Point)
-        case locationTapped
+        case pointTapped(PointEntry)
+        case locationTapped(FloatEntry)
         case userFocusTapped
         case floatFocusTapped
         case routeReceived(VoidResult<APIError>)
@@ -100,6 +91,7 @@ struct PublicRoute {
 
     @Dependency(\.locationProvider) var locationProvider
     @Dependency(RouteDataFetcherKey.self) var dataFetcher
+    @Dependency(LocationDataFetcherKey.self) var locationDataFetcher
 
     var body: some ReducerOf<PublicRoute> {
         BindingReducer()
@@ -121,18 +113,15 @@ struct PublicRoute {
                 state.detail = .point(value)
                 return .none
             case .locationTapped:
-                guard let location = state.location else { return .none }
-                state.detail = .location(location)
+                guard let float = state.float else { return .none }
+                state.detail = .location(float)
                 return .none
             case .floatFocusTapped:
-                return .none
-            // TODO:
-            //                return .run {[districtId = state.district.id] send in
-            //                    let result = await apiRepository.getLocation(districtId)
-            //                    await send(.locationReceived(result))
-            //                }
+                return .run {[districtId = state.district.id] send in
+                    try? await locationDataFetcher.fetch(districtId: districtId)
+                }
             case .routeReceived(.success):
-                state.replay = .initial
+                state.replay = .initial(state.selected?.id)
                 state.$mapRegion.withLock { $0 = makeRegion(state.points.map { $0.coordinate }) }
                 return .none
             case .routeReceived(.failure(let error)):

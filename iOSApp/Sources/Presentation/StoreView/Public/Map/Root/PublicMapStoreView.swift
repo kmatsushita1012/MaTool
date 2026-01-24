@@ -17,7 +17,7 @@ struct PublicMapStoreView: View {
             VStack(spacing: 0){
                 picker()
                 if let routeStore = store.scope(state: \.destination?.route, action: \.destination.route) {
-                    PublicRouteMapStoreView(store: routeStore)
+                    PublicRouteMapView(store: routeStore)
                         .id(routeStore.district.id)
                 } else if let store = store.scope(state: \.destination?.locations, action: \.destination.locations) {
                     PublicLocationsMapStoreView(store: store)

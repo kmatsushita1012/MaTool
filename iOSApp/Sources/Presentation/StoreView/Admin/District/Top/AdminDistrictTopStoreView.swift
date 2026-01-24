@@ -37,7 +37,7 @@ struct AdminDistrictView: View{
             LocationAdminView(store: store)
         }
         .navigationDestination(item: $store.scope(state: \.destination?.route, action: \.destination.route)) { store in
-            AdminRouteEditStoreView(store: store)
+            RouteEditView(store: store)
         }
         .navigationDestination(
             item: $store.scope(state: \.destination?.changePassword, action: \.destination.changePassword)

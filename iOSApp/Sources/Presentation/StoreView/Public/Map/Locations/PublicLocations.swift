@@ -14,25 +14,19 @@ import SQLiteData
 struct PublicLocations {
     @ObservableState
     struct State:Equatable {
-        @Selection struct Float: Equatable {
-            let district: District
-            let location: FloatLocation
-        }
-        
+
         let festival: Festival
-        @FetchAll private var floats: [Float]
-        
-        var floatAnnotations: [FloatCurrentAnnotation] { floats.map{ FloatCurrentAnnotation($0.district.name, location: $0.location) } }
+        @FetchAll var floats: [FloatEntry]
         
         @Shared var mapRegion: MKCoordinateRegion
-        var detail: FloatLocation?
+        var detail: FloatEntry?
     }
     
     @CasePathable
     enum Action: Equatable, BindableAction {
         case binding(BindingAction<State>)
-        case locationTapped(FloatCurrentAnnotation)
-        case floatFocusSelected(FloatCurrentAnnotation)
+        case floatTapped(FloatEntry)
+        case floatFocusSelected(FloatEntry)
         case userFocusTapped
         case userLocationReceived(Coordinate)
         case reloadTapped
@@ -47,11 +41,11 @@ struct PublicLocations {
             switch action {
             case .binding(_):
                 return .none
-            case .locationTapped(let annotation):
-                state.detail = annotation.location
+            case .floatTapped(let entry):
+                state.detail = entry
                 return .none
-            case .floatFocusSelected(let annotation):
-                state.$mapRegion.withLock { $0 = makeRegion(origin: annotation.location.coordinate, spanDelta: spanDelta)}
+            case .floatFocusSelected(let entry):
+                state.$mapRegion.withLock { $0 = makeRegion(origin: entry.floatLocation.coordinate, spanDelta: spanDelta)}
                 return .none
             case .reloadTapped:
                 return .run{ [id = state.festival.id ] send in
@@ -74,14 +68,7 @@ struct PublicLocations {
 extension PublicLocations.State {
     init(_ festival: Festival, mapRegion: Shared<MKCoordinateRegion>){
         self.festival = festival
-        self._floats = FetchAll(
-            FloatLocation
-                .join(District.where{ $0.festivalId == festival.id }, on: { $0.districtId.eq($1.id) })
-                .select{ Float.Columns(district: $1, location: $0) })
+        self._floats = FetchAll(festivalId: festival.id)
         self._mapRegion = mapRegion
     }
-}
-
-extension PublicLocations.State.Float: Identifiable, Hashable {
-    var id: String { self.location.id }
 }
