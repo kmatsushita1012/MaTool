@@ -1,5 +1,5 @@
 //
-//  AdminRouteEdit.swift
+//  RouteEditFeature.swift
 //  MaTool
 //
 //  Created by 松下和也 on 2025/08/01.
@@ -12,7 +12,7 @@ import Shared
 import SQLiteData
 
 @Reducer
-struct AdminRouteEdit{
+struct RouteEditFeature{
     
     enum Destination: Equatable {
         case point
@@ -60,7 +60,7 @@ struct AdminRouteEdit{
         var size: CGSize?
         
         // Navigation
-        @Presents var point: AdminPointEdit.State?
+        @Presents var point: PointEditFeature.State?
         @Presents var alert: AlertDestination.State? = nil
         var history: Bool = false
         var whole: ExportedItem? = nil
@@ -86,14 +86,14 @@ struct AdminRouteEdit{
         case apiErrorCatched(APIError)
         case wholePrepared(ExportedItem?)
         case partialPrepared(ExportedItem?)
-        case point(PresentationAction<AdminPointEdit.Action>)
+        case point(PresentationAction<PointEditFeature.Action>)
         case alert(PresentationAction<AlertDestination.Action>)
     }
     
     @Dependency(RouteDataFetcherKey.self) var dataFetcher
     @Dependency(\.dismiss) var dismiss
     
-    var body: some ReducerOf<AdminRouteEdit> {
+    var body: some ReducerOf<RouteEditFeature> {
         BindingReducer()
         Reduce{ state, action in
             switch action {
@@ -116,7 +116,7 @@ struct AdminRouteEdit{
                     return .none
                 }
             case .pointTapped(let entry):
-                state.point = AdminPointEdit.State(entry.point)
+                state.point = PointEditFeature.State(entry.point)
                 state.operation = .add
                 return .none
             case .undoTapped:
@@ -287,14 +287,14 @@ struct AdminRouteEdit{
             }
         }
         .ifLet(\.$point, action: \.point){
-            AdminPointEdit()
+            PointEditFeature()
         }
         .ifLet(\.$alert, action: \.alert)
     }
 }
 
-extension AdminRouteEdit.AlertDestination.State: Equatable {}
-extension AdminRouteEdit.AlertDestination.Action: Equatable {}
+extension RouteEditFeature.AlertDestination.State: Equatable {}
+extension RouteEditFeature.AlertDestination.Action: Equatable {}
 
 struct ExportedItem: Identifiable, Equatable {
     let id = UUID()
@@ -302,7 +302,7 @@ struct ExportedItem: Identifiable, Equatable {
     let pdf: URL
 }
 
-extension AdminRouteEdit.State {
+extension RouteEditFeature.State {
     var canUndo: Bool { manager.canUndo }
     var canRedo: Bool{ manager.canRedo }
     var isSaveable: Bool { mode != .preview }
@@ -332,7 +332,7 @@ extension AdminRouteEdit.State {
         points.map{ PointEntry($0) }
     }
     
-    init(mode: AdminRouteEdit.EditMode, route: Route, district: District, period: Period){
+    init(mode: RouteEditFeature.EditMode, route: Route, district: District, period: Period){
         self.mode = mode
         let points: [Point] = FetchAll(Point.where{ $0.routeId == route.id }).wrappedValue
         self.manager = EditManager(points)
@@ -351,7 +351,7 @@ extension AdminRouteEdit.State {
     }
 }
 
-extension AdminRouteEdit {
+extension RouteEditFeature {
     func findPointIndex(
         _ state: State,
         ignoreValidation: Bool = false

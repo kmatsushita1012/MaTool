@@ -1,5 +1,5 @@
 //
-//  AdminRouteEditStoreView.swift
+//  RouteEditView.swift
 //  MaTool
 //
 //  Created by 松下和也 on 2025/08/01.
@@ -11,12 +11,12 @@ import NavigationSwipeControl
 import Shared
 
 @available(iOS 17.0, *)
-struct AdminRouteEditStoreView: View {
+struct RouteEditView: View {
     @Dependency(\.values.isLiquidGlassEnabled) var isLiquidGlassEnabled
     
-    typealias Tab = AdminRouteEdit.Tab
+    typealias Tab = RouteEditFeature.Tab
     
-    @SwiftUI.Bindable var store: StoreOf<AdminRouteEdit>
+    @SwiftUI.Bindable var store: StoreOf<RouteEditFeature>
     @State private var selectedDetent: PresentationDetent = .large
     @State private var pickerHeight: CGFloat = 0
     
@@ -37,7 +37,7 @@ struct AdminRouteEditStoreView: View {
         }
         .sheet(item: $store.scope(state: \.point, action: \.point)){ store in
             NavigationStack{
-                AdminPointEditView(store: store)
+                PointEditView(store: store)
                     .dismissible(backButton: false, edgeSwipe: false)
             }
             .presentationDetents([.fraction(0.3), .fraction(0.5), .large], selection: $selectedDetent)
@@ -58,7 +58,7 @@ struct AdminRouteEditStoreView: View {
 
 // MARK: - LiquidGlass対応前
 @available(iOS 17.0, *)
-extension AdminRouteEditStoreView {
+extension RouteEditView {
     @ViewBuilder
     var contentBeforeLiquidGlass: some View {
         VStack {
@@ -110,7 +110,7 @@ extension AdminRouteEditStoreView {
 
 // MARK: - LiquidGlass対応後
 @available(iOS 17.0, *)
-extension AdminRouteEditStoreView {
+extension RouteEditView {
     @ViewBuilder
     @available(iOS 26.0, *)
     var contentAfterLiquidGlass: some View {
@@ -157,7 +157,7 @@ extension AdminRouteEditStoreView {
 
 // MARK: - Common
 @available(iOS 17.0, *)
-extension AdminRouteEditStoreView {
+extension RouteEditView {
     
     @ViewBuilder
     var info: some View {

@@ -21,7 +21,7 @@ struct AdminDistrictList {
         var isApiLoading: Bool = false
         var isExportLoading: Bool = false
         var folder: ExportedFolder? = nil
-        @Presents var export: AdminRouteEdit.State?
+        @Presents var export: RouteEditFeature.State?
         @Presents var alert: Alert.State?
         var isLoading: Bool {
             isApiLoading || isExportLoading
@@ -36,7 +36,7 @@ struct AdminDistrictList {
         case dismissTapped
         case batchExportTapped
         case batchExportPrepared(Result<[URL], APIError>)
-        case export(PresentationAction<AdminRouteEdit.Action>)
+        case export(PresentationAction<RouteEditFeature.Action>)
         case alert(PresentationAction<Alert.Action>)
     }
     
@@ -60,7 +60,7 @@ struct AdminDistrictList {
             case .exportPrepared(.success(let item)):
                 state.isApiLoading = false
                 guard let route = item.route else { return .none }
-                state.export = AdminRouteEdit.State(
+                state.export = RouteEditFeature.State(
                     mode: .preview,
                     route: route,
                     district: state.district,
@@ -92,7 +92,7 @@ struct AdminDistrictList {
             }
         }
         .ifLet(\.$export, action: \.export){
-            AdminRouteEdit()
+            RouteEditFeature()
         }
         .ifLet(\.$alert, action: \.alert)
     }

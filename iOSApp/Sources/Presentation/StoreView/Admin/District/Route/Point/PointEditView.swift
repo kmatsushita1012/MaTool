@@ -11,16 +11,16 @@ import NavigationSwipeControl
 import Shared
 
 @available(iOS 17.0, *)
-struct AdminPointEditView: View {
+struct PointEditView: View {
     
     @Dependency(\.values.isLiquidGlassEnabled) var isLiquidGlassEnabled: Bool
-    @SwiftUI.Bindable var store: StoreOf<AdminPointEdit>
+    @SwiftUI.Bindable var store: StoreOf<PointEditFeature>
     
     var body: some View {
         Form {
             Section {
                 Picker("地点の種類", selection: $store.pointType) {
-                    ForEach(AdminPointEdit.PointType.allCases, id: \.self){ type in
+                    ForEach(PointEditFeature.PointType.allCases, id: \.self){ type in
                         Text(type.text).tag(type)
                     }
                 }
@@ -168,7 +168,7 @@ struct AdminPointEditView: View {
     }
 }
 
-fileprivate extension AdminPointEdit.PointType {
+fileprivate extension PointEditFeature.PointType {
     var text: String {
         switch self {
         case .checkpoint:
