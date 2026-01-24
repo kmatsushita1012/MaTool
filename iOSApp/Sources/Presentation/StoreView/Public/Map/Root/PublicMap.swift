@@ -54,9 +54,9 @@ struct PublicMap{
             switch action {
             case .onAppear:
                 if state.destination?.route?.routes.isEmpty ?? false,
-                    state.destination?.route?.location == nil {
+                    state.destination?.route?.float == nil {
                     state.alert = Alert.notice("配信停止中です。")
-                } else if state.destination?.locations?.floatAnnotations.isEmpty ?? false {
+                } else if state.destination?.locations?.floats.isEmpty ?? false {
                     state.alert = Alert.notice("配信停止中です。")
                 }
                 return .run{ send in

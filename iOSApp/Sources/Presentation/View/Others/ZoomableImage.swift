@@ -10,9 +10,10 @@ import UIKit
 
 struct ZoomableImage: UIViewRepresentable {
     let image: UIImage
+    @Binding var isZooming: Bool   // ← 追加
 
     func makeCoordinator() -> Coordinator {
-        Coordinator()
+        Coordinator(isZooming: $isZooming)
     }
 
     func makeUIView(context: Context) -> UIScrollView {
@@ -46,24 +47,30 @@ struct ZoomableImage: UIViewRepresentable {
         return scrollView
     }
 
-    func updateUIView(_ uiView: UIScrollView, context: Context) {
-        // no dynamic update
-    }
+    func updateUIView(_ uiView: UIScrollView, context: Context) {}
 
     class Coordinator: NSObject, UIScrollViewDelegate {
         weak var imageView: UIView?
         weak var scrollView: UIScrollView?
+        @Binding var isZooming: Bool
+
+        init(isZooming: Binding<Bool>) {
+            _isZooming = isZooming
+        }
 
         func viewForZooming(in scrollView: UIScrollView) -> UIView? {
-            return imageView
+            imageView
         }
 
         func scrollViewDidZoom(_ scrollView: UIScrollView) {
             guard let imageView = imageView else { return }
 
-            // 中央に再配置（拡大していない時）
-            let offsetX = max((scrollView.bounds.size.width - scrollView.contentSize.width) * 0.5, 0)
-            let offsetY = max((scrollView.bounds.size.height - scrollView.contentSize.height) * 0.5, 0)
+            // SafeArea 切り替え用
+            isZooming = scrollView.zoomScale > 1.01
+
+            // 中央寄せ
+            let offsetX = max((scrollView.bounds.width - scrollView.contentSize.width) * 0.5, 0)
+            let offsetY = max((scrollView.bounds.height - scrollView.contentSize.height) * 0.5, 0)
 
             imageView.center = CGPoint(
                 x: scrollView.contentSize.width * 0.5 + offsetX,
