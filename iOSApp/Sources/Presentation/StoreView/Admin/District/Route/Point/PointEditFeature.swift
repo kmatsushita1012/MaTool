@@ -10,7 +10,7 @@ import Shared
 import SQLiteData
 
 @Reducer
-struct AdminPointEdit{
+struct PointEditFeature{
     enum PointType: Equatable, CaseIterable {
         case checkpoint
         case performance
@@ -41,7 +41,7 @@ struct AdminPointEdit{
         case alert(PresentationAction<Alert.Action>)
     }
     
-    var body: some ReducerOf<AdminPointEdit> {
+    var body: some ReducerOf<PointEditFeature> {
         BindingReducer()
         Reduce { state, action in
             switch action{
@@ -86,7 +86,7 @@ struct AdminPointEdit{
     }
 }
 
-extension AdminPointEdit.State {
+extension PointEditFeature.State {
     init(_ point: Point){
         self.point = point
         let district = FetchOne(Point
@@ -129,7 +129,7 @@ extension AdminPointEdit.State {
     }
 }
 
-extension AdminPointEdit.PointType {
+extension PointEditFeature.PointType {
     init(point: Point){
         if point.checkpointId != nil {
             self = .checkpoint
