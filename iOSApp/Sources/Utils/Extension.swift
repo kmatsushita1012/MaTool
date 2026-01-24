@@ -33,27 +33,40 @@ extension Array where Element: Identifiable & Equatable {
     }
 }
 
-extension Array where Element: Equatable & Identifiable {
-
+extension Array where Element: Equatable & Hashable {
+    
     func diff(
-        with newElements: [Element],
-    ) -> (insertions: [Element], deletions: [Element.ID]) {
-        // old / new を辞書化（PrimaryKey 基準）
-        let oldDict = Dictionary(uniqueKeysWithValues: self.map { ($0.id, $0) })
-        let newDict = Dictionary(uniqueKeysWithValues: newElements.map { ($0.id, $0) })
+        with newElements: [Element]
+    ) -> (insertions: [Element], deletions: [Element]) {
+        
+        let oldSet = Set(self)
+        let newSet = Set(newElements)
+        
+        // 完全一致で存在しないものだけ削除
+        let deletions = Array(oldSet.subtracting(newSet))
+        
+        // 新規 or 更新（完全一致しないもの）
+        let insertions = newElements.filter { !oldSet.contains($0) }
+        
+        return (insertions: insertions, deletions: deletions)
+    }
+}
 
-        // 削除対象：old にあって new にない
-        let deleteIds: [Element.ID] = oldDict.keys.filter { newDict[$0] == nil }
-        // 追加 or 更新対象
-        let upsertItems: [Element] = newElements.compactMap { newItem in
-            guard let oldItem = oldDict[newItem.id] else {
-                // 新規
-                return newItem
-            }
-            // 更新
-            return oldItem == newItem ? nil : newItem
-        }
-        return (insertions: upsertItems, deletions: deleteIds)
+extension Array where Element: Equatable & Hashable & Identifiable {
+    func diff(
+        with newElements: [Element]
+    ) -> (insertions: [Element], deletionIds: [Element.ID]) {
+
+        let oldSet = Set(self)
+        let newSet = Set(newElements)
+
+        // 完全一致で存在しないものだけ削除
+        let deletions = Array(oldSet.subtracting(newSet))
+
+        // 新規 or 更新（完全一致しないもの）
+        let insertions = newElements.filter { !oldSet.contains($0) }
+
+        return (insertions: insertions, deletionIds: deletions.map(\.id))
     }
 }
 

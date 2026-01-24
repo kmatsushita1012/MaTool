@@ -1,5 +1,5 @@
 //
-//  AdminRouteEditStoreView.swift
+//  RouteEditView.swift
 //  MaTool
 //
 //  Created by 松下和也 on 2025/08/01.
@@ -11,12 +11,12 @@ import NavigationSwipeControl
 import Shared
 
 @available(iOS 17.0, *)
-struct AdminRouteEditStoreView: View {
+struct RouteEditView: View {
     @Dependency(\.values.isLiquidGlassEnabled) var isLiquidGlassEnabled
     
-    typealias Tab = AdminRouteEdit.Tab
+    typealias Tab = RouteEditFeature.Tab
     
-    @SwiftUI.Bindable var store: StoreOf<AdminRouteEdit>
+    @SwiftUI.Bindable var store: StoreOf<RouteEditFeature>
     @State private var selectedDetent: PresentationDetent = .large
     @State private var pickerHeight: CGFloat = 0
     
@@ -37,24 +37,33 @@ struct AdminRouteEditStoreView: View {
         }
         .sheet(item: $store.scope(state: \.point, action: \.point)){ store in
             NavigationStack{
-                AdminPointEditStoreView(store: store)
+                PointEditView(store: store)
                     .dismissible(backButton: false, edgeSwipe: false)
             }
             .presentationDetents([.fraction(0.3), .fraction(0.5), .large], selection: $selectedDetent)
             .interactiveDismissDisabled()
         }
+        .sheet(isPresented: $store.history){
+            NavigationStack {
+                RouteHistoryView(.init(districtId: store.district.id) {
+                    store.send(.sourceSelected($0))
+                })
+            }
+        }
         .alert($store.scope(state: \.alert?.notice, action: \.alert.notice))
         .alert($store.scope(state: \.alert?.delete, action: \.alert.delete))
+        .loadingOverlay(store.isLoading)
     }
 }
 
 // MARK: - LiquidGlass対応前
 @available(iOS 17.0, *)
-extension AdminRouteEditStoreView {
+extension RouteEditView {
     @ViewBuilder
     var contentBeforeLiquidGlass: some View {
         VStack {
             tab
+                .padding(.horizontal)
             if store.tab == .info {
                 info
             } else {
@@ -101,7 +110,7 @@ extension AdminRouteEditStoreView {
 
 // MARK: - LiquidGlass対応後
 @available(iOS 17.0, *)
-extension AdminRouteEditStoreView {
+extension RouteEditView {
     @ViewBuilder
     @available(iOS 26.0, *)
     var contentAfterLiquidGlass: some View {
@@ -148,24 +157,19 @@ extension AdminRouteEditStoreView {
 
 // MARK: - Common
 @available(iOS 17.0, *)
-extension AdminRouteEditStoreView {
+extension RouteEditView {
     
     @ViewBuilder
     var info: some View {
         List{
-//            Section(header: Text("日付")){
-//                DateTimePicker(
-//                    "日付を選択",
-//                    selection: $store.period.date.fullDate,
-//                    displayedComponents: [.date]
-//                )
-//                .environment(\.locale, Locale(identifier: "ja_JP"))
-//            }
+            Section {
+                Text(store.period.shortText)
+            }
             Section(header: Text("説明")) {
                 TextEditor(text: $store.route.description.nonOptional)
-                    .frame(height:120)
+                    .frame(height:64)
             }
-            Section(header: Text("ルート")) {
+            Section {
                 Picker(selection: $store.route.visibility) {
                     ForEach(Visibility.allCases, id: \.self) { option in
                         Text(option.label).tag(option)
@@ -174,6 +178,12 @@ extension AdminRouteEditStoreView {
                     Text("公開範囲を選択")
                 }
                 .pickerStyle(.menu)
+            }
+            
+            Section {
+                Button("過去のルートからコピー"){
+                    store.send(.copyTapped)
+                }
             }
             
             if store.isDeleteable {
@@ -191,12 +201,13 @@ extension AdminRouteEditStoreView {
     
     @ViewBuilder
     var map: some View {
-        AdminRouteMapView(
-            points: store.points,
-            onMapLongPress: { store.send(.mapLongPressed($0)) },
-            pointTapped: { store.send(.pointTapped($0)) },
+        MapView(
+            style: store.tab == .public ? .public : .edit,
+            points: store.pointEntries,
             region: $store.region,
-            size: $store.size
+            size: $store.size,
+            pointTapped: { store.send(.pointTapped($0)) },
+            onLongPress: { store.send(.mapLongPressed($0)) },
         )
     }
     
@@ -208,10 +219,10 @@ extension AdminRouteEditStoreView {
                 .tag(Tab.info)
             Text("ルート")
                 .font(.title)
-                .tag(Tab.map)
+                .tag(Tab.edit)
             Text("公開")
                 .font(.title)
-                .tag(Tab.pub)
+                .tag(Tab.`public`)
         }
         .pickerStyle(.segmented)
         .frame(maxWidth: .infinity)
@@ -251,13 +262,15 @@ extension AdminRouteEditStoreView {
 
 struct PreviewView: View {
     let item: ExportedItem
+    @State var isZooming: Bool = false
     
     @Dependency(\.values.isLiquidGlassEnabled) var isLiquidGlassEnabled: Bool
     @Environment(\.dismiss) private var dismiss
     
     var body: some View {
         NavigationStack{
-            ZoomableImage(image: item.image)
+            ZoomableImage(image: item.image, isZooming: $isZooming)
+                .ignoresSafeArea(isZooming ? .all : [])
                 .navigationTitle("プレビュー")
                 .navigationBarTitleDisplayMode(.inline)
                 .toolbar {
