@@ -16,7 +16,7 @@ struct AdminDistrictTop {
     @Reducer
     enum Destination {
         case edit(AdminDistrictEdit)
-        case route(AdminRouteEdit)
+        case route(RouteEditFeature)
         case location(AdminLocation)
         case changePassword(ChangePassword)
         case updateEmail(UpdateEmail)
@@ -75,7 +75,7 @@ struct AdminDistrictTop {
                 } else {
                     let route = Route(id: UUID().uuidString, districtId: state.district.id, periodId: item.period.id)
                     state.destination = .route(
-                        AdminRouteEdit.State(
+                        RouteEditFeature.State(
                             mode: .create,
                             route: route,
                             district: state.district,
@@ -94,7 +94,7 @@ struct AdminDistrictTop {
                 state.isRouteLoading = false
                 guard let route = target.route else { return .none }
                 state.destination = .route(
-                    AdminRouteEdit.State(mode: .update, route: route, district: state.district, period: target.period)
+                    RouteEditFeature.State(mode: .update, route: route, district: state.district, period: target.period)
                 )
                 return .none
             case .locationPrepared(isTracking: let isTracking, Interval: let interval):
