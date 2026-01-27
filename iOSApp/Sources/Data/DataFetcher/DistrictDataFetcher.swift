@@ -56,6 +56,7 @@ struct DistrictDataFetcher: DistrictDataFetcherProtocol {
         try await database.write { db in
             let oldPerformances = try performanceStore.fetchAll(where: { $0.districtId == id }, from: db)
             let (insertedPerformances, deletedPerformanceIds) = oldPerformances.diff(with: pack.performances)
+            try districtStore.delete(pack.district.id, from: db)
             try performanceStore.deleteAll(deletedPerformanceIds, from: db)
             try districtStore.insert(pack.district, at: db)
             try performanceStore.insert(insertedPerformances, at: db)
