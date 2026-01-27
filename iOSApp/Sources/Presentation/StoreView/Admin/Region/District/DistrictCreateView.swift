@@ -1,5 +1,5 @@
 //
-//  AdminCreateDistrictView.swift
+//  DistrictCreateView.swift
 //  MaTool
 //
 //  Created by 松下和也 on 2025/05/12.
@@ -10,9 +10,9 @@ import ComposableArchitecture
 import NavigationSwipeControl
 
 @available(iOS 17.0, *)
-struct AdminCreateDistrictView: View {
+struct DistrictCreateView: View {
     
-    @SwiftUI.Bindable var store: StoreOf<AdminDistrictCreate>
+    @SwiftUI.Bindable var store: StoreOf<DistrictCreateFeature>
     
     var body: some View {
         List{
@@ -28,13 +28,13 @@ struct AdminCreateDistrictView: View {
         }
         .navigationTitle("新規作成")
         .toolbar {
-            ToolbarItem(placement: .topBarLeading) {
+            ToolbarItem(placement: .cancellationAction) {
                 Button("キャンセル") {
                     store.send(.cancelTapped)
                 }
                 .padding(8)
             }
-            ToolbarItem(placement: .topBarTrailing) {
+            ToolbarItem(placement: .primaryAction) {
                 Button{
                     store.send(.createTapped)
                 } label: {

@@ -26,15 +26,9 @@ struct FestivalDashboardView: View {
             }
             .navigationDestination(
                 item: $store.scope(
-                    state: \.destination?.districtInfo, action: \.destination.districtInfo)
+                    state: \.destination?.districts, action: \.destination.districts)
             ) { store in
-                AdminDistrictListView(store: store)
-            }
-            .navigationDestination(
-                item: $store.scope(
-                    state: \.destination?.districtCreate, action: \.destination.districtCreate)
-            ) { store in
-                AdminCreateDistrictView(store: store)
+                HeadquarterDistrictListView(store: store)
             }
             .navigationDestination(
                 item: $store.scope(state: \.destination?.periods, action: \.destination.periods)
@@ -70,31 +64,14 @@ struct FestivalDashboardView: View {
                     iconName: "calendar",
                     onTap: { store.send(.periodTapped) })
             }
-            Section(header: Text("参加町")) {
-                ForEach(store.districts) { district in
-                    NavigationItemView(
-                        title: district.name,
-                        onTap: {
-                            store.send(.onDistrictInfo(district))
-                        }
-                    )
-                }
-                Button(action: {
-                    store.send(.onCreateDistrict)
-                }) {
-                    Label("追加", systemImage: "plus.circle")
-                        .frame(maxWidth: .infinity, alignment: .center)
-                }
+            
+            Section {
+                NavigationItemView(
+                    title: "参加町一覧",
+                    iconName: "list.bullet",
+                    onTap: { store.send(.districtsTapped) })
             }
-            #if DEBUG
-                Section {
-                    Button(action: {
-                        store.send(.batchExportTapped)
-                    }) {
-                        Text("経路図一括出力")
-                    }
-                }
-            #endif
+            
             Section {
                 Button(action: {
                     store.send(.changePasswordTapped)

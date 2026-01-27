@@ -16,8 +16,7 @@ struct FestivalDashboardFeature {
     @Reducer
     enum Destination {
         case edit(FestivalEditFeature)
-        case districtInfo(AdminDistrictList)
-        case districtCreate(AdminDistrictCreate)
+        case districts(HeadquarterDistrictListFeature)
         case periods(PeriodListFeature)
         case changePassword(ChangePassword)
         case updateEmail(UpdateEmail)
@@ -26,7 +25,6 @@ struct FestivalDashboardFeature {
     @ObservableState
     struct State: Equatable {
         @FetchOne var festival: Festival
-        @FetchAll var districts: [District]
 
         var isApiLoading: Bool = false
         var isAuthLoading: Bool = false
@@ -45,21 +43,16 @@ struct FestivalDashboardFeature {
         case binding(BindingAction<State>)
         case onEdit
         case periodTapped
-        case onDistrictInfo(District)
-        case onCreateDistrict
+        case districtsTapped
         case homeTapped
         case changePasswordTapped
         case updateEmailTapped
         case signOutTapped
-        case batchExportTapped
-        case districtInfoPrepared(District)
         case signOutReceived(Result<UserRole, AuthError>)
-        case batchExportPrepared(Result<[URL], APIError>)
         case destination(PresentationAction<Destination.Action>)
         case alert(PresentationAction<Alert.Action>)
     }
 
-    @Dependency(\.apiRepository) var apiRepository
     @Dependency(RouteDataFetcherKey.self) var routeDataFetcher
     @Dependency(\.authService) var authService
     @Dependency(\.dismiss) var dismiss
@@ -74,17 +67,8 @@ struct FestivalDashboardFeature {
             case .periodTapped:
                 state.destination = .periods(PeriodListFeature.State(festivalId: state.festival.id))
                 return .none
-            case .onDistrictInfo(let district):
-                state.isApiLoading = true
-                return .run { send in
-                    let _ = await task {
-                        try await routeDataFetcher.fetchAll(districtID: district.id, query: .latest)
-                    }
-                    await send(.districtInfoPrepared(district))
-                }
-            case .onCreateDistrict:
-                state.destination = .districtCreate(
-                    AdminDistrictCreate.State(festivalId: state.festival.id))
+            case .districtsTapped:
+                state.destination = .districts(.init(state.festival))
                 return .none
             case .homeTapped:
                 return .run { _ in
@@ -102,13 +86,6 @@ struct FestivalDashboardFeature {
                     let result = await authService.signOut()
                     await send(.signOutReceived(result))
                 }
-            case .batchExportTapped:
-                state.isExportLoading = true
-                return batchExportEffect(state)
-            case .districtInfoPrepared(let district):
-                state.isApiLoading = false
-                state.destination = .districtInfo(AdminDistrictList.State(district))
-                return .none
             case .signOutReceived(.success):
                 state.isAuthLoading = false
                 return .none
@@ -116,20 +93,8 @@ struct FestivalDashboardFeature {
                 state.isAuthLoading = false
                 state.alert = Alert.error("ログアウトに失敗しました　\(error.localizedDescription)")
                 return .none
-            case .batchExportPrepared(.success(let value)):
-                state.isExportLoading = false
-                state.folder = ExportedFolder(value)
-                return .none
-            case .batchExportPrepared(.failure(let error)):
-                state.isExportLoading = false
-                state.alert = Alert.error("出力に失敗しました　\(error.localizedDescription)")
-                return .none
             case .destination(.presented(.edit(.putReceived(.success)))):
                 state.destination = nil
-                return .none
-            case .destination(.presented(.districtCreate(.received(.success)))):
-                state.destination = nil
-                state.alert = Alert.success("参加町の追加が完了しました")
                 return .none
             case .destination(.presented(.changePassword(.received(.success)))):
                 state.destination = nil
@@ -145,31 +110,6 @@ struct FestivalDashboardFeature {
         .ifLet(\.$destination, action: \.destination)
         .ifLet(\.$alert, action: \.alert)
     }
-
-    func batchExportEffect(_ state: State) -> Effect<Action> {
-        .run { send in
-            let districtIds = state.districts.map(\.id)
-            var urls: [URL] = []
-            //非同期並列にするとBEでアクセス過多
-            let _ = await task {
-                for districtId in districtIds {
-                    guard let _ =  try? await routeDataFetcher.fetchAll(districtID: districtId, query: .latest) else { continue }
-                    let routes: [Route] = FetchAll(Route.where { $0.districtId == districtId })
-                        .wrappedValue
-                    for route in routes {
-                        guard let period: Period = FetchOne(Period.find(route.periodId)).wrappedValue,
-                              (try? await routeDataFetcher.fetch(routeID: route.id)) != nil,
-                              let snapshotter = await RouteSnapshotter(route),
-                              let image = try? await snapshotter.take(),
-                              let url = await snapshotter.createPDF(with: image, path: "\(period.text)")
-                        else { continue }
-                        urls.append(url)
-                    }
-                }
-            }
-            await send(.batchExportPrepared(.success(urls)))
-        }
-    }
 }
 
 extension FestivalDashboardFeature.Destination.State: Equatable {}
@@ -177,7 +117,6 @@ extension FestivalDashboardFeature.Destination.Action: Equatable {}
 
 extension FestivalDashboardFeature.State {
     init(_ festival: Festival) {
-        self._festival = FetchOne(wrappedValue: festival)
-        self._districts = FetchAll(District.where { $0.festivalId == festival.id })
+        self._festival = FetchOne(wrappedValue: festival, Festival.find(festival.id))
     }
 }
