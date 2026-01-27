@@ -54,7 +54,6 @@ struct FestivalDashboardFeature {
         case alert(PresentationAction<Alert.Action>)
     }
 
-    @Dependency(\.apiRepository) var apiRepository
     @Dependency(RouteDataFetcherKey.self) var routeDataFetcher
     @Dependency(\.authService) var authService
     @Dependency(\.dismiss) var dismiss
