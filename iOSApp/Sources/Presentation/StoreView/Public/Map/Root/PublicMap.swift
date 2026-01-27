@@ -163,7 +163,7 @@ extension PublicMap.State {
         let districts: [District] = FetchAll(District.where{ $0.festivalId == festival.id }).wrappedValue
         let locations: PublicMap.Content = .locations(festival)
         let contents = [locations]
-            + districts.prioritizing(by: \.id, match: district.id)
+            + districts.prioritizing(districtId: district.id)
             .map{ PublicMap.Content.route($0) }
             
         let selected = contents[1]
@@ -187,7 +187,7 @@ extension PublicMap.State {
     ){
         let districts = FetchAll(District.where{ $0.festivalId == festival.id }).wrappedValue
         let selected: PublicMap.Content = .locations(festival)
-        let contents = [selected] + districts.map{ PublicMap.Content.route($0) }
+        let contents = [selected] + districts.sorted().map{ PublicMap.Content.route($0) }
         
         self.contents = contents
         self.selectedContent = selected
