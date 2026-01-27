@@ -25,7 +25,6 @@ struct FestivalDashboardFeature {
     @ObservableState
     struct State: Equatable {
         @FetchOne var festival: Festival
-        @FetchAll var districts: [District]
 
         var isApiLoading: Bool = false
         var isAuthLoading: Bool = false
@@ -118,7 +117,6 @@ extension FestivalDashboardFeature.Destination.Action: Equatable {}
 
 extension FestivalDashboardFeature.State {
     init(_ festival: Festival) {
-        self._festival = FetchOne(wrappedValue: festival)
-        self._districts = FetchAll(District.where { $0.festivalId == festival.id })
+        self._festival = FetchOne(wrappedValue: festival, Festival.find(festival.id))
     }
 }

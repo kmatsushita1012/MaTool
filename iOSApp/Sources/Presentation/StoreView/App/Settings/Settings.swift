@@ -18,7 +18,8 @@ struct Settings {
         var isOfflineMode: Bool = false
         @FetchAll var festivals: [Festival]
         var selectedFestival: Festival? = nil
-        @FetchAll var districts: [District]
+        @FetchAll var rawDistricts: [District]
+        var districts: [District] { rawDistricts.sorted() }
         var selectedDistrict: District? = nil
         var isLoading: Bool = false
         var userGuide: URL = {
@@ -41,7 +42,7 @@ struct Settings {
             @Dependency(\.values.defaultDistrictKey) var defaultDistrictKey
             self.selectedFestival = FetchOne(Festival.where{ $0.id ==  userDefaultsClient.string(defaultFestivalKey)}).wrappedValue
             self.selectedDistrict = FetchOne(District.where{ $0.id ==  userDefaultsClient.string(defaultDistrictKey)}).wrappedValue
-            self._districts = FetchAll(District.where{ $0.festivalId == selectedFestival?.id })
+            self._rawDistricts = FetchAll(District.where{ $0.festivalId == selectedFestival?.id })
         }
     }
 
