@@ -25,7 +25,7 @@ struct MenuSelector<T: Hashable>: View {
                     .foregroundColor(.primary)
             }
             Menu {
-                if let items = items {
+                if let items = items?.reversed() {
                     ForEach(items, id: \.self) { item in
                         Button(label(item)) {
                             selection = item
