@@ -24,6 +24,8 @@ struct DistrictRouter: Router {
         app.get(path: "/districts/:districtId/locations", locationController.get)
         app.put(path: "/districts/:districtId/locations", locationController.put)
         app.delete(path: "/districts/:districtId/locations", locationController.delete)
+        // MARK: - HQ District
+        app.put(path: "/districts/:districtId/core", districtController.updateDistrict)
         // MARK: - District
         app.get(path: "/districts/:districtId", districtController.get)
         app.put(path: "/districts/:districtId", districtController.put)
