@@ -22,13 +22,14 @@ struct InfoList {
     @ObservableState
     struct State: Equatable {
         @FetchOne var festival: Festival
-        @FetchAll var districts: [District]
+        @FetchAll private var rawDistricts: [District]
+        var districts: [District] { rawDistricts.sorted() }
         var isDismissed: Bool = false
         @Presents var destination: Destination.State? = nil
         
         init(festival: Festival) {
             self._festival = FetchOne(wrappedValue: festival)
-            self._districts = FetchAll(District.where{ $0.festivalId == festival.id })
+            self._rawDistricts = FetchAll(District.where{ $0.festivalId == festival.id })
         }
     }
     

@@ -16,11 +16,12 @@ struct OnboardingFeature {
     @ObservableState
     struct State: Equatable {
         @FetchAll var festivals: [Festival]
-        @FetchAll var districts: [District]
+        @FetchAll var rawDistricts: [District]
+        var districts: [District] { rawDistricts.sorted() }
         
         var selectedFestival: Festival? {
             didSet {
-                self._districts = FetchAll(District.where{ $0.festivalId == selectedFestival?.id })
+                self._rawDistricts = FetchAll(District.where{ $0.festivalId == selectedFestival?.id })
             }
         }
         @Shared var launchState: LaunchState
