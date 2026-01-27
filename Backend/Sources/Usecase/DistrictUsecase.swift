@@ -19,6 +19,7 @@ protocol DistrictUsecaseProtocol: Sendable {
     func get(_ id: String) async throws -> DistrictPack
     func post(user: UserRole, headquarterId: String, newDistrictName: String, email: String) async throws -> DistrictPack
     func put(id: String, item: DistrictPack, user: UserRole) async throws -> DistrictPack
+    func put(id: String, district: District, user: UserRole) async throws -> District
 }
 
 // MARK: - DistrictUsecase
@@ -86,6 +87,16 @@ struct DistrictUsecase: DistrictUsecaseProtocol {
         let performances = try await oldPerformances.update(with: item.performances, repository: peformanceRepository)
         
         return .init(district: district, performances: performances)
+    }
+    
+    // HQ権限
+    func put(id: String, district: District, user: UserRole) async throws -> District {
+        guard case let .headquarter(hqId) = user, district.festivalId == hqId, id == district.id else {
+            throw Error.unauthorized("アクセス権限がありません")
+        }
+        let result = try await repository.put(id: id, item: district)
+        
+        return result
     }
 }
 
