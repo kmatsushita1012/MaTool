@@ -106,7 +106,7 @@ extension RouteRecord {
     }
     
     static func makeKeys(_ id: String, districtId: String, date: SimpleDate) -> (pk: String, sk: String, dateKey: String){
-        (pk: "\(pkPrefix)\(districtId)", sk: "\(skPrefix)\(id)", dateKey: "\(datePrefix)\(date.sortableKey)")
+        (pk: "\(pkPrefix)\(districtId)", sk: "\(skPrefix)\(id)", dateKey: "\(skPrefix)\(datePrefix)\(date.sortableKey)")
     }
     
     static func makeKeys(_ id: String, districtId: String) -> (pk: String, sk: String){
