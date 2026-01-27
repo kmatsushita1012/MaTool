@@ -41,12 +41,14 @@ struct PublicMap{
         case binding(BindingAction<State>)
         case homeTapped
         case contentSelected(Content)
-        case routePrepared(District, Route.ID)
+        case routePrepared(District, Route.ID?)
+        case errorCaught(APIError)
         case destination(PresentationAction<Destination.Action>)
         case alert(PresentationAction<Alert.Action>)
     }
     
     @Dependency(\.locationProvider) var locationProvider
+    @Dependency(SceneDataFetcherKey.self) var sceneDataFetcher
     @Dependency(\.dismiss) var dismiss
     
     var body: some ReducerOf<PublicMap> {
@@ -99,6 +101,9 @@ struct PublicMap{
                     )
                 )
                 return .none
+            case .errorCaught(let error):
+                state.alert = Alert.error(error.localizedDescription)
+                return .none
             case .destination:
                 return .none
             case .alert:
@@ -111,8 +116,13 @@ struct PublicMap{
     
     func routeEffect(_ district: District) -> Effect<Action> {
         .run { send in
-//            let result = try await apiRepository.getCurrentRoute(id)
-            await send(.routePrepared(district, "routeid"))
+            let result = await task({ try await sceneDataFetcher.launchDistrict(districtId: district.id) }, defaultError: APIError.unknown(message: "予期しないエラーが発生しました。"))
+            switch result {
+            case .success(let routeId):
+                await send(.routePrepared(district, routeId))
+            case .failure(let error):
+                await send(.errorCaught(error))
+            }
         }
     }
 }
