@@ -37,6 +37,7 @@ struct HeadquarterDistrictDetailFeature {
         case editTapped
         case routeSelected(RouteSlot)
         case batchExportTapped
+        case updateCompleted
         case routePrepared(RouteEntry)
         case batchExportPrepared([URL])
         case errorCaught(APIError)
@@ -54,14 +55,20 @@ struct HeadquarterDistrictDetailFeature {
             case .binding(_):
                 return .none
             case .editTapped:
-                state.isEditable.toggle()
+                defer {
+                    state.isEditable.toggle()
+                }
                 if state.isEditable {
                     state.isLoading = true
-                    return .none
-                    // TODO: API開通待ち
-//                    return .run { [state] send in
-//                        let result = await task{ try await dataFetcher.update(district: state.district, performances: ) }
-//                    }
+                    return .run { [state] send in
+                        let result = await task{ try await dataFetcher.update(district: state.district) }
+                        switch result {
+                        case .success(_):
+                            await send(.updateCompleted)
+                        case .failure(let error):
+                            await send(.errorCaught(error))
+                        }
+                    }
                 } else {
                     return .none
                 }
@@ -81,6 +88,9 @@ struct HeadquarterDistrictDetailFeature {
             case .batchExportTapped:
                 state.isLoading = true
                 return batchExportEffect(state.routes)
+            case .updateCompleted:
+                state.isLoading = false
+                return .none
             case .routePrepared(let entry):
                 state.isLoading = false
                 state.destination = .route(.init(mode: .preview, route: entry.route, district: state.district, period: entry.period))

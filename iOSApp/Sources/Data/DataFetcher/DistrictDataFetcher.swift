@@ -13,9 +13,10 @@ enum DistrictDataFetcherKey: DependencyKey {
     static let liveValue: any DistrictDataFetcherProtocol = DistrictDataFetcher()
 }
 
-protocol DistrictDataFetcherProtocol: Sendable {
+protocol DistrictDataFetcherProtocol: DataFetcher {
     func create(name: String, email: String, festivalId: String) async throws
     func update(district: District, performances: [Performance]) async throws
+    func update(district: District) async throws
     func fetchAll(festivalID: Festival.ID) async throws
     func fetch(districtID: District.ID) async throws
 }
@@ -28,29 +29,37 @@ struct DistrictDataFetcher: DistrictDataFetcherProtocol {
     
     func create(name: String, email: String, festivalId: String) async throws {
         let draft: DistrictCreateForm = .init(name: name, email: email)
-        guard let token = await getAccessToken() else { throw APIError.unauthorized(message: "") }
+        guard let token = try await getToken() else { throw APIError.unauthorized(message: "") }
         let result: DistrictPack = try await client.post(path: "/festivals/\(festivalId)/districts", body: draft, accessToken: token)
         try await syncPack(result)
     }
-
+    
     func update(district: District, performances: [Performance] ) async throws {
         let draft: DistrictPack = .init(district: district, performances: performances)
-        guard let token = await getAccessToken() else { throw APIError.unauthorized(message: "") }
+        guard let token = try await getToken() else { throw APIError.unauthorized(message: "") }
         let result: DistrictPack = try await client.put(path: "/districts/\(district.id)", body: draft, accessToken: token)
         try await syncPack(result)
     }
-
+    
+    func update(district: District) async throws {
+        guard let token = try await getToken() else { throw APIError.unauthorized(message: "") }
+        let result: District = try await client.put(path: "/districts/\(district.id)/core", body: district, accessToken: token)
+        try await sync(district)
+    }
+    
     // fetch all districts for a festival
     func fetchAll(festivalID: Festival.ID) async throws {
         let districts: [District] = try await client.get(path: "/festivals/\(festivalID)/districts")
         try await syncAll(districts)
     }
-
+    
     func fetch(districtID: District.ID) async throws {
         let pack: DistrictPack = try await client.get(path: "/districts/\(districtID)")
         try await syncPack(pack)
     }
-
+}
+    
+extension DistrictDataFetcher {
     private func syncPack(_ pack: DistrictPack) async throws {
         let id: District.ID = pack.district.id
         try await database.write { db in
@@ -62,25 +71,17 @@ struct DistrictDataFetcher: DistrictDataFetcherProtocol {
             try performanceStore.insert(insertedPerformances, at: db)
         }
     }
-
+    
     private func syncAll(_ districts: [District]) async throws {
         try await database.write { db in
             try districtStore.insert(districts, at: db)
         }
     }
-}
-
-extension DistrictDataFetcher {
-    func getAccessToken() async -> String? {
-        @Dependency(AuthServiceKey.self) var authService
-        let token = await authService.getAccessToken()
-        return token
+    
+    private func sync(_ district: District) async throws {
+        try await database.write { db in
+            try districtStore.delete(district.id, from: db)
+            try districtStore.insert(district, at: db)
+        }
     }
 }
-extension DependencyValues {
-    var districtDataFetcher: DistrictDataFetcherProtocol {
-        get { self[DistrictDataFetcherKey.self] }
-        set { self[DistrictDataFetcherKey.self] = newValue }
-    }
-}
-

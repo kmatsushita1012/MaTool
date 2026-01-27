@@ -26,9 +26,10 @@ struct HeadquarterDistrictDetailView: View {
                         .keyboardType(.numberPad)
                         .multilineTextAlignment(.trailing)
                 }
-                
+            } footer: {
+                Text("編集する際は右上の「編集」ボタンを押してください。")
             }
-//            .disabled(!store.isEditable)
+            .disabled(!store.isEditable)
             Section(header: Text("ルート")) {
                 ForEach(store.routes) { pair in
                     RouteSlotView(pair){
