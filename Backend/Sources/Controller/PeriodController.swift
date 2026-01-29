@@ -49,11 +49,9 @@ struct PeriodController: PeriodControllerProtocol {
     }
     
     func put(request: Request, next: @Sendable (Application.Request) async throws -> Application.Response) async throws -> Response {
-        let festivalId = try request.parameter("festivalId", as: Festival.ID.self)
-        let year = try request.parameter("year", as: Int.self)
         let user = request.user ?? .guest
         let period = try request.body(as: Period.self)
-        let result = try await usecase.put(festivalId: festivalId, period: period, user: user)
+        let result = try await usecase.put(period: period, user: user)
         return try .success(result)
     }
     
