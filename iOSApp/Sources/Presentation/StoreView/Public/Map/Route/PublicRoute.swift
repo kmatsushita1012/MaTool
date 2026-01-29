@@ -53,22 +53,6 @@ struct PublicRoute {
         // Navigation
         var detail: Detail?
         @Presents var alert: Alert.State?
-
-        init(
-            _ district: District,
-            routeId: Route.ID?,
-            mapRegion: Shared<MKCoordinateRegion>
-        ) {
-            self._mapRegion = mapRegion
-            self._district = FetchOne(wrappedValue: district)
-            let routeQuery: FetchAll<RouteEntry> = .init(districtId: district.id, latest: true)
-            self._routes = routeQuery
-            let selected = routeQuery.wrappedValue.first { $0.route.id == routeId }
-            self.selected = selected
-            self.replay = .initial(selected?.id)
-            self._points = FetchAll(routeId: selected?.id)
-            self._float = FetchOne.init(districtId: district.id)
-        }
     }
 
     @CasePathable
@@ -122,14 +106,12 @@ struct PublicRoute {
                 }
             case .routeReceived(.success):
                 state.replay = .initial(state.selected?.id)
-                state.$mapRegion.withLock { $0 = makeRegion(state.points.map { $0.coordinate }) }
+                state.$mapRegion.withLock { $0 = makeRegion(state.points.map(\.coordinate)) }
                 return .none
             case .routeReceived(.failure(let error)):
                 state.alert = Alert.error(error.localizedDescription)
                 return .none
             case .locationReceived(.success):
-                // locationは別の方法で設定される必要があります
-                // TODO: locationの取得と設定を実装
                 return .none
             case .locationReceived(.failure(let error)):
                 if case .notFound = error {
@@ -173,6 +155,32 @@ struct PublicRoute {
 }
 
 extension PublicRoute.State {
+    
+    init(
+        _ district: District,
+        routeId: Route.ID?,
+        mapRegion: Shared<MKCoordinateRegion>
+    ) {
+        self._mapRegion = mapRegion
+        self._district = FetchOne(wrappedValue: district)
+        let routeQuery: FetchAll<RouteEntry> = .init(districtId: district.id, latest: true)
+        self._routes = routeQuery
+        let selected = routeQuery.wrappedValue.first { $0.route.id == routeId }
+        self.selected = selected
+        self.replay = .initial(selected?.id)
+        self._points = FetchAll(routeId: selected?.id)
+        self._float = FetchOne(districtId: district.id)
+        let points: [Point] = {
+            if let routeId {
+                FetchAll(routeId: routeId).wrappedValue
+            } else {
+                []
+            }
+        }()
+        if let mapRegion = makeRegion(points: points, location: self.float?.floatLocation, origin: district.base, spanDelta: spanDelta) {
+            self.$mapRegion.withLock{ $0 = mapRegion }
+        }
+    }
 
     var others: [RouteEntry] {
         routes.filter {
