@@ -1,10 +1,11 @@
-import Foundation
 //
 //  Extensions.swift
 //  MaTool
 //
 //  Created by 松下和也 on 2025/04/08.
 //
+
+import Foundation
 import MapKit
 import Shared
 import SwiftUI
