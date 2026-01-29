@@ -112,3 +112,13 @@ extension Point: Comparable {
         return lhs.index < rhs.index
     }
 }
+
+public extension Array where Element == Point {
+    func reindexed() -> [Point] {
+        enumerated().map { offset, point in
+            var copy = point
+            copy.index = offset
+            return copy
+        }
+    }
+}
