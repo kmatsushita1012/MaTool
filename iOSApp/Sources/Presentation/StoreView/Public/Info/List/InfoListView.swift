@@ -1,5 +1,5 @@
 //
-//  InfoStoreView.swift
+//  InfoListView.swift
 //  MaTool
 //
 //  Created by 松下和也 on 2025/05/08.
@@ -9,8 +9,8 @@ import SwiftUI
 import ComposableArchitecture
 import NavigationSwipeControl
 
-struct InfoStoreView: View {
-    @Perception.Bindable var store: StoreOf<InfoList>
+struct InfoListView: View {
+    @Perception.Bindable var store: StoreOf<InfoListFeature>
     
     var body: some View {
         WithPerceptionTracking{
@@ -61,7 +61,9 @@ struct InfoStoreView: View {
                     DistrictInfoStoreView(store: store)
                 }
             }
+            .alert($store.scope(state: \.alert, action: \.alert))
             .dismissOnChange(of: store.isDismissed)
+            .loadingOverlay(store.isLoading)
         }
     }
     
