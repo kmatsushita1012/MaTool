@@ -16,9 +16,6 @@ struct FestivalDashboardView: View {
     var body: some View {
         content
             .dismissible(backButton: false)
-            .sheet(item: $store.folder) { folder in
-                ShareSheet(folder.files)
-            }
             .navigationDestination(
                 item: $store.scope(state: \.destination?.edit, action: \.destination.edit)
             ) { store in
