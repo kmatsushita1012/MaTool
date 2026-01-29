@@ -16,7 +16,7 @@ struct Home {
     @Reducer
     enum Destination {
         case map(PublicMap)
-        case info(InfoList)
+        case info(InfoListFeature)
         case login(Login)
         case adminDistrict(AdminDistrictTop)
         case adminFestival(FestivalDashboardFeature)
