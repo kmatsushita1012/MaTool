@@ -91,23 +91,22 @@ struct HeadquarterDistrictListFeature {
     
     func batchExportEffect(_ state: State) -> Effect<Action> {
         .run { send in
-            let districtIds = state.districts.map(\.id)
             var urls: [URL] = []
             //非同期並列にするとBEでアクセス過多
             let _ = await task {
-                for districtId in districtIds {
-                    guard let _ =  try? await routeDataFetcher.fetchAll(districtID: districtId, query: .latest) else { continue }
-                    let routes: [Route] = FetchAll(Route.where { $0.districtId == districtId })
-                        .wrappedValue
+                for district in state.districts {
+                    let renderer = await PDFRenderer(path: "\(district.name).pdf")
+                    guard let _ =  try? await routeDataFetcher.fetchAll(districtID: district.id, query: .latest) else { continue }
+                    let routes: [Route] = FetchAll(Route.where { $0.districtId == district.id }).wrappedValue
+                    if routes.isEmpty { continue }
                     for route in routes {
-                        guard let period: Period = FetchOne(Period.find(route.periodId)).wrappedValue,
-                              (try? await routeDataFetcher.fetch(routeID: route.id)) != nil,
+                        guard (try? await routeDataFetcher.fetch(routeID: route.id)) != nil,
                               let snapshotter = await RouteSnapshotter(route),
-                              let image = try? await snapshotter.take(),
-                              let url = await snapshotter.createPDF(with: image, path: "\(period.text)")
-                        else { continue }
-                        urls.append(url)
+                              let image = try? await snapshotter.take() else { continue }
+                        await renderer.addPage(with: image)
                     }
+                    let url = await renderer.finalize()
+                    urls.append(url)
                 }
             }
             await send(.batchExportPrepared(urls))
