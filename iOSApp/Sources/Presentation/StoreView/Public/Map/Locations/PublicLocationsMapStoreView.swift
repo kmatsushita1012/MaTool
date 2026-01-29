@@ -51,6 +51,7 @@ struct PublicLocationsMapStoreView: View {
                 store.send(.reloadTapped)
             }
         }
+        .alert($store.scope(state: \.alert, action: \.alert))
         .padding(8)
         .fixedSize()
         .background(

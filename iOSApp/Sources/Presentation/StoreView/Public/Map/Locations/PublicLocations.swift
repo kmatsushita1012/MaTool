@@ -20,6 +20,7 @@ struct PublicLocations {
         
         @Shared var mapRegion: MKCoordinateRegion
         var detail: FloatEntry?
+        @Presents var alert: Alert.State?
     }
     
     @CasePathable
@@ -30,6 +31,8 @@ struct PublicLocations {
         case userFocusTapped
         case userLocationReceived(Coordinate)
         case reloadTapped
+        case errorCaught(APIError)
+        case alert(PresentationAction<Alert.Action>)
     }
     
     @Dependency(\.locationProvider) var locationProvider
@@ -48,8 +51,14 @@ struct PublicLocations {
                 state.$mapRegion.withLock { $0 = makeRegion(origin: entry.floatLocation.coordinate, spanDelta: spanDelta)}
                 return .none
             case .reloadTapped:
-                return .run{ [id = state.festival.id ] send in
-                    try? await dataFetcher.fetchAll(festivalId: id)
+                return .run{ [state] send in
+                    let result = await task{ try await dataFetcher.fetchAll(festivalId: state.festival.id) }
+                    switch result {
+                    case .success:
+                        return
+                    case .failure(let error):
+                        await send(.errorCaught(error))
+                    }
                 }
             case .userLocationReceived(let value):
                 state.$mapRegion.withLock { $0 = makeRegion(origin: value, spanDelta: spanDelta)}
@@ -60,8 +69,14 @@ struct PublicLocations {
                     guard let coordinate = result.value?.coordinate  else { return }
                     await send(.userLocationReceived(Coordinate.fromCL(coordinate)))
                 }
+            case .errorCaught(let error):
+                state.alert = Alert.error(error.localizedDescription)
+                return .none
+            case .alert:
+                return .none
             }
         }
+        .ifLet(\.alert, action: \.alert)
     }
 }
 
@@ -70,5 +85,8 @@ extension PublicLocations.State {
         self.festival = festival
         self._floats = FetchAll(festivalId: festival.id)
         self._mapRegion = mapRegion
+        if !self.floats.isEmpty {
+            self.$mapRegion.withLock{ $0 = makeRegion(locations: floats.map(keyPath: \.floatLocation), origin: festival.base) }
+        }
     }
 }
