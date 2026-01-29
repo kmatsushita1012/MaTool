@@ -38,7 +38,7 @@ struct HeadquarterDistrictListView: View {
         .navigationTitle("参加町")
         .navigationBarTitleDisplayMode(.inline)
         .sheet(item: $store.folder){ folder in
-            ShareSheet(folder.files)
+            ShareSheet(items: folder.files)
         }
         .navigationDestination(
             item: $store.scope(state: \.destination?.detail, action: \.destination.detail)

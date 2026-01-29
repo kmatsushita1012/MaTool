@@ -28,7 +28,7 @@ struct HeadquarterDistrictDetailFeature {
         
         @Presents var destination: Destination.State?
         @Presents var alert: Alert.State?
-        var folder: ExportedFolder? = nil
+        var url: URL? = nil
     }
     
     @CasePathable
@@ -39,7 +39,7 @@ struct HeadquarterDistrictDetailFeature {
         case batchExportTapped
         case updateCompleted
         case routePrepared(RouteEntry)
-        case batchExportPrepared([URL])
+        case batchExportPrepared(URL)
         case errorCaught(APIError)
         case destination(PresentationAction<Destination.Action>)
         case alert(PresentationAction<Alert.Action>)
@@ -87,7 +87,7 @@ struct HeadquarterDistrictDetailFeature {
                 }
             case .batchExportTapped:
                 state.isLoading = true
-                return batchExportEffect(state.routes)
+                return batchExportEffect(state.routes, path: "\(state.district.name).pdf")
             case .updateCompleted:
                 state.isLoading = false
                 return .none
@@ -95,8 +95,9 @@ struct HeadquarterDistrictDetailFeature {
                 state.isLoading = false
                 state.destination = .route(.init(mode: .preview, route: entry.route, district: state.district, period: entry.period))
                 return .none
-            case .batchExportPrepared(let urls):
-                state.folder = .init(urls)
+            case .batchExportPrepared(let url):
+                state.isLoading = false
+                state.url = url
                 return .none
             case .errorCaught(let error):
                 state.isLoading = false
@@ -112,24 +113,24 @@ struct HeadquarterDistrictDetailFeature {
         .ifLet(\.$alert, action: \.alert)
     }
     
-    func batchExportEffect(_ items: [RouteSlot]) -> Effect<Action> {
+    func batchExportEffect(_ items: [RouteSlot], path: String) -> Effect<Action> {
         .run { send in
             //非同期並列にするとBEでアクセス過多
             let result = await task({
-                var urls: [URL] = []
+                let renderer = await PDFRenderer(path: path)
                 for item in items {
                     guard let route = item.route,
                           let _ = try? await routeDataFetcher.fetch(routeID: route.id),
                           let snapshotter = await RouteSnapshotter(route),
-                          let image = try? await snapshotter.take(),
-                          let url = await snapshotter.createPDF(with: image, path: "") else { continue } //FIXME
-                    urls.append(url)
+                          let image = try? await snapshotter.take() else { continue }
+                    await renderer.addPage(with: image)
                 }
-                return urls
+                let url = await renderer.finalize()
+                return url
             }, defaultError: APIError.unknown(message: ""))
             switch result {
-            case .success(let urls):
-                await send(.batchExportPrepared(urls))
+            case .success(let url):
+                await send(.batchExportPrepared(url))
             case .failure(let error):
                 await send(.errorCaught(error))
             }
