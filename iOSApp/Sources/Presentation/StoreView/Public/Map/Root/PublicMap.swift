@@ -11,7 +11,7 @@ import Shared
 import SQLiteData
 
 @Reducer
-struct PublicMap{
+struct PublicMap {
     
     enum Content: Equatable{
         case locations(Festival)
@@ -78,7 +78,6 @@ struct PublicMap{
                 }
             case .contentSelected(let value):
                 state.selectedContent = value
-                state.isLoading = true
                 switch value {
                 case .locations(let festival):
                     state.destination = .locations(
@@ -89,6 +88,7 @@ struct PublicMap{
                     )
                     return .none
                 case .route(let district):
+                    state.isLoading = true
                     return routeEffect(district)
                 }
             case .routePrepared(let district, let routeId):
@@ -180,14 +180,12 @@ extension PublicMap.State {
         self.contents = contents
         self.selectedContent = selected
         
-//        let mapRegion = Shared(value: makeRegion(route: current, location: location, origin: selected.origin, spanDelta: spanDelta))
-        let mapRegion = Shared(value: makeRegion(origin: .init(latitude: 0, longitude: 0), spanDelta: spanDelta))
-        self._mapRegion = mapRegion
+        self._mapRegion = Shared(value: makeRegion(origin: festival.base, spanDelta: spanDelta))
         self.destination = .route(
             PublicRoute.State(
                 district,
                 routeId: routeId,
-                mapRegion: mapRegion
+                mapRegion: $mapRegion
             )
         )
     }
@@ -202,13 +200,11 @@ extension PublicMap.State {
         self.contents = contents
         self.selectedContent = selected
         
-//        let mapRegion = Shared(value: makeRegion(locations: locations, origin: festival.base)) FIXME
-        let mapRegion = Shared(value: makeRegion(origin: .init(latitude: 0, longitude: 0), spanDelta: spanDelta))
-        self._mapRegion = mapRegion
+        self._mapRegion = Shared(value: makeRegion(origin: festival.base, spanDelta: spanDelta))
         self.destination = .locations(
             PublicLocations.State(
                 festival,
-                mapRegion: mapRegion
+                mapRegion: $mapRegion
             )
         )
     }

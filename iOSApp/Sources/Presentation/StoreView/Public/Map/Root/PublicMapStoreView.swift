@@ -30,15 +30,13 @@ struct PublicMapStoreView: View {
             .navigationTitle("地図")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .navigationBarLeading) {
-                    Button(action: {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button(systemImage: "house"){
                         store.send(.homeTapped)
-                    }) {
-                        Image(systemName: "house")
-                            .foregroundColor(.black)
                     }
-                    .padding(.horizontal, 8)
+                    .foregroundColor(.black)
                 }
+                .sharedBackgroundVisibility(.hidden)
             }
             .alert($store.scope(state: \.alert, action: \.alert))
             .dismissible(backButton: false)
