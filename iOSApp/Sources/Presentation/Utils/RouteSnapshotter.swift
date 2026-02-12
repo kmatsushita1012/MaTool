@@ -43,14 +43,27 @@ struct RouteSnapshotter: Equatable {
         points.map { $0.coordinate }
     }
     
-    
-    func take() async throws -> UIImage? {
+    func take(path: String? = nil) async throws -> (UIImage, URL) {
+        let path = path ?? "\(district.name)_\(period.path).pdf"
         let region = makeRegion(coordinates, ratio: 1.4)
-        let image = try await take(of: region, size: CGSize(width: 594, height: 420))
+        let (image, url) = try await take(of: region, size: Self.a4size, path: path)
+        return (image, url)
+    }
+    
+    func take() async throws -> UIImage {
+        let region = makeRegion(coordinates, ratio: 1.4)
+        let image = try await take(of: region, size: Self.a4size)
         return image
     }
     
-    func take(of region: MKCoordinateRegion, size: CGSize) async throws -> UIImage {
+    func take(of region: MKCoordinateRegion, size: CGSize, path: String? = nil) async throws -> (UIImage, URL) {
+        let path =  path ?? "\(district.name)_\(period.path)_Part.pdf"
+        let image = try await take(of: region, size: size)
+        let url = try createPDF(with: image, path: path)
+        return (image, url)
+    }
+    
+    private func take(of region: MKCoordinateRegion, size: CGSize) async throws -> UIImage {
         let options = MKMapSnapshotter.Options()
         options.region = region
         options.pointOfInterestFilter = .excludingAll
@@ -156,7 +169,7 @@ struct RouteSnapshotter: Equatable {
         }
     }
     
-    func makeTitle(_ point: Point) -> String? {
+    private func makeTitle(_ point: Point) -> String? {
         if let checkpointId = point.checkpointId,
            let checkpoint = FetchOne(Checkpoint.find(checkpointId)).wrappedValue {
             checkpoint.name
@@ -282,21 +295,11 @@ struct RouteSnapshotter: Equatable {
         (text as NSString).draw(in: textDrawRect, withAttributes: attributes)
     }
     
-    func createPDF(with image: UIImage, path: String) -> URL? {
-       let pdfData = NSMutableData()
-       let pdfRect = CGRect(origin: .zero, size: image.size)
-       UIGraphicsBeginPDFContextToData(pdfData, pdfRect, nil)
-       UIGraphicsBeginPDFPage()
-       image.draw(in: pdfRect)
-       UIGraphicsEndPDFContext()
-
-       let tempURL = FileManager.default.temporaryDirectory.appendingPathComponent(path)
-       do {
-           try pdfData.write(to: tempURL, options: .atomic)
-           return tempURL
-       } catch {
-           return nil
-       }
+    func createPDF(with image: UIImage, path: String) throws -> URL {
+        let renderer = PDFRenderer(path: path)
+        renderer.addPage(with: image)
+        let url = renderer.finalize()
+        return url
     }
     
     //FIXME: v3.0.0
@@ -335,4 +338,6 @@ struct RouteSnapshotter: Equatable {
         ]
         drawPolyline(on: snapshot, coordinates: shinmeiCoordinates, color: .orange, lineWidth: 8)
     }
+    
+    static let a4size = CGSize(width: 594, height: 420)
 }

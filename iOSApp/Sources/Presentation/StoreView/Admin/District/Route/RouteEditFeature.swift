@@ -170,15 +170,10 @@ struct RouteEditFeature{
                 state.alert = .delete(Alert.delete())
                 return .none
             case .wholeTapped:
-                let path = "\(state.district.name)_\(state.period.path).pdf"
                 return .run { [state] send in
                     if let snapshotter = await RouteSnapshotter(route: state.route, points: state.points),
-                        let image = try? await snapshotter.take(),
-                       let pdf = await snapshotter.createPDF(
-                        with: image,
-                        path: path
-                       ) {
-                        await send(.wholePrepared(ExportedItem(image: image, pdf: pdf)))
+                       let (image, url) = try? await snapshotter.take() {
+                        await send(.wholePrepared(ExportedItem(image: image, url: url)))
                     }else {
                         await send(.wholePrepared(nil))
                     }
@@ -188,12 +183,10 @@ struct RouteEditFeature{
                     state.alert = .notice(Alert.error("描画範囲の取得に失敗しました。"))
                       return .none
                 }
-                let path =  "\(state.district.name)-\(state.period.path).pdf"
                 return .run { [state] send in
                     if let snapshotter = await RouteSnapshotter(route: state.route, points: state.points),
-                       let image = try? await snapshotter.take(of: state.region, size: size),
-                       let pdf = await snapshotter.createPDF(with: image, path: path) {
-                        await send(.partialPrepared(ExportedItem(image: image, pdf: pdf)))
+                       let (image, url) = try? await snapshotter.take(of: state.region, size: size) {
+                        await send(.partialPrepared(ExportedItem(image: image, url: url)))
                     } else {
                         await send(.partialPrepared(nil))
                     }
@@ -295,12 +288,6 @@ struct RouteEditFeature{
 
 extension RouteEditFeature.AlertDestination.State: Equatable {}
 extension RouteEditFeature.AlertDestination.Action: Equatable {}
-
-struct ExportedItem: Identifiable, Equatable {
-    let id = UUID()
-    let image: UIImage
-    let pdf: URL
-}
 
 extension RouteEditFeature.State {
     var canUndo: Bool { manager.canUndo }

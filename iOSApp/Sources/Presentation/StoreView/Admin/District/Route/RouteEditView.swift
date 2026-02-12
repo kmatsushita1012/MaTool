@@ -291,7 +291,7 @@ struct PreviewView: View {
             }
         }
         ToolbarItem(placement: .primaryAction) {
-            ShareLink(item: item.pdf) {
+            ShareLink(item: item.url) {
                 Image(systemName: "square.and.arrow.up")
                     .imageScale(.large)
             }
@@ -306,7 +306,7 @@ struct PreviewView: View {
             }
         }
         ToolbarItem(placement: .primaryAction) {
-            ShareLink(item: item.pdf) {
+            ShareLink(item: item.url) {
                 Image(systemName: "square.and.arrow.up")
                     .imageScale(.large)
                     .tint(.accentColor)

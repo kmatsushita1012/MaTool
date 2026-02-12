@@ -29,7 +29,6 @@ struct FestivalDashboardFeature {
         var isApiLoading: Bool = false
         var isAuthLoading: Bool = false
         var isExportLoading: Bool = false
-        var folder: ExportedFolder? = nil
 
         @Presents var destination: Destination.State? = nil
         @Presents var alert: Alert.State? = nil
