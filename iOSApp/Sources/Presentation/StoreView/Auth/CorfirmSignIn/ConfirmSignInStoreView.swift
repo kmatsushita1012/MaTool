@@ -38,14 +38,8 @@ struct ConfirmSignInStoreView: View {
         }
         .padding()
         .toolbar {
-            ToolbarItem(placement: .topBarLeading) {
-                Button(action: {
-                    store.send(.dismissTapped)
-                }) {
-                    Image(systemName: "house")
-                        .foregroundColor(.black)
-                }
-                .padding(.horizontal, 8)
+            DismissButton {
+                store.send(.dismissTapped)
             }
         }
         .dismissible(backButton: false)

@@ -66,10 +66,8 @@ struct PointEditView: View {
         .navigationBarTitleDisplayMode(.inline)
         .alert($store.scope(state: \.alert, action: \.alert))
         .toolbar {
-            if #available(iOS 26.0, *), isLiquidGlassEnabled{
-                toolbarAfterLiquidGlass
-            } else {
-                toolbarBeforeLiquidGlass
+            ToolbarDoneButton {
+                store.send(.doneTapped)
             }
         }
     }
@@ -142,28 +140,6 @@ struct PointEditView: View {
         Toggle("時刻を設定", isOn: $store.point.time.toggle)
         if store.point.time != nil {
             timePicker
-        }
-    }
-    
-    @ToolbarContentBuilder
-    var toolbarBeforeLiquidGlass: some ToolbarContent {
-        ToolbarItem(placement: .confirmationAction) {
-            Button{
-                store.send(.doneTapped)
-            } label: {
-                Text("完了")
-                    .bold()
-            }
-            .padding(.horizontal, 8)
-        }
-    }
-    
-    @ToolbarContentBuilder
-    var toolbarAfterLiquidGlass: some ToolbarContent {
-        ToolbarItem(placement: .primaryAction) {
-            Button(systemImage: "xmark"){
-                store.send(.doneTapped)
-            }
         }
     }
 }
