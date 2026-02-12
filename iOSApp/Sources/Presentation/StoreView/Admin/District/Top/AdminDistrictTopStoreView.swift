@@ -37,7 +37,7 @@ struct AdminDistrictView: View{
             LocationAdminView(store: store)
         }
         .navigationDestination(item: $store.scope(state: \.destination?.route, action: \.destination.route)) { store in
-            AdminRouteEditStoreView(store: store)
+            RouteEditView(store: store)
         }
         .navigationDestination(
             item: $store.scope(state: \.destination?.changePassword, action: \.destination.changePassword)
@@ -73,9 +73,9 @@ struct AdminDistrictView: View{
             }
             Section(header: Text("行動")){
                 ForEach(store.routes) { pair in
-                    AdminRouteItem(
-                        text: pair.period.shortText,
-                        onEdit: { store.send(.onRouteEdit(pair)) }
+                    RouteSlotView(
+                        pair,
+                        onTap: { store.send(.onRouteEdit(pair)) }
                     )
                 }
             }
