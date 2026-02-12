@@ -14,28 +14,25 @@ import SQLiteData
 struct PublicLocations {
     @ObservableState
     struct State:Equatable {
-        @Selection struct Float: Equatable {
-            let district: District
-            let location: FloatLocation
-        }
-        
+
         let festival: Festival
-        @FetchAll private var floats: [Float]
-        
-        var floatAnnotations: [FloatCurrentAnnotation] { floats.map{ FloatCurrentAnnotation($0.district.name, location: $0.location) } }
+        @FetchAll var floats: [FloatEntry]
         
         @Shared var mapRegion: MKCoordinateRegion
-        var detail: FloatLocation?
+        var detail: FloatEntry?
+        @Presents var alert: Alert.State?
     }
     
     @CasePathable
     enum Action: Equatable, BindableAction {
         case binding(BindingAction<State>)
-        case locationTapped(FloatCurrentAnnotation)
-        case floatFocusSelected(FloatCurrentAnnotation)
+        case floatTapped(FloatEntry)
+        case floatFocusSelected(FloatEntry)
         case userFocusTapped
         case userLocationReceived(Coordinate)
         case reloadTapped
+        case errorCaught(APIError)
+        case alert(PresentationAction<Alert.Action>)
     }
     
     @Dependency(\.locationProvider) var locationProvider
@@ -47,15 +44,21 @@ struct PublicLocations {
             switch action {
             case .binding(_):
                 return .none
-            case .locationTapped(let annotation):
-                state.detail = annotation.location
+            case .floatTapped(let entry):
+                state.detail = entry
                 return .none
-            case .floatFocusSelected(let annotation):
-                state.$mapRegion.withLock { $0 = makeRegion(origin: annotation.location.coordinate, spanDelta: spanDelta)}
+            case .floatFocusSelected(let entry):
+                state.$mapRegion.withLock { $0 = makeRegion(origin: entry.floatLocation.coordinate, spanDelta: spanDelta)}
                 return .none
             case .reloadTapped:
-                return .run{ [id = state.festival.id ] send in
-                    try? await dataFetcher.fetchAll(festivalId: id)
+                return .run{ [state] send in
+                    let result = await task{ try await dataFetcher.fetchAll(festivalId: state.festival.id) }
+                    switch result {
+                    case .success:
+                        return
+                    case .failure(let error):
+                        await send(.errorCaught(error))
+                    }
                 }
             case .userLocationReceived(let value):
                 state.$mapRegion.withLock { $0 = makeRegion(origin: value, spanDelta: spanDelta)}
@@ -66,22 +69,24 @@ struct PublicLocations {
                     guard let coordinate = result.value?.coordinate  else { return }
                     await send(.userLocationReceived(Coordinate.fromCL(coordinate)))
                 }
+            case .errorCaught(let error):
+                state.alert = Alert.error(error.localizedDescription)
+                return .none
+            case .alert:
+                return .none
             }
         }
+        .ifLet(\.alert, action: \.alert)
     }
 }
 
 extension PublicLocations.State {
     init(_ festival: Festival, mapRegion: Shared<MKCoordinateRegion>){
         self.festival = festival
-        self._floats = FetchAll(
-            FloatLocation
-                .join(District.where{ $0.festivalId == festival.id }, on: { $0.districtId.eq($1.id) })
-                .select{ Float.Columns(district: $1, location: $0) })
+        self._floats = FetchAll(festivalId: festival.id)
         self._mapRegion = mapRegion
+        if !self.floats.isEmpty {
+            self.$mapRegion.withLock{ $0 = makeRegion(locations: floats.map(keyPath: \.floatLocation), origin: festival.base) }
+        }
     }
-}
-
-extension PublicLocations.State.Float: Identifiable, Hashable {
-    var id: String { self.location.id }
 }

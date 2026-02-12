@@ -11,7 +11,7 @@ import Shared
 import SQLiteData
 
 @Reducer
-struct PublicMap{
+struct PublicMap {
     
     enum Content: Equatable{
         case locations(Festival)
@@ -41,12 +41,14 @@ struct PublicMap{
         case binding(BindingAction<State>)
         case homeTapped
         case contentSelected(Content)
-        case routePrepared(District, Route.ID)
+        case routePrepared(District, Route.ID?)
+        case errorCaught(APIError)
         case destination(PresentationAction<Destination.Action>)
         case alert(PresentationAction<Alert.Action>)
     }
     
     @Dependency(\.locationProvider) var locationProvider
+    @Dependency(SceneDataFetcherKey.self) var sceneDataFetcher
     @Dependency(\.dismiss) var dismiss
     
     var body: some ReducerOf<PublicMap> {
@@ -54,9 +56,9 @@ struct PublicMap{
             switch action {
             case .onAppear:
                 if state.destination?.route?.routes.isEmpty ?? false,
-                    state.destination?.route?.location == nil {
+                    state.destination?.route?.float == nil {
                     state.alert = Alert.notice("配信停止中です。")
-                } else if state.destination?.locations?.floatAnnotations.isEmpty ?? false {
+                } else if state.destination?.locations?.floats.isEmpty ?? false {
                     state.alert = Alert.notice("配信停止中です。")
                 }
                 return .run{ send in
@@ -76,7 +78,6 @@ struct PublicMap{
                 }
             case .contentSelected(let value):
                 state.selectedContent = value
-                state.isLoading = true
                 switch value {
                 case .locations(let festival):
                     state.destination = .locations(
@@ -87,6 +88,7 @@ struct PublicMap{
                     )
                     return .none
                 case .route(let district):
+                    state.isLoading = true
                     return routeEffect(district)
                 }
             case .routePrepared(let district, let routeId):
@@ -98,6 +100,9 @@ struct PublicMap{
                         mapRegion: state.$mapRegion
                     )
                 )
+                return .none
+            case .errorCaught(let error):
+                state.alert = Alert.error(error.localizedDescription)
                 return .none
             case .destination:
                 return .none
@@ -111,8 +116,13 @@ struct PublicMap{
     
     func routeEffect(_ district: District) -> Effect<Action> {
         .run { send in
-//            let result = try await apiRepository.getCurrentRoute(id)
-            await send(.routePrepared(district, "routeid"))
+            let result = await task({ try await sceneDataFetcher.launchDistrict(districtId: district.id) }, defaultError: APIError.unknown(message: "予期しないエラーが発生しました。"))
+            switch result {
+            case .success(let routeId):
+                await send(.routePrepared(district, routeId))
+            case .failure(let error):
+                await send(.errorCaught(error))
+            }
         }
     }
 }
@@ -163,21 +173,19 @@ extension PublicMap.State {
         let districts: [District] = FetchAll(District.where{ $0.festivalId == festival.id }).wrappedValue
         let locations: PublicMap.Content = .locations(festival)
         let contents = [locations]
-            + districts.prioritizing(by: \.id, match: district.id)
+            + districts.prioritizing(districtId: district.id)
             .map{ PublicMap.Content.route($0) }
             
         let selected = contents[1]
         self.contents = contents
         self.selectedContent = selected
         
-//        let mapRegion = Shared(value: makeRegion(route: current, location: location, origin: selected.origin, spanDelta: spanDelta))
-        let mapRegion = Shared(value: makeRegion(origin: .init(latitude: 0, longitude: 0), spanDelta: spanDelta))
-        self._mapRegion = mapRegion
+        self._mapRegion = Shared(value: makeRegion(origin: festival.base, spanDelta: spanDelta))
         self.destination = .route(
             PublicRoute.State(
                 district,
                 routeId: routeId,
-                mapRegion: mapRegion
+                mapRegion: $mapRegion
             )
         )
     }
@@ -187,18 +195,16 @@ extension PublicMap.State {
     ){
         let districts = FetchAll(District.where{ $0.festivalId == festival.id }).wrappedValue
         let selected: PublicMap.Content = .locations(festival)
-        let contents = [selected] + districts.map{ PublicMap.Content.route($0) }
+        let contents = [selected] + districts.sorted().map{ PublicMap.Content.route($0) }
         
         self.contents = contents
         self.selectedContent = selected
         
-//        let mapRegion = Shared(value: makeRegion(locations: locations, origin: festival.base)) FIXME
-        let mapRegion = Shared(value: makeRegion(origin: .init(latitude: 0, longitude: 0), spanDelta: spanDelta))
-        self._mapRegion = mapRegion
+        self._mapRegion = Shared(value: makeRegion(origin: festival.base, spanDelta: spanDelta))
         self.destination = .locations(
             PublicLocations.State(
                 festival,
-                mapRegion: mapRegion
+                mapRegion: $mapRegion
             )
         )
     }

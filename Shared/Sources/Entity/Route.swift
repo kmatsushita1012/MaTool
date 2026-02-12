@@ -6,6 +6,7 @@
 //
 
 import SQLiteData
+import Foundation
 
 // MARK: - Route
 @Table public struct Route: Entity, Identifiable {
@@ -16,7 +17,7 @@ import SQLiteData
     @NullEncodable public var description: String?
     
     public init(
-        id: String,
+        id: Self.ID = UUID().uuidString,
         districtId: District.ID,
         periodId: Period.ID,
         visibility: Visibility = .all,
@@ -44,8 +45,19 @@ import SQLiteData
     public var performanceId: Performance.ID?
     public var anchor: Anchor?
     public var index: Int
+    public var isBoundary: Bool
     
-    public init(id: String, routeId: Route.ID, coordinate: Coordinate, time: SimpleTime? = nil, checkpointId: Checkpoint.ID? = nil, performanceId: Performance.ID? = nil, anchor: Anchor? = nil, index: Int = 0) {
+    public init(
+        id: Self.ID = UUID().uuidString,
+        routeId: Route.ID,
+        coordinate: Coordinate,
+        time: SimpleTime? = nil,
+        checkpointId: Checkpoint.ID? = nil,
+        performanceId: Performance.ID? = nil,
+        anchor: Anchor? = nil,
+        index: Int = 0,
+        isBoundary: Bool = false
+    ) {
         self.id = id
         self.routeId = routeId
         self.coordinate = coordinate
@@ -54,6 +66,7 @@ import SQLiteData
         self.performanceId = performanceId
         self.anchor = anchor
         self.index = index
+        self.isBoundary = isBoundary
     }
 }
 
