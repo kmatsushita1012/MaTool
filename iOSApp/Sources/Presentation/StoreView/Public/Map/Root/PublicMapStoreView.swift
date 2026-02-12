@@ -32,7 +32,7 @@ struct PublicMapStoreView: View {
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button(systemImage: "house"){
-                        store.send(.homeTapped)
+                        store.send(.dismissTapped)
                     }
                     .foregroundColor(.black)
                 }
