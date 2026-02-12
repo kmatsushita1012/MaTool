@@ -14,6 +14,7 @@ import SwiftUI
 public struct RootSceneView: View {
     @Shared var launchState: LaunchState
     @Dependency(SceneUsecaseKey.self) var sceneUsecase
+    @Dependency(\.values.isLiquidGlassEnabled) var isLiquidGlassEnabled
 
     public init() {
         if #available(iOS 17.0, *){
@@ -55,6 +56,7 @@ public struct RootSceneView: View {
                 errorView(message)
             }
         }
+        .environment(\.isLiquidGlassDisabled, !isLiquidGlassEnabled)
     }
     
     @ViewBuilder
