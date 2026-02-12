@@ -17,7 +17,7 @@ struct PublicMapStoreView: View {
             VStack(spacing: 0){
                 picker()
                 if let routeStore = store.scope(state: \.destination?.route, action: \.destination.route) {
-                    PublicRouteMapStoreView(store: routeStore)
+                    PublicRouteMapView(store: routeStore)
                         .id(routeStore.district.id)
                 } else if let store = store.scope(state: \.destination?.locations, action: \.destination.locations) {
                     PublicLocationsMapStoreView(store: store)
@@ -30,15 +30,13 @@ struct PublicMapStoreView: View {
             .navigationTitle("地図")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .navigationBarLeading) {
-                    Button(action: {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button(systemImage: "house"){
                         store.send(.homeTapped)
-                    }) {
-                        Image(systemName: "house")
-                            .foregroundColor(.black)
                     }
-                    .padding(.horizontal, 8)
+                    .foregroundColor(.black)
                 }
+                .hideSharedBackgroundVisibility()
             }
             .alert($store.scope(state: \.alert, action: \.alert))
             .dismissible(backButton: false)
