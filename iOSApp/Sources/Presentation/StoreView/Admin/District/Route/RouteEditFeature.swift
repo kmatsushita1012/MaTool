@@ -132,6 +132,7 @@ struct RouteEditFeature{
                     try state.points.validate()
                 } catch {
                     state.alert = .notice(Alert.error(error.localizedDescription))
+                    return .none
                 }
                 if !state.isSaveable {
                     state.alert = .notice(Alert.error("権限がありません"))
