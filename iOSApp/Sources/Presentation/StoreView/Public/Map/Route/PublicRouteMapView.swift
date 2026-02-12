@@ -1,5 +1,5 @@
 //
-//  PublicRouteMapStoreView.swift
+//  PublicRouteMapView.swift
 //  MaTool
 //
 //  Created by 松下和也 on 2025/05/03.
@@ -8,7 +8,7 @@
 import SwiftUI
 import ComposableArchitecture
 
-struct PublicRouteMapStoreView: View {
+struct PublicRouteMapView: View {
     @Perception.Bindable var store: StoreOf<PublicRoute>
     @StateObject var replayController: ReplayController
     
@@ -26,9 +26,11 @@ struct PublicRouteMapStoreView: View {
     
     var floatAnnotation: FloatAnnotation? {
         if store.replay.isRunning {
-            return replayController.annotation
-        } else  {
-            return store.floatAnnotation
+            replayController.annotation
+        } else if let float = store.float  {
+            FloatCurrentAnnotation(float)
+        } else {
+            nil
         }
     }
     
@@ -36,13 +38,13 @@ struct PublicRouteMapStoreView: View {
     var body: some View {
         WithPerceptionTracking{
             ZStack{
-                PublicRouteMap(
+                MapView(
+                    style: .public,
                     points: store.points,
-                    polylines: store.points.pair,
-                    float: floatAnnotation,
+                    floatAnnotation: floatAnnotation,
                     region: $store.mapRegion,
                     pointTapped: { store.send(.pointTapped($0))},
-                    locationTapped: { store.send(.locationTapped) }
+                    floatTapped: { store.send(.locationTapped($0)) }
                 )
                 .equatable()
                 .ignoresSafeArea(edges: .bottom)
@@ -96,18 +98,18 @@ struct PublicRouteMapStoreView: View {
     var menu: some View {
         VStack(spacing: 8)  {
             if let selected = store.selected {
-                ToggleSelectedItem(title: "", isExpanded: $store.isMenuExpanded) // FIXME
+                ToggleSelectedItem(title: selected.text, isExpanded: $store.isMenuExpanded) // FIXME
                     .padding(8)
                     .background(.white)
                     .cornerRadius(8)
                     .shadow(radius: 3)
             }
             if store.isMenuExpanded  {
-                ForEach(store.others) { route in
+                ForEach(store.others) { entry in
                     WithPerceptionTracking{
                         ToggleOptionItem(
-                            title: "", // FIXME
-                            onTap: { store.send(.selected(route)) }
+                            title: entry.text,
+                            onTap: { store.send(.selected(entry)) }
                         )
                         .padding(8)
                         .background(Color(UIColor.systemGray5))

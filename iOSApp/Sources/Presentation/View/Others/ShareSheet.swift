@@ -10,8 +10,12 @@ import SwiftUI
 struct ShareSheet<T>: UIViewControllerRepresentable {
     let items: [T]
     
-    init(_ items: [T]){
+    init(items: [T]){
         self.items = items
+    }
+    
+    init(item: T){
+        self.items = [item]
     }
     
     func makeUIViewController(context: Context) -> UIActivityViewController {
@@ -28,4 +32,10 @@ struct ExportedFolder: Identifiable, Equatable {
     init(_ files: [URL]){
         self.files = files
     }
+}
+
+struct ExportedItem: Identifiable, Equatable {
+    let id = UUID()
+    let image: UIImage
+    let url: URL
 }

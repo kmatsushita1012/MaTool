@@ -57,7 +57,7 @@ struct DistrictInfo {
 
 extension DistrictInfo.State {
     init(_ district: District){
-        self._district = FetchOne(wrappedValue: district)
+        self._district = FetchOne(wrappedValue: district, District.find(district.id))
         self._performances = FetchAll(Performance.where{ $0.districtId == district.id })
         if let base = district.base, district.area.isEmpty{
             region = makeRegion(origin: base, spanDelta: spanDelta)

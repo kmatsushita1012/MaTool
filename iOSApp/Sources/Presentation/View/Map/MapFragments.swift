@@ -11,27 +11,27 @@ import SwiftUI
 import Shared
 
 class PointAnnotation: MKPointAnnotation {
-    enum TitleType {
+    enum Stryle {
         case simple
         case time(Int)
     }
-    let point: Point
+    let entry: PointEntry
     
-    init(_ point: Point,type: TitleType) {
-        self.point = point
+    init(_ entry: PointEntry, style: Stryle) {
+        self.entry = entry
         super.init()
-        self.coordinate = point.coordinate.toCL()
-        switch type {
+        self.coordinate = entry.coordinate.toCL()
+        switch style {
         case .simple:
-            self.title = "" //point.title
+            self.title = entry.title
         case .time(let index):
-//            let hasSuffix = (point.title?.isEmpty == false) || (point.time != nil)
-//            let titleText = [point.title, point.time?.text]
-//                .compactMap { $0 }
-//                .joined(separator: " ")
-//
-//            self.title = hasSuffix ? "\(index+1): \(titleText)" : "\(index+1)"
-            self.title = ""
+            let title = entry.title
+            let hasSuffix = (title?.isEmpty == false) || (entry.time != nil)
+            let titleText = [title, entry.time?.text]
+                .compactMap { $0 }
+                .joined(separator: " ")
+
+            self.title = hasSuffix ? "\(index+1): \(titleText)" : "\(index+1)"
         }
         
     }
@@ -40,7 +40,7 @@ class PointAnnotation: MKPointAnnotation {
 extension PointAnnotation{
     override func isEqual(_ object: Any?) -> Bool {
         guard let other = object as? PointAnnotation else { return false }
-        return self.point == other.point
+        return self.entry == other.entry
     }
 }
 
@@ -75,30 +75,27 @@ extension PointAnnotationView {
 }
 
 class FloatAnnotation: MKPointAnnotation {
-}
-
-final class FloatCurrentAnnotation: FloatAnnotation {
-    let location: FloatLocation
-    
-    init(_ title: String, location: FloatLocation) {
-        self.location = location
-        super.init()
-        self.title = title
-        self.coordinate = location.coordinate.toCL()
-    }
+    override init() {}
 }
 
 final class FloatReplayAnnotation: FloatAnnotation {
-    init(name: String, coordinate: Coordinate) {
+    init(title: String, coordinate: Coordinate) {
         super.init()
-        self.title = name
-        self.coordinate = coordinate.toCL()
-    }
-    
-    func update(coordinate: Coordinate) {
+        self.title = title
         self.coordinate = coordinate.toCL()
     }
 }
+
+final class FloatCurrentAnnotation: FloatAnnotation {
+    let entry: FloatEntry
+    init(_ entry: FloatEntry) {
+        self.entry = entry
+        super.init()
+        self.title = entry.district.name
+        self.coordinate = entry.floatLocation.coordinate.toCL()
+    }
+}
+
 
 final class FloatAnnotationView: MKAnnotationView {
     static let identifier = "FloatAnnotationView"
@@ -220,20 +217,23 @@ extension FloatAnnotationView {
 }
 
 final class PathPolyline: MKPolyline {
-    convenience init(from start: Point, to end: Point) {
+    var color: UIColor = .systemBlue
+
+    convenience init(from start: Point, to end: Point, color: UIColor = .systemBlue) {
         let coordinates = [start.coordinate.toCL(), end.coordinate.toCL()]
         self.init(coordinates: coordinates, count: coordinates.count)
+        self.color = color
     }
     
-    convenience init(_ coordinates: [Coordinate]) {
+    convenience init(_ coordinates: [Coordinate], color: UIColor = .systemBlue) {
         self.init(coordinates: coordinates.map{ $0.toCL() }, count: coordinates.count)
+        self.color = color
     }
     
     func renderer() -> MKOverlayRenderer {
         let renderer = MKPolylineRenderer(overlay: self)
-        renderer.strokeColor = .systemBlue
+        renderer.strokeColor = color
         renderer.lineWidth = 4
-        renderer.alpha = 0.8
         return renderer
     }
 }
@@ -371,3 +371,4 @@ class MapCoordinator<Parent: MapViewRepresentable>: NSObject, MKMapViewDelegate 
         parent.region = mapView.region
     }
 }
+

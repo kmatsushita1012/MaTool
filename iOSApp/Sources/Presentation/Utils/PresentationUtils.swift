@@ -1,10 +1,11 @@
-import Foundation
 //
 //  Extensions.swift
 //  MaTool
 //
 //  Created by 松下和也 on 2025/04/08.
 //
+
+import Foundation
 import MapKit
 import Shared
 import SwiftUI
@@ -36,6 +37,18 @@ func makeRegion(origin: Coordinate, spanDelta: CLLocationDegrees) -> MKCoordinat
     )
 }
 
+func makeRegion(_ points: [Point], ratio: Double = 1.1) -> MKCoordinateRegion {
+    makeRegion(points.map(\.coordinate))
+}
+
+func makeRegion(points: [Point], origin: Coordinate, spanDelta: CLLocationDegrees) -> MKCoordinateRegion {
+    if !points.isEmpty {
+        makeRegion(points)
+    } else {
+        makeRegion(origin: origin, spanDelta: spanDelta)
+    }
+}
+
 func makeRegion(
     points: [Point], location: FloatLocation?, origin: Coordinate, spanDelta: CLLocationDegrees
 ) -> MKCoordinateRegion {
@@ -45,6 +58,20 @@ func makeRegion(
         return makeRegion(points.map { $0.coordinate })
     } else {
         return makeRegion(origin: origin, spanDelta: spanDelta)
+    }
+}
+
+func makeRegion(
+    points: [Point], location: FloatLocation?, origin: Coordinate?, spanDelta: CLLocationDegrees
+) -> MKCoordinateRegion? {
+    if let location {
+        return makeRegion(origin: location.coordinate, spanDelta: spanDelta)
+    } else if !points.isEmpty {
+        return makeRegion(points.map { $0.coordinate })
+    } else if let origin {
+        return makeRegion(origin: origin, spanDelta: spanDelta)
+    } else {
+        return nil
     }
 }
 

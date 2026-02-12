@@ -10,18 +10,16 @@ import Shared
 import SQLiteData
 
 struct LocationView: View {
-    let location: FloatLocation
-    @FetchOne var district: District?
+    let entry: FloatEntry
     
-    init(_ location: FloatLocation) {
-        self.location = location
-        self._district = FetchOne(District.where{ $0.id == location.districtId })
+    init(_ entry: FloatEntry) {
+        self.entry = entry
     }
     
     var body: some View {
         VStack(alignment: .leading, spacing: 16){
-            BulletItem(text: "\(district?.name ?? "") 屋台")
-            BulletItem(text: location.timestamp.text())
+            BulletItem(text: "\(entry.district.name)")
+            BulletItem(text: entry.floatLocation.timestamp.text())
             Spacer()
         }
         .frame(maxWidth: .infinity, alignment: .leading)

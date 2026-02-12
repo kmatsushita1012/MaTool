@@ -9,7 +9,7 @@ import ComposableArchitecture
 import Shared
 
 @Reducer
-struct AdminDistrictCreate {
+struct DistrictCreateFeature {
     
     @ObservableState
     struct State: Equatable {
@@ -24,14 +24,14 @@ struct AdminDistrictCreate {
         case binding(BindingAction<State>)
         case createTapped
         case cancelTapped
-        case received(VoidResult<APIError>)
+        case errorCaught(APIError)
         case alert(PresentationAction<Alert.Action>)
     }
     
     @Dependency(DistrictDataFetcherKey.self) var dataFetcher
     @Dependency(\.dismiss) var dismiss
     
-    var body: some ReducerOf<AdminDistrictCreate> {
+    var body: some ReducerOf<DistrictCreateFeature> {
         BindingReducer()
         Reduce{ state, action in
             switch action {
@@ -44,19 +44,23 @@ struct AdminDistrictCreate {
                 state.isLoading = true
                 return .run { [state] send in
                     let result = await task{ try await dataFetcher.create(name: state.name, email: state.email, festivalId: state.festivalId) }
+                    switch result {
+                    case .success:
+                        await dismiss()
+                    case .failure(let error):
+                        await send(.errorCaught(error))
+                    }
                 }
             case .cancelTapped:
                 return .run { _ in
                     await dismiss()
                 }
-            case .received(.failure(let error)):
+            case .errorCaught(let error):
                 state.isLoading = false
                 state.alert = Alert.error(error.localizedDescription)
                 return .none
             case .alert:
                 state.alert = nil
-                return .none
-            default:
                 return .none
             }
         }

@@ -74,7 +74,7 @@ struct HomeStoreView: View {
                         PublicMapStoreView(store: store)
                     }
                     .navigationDestination(item: $store.scope(state: \.destination?.info, action: \.destination.info)) { store in
-                        InfoStoreView(store: store)
+                        InfoListView(store: store)
                     }
                     .navigationDestination(item: $store.scope(state: \.destination?.login, action: \.destination.login)) { store in
                         if #available(iOS 17.0, *){
