@@ -28,7 +28,7 @@ struct Login {
     @CasePathable
     enum Action: Equatable, BindableAction {
         case binding(BindingAction<State>)
-        case homeTapped
+        case dismissTapped
         case signInTapped
         case received(SignInResult)
         case resetPasswordTapped
@@ -56,7 +56,7 @@ struct Login {
                         // FIXME: Error
                     }
                 }
-            case .homeTapped:
+            case .dismissTapped:
                 return .run { _ in
                     await dismiss()
                 }

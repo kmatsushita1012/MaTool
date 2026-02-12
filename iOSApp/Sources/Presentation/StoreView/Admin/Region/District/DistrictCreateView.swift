@@ -28,20 +28,11 @@ struct DistrictCreateView: View {
         }
         .navigationTitle("新規作成")
         .toolbar {
-            ToolbarItem(placement: .cancellationAction) {
-                Button("キャンセル") {
-                    store.send(.cancelTapped)
-                }
-                .padding(8)
+            ToolbarCancelButton {
+                store.send(.cancelTapped)
             }
-            ToolbarItem(placement: .primaryAction) {
-                Button{
-                    store.send(.createTapped)
-                } label: {
-                    Text("作成")
-                        .bold()
-                }
-                .padding(8)
+            ToolbarSaveButton(title: "作成") {
+                store.send(.createTapped)
             }
         }
         .navigationBarTitleDisplayMode(.inline)
