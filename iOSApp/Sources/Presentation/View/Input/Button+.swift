@@ -25,20 +25,28 @@ extension Button where Label == Image {
 }
 
 struct SaveButton: View {
+    let title: String
     let action: () -> Void
     
+    init(title: String = "保存", action: @escaping () -> Void) {
+        self.title = title
+        self.action = action
+    }
+    
     var body: some View {
-        Button("保存") {
+        Button(title) {
             action()
         }
     }
 }
 
 struct ToolbarSaveButton: ToolbarContent {
+    let title: String
     let isDisabled: Bool
     let action: () -> Void
     
-    init(isDisabled: Bool = false, action: @escaping () -> Void) {
+    init(title: String = "保存", isDisabled: Bool = false, action: @escaping () -> Void) {
+        self.title = title
         self.isDisabled = isDisabled
         self.action = action
     }
@@ -48,13 +56,13 @@ struct ToolbarSaveButton: ToolbarContent {
     var body: some ToolbarContent {
         ToolbarItem(placement: .confirmationAction) {
             if #available(iOS 26.0, *), !isLiquidGlassDisabled {
-                SaveButton {
+                SaveButton(title: title) {
                     action()
                 }
                 .buttonStyle(.glassProminent)
                 .disabled(isDisabled)
             } else {
-                SaveButton {
+                SaveButton(title: title) {
                     action()
                 }
                 .disabled(isDisabled)
