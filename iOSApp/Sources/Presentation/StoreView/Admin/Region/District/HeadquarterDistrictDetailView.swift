@@ -48,17 +48,18 @@ struct HeadquarterDistrictDetailView: View {
         .navigationTitle(store.district.name)
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
-            ToolbarItem(placement: .primaryAction) {
-                if store.isEditable {
-                    Button("保存"){
-                        store.send(.editTapped)
-                    }
-                } else {
+            if store.isEditable {
+                ToolbarSaveButton {
+                    store.send(.editTapped)
+                }
+            } else {
+                ToolbarItem(placement: .primaryAction) {
                     Button("編集"){
                         store.send(.editTapped)
                     }
                 }
             }
+            
         }
         .sheet(item: $store.url){ url in
             ShareSheet(item: url)

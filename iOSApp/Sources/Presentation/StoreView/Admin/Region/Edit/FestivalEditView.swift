@@ -18,20 +18,11 @@ struct FestivalEditView: View{
         content
         .navigationTitle("祭典情報")
         .toolbar {
-            ToolbarItem(placement: .topBarLeading) {
-                Button("キャンセル") {
-                    store.send(.cancelTapped)
-                }
-                .padding(8)
+            ToolbarCancelButton {
+                store.send(.cancelTapped)
             }
-            ToolbarItem(placement: .topBarTrailing) {
-                Button{
-                    store.send(.saveTapped)
-                } label: {
-                    Text("保存")
-                        .bold()
-                }
-                .padding(8)
+            ToolbarSaveButton {
+                store.send(.saveTapped)
             }
         }
         .navigationBarTitleDisplayMode(.inline)

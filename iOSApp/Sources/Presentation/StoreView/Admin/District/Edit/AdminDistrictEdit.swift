@@ -62,7 +62,8 @@ struct AdminDistrictEdit {
             case .saveTapped:
                 state.isLoading = true
                 return .run{ [state] send in
-                    let _ = try? await dataFetcher.update(district: state.district, performances: state.performances)
+                    let result = await task{ try? await dataFetcher.update(district: state.district, performances: state.performances) }
+                    await send(.postReceived(result))
                 }
             case .baseTapped:
                 if let base = state.district.base{

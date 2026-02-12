@@ -19,14 +19,8 @@ struct AdminDistrictView: View{
             store.district.name
         )
         .toolbar {
-            ToolbarItem(placement: .topBarLeading) {
-                Button(action: {
-                    store.send(.homeTapped)
-                }) {
-                    Image(systemName: "house")
-                        .foregroundColor(.black)
-                }
-                .padding(.horizontal, 8)
+            ToolbarBackButton{
+                store.send(.dismissTapped)
             }
         }
         .dismissible(backButton: false)
