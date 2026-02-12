@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import Dependencies
 
 extension Button where Label == SwiftUI.Label<Text, Image> {
     init(systemImage: String, action: @escaping @MainActor () -> Void) {
@@ -22,3 +23,136 @@ extension Button where Label == Image {
         }
     }
 }
+
+struct SaveButton: View {
+    let action: () -> Void
+    
+    var body: some View {
+        Button("保存") {
+            action()
+        }
+    }
+}
+
+struct ToolbarSaveButton: ToolbarContent {
+    let isDisabled: Bool
+    let action: () -> Void
+    
+    init(isDisabled: Bool = false, action: @escaping () -> Void) {
+        self.isDisabled = isDisabled
+        self.action = action
+    }
+    
+    @Environment(\.isLiquidGlassDisabled) var isLiquidGlassDisabled
+ 
+    var body: some ToolbarContent {
+        ToolbarItem(placement: .confirmationAction) {
+            if #available(iOS 26.0, *), !isLiquidGlassDisabled {
+                SaveButton {
+                    action()
+                }
+                .buttonStyle(.glassProminent)
+                .disabled(isDisabled)
+            } else {
+                SaveButton {
+                    action()
+                }
+                .disabled(isDisabled)
+            }
+        }
+    }
+}
+
+struct DoneButton: View {
+    let action: () -> Void
+    
+    var body: some View {
+        Button("完了") {
+            action()
+        }
+    }
+}
+
+struct ToolbarDoneButton: ToolbarContent {
+    
+    let isDisabled: Bool
+    let action: () -> Void
+    
+    init(isDisabled: Bool = false, action: @escaping () -> Void) {
+        self.isDisabled = isDisabled
+        self.action = action
+    }
+    
+    var body: some ToolbarContent {
+        ToolbarItem(placement: .confirmationAction) {
+            DoneButton {
+                action()
+            }
+            .disabled(isDisabled)
+        }
+    }
+}
+
+struct CancelButton: View {
+    let action: () -> Void
+    @Environment(\.isLiquidGlassDisabled) private var isLiquidGlassDisabled
+
+    var body: some View {
+        Group {
+            if #available(iOS 26.0, *), !isLiquidGlassDisabled {
+                Button(systemImage: "xmark", action: action)
+            } else {
+                Button("キャンセル", action: action)
+            }
+        }
+    }
+}
+struct ToolbarCancelButton: ToolbarContent {
+    let isDisabled: Bool
+    let action: () -> Void
+
+    init(isDisabled: Bool = false, action: @escaping () -> Void) {
+        self.isDisabled = isDisabled
+        self.action = action
+    }
+
+    var body: some ToolbarContent {
+        ToolbarItem(placement: .cancellationAction) {
+            CancelButton(action: action)
+                .disabled(isDisabled)
+        }
+    }
+}
+
+struct BackButton: View {
+    let action: () -> Void
+    @Environment(\.isLiquidGlassDisabled) private var isLiquidGlassDisabled
+
+    var body: some View {
+        Group {
+            if #available(iOS 26.0, *), !isLiquidGlassDisabled {
+                Button(systemImage: "chevron.left", action: action)
+            } else {
+                Button("戻る", action: action)
+            }
+        }
+    }
+}
+
+struct ToolbarBackButton: ToolbarContent {
+    let isDisabled: Bool
+    let action: () -> Void
+
+    init(isDisabled: Bool = false, action: @escaping () -> Void) {
+        self.isDisabled = isDisabled
+        self.action = action
+    }
+
+    var body: some ToolbarContent {
+        ToolbarItem(placement: .navigation) {
+            BackButton(action: action)
+                .disabled(isDisabled)
+        }
+    }
+}
+
