@@ -192,3 +192,7 @@ extension Shared.Anchor {
         }
     }
 }
+
+extension URL: @retroactive Identifiable {
+    public var id: String { self.absoluteString }
+}

@@ -36,7 +36,7 @@ struct PublicMapStoreView: View {
                     }
                     .foregroundColor(.black)
                 }
-                .sharedBackgroundVisibility(.hidden)
+                .hideSharedBackgroundVisibility()
             }
             .alert($store.scope(state: \.alert, action: \.alert))
             .dismissible(backButton: false)
