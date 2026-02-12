@@ -217,20 +217,23 @@ extension FloatAnnotationView {
 }
 
 final class PathPolyline: MKPolyline {
-    convenience init(from start: Point, to end: Point) {
+    var color: UIColor = .systemBlue
+
+    convenience init(from start: Point, to end: Point, color: UIColor = .systemBlue) {
         let coordinates = [start.coordinate.toCL(), end.coordinate.toCL()]
         self.init(coordinates: coordinates, count: coordinates.count)
+        self.color = color
     }
     
-    convenience init(_ coordinates: [Coordinate]) {
+    convenience init(_ coordinates: [Coordinate], color: UIColor = .systemBlue) {
         self.init(coordinates: coordinates.map{ $0.toCL() }, count: coordinates.count)
+        self.color = color
     }
     
     func renderer() -> MKOverlayRenderer {
         let renderer = MKPolylineRenderer(overlay: self)
-        renderer.strokeColor = .systemBlue
+        renderer.strokeColor = color
         renderer.lineWidth = 4
-        renderer.alpha = 0.8
         return renderer
     }
 }
@@ -368,3 +371,4 @@ class MapCoordinator<Parent: MapViewRepresentable>: NSObject, MKMapViewDelegate 
         parent.region = mapView.region
     }
 }
+
