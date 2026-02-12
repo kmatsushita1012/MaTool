@@ -10,7 +10,7 @@ import Shared
 import SQLiteData
 
 @Reducer
-struct PointEditFeature{
+struct PointEditFeature {
     enum PointType: Equatable, CaseIterable {
         case checkpoint
         case performance
