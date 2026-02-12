@@ -60,8 +60,8 @@ struct HeadquarterDistrictDetailView: View {
                 }
             }
         }
-        .sheet(item: $store.folder){ folder in
-            ShareSheet(folder.files)
+        .sheet(item: $store.url){ url in
+            ShareSheet(item: url)
         }
         .navigationDestination(
             item: $store.scope(state: \.destination?.route, action: \.destination.route)
