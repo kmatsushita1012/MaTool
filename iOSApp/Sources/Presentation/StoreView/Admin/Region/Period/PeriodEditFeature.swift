@@ -58,6 +58,7 @@ struct PeriodEditFeature {
                 return .none
             }
         }
+        .ifLet(\.$alert, action: \.alert)
     }
     
     private func saveEffect(mode: Mode, period: Period) -> Effect<Action> {
