@@ -45,6 +45,7 @@ import Foundation
     public var performanceId: Performance.ID?
     public var anchor: Anchor?
     public var index: Int
+    public var isBoundary: Bool
     
     public init(
         id: Self.ID = UUID().uuidString,
@@ -54,7 +55,8 @@ import Foundation
         checkpointId: Checkpoint.ID? = nil,
         performanceId: Performance.ID? = nil,
         anchor: Anchor? = nil,
-        index: Int = 0
+        index: Int = 0,
+        isBoundary: Bool = false
     ) {
         self.id = id
         self.routeId = routeId
@@ -64,6 +66,7 @@ import Foundation
         self.performanceId = performanceId
         self.anchor = anchor
         self.index = index
+        self.isBoundary = isBoundary
     }
 }
 

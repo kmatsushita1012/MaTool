@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import UIKit
 import Shared
 import MapKit
 
@@ -91,7 +92,16 @@ struct MapView: UIViewRepresentable {
 
     func updateUIView(_ mapView: MKMapView, context: Context) {
         mapView.updatePoints(from: points.filter(style: style))
-        mapView.updatePolyline(polyline)
+        // ポリラインを isBoundary で分割し、色を交互に設定
+        let segments: [[Coordinate]] = splitPoints()
+        // 色を交互に
+        var coloredPolylines: [PathPolyline] = []
+        for (i, seg) in segments.enumerated() {
+            let color: UIColor = (i % 2 == 0) ? .systemBlue : .systemGreen
+            coloredPolylines.append(PathPolyline(seg, color: color))
+        }
+        mapView.updatePolylines(coloredPolylines)
+        
         mapView.updateFloats(from: floats)
         mapView.updateFloat(floatAnnotation)
         
@@ -105,6 +115,29 @@ struct MapView: UIViewRepresentable {
         if size != mapView.frame.size{
             size = mapView.frame.size
         }
+    }
+    
+    private func splitPoints() -> [[Coordinate]] {
+        // points と polyline は同一順序を前提にし、points の isBoundary を見て分割
+        guard points.count == polyline.count else {
+            // フォールバック: 単一セグメント
+            return [polyline]
+        }
+        var result: [[Coordinate]] = []
+        var current: [Coordinate] = []
+        for (idx, coord) in polyline.enumerated() {
+            // セグメントに座標を追加
+            current.append(coord)
+            // 次が境界、または末尾なら確定
+            let isBoundary = points[idx].point.isBoundary
+            if isBoundary && !current.isEmpty {
+                result.append(current)
+                current = [coord]
+            }
+        }
+        if !current.isEmpty { result.append(current) }
+        // 2点未満のセグメントは描画しない
+        return result.filter { $0.count >= 2 }
     }
 
     class Coordinator: NSObject, MKMapViewDelegate {
@@ -202,6 +235,12 @@ fileprivate extension MKMapView {
         removeOverlays(oldPolylines)
     }
     
+    func updatePolylines(_ polylines: [PathPolyline]) {
+        let oldPolylines = overlays.compactMap { $0 as? PathPolyline }
+        addOverlays(polylines)
+        removeOverlays(oldPolylines)
+    }
+    
     func updateFloats(from entries: [FloatEntry]){
         let existingAnnotations = annotations.compactMap { $0 as? FloatCurrentAnnotation }
 
@@ -244,3 +283,4 @@ extension MapView: Equatable {
         lhs.region == rhs.region
     }
 }
+
