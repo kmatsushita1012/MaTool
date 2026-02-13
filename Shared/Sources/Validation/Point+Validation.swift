@@ -87,13 +87,15 @@ public extension Array where Element == Point {
         }
 
         // ③ 位置制約
-        if startAnchors.count == 1,
-           first?.anchor != .start {
+        if (startAnchors.count == 1 &&
+           first?.anchor != .start)
+            || startAnchors.count == 0 {
             throw Point.Error.startAnchorNotFirst
         }
 
-        if endAnchors.count == 1,
-           last?.anchor != .end {
+        if (endAnchors.count == 1 &&
+           last?.anchor != .end)
+            || endAnchors.count == 0 {
             throw Point.Error.endAnchorNotLast
         }
 
