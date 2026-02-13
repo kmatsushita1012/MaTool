@@ -15,7 +15,6 @@ struct FestivalDashboardView: View {
 
     var body: some View {
         content
-            .dismissible(backButton: false)
             .navigationDestination(
                 item: $store.scope(state: \.destination?.edit, action: \.destination.edit)
             ) { store in
@@ -93,10 +92,5 @@ struct FestivalDashboardView: View {
         .navigationTitle(
             "\(store.festival.name) \(store.festival.subname)"
         )
-        .toolbar {
-            ToolbarBackButton {
-                store.send(.dismissTapped)
-            }
-        }
     }
 }
