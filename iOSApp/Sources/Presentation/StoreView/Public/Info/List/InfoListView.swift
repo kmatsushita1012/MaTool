@@ -20,7 +20,7 @@ struct InfoListView: View {
                     text: "町を見てみよう",
                     image: "InfoBackground"
                 ) {
-                    store.send(.homeTapped)
+                    store.send(.dismissTapped)
                 }
                 .ignoresSafeArea(edges: .top)
                 VStack{

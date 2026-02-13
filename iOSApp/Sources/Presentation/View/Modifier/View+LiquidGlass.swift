@@ -19,3 +19,16 @@ extension ToolbarContent {
         }
     }
 }
+
+private struct IsLiquidGlassDisabledKey: EnvironmentKey {
+    static let defaultValue: Bool = false
+}
+
+extension EnvironmentValues {
+    var isLiquidGlassDisabled: Bool {
+        get { self[IsLiquidGlassDisabledKey.self] }
+        set { self[IsLiquidGlassDisabledKey.self] = newValue }
+    }
+}
+
+
