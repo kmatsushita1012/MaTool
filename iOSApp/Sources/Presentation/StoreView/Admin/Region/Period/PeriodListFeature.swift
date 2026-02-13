@@ -28,13 +28,7 @@ struct PeriodListFeature {
         
         let festivalId: String
         
-        @FetchAll var periods: [Period]  {
-            mutating didSet {
-                let items = makePeriodsStates(from: periods)
-                self.latests = items.first
-                self.archives = .init(items.dropFirst())
-            }
-        }
+        @FetchAll var periods: [Period]
         
         var archives: [YearlyPeriods] = []
         var latests: YearlyPeriods?
@@ -72,13 +66,16 @@ struct PeriodListFeature {
                 return .none
             case .batchCreateTapped(let year):
                 state.isLoading = true
-                return batchEffect(state, year: year)
+                return batchEffect(state, sourceYear: year)
             case .destination(.presented(.edit(.saveReceived(.success(_))))),
                     .destination(.presented(.archives(.destination(.presented(.edit(.saveReceived(.success(_)))))))),
                     .destination(.presented(.edit(.deleteReceived(.success(_))))),
                     .destination(.presented(.archives(.destination(.presented(.edit(.deleteReceived(.success(_)))))))):
                 state.destination = nil
                 state.isLoading = true
+                let items = state.makePeriodsStates()
+                state.latests = items.first
+                state.archives = .init(items.dropFirst())
                 return .none
             case .batchCreateSuccessed:
                 state.isLoading = false
@@ -99,23 +96,15 @@ struct PeriodListFeature {
         .ifLet(\.$alert, action: \.alert)
     }
     
-    func batchEffect(_ state: State, year: Int) -> Effect<Action> {
+    func batchEffect(_ state: State, sourceYear: Int) -> Effect<Action> {
         .run { send in
-            guard let latests = state.latests else {
-                await send(.batchCreateFailured("過去のデータが存在しません。"))
-                return
-            }
-            let all = [latests] + state.archives
-            guard let source: State.YearlyPeriods = all.first(where: { $0.year < year  }) else {
-                await send(.batchCreateFailured("過去のデータが存在しません。"))
-                return
-            }
-            let newPeriods = source.periods.map{
+            let source: [Period] = state.periods.filter{ $0.date.year == sourceYear }
+            let newPeriods = source.map{
                 Period(
                     id: UUID().uuidString,
                     festivalId: $0.festivalId,
                     title: $0.title,
-                    date: .from( $0.date.toDate.sameWeekday(in: year) ?? .now),
+                    date: .from( $0.date.toDate.sameWeekday(in: state.createYear) ?? .now),
                     start: $0.start,
                     end: $0.end
                 )
@@ -142,12 +131,12 @@ extension PeriodListFeature.State {
     init(festivalId: String) {
         self.festivalId = festivalId
         self._periods = FetchAll(Period.where{ $0.festivalId == festivalId })
-        let items = makePeriodsStates(from: periods)
+        let items = makePeriodsStates()
         self.latests = items.first
         self.archives = .init(items.dropFirst())
     }
     
-    private func makePeriodsStates(from periods: [Period]) -> [YearlyPeriods] {
+    func makePeriodsStates() -> [YearlyPeriods] {
         let grouped = Dictionary(grouping: periods) { $0.date.year }
 
         return grouped
@@ -160,13 +149,15 @@ extension PeriodListFeature.State {
             .sorted { $0.year > $1.year }
     }
     
-    var batchCreateYearOptions: [Int]? {
-        if let latests, !archives.isEmpty {
-            [latests.year, latests.year + 1]
-        } else if let latests {
-            [latests.year + 1]
+    var yearOptions: [Int] {
+        Array(Set(periods.map(keyPath: \.date.year))).sorted()
+    }
+    
+    var createYear: Int {
+        if let latest = latests?.year {
+            latest + 1
         } else {
-            []
+            SimpleDate.now.year
         }
     }
 }
