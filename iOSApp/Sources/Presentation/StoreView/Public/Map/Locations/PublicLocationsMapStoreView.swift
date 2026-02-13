@@ -10,21 +10,23 @@ import ComposableArchitecture
 
 struct PublicLocationsMapStoreView: View {
     @Perception.Bindable var store: StoreOf<PublicLocations>
+    @Environment(\.isLiquidGlassDisabled) var isLiquidGlassDisabled
     
     var body: some View {
         WithPerceptionTracking{
-            ZStack{
-                MapView(style: .public, floats: store.floats, region: $store.mapRegion, floatTapped: { store.send(.floatTapped($0)) })
-                .ignoresSafeArea(edges: .bottom)
-                VStack{
-                    Spacer()
-                    HStack{
-                        Spacer()
-                        buttons()
-                            .padding()
-                    }
+            MapView(style: .public, floats: store.floats, region: $store.mapRegion, floatTapped: { store.send(.floatTapped($0)) })
+            .ignoresSafeArea(edges: .bottom)
+            .safeAreaInset(edge: .bottom){
+                if isLiquidGlassDisabled {
+                    toolbarLayer
                 }
             }
+            .toolbar{
+                if !isLiquidGlassDisabled, #available(iOS 26.0, *) {
+                    toolbar
+                }
+            }
+            .alert($store.scope(state: \.alert, action: \.alert))
             .sheet(item: $store.detail){ location in
                 LocationView(location)
                     .presentationDetents([.fraction(0.3)])
@@ -33,7 +35,19 @@ struct PublicLocationsMapStoreView: View {
     }
     
     @ViewBuilder
-    func buttons() -> some View {
+    var toolbarLayer: some View {
+        VStack{
+            Spacer()
+            HStack{
+                Spacer()
+                buttons
+                    .padding()
+            }
+        }
+    }
+    
+    @ViewBuilder
+    var buttons: some View {
         HStack {
             FloatingIconButton(icon: "location.fill"){
                 store.send(.userFocusTapped)
@@ -51,7 +65,6 @@ struct PublicLocationsMapStoreView: View {
                 store.send(.reloadTapped)
             }
         }
-        .alert($store.scope(state: \.alert, action: \.alert))
         .padding(8)
         .fixedSize()
         .background(
@@ -59,5 +72,28 @@ struct PublicLocationsMapStoreView: View {
                 .fill(Color.white)
                 .shadow(radius: 8)
         )
+    }
+    
+    @available(iOS 26.0, *)
+    @ToolbarContentBuilder
+    var toolbar: some ToolbarContent {
+        ToolbarSpacer(.flexible, placement: .bottomBar)
+        ToolbarItemGroup(placement: .bottomBar) {
+            Button(systemImage: "location.fill"){
+                store.send(.userFocusTapped)
+            }
+            Menu {
+                ForEach(store.floats, id: \.self) { item in
+                    Button(item.district.name){
+                        store.send(.floatFocusSelected(item))
+                    }
+                }
+            } label: {
+                Image(systemName: "mappin.and.ellipse")
+            }
+            Button(systemImage: "arrow.clockwise"){
+                store.send(.reloadTapped)
+            }
+        }
     }
 }
