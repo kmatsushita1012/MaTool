@@ -30,7 +30,11 @@ struct PeriodEditView: View {
     var content: some View {
         Form {
             Section(header: Text("日付")){
-                DatePicker(selection: $store.period.date)
+                DatePicker(
+                    store.isCreateMode ? "日付を選択" : "日付",
+                    selection: Binding(get: { store.period.date }, set: { store.send(.dateChanged($0)) })
+                )
+                .disabled(!store.isCreateMode)
             }
             
             Section(header: Text("タイトル"), footer: Text("例: 午前、午後、夜")){

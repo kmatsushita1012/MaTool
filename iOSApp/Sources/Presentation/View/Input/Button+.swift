@@ -164,3 +164,36 @@ struct ToolbarBackButton: ToolbarContent {
     }
 }
 
+struct AddButton: View {
+    let title: String
+    let action: () -> Void
+    @Environment(\.isLiquidGlassDisabled) private var isLiquidGlassDisabled
+    init(title: String = "追加", action: @escaping () -> Void) {
+        self.title = title
+        self.action = action
+    }
+
+    var body: some View {
+        Button(title, action: action)
+    }
+}
+
+struct ToolbarAddButton: ToolbarContent {
+    let title: String
+    let isDisabled: Bool
+    let action: () -> Void
+
+    init(title: String = "追加", isDisabled: Bool = false, action: @escaping () -> Void) {
+        self.title = title
+        self.isDisabled = isDisabled
+        self.action = action
+    }
+
+    var body: some ToolbarContent {
+        ToolbarItem(placement: .primaryAction) {
+            AddButton(title: title, action: action)
+                .disabled(isDisabled)
+        }
+    }
+}
+
