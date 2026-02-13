@@ -18,12 +18,6 @@ struct AdminDistrictView: View{
         .navigationTitle(
             store.district.name
         )
-        .toolbar {
-            ToolbarBackButton{
-                store.send(.dismissTapped)
-            }
-        }
-        .dismissible(backButton: false)
         .navigationDestination(item: $store.scope(state: \.destination?.edit, action: \.destination.edit)) { store in
             AdminDistrictEditView(store: store)
         }
