@@ -18,18 +18,6 @@ struct AdminDistrictView: View{
         .navigationTitle(
             store.district.name
         )
-        .toolbar {
-            ToolbarItem(placement: .topBarLeading) {
-                Button(action: {
-                    store.send(.homeTapped)
-                }) {
-                    Image(systemName: "house")
-                        .foregroundColor(.black)
-                }
-                .padding(.horizontal, 8)
-            }
-        }
-        .dismissible(backButton: false)
         .navigationDestination(item: $store.scope(state: \.destination?.edit, action: \.destination.edit)) { store in
             AdminDistrictEditView(store: store)
         }

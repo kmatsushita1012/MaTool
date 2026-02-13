@@ -15,7 +15,6 @@ struct FestivalDashboardView: View {
 
     var body: some View {
         content
-            .dismissible(backButton: false)
             .navigationDestination(
                 item: $store.scope(state: \.destination?.edit, action: \.destination.edit)
             ) { store in
@@ -93,17 +92,5 @@ struct FestivalDashboardView: View {
         .navigationTitle(
             "\(store.festival.name) \(store.festival.subname)"
         )
-        .toolbar {
-            ToolbarItem(placement: .topBarLeading) {
-                Button(action: {
-                    store.send(.homeTapped)
-                }) {
-                    Image(systemName: "house")
-                        .foregroundColor(.black)
-                        .padding(.horizontal, 8)
-                }
-
-            }
-        }
     }
 }

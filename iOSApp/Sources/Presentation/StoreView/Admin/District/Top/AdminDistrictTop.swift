@@ -50,7 +50,8 @@ struct AdminDistrictTop {
         case destination(PresentationAction<Destination.Action>)
         case signOutTapped
         case signOutReceived(Result<UserRole, AuthError>)
-        case homeTapped
+        case errorCaught(APIError)
+        case dismissTapped
         case alert(PresentationAction<Alert.Action>)
     }
     
@@ -63,14 +64,19 @@ struct AdminDistrictTop {
         Reduce{ state, action in
             switch action {
             case .onEdit:
+                state.destination = .edit(.init(state.district))
                 return .none
             case .onRouteEdit(let item):
                 if let route = item.route {
                     state.isRouteLoading = true
                     return .run { send in
                         let result = await task{ try await routeDateFetcher.fetch(routeID: route.id) }
-                        // TODO: エラーハンドリング
-                        await send(.routeEditPrepared(item))
+                        switch result {
+                        case .success:
+                            await send(.routeEditPrepared(item))
+                        case .failure(let error):
+                            await send(.errorCaught(error))
+                        }
                     }
                 } else {
                     let route = Route(id: UUID().uuidString, districtId: state.district.id, periodId: item.period.id)
@@ -136,7 +142,7 @@ struct AdminDistrictTop {
                     state.alert = Alert.error("ログアウトに失敗しました。 \(error.localizedDescription)")
                 }
                 return .none
-            case .homeTapped:
+            case .dismissTapped:
                 return .run { _ in
                     await dismiss()
                 }
