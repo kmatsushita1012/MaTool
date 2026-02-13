@@ -106,7 +106,8 @@ func setupDatabase() throws -> DatabaseQueue {
                 "checkpointId" TEXT,
                 "performanceId" TEXT,
                 "anchor" TEXT,
-                "index" INTEGER NOT NULL DEFAULT 0
+                "index" INTEGER NOT NULL DEFAULT 0,
+                "isBoundary" INTEGER NOT NULL DEFAULT 0
             )
         """).execute(db)
 
