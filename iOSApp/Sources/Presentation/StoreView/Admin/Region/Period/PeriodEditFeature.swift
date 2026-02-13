@@ -25,6 +25,7 @@ struct PeriodEditFeature {
         case binding(BindingAction<State>)
         case doneTapped
         case deleteTapped
+        case dateChanged(SimpleDate)
         case saveReceived(VoidResult<APIError>)
         case deleteReceived(VoidResult<APIError>)
         case catched(APIError)
@@ -49,6 +50,12 @@ struct PeriodEditFeature {
                     let result = await task{ try await dataFetcher.delete(id) }
                     await send(.deleteReceived(result))
                 }
+            case .dateChanged(let date):
+                if state.mode == .create {
+                    let source = state.period
+                    state.period = Period(festivalId: source.festivalId, title: source.title, date: date, start: source.start, end: source.end)
+                }
+                return .none
             case .saveReceived(.failure(let error)),
                 .deleteReceived(.failure(let error)):
                 state.isLoading = false
@@ -96,5 +103,14 @@ extension PeriodEditFeature.State {
                 end: .init(hour: 12, minute: 0)
             )
         )
+    }
+    
+    var isCreateMode: Bool {
+        switch mode {
+        case .create:
+            return true
+        case .update:
+            return false
+        }
     }
 }
