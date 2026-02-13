@@ -17,5 +17,6 @@ struct OtherRouter: Router {
         app.put(path: "/routes/:routeId", routeController.put)
         app.delete(path: "/routes/:routeId", routeController.delete)
         app.put(path: "/periods/:periodId", periodController.put)
+        app.delete(path: "/periods/:periodId", periodController.delete)
     }
 }
