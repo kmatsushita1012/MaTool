@@ -53,7 +53,7 @@ struct FestivalEditView: View{
             Section(header: Text("市区町村")) {
                 TextField("市区町村を入力",text: $store.festival.city)
             }
-            Section(header: Text("経由地")) {
+            Section(header: Text("重要地点")) {
                 ForEach(store.checkpoints) { checkpoint in
                     NavigationItemView(
                         title: checkpoint.name,
