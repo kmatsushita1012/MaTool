@@ -35,6 +35,7 @@ struct HeadquarterDistrictDetailFeature {
     enum Action: Equatable, BindableAction {
         case binding(BindingAction<State>)
         case editTapped
+        case cancelTapped
         case routeSelected(RouteSlot)
         case batchExportTapped
         case updateCompleted
@@ -72,6 +73,10 @@ struct HeadquarterDistrictDetailFeature {
                 } else {
                     return .none
                 }
+            case .cancelTapped:
+                state.isEditable = false
+                state.district = FetchOne(District.find(state.district.id)).wrappedValue ?? state.district
+                return .none
             case .routeSelected(let slot):
                 guard let route = slot.route else { return .none }
                 state.isLoading = true

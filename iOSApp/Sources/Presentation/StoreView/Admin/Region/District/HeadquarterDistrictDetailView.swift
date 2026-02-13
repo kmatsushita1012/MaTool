@@ -48,8 +48,12 @@ struct HeadquarterDistrictDetailView: View {
         }
         .navigationTitle(store.district.name)
         .navigationBarTitleDisplayMode(.inline)
+        .dismissible(backButton: !store.isEditable)
         .toolbar {
             if store.isEditable {
+                ToolbarCancelButton{
+                    store.send(.cancelTapped)
+                }
                 ToolbarSaveButton {
                     store.send(.editTapped)
                 }
