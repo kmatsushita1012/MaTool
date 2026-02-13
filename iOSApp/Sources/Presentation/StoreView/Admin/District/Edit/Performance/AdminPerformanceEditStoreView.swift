@@ -40,22 +40,11 @@ struct AdminPerformanceView:View {
         .navigationTitle("余興")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
-            ToolbarItem(placement: .topBarLeading) {
-                Button{
-                    store.send(.cancelTapped)
-                } label: {
-                    Text("キャンセル")
-                }
-                .padding(.horizontal, 8)
+            ToolbarCancelButton {
+                store.send(.cancelTapped)
             }
-            ToolbarItem(placement: .topBarTrailing) {
-                Button{
-                    store.send(.doneTapped)
-                } label: {
-                    Text("完了")
-                        .bold()
-                }
-                .padding(.horizontal, 8)
+            ToolbarDoneButton {
+                store.send(.doneTapped)
             }
         }
         .dismissible(backButton: false, edgeSwipe: false)
