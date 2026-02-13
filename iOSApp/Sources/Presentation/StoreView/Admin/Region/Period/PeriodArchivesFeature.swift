@@ -23,6 +23,12 @@ struct PeriodArchivesFeature {
         let year: Int
         @FetchAll var periods: [Period]
         @Presents var destination: Destination.State?
+        
+        init(festivalId: String, year: Int) {
+            self.festivalId = festivalId
+            self.year = year
+            self._periods = FetchAll(Period.where{ $0.festivalId == festivalId && $0.date.inYear(year) })
+        }
     }
     
     @CasePathable
@@ -47,11 +53,3 @@ struct PeriodArchivesFeature {
 
 extension PeriodArchivesFeature.Destination.State: Equatable {}
 extension PeriodArchivesFeature.Destination.Action: Equatable {}
-
-extension PeriodArchivesFeature.State {
-    init(festivalId: String, year: Int) async throws {
-        self.festivalId = festivalId
-        self.year = year
-        self._periods = FetchAll(Period.where{ $0.festivalId == festivalId && $0.date.inYear(year) })
-    }
-}
