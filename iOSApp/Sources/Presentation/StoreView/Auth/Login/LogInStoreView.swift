@@ -56,12 +56,6 @@ struct LoginStoreView: View {
             .padding()
         }
         .padding()
-        .toolbar {
-            ToolbarBackButton {
-                store.send(.dismissTapped)
-            }
-        }
-        .dismissible(backButton: false)
         .navigationDestination(item: $store.scope(state: \.destination?.confirmSignIn, action: \.destination.confirmSignIn)){ store in
             ConfirmSignInStoreView(store:store)
         }
