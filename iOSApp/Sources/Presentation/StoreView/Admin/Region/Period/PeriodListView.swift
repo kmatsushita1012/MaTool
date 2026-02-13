@@ -84,17 +84,17 @@ struct PeriodListView: View {
     
     @ToolbarContentBuilder
     var batchCreateMenu: some ToolbarContent {
-        if let options = store.batchCreateYearOptions {
+        if !store.yearOptions.isEmpty {
             ToolbarItem(placement: .bottomBar) {
                 Button("一括作成") {
                     showBatchCreateDialog = true
                 }
                 .confirmationDialog(
-                    "一括作成",
+                    "\(String(store.createYear))年を一括作成",
                     isPresented: $showBatchCreateDialog,
                     titleVisibility: .visible
                 ) {
-                    ForEach(options, id: \.self) { year in
+                    ForEach(store.yearOptions, id: \.self) { year in
                         Button("\(String(year))年") {
                             store.send(.batchCreateTapped(year))
                         }
@@ -103,7 +103,7 @@ struct PeriodListView: View {
                         showBatchCreateDialog = false
                     }
                 } message: {
-                    Text("選択した年の日程を前年のデータを元に一括で作成します。\n既存のデータは上書きされません。")
+                    Text("選択した年の日程をを元に一括で作成します。\n既存のデータは上書きされません。")
                 }
             }
         }
