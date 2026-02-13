@@ -26,6 +26,7 @@ struct HeadquarterDistrictDetailView: View {
                         .keyboardType(.numberPad)
                         .multilineTextAlignment(.trailing)
                 }
+                Toggle("各町が編集を行うことを許可", isOn: $store.district.isEditable)
             } footer: {
                 Text("編集する際は右上の「編集」ボタンを押してください。")
             }
