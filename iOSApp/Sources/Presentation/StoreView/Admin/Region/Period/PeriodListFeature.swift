@@ -72,7 +72,6 @@ struct PeriodListFeature {
                     .destination(.presented(.edit(.deleteReceived(.success(_))))),
                     .destination(.presented(.archives(.destination(.presented(.edit(.deleteReceived(.success(_)))))))):
                 state.destination = nil
-                state.isLoading = true
                 let items = state.makePeriodsStates()
                 state.latests = items.first
                 state.archives = .init(items.dropFirst())
@@ -80,6 +79,9 @@ struct PeriodListFeature {
             case .batchCreateSuccessed:
                 state.isLoading = false
                 state.alert = Alert.notice("一括作成が完了しました。")
+                let items = state.makePeriodsStates()
+                state.latests = items.first
+                state.archives = .init(items.dropFirst())
                 return .none
             case .batchCreateFailured(let message):
                 state.isLoading = false
