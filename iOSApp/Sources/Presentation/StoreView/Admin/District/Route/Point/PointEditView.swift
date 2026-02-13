@@ -39,6 +39,12 @@ struct PointEditView: View {
             }
             
             Section {
+                Toggle("ここから色を変更", isOn: $store.point.isBoundary)
+            } footer: {
+                Text("経路が重なって見にくい場合は、この地点から表示色を変更できます。")
+            }
+            
+            Section {
                 Button(action: {
                     store.send(.moveTapped)
                 }) {
