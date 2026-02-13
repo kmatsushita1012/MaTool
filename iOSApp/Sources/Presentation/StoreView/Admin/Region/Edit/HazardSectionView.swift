@@ -77,10 +77,13 @@ struct HazardSectionView: View {
     @ToolbarContentBuilder
     var bottomBarBeforeLiquidGlass: some ToolbarContent {
         ToolbarItemGroup(placement: .bottomBar) {
-            undoButton
-            redoButton
-            clearButton
-            deleteButton
+            HStack(spacing:8){
+                undoButton
+                redoButton
+                Spacer()
+                deleteButton
+            }
+            .padding(.horizontal, 8)
         }
     }
     
@@ -92,10 +95,6 @@ struct HazardSectionView: View {
             redoButton
         }
         ToolbarSpacer(.flexible ,placement: .bottomBar)
-        ToolbarItem(placement: .bottomBar) {
-            clearButton
-        }
-        ToolbarSpacer(.fixed, placement: .bottomBar)
         ToolbarItem(placement: .bottomBar) {
             deleteButton
         }
