@@ -38,7 +38,7 @@ struct InfoListFeature {
     enum Action: Equatable {
         case festivalTapped
         case districtTapped(District)
-        case homeTapped
+        case dismissTapped
         case districtPrepared(District)
         case errorCaught(APIError)
         case destination(PresentationAction<Destination.Action>)
@@ -65,7 +65,7 @@ struct InfoListFeature {
                         await send(.errorCaught(error))
                     }
                 }
-            case .homeTapped:
+            case .dismissTapped:
                 if #available(iOS 17.0, *) {
                     return .run { _ in
                         await dismiss()

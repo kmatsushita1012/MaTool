@@ -18,10 +18,8 @@ struct PeriodEditView: View {
         content
             .navigationTitle(store.mode.title)
             .toolbar{
-                if #available(iOS 26.0, *), isLiquidGlassEnabled {
-                    toolbarAfterLiquidGlass
-                } else {
-                    toolbarBeforeLiquidGlass
+                ToolbarDoneButton {
+                    store.send(.doneTapped)
                 }
             }
             .loadingOverlay(store.isLoading)
@@ -53,21 +51,4 @@ struct PeriodEditView: View {
         }
     }
     
-    @ToolbarContentBuilder
-    var toolbarBeforeLiquidGlass: some ToolbarContent {
-        ToolbarItem(placement: .confirmationAction) {
-            Button("完了") {
-                store.send(.doneTapped)
-            }
-        }
-    }
-    
-    @ToolbarContentBuilder
-    var toolbarAfterLiquidGlass: some ToolbarContent {
-        ToolbarItem( placement: .confirmationAction) {
-            Button(systemImage: "checkmark") {
-                store.send(.doneTapped)
-            }
-        }
-    }
 }
