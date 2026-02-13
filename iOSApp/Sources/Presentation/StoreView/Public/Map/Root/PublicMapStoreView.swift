@@ -34,7 +34,7 @@ struct PublicMapStoreView: View {
                     Button(systemImage: "house"){
                         store.send(.dismissTapped)
                     }
-                    .foregroundColor(.black)
+                    .tint(.black)
                 }
                 .hideSharedBackgroundVisibility()
             }
