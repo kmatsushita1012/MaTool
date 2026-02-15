@@ -37,7 +37,7 @@ struct HeadquarterDistrictListFeature {
         case createTapped
         case batchExportTapped
         case selectedReceived(TaskResult<District>)
-        case batchExportPrepared([URL])
+        case batchExportReceived(TaskResult<[URL]>)
         case destination(PresentationAction<Destination.Action>)
         case alert(PresentationAction<Alert.Action>)
     }
@@ -66,10 +66,11 @@ struct HeadquarterDistrictListFeature {
                 state.isLoading = false
                 state.destination = .detail(.init(district))
                 return .none
-            case .batchExportPrepared(let urls):
+            case .batchExportReceived(.success(let urls)):
                 state.folder = .init(urls)
                 return .none
-            case .selectedReceived(.failure(let error)):
+            case .selectedReceived(.failure(let error)),
+                .batchExportReceived(.failure(let error)):
                 state.isLoading = false
                 state.alert = Alert.error(error.localizedDescription)
                 return .none
@@ -84,26 +85,24 @@ struct HeadquarterDistrictListFeature {
     }
     
     func batchExportEffect(_ state: State) -> Effect<Action> {
-        .run { send in
+        .task(Action.batchExportReceived) {
             var urls: [URL] = []
             //非同期並列にするとBEでアクセス過多
-            let _ = await task {
-                for district in state.districts {
-                    let renderer = await PDFRenderer(path: "\(district.name).pdf")
-                    guard let _ =  try? await routeDataFetcher.fetchAll(districtID: district.id, query: .latest) else { continue }
-                    let routes: [Route] = FetchAll(Route.where { $0.districtId == district.id }).wrappedValue
-                    if routes.isEmpty { continue }
-                    for route in routes {
-                        guard (try? await routeDataFetcher.fetch(routeID: route.id)) != nil,
-                              let snapshotter = try? await RouteSnapshotter(route),
-                              let image = try? await snapshotter.take() else { continue }
-                        await renderer.addPage(with: image)
-                    }
-                    let url = await renderer.finalize()
-                    urls.append(url)
+            for district in state.districts {
+                let renderer = await PDFRenderer(path: "\(district.name).pdf")
+                guard let _ =  try? await routeDataFetcher.fetchAll(districtID: district.id, query: .latest) else { continue }
+                let routes: [Route] = FetchAll(Route.where { $0.districtId == district.id }).wrappedValue
+                if routes.isEmpty { continue }
+                for route in routes {
+                    guard (try? await routeDataFetcher.fetch(routeID: route.id)) != nil,
+                          let snapshotter = try? await RouteSnapshotter(route),
+                          let image = try? await snapshotter.take() else { continue }
+                    await renderer.addPage(with: image)
                 }
+                let url = await renderer.finalize()
+                urls.append(url)
             }
-            await send(.batchExportPrepared(urls))
+            return urls
         }
     }
 }
