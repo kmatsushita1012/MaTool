@@ -43,8 +43,8 @@ struct AdminDistrictEditView: View {
                         .font(.body)
                 }
             }
-            Section(header: Text("ルート")) {
-                Picker("デフォルトの公開範囲を選択（すでに作成済のルートには反映されません）", selection: $store.district.visibility) {
+            Section(header: Text("ルート"), footer: Text("すでに作成済のルートには反映されません")) {
+                Picker("デフォルトの公開範囲を選択", selection: $store.district.visibility) {
                     ForEach(Visibility.allCases) { option in
                         Text(option.label).tag(option)
                     }
@@ -71,20 +71,11 @@ struct AdminDistrictEditView: View {
         .navigationTitle("地区情報")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
-            ToolbarItem(placement: .topBarLeading) {
-                Button("キャンセル") {
-                    store.send(.cancelTapped)
-                }
-                .padding(8)
+            ToolbarCancelButton {
+                store.send(.cancelTapped)
             }
-            ToolbarItem(placement: .topBarTrailing) {
-                Button{
-                    store.send(.saveTapped)
-                } label: {
-                    Text("保存")
-                        .bold()
-                }
-                .padding(8)
+            ToolbarSaveButton {
+                store.send(.saveTapped)
             }
         }
         .dismissible(backButton: false, edgeSwipe: false)
@@ -98,6 +89,7 @@ struct AdminDistrictEditView: View {
             AdminPerformanceView(store: store)
         }
         .alert($store.scope(state: \.alert, action: \.alert))
+        .loadingOverlay(store.isLoading)
     }
 }
 

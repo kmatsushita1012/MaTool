@@ -132,6 +132,7 @@ struct RouteEditFeature{
                     try state.points.validate()
                 } catch {
                     state.alert = .notice(Alert.error(error.localizedDescription))
+                    return .none
                 }
                 if !state.isSaveable {
                     state.alert = .notice(Alert.error("権限がありません"))
@@ -322,7 +323,7 @@ extension RouteEditFeature.State {
     init(mode: RouteEditFeature.EditMode, route: Route, district: District, period: Period){
         self.mode = mode
         let points: [Point] = FetchAll(Point.where{ $0.routeId == route.id }).wrappedValue
-        self.manager = EditManager(points)
+        self.manager = EditManager(points.sorted())
         self.route = route
         self._district = FetchOne(wrappedValue: district, District.find(district.id))
         self._period = FetchOne(wrappedValue: period, Period.find(period.id))
