@@ -51,9 +51,7 @@ struct ChangePassword {
                     try await authService.changePassword(current: current, new: new).get()
                 }
             case .dismissTapped:
-                return .run { _ in
-                    await dismiss()
-                }
+                return .dismiss
             case .received(.success):
                 state.isLoading = false
                 return .none

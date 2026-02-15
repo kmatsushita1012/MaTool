@@ -51,9 +51,7 @@ struct Login {
                     try await sceneUsecase.signIn(username: state.id, password: state.password)
                 }
             case .dismissTapped:
-                return .run { _ in
-                    await dismiss()
-                }
+                return .dismiss
             case .resetPasswordTapped:
                 state.destination = .resetPassword(ResetPassword.State(username: state.id))
                 return .none
