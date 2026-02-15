@@ -31,7 +31,7 @@ struct PublicLocations {
         case userFocusTapped
         case userLocationReceived(Coordinate)
         case reloadTapped
-        case errorCaught(APIError)
+        case reloadReceived(VoidTaskResult)
         case alert(PresentationAction<Alert.Action>)
     }
     
@@ -51,14 +51,8 @@ struct PublicLocations {
                 state.$mapRegion.withLock { $0 = makeRegion(origin: entry.floatLocation.coordinate, spanDelta: spanDelta)}
                 return .none
             case .reloadTapped:
-                return .run{ [state] send in
-                    let result = await task{ try await dataFetcher.fetchAll(festivalId: state.festival.id) }
-                    switch result {
-                    case .success:
-                        return
-                    case .failure(let error):
-                        await send(.errorCaught(error))
-                    }
+                return .task(Action.reloadReceived) { [state] in
+                    try await dataFetcher.fetchAll(festivalId: state.festival.id)
                 }
             case .userLocationReceived(let value):
                 state.$mapRegion.withLock { $0 = makeRegion(origin: value, spanDelta: spanDelta)}
@@ -69,7 +63,7 @@ struct PublicLocations {
                     guard let coordinate = result.value?.coordinate  else { return }
                     await send(.userLocationReceived(Coordinate.fromCL(coordinate)))
                 }
-            case .errorCaught(let error):
+            case .reloadReceived(.failure(let error)):
                 state.alert = Alert.error(error.localizedDescription)
                 return .none
             case .alert:
