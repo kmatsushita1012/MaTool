@@ -82,9 +82,7 @@ struct ResetPassword {
                 }
             case .enterUsername(.dismissTapped),
                 .enterCode(.dismissTapped):
-                return .run { _ in
-                    await dismiss()
-                }
+                return .dismiss
             case .resetReceived(.success):
                 state.isLoading = false
                 state.step = .enterCode

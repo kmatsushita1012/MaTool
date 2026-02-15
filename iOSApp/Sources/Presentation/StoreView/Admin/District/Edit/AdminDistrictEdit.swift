@@ -56,9 +56,7 @@ struct AdminDistrictEdit {
             case .binding:
                 return .none
             case .cancelTapped:
-                return .run { _ in
-                    await dismiss()
-                }
+                return .dismiss
             case .saveTapped:
                 state.isLoading = true
                 return .task(Action.postReceived) { [state] in

@@ -59,9 +59,7 @@ struct FestivalEditFeature {
                     await dismiss()
                 }
             case .cancelTapped:
-                return .run { _ in
-                    await dismiss()
-                }
+                return .dismiss
             case .putReceived(.failure(let error)):
                 state.isLoading = false
                 state.alert = Alert.error("保存に失敗しました。\(error.localizedDescription)")
