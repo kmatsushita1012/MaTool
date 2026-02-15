@@ -21,6 +21,7 @@ protocol DistrictControllerProtocol: Sendable {
 	func query(_ request: Request, next: Handler) async throws -> Response
 	func post(_ request: Request, next: Handler) async throws -> Response
 	func put(_ request: Request, next: Handler) async throws -> Response
+    func updateDistrict(_ request: Request, next: Handler) async throws -> Response
 }
 
 // MARK: - DependencyKey
@@ -61,4 +62,12 @@ struct DistrictController: DistrictControllerProtocol {
         let result = try await usecase.put(id: id, item: body, user: user)
         return try .success(result)
 	}
+    
+    func updateDistrict(_ request: Request, next: Handler) async throws -> Response {
+        let id = try request.parameter("districtId", as: String.self)
+        let body = try request.body(as: District.self)
+        let user = request.user ?? .guest
+        let result = try await usecase.put(id: id, district: body, user: user)
+        return try .success(result)
+    }
 }
