@@ -57,7 +57,7 @@ struct ResetPasswordStoreView: View {
                 .foregroundStyle(.gray)
                 .padding()
             VStack(alignment: .leading, spacing: 4) {
-                Text("ID")
+                Text("ID（ユーザー名）")
                     .font(.subheadline)
                     .foregroundColor(.gray)
                 TextField("", text: $store.username)
@@ -78,11 +78,13 @@ struct ResetPasswordStoreView: View {
     @ViewBuilder
     var enterCode: some View {
         VStack{
-            SecureField("新しいパスワード", text: $store.newPassword1)
+            TextField("新しいパスワード", text: $store.newPassword1)
+                .textContentType(.password)
                 .textFieldStyle(RoundedBorderTextFieldStyle())
                 .focused($focusedField, equals: .newPassword1)
                 .padding()
-            SecureField("新しいパスワード（確認用）", text: $store.newPassword2)
+            TextField("新しいパスワード（確認用）", text: $store.newPassword2)
+                .textContentType(.password)
                 .textFieldStyle(RoundedBorderTextFieldStyle())
                 .focused($focusedField, equals: .newPassword2)
                 .padding()
