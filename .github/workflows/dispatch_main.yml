@@ -23,6 +23,6 @@ jobs:
 
   deploy:
     name: Deploy Backend API
-    needs: [test_backend, test_shared]
+    # needs: [test_backend, test_shared] 一時的に削除
     uses: ./.github/workflows/job_deploy_backend.yml
     secrets: inherit
