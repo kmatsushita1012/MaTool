@@ -39,7 +39,7 @@ struct UpdateEmail {
         }
         
         case resendTapped
-        case updateReceived(UpdateEmailResult)
+        case updateReceived(TaskResult<UpdateEmailState>)
         case confirmUpdateReceived(TaskResult<Empty>)
         case errorAlert(PresentationAction<Alert.Action>)
         case completeAlert(PresentationAction<Alert.Action>)
@@ -57,9 +57,8 @@ struct UpdateEmail {
             case .enterEmail(.okTapped),
                 .resendTapped:
                 state.isLoading = true
-                return .run { [email = state.email] send in
-                    let result = await authService.updateEmail(to: email)
-                    await send(.updateReceived(result))
+                return .task(Action.updateReceived) { [email = state.email] in
+                    try await authService.updateEmail(to: email)
                 }
             case .enterCode(.okTapped):
                 state.isLoading = true
@@ -69,11 +68,11 @@ struct UpdateEmail {
             case .enterEmail(.dismissTapped),
                 .enterCode(.dismissTapped):
                 return .dismiss
-            case .updateReceived(.completed):
+            case .updateReceived(.success(.completed)):
                 state.isLoading = false
                 state.completeAlert = Alert.success("メールアドレスが変更されました")
                 return .none
-            case .updateReceived(.verificationRequired(destination: let destination)):
+            case .updateReceived(.success(.verificationRequired(destination: let destination))):
                 state.isLoading = false
                 state.step = .enterCode(destination: destination)
                 return .none

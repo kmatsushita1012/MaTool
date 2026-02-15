@@ -7,22 +7,19 @@
 
 import Shared
 
-enum SignInResult: Equatable {
-    case success(UserRole)
+enum SignInState: Equatable {
+    case signedIn(UserRole)
     case newPasswordRequired
-    case failure(AuthError)
 }
 
-enum UpdateEmailResult: Equatable {
+enum UpdateEmailState: Equatable {
     case completed
     case verificationRequired(destination: String)
-    case failure(AuthError)
 }
 
-
-enum InitializeResult: Equatable {
-    case signedIn
-    case signedOut
+enum SignInResponse {
+    case success
+    case newPasswordRequired
 }
 
 extension Error {
@@ -30,10 +27,3 @@ extension Error {
         return .unknown(self.localizedDescription)
     }
 }
-
-enum SignInResponse {
-    case success
-    case newPasswordRequired
-    case failure(AuthError)
-}
-

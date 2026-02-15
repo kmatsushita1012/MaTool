@@ -15,7 +15,7 @@ enum SceneUsecaseKey: DependencyKey {
 
 protocol SceneUsecaseProtocol: Sendable {
     func launch() async -> LaunchState
-    func signIn(username: String, password: String) async throws -> SignInResult
+    func signIn(username: String, password: String) async throws -> SignInState
     func confirmSignIn(password: String) async throws -> UserRole
     func select(festivalId: Festival.ID) async throws
     func select(districtId: District.ID) async throws -> Route.ID?
@@ -61,13 +61,13 @@ actor SceneUsecase: SceneUsecaseProtocol {
         }
     }
     
-    func signIn(username: String, password: String) async throws -> SignInResult {
-        let signInResult = await authService.signIn(username, password: password)
-        if case .success(.headquarter(let festivalId)) = signInResult {
+    func signIn(username: String, password: String) async throws -> SignInState {
+        let signInResult = try await authService.signIn(username, password: password)
+        if case .signedIn(.headquarter(let festivalId)) = signInResult {
             try await dataFetcher.launchFestival(festivalId: festivalId)
             userDefaults.defaultDistrictId = nil
             userDefaults.defaultFestivalId = festivalId
-        } else if case .success(.district(let districtId)) = signInResult {
+        } else if case .signedIn(.district(let districtId)) = signInResult {
             async let festivalTask = dataFetcher.launchFestival(districtId: districtId)
             async let districtTask = dataFetcher.launchDistrict(districtId: districtId)
             let (festivalId, _) = try await (festivalTask, districtTask)

@@ -30,7 +30,7 @@ struct Login {
         case binding(BindingAction<State>)
         case dismissTapped
         case signInTapped
-        case received(TaskResult<SignInResult>)
+        case received(TaskResult<SignInState>)
         case resetPasswordTapped
         case destination(PresentationAction<Destination.Action>)
     }

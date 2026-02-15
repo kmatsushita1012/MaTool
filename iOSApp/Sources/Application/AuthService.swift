@@ -23,14 +23,14 @@ extension DependencyValues {
 // MARK: - AuthServiceProtocol
 protocol AuthServiceProtocol: Sendable {
     nonisolated func initialize() throws
-    func signIn(_ username: String, password: String) async -> SignInResult
+    func signIn(_ username: String, password: String) async throws -> SignInState
     func confirmSignIn(password: String) async throws -> UserRole
     func signOut() async throws -> UserRole
     func getAccessToken() async -> String?
     func changePassword(current: String, new: String) async throws -> Empty
     func resetPassword(username: String)  async throws -> Empty
     func confirmResetPassword(username: String, newPassword: String, code: String)  async throws -> Empty
-    func updateEmail(to newEmail: String) async -> UpdateEmailResult
+    func updateEmail(to newEmail: String) async throws -> UpdateEmailState
     func confirmUpdateEmail(code: String) async throws -> Empty
     nonisolated func isValidPassword(_ password: String) -> Bool
     func getUserRole() async throws -> UserRole
@@ -47,23 +47,15 @@ actor AuthService: AuthServiceProtocol {
         return try authProvider.initialize()
     }
     
-    func signIn(_ username: String, password: String) async -> SignInResult {
+    func signIn(_ username: String, password: String) async throws -> SignInState {
         try? await authProvider.signOut()
-        let result = await authProvider.signIn(username, password)
+        let result = try await authProvider.signIn(username, password)
         switch result {
-        case .failure(let error):
-            return .failure(error)
         case .newPasswordRequired:
             return .newPasswordRequired
         case .success:
-            do {
-                let userRole = try await getUserRole()
-                return .success(userRole)
-            } catch let error as AuthError {
-                return .failure(error)
-            } catch {
-                return .failure(.unknown(error.localizedDescription))
-            }
+            let userRole = try await getUserRole()
+            return .signedIn(userRole)
         }
     }
     
@@ -106,8 +98,8 @@ actor AuthService: AuthServiceProtocol {
         )
     }
     
-    func updateEmail(to newEmail: String) async -> UpdateEmailResult {
-        return await authProvider.updateEmail(newEmail)
+    func updateEmail(to newEmail: String) async throws -> UpdateEmailState {
+        return try await authProvider.updateEmail(newEmail)
     }
     
     func confirmUpdateEmail(code: String) async throws -> Empty {

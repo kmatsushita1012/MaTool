@@ -7,7 +7,7 @@
 
 import Foundation
 
-enum APIError: Error, Equatable, Hashable {
+enum APIError: LocalizedError, Equatable, Hashable {
     case network(statusCode: Int?, message: String)
     case notFound(message: String)
     case unauthorized(message: String)
