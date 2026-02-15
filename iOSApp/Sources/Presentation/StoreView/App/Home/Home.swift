@@ -51,9 +51,7 @@ struct Home {
         case adminTapped
         case settingsTapped
         case statusReceived(StatusCheckResult?)
-        case adminDistrictPrepared(VoidResult<APIError>)
-        case adminFestivalPrepared(VoidResult<APIError>)
-        case settingsPrepared(VoidResult<APIError>)
+        case settingsPrepared(VoidTaskResult)
         case destination(PresentationAction<Destination.Action>)
         case alert(PresentationAction<Alert.Action>)
     }
@@ -70,12 +68,10 @@ struct Home {
             case .binding:
                 return .none
             case .initialize:
-                return .merge(
-                    .run { send in
-                        let result = await appStatusClient.checkStatus()
-                        await send(.statusReceived(result))
-                    },
-                )
+                return .run { send in
+                    let result = await appStatusClient.checkStatus()
+                    await send(.statusReceived(result))
+                }
             case .statusReceived(let value):
                 state.status = value
                 return .none
@@ -93,7 +89,6 @@ struct Home {
                 } else {
                     state.destination = .map(.init(festival: festival))
                     return .none
-                    
                 }
             case .infoTapped:
                 guard let festivalId = userDefaults.defaultFestivalId,
@@ -107,9 +102,8 @@ struct Home {
                 return adminTapped(state: &state, action: action)
             case .settingsTapped:
                 state.isDestinationLoading = true
-                return .run {send in 
-                    let result = await task{ try await festivalDataFetcher.fetchAll()}
-                    await send(.settingsPrepared(result))
+                return .task(Action.settingsPrepared) {
+                    try await festivalDataFetcher.fetchAll()
                 }
             case .settingsPrepared(.success):
                 state.isDestinationLoading = false
@@ -120,7 +114,7 @@ struct Home {
                 return .none
             case .destination(.presented(let childAction)):
                 switch childAction {
-                case .login(.received(.success(let userRole))),
+                case .login(.received(.success(.signedIn(let userRole)))),
                         .login(.destination(.presented(.confirmSignIn(.received(.success(let userRole)))))):
                     state.userRole = userRole
                     switch state.userRole {

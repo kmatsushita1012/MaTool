@@ -64,8 +64,8 @@ struct PublicRoute {
         case locationTapped(FloatEntry)
         case userFocusTapped
         case floatFocusTapped
-        case routeReceived(VoidResult<APIError>)
-        case locationReceived(VoidResult<APIError>)
+        case routeReceived(VoidTaskResult)
+        case locationReceived(VoidTaskResult)
         case userLocationReceived(Coordinate)
         case replayTapped
         case replayEnded
@@ -89,9 +89,8 @@ struct PublicRoute {
             case .selected(let entry):
                 state.isMenuExpanded = false
                 state.selected = entry
-                return .run { send in
-                    let result = await task { try await dataFetcher.fetch(routeID: entry.route.id) }
-                    await send(.routeReceived(result))
+                return .task(Action.routeReceived) {
+                    try await dataFetcher.fetch(routeID: entry.route.id)
                 }
             case .pointTapped(let value):
                 state.detail = .point(value)
@@ -111,12 +110,12 @@ struct PublicRoute {
             case .routeReceived(.failure(let error)):
                 state.alert = Alert.error(error.localizedDescription)
                 return .none
-            case .locationReceived(.success):
-                return .none
             case .locationReceived(.failure(let error)):
-                if case .notFound = error {
+                if let error = error as? APIError,
+                    case .notFound = error {
                     state.alert = Alert.notice("現在地の配信は停止中です。")
-                } else if case .forbidden = error {
+                } else if let error = error as? APIError,
+                    case .forbidden = error {
                     state.alert = Alert.notice("現在地の配信は停止中です。")
                 } else {
                     state.alert = Alert.error(error.localizedDescription)
@@ -148,6 +147,8 @@ struct PublicRoute {
                 return .none
             case .alert:
                 state.alert = nil
+                return .none
+            default:
                 return .none
             }
         }

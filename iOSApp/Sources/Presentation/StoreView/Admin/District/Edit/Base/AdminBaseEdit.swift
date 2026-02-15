@@ -45,9 +45,7 @@ struct AdminBaseEdit {
                 state.coordinate = coordinate
                 return .none
             case .dismissTapped:
-                return .run { _ in
-                    await dismiss()
-                }
+                return .dismiss
             case .doneTapped:
                 return .none
             case .clearTapped:
