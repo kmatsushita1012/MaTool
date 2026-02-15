@@ -21,7 +21,7 @@ extension DependencyValues {
 // MARK: - AuthProvider(Protocol)
 struct AuthProvider: Sendable {
     nonisolated var initialize: @Sendable () throws -> Void
-    var signIn: @Sendable (_ username: String, _ password: String) async -> SignInResponse
+    var signIn: @Sendable (_ username: String, _ password: String) async throws -> SignInResponse
     var confirmSignIn: @Sendable (_ newPassword: String) async throws -> Empty
     var getUserRole: @Sendable () async throws -> UserRole
     var getTokens: @Sendable () async throws -> String
@@ -29,7 +29,7 @@ struct AuthProvider: Sendable {
     var changePassword: @Sendable (_ current: String, _ new: String) async throws -> Empty
     var resetPassword: @Sendable (_ username: String) async throws -> Empty
     var confirmResetPassword: @Sendable (_ username: String,_ newPassword: String, _ code: String) async throws -> Empty
-    var updateEmail: @Sendable (_ newEmail: String) async -> UpdateEmailResult
+    var updateEmail: @Sendable (_ newEmail: String) async throws -> UpdateEmailState
     var confirmUpdateEmail: @Sendable (_ code: String) async throws -> Empty
 }
 
@@ -57,12 +57,10 @@ extension AuthProvider: DependencyKey {
                     } else if case .confirmSignInWithNewPassword = result.nextStep {
                         return .newPasswordRequired
                     } else {
-                        return .failure(.unknown("Unexpected step: \(result.nextStep)"))
+                        throw AuthError.unknown("Unexpected step: \(result.nextStep)")
                     }
-                } catch let error as AuthError {
-                    return .failure(error)
                 } catch {
-                    return .failure(.timeout("signIn"))
+                    try Self.rethrowAsAuthErrorIfNeeded(error, operation: "signIn")
                 }
             },
             
@@ -73,10 +71,8 @@ extension AuthProvider: DependencyKey {
                     }
                     guard result.isSignedIn else { throw AuthError.unknown("Failed") }
                     return Empty()
-                } catch let error as AuthError {
-                    throw error
                 } catch {
-                    throw AuthError.timeout("confirmSignIn")
+                    try Self.rethrowAsAuthErrorIfNeeded(error, operation: "confirmSignIn")
                 }
             },
             
@@ -96,10 +92,8 @@ extension AuthProvider: DependencyKey {
                         }
                     }
                     return .guest
-                } catch let error as AuthError {
-                    throw error
                 } catch {
-                    throw AuthError.timeout("getUserRole")
+                    try Self.rethrowAsAuthErrorIfNeeded(error, operation: "getUserRole")
                 }
             },
             
@@ -116,7 +110,7 @@ extension AuthProvider: DependencyKey {
                         throw AuthError.unknown("")
                     }
                 } catch {
-                    throw AuthError.unknown(error.localizedDescription)
+                    try Self.rethrowAsAuthErrorIfNeeded(error, operation: "getTokens")
                 }
             },
             signOut: {
@@ -125,10 +119,8 @@ extension AuthProvider: DependencyKey {
                         await Amplify.Auth.signOut()
                     }
                     return Empty()
-                } catch let error as AuthError {
-                    throw error
                 } catch {
-                    throw AuthError.timeout("signOut")
+                    try Self.rethrowAsAuthErrorIfNeeded(error, operation: "signOut")
                 }
             },
             
@@ -138,10 +130,8 @@ extension AuthProvider: DependencyKey {
                         try await Amplify.Auth.update(oldPassword: current, to: new)
                     }
                     return Empty()
-                } catch let error as AuthError {
-                    throw error
                 } catch {
-                    throw AuthError.timeout("changePassword")
+                    try Self.rethrowAsAuthErrorIfNeeded(error, operation: "changePassword")
                 }
             },
             
@@ -151,10 +141,8 @@ extension AuthProvider: DependencyKey {
                         try await Amplify.Auth.resetPassword(for: username)
                     }
                     return Empty()
-                } catch let error as AuthError {
-                    throw error
                 } catch {
-                    throw AuthError.timeout("resetPassword")
+                    try Self.rethrowAsAuthErrorIfNeeded(error, operation: "resetPassword")
                 }
             },
             
@@ -168,10 +156,8 @@ extension AuthProvider: DependencyKey {
                         )
                     }
                     return Empty()
-                } catch let error as AuthError {
-                    throw error
                 } catch {
-                    throw AuthError.timeout("confirmResetPassword")
+                    try Self.rethrowAsAuthErrorIfNeeded(error, operation: "confirmResetPassword")
                 }
             },
             
@@ -187,10 +173,8 @@ extension AuthProvider: DependencyKey {
                         //TODO: destination
                         return .verificationRequired(destination: "仮")
                     }
-                } catch let error as AuthError {
-                    return .failure(error)
                 } catch {
-                    return .failure(.timeout("updateEmail"))
+                    try Self.rethrowAsAuthErrorIfNeeded(error, operation: "updateEmail")
                 }
             },
             
@@ -200,12 +184,22 @@ extension AuthProvider: DependencyKey {
                         try await Amplify.Auth.confirm(userAttribute: .email, confirmationCode: code)
                     }
                     return Empty()
-                } catch let error as AuthError {
-                    throw error
                 } catch {
-                    throw AuthError.timeout("confirmUpdateEmail")
+                    try Self.rethrowAsAuthErrorIfNeeded(error, operation: "confirmUpdateEmail")
                 }
             }
         )
     }()
+}
+
+private extension AuthProvider {
+    static func rethrowAsAuthErrorIfNeeded(_ error: Error, operation: String) throws -> Never {
+        if let authError = error as? AuthError {
+            throw authError
+        }
+        if error is CancellationError {
+            throw AuthError.timeout(operation)
+        }
+        throw error
+    }
 }
