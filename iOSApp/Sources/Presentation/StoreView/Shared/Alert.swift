@@ -7,6 +7,27 @@
 
 import ComposableArchitecture
 
+extension AlertState {
+    static func error(_ text: String, title: String = "エラー") -> AlertState<Alert.Action> {
+        return Alert.error(text, title: title)
+    }
+    
+    static func success(_ text: String, title: String = "完了") -> AlertState<Alert.Action> {
+        return Alert.success(text, title: title)
+    }
+    
+    static func notice(_ text: String, title: String = " お知らせ") -> AlertState<Alert.Action> {
+        return Alert.notice(text, title: title)
+    }
+    
+    static func delete(
+        _ text: String = "このデータを削除してもよろしいですか？この操作は元に戻せません。",
+        title: String = "確認"
+    ) -> AlertState<Alert.Action> {
+        return Alert.delete(text, title: title)
+    }
+}
+
 @Reducer
 struct Alert {
     @CasePathable
