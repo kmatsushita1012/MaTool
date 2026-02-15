@@ -40,7 +40,7 @@ struct UpdateEmail {
         
         case resendTapped
         case updateReceived(UpdateEmailResult)
-        case confirmUpdateReceived(Result<Empty, AuthError>)
+        case confirmUpdateReceived(TaskResult<Empty>)
         case errorAlert(PresentationAction<Alert.Action>)
         case completeAlert(PresentationAction<Alert.Action>)
     }
@@ -57,15 +57,14 @@ struct UpdateEmail {
             case .enterEmail(.okTapped),
                 .resendTapped:
                 state.isLoading = true
-                return .run { [email = state.email] send in
+                return .task { [email = state.email] send in
                     let result = await authService.updateEmail(to: email)
                     await send(.updateReceived(result))
                 }
             case .enterCode(.okTapped):
                 state.isLoading = true
-                return .run { [code = state.code] send in
-                    let result = await authService.confirmUpdateEmail(code: code)
-                    await send(.confirmUpdateReceived(result))
+                return .task(Action.confirmUpdateReceived) { [code = state.code] in
+                    try await authService.confirmUpdateEmail(code: code).get()
                 }
             case .enterEmail(.dismissTapped),
                 .enterCode(.dismissTapped):
