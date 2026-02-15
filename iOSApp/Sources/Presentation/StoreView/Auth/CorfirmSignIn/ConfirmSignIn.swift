@@ -51,7 +51,7 @@ struct ConfirmSignIn {
                 }
                 state.isLoading = true
                 return .task(Action.received) { [password = state.password1] in
-                    try await authService.confirmSignIn(password: password).get()
+                    try await authService.confirmSignIn(password: password)
                 }
             case .dismissTapped:
                 return .dismiss
