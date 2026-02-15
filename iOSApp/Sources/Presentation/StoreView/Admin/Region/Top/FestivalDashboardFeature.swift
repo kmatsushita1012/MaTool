@@ -47,7 +47,7 @@ struct FestivalDashboardFeature {
         case changePasswordTapped
         case updateEmailTapped
         case signOutTapped
-        case signOutReceived(Result<UserRole, AuthError>)
+        case signOutReceived(TaskResult<UserRole>)
         case destination(PresentationAction<Destination.Action>)
         case alert(PresentationAction<Alert.Action>)
     }
@@ -81,13 +81,10 @@ struct FestivalDashboardFeature {
                 return .none
             case .signOutTapped:
                 state.isAuthLoading = true
-                return .run { send in
-                    let result = await authService.signOut()
-                    await send(.signOutReceived(result))
+                return .task(Action.signOutReceived) {
+                    try await authService.signOut().get()
+                    await dismiss()
                 }
-            case .signOutReceived(.success):
-                state.isAuthLoading = false
-                return .none
             case .signOutReceived(.failure(let error)):
                 state.isAuthLoading = false
                 state.alert = Alert.error("ログアウトに失敗しました　\(error.localizedDescription)")
