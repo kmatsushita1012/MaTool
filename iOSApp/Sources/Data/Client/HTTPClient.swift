@@ -7,6 +7,7 @@
 
 import Foundation
 import Dependencies
+import Shared
 
 //MARK: - Dependencies
 enum HTTPClientKey: DependencyKey {
@@ -34,7 +35,7 @@ protocol HTTPClientProtocol: Sendable {
         body: Body?,
         accessToken: String?,
         isCache: Bool
-    ) async -> Result<Response, APIError>
+    ) async throws -> Response
 
     func request<Response: Decodable>(
         path: String,
@@ -42,34 +43,40 @@ protocol HTTPClientProtocol: Sendable {
         query: [String: Any],
         accessToken: String?,
         isCache: Bool
-    ) async -> Result<Response, APIError>
+    ) async throws -> Response
 
     func get<Response: Decodable>(
         path: String,
         query: [String: Any],
         accessToken: String?,
         isCache: Bool
-    ) async -> Result<Response, APIError>
+    ) async throws -> Response
 
     func post<Response: Decodable, Body: Encodable>(
         path: String,
         body: Body,
         query: [String: Any],
         accessToken: String?
-    ) async -> Result<Response, APIError>
+    ) async throws -> Response
 
     func put<Response: Decodable, Body: Encodable>(
         path: String,
         body: Body,
         query: [String: Any],
         accessToken: String?
-    ) async -> Result<Response, APIError>
+    ) async throws -> Response
 
     func delete<Response: Decodable>(
         path: String,
         query: [String: Any],
         accessToken: String?
-    ) async -> Result<Response, APIError>
+    ) async throws -> Response
+
+    func delete(
+        path: String,
+        query: [String: Any],
+        accessToken: String?
+    ) async throws
 }
 
 // MARK: - APIClient
@@ -81,6 +88,7 @@ actor HTTPClient: HTTPClientProtocol {
     private let jsonDecoder: JSONDecoder
 
     private struct EmptyBody: Encodable {}
+    private struct EmptyResponse: Decodable {}
 
     init(base: String, session: URLSession = .shared) {
         self.base = base
@@ -99,11 +107,6 @@ actor HTTPClient: HTTPClientProtocol {
         self.jsonDecoder = JSONDecoder()
     }
 
-    private struct ErrorResponse: Decodable {
-        let message: String
-        let localizedDescription: String?
-    }
-
     func request<Response: Decodable, Body: Encodable>(
         path: String,
         method: String = "GET",
@@ -111,43 +114,36 @@ actor HTTPClient: HTTPClientProtocol {
         body: Body? = nil,
         accessToken: String? = nil,
         isCache: Bool = false
-    ) async -> Result<Response, APIError> {
-        do {
-            let url = try makeURL(path: path, query: query)
+    ) async throws -> Response {
+        let url = try makeURL(path: path, query: query)
 
-            // Encode body (early return on failure)
-            let bodyDataResult: Result<Data?, APIError> = encodeBody(body)
-            if case .failure(let err) = bodyDataResult { return .failure(err) }
-            let bodyData = try? bodyDataResult.get()
+        let bodyData = try encodeBody(body)
 
-            let key = cacheKey(url: url, method: method, bodyData: bodyData ?? nil)
+        let key = cacheKey(url: url, method: method, bodyData: bodyData ?? nil)
 
-            // Cache hit
-            if isCache, let cached = cache.object(forKey: key) {
-                return decodeResponse(from: cached as Data)
-            }
-
-            // Build request and execute
-            let urlRequest = makeRequest(url: url, method: method, bodyData: bodyData ?? nil, accessToken: accessToken)
-            let (data, http): (Data, HTTPURLResponse?)
-            do {
-                (data, http) = try await execute(request: urlRequest)
-            } catch {
-                return .failure(APIError(error))
-            }
-
-            // If we have HTTP response, check status code
-            if let http = http, !(200...299).contains(http.statusCode) {
-                let error = decodeAPIError(from: data, httpStatus: http.statusCode)
-                return .failure(APIError(error))
-            }
-
-            // Success path: cache and decode
-            if isCache { cache.setObject(data as NSData, forKey: key) }
-            return decodeResponse(from: data)
-        } catch {
-            return .failure(APIError(error))
+        // Cache hit
+        if isCache, let cached = cache.object(forKey: key) {
+            return try decodeResponse(from: cached as Data)
         }
+
+        // Build request and execute
+        let urlRequest = makeRequest(url: url, method: method, bodyData: bodyData ?? nil, accessToken: accessToken)
+        let (data, http): (Data, HTTPURLResponse?)
+        do {
+            (data, http) = try await execute(request: urlRequest)
+        } catch {
+            throw APIError(statusCode: nil, message: "実行中にエラーが発生しました。インターネット接続を確認してください。")
+        }
+
+        // If we have HTTP response, check status code
+        if let http = http, !(200...299).contains(http.statusCode),
+           let response: ErrorResponse = try decodeResponse(from: data){
+            throw APIError(statusCode: http.statusCode, message: response.localizedDescription)
+        }
+
+        // Success path: cache and decode
+        if isCache { cache.setObject(data as NSData, forKey: key) }
+        return try decodeResponse(from: data)
     }
 
     func request<Response: Decodable>(
@@ -156,30 +152,42 @@ actor HTTPClient: HTTPClientProtocol {
         query: [String: Any] = [:],
         accessToken: String? = nil,
         isCache: Bool = false
-    ) async -> Result<Response, APIError> {
-        await request(path: path, method: method, query: query, body: Optional<EmptyBody>.none, accessToken: accessToken, isCache: isCache)
+    ) async throws -> Response {
+        try await request(path: path, method: method, query: query, body: Optional<EmptyBody>.none, accessToken: accessToken, isCache: isCache)
     }
 
-    func get<Response: Decodable>(path: String, query: [String: Any] = [:], accessToken: String? = nil, isCache: Bool = false) async -> Result<Response, APIError> {
-        await request(path: path, method: "GET", query: query, body: Optional<EmptyBody>.none, accessToken: accessToken, isCache: isCache)
+    func get<Response: Decodable>(path: String, query: [String: Any] = [:], accessToken: String? = nil, isCache: Bool = false) async throws -> Response {
+        try await request(path: path, method: "GET", query: query, body: Optional<EmptyBody>.none, accessToken: accessToken, isCache: isCache)
     }
 
-    func post<Response: Decodable, Body: Encodable>(path: String, body: Body, query: [String: Any] = [:], accessToken: String? = nil) async -> Result<Response, APIError> {
-        let response: Result<Response, APIError> = await request(path: path, method: "POST", query: query, body: body, accessToken: accessToken, isCache: false)
+    func post<Response: Decodable, Body: Encodable>(path: String, body: Body, query: [String: Any] = [:], accessToken: String? = nil) async throws -> Response {
+        let response: Response = try await request(path: path, method: "POST", query: query, body: body, accessToken: accessToken, isCache: false)
         cache.removeAllObjects()
         return response
     }
 
-    func put<Response: Decodable, Body: Encodable>(path: String, body: Body, query: [String: Any] = [:], accessToken: String? = nil) async -> Result<Response, APIError> {
-        let response: Result<Response, APIError> = await request(path: path, method: "PUT", query: query, body: body, accessToken: accessToken, isCache: false)
+    func put<Response: Decodable, Body: Encodable>(path: String, body: Body, query: [String: Any] = [:], accessToken: String? = nil) async throws -> Response {
+        let response: Response = try await request(path: path, method: "PUT", query: query, body: body, accessToken: accessToken, isCache: false)
         cache.removeAllObjects()
         return response
     }
 
-    func delete<Response: Decodable>(path: String, query: [String: Any] = [:], accessToken: String? = nil) async -> Result<Response, APIError> {
-        let response: Result<Response, APIError> = await request(path: path, method: "DELETE", query: query, body: Optional<EmptyBody>.none, accessToken: accessToken, isCache: false)
+    func delete<Response: Decodable>(path: String, query: [String: Any] = [:], accessToken: String? = nil) async throws -> Response {
+        let response: Response = try await request(path: path, method: "DELETE", query: query, body: Optional<EmptyBody>.none, accessToken: accessToken, isCache: false)
         cache.removeAllObjects()
         return response
+    }
+
+    func delete(path: String, query: [String: Any] = [:], accessToken: String? = nil) async throws {
+        let _: EmptyResponse = try await request(
+            path: path,
+            method: "DELETE",
+            query: query,
+            body: Optional<EmptyBody>.none,
+            accessToken: accessToken,
+            isCache: false
+        )
+        cache.removeAllObjects()
     }
 
     private func makeURL(path: String, query: [String: Any]) throws -> URL {
@@ -216,15 +224,13 @@ actor HTTPClient: HTTPClientProtocol {
         return request
     }
 
-    private func encodeBody<Body: Encodable>(_ body: Body?) -> Result<Data?, APIError> {
-        guard let body else { return .success(nil) }
-        do { return .success(try jsonEncoder.encode(body)) }
-        catch { return .failure(APIError(error)) }
+    private func encodeBody<Body: Encodable>(_ body: Body?) throws -> Data? {
+        guard let body else { return nil }
+        return try jsonEncoder.encode(body)
     }
 
-    private func decodeResponse<Response: Decodable>(from data: Data) -> Result<Response, APIError> {
-        do { return .success(try jsonDecoder.decode(Response.self, from: data)) }
-        catch { return .failure(APIError(error)) }
+    private func decodeResponse<Response: Decodable>(from data: Data) throws -> Response {
+        try jsonDecoder.decode(Response.self, from: data)
     }
 
     private func execute(request: URLRequest) async throws -> (Data, HTTPURLResponse?) {
@@ -270,8 +276,8 @@ extension HTTPClientProtocol {
         body: Body? = nil,
         accessToken: String? = nil,
         isCache: Bool = true
-    ) async -> Result<Response, APIError> {
-        await self.request(
+    ) async throws -> Response {
+        try await self.request(
             path: path,
             method: method,
             query: query,
@@ -287,8 +293,8 @@ extension HTTPClientProtocol {
         query: [String: Any] = [:],
         accessToken: String? = nil,
         isCache: Bool = true
-    ) async -> Result<Response, APIError> {
-        await self.request(
+    ) async throws -> Response {
+        try await self.request(
             path: path,
             method: method,
             query: query,
@@ -302,8 +308,8 @@ extension HTTPClientProtocol {
         query: [String: Any] = [:],
         accessToken: String? = nil,
         isCache: Bool = true
-    ) async -> Result<Response, APIError> {
-        await self.get(
+    ) async throws -> Response {
+        try await self.get(
             path: path,
             query: query,
             accessToken: accessToken,
@@ -316,10 +322,22 @@ extension HTTPClientProtocol {
         body: Body,
         query: [String: Any] = [:],
         accessToken: String? = nil
-    ) async -> Result<Response, APIError> {
-        await self.post(
+    ) async throws -> Response {
+        try await self.post(
             path: path,
             body: body,
+            query: query,
+            accessToken: accessToken
+        )
+    }
+
+    func delete(
+        path: String,
+        query: [String: Any] = [:],
+        accessToken: String? = nil
+    ) async throws {
+        try await self.delete(
+            path: path,
             query: query,
             accessToken: accessToken
         )
@@ -330,8 +348,8 @@ extension HTTPClientProtocol {
         body: Body,
         query: [String: Any] = [:],
         accessToken: String? = nil
-    ) async -> Result<Response, APIError> {
-        await self.put(
+    ) async throws -> Response {
+        try await self.put(
             path: path,
             body: body,
             query: query,
@@ -343,126 +361,11 @@ extension HTTPClientProtocol {
         path: String,
         query: [String: Any] = [:],
         accessToken: String? = nil
-    ) async -> Result<Response, APIError> {
-        await self.delete(
+    ) async throws -> Response {
+        try await self.delete(
             path: path,
             query: query,
             accessToken: accessToken
         )
     }
 }
-
-// MARK: - APIClientProtocol (async throws variants)
-extension HTTPClientProtocol {
-    func request<Response: Decodable, Body: Encodable>(
-        path: String,
-        method: String,
-        query: [String: Any] = [:],
-        body: Body? = nil,
-        accessToken: String? = nil,
-        isCache: Bool = true
-    ) async throws -> Response {
-        let result: Result<Response, APIError> = await self.request(
-            path: path,
-            method: method,
-            query: query,
-            body: body,
-            accessToken: accessToken,
-            isCache: isCache
-        )
-        switch result {
-        case .success(let value): return value
-        case .failure(let error): throw error
-        }
-    }
-    func request<Response: Decodable>(
-        path: String,
-        method: String,
-        query: [String: Any] = [:],
-        accessToken: String? = nil,
-        isCache: Bool = true
-    ) async throws -> Response {
-        let result: Result<Response, APIError> = await self.request(
-            path: path,
-            method: method,
-            query: query,
-            accessToken: accessToken,
-            isCache: isCache
-        )
-        switch result {
-        case .success(let value): return value
-        case .failure(let error): throw error
-        }
-    }
-
-    func get<Response: Decodable>(
-        path: String,
-        query: [String: Any] = [:],
-        accessToken: String? = nil,
-        isCache: Bool = true
-    ) async throws -> Response {
-        let result: Result<Response, APIError> = await self.get(
-            path: path,
-            query: query,
-            accessToken: accessToken,
-            isCache: isCache
-        )
-        switch result {
-        case .success(let value): return value
-        case .failure(let error): throw error
-        }
-    }
-
-    func post<Response: Decodable, Body: Encodable>(
-        path: String,
-        body: Body,
-        query: [String: Any] = [:],
-        accessToken: String? = nil
-    ) async throws -> Response {
-        let result: Result<Response, APIError> = await self.post(
-            path: path,
-            body: body,
-            query: query,
-            accessToken: accessToken
-        )
-        switch result {
-        case .success(let value): return value
-        case .failure(let error): throw error
-        }
-    }
-
-    func put<Response: Decodable, Body: Encodable>(
-        path: String,
-        body: Body,
-        query: [String: Any] = [:],
-        accessToken: String? = nil
-    ) async throws -> Response {
-        let result: Result<Response, APIError> = await self.put(
-            path: path,
-            body: body,
-            query: query,
-            accessToken: accessToken
-        )
-        switch result {
-        case .success(let value): return value
-        case .failure(let error): throw error
-        }
-    }
-
-    func delete<Response: Decodable>(
-        path: String,
-        query: [String: Any] = [:],
-        accessToken: String? = nil
-    ) async throws -> Response {
-        let result: Result<Response, APIError> = await self.delete(
-            path: path,
-            query: query,
-            accessToken: accessToken
-        )
-        switch result {
-        case .success(let value): return value
-        case .failure(let error): throw error
-        }
-    }
-}
-
