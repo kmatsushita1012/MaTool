@@ -64,7 +64,7 @@ struct UpdateEmail {
             case .enterCode(.okTapped):
                 state.isLoading = true
                 return .task(Action.confirmUpdateReceived) { [code = state.code] in
-                    try await authService.confirmUpdateEmail(code: code).get()
+                    try await authService.confirmUpdateEmail(code: code)
                 }
             case .enterEmail(.dismissTapped),
                 .enterCode(.dismissTapped):
