@@ -33,9 +33,7 @@ struct CheckpointEditFeature {
             case .binding:
                 return .none
             case .cancelTapped:
-                return .run { _ in
-                    await dismiss()
-                }
+                return .dismiss
             case .doneTapped:
                 return .none
             }

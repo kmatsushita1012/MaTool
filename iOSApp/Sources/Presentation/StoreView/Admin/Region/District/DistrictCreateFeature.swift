@@ -47,9 +47,7 @@ struct DistrictCreateFeature {
                         await dismiss()
                 }
             case .cancelTapped:
-                return .run { _ in
-                    await dismiss()
-                }
+                return .dismiss
             case .createReceived(.failure(let error)):
                 state.isLoading = false
                 state.alert = Alert.error(error.localizedDescription)

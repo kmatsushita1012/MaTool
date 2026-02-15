@@ -61,9 +61,7 @@ struct InfoListFeature {
                 }
             case .dismissTapped:
                 if #available(iOS 17.0, *) {
-                    return .run { _ in
-                        await dismiss()
-                    }
+                    return .dismiss
                 } else {
                     state.isDismissed = true
                     return .none

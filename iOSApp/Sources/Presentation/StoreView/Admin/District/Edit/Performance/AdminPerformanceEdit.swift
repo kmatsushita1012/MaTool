@@ -49,9 +49,7 @@ struct AdminPerformanceEdit{
             case .doneTapped:
                 return .none
             case .cancelTapped:
-                return .run{ _ in
-                    await dismiss()
-                }
+                return .dismiss
             case .deleteTapped:
                 if state.mode == .create {
                     return .none

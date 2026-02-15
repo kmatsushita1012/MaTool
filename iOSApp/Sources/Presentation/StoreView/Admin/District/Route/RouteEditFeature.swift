@@ -140,9 +140,7 @@ struct RouteEditFeature{
                     await dismiss()
                 }
             case .cancelTapped:
-                return .run { _ in
-                    await dismiss()
-                }
+                return .dismiss
             case .deleteTapped:
                 if !state.isDeleteable {
                     state.alert = .notice(Alert.error("権限がありません"))

@@ -54,9 +54,7 @@ struct ConfirmSignIn {
                     try await authService.confirmSignIn(password: password).get()
                 }
             case .dismissTapped:
-                return .run { _ in
-                    await dismiss()
-                }
+                return .dismiss
             case .received(.success(let userRole)):
                 switch userRole {
                 case .headquarter(let id):

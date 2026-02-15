@@ -139,9 +139,7 @@ struct AdminDistrictTop {
                 state.alert = .error("ログアウトに失敗しました。 \(error.localizedDescription)")
                 return .none
             case .dismissTapped:
-                return .run { _ in
-                    await dismiss()
-                }
+                return .dismiss
             case .alert(.presented(.okTapped)):
                 state.alert = nil
                 return .none

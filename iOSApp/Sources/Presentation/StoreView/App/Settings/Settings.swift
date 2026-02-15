@@ -102,9 +102,7 @@ struct Settings {
                 state.alert = nil
                 return .none
             case .dismissTapped:
-                return .run {_ in
-                    await dismiss()
-                }
+                return .dismiss
             }
         }
     }

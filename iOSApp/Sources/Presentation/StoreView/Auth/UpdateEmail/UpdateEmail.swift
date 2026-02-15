@@ -68,9 +68,7 @@ struct UpdateEmail {
                 }
             case .enterEmail(.dismissTapped),
                 .enterCode(.dismissTapped):
-                return .run { _ in
-                    await dismiss()
-                }
+                return .dismiss
             case .updateReceived(.completed):
                 state.isLoading = false
                 state.completeAlert = Alert.success("メールアドレスが変更されました")
@@ -96,9 +94,7 @@ struct UpdateEmail {
                 return .none
             case .completeAlert:
                 state.completeAlert = nil
-                return .run { _ in
-                    await dismiss()
-                }
+                return .dismiss
             }
         }
         .ifLet(\.$errorAlert, action: \.errorAlert)

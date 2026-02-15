@@ -70,9 +70,7 @@ struct FestivalDashboardFeature {
                 state.destination = .districts(.init(state.festival))
                 return .none
             case .dismissTapped:
-                return .run { _ in
-                    await dismiss()
-                }
+                return .dismiss
             case .changePasswordTapped:
                 state.destination = .changePassword(ChangePassword.State())
                 return .none
