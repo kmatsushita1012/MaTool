@@ -64,8 +64,8 @@ struct PublicRoute {
         case locationTapped(FloatEntry)
         case userFocusTapped
         case floatFocusTapped
-        case routeReceived(VoidResult<APIError>)
-        case locationReceived(VoidResult<APIError>)
+        case routeReceived(VoidTaskResult)
+        case locationReceived(VoidTaskResult)
         case userLocationReceived(Coordinate)
         case replayTapped
         case replayEnded
@@ -89,9 +89,8 @@ struct PublicRoute {
             case .selected(let entry):
                 state.isMenuExpanded = false
                 state.selected = entry
-                return .run { send in
-                    let result = await task { try await dataFetcher.fetch(routeID: entry.route.id) }
-                    await send(.routeReceived(result))
+                return .task(Action.routeReceived) {
+                    try await dataFetcher.fetch(routeID: entry.route.id)
                 }
             case .pointTapped(let value):
                 state.detail = .point(value)
