@@ -116,7 +116,6 @@ extension AuthProvider: DependencyKey {
                     let _ = try await withTimeout(seconds: timeout) {
                         await Amplify.Auth.signOut()
                     }
-                    return ()
                 } catch {
                     try Self.rethrowAsAuthErrorIfNeeded(error, operation: "signOut")
                 }
@@ -127,7 +126,6 @@ extension AuthProvider: DependencyKey {
                     try await withTimeout(seconds: timeout) {
                         try await Amplify.Auth.update(oldPassword: current, to: new)
                     }
-                    return ()
                 } catch {
                     try Self.rethrowAsAuthErrorIfNeeded(error, operation: "changePassword")
                 }
@@ -138,7 +136,6 @@ extension AuthProvider: DependencyKey {
                     _ = try await withTimeout(seconds: timeout) {
                         try await Amplify.Auth.resetPassword(for: username)
                     }
-                    return ()
                 } catch {
                     try Self.rethrowAsAuthErrorIfNeeded(error, operation: "resetPassword")
                 }
@@ -153,7 +150,6 @@ extension AuthProvider: DependencyKey {
                             confirmationCode: code
                         )
                     }
-                    return ()
                 } catch {
                     try Self.rethrowAsAuthErrorIfNeeded(error, operation: "confirmResetPassword")
                 }
@@ -169,19 +165,17 @@ extension AuthProvider: DependencyKey {
                         return .completed
                     case .confirmAttributeWithCode(_, _):
                         //TODO: destination
-                        return .verificationRequired(destination: "仮")
+                        return .verificationRequired(destination: newEmail)
                     }
                 } catch {
                     try Self.rethrowAsAuthErrorIfNeeded(error, operation: "updateEmail")
                 }
             },
-            
             confirmUpdateEmail: { code in
                 do {
                     try await withTimeout(seconds: timeout) {
                         try await Amplify.Auth.confirm(userAttribute: .email, confirmationCode: code)
                     }
-                    return ()
                 } catch {
                     try Self.rethrowAsAuthErrorIfNeeded(error, operation: "confirmUpdateEmail")
                 }
