@@ -57,7 +57,7 @@ struct ResetPassword {
             case .enterUsername(.okTapped),
                 .resendTapped:
                 return .task(Action.resetReceived) { [username = state.username] in
-                    try await authService.resetPassword(username: username).get()
+                    try await authService.resetPassword(username: username)
                 }
             case .enterCode(.okTapped):
                 if state.newPassword1 != state.newPassword2 {
@@ -78,7 +78,7 @@ struct ResetPassword {
                         username: username,
                         newPassword: password,
                         code: code
-                    ).get()
+                    )
                 }
             case .enterUsername(.dismissTapped),
                 .enterCode(.dismissTapped):

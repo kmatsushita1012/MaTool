@@ -83,7 +83,7 @@ struct Settings {
                 return .none
             case .signOutTapped:
                 return .task(Action.signOutReceived) {
-                    try await authService.signOut().get()
+                    try await authService.signOut()
                 }
             case .signOutReceived(.success):
                 state.alert = Alert.success("ログアウトしました")

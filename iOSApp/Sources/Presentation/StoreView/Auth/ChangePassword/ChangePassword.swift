@@ -48,7 +48,7 @@ struct ChangePassword {
                 }
                 state.isLoading = true
                 return .task(Action.received) { [current = state.current, new = state.new1] in
-                    try await authService.changePassword(current: current, new: new).get()
+                    try await authService.changePassword(current: current, new: new)
                 }
             case .dismissTapped:
                 return .dismiss
