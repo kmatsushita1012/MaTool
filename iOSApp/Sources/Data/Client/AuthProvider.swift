@@ -21,16 +21,16 @@ extension DependencyValues {
 // MARK: - AuthProvider(Protocol)
 struct AuthProvider: Sendable {
     nonisolated var initialize: @Sendable () throws -> Void
-    var signIn: @Sendable (_ username: String, _ password: String) async -> SignInResponse
-    var confirmSignIn: @Sendable (_ newPassword: String) async -> Result<Empty, AuthError>
-    var getUserRole: @Sendable () async -> Result<UserRole, AuthError>
-    var getTokens: @Sendable () async -> Result<String, AuthError>
-    var signOut: @Sendable () async -> Result<Empty, AuthError>
-    var changePassword: @Sendable (_ current: String, _ new: String) async -> Result<Empty,AuthError>
-    var resetPassword: @Sendable (_ username: String) async -> Result<Empty,AuthError>
-    var confirmResetPassword: @Sendable (_ username: String,_ newPassword: String, _ code: String) async -> Result<Empty,AuthError>
-    var updateEmail: @Sendable (_ newEmail: String) async -> UpdateEmailResult
-    var confirmUpdateEmail: @Sendable (_ code: String) async -> Result<Empty,AuthError>
+    var signIn: @Sendable (_ username: String, _ password: String) async throws -> SignInResponse
+    var confirmSignIn: @Sendable (_ newPassword: String) async throws -> Void
+    var getUserRole: @Sendable () async throws -> UserRole
+    var getTokens: @Sendable () async throws -> String
+    var signOut: @Sendable () async throws -> Void
+    var changePassword: @Sendable (_ current: String, _ new: String) async throws -> Void
+    var resetPassword: @Sendable (_ username: String) async throws -> Void
+    var confirmResetPassword: @Sendable (_ username: String,_ newPassword: String, _ code: String) async throws -> Void
+    var updateEmail: @Sendable (_ newEmail: String) async throws -> UpdateEmailState
+    var confirmUpdateEmail: @Sendable (_ code: String) async throws -> Void
 }
 
 // MARK: - AuthProvider(AWS)
@@ -44,7 +44,7 @@ extension AuthProvider: DependencyKey {
                     try Amplify.add(plugin: AWSCognitoAuthPlugin())
                     try Amplify.configure()
                 } catch {
-                    throw AuthError.unknown(error.localizedDescription)
+                    try Self.rethrowAsAuthErrorIfNeeded(error, operation: "signIn")
                 }
             },
             signIn: { username, password in
@@ -57,12 +57,10 @@ extension AuthProvider: DependencyKey {
                     } else if case .confirmSignInWithNewPassword = result.nextStep {
                         return .newPasswordRequired
                     } else {
-                        return .failure(.unknown("Unexpected step: \(result.nextStep)"))
+                        throw AuthError.unknown("予期しないエラーです \(result.nextStep)")
                     }
-                } catch let error as AuthError {
-                    return .failure(error)
                 } catch {
-                    return .failure(.timeout("signIn"))
+                    try Self.rethrowAsAuthErrorIfNeeded(error, operation: "signIn")
                 }
             },
             
@@ -71,11 +69,8 @@ extension AuthProvider: DependencyKey {
                     let result = try await withTimeout(seconds: timeout) {
                         try await Amplify.Auth.confirmSignIn(challengeResponse: newPassword)
                     }
-                    return result.isSignedIn ? .success(Empty()) : .failure(.unknown("Failed"))
-                } catch let error as AuthError {
-                    return .failure(error)
                 } catch {
-                    return .failure(.timeout("confirmSignIn"))
+                    try Self.rethrowAsAuthErrorIfNeeded(error, operation: "confirmSignIn")
                 }
             },
             
@@ -89,16 +84,14 @@ extension AuthProvider: DependencyKey {
                     
                     if let role = attributes.first(where: { $0.key.rawValue == "custom:role" })?.value {
                         switch role {
-                        case "region": return .success(.headquarter(user.username))
-                        case "district": return .success(.district(user.username))
-                        default: return .success(.guest)
+                        case "region": return .headquarter(user.username)
+                        case "district": return .district(user.username)
+                        default: return .guest
                         }
                     }
-                    return .success(.guest)
-                } catch let error as AuthError {
-                    return .failure(error)
+                    return .guest
                 } catch {
-                    return .failure(.timeout("getUserRole"))
+                    try Self.rethrowAsAuthErrorIfNeeded(error, operation: "getUserRole")
                 }
             },
             
@@ -108,14 +101,14 @@ extension AuthProvider: DependencyKey {
                     let result = session?.getCognitoTokens()
                     switch result {
                     case .success(let tokens):
-                        return .success(tokens.accessToken)
+                        return tokens.accessToken
                     case .failure(let error):
-                        return .failure(.unknown(error.errorDescription))
+                        throw error
                     case .none:
-                        return .failure(.unknown(""))
+                        throw AuthError.unknown("アクセストークンの取得に失敗しました。")
                     }
                 } catch {
-                    return .failure(.unknown(error.localizedDescription))
+                    try Self.rethrowAsAuthErrorIfNeeded(error, operation: "getTokens")
                 }
             },
             signOut: {
@@ -123,11 +116,8 @@ extension AuthProvider: DependencyKey {
                     let _ = try await withTimeout(seconds: timeout) {
                         await Amplify.Auth.signOut()
                     }
-                    return .success(Empty())
-                } catch let error as AuthError {
-                    return .failure(error)
                 } catch {
-                    return .failure(.timeout("signOut"))
+                    try Self.rethrowAsAuthErrorIfNeeded(error, operation: "signOut")
                 }
             },
             
@@ -136,11 +126,8 @@ extension AuthProvider: DependencyKey {
                     try await withTimeout(seconds: timeout) {
                         try await Amplify.Auth.update(oldPassword: current, to: new)
                     }
-                    return .success(Empty())
-                } catch let error as AuthError {
-                    return .failure(error)
                 } catch {
-                    return .failure(.timeout("changePassword"))
+                    try Self.rethrowAsAuthErrorIfNeeded(error, operation: "changePassword")
                 }
             },
             
@@ -149,11 +136,8 @@ extension AuthProvider: DependencyKey {
                     _ = try await withTimeout(seconds: timeout) {
                         try await Amplify.Auth.resetPassword(for: username)
                     }
-                    return .success(Empty())
-                } catch let error as AuthError {
-                    return .failure(error)
                 } catch {
-                    return .failure(.timeout("resetPassword"))
+                    try Self.rethrowAsAuthErrorIfNeeded(error, operation: "resetPassword")
                 }
             },
             
@@ -166,11 +150,8 @@ extension AuthProvider: DependencyKey {
                             confirmationCode: code
                         )
                     }
-                    return .success(Empty())
-                } catch let error as AuthError {
-                    return .failure(error)
                 } catch {
-                    return .failure(.timeout("confirmResetPassword"))
+                    try Self.rethrowAsAuthErrorIfNeeded(error, operation: "confirmResetPassword")
                 }
             },
             
@@ -184,27 +165,30 @@ extension AuthProvider: DependencyKey {
                         return .completed
                     case .confirmAttributeWithCode(_, _):
                         //TODO: destination
-                        return .verificationRequired(destination: "仮")
+                        return .verificationRequired(destination: newEmail)
                     }
-                } catch let error as AuthError {
-                    return .failure(error)
                 } catch {
-                    return .failure(.timeout("updateEmail"))
+                    try Self.rethrowAsAuthErrorIfNeeded(error, operation: "updateEmail")
                 }
             },
-            
             confirmUpdateEmail: { code in
                 do {
                     try await withTimeout(seconds: timeout) {
                         try await Amplify.Auth.confirm(userAttribute: .email, confirmationCode: code)
                     }
-                    return .success(Empty())
-                } catch let error as AuthError {
-                    return .failure(error)
                 } catch {
-                    return .failure(.timeout("confirmUpdateEmail"))
+                    try Self.rethrowAsAuthErrorIfNeeded(error, operation: "confirmUpdateEmail")
                 }
             }
         )
     }()
+}
+
+private extension AuthProvider {
+    static func rethrowAsAuthErrorIfNeeded(_ error: Error, operation: String) throws -> Never {
+        if let parsed = AuthError.parse(error, operation: operation) {
+            throw parsed
+        }
+        throw error
+    }
 }

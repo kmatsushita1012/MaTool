@@ -6,7 +6,7 @@
 //
 
 import Foundation
-
+import Shared
 
 typealias Error = Application.Error
 
@@ -57,6 +57,10 @@ extension Error{
              .decodingError(let message):
             return message ?? "unknown"
         }
+    }
+    
+    var response: ErrorResponse {
+        .init(message: localizedDescription, localizedDescription: localizedDescription)
     }
 }
 

@@ -44,9 +44,7 @@ struct AdminAreaEdit{
             case .doneTapped:
                 return .none
             case .dismissTapped:
-                return .run{ _ in
-                    await dismiss()
-                }
+                return .dismiss
             case .undoTapped:
                 if(!state.coordinates.isEmpty){
                     state.coordinates.removeLast()

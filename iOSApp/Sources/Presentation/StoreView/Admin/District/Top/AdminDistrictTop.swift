@@ -43,14 +43,13 @@ struct AdminDistrictTop {
         case onRouteEdit(RouteSlot)
         case changePasswordTapped
         case updateEmailTapped
-        case routeEditPrepared(RouteSlot)
         case routeCreatePrepared
         case locationPrepared(isTracking: Bool, Interval: Interval?)
         case onLocation
         case destination(PresentationAction<Destination.Action>)
         case signOutTapped
-        case signOutReceived(Result<UserRole, AuthError>)
-        case errorCaught(APIError)
+        case signOutReceived(TaskResult<UserRole>)
+        case routeEditReceived(TaskResult<RouteSlot>)
         case dismissTapped
         case alert(PresentationAction<Alert.Action>)
     }
@@ -69,14 +68,9 @@ struct AdminDistrictTop {
             case .onRouteEdit(let item):
                 if let route = item.route {
                     state.isRouteLoading = true
-                    return .run { send in
-                        let result = await task{ try await routeDateFetcher.fetch(routeID: route.id) }
-                        switch result {
-                        case .success:
-                            await send(.routeEditPrepared(item))
-                        case .failure(let error):
-                            await send(.errorCaught(error))
-                        }
+                    return .task(Action.routeEditReceived) {
+                        try await routeDateFetcher.fetch(routeID: route.id)
+                        return item
                     }
                 } else {
                     let route = Route(id: UUID().uuidString, districtId: state.district.id, periodId: item.period.id)
@@ -96,12 +90,16 @@ struct AdminDistrictTop {
             case .updateEmailTapped:
                 state.destination = .updateEmail(UpdateEmail.State())
                 return .none
-            case .routeEditPrepared(let target):
+            case .routeEditReceived(.success(let item)):
                 state.isRouteLoading = false
-                guard let route = target.route else { return .none }
+                guard let route = item.route else { return .none }
                 state.destination = .route(
-                    RouteEditFeature.State(mode: .update, route: route, district: state.district, period: target.period)
+                    RouteEditFeature.State(mode: .update, route: route, district: state.district, period: item.period)
                 )
+                return .none
+            case .routeEditReceived(.failure(let error)):
+                state.isRouteLoading = false
+                state.alert = .error(error.localizedDescription)
                 return .none
             case .locationPrepared(isTracking: let isTracking, Interval: let interval):
                 state.destination = .location(
@@ -132,20 +130,15 @@ struct AdminDistrictTop {
                 }
             case .signOutTapped:
                 state.isAWSLoading = true
-                return .run { send in
-                    let result = await authService.signOut()
-                    await send(.signOutReceived(result))
+                return .task(Action.signOutReceived) {
+                    try await authService.signOut()
                 }
-            case .signOutReceived(let result):
+            case .signOutReceived(.failure(let error)):
                 state.isAWSLoading = false
-                if case let .failure(error) = result {
-                    state.alert = Alert.error("ログアウトに失敗しました。 \(error.localizedDescription)")
-                }
+                state.alert = .error("ログアウトに失敗しました。 \(error.localizedDescription)")
                 return .none
             case .dismissTapped:
-                return .run { _ in
-                    await dismiss()
-                }
+                return .dismiss
             case .alert(.presented(.okTapped)):
                 state.alert = nil
                 return .none

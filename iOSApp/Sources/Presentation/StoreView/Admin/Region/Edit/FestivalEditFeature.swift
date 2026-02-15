@@ -34,7 +34,7 @@ struct FestivalEditFeature {
         case binding(BindingAction<State>)
         case saveTapped
         case cancelTapped
-        case putReceived(VoidResult<APIError>)
+        case putReceived(VoidTaskResult)
         case onCheckpointEdit(Checkpoint)
         case onCheckpointAdd
         case hazardTapped(HazardSection)
@@ -54,19 +54,15 @@ struct FestivalEditFeature {
                 return .none
             case .saveTapped:
                 state.isLoading = true
-                return .run { [state] send in
-                    let result = await task{ try await festivalDataFetcher.update(festival: state.festival, checkPoints: state.checkpoints, hazardSections: state.hazardSections) }
-                    await send(.putReceived(result))
-                }
-            case .cancelTapped:
-                return .run { _ in
+                return .task(Action.putReceived) { [state] in
+                    try await festivalDataFetcher.update(festival: state.festival, checkPoints: state.checkpoints, hazardSections: state.hazardSections)
                     await dismiss()
                 }
-            case .putReceived(let result):
+            case .cancelTapped:
+                return .dismiss
+            case .putReceived(.failure(let error)):
                 state.isLoading = false
-                if case let .failure(error) = result {
-                    state.alert = Alert.error("保存に失敗しました。\(error.localizedDescription)")
-                }
+                state.alert = Alert.error("保存に失敗しました。\(error.localizedDescription)")
                 return .none
             case .onCheckpointEdit(let item):
                 state.destination = .checkpoint(

@@ -13,7 +13,7 @@ enum RouteDataFetcherKey: DependencyKey {
     static let liveValue: any RouteDataFetcherProtocol = RouteDataFetcher()
 }
 
-protocol RouteDataFetcherProtocol: Sendable {
+protocol RouteDataFetcherProtocol: DataFetcher {
     func fetchAll(districtID: District.ID, query: Query) async throws
     func fetch(routeID: Route.ID) async throws
     func update(_ route: Route, points: [Point]) async throws
@@ -40,25 +40,22 @@ struct RouteDataFetcher: RouteDataFetcherProtocol {
     }
 
     func update(_ route: Route, points: [Point]) async throws {
-        @Dependency(AuthServiceKey.self) var authService
-        guard let token = await authService.getAccessToken() else { throw APIError.unauthorized(message: "") }
+        let token = try await getToken()
         let draft: RouteDetailPack = .init(route: route, points: points)
         let pack: RouteDetailPack = try await client.put(path: "/routes/\(route.id)", body: draft, accessToken: token)
         try await syncPack(pack)
     }
 
     func create(districtID: District.ID, route: Route, points: [Point]) async throws {
-        @Dependency(AuthServiceKey.self) var authService
-        guard let token = await authService.getAccessToken() else { throw APIError.unauthorized(message: "") }
+        let token = try await getToken()
         let draft: RouteDetailPack = .init(route: route, points: points)
         let pack: RouteDetailPack = try await client.post(path: "/districts/\(districtID)/routes", body: draft, query: [:], accessToken: token)
         try await syncPack(pack)
     }
 
     func delete(_ routeID: Route.ID) async throws {
-        @Dependency(AuthServiceKey.self) var authService
-        guard let token = await authService.getAccessToken() else { throw APIError.unauthorized(message: "") }
-        let _: Empty = try await client.delete(path: "/routes/\(routeID)", query: [:], accessToken: token)
+        let token = try await getToken()
+        try await client.delete(path: "/routes/\(routeID)", query: [:], accessToken: token)
         try await database.write { db in
             try routeStore.deleteAll([routeID], from: db)
         }

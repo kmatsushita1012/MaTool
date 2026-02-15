@@ -51,8 +51,8 @@ struct Settings {
         case binding(BindingAction<State>)
         case dismissTapped
         case signOutTapped
-        case signOutReceived(Result<UserRole,AuthError>)
-        case districtsReceived(VoidResult<APIError>)
+        case signOutReceived(TaskResult<UserRole>)
+        case districtsReceived(VoidTaskResult)
         case alert(PresentationAction<Alert.Action>)
     }
     
@@ -73,9 +73,8 @@ struct Settings {
                 userDefaultsClient.setString(state.selectedFestival?.id, defaultFestivalKey)
                 guard let festival = state.selectedFestival else { return .none }
                 state.isLoading = true
-                return .run { send in
-                    let result = await task { try await districtDataFetcher.fetchAll(festivalID: festival.id) }
-                    await send(.districtsReceived(result))
+                return .task(Action.districtsReceived) {
+                    try await districtDataFetcher.fetchAll(festivalID: festival.id)
                 }
             case .binding(\.selectedDistrict):
                 userDefaultsClient.setString(state.selectedDistrict?.id, defaultDistrictKey)
@@ -83,9 +82,8 @@ struct Settings {
             case .binding:
                 return .none
             case .signOutTapped:
-                return .run { send in
-                    let result = await authService.signOut()
-                    await send(.signOutReceived(result))
+                return .task(Action.signOutReceived) {
+                    try await authService.signOut()
                 }
             case .signOutReceived(.success):
                 state.alert = Alert.success("ログアウトしました")
@@ -104,9 +102,7 @@ struct Settings {
                 state.alert = nil
                 return .none
             case .dismissTapped:
-                return .run {_ in
-                    await dismiss()
-                }
+                return .dismiss
             }
         }
     }
