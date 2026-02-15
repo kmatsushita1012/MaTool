@@ -93,7 +93,7 @@ extension AuthError {
     }
 
     private static func composeMessage(main: String, recovery: String) -> String {
-        "\(main) \(recovery)"
+        main
     }
 
     private static func localizedAmplifyDescription(_ description: String) -> String {
@@ -103,13 +103,15 @@ extension AuthError {
             return "ユーザー名またはパスワードが正しくありません。"
         case "Username is required to signIn":
             return "サインインに必要なユーザー名が入力されていません。"
+        case "Password is required to signIn":
+            return "サインインに必要なパスワードが入力されていません。"
         case "Invalid email address format":
             return "有効なメールアドレスを入力してください。"
         case "Invalid verification code provided, please try again":
-            return "認証コードが正しくありません。"
+            return "認証コードが正しくありません。もう一度お試しください。"
+        case "Attempt limit exceeded, please try after some time":
+            return "試行回数が限界に達しています。しばらくしてから再度お試しください。"
         // MARK: - 未確認
-        case "Password is required to signIn":
-            return "サインインに必要なパスワードが入力されていません。"
         case "Username is required to signUp":
             return "サインアップに必要なユーザー名が入力されていません。"
         case "Password is required to signUp":
