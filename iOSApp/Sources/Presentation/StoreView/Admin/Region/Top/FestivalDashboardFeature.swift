@@ -82,8 +82,8 @@ struct FestivalDashboardFeature {
             case .signOutTapped:
                 state.isAuthLoading = true
                 return .task(Action.signOutReceived) {
-                    try await authService.signOut().get()
-                    await dismiss()
+                    let userRole = try await authService.signOut().get()
+                    return userRole
                 }
             case .signOutReceived(.failure(let error)):
                 state.isAuthLoading = false
