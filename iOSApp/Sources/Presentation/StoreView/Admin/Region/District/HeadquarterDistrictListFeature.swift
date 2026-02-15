@@ -36,9 +36,8 @@ struct HeadquarterDistrictListFeature {
         case selected(District)
         case createTapped
         case batchExportTapped
-        case prepared(District)
+        case selectedReceived(TaskResult<District>)
         case batchExportPrepared([URL])
-        case errorCaught(APIError)
         case destination(PresentationAction<Destination.Action>)
         case alert(PresentationAction<Alert.Action>)
     }
@@ -54,28 +53,23 @@ struct HeadquarterDistrictListFeature {
                 return .none
             case .selected(let district):
                 state.isLoading = true
-                return .run { send in
-                    let result = await task{ try await dataFetcher.fetch(districtID: district.id) }
-                    switch result {
-                    case .success:
-                        await send(.prepared(district))
-                    case .failure(let error):
-                        await send(.errorCaught(error))
-                    }
+                return .task(Action.selectedReceived) {
+                    try await dataFetcher.fetch(districtID: district.id)
+                    return district
                 }
             case .createTapped:
                 state.destination = .create(.init(festivalId: state.festival.id))
                 return .none
             case .batchExportTapped:
                 return batchExportEffect(state)
-            case .prepared(let district):
+            case .selectedReceived(.success(let district)):
                 state.isLoading = false
                 state.destination = .detail(.init(district))
                 return .none
             case .batchExportPrepared(let urls):
                 state.folder = .init(urls)
                 return .none
-            case .errorCaught(let error):
+            case .selectedReceived(.failure(let error)):
                 state.isLoading = false
                 state.alert = Alert.error(error.localizedDescription)
                 return .none
