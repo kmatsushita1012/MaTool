@@ -7,6 +7,7 @@
 
 import Foundation
 import Dependencies
+import Shared
 
 //MARK: - Dependencies
 enum HTTPClientKey: DependencyKey {
@@ -106,11 +107,6 @@ actor HTTPClient: HTTPClientProtocol {
         self.jsonDecoder = JSONDecoder()
     }
 
-    private struct ErrorResponse: Decodable {
-        let message: String
-        let localizedDescription: String?
-    }
-
     func request<Response: Decodable, Body: Encodable>(
         path: String,
         method: String = "GET",
@@ -119,39 +115,35 @@ actor HTTPClient: HTTPClientProtocol {
         accessToken: String? = nil,
         isCache: Bool = false
     ) async throws -> Response {
-        do {
-            let url = try makeURL(path: path, query: query)
+        let url = try makeURL(path: path, query: query)
 
-            let bodyData = try encodeBody(body)
+        let bodyData = try encodeBody(body)
 
-            let key = cacheKey(url: url, method: method, bodyData: bodyData ?? nil)
+        let key = cacheKey(url: url, method: method, bodyData: bodyData ?? nil)
 
-            // Cache hit
-            if isCache, let cached = cache.object(forKey: key) {
-                return try decodeResponse(from: cached as Data)
-            }
-
-            // Build request and execute
-            let urlRequest = makeRequest(url: url, method: method, bodyData: bodyData ?? nil, accessToken: accessToken)
-            let (data, http): (Data, HTTPURLResponse?)
-            do {
-                (data, http) = try await execute(request: urlRequest)
-            } catch {
-                throw APIError(error)
-            }
-
-            // If we have HTTP response, check status code
-            if let http = http, !(200...299).contains(http.statusCode) {
-                let error = decodeAPIError(from: data, httpStatus: http.statusCode)
-                throw APIError(error)
-            }
-
-            // Success path: cache and decode
-            if isCache { cache.setObject(data as NSData, forKey: key) }
-            return try decodeResponse(from: data)
-        } catch {
-            throw APIError(error)
+        // Cache hit
+        if isCache, let cached = cache.object(forKey: key) {
+            return try decodeResponse(from: cached as Data)
         }
+
+        // Build request and execute
+        let urlRequest = makeRequest(url: url, method: method, bodyData: bodyData ?? nil, accessToken: accessToken)
+        let (data, http): (Data, HTTPURLResponse?)
+        do {
+            (data, http) = try await execute(request: urlRequest)
+        } catch {
+            throw APIError(statusCode: nil, message: "実行中にエラーが発生しました")
+        }
+
+        // If we have HTTP response, check status code
+        if let http = http, !(200...299).contains(http.statusCode),
+           let response: ErrorResponse = try decodeResponse(from: data){
+            throw APIError(statusCode: http.statusCode, message: response.localizedDescription)
+        }
+
+        // Success path: cache and decode
+        if isCache { cache.setObject(data as NSData, forKey: key) }
+        return try decodeResponse(from: data)
     }
 
     func request<Response: Decodable>(
