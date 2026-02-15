@@ -131,8 +131,7 @@ struct AdminDistrictTop {
             case .signOutTapped:
                 state.isAWSLoading = true
                 return .task(Action.signOutReceived) {
-                    let userRole = try await authService.signOut().get()
-                    return userRole
+                    try await authService.signOut()
                 }
             case .signOutReceived(.failure(let error)):
                 state.isAWSLoading = false
