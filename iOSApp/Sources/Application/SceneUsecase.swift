@@ -109,16 +109,3 @@ actor SceneUsecase: SceneUsecaseProtocol {
         return currentRouteId
     }
 }
-
-@available(*, deprecated, message: "Use async throws APIs instead of Result wrappers.")
-extension SceneUsecaseProtocol {
-    func confirmSignInResult(password: String) async -> Result<UserRole, AuthError> {
-        do {
-            return .success(try await confirmSignIn(password: password))
-        } catch let error as AuthError {
-            return .failure(error)
-        } catch {
-            return .failure(.unknown(error.localizedDescription))
-        }
-    }
-}
