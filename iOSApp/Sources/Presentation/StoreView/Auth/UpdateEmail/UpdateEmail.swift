@@ -57,7 +57,7 @@ struct UpdateEmail {
             case .enterEmail(.okTapped),
                 .resendTapped:
                 state.isLoading = true
-                return .task { [email = state.email] send in
+                return .run { [email = state.email] send in
                     let result = await authService.updateEmail(to: email)
                     await send(.updateReceived(result))
                 }

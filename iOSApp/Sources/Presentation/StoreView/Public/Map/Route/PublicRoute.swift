@@ -110,12 +110,12 @@ struct PublicRoute {
             case .routeReceived(.failure(let error)):
                 state.alert = Alert.error(error.localizedDescription)
                 return .none
-            case .locationReceived(.success):
-                return .none
             case .locationReceived(.failure(let error)):
-                if case .notFound = error {
+                if let error = error as? APIError,
+                    case .notFound = error {
                     state.alert = Alert.notice("現在地の配信は停止中です。")
-                } else if case .forbidden = error {
+                } else if let error = error as? APIError,
+                    case .forbidden = error {
                     state.alert = Alert.notice("現在地の配信は停止中です。")
                 } else {
                     state.alert = Alert.error(error.localizedDescription)
@@ -147,6 +147,8 @@ struct PublicRoute {
                 return .none
             case .alert:
                 state.alert = nil
+                return .none
+            default:
                 return .none
             }
         }
