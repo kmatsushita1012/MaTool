@@ -78,7 +78,7 @@ struct UpdateEmail {
                 return .none
             case .updateReceived(.failure(let error)):
                 state.isLoading = false
-                state.errorAlert = Alert.error("変更に失敗しました　\(error.localizedDescription)")
+                state.errorAlert = .error(error.localizedDescription)
                 return .none
             case .confirmUpdateReceived(.success):
                 state.isLoading = false
@@ -86,7 +86,7 @@ struct UpdateEmail {
                 return .none
             case .confirmUpdateReceived(.failure(let error)):
                 state.isLoading = false
-                state.errorAlert = Alert.error("変更に失敗しました　\(error.localizedDescription)")
+                state.errorAlert = .error(error.localizedDescription)
                 return .none
             case .errorAlert:
                 state.errorAlert = nil
