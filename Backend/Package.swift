@@ -37,9 +37,7 @@ let package = Package(
                 .product(name: "GRDB", package: "GRDB.swift")
             ],
             path: "Sources",
-            resources: [
-                .copy("../.env")
-            ]
+            resources: []
         ),
         .testTarget(
             name: "BackendTests",
