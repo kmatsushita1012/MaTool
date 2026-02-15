@@ -26,8 +26,8 @@ struct PeriodEditFeature {
         case doneTapped
         case deleteTapped
         case dateChanged(SimpleDate)
-        case saveReceived(VoidResult<APIError>)
-        case deleteReceived(VoidResult<APIError>)
+        case saveReceived(VoidTaskResult)
+        case deleteReceived(VoidTaskResult)
         case catched(APIError)
         case alert(PresentationAction<Alert.Action>)
     }
@@ -46,9 +46,8 @@ struct PeriodEditFeature {
             case .deleteTapped:
                 guard state.mode == .update else { return .none }
                 state.isLoading = true
-                return .run { [id = state.period.id] send in
-                    let result = await task{ try await dataFetcher.delete(id) }
-                    await send(.deleteReceived(result))
+                return .task(Action.deleteReceived) { [id = state.period.id] in
+                    try await dataFetcher.delete(id)
                 }
             case .dateChanged(let date):
                 if state.mode == .create {
@@ -69,16 +68,13 @@ struct PeriodEditFeature {
     }
     
     private func saveEffect(mode: Mode, period: Period) -> Effect<Action> {
-        .run { send in
-            let result: VoidResult<APIError> = await task{
-                switch mode {
-                case .create:
-                    try await dataFetcher.create(period)
-                case .update:
-                    try await dataFetcher.update(period)
-                }
+        .task(Action.saveReceived) {
+            switch mode {
+            case .create:
+                try await dataFetcher.create(period)
+            case .update:
+                try await dataFetcher.update(period)
             }
-            await send(.saveReceived(result))
         }
     }
 }
