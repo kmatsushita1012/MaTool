@@ -8,7 +8,8 @@
 import Foundation
 
 enum APIError: LocalizedError, Equatable, Hashable {
-    case network(statusCode: Int?, message: String)
+    case network(message: String)
+    case server(statusCode: Int, message: String)
     case notFound(message: String)
     case unauthorized(message: String)
     case forbidden(message: String)
@@ -17,35 +18,40 @@ enum APIError: LocalizedError, Equatable, Hashable {
     case encoding(message: String)
     case unknown(message: String)
     case cache(message: String)
-    
-    init(_ error: Error) {
-        if let nsError = error as NSError? {
-            let code = nsError.code
-            switch code {
-            case 400: self = .badRequest(message: nsError.localizedDescription)
-            case 401: self = .unauthorized(message: nsError.localizedDescription)
-            case 403: self = .forbidden(message: nsError.localizedDescription)
-            case 404: self = .notFound(message: nsError.localizedDescription)
-            case 500...599: self = .network(statusCode: code, message: nsError.localizedDescription)
-            default: self = .unknown(message: nsError.localizedDescription)
-            }
-        } else {
-            self = .unknown(message: error.localizedDescription)
+
+    init(statusCode: Int?, message: String) {
+        guard let statusCode else {
+            self = .network(message: message)
+            return
+        }
+        switch statusCode {
+        case 400:
+            self = .badRequest(message: message)
+        case 401:
+            self = .unauthorized(message: message)
+        case 403:
+            self = .forbidden(message: message)
+        case 404:
+            self = .notFound(message: message)
+        case 500...599:
+            self = .server(statusCode: statusCode, message: message)
+        default:
+            self = .unknown(message: message)
         }
     }
 
-    var localizedDescription: String {
+    var errorDescription: String? {
         switch self {
-        case .network(let statusCode, let message):
-            return "サーバーエラー(\(statusCode ?? -1))が発生しました。 \n\(message)"
+        case .network(let message):
+            return "ネットワークエラーが発生しました。 \n\(message)"
         case .notFound(let message):
-            return " 情報が見つかりません。 \n\(message)"
+            return message
         case .unauthorized(let message):
-            return "ログインの有効期限が切れました。\n再度ログインしてください。 \n\(message)"
+            return "\(message) \nログインし直してください。"
         case .forbidden(let message):
-            return "アクセス権限がありません。 \n\(message)"
+            return message
         case .badRequest(let message):
-            return "リクエストが不正です。 \n\(message)"
+            return message
         case .decoding(let message):
             return "データの読み取りに失敗しました。 \n\(message)"
         case .encoding(let message):
@@ -54,6 +60,8 @@ enum APIError: LocalizedError, Equatable, Hashable {
             return "予期せぬエラーが発生しました。 \n\(message)"
         case .cache(message: let message):
             return "キャッシュでエラーが発生しました \n\(message)"
+        case .server(statusCode: let statusCode, message: let message):
+            return "サーバーエラーが発生しました。\nステータスコード: \(statusCode)\n\(message) "
         }
     }
 }

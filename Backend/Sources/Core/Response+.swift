@@ -5,6 +5,7 @@
 //  Created by 松下和也 on 2025/11/23.
 //
 
+import Shared
 import Foundation
 
 extension Application.Response {
@@ -31,10 +32,7 @@ extension Application.Response {
 extension Application.Response {
     static func error(_ error: Swift.Error) -> Self {
         if let apiError = error as? Error {
-            let body: [String: String] = [
-                "message": apiError.message,
-                "localizedDescription": apiError.localizedDescription
-            ]
+            let body = apiError.response
             
             return Self(
                 statusCode: apiError.statusCode,
@@ -42,10 +40,7 @@ extension Application.Response {
                 body: (try? body.toString()) ?? "{}"
             )
         } else {
-            let body: [String: String] = [
-                "message": "Internal Server Error",
-                "localizedDescription": "\(error)"
-            ]
+            let body = ErrorResponse(message: "Internal Server Error", localizedDescription: "予期しないエラーが発生しました。")
             
             return Self(
                 statusCode: 500,
