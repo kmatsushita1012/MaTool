@@ -24,7 +24,7 @@ struct DistrictCreateFeature {
         case binding(BindingAction<State>)
         case createTapped
         case cancelTapped
-        case errorCaught(APIError)
+        case createReceived(VoidTaskResult)
         case alert(PresentationAction<Alert.Action>)
     }
     
@@ -42,25 +42,22 @@ struct DistrictCreateFeature {
                     return .none
                 }
                 state.isLoading = true
-                return .run { [state] send in
-                    let result = await task{ try await dataFetcher.create(name: state.name, email: state.email, festivalId: state.festivalId) }
-                    switch result {
-                    case .success:
+                return .task(Action.createReceived) { [state] in
+                    try await dataFetcher.create(name: state.name, email: state.email, festivalId: state.festivalId)
                         await dismiss()
-                    case .failure(let error):
-                        await send(.errorCaught(error))
-                    }
                 }
             case .cancelTapped:
                 return .run { _ in
                     await dismiss()
                 }
-            case .errorCaught(let error):
+            case .createReceived(.failure(let error)):
                 state.isLoading = false
                 state.alert = Alert.error(error.localizedDescription)
                 return .none
             case .alert:
                 state.alert = nil
+                return .none
+            default:
                 return .none
             }
         }
