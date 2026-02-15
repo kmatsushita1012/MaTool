@@ -13,6 +13,7 @@ import SQLiteData
 @MainActor
 struct RouteSnapshotter: Equatable {
     enum Error: Swift.Error {
+        case notFound
         case snapshotterNotAvailable
         case imageCreationFailed
     }
@@ -23,14 +24,16 @@ struct RouteSnapshotter: Equatable {
     var district: District
     var hazardSections: [HazardSection]
     
-    init? (_ route: Route) {
+    init (_ route: Route) throws {
         let points: [Point] = FetchAll(routeId: route.id).wrappedValue
-        self.init(route: route, points: points)
+        try self.init(route: route, points: points)
     }
     
-    init? (route: Route, points: [Point]){
+    init (route: Route, points: [Point]) throws {
         guard let district: District = FetchOne(District.find(route.districtId)).wrappedValue,
-              let period: Period = FetchOne(Period.find(route.periodId)).wrappedValue else { return nil }
+              let period: Period = FetchOne(Period.find(route.periodId)).wrappedValue else {
+            throw Error.notFound
+        }
         self.district = district
         self.period = period
         self.route = route
@@ -340,4 +343,17 @@ struct RouteSnapshotter: Equatable {
     }
     
     static let a4size = CGSize(width: 594, height: 420)
+}
+
+extension RouteSnapshotter.Error {
+    var localizedDescription: String {
+        switch self {
+        case .notFound:
+            "必要な情報の取得に失敗しました。"
+        case .imageCreationFailed:
+            "地図の画像を作成できませんでした。"
+        case .snapshotterNotAvailable:
+            "Snapshotterサービスが利用できません。"
+        }
+    }
 }

@@ -101,7 +101,7 @@ struct HeadquarterDistrictListFeature {
                     if routes.isEmpty { continue }
                     for route in routes {
                         guard (try? await routeDataFetcher.fetch(routeID: route.id)) != nil,
-                              let snapshotter = await RouteSnapshotter(route),
+                              let snapshotter = try? await RouteSnapshotter(route),
                               let image = try? await snapshotter.take() else { continue }
                         await renderer.addPage(with: image)
                     }

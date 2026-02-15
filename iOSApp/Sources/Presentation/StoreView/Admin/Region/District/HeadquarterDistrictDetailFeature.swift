@@ -121,7 +121,7 @@ struct HeadquarterDistrictDetailFeature {
                 for item in items {
                     guard let route = item.route,
                           let _ = try? await routeDataFetcher.fetch(routeID: route.id),
-                          let snapshotter = await RouteSnapshotter(route),
+                          let snapshotter = try? await RouteSnapshotter(route),
                           let image = try? await snapshotter.take() else { continue }
                     await renderer.addPage(with: image)
                 }

@@ -32,10 +32,7 @@ struct RouteEditView: View {
             toolbar
         }
         .dismissible(backButton: false, edgeSwipe: false)
-        .sheet(item: $store.whole) { item in
-            PreviewView(item: item)
-        }
-        .sheet(item: $store.partial) { item in
+        .sheet(item: $store.preview) { item in
             PreviewView(item: item)
         }
         .sheet(item: $store.scope(state: \.point, action: \.point)){ store in
