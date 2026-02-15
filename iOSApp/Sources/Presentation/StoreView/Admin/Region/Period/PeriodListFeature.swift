@@ -44,8 +44,7 @@ struct PeriodListFeature {
         case archiveTapped(State.YearlyPeriods)
         case periodCreateTapped
         case batchCreateTapped(Int)
-        case batchCreateSuccessed
-        case batchCreateFailured(String)
+        case batchCreateReceived(VoidTaskResult)
         case destination(PresentationAction<Destination.Action>)
         case alert(PresentationAction<Alert.Action>)
     }
@@ -76,16 +75,16 @@ struct PeriodListFeature {
                 state.latests = items.first
                 state.archives = .init(items.dropFirst())
                 return .none
-            case .batchCreateSuccessed:
+            case .batchCreateReceived(.success):
                 state.isLoading = false
                 state.alert = Alert.notice("一括作成が完了しました。")
                 let items = state.makePeriodsStates()
                 state.latests = items.first
                 state.archives = .init(items.dropFirst())
                 return .none
-            case .batchCreateFailured(let message):
+            case .batchCreateReceived(.failure(let error)):
                 state.isLoading = false
-                state.alert = Alert.error(message)
+                state.alert = Alert.error(error.localizedDescription)
                 return .none
             case .alert(.presented(_)):
                 state.alert = nil
@@ -99,7 +98,7 @@ struct PeriodListFeature {
     }
     
     func batchEffect(_ state: State, sourceYear: Int) -> Effect<Action> {
-        .run { send in
+        .task(Action.batchCreateReceived) {
             let source: [Period] = state.periods.filter{ $0.date.year == sourceYear }
             let newPeriods = source.map{
                 Period(
@@ -111,16 +110,8 @@ struct PeriodListFeature {
                     end: $0.end
                 )
             }
-            let result = await task {
-                for period in newPeriods {
+            for period in newPeriods {
                     _ = try await dataFetcher.create(period)
-                }
-            }
-            switch result {
-            case .success:
-                await send(.batchCreateSuccessed)
-            case .failure(let error):
-                await send(.batchCreateFailured(error.localizedDescription))
             }
         }
     }
