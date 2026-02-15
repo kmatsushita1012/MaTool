@@ -68,12 +68,10 @@ struct Home {
             case .binding:
                 return .none
             case .initialize:
-                return .merge(
-                    .run { send in
-                        let result = await appStatusClient.checkStatus()
-                        await send(.statusReceived(result))
-                    },
-                )
+                return .run { send in
+                    let result = await appStatusClient.checkStatus()
+                    await send(.statusReceived(result))
+                }
             case .statusReceived(let value):
                 state.status = value
                 return .none
@@ -91,7 +89,6 @@ struct Home {
                 } else {
                     state.destination = .map(.init(festival: festival))
                     return .none
-                    
                 }
             case .infoTapped:
                 guard let festivalId = userDefaults.defaultFestivalId,
@@ -117,7 +114,7 @@ struct Home {
                 return .none
             case .destination(.presented(let childAction)):
                 switch childAction {
-                case .login(.received(.success(.success(let userRole)))),
+                case .login(.received(.success(.signedIn(let userRole)))),
                         .login(.destination(.presented(.confirmSignIn(.received(.success(let userRole)))))):
                     state.userRole = userRole
                     switch state.userRole {
