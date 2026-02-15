@@ -33,19 +33,19 @@ struct LocationDataFetcher: LocationDataFetcherProtocol{
     
     func fetch(districtId: Shared.District.ID) async throws {
         let token = try await getToken()
-        let location: FloatLocation = try await client.get(path: "/district/\(districtId)/locations", accessToken: token)
+        let location: FloatLocation = try await client.get(path: "/districts/\(districtId)/locations", accessToken: token)
         try await sync(location)
     }
     
     func update(_ location: Shared.FloatLocation) async throws {
         let token = try await getToken()
-        let location: FloatLocation = try await client.put(path: "/district/\(location.districtId)/locations", body: location,  accessToken: token)
+        let location: FloatLocation = try await client.put(path: "/districts/\(location.districtId)/locations", body: location,  accessToken: token)
         try await sync(location)
     }
     
     func delete(districtId: District.ID) async throws {
         let token = try await getToken()
-        let _: Empty = try await client.delete(path: "/district/\(districtId)/locations", accessToken: token)
+        let _: Empty = try await client.delete(path: "/districts/\(districtId)/locations", accessToken: token)
         try await database.write{ db in
             try store.deleteAll(where: { $0.districtId.eq(districtId) }, from: db)
         }

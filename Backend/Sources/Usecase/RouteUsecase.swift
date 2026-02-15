@@ -78,9 +78,11 @@ struct RouteUsecase: RouteUsecaseProtocol {
               pack.route.districtId == user.id else {
             throw Error.unauthorized("アクセス権限がありません")
         }
+        let reindexed = pack.points.reindexed()
+        try pack.points.validate()
         let oldPoints = try await pointRepository.query(by: pack.route.id)
         let route = try await routeRepository.post(pack.route)
-        let points = try await oldPoints.update(with: pack.points, separateDeleteAndUpdate: true, repository: pointRepository)
+        let points = try await oldPoints.update(with: reindexed, separateDeleteAndUpdate: true, repository: pointRepository)
         return .init(route: route, points: points)
     }
     
@@ -92,10 +94,10 @@ struct RouteUsecase: RouteUsecaseProtocol {
               old.districtId == user.id else {
             throw Error.unauthorized("アクセス権限がありません")
         }
-        
+        let reindexed = pack.points.reindexed()
         let oldPoints = try await pointRepository.query(by: pack.route.id)
         let route = try await routeRepository.post(pack.route)
-        let points = try await oldPoints.update(with: pack.points, separateDeleteAndUpdate: true, repository: pointRepository)
+        let points = try await oldPoints.update(with: reindexed, separateDeleteAndUpdate: true, repository: pointRepository)
         return .init(route: route, points: points)
     }
     
