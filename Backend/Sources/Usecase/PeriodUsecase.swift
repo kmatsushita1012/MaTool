@@ -18,7 +18,7 @@ protocol PeriodUsecaseProtocol: Sendable {
     func query(by festivalId: String, year: Int) async throws -> [Period]
     func query(by festivalId: String) async throws -> [Period]
     func post(festivalId: String, period: Period, user: UserRole) async throws -> Period
-    func put(festivalId: String, period: Period, user: UserRole) async throws -> Period
+    func put(period: Period, user: UserRole) async throws -> Period
     func delete(id: String, user: UserRole) async throws
 }
 
@@ -48,9 +48,9 @@ struct PeriodUsecase: PeriodUsecaseProtocol {
         return try await repository.post(period)
     }
     
-    func put(festivalId: String, period: Period, user: UserRole) async throws -> Period {
+    func put(period: Period, user: UserRole) async throws -> Period {
         guard case let .headquarter(id) = user,
-                festivalId == id && period.festivalId == id else {
+                period.festivalId == id else {
             throw Error.unauthorized("アクセス権限がありません。")
         }
         return try await repository.put(period)
