@@ -37,10 +37,9 @@ struct HeadquarterDistrictDetailFeature {
         case editTapped
         case routeSelected(RouteSlot)
         case batchExportTapped
-        case updateCompleted
-        case routePrepared(RouteEntry)
-        case batchExportPrepared(URL)
-        case errorCaught(APIError)
+        case updateReceived(VoidTaskResult)
+        case routeReceived(TaskResult<RouteEntry>)
+        case batchExportReceived(TaskResult<URL>)
         case destination(PresentationAction<Destination.Action>)
         case alert(PresentationAction<Alert.Action>)
     }
@@ -60,14 +59,8 @@ struct HeadquarterDistrictDetailFeature {
                 }
                 if state.isEditable {
                     state.isLoading = true
-                    return .run { [state] send in
-                        let result = await task{ try await dataFetcher.update(district: state.district) }
-                        switch result {
-                        case .success(_):
-                            await send(.updateCompleted)
-                        case .failure(let error):
-                            await send(.errorCaught(error))
-                        }
+                    return .task(Action.updateReceived) { [state] in
+                        try await dataFetcher.update(district: state.district)
                     }
                 } else {
                     return .none
@@ -76,30 +69,27 @@ struct HeadquarterDistrictDetailFeature {
                 guard let route = slot.route else { return .none }
                 state.isLoading = true
                 let entry: RouteEntry = .init(period: slot.period, route: route)
-                return .run { send in
-                    let result = await task{ try await routeDataFetcher.fetch(routeID: route.id) }
-                    switch result {
-                    case .success:
-                        await send(.routePrepared(entry))
-                    case .failure(let error):
-                        await send(.errorCaught(error))
-                    }
+                return .task(Action.routeReceived) {
+                    try await routeDataFetcher.fetch(routeID: route.id)
+                    return entry
                 }
             case .batchExportTapped:
                 state.isLoading = true
                 return batchExportEffect(state.routes, path: "\(state.district.name).pdf")
-            case .updateCompleted:
+            case .updateReceived(.success):
                 state.isLoading = false
                 return .none
-            case .routePrepared(let entry):
+            case .routeReceived(.success(let entry)):
                 state.isLoading = false
                 state.destination = .route(.init(mode: .preview, route: entry.route, district: state.district, period: entry.period))
                 return .none
-            case .batchExportPrepared(let url):
+            case .batchExportReceived(.success(let url)):
                 state.isLoading = false
                 state.url = url
                 return .none
-            case .errorCaught(let error):
+            case .updateReceived(.failure(let error)),
+                .routeReceived(.failure(let error)),
+                .batchExportReceived(.failure(let error)):
                 state.isLoading = false
                 state.alert = Alert.error(error.localizedDescription)
                 return .none
@@ -114,26 +104,18 @@ struct HeadquarterDistrictDetailFeature {
     }
     
     func batchExportEffect(_ items: [RouteSlot], path: String) -> Effect<Action> {
-        .run { send in
+        .task(Action.batchExportReceived) {
             //非同期並列にするとBEでアクセス過多
-            let result = await task({
-                let renderer = await PDFRenderer(path: path)
-                for item in items {
-                    guard let route = item.route,
-                          let _ = try? await routeDataFetcher.fetch(routeID: route.id),
-                          let snapshotter = try? await RouteSnapshotter(route),
-                          let image = try? await snapshotter.take() else { continue }
-                    await renderer.addPage(with: image)
-                }
-                let url = await renderer.finalize()
-                return url
-            }, defaultError: APIError.unknown(message: ""))
-            switch result {
-            case .success(let url):
-                await send(.batchExportPrepared(url))
-            case .failure(let error):
-                await send(.errorCaught(error))
+            let renderer = await PDFRenderer(path: path)
+            for item in items {
+                guard let route = item.route,
+                      let _ = try? await routeDataFetcher.fetch(routeID: route.id),
+                      let snapshotter = try? await RouteSnapshotter(route),
+                      let image = try? await snapshotter.take() else { continue }
+                await renderer.addPage(with: image)
             }
+            let url = await renderer.finalize()
+            return url
         }
     }
 }
@@ -148,4 +130,3 @@ extension HeadquarterDistrictDetailFeature.State {
     }
     
 }
-
