@@ -33,8 +33,8 @@ struct ResetPassword {
         case binding(BindingAction<State>)
         case enterUsername(NavigationAction)
         case enterCode(NavigationAction)
-        case resetReceived(Result<Empty,AuthError>)
-        case confirmResetReceived(Result<Empty,AuthError>)
+        case resetReceived(TaskResult<Empty>)
+        case confirmResetReceived(TaskResult<Empty>)
         case resendTapped
         case alert(PresentationAction<Alert.Action>)
         
@@ -56,9 +56,8 @@ struct ResetPassword {
                 return .none
             case .enterUsername(.okTapped),
                 .resendTapped:
-                return .run { [username = state.username] send in
-                    let result = await authService.resetPassword(username: username)
-                    await send(.resetReceived(result))
+                return .task(Action.resetReceived) { [username = state.username] in
+                    try await authService.resetPassword(username: username).get()
                 }
             case .enterCode(.okTapped):
                 if state.newPassword1 != state.newPassword2 {
@@ -69,18 +68,17 @@ struct ResetPassword {
                     return .none
                 }
                 state.isLoading = true
-                return .run {
+                return .task(Action.confirmResetReceived) {
                     [
                         username = state.username,
                         password = state.newPassword1,
                         code = state.code
-                    ] send in
-                    let result = await authService.confirmResetPassword(
+                    ] in
+                    try await authService.confirmResetPassword(
                         username: username,
                         newPassword: password,
                         code: code
-                    )
-                    await send(.confirmResetReceived(result))
+                    ).get()
                 }
             case .enterUsername(.dismissTapped),
                 .enterCode(.dismissTapped):

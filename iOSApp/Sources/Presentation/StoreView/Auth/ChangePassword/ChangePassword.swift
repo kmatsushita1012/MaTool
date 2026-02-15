@@ -25,7 +25,7 @@ struct ChangePassword {
         case binding(BindingAction<State>)
         case okTapped
         case dismissTapped
-        case received(Result<Empty, AuthError>)
+        case received(TaskResult<Empty>)
         case alert(PresentationAction<Alert.Action>)
     }
     
@@ -47,9 +47,8 @@ struct ChangePassword {
                     return .none
                 }
                 state.isLoading = true
-                return .run { [current = state.current, new = state.new1] send in
-                    let result = await authService.changePassword(current: current, new: new)
-                    await send(.received(result))
+                return .task(Action.received) { [current = state.current, new = state.new1] in
+                    try await authService.changePassword(current: current, new: new).get()
                 }
             case .dismissTapped:
                 return .run { _ in
