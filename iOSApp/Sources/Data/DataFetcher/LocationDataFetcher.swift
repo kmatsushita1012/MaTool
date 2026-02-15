@@ -45,7 +45,7 @@ struct LocationDataFetcher: LocationDataFetcherProtocol{
     
     func delete(districtId: District.ID) async throws {
         let token = try await getToken()
-        let _: Empty = try await client.delete(path: "/districts/\(districtId)/locations", accessToken: token)
+        try await client.delete(path: "/districts/\(districtId)/locations", accessToken: token)
         try await database.write{ db in
             try store.deleteAll(where: { $0.districtId.eq(districtId) }, from: db)
         }

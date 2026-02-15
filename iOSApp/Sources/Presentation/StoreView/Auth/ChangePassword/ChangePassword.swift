@@ -25,7 +25,7 @@ struct ChangePassword {
         case binding(BindingAction<State>)
         case okTapped
         case dismissTapped
-        case received(TaskResult<Empty>)
+        case received(VoidTaskResult)
         case alert(PresentationAction<Alert.Action>)
     }
     

@@ -58,7 +58,7 @@ struct RouteDataFetcher: RouteDataFetcherProtocol {
     func delete(_ routeID: Route.ID) async throws {
         @Dependency(AuthServiceKey.self) var authService
         guard let token = await authService.getAccessToken() else { throw APIError.unauthorized(message: "") }
-        let _: Empty = try await client.delete(path: "/routes/\(routeID)", query: [:], accessToken: token)
+        try await client.delete(path: "/routes/\(routeID)", query: [:], accessToken: token)
         try await database.write { db in
             try routeStore.deleteAll([routeID], from: db)
         }
