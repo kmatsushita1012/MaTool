@@ -39,8 +39,7 @@ struct InfoListFeature {
         case festivalTapped
         case districtTapped(District)
         case dismissTapped
-        case districtPrepared(District)
-        case errorCaught(APIError)
+        case districtReceived(TaskResult<District>)
         case destination(PresentationAction<Destination.Action>)
         case alert(PresentationAction<Alert.Action>)
     }
@@ -56,14 +55,9 @@ struct InfoListFeature {
                 return .none
             case .districtTapped(let district):
                 state.isLoading = true
-                return .run{ send in
-                    let result = await task{ try await dataFetcher.fetch(districtID: district.id) }
-                    switch result {
-                    case .success:
-                        await send(.districtPrepared(district))
-                    case .failure(let error):
-                        await send(.errorCaught(error))
-                    }
+                return .task(Action.districtReceived) {
+                    try await dataFetcher.fetch(districtID: district.id)
+                    return district
                 }
             case .dismissTapped:
                 if #available(iOS 17.0, *) {
@@ -74,11 +68,11 @@ struct InfoListFeature {
                     state.isDismissed = true
                     return .none
                 }
-            case .districtPrepared(let district):
+            case .districtReceived(.success(let district)):
                 state.destination = .district(DistrictInfo.State(district))
                 state.isLoading = false
                 return .none
-            case .errorCaught(let error):
+            case .districtReceived(.failure(let error)):
                 state.alert = Alert.error(error.localizedDescription)
                 state.isLoading = false
                 return .none
