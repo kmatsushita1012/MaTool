@@ -18,20 +18,11 @@ struct FestivalEditView: View{
         content
         .navigationTitle("祭典情報")
         .toolbar {
-            ToolbarItem(placement: .topBarLeading) {
-                Button("キャンセル") {
-                    store.send(.cancelTapped)
-                }
-                .padding(8)
+            ToolbarCancelButton {
+                store.send(.cancelTapped)
             }
-            ToolbarItem(placement: .topBarTrailing) {
-                Button{
-                    store.send(.saveTapped)
-                } label: {
-                    Text("保存")
-                        .bold()
-                }
-                .padding(8)
+            ToolbarSaveButton {
+                store.send(.saveTapped)
             }
         }
         .navigationBarTitleDisplayMode(.inline)
@@ -62,7 +53,7 @@ struct FestivalEditView: View{
             Section(header: Text("市区町村")) {
                 TextField("市区町村を入力",text: $store.festival.city)
             }
-            Section(header: Text("経由地")) {
+            Section(header: Text("重要地点")) {
                 ForEach(store.checkpoints) { checkpoint in
                     NavigationItemView(
                         title: checkpoint.name,

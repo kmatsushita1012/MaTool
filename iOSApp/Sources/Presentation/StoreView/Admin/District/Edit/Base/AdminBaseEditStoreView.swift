@@ -43,24 +43,11 @@ struct AdminBaseView:View {
         .navigationTitle("会所位置")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
-            ToolbarItem(placement: .topBarLeading) {
-                Button {
-                    store.send(.dismissTapped)
-                } label: {
-                    HStack {
-                        Text("キャンセル")
-                    }
-                    .padding(8)
-                }
+            ToolbarCancelButton {
+                store.send(.dismissTapped)
             }
-            ToolbarItem(placement: .topBarTrailing) {
-                Button{
-                    store.send(.doneTapped)
-                } label: {
-                    Text("完了")
-                        .bold()
-                }
-                .padding(.horizontal, 8)
+            ToolbarDoneButton {
+                store.send(.doneTapped)
             }
         }
         .toolbarBackground(.visible, for: .navigationBar)

@@ -63,10 +63,8 @@ struct RouteHistoryView: View {
             .foregroundStyle(.primary)
         }
         .toolbar {
-            ToolbarItem(placement: .cancellationAction) {
-                Button(systemImage: "xmark") {
-                    dismiss()
-                }
+            ToolbarCancelButton {
+                dismiss()
             }
         }
     }

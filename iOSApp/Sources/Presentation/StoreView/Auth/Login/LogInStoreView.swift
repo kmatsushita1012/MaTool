@@ -56,18 +56,6 @@ struct LoginStoreView: View {
             .padding()
         }
         .padding()
-        .toolbar {
-            ToolbarItem(placement: .topBarLeading) {
-                Button(action: {
-                    store.send(.homeTapped)
-                }) {
-                    Image(systemName: "house")
-                        .foregroundColor(.black)
-                }
-                .padding(.horizontal, 8)
-            }
-        }
-        .dismissible(backButton: false)
         .navigationDestination(item: $store.scope(state: \.destination?.confirmSignIn, action: \.destination.confirmSignIn)){ store in
             ConfirmSignInStoreView(store:store)
         }

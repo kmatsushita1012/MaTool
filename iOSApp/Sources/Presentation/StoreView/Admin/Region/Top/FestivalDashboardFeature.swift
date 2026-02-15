@@ -43,7 +43,7 @@ struct FestivalDashboardFeature {
         case onEdit
         case periodTapped
         case districtsTapped
-        case homeTapped
+        case dismissTapped
         case changePasswordTapped
         case updateEmailTapped
         case signOutTapped
@@ -69,7 +69,7 @@ struct FestivalDashboardFeature {
             case .districtsTapped:
                 state.destination = .districts(.init(state.festival))
                 return .none
-            case .homeTapped:
+            case .dismissTapped:
                 return .run { _ in
                     await dismiss()
                 }

@@ -34,6 +34,7 @@ struct PublicRouteMapView: View {
         }
     }
     
+    @Environment(\.isLiquidGlassDisabled) var isLiquidGlassDisabled
     
     var body: some View {
         WithPerceptionTracking{
@@ -48,8 +49,17 @@ struct PublicRouteMapView: View {
                 )
                 .equatable()
                 .ignoresSafeArea(edges: .bottom)
-                toolbarLayer
                 menuLayer
+            }
+            .safeAreaInset(edge: .bottom) {
+                if isLiquidGlassDisabled {
+                    toolbarLayerBeforeLiquidGlass
+                }
+            }
+            .toolbar{
+                if !isLiquidGlassDisabled, #available(iOS 26.0, *) {
+                    toolbarAfterLiquidGlass
+                }
             }
             .alert($store.scope(state: \.alert, action: \.alert))
             .sheet(item: $store.detail) { detail in
@@ -65,22 +75,6 @@ struct PublicRouteMapView: View {
             .onAppear{ updateReplay() }
             .onChange(of: store.selected) { _ in updateReplay() }
             .onChange(of: store.replay) { _ in updateReplay() }
-        }
-    }
-    
-    @ViewBuilder
-    var toolbarLayer: some View {
-        VStack{
-            Spacer()
-            HStack(spacing: 16){
-                if store.replay.isRunning {
-                    slider
-                }else{
-                    Spacer()
-                }
-                buttons
-            }
-            .padding()
         }
     }
     
@@ -118,6 +112,25 @@ struct PublicRouteMapView: View {
                     }
                 }
             }
+        }
+    }
+}
+    
+extension PublicRouteMapView {
+    
+    @ViewBuilder
+    var toolbarLayerBeforeLiquidGlass: some View {
+        VStack{
+            Spacer()
+            HStack(spacing: 16){
+                if store.replay.isRunning {
+                    slider
+                }else{
+                    Spacer()
+                }
+                buttons
+            }
+            .padding()
         }
     }
     
@@ -172,7 +185,43 @@ struct PublicRouteMapView: View {
                 .fill(Color.white.opacity(0.8))
         )
     }
-    
+}
+
+extension PublicRouteMapView {
+    @available(iOS 26.0, *)
+    @ToolbarContentBuilder
+    var toolbarAfterLiquidGlass: some ToolbarContent {
+        if store.replay.isRunning {
+            ToolbarItem(placement: .bottomBar) {
+                slider
+            }
+        }
+        
+        ToolbarSpacer(.flexible, placement: .bottomBar)
+        ToolbarItemGroup(placement: .bottomBar){
+            Button(systemImage: "location.fill"){
+                store.send(.userFocusTapped)
+            }
+            Button(systemImage: "mappin.and.ellipse"){
+                store.send(.floatFocusTapped)
+            }
+            Button(
+                systemImage: {
+                    if store.replay.isRunning {
+                        return "stop.circle"
+                    } else {
+                        return "point.bottomleft.forward.to.arrow.triangle.scurvepath.fill"
+                    }
+                }()
+            ){
+                store.send(.replayTapped)
+            }
+            .disabled(!store.isReplayEnable)
+        }
+    }
+}
+
+extension PublicRouteMapView {
     func updateReplay() {
         switch store.replay {
         case .initial:
