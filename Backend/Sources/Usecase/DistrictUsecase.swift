@@ -19,6 +19,7 @@ protocol DistrictUsecaseProtocol: Sendable {
     func get(_ id: String) async throws -> DistrictPack
     func post(user: UserRole, headquarterId: String, newDistrictName: String, email: String) async throws -> DistrictPack
     func put(id: String, item: DistrictPack, user: UserRole) async throws -> DistrictPack
+    func put(id: String, district: District, user: UserRole) async throws -> District
 }
 
 // MARK: - DistrictUsecase
@@ -75,21 +76,65 @@ struct DistrictUsecase: DistrictUsecaseProtocol {
         let district = try await repository.post(item: item)
         return .init(district: district, performances: [])
     }
-    
+    // District権限
     func put(id: String, item: DistrictPack, user: UserRole) async throws -> DistrictPack {
         guard case let .district(districtId) = user, id == districtId else {
             throw Error.unauthorized("アクセス権限がありません")
         }
-        let district = try await repository.put(id: id, item: item.district)
+        // 現在のDistrictを取得して、変更可能なプロパティのみ反映
+        guard let current = try await repository.get(id: id) else {
+            throw Error.notFound("指定された地区が見つかりません")
+        }
+        let mergedDistrict = mergeForDistrictRole(current: current, incoming: item.district)
+        let district = try await repository.put(id: id, item: mergedDistrict)
         
         let oldPerformances = try await peformanceRepository.query(by: districtId)
         let performances = try await oldPerformances.update(with: item.performances, repository: peformanceRepository)
         
         return .init(district: district, performances: performances)
     }
+    
+    // HQ権限
+    func put(id: String, district: District, user: UserRole) async throws -> District {
+        guard case let .headquarter(hqId) = user, district.festivalId == hqId, id == district.id else {
+            throw Error.unauthorized("アクセス権限がありません")
+        }
+        // 現在のDistrictを取得して、HQが変更可能なプロパティのみ反映
+        guard let current = try await repository.get(id: id) else {
+            throw Error.notFound("指定された地区が見つかりません")
+        }
+        let merged = mergeForHQRole(current: current, incoming: district)
+        let result = try await repository.put(id: id, item: merged)
+        
+        return result
+    }
 }
 
 extension DistrictUsecase {
+    // District権限: order, group, isEditable は変更不可。それ以外の可変プロパティのみ反映
+    private func mergeForDistrictRole(current: District, incoming: District) -> District {
+        var result = current
+        // 許可フィールドを反映
+        result.name = incoming.name
+        result.description = incoming.description
+        result.base = incoming.base
+        result.area = incoming.area
+        result.image = incoming.image
+        result.visibility = incoming.visibility
+
+        return result
+    }
+    
+    // HQ権限: order, group, isEditable のみ変更可能。他は current を維持
+    private func mergeForHQRole(current: District, incoming: District) -> District {
+        var result = current
+        // HQ権限は order / group / isEditable のみ変更可能。他は current を維持
+        result.order = incoming.order
+        result.group = incoming.group
+        result.isEditable = incoming.isEditable
+        return result
+    }
+
     private func makeDistrictId(_ name: String, festival: Festival) -> String {
         let prefix = festival.id.split(separator: "_").first ?? ""
         return "\(prefix)_\(name)"

@@ -125,33 +125,38 @@ struct SceneUsecase: SceneUsecaseProtocol {
             }
         }()
 
-        let filtered = routes.filter { isVisible(visibility: $0.visibility, user: user, district: district) }
-        
-        let currentPeriod: Period? = {
-            if let between = periods.first(where: { $0.contains(now) }){
-                between
-            } else if let before = periods.sorted().first(where: { $0.before(now) }) {
-                before
-            } else {
-                periods.first
+        let filteredRoutes = routes.filter { isVisible(visibility: $0.visibility, user: user, district: district) }
+
+        let routeWithPeriod: [(route: Route, period: Period)] = filteredRoutes.compactMap { route in
+            if let period = periods.first(where: { $0.id == route.periodId }) {
+                return (route, period)
             }
-        }()
-        
-        if let currentPeriod ,
-            let currentRoute = filtered.first(where: { currentPeriod.id == $0.periodId }) {
-            let points = try await pointRepository.query(by: currentRoute.id)
-            return .init(
-                performances: try await performances,
-                routes: filtered,
-                points: points,
-                currentRouteId: currentRoute.id
-            )
+            return nil
         }
+
+        // 優先度順にソート
+        let sorted = routeWithPeriod.sorted { lhs, rhs in
+            if lhs.period.contains(now) && !rhs.period.contains(now) {
+                return true
+            } else if !lhs.period.contains(now) && rhs.period.contains(now) {
+                return false
+            } else if lhs.period.before(now) && !rhs.period.before(now) {
+                return true
+            } else if !lhs.period.before(now) && rhs.period.before(now) {
+                return false
+            } else {
+                return lhs.period.start < rhs.period.start
+            }
+        }
+
+        let currentRoute = sorted.first?.route
+        let points = currentRoute != nil ? try await pointRepository.query(by: currentRoute!.id) : []
+
         return .init(
             performances: try await performances,
-            routes: filtered,
-            points: [],
-            currentRouteId: nil
+            routes: filteredRoutes,
+            points: points,
+            currentRouteId: currentRoute?.id
         )
     }
 }
