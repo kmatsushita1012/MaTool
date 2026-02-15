@@ -40,7 +40,7 @@ struct UpdateEmail {
         
         case resendTapped
         case updateReceived(TaskResult<UpdateEmailState>)
-        case confirmUpdateReceived(TaskResult<Empty>)
+        case confirmUpdateReceived(VoidTaskResult)
         case errorAlert(PresentationAction<Alert.Action>)
         case completeAlert(PresentationAction<Alert.Action>)
     }
