@@ -33,8 +33,8 @@ struct ResetPassword {
         case binding(BindingAction<State>)
         case enterUsername(NavigationAction)
         case enterCode(NavigationAction)
-        case resetReceived(TaskResult<Empty>)
-        case confirmResetReceived(TaskResult<Empty>)
+        case resetReceived(VoidTaskResult)
+        case confirmResetReceived(VoidTaskResult)
         case resendTapped
         case alert(PresentationAction<Alert.Action>)
         

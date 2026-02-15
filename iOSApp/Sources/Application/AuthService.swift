@@ -27,11 +27,11 @@ protocol AuthServiceProtocol: Sendable {
     func confirmSignIn(password: String) async throws -> UserRole
     func signOut() async throws -> UserRole
     func getAccessToken() async -> String?
-    func changePassword(current: String, new: String) async throws -> Empty
-    func resetPassword(username: String)  async throws -> Empty
-    func confirmResetPassword(username: String, newPassword: String, code: String)  async throws -> Empty
+    func changePassword(current: String, new: String) async throws
+    func resetPassword(username: String)  async throws
+    func confirmResetPassword(username: String, newPassword: String, code: String)  async throws
     func updateEmail(to newEmail: String) async throws -> UpdateEmailState
-    func confirmUpdateEmail(code: String) async throws -> Empty
+    func confirmUpdateEmail(code: String) async throws
     nonisolated func isValidPassword(_ password: String) -> Bool
     func getUserRole() async throws -> UserRole
 }
@@ -82,16 +82,16 @@ actor AuthService: AuthServiceProtocol {
         return try? await authProvider.getTokens()
     }
     
-    func changePassword(current: String, new: String) async throws -> Empty {
-        return try await authProvider.changePassword(current, new)
+    func changePassword(current: String, new: String) async throws {
+        try await authProvider.changePassword(current, new)
     }
     
-    func resetPassword(username: String)  async throws -> Empty {
-        return try await authProvider.resetPassword(username)
+    func resetPassword(username: String)  async throws {
+        try await authProvider.resetPassword(username)
     }
     
-    func confirmResetPassword(username: String, newPassword: String, code: String)  async throws -> Empty {
-        return try await authProvider.confirmResetPassword(
+    func confirmResetPassword(username: String, newPassword: String, code: String)  async throws {
+        try await authProvider.confirmResetPassword(
             username,
             newPassword,
             code
@@ -102,8 +102,8 @@ actor AuthService: AuthServiceProtocol {
         return try await authProvider.updateEmail(newEmail)
     }
     
-    func confirmUpdateEmail(code: String) async throws -> Empty {
-        return try await authProvider.confirmUpdateEmail(code)
+    func confirmUpdateEmail(code: String) async throws {
+        try await authProvider.confirmUpdateEmail(code)
     }
     
     nonisolated func isValidPassword(_ password: String) -> Bool {
@@ -150,7 +150,7 @@ extension AuthServiceProtocol {
         }
     }
 
-    func changePasswordResult(current: String, new: String) async -> Result<Empty, AuthError> {
+    func changePasswordResult(current: String, new: String) async -> Result<Void, AuthError> {
         do {
             return .success(try await changePassword(current: current, new: new))
         } catch let error as AuthError {
@@ -160,7 +160,7 @@ extension AuthServiceProtocol {
         }
     }
 
-    func resetPasswordResult(username: String) async -> Result<Empty, AuthError> {
+    func resetPasswordResult(username: String) async -> Result<Void, AuthError> {
         do {
             return .success(try await resetPassword(username: username))
         } catch let error as AuthError {
@@ -170,7 +170,7 @@ extension AuthServiceProtocol {
         }
     }
 
-    func confirmResetPasswordResult(username: String, newPassword: String, code: String) async -> Result<Empty, AuthError> {
+    func confirmResetPasswordResult(username: String, newPassword: String, code: String) async -> Result<Void, AuthError> {
         do {
             return .success(try await confirmResetPassword(username: username, newPassword: newPassword, code: code))
         } catch let error as AuthError {
@@ -180,7 +180,7 @@ extension AuthServiceProtocol {
         }
     }
 
-    func confirmUpdateEmailResult(code: String) async -> Result<Empty, AuthError> {
+    func confirmUpdateEmailResult(code: String) async -> Result<Void, AuthError> {
         do {
             return .success(try await confirmUpdateEmail(code: code))
         } catch let error as AuthError {
