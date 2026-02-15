@@ -88,6 +88,7 @@ struct PeriodDataFetcher: PeriodDataFetcherProtocol {
     
     private func sync(_ period: Period) async throws {
         try await database.write { db in
+            try periodStore.delete(period.id, from: db)
             try periodStore.insert(period, at: db)
         }
     }

@@ -71,7 +71,7 @@ struct FestivalEditFeature {
             case .onCheckpointEdit(let item):
                 state.destination = .checkpoint(
                     CheckpointEditFeature.State(
-                        title: "経由地",
+                        title: "重要地点",
                         item: item
                     )
                 )
@@ -79,7 +79,7 @@ struct FestivalEditFeature {
             case .onCheckpointAdd:
                 state.destination = .checkpoint(
                     CheckpointEditFeature.State(
-                        title: "経由地",
+                        title: "重要地点",
                         item: .init(id: UUID().uuidString, festivalId: state.festival.id)
                     )
                 )

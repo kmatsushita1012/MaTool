@@ -46,6 +46,7 @@ extension FetchAll where Element == PointEntry {
         self.init(
             Point
                 .where{ $0.routeId == routeId }
+                .order(by: \.index)
                 .leftJoin(Checkpoint.all) { $0.checkpointId.eq($1.id) }
                 .leftJoin(Performance.all) { $0.performanceId.eq($2.id) }
                 .select{

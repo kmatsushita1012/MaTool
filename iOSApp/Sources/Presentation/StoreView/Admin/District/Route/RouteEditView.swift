@@ -28,7 +28,10 @@ struct RouteEditView: View {
                 contentBeforeLiquidGlass
             }
         }
-        .dismissible(backButton: isLiquidGlassEnabled, edgeSwipe: false)
+        .toolbar {
+            toolbar
+        }
+        .dismissible(backButton: false, edgeSwipe: false)
         .sheet(item: $store.whole) { item in
             PreviewView(item: item)
         }
@@ -54,6 +57,21 @@ struct RouteEditView: View {
         .alert($store.scope(state: \.alert?.delete, action: \.alert.delete))
         .loadingOverlay(store.isLoading)
     }
+    
+    @ToolbarContentBuilder
+    var toolbar: some ToolbarContent {
+        ToolbarSaveButton(isDisabled: !store.isSaveable){
+            store.send(.saveTapped)
+        }
+        ToolbarCancelButton {
+            store.send(.cancelTapped)
+        }
+        if #available(iOS 26.0, *), isLiquidGlassEnabled {
+            bottomBarAfterLiquidGlass
+        } else {
+            bottomBarBeforeLiquidGlass
+        }
+    }
 }
 
 // MARK: - LiquidGlass対応前
@@ -73,26 +91,10 @@ extension RouteEditView {
         }
         .navigationTitle(store.title)
         .navigationBarTitleDisplayMode(.inline)
-        .toolbar {
-            toolbarBeforeLiquidGlass
-        }
     }
     
     @ToolbarContentBuilder
-    var toolbarBeforeLiquidGlass: some ToolbarContent {
-        ToolbarItem(placement: .navigationBarLeading) {
-            Button( store.isSaveable ? "キャンセル" : "戻る") {
-                store.send(.cancelTapped)
-            }
-        }
-        ToolbarItem(placement: .navigationBarTrailing) {
-            Button("保存") {
-                store.send(.saveTapped)
-            }
-            .disabled(!store.isSaveable)
-            .fontWeight(.bold)
-        }
-        
+    var bottomBarBeforeLiquidGlass: some ToolbarContent {
         ToolbarItemGroup(placement: .bottomBar) {
             HStack(alignment: .center, spacing: 16) {
                 undoButton
@@ -130,19 +132,11 @@ extension RouteEditView {
         }
         .navigationTitle(store.title)
         .navigationBarTitleDisplayMode(.inline)
-        .toolbar {
-            toolbarAfterLiquidGlass
-        }
     }
     
     @ToolbarContentBuilder
     @available(iOS 26.0, *)
-    var toolbarAfterLiquidGlass: some ToolbarContent {
-        ToolbarItemGroup(placement: .confirmationAction) {
-            Button(systemImage: "checkmark") {
-                store.send(.saveTapped)
-            }
-        }
+    var bottomBarAfterLiquidGlass: some ToolbarContent {
         ToolbarItemGroup(placement: .bottomBar) {
             undoButton
             redoButton
@@ -285,10 +279,8 @@ struct PreviewView: View {
     
     @ToolbarContentBuilder
     var toolbarBeforeLiquidGlass: some ToolbarContent {
-        ToolbarItem(placement: .cancellationAction) {
-            Button("閉じる") {
-                dismiss()
-            }
+        ToolbarCancelButton {
+            dismiss()
         }
         ToolbarItem(placement: .primaryAction) {
             ShareLink(item: item.url) {
@@ -300,10 +292,8 @@ struct PreviewView: View {
     
     @ToolbarContentBuilder
     var toolbarAfterLiquidGlass: some ToolbarContent {
-        ToolbarItem(placement: .cancellationAction) {
-            Button(systemImage: "xmark") {
-                dismiss()
-            }
+        ToolbarCancelButton {
+            dismiss()
         }
         ToolbarItem(placement: .primaryAction) {
             ShareLink(item: item.url) {

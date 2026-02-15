@@ -28,10 +28,13 @@ struct HazardSectionView: View {
         .navigationTitle("要注意区間")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
+            ToolbarDoneButton {
+                store.send(.doneTapped)
+            }
             if isLiquidGlassEnabled, #available(iOS 26.0, *)  {
-                toolbarAfterLiquidGlass
+                bottomBarAfterLiquidGlass
             } else {
-                toolbarBeforeLiquidGlass
+                bottomBarBeforeLiquidGlass
             }
         }
         .alert($store.scope(state: \.alert, action: \.alert))
@@ -72,39 +75,26 @@ struct HazardSectionView: View {
     }
     
     @ToolbarContentBuilder
-    var toolbarBeforeLiquidGlass: some ToolbarContent {
-        ToolbarItem(placement: .primaryAction) {
-            Button("完了") {
-                store.send(.doneTapped)
-            }
-            .tint(.accent)
-        }
+    var bottomBarBeforeLiquidGlass: some ToolbarContent {
         ToolbarItemGroup(placement: .bottomBar) {
-            undoButton
-            redoButton
-            clearButton
-            deleteButton
+            HStack(spacing:8){
+                undoButton
+                redoButton
+                Spacer()
+                deleteButton
+            }
+            .padding(.horizontal, 8)
         }
     }
     
     @available(iOS 26.0, *)
     @ToolbarContentBuilder
-    var toolbarAfterLiquidGlass: some ToolbarContent {
-        ToolbarItem(placement: .primaryAction) {
-            Button("完了", systemImage: "checkmark") {
-                store.send(.doneTapped)
-            }
-            .tint(.accent)
-        }
+    var bottomBarAfterLiquidGlass: some ToolbarContent {
         ToolbarItemGroup(placement: .bottomBar) {
             undoButton
             redoButton
         }
         ToolbarSpacer(.flexible ,placement: .bottomBar)
-        ToolbarItem(placement: .bottomBar) {
-            clearButton
-        }
-        ToolbarSpacer(.fixed, placement: .bottomBar)
         ToolbarItem(placement: .bottomBar) {
             deleteButton
         }

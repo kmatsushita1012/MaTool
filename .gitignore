@@ -114,3 +114,6 @@ playground.xcworkspace
 *.out
 *.tmp
 *.lock
+
+# Codex
+.codex/

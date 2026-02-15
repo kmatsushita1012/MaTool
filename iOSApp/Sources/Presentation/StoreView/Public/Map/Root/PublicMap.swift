@@ -39,7 +39,7 @@ struct PublicMap {
     enum Action: BindableAction, Equatable {
         case onAppear
         case binding(BindingAction<State>)
-        case homeTapped
+        case dismissTapped
         case contentSelected(Content)
         case routePrepared(District, Route.ID?)
         case errorCaught(APIError)
@@ -67,7 +67,7 @@ struct PublicMap {
                 }
             case .binding:
                 return .none
-            case .homeTapped:
+            case .dismissTapped:
                 if #available(iOS 17.0, *) {
                     return .run { _ in
                         await dismiss()

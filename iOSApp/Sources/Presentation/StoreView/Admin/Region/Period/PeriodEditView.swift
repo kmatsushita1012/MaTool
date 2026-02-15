@@ -18,10 +18,8 @@ struct PeriodEditView: View {
         content
             .navigationTitle(store.mode.title)
             .toolbar{
-                if #available(iOS 26.0, *), isLiquidGlassEnabled {
-                    toolbarAfterLiquidGlass
-                } else {
-                    toolbarBeforeLiquidGlass
+                ToolbarDoneButton {
+                    store.send(.doneTapped)
                 }
             }
             .loadingOverlay(store.isLoading)
@@ -32,7 +30,11 @@ struct PeriodEditView: View {
     var content: some View {
         Form {
             Section(header: Text("日付")){
-                DatePicker(selection: $store.period.date)
+                DatePicker(
+                    store.isCreateMode ? "日付を選択" : "日付",
+                    selection: Binding(get: { store.period.date }, set: { store.send(.dateChanged($0)) })
+                )
+                .disabled(!store.isCreateMode)
             }
             
             Section(header: Text("タイトル"), footer: Text("例: 午前、午後、夜")){
@@ -53,21 +55,4 @@ struct PeriodEditView: View {
         }
     }
     
-    @ToolbarContentBuilder
-    var toolbarBeforeLiquidGlass: some ToolbarContent {
-        ToolbarItem(placement: .confirmationAction) {
-            Button("完了") {
-                store.send(.doneTapped)
-            }
-        }
-    }
-    
-    @ToolbarContentBuilder
-    var toolbarAfterLiquidGlass: some ToolbarContent {
-        ToolbarItem( placement: .confirmationAction) {
-            Button(systemImage: "checkmark") {
-                store.send(.doneTapped)
-            }
-        }
-    }
 }

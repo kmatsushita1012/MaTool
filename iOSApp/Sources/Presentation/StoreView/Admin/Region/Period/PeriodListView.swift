@@ -17,11 +17,7 @@ struct PeriodListView: View {
     var body: some View {
         content
             .toolbar{
-                if isLiquidGlassEnabled, #available(iOS 26.0, *) {
-                    toolbarAfterLiquidGlass
-                } else {
-                    toolbarBeforeLiquidGlass
-                }
+                toolbar
             }
             .navigationTitle("日程")
             .navigationBarTitleDisplayMode(.inline)
@@ -49,7 +45,7 @@ struct PeriodListView: View {
             }
             
             if !store.archives.isEmpty {
-                Section{
+                Section("過去の日程"){
                     ForEach(store.archives){ archive in
                         NavigationItemView(title: archive.text) {
                             store.send(.archiveTapped(archive))
@@ -61,40 +57,29 @@ struct PeriodListView: View {
     }
     
     @ToolbarContentBuilder
-    var toolbarBeforeLiquidGlass: some ToolbarContent {
-        ToolbarItem(placement: .primaryAction) {
-            Button("追加"){
-                store.send(.periodCreateTapped)
-            }
+    var toolbar: some ToolbarContent {
+        ToolbarAddButton {
+            store.send(.periodCreateTapped)
         }
-        batchCreateMenu
-    }
-    
-    @available(iOS 26.0, *)
-    @ToolbarContentBuilder
-    var toolbarAfterLiquidGlass: some ToolbarContent {
-        ToolbarItemGroup(placement: .primaryAction) {
-            Button(systemImage: "plus") {
-                store.send(.periodCreateTapped)
-            }
-        }
-        ToolbarSpacer(.flexible, placement: .bottomBar)
         batchCreateMenu
     }
     
     @ToolbarContentBuilder
     var batchCreateMenu: some ToolbarContent {
-        if let options = store.batchCreateYearOptions {
+        if !store.yearOptions.isEmpty {
+            if #available(iOS 26.0, *) {
+                ToolbarSpacer(.flexible, placement: .bottomBar)
+            }
             ToolbarItem(placement: .bottomBar) {
                 Button("一括作成") {
                     showBatchCreateDialog = true
                 }
                 .confirmationDialog(
-                    "一括作成",
+                    "\(String(store.createYear))年を一括作成",
                     isPresented: $showBatchCreateDialog,
                     titleVisibility: .visible
                 ) {
-                    ForEach(options, id: \.self) { year in
+                    ForEach(store.yearOptions, id: \.self) { year in
                         Button("\(String(year))年") {
                             store.send(.batchCreateTapped(year))
                         }
@@ -103,7 +88,7 @@ struct PeriodListView: View {
                         showBatchCreateDialog = false
                     }
                 } message: {
-                    Text("選択した年の日程を前年のデータを元に一括で作成します。\n既存のデータは上書きされません。")
+                    Text("選択した年の日程をを元に一括で作成します。")
                 }
             }
         }
