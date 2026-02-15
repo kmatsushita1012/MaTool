@@ -23,13 +23,11 @@ struct FestivalRouter: Router {
         // MARK: - Location
         app.get(path: "/festivals/:festivalId/locations", locationController.query)
         // MARK: - Period
-        app.get(path: "/festivals/:festivalId/periods/:periodId", periodController.get)
-        app.delete(path: "/festivals/:festivalId/periods/:periodId", periodController.delete)
         app.get(path: "/festivals/:festivalId/periods", periodController.query)
         app.post(path: "/festivals/:festivalId/periods", periodController.post)
         // MARK: - Festival
         app.get(path: "/festivals/:festivalId", festivalController.get)
         app.get(path: "/festivals", festivalController.scan)
-        app.put(path: "/festivals", festivalController.put)
+        app.put(path: "/festivals/:festivalId", festivalController.put)
     }
 }
