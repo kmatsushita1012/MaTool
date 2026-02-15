@@ -22,15 +22,15 @@ extension DependencyValues {
 struct AuthProvider: Sendable {
     nonisolated var initialize: @Sendable () throws -> Void
     var signIn: @Sendable (_ username: String, _ password: String) async throws -> SignInResponse
-    var confirmSignIn: @Sendable (_ newPassword: String) async throws -> Empty
+    var confirmSignIn: @Sendable (_ newPassword: String) async throws -> Void
     var getUserRole: @Sendable () async throws -> UserRole
     var getTokens: @Sendable () async throws -> String
-    var signOut: @Sendable () async throws -> Empty
-    var changePassword: @Sendable (_ current: String, _ new: String) async throws -> Empty
-    var resetPassword: @Sendable (_ username: String) async throws -> Empty
-    var confirmResetPassword: @Sendable (_ username: String,_ newPassword: String, _ code: String) async throws -> Empty
+    var signOut: @Sendable () async throws -> Void
+    var changePassword: @Sendable (_ current: String, _ new: String) async throws -> Void
+    var resetPassword: @Sendable (_ username: String) async throws -> Void
+    var confirmResetPassword: @Sendable (_ username: String,_ newPassword: String, _ code: String) async throws -> Void
     var updateEmail: @Sendable (_ newEmail: String) async throws -> UpdateEmailState
-    var confirmUpdateEmail: @Sendable (_ code: String) async throws -> Empty
+    var confirmUpdateEmail: @Sendable (_ code: String) async throws -> Void
 }
 
 // MARK: - AuthProvider(AWS)
@@ -44,7 +44,7 @@ extension AuthProvider: DependencyKey {
                     try Amplify.add(plugin: AWSCognitoAuthPlugin())
                     try Amplify.configure()
                 } catch {
-                    throw AuthError.unknown(error.localizedDescription)
+                    try Self.rethrowAsAuthErrorIfNeeded(error, operation: "signIn")
                 }
             },
             signIn: { username, password in
@@ -57,7 +57,7 @@ extension AuthProvider: DependencyKey {
                     } else if case .confirmSignInWithNewPassword = result.nextStep {
                         return .newPasswordRequired
                     } else {
-                        throw AuthError.unknown("Unexpected step: \(result.nextStep)")
+                        throw AuthError.unknown("予期しないエラーです \(result.nextStep)")
                     }
                 } catch {
                     try Self.rethrowAsAuthErrorIfNeeded(error, operation: "signIn")
@@ -69,8 +69,6 @@ extension AuthProvider: DependencyKey {
                     let result = try await withTimeout(seconds: timeout) {
                         try await Amplify.Auth.confirmSignIn(challengeResponse: newPassword)
                     }
-                    guard result.isSignedIn else { throw AuthError.unknown("Failed") }
-                    return Empty()
                 } catch {
                     try Self.rethrowAsAuthErrorIfNeeded(error, operation: "confirmSignIn")
                 }
@@ -105,9 +103,9 @@ extension AuthProvider: DependencyKey {
                     case .success(let tokens):
                         return tokens.accessToken
                     case .failure(let error):
-                        throw AuthError.unknown(error.errorDescription)
+                        throw error
                     case .none:
-                        throw AuthError.unknown("")
+                        throw AuthError.unknown("アクセストークンの取得に失敗しました。")
                     }
                 } catch {
                     try Self.rethrowAsAuthErrorIfNeeded(error, operation: "getTokens")
@@ -118,7 +116,7 @@ extension AuthProvider: DependencyKey {
                     let _ = try await withTimeout(seconds: timeout) {
                         await Amplify.Auth.signOut()
                     }
-                    return Empty()
+                    return ()
                 } catch {
                     try Self.rethrowAsAuthErrorIfNeeded(error, operation: "signOut")
                 }
@@ -129,7 +127,7 @@ extension AuthProvider: DependencyKey {
                     try await withTimeout(seconds: timeout) {
                         try await Amplify.Auth.update(oldPassword: current, to: new)
                     }
-                    return Empty()
+                    return ()
                 } catch {
                     try Self.rethrowAsAuthErrorIfNeeded(error, operation: "changePassword")
                 }
@@ -140,7 +138,7 @@ extension AuthProvider: DependencyKey {
                     _ = try await withTimeout(seconds: timeout) {
                         try await Amplify.Auth.resetPassword(for: username)
                     }
-                    return Empty()
+                    return ()
                 } catch {
                     try Self.rethrowAsAuthErrorIfNeeded(error, operation: "resetPassword")
                 }
@@ -155,7 +153,7 @@ extension AuthProvider: DependencyKey {
                             confirmationCode: code
                         )
                     }
-                    return Empty()
+                    return ()
                 } catch {
                     try Self.rethrowAsAuthErrorIfNeeded(error, operation: "confirmResetPassword")
                 }
@@ -183,7 +181,7 @@ extension AuthProvider: DependencyKey {
                     try await withTimeout(seconds: timeout) {
                         try await Amplify.Auth.confirm(userAttribute: .email, confirmationCode: code)
                     }
-                    return Empty()
+                    return ()
                 } catch {
                     try Self.rethrowAsAuthErrorIfNeeded(error, operation: "confirmUpdateEmail")
                 }
@@ -194,11 +192,8 @@ extension AuthProvider: DependencyKey {
 
 private extension AuthProvider {
     static func rethrowAsAuthErrorIfNeeded(_ error: Error, operation: String) throws -> Never {
-        if let authError = error as? AuthError {
-            throw authError
-        }
-        if error is CancellationError {
-            throw AuthError.timeout(operation)
+        if let parsed = AuthError.parse(error, operation: operation) {
+            throw parsed
         }
         throw error
     }
