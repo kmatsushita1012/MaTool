@@ -66,7 +66,7 @@ struct PublicLocations {
             case .reloadReceived(.failure(let error)):
                 state.alert = Alert.error(error.localizedDescription)
                 return .none
-            case .alert:
+            default:
                 return .none
             }
         }
