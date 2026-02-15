@@ -57,3 +57,12 @@ extension Effect {
         }
     }
 }
+
+extension Effect {
+    static var dismiss: Self {
+        @Dependency(\.dismiss) var dismiss
+        return .run { _ in
+            await dismiss()
+        }
+    }
+}
