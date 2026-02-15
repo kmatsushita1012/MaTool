@@ -19,15 +19,15 @@ enum AuthError: LocalizedError, Equatable {
     var errorDescription: String? {
         switch self {
         case .network(let message):
-            return "ネットワークエラー \(message)"
+            return "\(message)"
         case .encoding(let message):
-            return "送信失敗 \(message)"
+            return "\(message)"
         case .decoding(let message):
-            return "解析失敗 \(message)"
+            return "\(message)"
         case .unknown(let message):
-            return "予期しないエラー \(message)"
+            return "\(message)"
         case .auth(let message):
-            return "認証エラー \(message)"
+            return "\(message)"
         case .timeout(let message):
             return "タイムアウト \(message) このエラーが繰り返し発生する場合は、設定画面からログアウトし、再度サインインしてください。"
         }
@@ -36,6 +36,8 @@ enum AuthError: LocalizedError, Equatable {
 
 extension AuthError {
     static func parse(_ error: Error, operation: String) -> AuthError? {
+        // FIXME: エラー網羅後に削除
+        print(error)
         if let authError = error as? AuthError {
             return authError
         }
@@ -96,10 +98,16 @@ extension AuthError {
 
     private static func localizedAmplifyDescription(_ description: String) -> String {
         switch normalize(description) {
+        // MARK: - 出現を確認済
         case "Incorrect username or password":
             return "ユーザー名またはパスワードが正しくありません。"
         case "Username is required to signIn":
             return "サインインに必要なユーザー名が入力されていません。"
+        case "Invalid email address format":
+            return "有効なメールアドレスを入力してください。"
+        case "Invalid verification code provided, please try again":
+            return "認証コードが正しくありません。"
+        // MARK: - 未確認
         case "Password is required to signIn":
             return "サインインに必要なパスワードが入力されていません。"
         case "Username is required to signUp":
@@ -218,12 +226,16 @@ extension AuthError {
 
     private static func localizedAmplifyRecovery(_ recovery: String) -> String {
         switch normalize(recovery) {
+        // MARK: - 確認
         case "Check whether the given values are correct and the user is authorized to perform the operation":
             return "入力値（ユーザー名・パスワード）と、操作権限が正しいか確認してください。"
         case "Make sure that a valid username is passed during signIn":
             return "サインイン時に有効なユーザー名を入力してください。"
         case "Make sure that a valid password is passed during signIn":
             return "サインイン時に有効なパスワードを入力してください。"
+        case "Retry with a valid code":
+            return "有効な確認コードを入力し、もう一度試してみてください。"
+        // MARK: - 未確認
         case "Make sure that a valid username is passed for signUp":
             return "サインアップ時に有効なユーザー名を入力してください。"
         case "Make sure that a valid password is passed for signUp":
@@ -291,8 +303,10 @@ extension AuthError {
             return "既存のWebAuthn資格情報を削除してから再試行してください。"
         case "Invoke the sign in with WebAuthn flow again":
             return "WebAuthnサインインを再実行してください。"
+        case "Make sure that the parameters passed are valid":
+            return "入力された値が正しいか確認してください。"
         default:
-            return "しばらく待ってから再試行してください。インターネット接続状況を確認してください。"
+            return "インターネット接続状況を確認してください。繋がっている場合はしばらく待ってから再試行してください。"
         }
     }
 
