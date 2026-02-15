@@ -132,7 +132,7 @@ actor HTTPClient: HTTPClientProtocol {
         do {
             (data, http) = try await execute(request: urlRequest)
         } catch {
-            throw APIError(statusCode: nil, message: "実行中にエラーが発生しました")
+            throw APIError(statusCode: nil, message: "実行中にエラーが発生しました。インターネット接続を確認してください。")
         }
 
         // If we have HTTP response, check status code

@@ -43,7 +43,7 @@ enum APIError: LocalizedError, Equatable, Hashable {
     var errorDescription: String? {
         switch self {
         case .network(let message):
-            return "ネットワークエラーが発生しました。 \n\(message)"
+            return message
         case .notFound(let message):
             return message
         case .unauthorized(let message):
