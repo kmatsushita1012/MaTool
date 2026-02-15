@@ -5,7 +5,7 @@
 //  Created by 松下和也 on 2025/06/19.
 //
 
-enum AuthError: Error, Equatable, Sendable {
+enum AuthError: Error, Equatable {
     case network(String)
     case encoding(String)
     case decoding(String)
