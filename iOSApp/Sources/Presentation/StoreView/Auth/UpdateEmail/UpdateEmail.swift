@@ -39,8 +39,8 @@ struct UpdateEmail {
         }
         
         case resendTapped
-        case updateReceived(UpdateEmailResult)
-        case confirmUpdateReceived(Result<Empty, AuthError>)
+        case updateReceived(TaskResult<UpdateEmailState>)
+        case confirmUpdateReceived(VoidTaskResult)
         case errorAlert(PresentationAction<Alert.Action>)
         case completeAlert(PresentationAction<Alert.Action>)
     }
@@ -57,32 +57,28 @@ struct UpdateEmail {
             case .enterEmail(.okTapped),
                 .resendTapped:
                 state.isLoading = true
-                return .run { [email = state.email] send in
-                    let result = await authService.updateEmail(to: email)
-                    await send(.updateReceived(result))
+                return .task(Action.updateReceived) { [email = state.email] in
+                    try await authService.updateEmail(to: email)
                 }
             case .enterCode(.okTapped):
                 state.isLoading = true
-                return .run { [code = state.code] send in
-                    let result = await authService.confirmUpdateEmail(code: code)
-                    await send(.confirmUpdateReceived(result))
+                return .task(Action.confirmUpdateReceived) { [code = state.code] in
+                    try await authService.confirmUpdateEmail(code: code)
                 }
             case .enterEmail(.dismissTapped),
                 .enterCode(.dismissTapped):
-                return .run { _ in
-                    await dismiss()
-                }
-            case .updateReceived(.completed):
+                return .dismiss
+            case .updateReceived(.success(.completed)):
                 state.isLoading = false
                 state.completeAlert = Alert.success("メールアドレスが変更されました")
                 return .none
-            case .updateReceived(.verificationRequired(destination: let destination)):
+            case .updateReceived(.success(.verificationRequired(destination: let destination))):
                 state.isLoading = false
                 state.step = .enterCode(destination: destination)
                 return .none
             case .updateReceived(.failure(let error)):
                 state.isLoading = false
-                state.errorAlert = Alert.error("変更に失敗しました　\(error.localizedDescription)")
+                state.errorAlert = .error(error.localizedDescription)
                 return .none
             case .confirmUpdateReceived(.success):
                 state.isLoading = false
@@ -90,16 +86,14 @@ struct UpdateEmail {
                 return .none
             case .confirmUpdateReceived(.failure(let error)):
                 state.isLoading = false
-                state.errorAlert = Alert.error("変更に失敗しました　\(error.localizedDescription)")
+                state.errorAlert = .error(error.localizedDescription)
                 return .none
             case .errorAlert:
                 state.errorAlert = nil
                 return .none
             case .completeAlert:
                 state.completeAlert = nil
-                return .run { _ in
-                    await dismiss()
-                }
+                return .dismiss
             }
         }
         .ifLet(\.$errorAlert, action: \.errorAlert)

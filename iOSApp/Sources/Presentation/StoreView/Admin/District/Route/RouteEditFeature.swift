@@ -63,8 +63,7 @@ struct RouteEditFeature{
         @Presents var point: PointEditFeature.State?
         @Presents var alert: AlertDestination.State? = nil
         var history: Bool = false
-        var whole: ExportedItem? = nil
-        var partial: ExportedItem? = nil
+        var preview: ExportedItem? = nil
     }
     
     @CasePathable
@@ -81,11 +80,10 @@ struct RouteEditFeature{
         case partialTapped
         case copyTapped
         case sourceSelected(RouteEntry)
-        case copyPrepared(Route.ID)
-        case taskFinished
-        case apiErrorCatched(APIError)
-        case wholePrepared(ExportedItem?)
-        case partialPrepared(ExportedItem?)
+        case saveReceived(VoidTaskResult)
+        case copyPrepared(TaskResult<Route.ID>)
+        case deleteReceived(VoidTaskResult)
+        case previewPrepared(TaskResult<ExportedItem>)
         case point(PresentationAction<PointEditFeature.Action>)
         case alert(PresentationAction<AlertDestination.Action>)
     }
@@ -128,41 +126,21 @@ struct RouteEditFeature{
                 state.operation = .add
                 return .none
             case .saveTapped:
-                do {
-                    try state.points.validate()
-                } catch {
-                    state.alert = .notice(Alert.error(error.localizedDescription))
-                    return .none
-                }
-                if !state.isSaveable {
-                    state.alert = .notice(Alert.error("権限がありません"))
-                    return .none
-                }
                 state.isLoading = true
-                return .run { [
-                    state
-                ] send in
-                    let result = await task{
-                        switch state.mode {
-                        case .create:
-                            try await dataFetcher.create(districtID: state.route.districtId, route: state.route, points: state.points)
-                        case .update:
-                            try await dataFetcher.update(state.route, points: state.points)
-                        case .preview:
-                            throw APIError.unknown(message: "権限がありません")
-                        }
+                return .task(Action.saveReceived) {[state] in
+                    try state.points.validate()
+                    switch state.mode {
+                    case .create:
+                        try await dataFetcher.create(districtID: state.route.districtId, route: state.route, points: state.points)
+                    case .update:
+                        try await dataFetcher.update(state.route, points: state.points)
+                    case .preview:
+                        throw APIError.unknown(message: "権限がありません")
                     }
-                    switch result {
-                    case .success:
-                        await dismiss()
-                    case .failure(let error):
-                        await send(.apiErrorCatched(error))
-                    }
-                }
-            case .cancelTapped:
-                return .run { _ in
                     await dismiss()
                 }
+            case .cancelTapped:
+                return .dismiss
             case .deleteTapped:
                 if !state.isDeleteable {
                     state.alert = .notice(Alert.error("権限がありません"))
@@ -171,26 +149,20 @@ struct RouteEditFeature{
                 state.alert = .delete(Alert.delete())
                 return .none
             case .wholeTapped:
-                return .run { [state] send in
-                    if let snapshotter = await RouteSnapshotter(route: state.route, points: state.points),
-                       let (image, url) = try? await snapshotter.take() {
-                        await send(.wholePrepared(ExportedItem(image: image, url: url)))
-                    }else {
-                        await send(.wholePrepared(nil))
-                    }
+                return .task(Action.previewPrepared){ [state] in
+                    let snapshotter = try await RouteSnapshotter(route: state.route, points: state.points)
+                    let (image, url) = try await snapshotter.take()
+                    return ExportedItem(image: image, url: url)
                 }
             case .partialTapped:
                 guard  let size = state.size else {
-                    state.alert = .notice(Alert.error("描画範囲の取得に失敗しました。"))
+                    state.alert = .notice(.error("描画範囲の取得に失敗しました。"))
                       return .none
                 }
-                return .run { [state] send in
-                    if let snapshotter = await RouteSnapshotter(route: state.route, points: state.points),
-                       let (image, url) = try? await snapshotter.take(of: state.region, size: size) {
-                        await send(.partialPrepared(ExportedItem(image: image, url: url)))
-                    } else {
-                        await send(.partialPrepared(nil))
-                    }
+                return .task(Action.previewPrepared){ [state] in
+                    let snapshotter = try await RouteSnapshotter(route: state.route, points: state.points)
+                    let (image, url) = try await snapshotter.take(of: state.region, size: size)
+                    return ExportedItem(image: image, url: url)
                 }
             case .copyTapped:
                 state.history = true
@@ -198,16 +170,13 @@ struct RouteEditFeature{
             case .sourceSelected(let route):
                 state.isLoading = true
                 state.history = false
-                return .run { send in
-                    let result = await task{ try await dataFetcher.fetch(routeID: route.id) }
-                    switch result {
-                    case .success:
-                        await send(.copyPrepared(route.id))
-                    case .failure(let error):
-                        await send(.apiErrorCatched(error))
-                    }
+                return .task(Action.copyPrepared) {
+                    try await dataFetcher.fetch(routeID: route.id)
+                    return route.id
                 }
-            case .copyPrepared(let routeId):
+            // MARK: - Received
+            case .copyPrepared(.success(let routeId)):
+                state.isLoading = false
                 guard let sourceRoute: Route = FetchOne(Route.find(routeId)).wrappedValue else { return .none }
                 let sourcePoints: [Point] = FetchAll(routeId: sourceRoute.id).wrappedValue
                 state.route = sourceRoute.copyWith(districtId: state.district.id, periodId: state.period.id)
@@ -215,22 +184,11 @@ struct RouteEditFeature{
                 state.region = makeRegion(state.points.map(\.coordinate))
                 state.isLoading = false
                 return .none
-            case .apiErrorCatched(let error):
+            case .previewPrepared(.success(let item)):
+                state.preview = item
                 state.isLoading = false
-                state.alert = .notice(Alert.error("情報の取得に失敗しました。 \(error.localizedDescription)"))
                 return .none
-            case .wholePrepared(let item):
-                state.whole = item
-                if item == nil {
-                    state.alert = .notice(Alert.error("描画に失敗しました"))
-                }
-                return .none
-            case .partialPrepared(let item):
-                state.partial = item
-                if item == nil {
-                    state.alert = .notice(Alert.error("描画に失敗しました"))
-                }
-                return .none
+            // MARK: - Destination
             case .point(.presented(.moveTapped)):
                 if let (point, index) = findPointIndex(state){
                     state.points[index] = point
@@ -266,16 +224,19 @@ struct RouteEditFeature{
                 case .delete(.okTapped):
                     state.alert = nil
                     state.isLoading = true
-                    return .run { [state] send in
-                        let result = await task{ try await dataFetcher.delete(state.route.id) }
-                        switch result {
-                        case .success:
-                            await dismiss()
-                        case .failure(let error):
-                            await send(.apiErrorCatched(error))
-                        }
+                    return .task(Action.deleteReceived) { [state] in
+                        try await dataFetcher.delete(state.route.id)
+                        await dismiss()
                     }
                 }
+            // MARK: - Error
+            case .saveReceived(.failure(let error)),
+                .deleteReceived(.failure(let error)),
+                .copyPrepared(.failure(let error)),
+                .previewPrepared(.failure(let error)):
+                state.isLoading = false
+                state.alert = .notice(.error(error.localizedDescription))
+                return .none
             default:
                 return .none
             }

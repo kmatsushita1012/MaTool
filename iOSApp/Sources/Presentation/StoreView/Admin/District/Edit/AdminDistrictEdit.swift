@@ -40,7 +40,7 @@ struct AdminDistrictEdit {
         case areaTapped
         case performanceAddTapped
         case performanceEditTapped(Performance)
-        case postReceived(VoidResult<APIError>)
+        case postReceived(VoidTaskResult)
         case destination(PresentationAction<Destination.Action>)
         case alert(PresentationAction<Alert.Action>)
     }
@@ -56,14 +56,12 @@ struct AdminDistrictEdit {
             case .binding:
                 return .none
             case .cancelTapped:
-                return .run { _ in
-                    await dismiss()
-                }
+                return .dismiss
             case .saveTapped:
                 state.isLoading = true
-                return .run{ [state] send in
-                    let result = await task{ try? await dataFetcher.update(district: state.district, performances: state.performances) }
-                    await send(.postReceived(result))
+                return .task(Action.postReceived) { [state] in
+                    try await dataFetcher.update(district: state.district, performances: state.performances)
+                    await dismiss()
                 }
             case .baseTapped:
                 if let base = state.district.base{
@@ -86,11 +84,9 @@ struct AdminDistrictEdit {
             case .performanceEditTapped(let item):
                 state.destination = .performance(AdminPerformanceEdit.State(item: item))
                 return .none
-            case .postReceived(let result):
+            case .postReceived(.failure(let error)):
                 state.isLoading = false
-                if case let .failure(error) = result {
                     state.alert = Alert.error("保存に失敗しました。\(error.localizedDescription)")
-                }
                 return .none
             case .destination(.presented(let childAction)):
                 switch childAction {
@@ -124,10 +120,10 @@ struct AdminDistrictEdit {
                     .performance:
                     return .none
                 }
-            case .destination(.dismiss):
-                return .none
             case .alert:
                 state.alert = nil
+                return .none
+            default:
                 return .none
             }
         }
@@ -149,7 +145,7 @@ extension AdminDistrictEdit.State {
 
 //            case .binding(\.image):
 //                guard let item = state.selectedItem else { return .none }
-//                return .run { send in
+//                return .task { send in
 //                    do {
 //                        let data = try await item.loadTransferable(type: Data.self)
 //                        if let data, let uiImage = UIImage(data: data) {

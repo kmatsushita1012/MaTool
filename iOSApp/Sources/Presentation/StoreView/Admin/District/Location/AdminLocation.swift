@@ -72,9 +72,7 @@ struct AdminLocation{
                 state.history = history
                 return .none
             case .dismissTapped:
-                return .run{ _ in
-                    await dismiss()
-                }
+                return .dismiss
             }
         }
     }

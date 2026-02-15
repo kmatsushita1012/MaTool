@@ -13,7 +13,7 @@ enum FestivalDataFetcherKey: DependencyKey {
     static let liveValue: any FestivalDataFetcherProtocol = FestivalDataFetcher()
 }
 
-protocol FestivalDataFetcherProtocol: Sendable {
+protocol FestivalDataFetcherProtocol: DataFetcher {
     func update(festival: Festival, checkPoints: [Checkpoint], hazardSections: [HazardSection]) async throws
     func fetchAll() async throws
     func fetch(festivalID: Festival.ID) async throws
@@ -34,7 +34,7 @@ struct FestivalDataFetcher: FestivalDataFetcherProtocol {
     @Dependency(\.defaultDatabase) var database
     
     func update(festival: Festival, checkPoints: [Checkpoint], hazardSections: [HazardSection] ) async throws {
-        guard let token = await getAccessToken() else { throw APIError.unauthorized(message: "") }
+        let token = try await getToken()
         let draft: FestivalPack = .init(festival: festival, checkpoints: checkPoints, hazardSections: hazardSections)
         let result: FestivalPack = try await client.put(path: "/festivals/\(festival.id)", body: draft, accessToken: token)
         try await syncPack(result)

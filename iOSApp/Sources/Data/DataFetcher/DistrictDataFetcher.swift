@@ -29,22 +29,22 @@ struct DistrictDataFetcher: DistrictDataFetcherProtocol {
     
     func create(name: String, email: String, festivalId: String) async throws {
         let draft: DistrictCreateForm = .init(name: name, email: email)
-        guard let token = try await getToken() else { throw APIError.unauthorized(message: "") }
+        let token = try await getToken()
         let result: DistrictPack = try await client.post(path: "/festivals/\(festivalId)/districts", body: draft, accessToken: token)
         try await syncPack(result)
     }
     
     func update(district: District, performances: [Performance] ) async throws {
         let draft: DistrictPack = .init(district: district, performances: performances)
-        guard let token = try await getToken() else { throw APIError.unauthorized(message: "") }
+        let token = try await getToken()
         let result: DistrictPack = try await client.put(path: "/districts/\(district.id)", body: draft, accessToken: token)
         try await syncPack(result)
     }
     
     func update(district: District) async throws {
-        guard let token = try await getToken() else { throw APIError.unauthorized(message: "") }
+        let token = try await getToken()
         let result: District = try await client.put(path: "/districts/\(district.id)/core", body: district, accessToken: token)
-        try await sync(district)
+        try await sync(result)
     }
     
     // fetch all districts for a festival

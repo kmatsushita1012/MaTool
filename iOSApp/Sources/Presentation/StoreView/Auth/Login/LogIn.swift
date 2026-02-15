@@ -30,7 +30,7 @@ struct Login {
         case binding(BindingAction<State>)
         case dismissTapped
         case signInTapped
-        case received(SignInResult)
+        case received(TaskResult<SignInState>)
         case resetPasswordTapped
         case destination(PresentationAction<Destination.Action>)
     }
@@ -47,33 +47,15 @@ struct Login {
                 return .none
             case .signInTapped:
                 state.isLoading = true
-                return .run {[id = state.id, password = state.password] send in
-                    do {
-                        let result = try await sceneUsecase.signIn(username: id, password: password)
-                        await send(.received(result))
-                    }catch {
-                        print(error)
-                        // FIXME: Error
-                    }
+                return .task(Action.received) { [state] in
+                    try await sceneUsecase.signIn(username: state.id, password: state.password)
                 }
             case .dismissTapped:
-                return .run { _ in
-                    await dismiss()
-                }
+                return .dismiss
             case .resetPasswordTapped:
                 state.destination = .resetPassword(ResetPassword.State(username: state.id))
                 return .none
-            case .received(.success(let userRole)):
-                state.errorMessage = nil
-                switch userRole {
-                case .headquarter(let id):
-                    return .none
-                case .district(let id):
-                    return .none
-                case .guest:
-                    return .none
-                }
-            case .received(.newPasswordRequired):
+            case .received(.success(.newPasswordRequired)):
                 state.destination = .confirmSignIn(ConfirmSignIn.State())
                 state.isLoading = false
                 state.errorMessage = nil
@@ -91,7 +73,7 @@ struct Login {
                     .resetPassword:
                     return .none
                 }
-            case .destination(.dismiss):
+            default:
                 return .none
             }
         }
