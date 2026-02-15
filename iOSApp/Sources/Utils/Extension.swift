@@ -162,17 +162,6 @@ extension Result {
     }
 }
 
-struct VoidSuccess: Equatable {
-    init() {}
-}
-
-typealias VoidResult<Failure: Swift.Error> = Result<VoidSuccess, Failure>
-
-extension VoidResult where Success == VoidSuccess {
-    static var success: Self {
-        .success(.init())
-    }
-}
 
 extension Result {
     func mapVoid() -> VoidResult<Failure>{
