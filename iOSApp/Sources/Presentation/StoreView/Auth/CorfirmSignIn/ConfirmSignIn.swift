@@ -24,7 +24,7 @@ struct ConfirmSignIn {
         case binding(BindingAction<State>)
         case submitTapped
         case dismissTapped
-        case received(Result<UserRole, AuthError>)
+        case received(TaskResult<UserRole>)
         case alert(PresentationAction<Alert.Action>)
     }
     
@@ -50,9 +50,8 @@ struct ConfirmSignIn {
                     return .none
                 }
                 state.isLoading = true
-                return .run { [password = state.password1] send in
-                    let result = await authService.confirmSignIn(password: password)
-                    await send(.received(result))
+                return .task(Action.received) { [password = state.password1] in
+                    try await authService.confirmSignIn(password: password).get()
                 }
             case .dismissTapped:
                 return .run { _ in
