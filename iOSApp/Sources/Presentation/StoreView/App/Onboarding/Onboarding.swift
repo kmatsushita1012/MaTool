@@ -40,8 +40,8 @@ struct OnboardingFeature {
         case externalGuestTapped
         case adminTapped
         case districtSelected(District)
-        case festivalDidSet(VoidResult<APIError>)
-        case districtDidSet(Result<Route.ID?, APIError>)
+        case festivalDidSet(VoidTaskResult)
+        case districtDidSet(TaskResult<Route.ID?>)
     }
     
     @Dependency(SceneUsecaseKey.self) var sceneUsecase
@@ -53,15 +53,8 @@ struct OnboardingFeature {
             case .binding(\.selectedFestival):
                 guard let festival = state.selectedFestival else { return .none }
                 state.isLoading = true
-                return .run { send in
-                    do{
-                        try await sceneUsecase.select(festivalId: festival.id)
-                        await send(.festivalDidSet(.success))
-                    } catch let error as APIError {
-                        await send(.festivalDidSet(.failure(error)))
-                    } catch {
-                        await send(.festivalDidSet(.failure(.unknown(message: error.localizedDescription))))
-                    }
+                return .task(Action.festivalDidSet) {
+                    try await sceneUsecase.select(festivalId: festival.id)
                 }
             case .binding:
                 return .none
@@ -78,15 +71,8 @@ struct OnboardingFeature {
                     state.festivalErrorMessaage = "祭典を選択してください。"
                     return .none
                 }
-                return .run { send in
-                    do{
-                        let routeId = try await sceneUsecase.select(districtId: district.id)
-                        await send(.districtDidSet(.success(routeId)))
-                    } catch let error as APIError {
-                        await send(.districtDidSet(.failure(error)))
-                    } catch {
-                        await send(.districtDidSet(.failure(.unknown(message: error.localizedDescription))))
-                    }
+                return .task(Action.districtDidSet) {
+                    try await sceneUsecase.select(districtId: district.id)
                 }
             case .festivalDidSet(.success):
                 state.isLoading = false
