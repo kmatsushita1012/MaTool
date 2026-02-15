@@ -24,16 +24,16 @@ extension DependencyValues {
 protocol AuthServiceProtocol: Sendable {
     nonisolated func initialize() throws
     func signIn(_ username: String, password: String) async -> SignInResult
-    func confirmSignIn(password: String) async -> Result<UserRole,AuthError>
-    func signOut() async -> Result<UserRole, AuthError>
+    func confirmSignIn(password: String) async throws -> UserRole
+    func signOut() async throws -> UserRole
     func getAccessToken() async -> String?
-    func changePassword(current: String, new: String) async -> Result<Empty,AuthError>
-    func resetPassword(username: String)  async -> Result<Empty,AuthError>
-    func confirmResetPassword(username: String, newPassword: String, code: String)  async -> Result<Empty,AuthError>
+    func changePassword(current: String, new: String) async throws -> Empty
+    func resetPassword(username: String)  async throws -> Empty
+    func confirmResetPassword(username: String, newPassword: String, code: String)  async throws -> Empty
     func updateEmail(to newEmail: String) async -> UpdateEmailResult
-    func confirmUpdateEmail(code: String) async -> Result<Empty,AuthError>
+    func confirmUpdateEmail(code: String) async throws -> Empty
     nonisolated func isValidPassword(_ password: String) -> Bool
-    func getUserRole() async -> Result<UserRole, AuthError>
+    func getUserRole() async throws -> UserRole
 }
 
 // MARK: - AuthService
@@ -48,7 +48,7 @@ actor AuthService: AuthServiceProtocol {
     }
     
     func signIn(_ username: String, password: String) async -> SignInResult {
-        let _ = await authProvider.signOut()
+        try? await authProvider.signOut()
         let result = await authProvider.signIn(username, password)
         switch result {
         case .failure(let error):
@@ -56,58 +56,50 @@ actor AuthService: AuthServiceProtocol {
         case .newPasswordRequired:
             return .newPasswordRequired
         case .success:
-            let userRoleResult = await getUserRole()
-            switch userRoleResult{
-            case .success(let userRole):
+            do {
+                let userRole = try await getUserRole()
                 return .success(userRole)
-            case .failure(let error):
+            } catch let error as AuthError {
                 return .failure(error)
+            } catch {
+                return .failure(.unknown(error.localizedDescription))
             }
         }
     }
     
-    func confirmSignIn(password: String) async -> Result<UserRole, AuthError> {
-        let confirmSignInResult = await authProvider.confirmSignIn(password)
-        if case .failure(let error) = confirmSignInResult {
-            let _ = await authProvider.signOut()
-            return .failure(error)
+    func confirmSignIn(password: String) async throws -> UserRole {
+        do {
+            _ = try await authProvider.confirmSignIn(password)
+            return try await authProvider.getUserRole()
+        } catch {
+            try? await authProvider.signOut()
+            throw error
         }
-        let userRoleResult = await authProvider.getUserRole()
-        return userRoleResult.mapError{ $0 }
     }
     
-    func signOut() async -> Result<UserRole, AuthError> {
-        let signOutResult = await authProvider.signOut()
-        if case .failure(let error) = signOutResult{
-            return .failure(error)
-        }
+    func signOut() async throws -> UserRole {
+        _ = try await authProvider.signOut()
         userRole = .guest
-        return .success(userRole)
+        return userRole
     }
     
     func getAccessToken() async -> String? {
         if userRole == .guest {
             return nil
         }
-        let result = await authProvider.getTokens()
-        switch result {
-        case .success(let value):
-            return value
-        case .failure:
-            return nil
-        }
+        return try? await authProvider.getTokens()
     }
     
-    func changePassword(current: String, new: String) async -> Result<Empty,AuthError> {
-        return await authProvider.changePassword(current, new)
+    func changePassword(current: String, new: String) async throws -> Empty {
+        return try await authProvider.changePassword(current, new)
     }
     
-    func resetPassword(username: String)  async -> Result<Empty,AuthError> {
-        return await authProvider.resetPassword(username)
+    func resetPassword(username: String)  async throws -> Empty {
+        return try await authProvider.resetPassword(username)
     }
     
-    func confirmResetPassword(username: String, newPassword: String, code: String)  async -> Result<Empty,AuthError> {
-        return await authProvider.confirmResetPassword(
+    func confirmResetPassword(username: String, newPassword: String, code: String)  async throws -> Empty {
+        return try await authProvider.confirmResetPassword(
             username,
             newPassword,
             code
@@ -118,8 +110,8 @@ actor AuthService: AuthServiceProtocol {
         return await authProvider.updateEmail(newEmail)
     }
     
-    func confirmUpdateEmail(code: String) async -> Result<Empty,AuthError> {
-        return await authProvider.confirmUpdateEmail(code)
+    func confirmUpdateEmail(code: String) async throws -> Empty {
+        return try await authProvider.confirmUpdateEmail(code)
     }
     
     nonisolated func isValidPassword(_ password: String) -> Bool {
@@ -131,15 +123,88 @@ actor AuthService: AuthServiceProtocol {
         return lengthRule && hasNumber && hasUppercase && hasLowercase
     }
     
-    func getUserRole() async -> Result<UserRole, AuthError> {
-        let userRoleResult = await authProvider.getUserRole()
-        switch userRoleResult {
-        case .success(let value):
+    func getUserRole() async throws -> UserRole {
+        do {
+            let value = try await authProvider.getUserRole()
             userRole = value
-            return .success(value)
-        case .failure( _):
-            let _ = await authProvider.signOut()
-            return .success(.guest)
+            return value
+        } catch {
+            try? await authProvider.signOut()
+            userRole = .guest
+            return .guest
+        }
+    }
+}
+
+@available(*, deprecated, message: "Use async throws APIs instead of Result wrappers.")
+extension AuthServiceProtocol {
+    func confirmSignInResult(password: String) async -> Result<UserRole, AuthError> {
+        do {
+            return .success(try await confirmSignIn(password: password))
+        } catch let error as AuthError {
+            return .failure(error)
+        } catch {
+            return .failure(.unknown(error.localizedDescription))
+        }
+    }
+
+    func signOutResult() async -> Result<UserRole, AuthError> {
+        do {
+            return .success(try await signOut())
+        } catch let error as AuthError {
+            return .failure(error)
+        } catch {
+            return .failure(.unknown(error.localizedDescription))
+        }
+    }
+
+    func changePasswordResult(current: String, new: String) async -> Result<Empty, AuthError> {
+        do {
+            return .success(try await changePassword(current: current, new: new))
+        } catch let error as AuthError {
+            return .failure(error)
+        } catch {
+            return .failure(.unknown(error.localizedDescription))
+        }
+    }
+
+    func resetPasswordResult(username: String) async -> Result<Empty, AuthError> {
+        do {
+            return .success(try await resetPassword(username: username))
+        } catch let error as AuthError {
+            return .failure(error)
+        } catch {
+            return .failure(.unknown(error.localizedDescription))
+        }
+    }
+
+    func confirmResetPasswordResult(username: String, newPassword: String, code: String) async -> Result<Empty, AuthError> {
+        do {
+            return .success(try await confirmResetPassword(username: username, newPassword: newPassword, code: code))
+        } catch let error as AuthError {
+            return .failure(error)
+        } catch {
+            return .failure(.unknown(error.localizedDescription))
+        }
+    }
+
+    func confirmUpdateEmailResult(code: String) async -> Result<Empty, AuthError> {
+        do {
+            return .success(try await confirmUpdateEmail(code: code))
+        } catch let error as AuthError {
+            return .failure(error)
+        } catch {
+            return .failure(.unknown(error.localizedDescription))
+        }
+    }
+
+    func getUserRoleResult() async -> Result<UserRole, AuthError> {
+        do {
+            return .success(try await getUserRole())
+        } catch let error as AuthError {
+            return .failure(error)
+        } catch {
+            return .failure(.unknown(error.localizedDescription))
         }
     }
 }
