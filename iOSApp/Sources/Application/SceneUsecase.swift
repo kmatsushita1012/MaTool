@@ -16,7 +16,7 @@ enum SceneUsecaseKey: DependencyKey {
 protocol SceneUsecaseProtocol: Sendable {
     func launch() async -> LaunchState
     func signIn(username: String, password: String) async throws -> SignInResult
-    func confirmSignIn(password: String) async throws -> Result<UserRole, AuthError>
+    func confirmSignIn(password: String) async throws -> UserRole
     func select(festivalId: Festival.ID) async throws
     func select(districtId: District.ID) async throws -> Route.ID?
 }
@@ -40,11 +40,9 @@ actor SceneUsecase: SceneUsecaseProtocol {
                 return .onboarding
             }
             let userRole = await {
-                let result = await authService.getUserRole()
-                switch result {
-                case .success(let userRole):
-                    return userRole
-                case .failure:
+                do {
+                    return try await authService.getUserRole()
+                } catch {
                     return .guest
                 }
             }()
@@ -79,13 +77,13 @@ actor SceneUsecase: SceneUsecaseProtocol {
         return signInResult
     }
     
-    func confirmSignIn(password: String) async throws -> Result<UserRole, AuthError> {
-        let result = await authService.confirmSignIn(password: password)
-        if case .success(.headquarter(let festivalId)) = result {
+    func confirmSignIn(password: String) async throws -> UserRole {
+        let result = try await authService.confirmSignIn(password: password)
+        if case .headquarter(let festivalId) = result {
             try await dataFetcher.launchFestival(festivalId: festivalId)
             userDefaults.defaultDistrictId = nil
             userDefaults.defaultFestivalId = festivalId
-        } else if case .success(.district(let districtId)) = result {
+        } else if case .district(let districtId) = result {
             async let festivalTask = dataFetcher.launchFestival(districtId: districtId)
             async let districtTask = dataFetcher.launchDistrict(districtId: districtId)
             let (festivalId, _) = try await (festivalTask, districtTask)
@@ -109,5 +107,18 @@ actor SceneUsecase: SceneUsecaseProtocol {
         let currentRouteId = try await dataFetcher.launchDistrict(districtId: districtId)
         userDefaults.defaultDistrictId = district.id
         return currentRouteId
+    }
+}
+
+@available(*, deprecated, message: "Use async throws APIs instead of Result wrappers.")
+extension SceneUsecaseProtocol {
+    func confirmSignInResult(password: String) async -> Result<UserRole, AuthError> {
+        do {
+            return .success(try await confirmSignIn(password: password))
+        } catch let error as AuthError {
+            return .failure(error)
+        } catch {
+            return .failure(.unknown(error.localizedDescription))
+        }
     }
 }
