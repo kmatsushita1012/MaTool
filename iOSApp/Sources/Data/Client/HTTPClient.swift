@@ -70,6 +70,12 @@ protocol HTTPClientProtocol: Sendable {
         query: [String: Any],
         accessToken: String?
     ) async throws -> Response
+
+    func delete(
+        path: String,
+        query: [String: Any],
+        accessToken: String?
+    ) async throws
 }
 
 // MARK: - APIClient
@@ -81,6 +87,7 @@ actor HTTPClient: HTTPClientProtocol {
     private let jsonDecoder: JSONDecoder
 
     private struct EmptyBody: Encodable {}
+    private struct EmptyResponse: Decodable {}
 
     init(base: String, session: URLSession = .shared) {
         self.base = base
@@ -177,6 +184,18 @@ actor HTTPClient: HTTPClientProtocol {
         let response: Response = try await request(path: path, method: "DELETE", query: query, body: Optional<EmptyBody>.none, accessToken: accessToken, isCache: false)
         cache.removeAllObjects()
         return response
+    }
+
+    func delete(path: String, query: [String: Any] = [:], accessToken: String? = nil) async throws {
+        let _: EmptyResponse = try await request(
+            path: path,
+            method: "DELETE",
+            query: query,
+            body: Optional<EmptyBody>.none,
+            accessToken: accessToken,
+            isCache: false
+        )
+        cache.removeAllObjects()
     }
 
     private func makeURL(path: String, query: [String: Any]) throws -> URL {
@@ -315,6 +334,18 @@ extension HTTPClientProtocol {
         try await self.post(
             path: path,
             body: body,
+            query: query,
+            accessToken: accessToken
+        )
+    }
+
+    func delete(
+        path: String,
+        query: [String: Any] = [:],
+        accessToken: String? = nil
+    ) async throws {
+        try await self.delete(
+            path: path,
             query: query,
             accessToken: accessToken
         )
