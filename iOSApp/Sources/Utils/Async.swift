@@ -102,12 +102,20 @@ func withTimeout<T>(
         group.addTask {
             try await operation()
         }
+
         group.addTask {
-            try await Task.sleep(nanoseconds: UInt64(seconds) * 1_000_000_000)
-            throw AuthError.timeout("Operation timed out")
+            try await Task.sleep(
+                nanoseconds: UInt64(seconds) * 1_000_000_000
+            )
+            throw AuthError.timeout("タイムアウトしました")
         }
-        defer { group.cancelAll() } // 必ずキャンセルは投げておく
-        return try await group.next()!
+
+        guard let result = try await group.next() else {
+            throw CancellationError()
+        }
+
+        group.cancelAll()
+        return result
     }
 }
 
