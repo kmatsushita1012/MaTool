@@ -75,7 +75,7 @@ import Foundation
     public let id: String
     public let routeId: Route.ID
     public let districtId: District.ID
-    public let order: Int
+    public var order: Int
     
     public init(
         id: Self.ID = UUID().uuidString,
