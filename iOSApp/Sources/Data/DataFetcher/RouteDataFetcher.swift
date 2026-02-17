@@ -35,21 +35,21 @@ struct RouteDataFetcher: RouteDataFetcherProtocol {
     }
 
     func fetch(routeID: Route.ID) async throws {
-        let pack: RouteDetailPack = try await client.get(path: "/routes/\(routeID)")
+        let pack: RoutePack = try await client.get(path: "/routes/\(routeID)")
         try await syncPack(pack)
     }
 
     func update(_ route: Route, points: [Point]) async throws {
         let token = try await getToken()
-        let draft: RouteDetailPack = .init(route: route, points: points)
-        let pack: RouteDetailPack = try await client.put(path: "/routes/\(route.id)", body: draft, accessToken: token)
+        let draft: RoutePack = .init(route: route, points: points)
+        let pack: RoutePack = try await client.put(path: "/routes/\(route.id)", body: draft, accessToken: token)
         try await syncPack(pack)
     }
 
     func create(districtID: District.ID, route: Route, points: [Point]) async throws {
         let token = try await getToken()
-        let draft: RouteDetailPack = .init(route: route, points: points)
-        let pack: RouteDetailPack = try await client.post(path: "/districts/\(districtID)/routes", body: draft, query: [:], accessToken: token)
+        let draft: RoutePack = .init(route: route, points: points)
+        let pack: RoutePack = try await client.post(path: "/districts/\(districtID)/routes", body: draft, query: [:], accessToken: token)
         try await syncPack(pack)
     }
 
@@ -61,7 +61,7 @@ struct RouteDataFetcher: RouteDataFetcherProtocol {
         }
     }
 
-    private func syncPack(_ pack: RouteDetailPack) async throws {
+    private func syncPack(_ pack: RoutePack) async throws {
         let id = pack.route.id
         try await database.write { db in
             let oldPoints = try pointStore.fetchAll(where: { $0.routeId == id }, from: db)
