@@ -16,10 +16,10 @@ enum RouteUsecaseKey: DependencyKey {
 
 // MARK: - RouteUsecaseProtocol
 protocol RouteUsecaseProtocol: Sendable {
-    func get(id: String, user: UserRole) async throws -> RouteDetailPack
+    func get(id: String, user: UserRole) async throws -> RoutePack
     func query(by districtId: String, type: RouteQueryType, now: SimpleDate, user: UserRole) async throws -> [Route]
-    func post(districtId: String, pack: RouteDetailPack, user: UserRole) async throws -> RouteDetailPack
-    func put(id: String, pack: RouteDetailPack, user: UserRole) async throws -> RouteDetailPack
+    func post(districtId: String, pack: RoutePack, user: UserRole) async throws -> RoutePack
+    func put(id: String, pack: RoutePack, user: UserRole) async throws -> RoutePack
     func delete(id: String, user: UserRole) async throws
 }
 
@@ -35,7 +35,7 @@ struct RouteUsecase: RouteUsecaseProtocol {
     @Dependency(DistrictRepositoryKey.self) var districtRepository
     @Dependency(PointRepositoryKey.self) var pointRepository
     
-    func get(id: String, user: UserRole) async throws -> RouteDetailPack {
+    func get(id: String, user: UserRole) async throws -> RoutePack {
         guard let route = try await routeRepository.get(id: id) else {
             throw Error.notFound("指定されたルートが見つかりません")
         }
@@ -73,7 +73,7 @@ struct RouteUsecase: RouteUsecaseProtocol {
         return filtered
     }
     
-    func post(districtId: String, pack: RouteDetailPack, user: UserRole) async throws -> RouteDetailPack {
+    func post(districtId: String, pack: RoutePack, user: UserRole) async throws -> RoutePack {
         guard districtId == user.id,
               pack.route.districtId == user.id else {
             throw Error.unauthorized("アクセス権限がありません")
@@ -86,7 +86,7 @@ struct RouteUsecase: RouteUsecaseProtocol {
         return .init(route: route, points: points)
     }
     
-    func put(id: String, pack: RouteDetailPack, user: UserRole) async throws -> RouteDetailPack {
+    func put(id: String, pack: RoutePack, user: UserRole) async throws -> RoutePack {
         guard let old = try await routeRepository.get(id: id) else {
             throw Error.notFound("指定されたルートが見つかりません")
         }
