@@ -37,7 +37,7 @@ public struct DistrictCreateForm: Pack {
     }
 }
 
-public struct RouteDetailPack: Pack {
+public struct RoutePack: Pack {
     public let route: Route
     public let points: [Point]
     public let passages: [RoutePassage]

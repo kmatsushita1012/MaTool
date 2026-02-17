@@ -51,7 +51,7 @@ struct RouteController: RouteControllerProtocol {
 
 	func post(_ request: Request, next: Handler) async throws -> Response {
 		let districtId = try request.parameter("districtId", as: String.self)
-		let body = try request.body(as: RouteDetailPack.self)
+		let body = try request.body(as: RoutePack.self)
 		let user = request.user ?? .guest
         let result = try await usecase.post(districtId: districtId, pack: body, user: user)
 		return try .success(result)
@@ -59,7 +59,7 @@ struct RouteController: RouteControllerProtocol {
 
 	func put(_ request: Request, next: Handler) async throws -> Response {
 		let id = try request.parameter("routeId", as: String.self)
-		let body = try request.body(as: RouteDetailPack.self)
+		let body = try request.body(as: RoutePack.self)
 		let user = request.user ?? .guest
         let result = try await usecase.put(id: id, pack: body, user: user)
 		return try .success(result)
