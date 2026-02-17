@@ -40,10 +40,12 @@ public struct DistrictCreateForm: Pack {
 public struct RouteDetailPack: Pack {
     public let route: Route
     public let points: [Point]
+    public let passages: [RoutePassage]
     
-    public init(route: Route, points: [Point]) {
+    public init(route: Route, points: [Point], passages: [RoutePassage]) {
         self.route = route
         self.points = points
+        self.passages = passages
     }
 }
 
@@ -75,12 +77,14 @@ public struct LaunchDistrictPack: Pack {
     public let performances: [Performance]
     public let routes: [Route]
     public let points: [Point]
+    public let passages: [RoutePassage]
     public let currentRouteId: Route.ID?
     
-    public init(performances: [Performance], routes: [Route], points: [Point], currentRouteId: Route.ID?) {
+    public init(performances: [Performance], routes: [Route], points: [Point], passages: [RoutePassage], currentRouteId: Route.ID?) {
         self.performances = performances
         self.routes = routes
         self.points = points
+        self.passages = passages
         self.currentRouteId = currentRouteId
     }
 }
