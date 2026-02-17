@@ -39,6 +39,9 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-derived-
 
+    - name: Clear ModuleCache only
+      run: rm -rf Shared/.derivedData/ModuleCache.noindex
+
     - name: Build & Test
       run: |
         set -o pipefail

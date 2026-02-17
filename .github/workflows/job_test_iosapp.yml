@@ -36,6 +36,9 @@ jobs:
           key: ${{ runner.os }}-derived-26.0
           restore-keys: |
             ${{ runner.os }}-derived-
+      
+      - name: Clear ModuleCache only
+        run: rm -rf Shared/.derivedData/ModuleCache.noindex
 
       - name: Build&Test
         run: |
