@@ -25,8 +25,7 @@ struct RouteControllerTest {
 	let expectedHeaders: [String: String] = ["Content-Type": "application/json"]
 
 	@Test func test_query_正常() async throws {
-		let route = Route(id: "r-id", districtId: "d-id", start: SimpleTime(hour: 10, minute: 0), goal: SimpleTime(hour: 11, minute: 0))
-		let expected = [RouteItem(from: route)]
+        let expected = [Route.mock()]
 		var lastCalledDistrictId: String? = nil
 		var lastCalledUser: UserRole? = nil
 		let mock = RouteUsecaseMock(queryHandler: { districtId, user in
@@ -43,7 +42,7 @@ struct RouteControllerTest {
 
 		#expect(result.statusCode == 200)
 		#expect(result.headers == expectedHeaders)
-		let target = try [RouteItem].from(result.body)
+		let target = try [Route].from(result.body)
 		#expect(target == expected)
 		#expect(lastCalledDistrictId == "d-id")
 		#expect(lastCalledUser == .guest)
@@ -51,8 +50,7 @@ struct RouteControllerTest {
 	}
     
     @Test func test_query_userがnil() async throws {
-        let route = Route(id: "r-id", districtId: "d-id", start: SimpleTime(hour: 10, minute: 0), goal: SimpleTime(hour: 11, minute: 0))
-        let expected = [RouteItem(from: route)]
+        let expected = [Route.mock()]
         var lastCalledDistrictId: String? = nil
         var lastCalledUser: UserRole? = nil
         let mock = RouteUsecaseMock(queryHandler: { districtId, user in
@@ -68,7 +66,7 @@ struct RouteControllerTest {
 
         #expect(result.statusCode == 200)
         #expect(result.headers == expectedHeaders)
-        let target = try [RouteItem].from(result.body)
+        let target = try [Route].from(result.body)
         #expect(target == expected)
         #expect(lastCalledDistrictId == "d-id")
         #expect(lastCalledUser == .guest)
@@ -99,7 +97,7 @@ struct RouteControllerTest {
 	}
 
 	@Test func test_get_正常() async throws {
-		let route = Route(id: "r-id", districtId: "d-id", start: SimpleTime(hour: 10, minute: 0), goal: SimpleTime(hour: 11, minute: 0))
+        let route = RouteDetailPack.mock()
 		var lastCalledId: String? = nil
 		let mock = RouteUsecaseMock(getHandler: { id, _ in
 			lastCalledId = id
@@ -115,13 +113,13 @@ struct RouteControllerTest {
 		#expect(lastCalledId == "r-id")
 		#expect(result.statusCode == 200)
 		#expect(result.headers == expectedHeaders)
-		let target = try Route.from(result.body)
+		let target = try RouteDetailPack.from(result.body)
 		#expect(target == route)
 		#expect(mock.getCallCount == 1)
 	}
     
     @Test func test_get_user_nil() async throws {
-        let route = Route(id: "r-id", districtId: "d-id", start: SimpleTime(hour: 10, minute: 0), goal: SimpleTime(hour: 11, minute: 0))
+        let route = RouteDetailPack.mock()
         var lastCalledId: String? = nil
         var lastCalledUser: UserRole? = nil
         let mock = RouteUsecaseMock(getHandler: { id, user in
@@ -139,7 +137,7 @@ struct RouteControllerTest {
         #expect(lastCalledUser == .guest)
         #expect(result.statusCode == 200)
         #expect(result.headers == expectedHeaders)
-        let target = try Route.from(result.body)
+        let target = try RouteDetailPack.from(result.body)
         #expect(target == route)
         #expect(mock.getCallCount == 1)
     }
@@ -164,153 +162,13 @@ struct RouteControllerTest {
 		#expect(mock.getCallCount == 1)
 	}
 
-	@Test func test_getCurrent_正常() async throws {
-		let route = Route(id: "r-id", districtId: "d-id", start: SimpleTime(hour: 10, minute: 0), goal: SimpleTime(hour: 11, minute: 0))
-		let item = RouteItem(from: route)
-		let expected = CurrentResponse(districtId: "d-id", districtName: "d-name", routes: [item], current: route, location: nil)
-		var lastCalledDistrictId: String? = nil
-		var lastCalledUser: UserRole? = nil
-		let mock = RouteUsecaseMock(getCurrentHandler: { districtId, user, _ in
-			lastCalledDistrictId = districtId
-			lastCalledUser = user
-			return expected
-		})
-		let subject = makeUsecase(mock)
-		let request = makeRequest(method: .get, parameters: ["districtId": "d-id"], user: .district("d-id"))
 
-
-		let result = try await subject.getCurrent(request, next: next)
-
-
-		#expect(lastCalledDistrictId == "d-id")
-		#expect(lastCalledUser == .district("d-id"))
-		#expect(result.statusCode == 200)
-		#expect(result.headers == expectedHeaders)
-		let target = try CurrentResponse.from(result.body)
-		#expect(target.districtId == expected.districtId)
-		#expect(target.districtName == expected.districtName)
-		#expect(mock.getCurrentCallCount == 1)
-	}
-    
-    @Test func test_getCurrent_userがnil() async throws {
-        let route = Route(id: "r-id", districtId: "d-id", start: SimpleTime(hour: 10, minute: 0), goal: SimpleTime(hour: 11, minute: 0))
-        let item = RouteItem(from: route)
-        let expected = CurrentResponse(districtId: "d-id", districtName: "d-name", routes: [item], current: route, location: nil)
-        var lastCalledDistrictId: String? = nil
-        var lastCalledUser: UserRole? = nil
-        let mock = RouteUsecaseMock(getCurrentHandler: { districtId, user, _ in
-            lastCalledDistrictId = districtId
-            lastCalledUser = user
-            return expected
-        })
-        let subject = makeUsecase(mock)
-        var request = makeRequest(method: .get, parameters: ["districtId": "d-id"])
-        request.user = nil
-
-        let result = try await subject.getCurrent(request, next: next)
-
-        #expect(lastCalledDistrictId == "d-id")
-        #expect(lastCalledUser == .guest)
-        #expect(result.statusCode == 200)
-        #expect(result.headers == expectedHeaders)
-        let target = try CurrentResponse.from(result.body)
-        #expect(target.districtId == expected.districtId)
-        #expect(target.districtName == expected.districtName)
-        #expect(mock.getCurrentCallCount == 1)
-    }
-
-
-	@Test func test_getCurrent_異常() async throws {
-		let expectedError = Error.internalServerError("getCurrent_failed")
-		var lastCalledDistrictId: String? = nil
-		var lastCalledUser: UserRole? = nil
-		let mock = RouteUsecaseMock(getCurrentHandler: { districtId, user, _ in
-			lastCalledDistrictId = districtId
-			lastCalledUser = user
-			throw expectedError
-		})
-		let subject = makeUsecase(mock)
-		let request = makeRequest(method: .get, parameters: ["districtId": "d-id"], user: .district("d-id"))
-
-
-		await #expect(throws: expectedError) {
-			let _ = try await subject.getCurrent(request, next: next)
-		}
-
-
-		#expect(lastCalledDistrictId == "d-id")
-		#expect(lastCalledUser == .district("d-id"))
-		#expect(mock.getCurrentCallCount == 1)
-	}
-
-	@Test func test_getIds_正常() async throws {
-		let expected = ["r-1", "r-2"]
-		var lastCalledUser: UserRole? = nil
-		let mock = RouteUsecaseMock(getAllRouteIdsHandler: { user in
-			lastCalledUser = user
-			return expected
-		})
-		let subject = makeUsecase(mock)
-		let request = makeRequest(method: .get, user: .headquarter("f-id"))
-
-
-		let result = try await subject.getIds(request, next: next)
-
-
-		#expect(result.statusCode == 200)
-		#expect(result.headers == expectedHeaders)
-		let target = try [String].from(result.body)
-		#expect(target == expected)
-		#expect(lastCalledUser == .headquarter("f-id"))
-		#expect(mock.getAllRouteIdsCallCount == 1)
-	}
-    
-    @Test func test_getIds_userがnil() async throws {
-        let expected = ["r-1", "r-2"]
-        var lastCalledUser: UserRole? = nil
-        let mock = RouteUsecaseMock(getAllRouteIdsHandler: { user in
-            lastCalledUser = user
-            return expected
-        })
-        let subject = makeUsecase(mock)
-        var request = makeRequest(method: .get)
-        request.user = nil
-
-        let result = try await subject.getIds(request, next: next)
-
-        #expect(result.statusCode == 200)
-        #expect(result.headers == expectedHeaders)
-        let target = try [String].from(result.body)
-        #expect(target == expected)
-        #expect(lastCalledUser == .guest)
-        #expect(mock.getAllRouteIdsCallCount == 1)
-    }
-
-	@Test func test_getIds_異常() async throws {
-		let expectedError = Error.internalServerError("getIds_failed")
-		var lastCalledUser: UserRole? = nil
-		let mock = RouteUsecaseMock(getAllRouteIdsHandler: { user in
-			lastCalledUser = user
-			throw expectedError
-		})
-		let subject = makeUsecase(mock)
-		let request = makeRequest(method: .get, user: .headquarter("f-id"))
-
-
-		await #expect(throws: expectedError) {
-			let _ = try await subject.getIds(request, next: next)
-		}
-
-
-		#expect(lastCalledUser == .headquarter("f-id"))
-		#expect(mock.getAllRouteIdsCallCount == 1)
-	}
 
 	@Test func test_post_正常() async throws {
-		let route = Route(id: "r-id", districtId: "d-id", start: SimpleTime(hour: 10, minute: 0), goal: SimpleTime(hour: 11, minute: 0))
+        let route = RouteDetailPack.mock()
 		let body = try route.toString()
 		var lastCalledDistrictId: String? = nil
-		var lastCalledRoute: Route? = nil
+		var lastCalledRoute: RouteDetailPack? = nil
 		let mock = RouteUsecaseMock(postHandler: { districtId, route, _ in
 			lastCalledDistrictId = districtId
 			lastCalledRoute = route
@@ -324,19 +182,19 @@ struct RouteControllerTest {
 
 
 		#expect(lastCalledDistrictId == "d-id")
-		#expect(lastCalledRoute?.id == route.id)
+		#expect(lastCalledRoute == route)
 		#expect(result.statusCode == 200)
 		#expect(result.headers == expectedHeaders)
-		let target = try Route.from(result.body)
+		let target = try RouteDetailPack.from(result.body)
 		#expect(target == route)
 		#expect(mock.postCallCount == 1)
 	}
 
     @Test func test_post_userがnil() async throws {
-        let route = Route(id: "r-id", districtId: "d-id", start: SimpleTime(hour: 10, minute: 0), goal: SimpleTime(hour: 11, minute: 0))
+        let route = RouteDetailPack.mock()
         let body = try route.toString()
         var lastCalledDistrictId: String? = nil
-        var lastCalledRoute: Route? = nil
+        var lastCalledRoute: RouteDetailPack? = nil
         var lastCalledUser: UserRole? = nil
         let mock = RouteUsecaseMock(postHandler: { districtId, route, user in
             lastCalledDistrictId = districtId
@@ -353,21 +211,21 @@ struct RouteControllerTest {
 
         
         #expect(lastCalledDistrictId == "d-id")
-        #expect(lastCalledRoute?.id == route.id)
+        #expect(lastCalledRoute == route)
         #expect(lastCalledUser == .guest)
         #expect(result.statusCode == 200)
         #expect(result.headers == expectedHeaders)
-        let target = try Route.from(result.body)
+        let target = try RouteDetailPack.from(result.body)
         #expect(target == route)
         #expect(mock.postCallCount == 1)
     }
 
 	@Test func test_post_異常() async throws {
-		let route = Route(id: "r-id", districtId: "d-id", start: SimpleTime(hour: 10, minute: 0), goal: SimpleTime(hour: 11, minute: 0))
+        let route = RouteDetailPack.mock()
 		let body = try route.toString()
 		let expectedError = Error.internalServerError("post_failed")
 		var lastCalledDistrictId: String? = nil
-		var lastCalledRoute: Route? = nil
+		var lastCalledRoute: RouteDetailPack? = nil
 		let mock = RouteUsecaseMock(postHandler: { districtId, route, _ in
 			lastCalledDistrictId = districtId
 			lastCalledRoute = route
@@ -383,15 +241,15 @@ struct RouteControllerTest {
 
 
 		#expect(lastCalledDistrictId == "d-id")
-		#expect(lastCalledRoute?.id == route.id)
+		#expect(lastCalledRoute == route)
 		#expect(mock.postCallCount == 1)
 	}
 
 	@Test func test_put_正常() async throws {
-		let route = Route(id: "r-id", districtId: "d-id", start: SimpleTime(hour: 10, minute: 0), goal: SimpleTime(hour: 11, minute: 0))
+        let route = RouteDetailPack.mock()
 		let body = try route.toString()
 		var lastCalledId: String? = nil
-		var lastCalledBody: Route? = nil
+		var lastCalledBody: RouteDetailPack? = nil
 		var lastCalledUser: UserRole? = nil
 		let mock = RouteUsecaseMock(putHandler: { id, item, user in
 			lastCalledId = id
@@ -411,15 +269,15 @@ struct RouteControllerTest {
 		#expect(lastCalledUser == .district("d-id"))
 		#expect(result.statusCode == 200)
 		#expect(result.headers == expectedHeaders)
-		let target = try Route.from(result.body)
+		let target = try RouteDetailPack.from(result.body)
 		#expect(target == route)
 	}
     
     @Test func test_put_userがnil() async throws {
-        let route = Route(id: "r-id", districtId: "d-id", start: SimpleTime(hour: 10, minute: 0), goal: SimpleTime(hour: 11, minute: 0))
+        let route = RouteDetailPack.mock()
         let body = try route.toString()
         var lastCalledId: String? = nil
-        var lastCalledBody: Route? = nil
+        var lastCalledBody: RouteDetailPack? = nil
         var lastCalledUser: UserRole? = nil
         let mock = RouteUsecaseMock(putHandler: { id, item, user in
             lastCalledId = id
@@ -440,16 +298,16 @@ struct RouteControllerTest {
         #expect(lastCalledUser == .guest)
         #expect(result.statusCode == 200)
         #expect(result.headers == expectedHeaders)
-        let target = try Route.from(result.body)
+        let target = try RouteDetailPack.from(result.body)
         #expect(target == route)
     }
 
 	@Test func test_put_異常() async throws {
-		let route = Route(id: "r-id", districtId: "d-id", start: SimpleTime(hour: 10, minute: 0), goal: SimpleTime(hour: 11, minute: 0))
+        let route = RouteDetailPack.mock()
 		let body = try route.toString()
 		let expectedError = Error.internalServerError("put_failed")
 		var lastCalledId: String? = nil
-		var lastCalledBody: Route? = nil
+		var lastCalledBody: RouteDetailPack? = nil
 		var lastCalledUser: UserRole? = nil
 		let mock = RouteUsecaseMock(putHandler: { id, item, user in
 			lastCalledId = id

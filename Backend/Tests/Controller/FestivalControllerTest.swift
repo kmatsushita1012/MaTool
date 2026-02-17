@@ -49,7 +49,7 @@ struct FestivalControllerTest {
     }
 
     @Test func test_get_正常() async throws {
-        let expected = FestivalPack(festival: Festival(id: "g-id", name: "g-name", subname: "g-subname", prefecture: "p", city: "c", base: Coordinate(latitude: 0.0, longitude: 0.0)), checkpoints: [], hazardSections: [])
+        let expected = FestivalPack.mock()
         var lastCalledId: String? = nil
         let mock = FestivalUsecaseMock(getHandler: { id in
             lastCalledId = id
@@ -65,7 +65,7 @@ struct FestivalControllerTest {
         #expect(lastCalledId == "g-id")
         #expect(result.statusCode == 200)
         #expect(result.headers == expectedHeaders)
-        let target = try Festival.from(result.body)
+        let target = try FestivalPack.from(result.body)
         #expect(target == expected)
         #expect(mock.getCallCount == 1)
     }
@@ -86,8 +86,8 @@ struct FestivalControllerTest {
     }
     
     @Test func test_put_正常() async throws {
-        let expected = FestivalPack(festival: Festival(id: "g-id", name: "g-name", subname: "g-subname", prefecture: "p", city: "c", base: Coordinate(latitude: 0.0, longitude: 0.0)), checkpoints: [], hazardSections: [])
-        var lastCalledItem: Festival? = nil
+        let expected = FestivalPack.mock()
+        var lastCalledItem: FestivalPack? = nil
         var lastCalledUser: UserRole? = nil
         let mock = FestivalUsecaseMock(putHandler: { festival, user in
             lastCalledItem = festival
@@ -105,13 +105,13 @@ struct FestivalControllerTest {
         #expect(lastCalledUser == .headquarter("p-id"))
         #expect(result.statusCode == 200)
         #expect(result.headers == expectedHeaders)
-        let target = try Festival.from(result.body)
+        let target = try FestivalPack.from(result.body)
         #expect(target == expected)
         #expect(mock.putCallCount == 1)
     }
 
     @Test func test_put_異常() async throws {
-        let item = FestivalPack(festival: Festival(id: "g-id", name: "g-name", subname: "g-subname", prefecture: "p", city: "c", base: Coordinate(latitude: 0.0, longitude: 0.0)), checkpoints: [], hazardSections: [])
+        let item = FestivalPack.mock()
         let expectedBody: String = try item.toString()
         let expected = Error.internalServerError("put_failed")
         let mock = FestivalUsecaseMock(putHandler: { _, _ in throw expected })

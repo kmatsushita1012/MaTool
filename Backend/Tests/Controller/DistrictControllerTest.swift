@@ -50,7 +50,7 @@ struct DistrictControllerTest {
     }
 
     @Test func test_get_正常() async throws {
-        let expected = District(id: "g-id", name: "g-name", festivalId: "f-id", visibility: .all)
+        let expected = DistrictPack.mock()
         var lastCalledId: String? = nil
         let mock = DistrictUsecaseMock(getHandler: { id in
             lastCalledId = id
@@ -66,7 +66,7 @@ struct DistrictControllerTest {
         #expect(lastCalledId == "g-id")
         #expect(result.statusCode == 200)
         #expect(result.headers == expectedHeaders)
-        let target = try District.from(result.body)
+        let target = try DistrictPack.from(result.body)
         #expect(target == expected)
     }
 
@@ -87,10 +87,10 @@ struct DistrictControllerTest {
 
 
     @Test func test_put_正常() async throws {
-        let expected = District(id: "d", name: "updated", festivalId: "f", visibility: .all)
+        let expected = DistrictPack.mock()
         let body: String = try expected.toString()
         var lastCalledId: String?
-        var lastCalledBody: District?
+        var lastCalledBody: DistrictPack?
         var lastCalledUser: UserRole?
         let mock = DistrictUsecaseMock(putHandler: { id, body, user in
             lastCalledId = id
@@ -110,7 +110,7 @@ struct DistrictControllerTest {
         #expect(lastCalledUser == .district("d"))
         #expect(result.statusCode == 200)
         #expect(result.headers == expectedHeaders)
-        let target = try District.from(result.body)
+        let target = try DistrictPack.from(result.body)
         #expect(target == expected)
     }
 

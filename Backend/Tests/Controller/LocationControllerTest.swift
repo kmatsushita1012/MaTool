@@ -17,7 +17,7 @@ struct LocationControllerTest {
     let expectedHeaders: [String: String] = ["Content-Type": "application/json"]
 
     @Test func test_query_正常() async throws {
-        let dto = FloatLocationGetDTO(districtId: "d-id", districtName: "d-name", coordinate: Coordinate(latitude: 0.0, longitude: 0.0), timestamp: Date(timeIntervalSince1970: 0))
+        let dto = FloatLocation.mock()
         let expected = [dto]
         var lastFestivalId: String? = nil
         var lastUser: UserRole? = nil
@@ -36,7 +36,7 @@ struct LocationControllerTest {
         
         #expect(result.statusCode == 200)
         #expect(result.headers == expectedHeaders)
-        let body = try [FloatLocationGetDTO].from(result.body)
+        let body = try [FloatLocation].from(result.body)
         #expect(body == expected)
         #expect(lastFestivalId == "f-id")
         #expect(lastUser == .guest)
@@ -44,7 +44,7 @@ struct LocationControllerTest {
     }
 
     @Test func test_query_userがnil() async throws {
-        let dto = FloatLocationGetDTO(districtId: "d-id", districtName: "d-name", coordinate: Coordinate(latitude: 0.0, longitude: 0.0), timestamp: Date(timeIntervalSince1970: 0))
+        let dto = FloatLocation.mock()
         let expected = [dto]
         var lastFestivalId: String? = nil
         var lastUser: UserRole? = nil
@@ -64,7 +64,7 @@ struct LocationControllerTest {
         
         #expect(result.statusCode == 200)
         #expect(result.headers == expectedHeaders)
-        let body = try [FloatLocationGetDTO].from(result.body)
+        let body = try [FloatLocation].from(result.body)
         #expect(body == expected)
         #expect(lastFestivalId == "f-id")
         #expect(lastUser == .guest)
@@ -95,7 +95,7 @@ struct LocationControllerTest {
     }
 
     @Test func test_get_正常() async throws {
-        let dto = FloatLocationGetDTO(districtId: "d-id", districtName: "d-name", coordinate: Coordinate(latitude: 0.0, longitude: 0.0), timestamp: Date(timeIntervalSince1970: 0))
+        let dto = FloatLocation.mock()
         var lastCalledId: String? = nil
         var lastCalledUser: UserRole? = nil
         let mock = LocationUsecaseMock(getHandler: { id, user in
@@ -115,13 +115,13 @@ struct LocationControllerTest {
         #expect(lastCalledUser == .guest)
         #expect(result.statusCode == 200)
         #expect(result.headers == expectedHeaders)
-        let body = try FloatLocationGetDTO.from(result.body)
+        let body = try FloatLocation.from(result.body)
         #expect(body == dto)
         #expect(mock.getCallCount == 1)
     }
 
     @Test func test_get_userがnil() async throws {
-        let dto = FloatLocationGetDTO(districtId: "d-id", districtName: "d-name", coordinate: Coordinate(latitude: 0.0, longitude: 0.0), timestamp: Date(timeIntervalSince1970: 0))
+        let dto = FloatLocation.mock()
         var lastCalledId: String? = nil
         var lastCalledUser: UserRole? = nil
         let mock = LocationUsecaseMock(getHandler: { id, user in
@@ -141,7 +141,7 @@ struct LocationControllerTest {
         #expect(lastCalledUser == .guest)
         #expect(result.statusCode == 200)
         #expect(result.headers == expectedHeaders)
-        let body = try FloatLocationGetDTO.from(result.body)
+        let body = try FloatLocation.from(result.body)
         #expect(body == dto)
         #expect(mock.getCallCount == 1)
     }
@@ -168,7 +168,7 @@ struct LocationControllerTest {
     }
 
     @Test func test_put_正常() async throws {
-        let location = FloatLocation(districtId: "d-id", coordinate: Coordinate(latitude: 0.0, longitude: 0.0), timestamp: Date(timeIntervalSince1970: 0))
+        let location = FloatLocation.mock()
         let bodyString = try location.toString()
         var lastCalledLocation: FloatLocation? = nil
         var lastCalledUser: UserRole? = nil
@@ -193,7 +193,7 @@ struct LocationControllerTest {
     }
 
     @Test func test_put_userがnil() async throws {
-        let location = FloatLocation(districtId: "d-id", coordinate: Coordinate(latitude: 0.0, longitude: 0.0), timestamp: Date(timeIntervalSince1970: 0))
+        let location = FloatLocation.mock()
         let bodyString = try location.toString()
         var lastCalledLocation: FloatLocation? = nil
         var lastCalledUser: UserRole? = nil
@@ -219,7 +219,7 @@ struct LocationControllerTest {
     }
 
     @Test func test_put_異常() async throws {
-        let location = FloatLocation(districtId: "d-id", coordinate: Coordinate(latitude: 0.0, longitude: 0.0), timestamp: Date(timeIntervalSince1970: 0))
+        let location = FloatLocation.mock()
         let bodyString = try location.toString()
         let expectedError = Error.internalServerError("put_failed")
         let mock = LocationUsecaseMock(putHandler: { _, _ in

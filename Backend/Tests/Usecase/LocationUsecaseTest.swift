@@ -6,10 +6,10 @@ import Shared
 
 struct LocationUsecaseTest {
     
-    let festival = Festival(id: "festival-id", name: "festival-name", subname: "sub", prefecture: "p", city: "c", base: Coordinate(latitude: 0, longitude: 0))
-    let district = District(id: "district-id", name: "district-name", festivalId: "festival-id", visibility: .all)
-    let location = FloatLocation(districtId: "district-id", coordinate: Coordinate(latitude: 0.0, longitude: 0.0), timestamp: Date(timeIntervalSince1970: 0))
-    let dto = FloatLocationGetDTO(districtId: "district-id", districtName: "district-name", coordinate: Coordinate(latitude: 0.0, longitude: 0.0), timestamp: Date(timeIntervalSince1970: 0))
+    let festival = Festival.mock()
+    let district = District.mock()
+    let location = FloatLocation.mock()
+    let locations = [FloatLocation.mock()]
     
     
     @Test func test_query_admin_success() async throws {
@@ -19,7 +19,7 @@ struct LocationUsecaseTest {
             districtLastCalledId = id
             return [district]
         })
-        let locationRepositoryMock = LocationRepositoryMock(scanHandler: { [location] })
+        let locationRepositoryMock = LocationRepositoryMock(queryHandler: { _ in locations })
         let festivalRepositoryMock = FestivalRepositoryMock(getHandler: { id in
             festivalLastCalledId = id
             return festival
@@ -32,10 +32,10 @@ struct LocationUsecaseTest {
         
         #expect(districtRepositoryMock.queryCallCount == 1)
         #expect(districtLastCalledId == "festival-id")
-        #expect(locationRepositoryMock.scanCallCount == 1)
+        #expect(locationRepositoryMock.queryCallCount == 1)
         #expect(festivalRepositoryMock.getCallCount == 0)
         #expect(festivalLastCalledId == nil)
-        #expect(result == [dto])
+        #expect(result == locations)
     }
     
     @Test(.disabled())
@@ -51,18 +51,18 @@ struct LocationUsecaseTest {
             districtLastCalledId = id
             return [district]
         })
-        let locationRepositoryMock = LocationRepositoryMock(scanHandler: { [location] })
+        let locationRepositoryMock = LocationRepositoryMock(queryHandler: { _ in locations })
         
         let subject = make(districtRepository: districtRepositoryMock, locationRepository: locationRepositoryMock, festivalRepository: festivalRepositoryMock)
         
         let result = try await subject.query(by: festival.id, user: .guest, now: Date())
         
-        #expect(result == [dto])
+        #expect(result == locations)
         #expect(festivalRepositoryMock.getCallCount == 1)
         #expect(festivalLastCalledId == festival.id)
         #expect(districtRepositoryMock.queryCallCount == 1)
         #expect(districtLastCalledId == festival.id)
-        #expect(locationRepositoryMock.scanCallCount == 1)
+        #expect(locationRepositoryMock.queryCallCount == 1)
     }
     
     @Test func test_query_public_out_of_period_returns_empty() async throws {
@@ -108,7 +108,7 @@ struct LocationUsecaseTest {
             districtLastCalledId = id
             return []
         })
-        let locationRepositoryMock = LocationRepositoryMock(scanHandler: { [location] })
+        let locationRepositoryMock = LocationRepositoryMock(queryHandler: { _ in locations })
         
         let subject = make(districtRepository: districtRepositoryMock, locationRepository: locationRepositoryMock, festivalRepository: festivalRepositoryMock)
         
@@ -131,20 +131,20 @@ struct LocationUsecaseTest {
             lastCalledDistrictId = id
             return district
         })
-        let locationRepositoryMock = LocationRepositoryMock(getHandler: { id in
+        let locationRepositoryMock = LocationRepositoryMock(getHandler: { id, _  in
             lastCalledLocationId = id
             return location
         })
         
         let subject = make(districtRepository: districtRepositoryMock, locationRepository: locationRepositoryMock)
         
-        let result = try await subject.get("district-id", user: .headquarter("festival-id"))
+        let result = try await subject.get(districtId: "district-id", user: .headquarter("festival-id"), now: .now)
         
         #expect(districtRepositoryMock.getCallCount == 1)
         #expect(lastCalledDistrictId == "district-id")
         #expect(locationRepositoryMock.getCallCount == 1)
         #expect(lastCalledLocationId == "district-id")
-        #expect(result == dto)
+        #expect(result == location)
     }
     
     @Test func test_get_admin_district_success() async throws {
@@ -155,7 +155,7 @@ struct LocationUsecaseTest {
             lastCalledDistrictId = id
             return district
         })
-        let locationRepositoryMock = LocationRepositoryMock(getHandler: { id in
+        let locationRepositoryMock = LocationRepositoryMock(getHandler: { id, _  in
             lastCalledLocationId = id
             return location
         })
@@ -163,14 +163,14 @@ struct LocationUsecaseTest {
         let subject = make(districtRepository: districtRepositoryMock, locationRepository: locationRepositoryMock)
         
         
-        let result = try await subject.get("district-id", user: .district("district-id"))
+        let result = try await subject.get(districtId: "district-id", user: .district("district-id"), now: .now)
         
         
         #expect(districtRepositoryMock.getCallCount == 1)
         #expect(lastCalledDistrictId == "district-id")
         #expect(locationRepositoryMock.getCallCount == 1)
         #expect(lastCalledLocationId == "district-id")
-        #expect(result == dto)
+        #expect(result == location)
     }
     
     @Test(.disabled()) func test_get_public_within_period_success() async throws {
@@ -185,7 +185,7 @@ struct LocationUsecaseTest {
             lastCalledFestivalId = id
             return festival
         })
-        let locationRepositoryMock = LocationRepositoryMock(getHandler: { id in
+        let locationRepositoryMock = LocationRepositoryMock(getHandler: { id, _  in
             lastCalledLocationId = id
             return location
         })
@@ -194,10 +194,10 @@ struct LocationUsecaseTest {
         let subject = make(districtRepository: districtRepositoryMock, locationRepository: locationRepositoryMock, festivalRepository: festivalRepositoryMock)
         
         
-        let result = try await subject.get("district-id", user: .guest)
+        let result = try await subject.get(districtId: "district-id", user: .guest, now: .now)
         
         
-        #expect(result == dto)
+        #expect(result == location)
         #expect(festivalRepositoryMock.getCallCount == 1)
         #expect(lastCalledFestivalId == festival.id)
         #expect(districtRepositoryMock.getCallCount == 1)
@@ -211,7 +211,7 @@ struct LocationUsecaseTest {
         let subject = make(districtRepository: districtRepositoryMock)
         
         await #expect(throws: Error.notFound("指定された地区が見つかりません")) {
-            let _ = try await subject.get("districtId", user: .guest)
+            let _ = try await subject.get(districtId: "districtId", user: .guest, now: .now)
         }
     }
     
@@ -224,22 +224,20 @@ struct LocationUsecaseTest {
         let subject = make(districtRepository: districtRepositoryMock, festivalRepository: festivalRepositoryMock)
         
         await #expect(throws: Error.notFound("指定された地域が見つかりません")) {
-            let _ = try await subject.get(districtId, user: .guest)
+            let _ = try await subject.get(districtId: districtId, user: .guest, now: .now)
         }
     }
     
     @Test func test_get_public_out_of_period_throws() async throws {
         let districtId = "districtId"
-        let district = District(id: districtId, name: "district-name", festivalId: "fest-1", visibility: .all)
-        let festival = Festival(id: "fest-1", name: "festival", subname: "sub", prefecture: "p", city: "c", base: Coordinate(latitude: 0, longitude: 0))
         let districtRepositoryMock = DistrictRepositoryMock(getHandler: { _ in district })
         let festivalRepositoryMock = FestivalRepositoryMock(getHandler: { _ in festival })
-        let locationRepositoryMock = LocationRepositoryMock(getHandler: { _ in FloatLocation(districtId: districtId, coordinate: Coordinate(latitude: 0, longitude: 0), timestamp: Date()) })
+        let locationRepositoryMock = LocationRepositoryMock(getHandler: { _,_  in location })
         
         let subject = make(districtRepository: districtRepositoryMock, locationRepository: locationRepositoryMock, festivalRepository: festivalRepositoryMock)
         
         await #expect(throws: Error.unauthorized("アクセス権限がありません")) {
-            let _ = try await subject.get(districtId, user: .guest)
+            let _ = try await subject.get(districtId: districtId, user: .guest, now: .now)
         }
     }
     
@@ -248,12 +246,12 @@ struct LocationUsecaseTest {
         
         let districtRepositoryMock = DistrictRepositoryMock(getHandler: { _ in district })
         let festivalRepositoryMock = FestivalRepositoryMock(getHandler: { _ in festival })
-        let locationRepositoryMock = LocationRepositoryMock(getHandler: { _ in nil })
+        let locationRepositoryMock = LocationRepositoryMock(getHandler: { _,_  in nil })
         
         let subject = make(districtRepository: districtRepositoryMock, locationRepository: locationRepositoryMock, festivalRepository: festivalRepositoryMock)
         
         await #expect(throws: Error.notFound("位置情報が見つかりません")) {
-            let _ = try await subject.get("district-id", user: .guest)
+            let _ = try await subject.get(districtId: "d-id", user: .guest, now: .now)
         }
     }
     
@@ -261,7 +259,7 @@ struct LocationUsecaseTest {
     @Test func test_put_success() async throws {
         var lastCalledLocation: FloatLocation? = nil
         
-        let locationRepositoryMock = LocationRepositoryMock(putHandler: { location in
+        let locationRepositoryMock = LocationRepositoryMock(putHandler: { location, _  in
             lastCalledLocation = location
             return location
         })
@@ -278,10 +276,9 @@ struct LocationUsecaseTest {
     
     @Test func test_put_unauthorized_guest() async throws {
         let districtId = "districtId"
-        let location = FloatLocation(districtId: districtId, coordinate: Coordinate(latitude: 1, longitude: 2), timestamp: Date())
-        
+
         let locationRepositoryMock = LocationRepositoryMock()
-        let subject = make(districtRepository: .init(getHandler: { _ in District(id: districtId, name: "n", festivalId: "f", visibility: .all) }), locationRepository: locationRepositoryMock)
+        let subject = make(districtRepository: .init(getHandler: { _ in district }), locationRepository: locationRepositoryMock)
         
         await #expect(throws: Error.unauthorized("アクセス権限がありません")) {
             let _ = try await subject.put(location, user: .guest)
@@ -292,10 +289,9 @@ struct LocationUsecaseTest {
     
     @Test func test_put_unauthorized_mismatch() async throws {
         let districtId = "districtId"
-        let location = FloatLocation(districtId: districtId, coordinate: Coordinate(latitude: 1, longitude: 2), timestamp: Date())
         
         let locationRepositoryMock = LocationRepositoryMock()
-        let subject = make(districtRepository: .init(getHandler: { _ in District(id: districtId, name: "n", festivalId: "f", visibility: .all) }), locationRepository: locationRepositoryMock)
+        let subject = make(districtRepository: .init(getHandler: { _ in .mock() }), locationRepository: locationRepositoryMock)
         
         await #expect(throws: Error.unauthorized("アクセス権限がありません")) {
             let _ = try await subject.put(location, user: .district("other"))
@@ -307,14 +303,14 @@ struct LocationUsecaseTest {
     @Test func test_delete_success() async throws {
         var lastCalledId: String? = nil
         
-        let locationRepositoryMock = LocationRepositoryMock(deleteHandler: { id in
+        let locationRepositoryMock = LocationRepositoryMock(deleteHandler: { id, _  in
             lastCalledId = id
         })
         
         let subject = make(locationRepository: locationRepositoryMock)
         
         
-        try await subject.delete("district-id", user: .district("district-id"))
+        try await subject.delete(districtId: "district-id", user: .district("district-id"))
 
         
         #expect(lastCalledId == "district-id")
@@ -328,7 +324,7 @@ struct LocationUsecaseTest {
         let subject = make(districtRepository: districtRepositoryMock, locationRepository: locationRepositoryMock)
 
         await #expect(throws: Error.unauthorized("アクセス権限がありません")) {
-            let _ = try await subject.delete(districtId, user: .guest)
+            let _ = try await subject.delete(districtId: districtId, user: .guest)
         }
 
         #expect(districtRepositoryMock.getCallCount == 0)
@@ -342,7 +338,7 @@ struct LocationUsecaseTest {
         let subject = make(districtRepository: districtRepositoryMock, locationRepository: locationRepositoryMock)
 
         await #expect(throws: Error.unauthorized("アクセス権限がありません")) {
-            let _ = try await subject.delete(districtId, user: .district("other"))
+            let _ = try await subject.delete(districtId: districtId, user: .district("other"))
         }
 
         #expect(districtRepositoryMock.getCallCount == 0)
@@ -350,14 +346,14 @@ struct LocationUsecaseTest {
     }
 
     @Test func test_delete_repository_error_bubbles() async throws {
-        let locationRepositoryMock = LocationRepositoryMock(deleteHandler: { _ in
+        let locationRepositoryMock = LocationRepositoryMock(deleteHandler: { _,_  in
             throw Error.internalServerError("delete_failed")
         })
         let subject = make(locationRepository: locationRepositoryMock)
 
         
         await #expect(throws: Error.internalServerError("delete_failed")) {
-            let _ = try await subject.delete("district-id", user: .district("district-id"))
+            let _ = try await subject.delete(districtId: "district-id", user: .district("district-id"))
         }
 
         
