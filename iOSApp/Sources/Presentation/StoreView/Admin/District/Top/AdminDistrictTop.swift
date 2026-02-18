@@ -66,12 +66,32 @@ struct AdminDistrictTop {
                 state.destination = .edit(.init(state.district))
                 return .none
             case .onRouteEdit(let item):
+                state.isRouteLoading = true
                 if let route = item.route {
-                    state.isRouteLoading = true
-                    return .task(Action.routeEditReceived) {
-                        try await routeDateFetcher.fetch(routeID: route.id)
+                    return .task(Action.routeEditReceived) { [state] in
+                        async let listTask: () = routeDateFetcher.fetchAll(districtID: state.district.id, query: .all)
+                        async let detailTask: () = routeDateFetcher.fetch(routeID: route.id)
+                        let _ = try await (listTask, detailTask)
                         return item
                     }
+                } else {
+                    return .task(Action.routeEditReceived) { [state] in
+                        try await routeDateFetcher.fetchAll(districtID: state.district.id, query: .all)
+                        return item
+                    }
+                }
+            case .changePasswordTapped:
+                state.destination = .changePassword(ChangePassword.State())
+                return .none
+            case .updateEmailTapped:
+                state.destination = .updateEmail(UpdateEmail.State())
+                return .none
+            case .routeEditReceived(.success(let item)):
+                state.isRouteLoading = false
+                if let route = item.route {
+                    state.destination = .route(
+                        RouteEditFeature.State(mode: .update, route: route, district: state.district, period: item.period)
+                    )
                 } else {
                     let route = Route(id: UUID().uuidString, districtId: state.district.id, periodId: item.period.id)
                     state.destination = .route(
@@ -82,20 +102,7 @@ struct AdminDistrictTop {
                             period: item.period
                         )
                     )
-                    return .none
                 }
-            case .changePasswordTapped:
-                state.destination = .changePassword(ChangePassword.State())
-                return .none
-            case .updateEmailTapped:
-                state.destination = .updateEmail(UpdateEmail.State())
-                return .none
-            case .routeEditReceived(.success(let item)):
-                state.isRouteLoading = false
-                guard let route = item.route else { return .none }
-                state.destination = .route(
-                    RouteEditFeature.State(mode: .update, route: route, district: state.district, period: item.period)
-                )
                 return .none
             case .routeEditReceived(.failure(let error)):
                 state.isRouteLoading = false
