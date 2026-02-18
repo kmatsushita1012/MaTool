@@ -34,3 +34,15 @@ extension Array where Element == Point {
         self.map{ $0.copyWith(routeId: routeId) }
     }
 }
+
+extension RoutePassage {
+    func copyWith(routeId: Route.ID) -> Self{
+        .init(routeId: routeId, districtId: self.districtId)
+    }
+}
+
+extension Array where Element == RoutePassage {
+    func copyWith(routeId: Route.ID) -> Self {
+        self.map{ $0.copyWith(routeId: routeId) }
+    }
+}
