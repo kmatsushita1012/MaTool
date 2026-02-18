@@ -124,3 +124,13 @@ public extension Array where Element == Point {
         }
     }
 }
+
+public extension Array where Element == RoutePassage {
+    func reindexed() -> [RoutePassage] {
+        return enumerated().map { offset, point in
+            var copy = point
+            copy.order = offset
+            return copy
+        }
+    }
+}
