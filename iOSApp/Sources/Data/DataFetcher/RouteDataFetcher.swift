@@ -82,6 +82,7 @@ struct RouteDataFetcher: RouteDataFetcherProtocol {
 
     private func syncAll(_ routes: [Route]) async throws {
         try await database.write { db in
+            try routeStore.deleteAll(routes.map(\.id), from: db)
             try routeStore.insert(routes, at: db)
         }
     }
