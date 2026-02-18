@@ -102,8 +102,15 @@ extension RouteEditView {
     var bottomBarBeforeLiquidGlass: some ToolbarContent {
         ToolbarItemGroup(placement: .bottomBar) {
             HStack(alignment: .center, spacing: 16) {
-                undoButton
-                redoButton
+                switch store.tab {
+                case .info:
+                    Button("コピー"){
+                        store.send(.copyTapped)
+                    }
+                case .edit, .public:
+                    undoButton
+                    redoButton
+                }
                 Spacer()
                 partialButton
                 wholeButton
@@ -142,9 +149,19 @@ extension RouteEditView {
     @ToolbarContentBuilder
     @available(iOS 26.0, *)
     var bottomBarAfterLiquidGlass: some ToolbarContent {
-        ToolbarItemGroup(placement: .bottomBar) {
-            undoButton
-            redoButton
+        switch store.tab {
+        case .info:
+            ToolbarItem(placement: .bottomBar){
+                Button("コピー"){
+                    store.send(.copyTapped)
+                }
+            }
+        case .edit, .public:
+            ToolbarItemGroup(placement: .bottomBar) {
+                undoButton
+                redoButton
+            }
+            
         }
         ToolbarSpacer(placement: .bottomBar)
         ToolbarItemGroup(placement: .bottomBar){
@@ -162,7 +179,7 @@ extension RouteEditView {
     var info: some View {
         List{
             Section {
-                Text(store.period.shortText)
+                LabeledContent("日付", value: store.period.text(format: "y/m/d (w)"))
             }
             Section(header: Text("説明")) {
                 TextEditor(text: $store.route.description.nonOptional)
@@ -180,42 +197,53 @@ extension RouteEditView {
             }
             
             Section {
-                Button("過去のルートからコピー"){
-                    store.send(.copyTapped)
-                }
-            }
-            
-            Section {
-                ForEach(store.passages){ passage in
-                    PassageItemView(passage: passage)
+                ForEach(store.passages) { passage in
+                    if let index = store.passages.firstIndex(of: passage){
+                        PassageItemView(
+                            passage: passage,
+                            canMoveUp: index > 0,
+                            canMoveDown: index < store.passages.count - 1,
+                            onMoveUp: {
+                                withAnimation {
+                                    store.send(.passageMoved(from: IndexSet(integer: index), to: index - 1))
+                                    return
+                                }
+                            },
+                            onMoveDown: {
+                                withAnimation {
+                                    store.send(.passageMoved(from: IndexSet(integer: index), to: index + 2))
+                                    return
+                                }
+                            },
+                            onDelete: {
+                                withAnimation {
+                                    store.send(.passageDeleteTapped(index))
+                                    return
+                                }
+                            }
+                        )
+                    }
                 }
                 .onMove{
                     store.send(.passageMoved(from: $0, to: $1))
                 }
-                .onDelete{
-                    store.send(.passageDeleteTapped($0))
+                Button("追加", systemImage: "plus.circle"){
+                    store.send(.passageAddTapped)
                 }
-                
+                .labelStyle(.titleAndIcon)
             } header: {
                 HStack{
                     Text("通過する町")
-                    Spacer()
-                    Button(systemImage: "plus"){
-                        store.send(.passageAddTapped)
-                    }
                 }
             }
             .formStyle(.columns)
-            .environment(\.editMode, .constant(.active))
             
             if store.isDeleteable {
                 Section {
-                    Button(action: {
+                    Button("削除", systemImage: "trash", role: .destructive){
                         store.send(.deleteTapped)
-                    }) {
-                        Text("削除")
-                            .foregroundColor(.red)
                     }
+                    .labelStyle(.titleAndIcon)
                 }
             }
         }

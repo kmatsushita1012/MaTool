@@ -82,7 +82,7 @@ struct RouteEditFeature{
         case passageAddTapped
         case passageSelected(District)
         case passageMoved(from: IndexSet, to: Int)
-        case passageDeleteTapped(IndexSet)
+        case passageDeleteTapped(Int)
         case sourceSelected(RouteEntry)
         case saveReceived(VoidTaskResult)
         case copyPrepared(TaskResult<Route.ID>)
@@ -179,7 +179,7 @@ struct RouteEditFeature{
                 state.destination = nil
                 return .none
             case .passageDeleteTapped(let index):
-                state.passages.remove(atOffsets: index)
+                state.passages.remove(at: index)
                 return .none
             case let .passageMoved(from: source, to: destination):
                 state.passages.move(fromOffsets: source, toOffset: destination)
