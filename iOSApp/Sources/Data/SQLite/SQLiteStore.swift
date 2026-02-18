@@ -43,6 +43,10 @@ enum PointStoreKey: DependencyKey {
     static let liveValue: any SQLiteStoreProtocol<Point> = SQLiteStore<Point>()
 }
 
+enum PassageStoreKey: DependencyKey {
+    static let liveValue: any SQLiteStoreProtocol<RoutePassage> = SQLiteStore<RoutePassage>()
+}
+
 enum FloatLocationStoreKey: DependencyKey {
     static let liveValue: any SQLiteStoreProtocol<FloatLocation> = SQLiteStore<FloatLocation>()
 }

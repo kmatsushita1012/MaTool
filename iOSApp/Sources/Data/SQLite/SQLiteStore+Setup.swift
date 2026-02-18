@@ -110,6 +110,15 @@ func setupDatabase() throws -> DatabaseQueue {
                 "isBoundary" INTEGER NOT NULL DEFAULT 0
             )
         """).execute(db)
+        
+        try #sql("""
+            CREATE TABLE IF NOT EXISTS "routePassages" (
+                "id" TEXT PRIMARY KEY NOT NULL,
+                "routeId" TEXT NOT NULL,
+                "districtId" TEXT NOT NULL,
+                "order" INTEGER NOT NULL DEFAULT 0
+            )
+        """).execute(db)
 
         try #sql("""
             CREATE TABLE IF NOT EXISTS "floatlocations" (
