@@ -15,9 +15,9 @@ import SQLiteData
 struct RouteEditFeature{
     
     enum Destination: Equatable {
-        case point
-        case whole
-        case partial
+        case preview(ExportedItem)
+        case history
+        case passage
     }
     
     enum EditMode: Equatable {
@@ -48,6 +48,7 @@ struct RouteEditFeature{
     struct State: Equatable{
         var manager: EditManager<[Point]>
         var route: Route
+        var passages: [RoutePassage]
         
         @FetchOne var district: District
         @FetchOne var period: Period
@@ -62,8 +63,7 @@ struct RouteEditFeature{
         // Navigation
         @Presents var point: PointEditFeature.State?
         @Presents var alert: AlertDestination.State? = nil
-        var history: Bool = false
-        var preview: ExportedItem? = nil
+        var destination: Destination?
     }
     
     @CasePathable
@@ -79,6 +79,10 @@ struct RouteEditFeature{
         case wholeTapped
         case partialTapped
         case copyTapped
+        case passageAddTapped
+        case passageSelected(District)
+        case passageMoved(from: IndexSet, to: Int)
+        case passageDeleteTapped(Int)
         case sourceSelected(RouteEntry)
         case saveReceived(VoidTaskResult)
         case copyPrepared(TaskResult<Route.ID>)
@@ -131,9 +135,9 @@ struct RouteEditFeature{
                     try state.points.validate()
                     switch state.mode {
                     case .create:
-                        try await dataFetcher.create(districtID: state.route.districtId, route: state.route, points: state.points)
+                        try await dataFetcher.create(districtID: state.route.districtId, route: state.route, points: state.points, passages: state.passages)
                     case .update:
-                        try await dataFetcher.update(state.route, points: state.points)
+                        try await dataFetcher.update(state.route, points: state.points, passages: state.passages)
                     case .preview:
                         throw APIError.unknown(message: "権限がありません")
                     }
@@ -165,11 +169,24 @@ struct RouteEditFeature{
                     return ExportedItem(image: image, url: url)
                 }
             case .copyTapped:
-                state.history = true
+                state.destination = .history
+                return .none
+            case .passageAddTapped:
+                state.destination = .passage
+                return .none
+            case .passageSelected(let district):
+                state.passages.append(.init(routeId: state.route.id, districtId: district.id))
+                state.destination = nil
+                return .none
+            case .passageDeleteTapped(let index):
+                state.passages.remove(at: index)
+                return .none
+            case let .passageMoved(from: source, to: destination):
+                state.passages.move(fromOffsets: source, toOffset: destination)
                 return .none
             case .sourceSelected(let route):
                 state.isLoading = true
-                state.history = false
+                state.destination = nil
                 return .task(Action.copyPrepared) {
                     try await dataFetcher.fetch(routeID: route.id)
                     return route.id
@@ -179,13 +196,15 @@ struct RouteEditFeature{
                 state.isLoading = false
                 guard let sourceRoute: Route = FetchOne(Route.find(routeId)).wrappedValue else { return .none }
                 let sourcePoints: [Point] = FetchAll(routeId: sourceRoute.id).wrappedValue
+                let sourcePassages: [RoutePassage] = FetchAll(routeId: sourceRoute.id).wrappedValue
                 state.route = sourceRoute.copyWith(districtId: state.district.id, periodId: state.period.id)
                 state.points = sourcePoints.copyWith(routeId: state.route.id)
+                state.passages = sourcePassages.copyWith(routeId: state.route.id)
                 state.region = makeRegion(state.points.map(\.coordinate))
                 state.isLoading = false
                 return .none
             case .previewPrepared(.success(let item)):
-                state.preview = item
+                state.destination = .preview(item)
                 state.isLoading = false
                 return .none
             // MARK: - Destination
@@ -283,8 +302,9 @@ extension RouteEditFeature.State {
     
     init(mode: RouteEditFeature.EditMode, route: Route, district: District, period: Period){
         self.mode = mode
-        let points: [Point] = FetchAll(Point.where{ $0.routeId == route.id }).wrappedValue
+        let points: [Point] = FetchAll(routeId: route.id).wrappedValue
         self.manager = EditManager(points.sorted())
+        self.passages = FetchAll(routeId: route.id).wrappedValue
         self.route = route
         self._district = FetchOne(wrappedValue: district, District.find(district.id))
         self._period = FetchOne(wrappedValue: period, Period.find(period.id))
@@ -325,5 +345,18 @@ extension RouteEditFeature {
         }
 
         return (point, index)
+    }
+}
+
+extension RouteEditFeature.Destination: Identifiable {
+    var id: String {
+        switch self {
+        case .preview(let exportedItem):
+            return "preview-\(exportedItem.id)"
+        case .history:
+            return "history"
+        case .passage:
+            return "passage"
+        }
     }
 }

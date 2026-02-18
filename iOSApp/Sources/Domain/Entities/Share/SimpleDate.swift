@@ -40,6 +40,8 @@ extension SimpleDate {
                 } else {
                     result += String(day)
                 }
+            case "w":
+                result += weekdaySymbol ?? ""
             default:
                 result += String(char)
             }
@@ -54,7 +56,6 @@ extension SimpleDate {
 extension SimpleDate {
     /// 日本語の曜日 ("日","月","火","水","木","金","土")
     var weekdaySymbol: String? {
-        guard let weekday else { return nil }
         let symbols = ["日", "月", "火", "水", "木", "金", "土"]
         return symbols[weekday - 1]
     }
