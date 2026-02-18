@@ -30,6 +30,7 @@ struct SceneDataFetcher: SceneDataFetcherProtocol {
     @Dependency(PerformanceStoreKey.self) var performanceStore
     @Dependency(RouteStoreKey.self) var routeStore
     @Dependency(PointStoreKey.self) var pointStore
+    @Dependency(PassageStoreKey.self) var passageStore
     @Dependency(FloatLocationStoreKey.self) var locationStore
     
     func launchFestival(festivalId: Shared.Festival.ID) async throws {
@@ -70,6 +71,7 @@ struct SceneDataFetcher: SceneDataFetcherProtocol {
             try performanceStore.deleteAll(from: db)
             try routeStore.deleteAll(from: db)
             try pointStore.deleteAll(from: db)
+            try passageStore.deleteAll(from: db)
         }
         let pack: LaunchDistrictPack = try await client.get(path: "/districts/\(districtId)/launch", accessToken: token)
         try await deleteTask
@@ -77,6 +79,7 @@ struct SceneDataFetcher: SceneDataFetcherProtocol {
             try performanceStore.insert(pack.performances, at: db)
             try routeStore.insert(pack.routes, at: db)
             try pointStore.insert(pack.points, at: db)
+            try passageStore.insert(pack.passages, at: db)
         }
         return pack.currentRouteId
     }    
