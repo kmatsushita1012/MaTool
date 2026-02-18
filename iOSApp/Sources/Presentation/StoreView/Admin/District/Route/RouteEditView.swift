@@ -32,9 +32,6 @@ struct RouteEditView: View {
             toolbar
         }
         .dismissible(backButton: false, edgeSwipe: false)
-        .sheet(item: $store.preview) { item in
-            PreviewView(item: item)
-        }
         .sheet(item: $store.scope(state: \.point, action: \.point)){ store in
             NavigationStack{
                 PointEditView(store: store)
@@ -43,11 +40,22 @@ struct RouteEditView: View {
             .presentationDetents([.fraction(0.3), .fraction(0.5), .large], selection: $selectedDetent)
             .interactiveDismissDisabled()
         }
-        .sheet(isPresented: $store.history){
-            NavigationStack {
-                RouteHistoryView(.init(districtId: store.district.id) {
-                    store.send(.sourceSelected($0))
-                })
+        .sheet(item: $store.destination){ destination in
+            switch destination {
+            case .preview(let item):
+                PreviewView(item: item)
+            case .history:
+                NavigationStack {
+                    RouteHistoryView(.init(districtId: store.district.id) {
+                        store.send(.sourceSelected($0))
+                    })
+                }
+            case .passage:
+                NavigationStack{
+                    PassageOptionsView(festivalId: store.district.festivalId) {
+                        store.send(.passageSelected($0))
+                    }
+                }
             }
         }
         .alert($store.scope(state: \.alert?.notice, action: \.alert.notice))
@@ -176,6 +184,29 @@ extension RouteEditView {
                     store.send(.copyTapped)
                 }
             }
+            
+            Section {
+                ForEach(store.passages){ passage in
+                    PassageItemView(passage: passage)
+                }
+                .onMove{
+                    store.send(.passageMoved(from: $0, to: $1))
+                }
+                .onDelete{
+                    store.send(.passageDeleteTapped($0))
+                }
+                
+            } header: {
+                HStack{
+                    Text("通過する町")
+                    Spacer()
+                    Button(systemImage: "plus"){
+                        store.send(.passageAddTapped)
+                    }
+                }
+            }
+            .formStyle(.columns)
+            .environment(\.editMode, .constant(.active))
             
             if store.isDeleteable {
                 Section {
