@@ -16,10 +16,10 @@ enum RouteUsecaseKey: DependencyKey {
 
 // MARK: - RouteUsecaseProtocol
 protocol RouteUsecaseProtocol: Sendable {
-    func get(id: String, user: UserRole) async throws -> RouteDetailPack
+    func get(id: String, user: UserRole) async throws -> RoutePack
     func query(by districtId: String, type: RouteQueryType, now: SimpleDate, user: UserRole) async throws -> [Route]
-    func post(districtId: String, pack: RouteDetailPack, user: UserRole) async throws -> RouteDetailPack
-    func put(id: String, pack: RouteDetailPack, user: UserRole) async throws -> RouteDetailPack
+    func post(districtId: String, pack: RoutePack, user: UserRole) async throws -> RoutePack
+    func put(id: String, pack: RoutePack, user: UserRole) async throws -> RoutePack
     func delete(id: String, user: UserRole) async throws
 }
 
@@ -34,8 +34,9 @@ struct RouteUsecase: RouteUsecaseProtocol {
     @Dependency(RouteRepositoryKey.self) var routeRepository
     @Dependency(DistrictRepositoryKey.self) var districtRepository
     @Dependency(PointRepositoryKey.self) var pointRepository
+    @Dependency(PassageRepositoryKey.self) var passageRepository
     
-    func get(id: String, user: UserRole) async throws -> RouteDetailPack {
+    func get(id: String, user: UserRole) async throws -> RoutePack {
         guard let route = try await routeRepository.get(id: id) else {
             throw Error.notFound("指定されたルートが見つかりません")
         }
@@ -45,8 +46,9 @@ struct RouteUsecase: RouteUsecaseProtocol {
             throw Error.forbidden("アクセス権限がありせん。このルートは非公開です。")
         }
         let points = try await pointRepository.query(by: route.id)
+        let passages = try await passageRepository.query(by: route.id)
         
-        return .init(route: route, points: points)
+        return .init(route: route, points: points, passages: passages)
     }
     
     func query(by districtId: String, type: RouteQueryType, now: SimpleDate, user: UserRole) async throws -> [Route] {
@@ -73,20 +75,23 @@ struct RouteUsecase: RouteUsecaseProtocol {
         return filtered
     }
     
-    func post(districtId: String, pack: RouteDetailPack, user: UserRole) async throws -> RouteDetailPack {
+    func post(districtId: String, pack: RoutePack, user: UserRole) async throws -> RoutePack {
         guard districtId == user.id,
               pack.route.districtId == user.id else {
             throw Error.unauthorized("アクセス権限がありません")
         }
-        let reindexed = pack.points.reindexed()
+        let reindexedPoints = pack.points.reindexed()
+        let reindexedPassages = pack.passages.reindexed()
         try pack.points.validate()
         let oldPoints = try await pointRepository.query(by: pack.route.id)
+        let oldPassages = try await passageRepository.query(by: pack.route.id)
         let route = try await routeRepository.post(pack.route)
-        let points = try await oldPoints.update(with: reindexed, separateDeleteAndUpdate: true, repository: pointRepository)
-        return .init(route: route, points: points)
+        let points = try await oldPoints.update(with: reindexedPoints, separateDeleteAndUpdate: true, repository: pointRepository)
+        let passages = try await oldPassages.update(with: reindexedPassages, separateDeleteAndUpdate: true, repository: passageRepository)
+        return .init(route: route, points: points, passages: passages)
     }
     
-    func put(id: String, pack: RouteDetailPack, user: UserRole) async throws -> RouteDetailPack {
+    func put(id: String, pack: RoutePack, user: UserRole) async throws -> RoutePack {
         guard let old = try await routeRepository.get(id: id) else {
             throw Error.notFound("指定されたルートが見つかりません")
         }
@@ -94,11 +99,15 @@ struct RouteUsecase: RouteUsecaseProtocol {
               old.districtId == user.id else {
             throw Error.unauthorized("アクセス権限がありません")
         }
-        let reindexed = pack.points.reindexed()
+        let reindexedPoints = pack.points.reindexed()
+        let reindexedPassages = pack.passages.reindexed()
+        try pack.points.validate()
         let oldPoints = try await pointRepository.query(by: pack.route.id)
+        let oldPassages = try await passageRepository.query(by: pack.route.id)
         let route = try await routeRepository.post(pack.route)
-        let points = try await oldPoints.update(with: reindexed, separateDeleteAndUpdate: true, repository: pointRepository)
-        return .init(route: route, points: points)
+        let points = try await oldPoints.update(with: reindexedPoints, separateDeleteAndUpdate: true, repository: pointRepository)
+        let passages = try await oldPassages.update(with: reindexedPassages, separateDeleteAndUpdate: true, repository: passageRepository)
+        return .init(route: route, points: points, passages: passages)
     }
     
     func delete(id: String, user: UserRole) async throws {
@@ -109,8 +118,8 @@ struct RouteUsecase: RouteUsecaseProtocol {
             throw Error.unauthorized("アクセス権限がありません")
         }
         try await routeRepository.delete(id: id)
-        let points = try await pointRepository.query(by: id)
-        
+        _ = try await pointRepository.delete(by: id)
+        _ = try await passageRepository.delete(by: id)
         return
     }
 }
