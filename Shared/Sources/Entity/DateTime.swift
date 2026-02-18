@@ -109,7 +109,7 @@ public extension SimpleDate {
     }
     
     /// 曜日 (1=日曜, 2=月曜 ... 7=土曜)
-    var weekday: Int? {
+    var weekday: Int {
         var cal = Calendar.current
         cal.timeZone = japanTimeZone
         return cal.component(.weekday, from: toDate)
