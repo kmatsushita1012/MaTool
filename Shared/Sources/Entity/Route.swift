@@ -70,6 +70,26 @@ import Foundation
     }
 }
 
+// MARK: - RoutePassage
+@Table public struct RoutePassage: Entity, Identifiable {
+    public let id: String
+    public let routeId: Route.ID
+    public let districtId: District.ID
+    public var order: Int
+    
+    public init(
+        id: Self.ID = UUID().uuidString,
+        routeId: Route.ID,
+        districtId: District.ID,
+        order: Int = 0
+    ) {
+        self.id = id
+        self.routeId = routeId
+        self.districtId = districtId
+        self.order = order
+    }
+}
+
 // MARK: - Anchor
 public enum Anchor: String, Entity, QueryBindable {
     case start

@@ -39,6 +39,7 @@ struct SceneUsecase: SceneUsecaseProtocol {
     @Dependency(PerformanceRepositoryKey.self) var performanceRepository
     @Dependency(RouteRepositoryKey.self) var routeRepository
     @Dependency(PointRepositoryKey.self) var pointRepository
+    @Dependency(PassageRepositoryKey.self) var passageRepository
 
     func fetchLaunchFestivalPack(festivalId: Festival.ID, user: UserRole, now: Date) async throws -> LaunchFestivalPack {
         let isAdmin = (user != .guest)
@@ -151,11 +152,13 @@ struct SceneUsecase: SceneUsecaseProtocol {
 
         let currentRoute = sorted.first?.route
         let points = currentRoute != nil ? try await pointRepository.query(by: currentRoute!.id) : []
+        let passages = currentRoute != nil ? try await passageRepository.query(by: currentRoute!.id) : []
 
         return .init(
             performances: try await performances,
             routes: filteredRoutes,
             points: points,
+            passages: passages,
             currentRouteId: currentRoute?.id
         )
     }
