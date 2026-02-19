@@ -1,6 +1,6 @@
 ---
 name: matool-git
-description: "MaToolリポジトリのGit運用（パッケージ別のブランチ作成: ios/backend/shared、適切な粒度の日本語コミット、git push -u、PR作成）を統一する。MaToolでブランチ命名・コミット・push・PR作成の手順を求められたときに使う。"
+description: "MaToolリポジトリのGit運用（パッケージ別のブランチ作成: ios/backend/shared、適切な粒度の日本語コミット、push（-uは初回のみ）、PR作成・ラベル/assignee/milestone設定）を統一する。MaToolでブランチ命名・コミット・push・PR作成の手順を求められたときに使う。"
 ---
 
 # パッケージ別の進め方（必須）
@@ -9,6 +9,7 @@ description: "MaToolリポジトリのGit運用（パッケージ別のブラン
   - `ios`: `iOSApp/` 配下中心
   - `backend`: `Backend/` 配下中心
   - `shared`: `Shared/` 配下中心
+- コード改変を伴わない変更（例: `docs/` の編集のみ）は `meta` 扱いにする（ブランチprefix/コミットprefixも `meta`）。
 - 可能なら **パッケージごとにブランチとPRを分ける**（レビューしやすさ優先）。
   - 例外: `shared` の変更が `ios`/`backend` の最小限の追従を必ず要求する場合は、主となるパッケージを1つ決めて同一PRに含める（本文に理由を書く）。
 
@@ -16,34 +17,29 @@ description: "MaToolリポジトリのGit運用（パッケージ別のブラン
 
 ## 作業前チェック
 
-- `git status` が clean か確認する（未コミットがある場合はコミット or stash）。
+- `git status` が clean か確認する（未コミット・未追跡がある場合は整理してから進める）。
+  - `gh pr create` は未コミットがあっても進むが、警告が出て事故りやすいので **基本は clean 推奨**
 - ベースは `main` とする（別ブランチ運用が明示されている場合のみ従う）。
 
 ## ブランチを切る（パッケージ別）
 
-- ブランチ名は原則 `codex/<package>/<topic>` とする（Codexが作業するブランチ識別のため）。
-  - 既存運用として `ios/<topic>` のような形式が求められる場合はそれに従う
-- `<package>` は `ios` / `backend` / `shared`
-  - `ios`: `iOSApp/` 配下中心
-  - `backend`: `Backend/` 配下中心
-  - `shared`: `Shared/` 配下中心
-- `<topic>` は短い英数字kebab-case（必要ならチケット番号を含める）
+- ブランチprefixは原則 `ios` / `backend` / `shared`
+- `codex/*` prefix は **CIが壊れるため禁止**（絶対に使わない）
+- コード改変を伴わない変更（例: `docs/` の編集のみ）は `meta/<topic>`
 
-例（推奨）:
-- `codex/ios/rename-loading-view`
-- `codex/backend/add-district-filter`
-- `codex/shared/fix-normalization-route`
+`<topic>` は短い英数字kebab-case（必要ならチケット番号を含める）
 
-例（既存運用に合わせる場合）:
+例:
 - `ios/rename-loading-view`
 - `backend/add-district-filter`
 - `shared/fix-normalization-route`
+- `meta/update-ios-docs`
 
 コマンド例:
 
 ```bash
 git switch main
-git switch -c codex/ios/<topic>
+git switch -c ios/<topic>
 ```
 
 # コミット（日本語・適切な粒度）
@@ -60,13 +56,13 @@ git switch -c codex/ios/<topic>
 
 ## コミットメッセージ（日本語）
 
-- 形式は原則 `"<package>: <要約>"` とする（要約は日本語、簡潔に、命令形寄り）。
+- 形式は原則 `"<package>: <要約>"`（要約は日本語、簡潔に、命令形寄り）
 
 例:
-- `ios: ルート編集画面に保存ボタンを追加`
+- `ios: Presentation(View)をPartsへ移動`
 - `backend: District取得APIにフィルタを追加`
 - `shared: Routeモデルの正規化を修正`
-- `ios: 不要なデバッグログを削除`
+- `meta: ドキュメントの記述を更新`
 
 推奨コマンド:
 
@@ -87,38 +83,48 @@ git push
 
 # PR作成
 
+## 前提（gh）
+
+- GitHub CLI を使うなら、まず `gh auth status` でログイン状態を確認し、未ログインなら `gh auth login`
+
 ## 作成前チェック
 
 - 差分が想定どおりか: `git diff main...HEAD`
 - 変更対象パッケージが意図どおりか（混在していたら分割を検討）
+- `git status` に未追跡ファイルが残っていないか（意図せず含めない）
+  - 例: Xcode由来の `MaTool.xcworkspace/xcshareddata/` 等
+  - 例: SwiftPM由来の `Shared/Package.resolved` 等
 - テスト/ビルド（可能な範囲で）を実施し、結果をPR本文に書く
 - 秘密情報（トークン等）が入っていないことを確認する
 
-## PRの基本ルール
+## PRの基本ルール（ラベル/assignee/milestone）
 
 - タイトル: コミットメッセージの要約に合わせて日本語で簡潔に
-- ラベル:
-  - **パッケージ系**（どれか1つ以上）: `ios` / `backend` / `shared`
-  - **種別系**（どれか1つ以上）: `feature` / `refactor` / `fix`
-  - 例: iOSのバグ修正なら `ios` + `fix`、sharedの整理なら `shared` + `refactor`
-- Assignee: **自分**（作業責任者を明確にする）
-- Milestone: **一番直近のもの**（運用上の「直近」に合わせる。迷ったら「Openの中で期日が最も近い」/ 期日が無ければ「最新のもの」）
-- 本文に最低限含める:
-  - 目的（なぜ）
-  - 変更点（なに）
-  - 動作確認（どう確認したか）
-  - 影響範囲・リスク（あれば）
-  - スクリーンショット/ログ（UI変更や挙動変更がある場合）
+- ラベルは **2系統** を付ける（実際のラベル名を優先する）
+  - **アーキテクチャ/対象**: `arc:iOS` / `arc:BE` / `arc:Shared`
+  - **種別**: `type:Feature` / `type:Refactor` / `type:Fix`
+  - 迷ったらラベル一覧を見る: `gh label list --limit 200`
+- `meta` の場合も、変更対象に近い `arc:*` を付ける（例: `docs/iOS/` なら `arc:iOS`）
+- Assignee: **自分**（`gh` では `--assignee @me`）
+- Milestone: **一番直近のもの**
+  - 候補確認: `gh api "repos/<owner>/<repo>/milestones?state=open" --paginate`
+  - 直近の解釈: due date があるなら最も近い（未来優先）、無いなら作成が新しいもの
 
-## PR作成コマンド（環境に応じて）
+## 本文テンプレ（最低限）
 
-- GitHub CLI (`gh`) が使える場合:
+- 目的（なぜ）
+- 変更点（なに）
+- 動作確認（どう確認したか）
+- 影響範囲・リスク（あれば）
+- スクリーンショット/ログ（UI変更や挙動変更がある場合）
+
+## PR作成コマンド（例）
 
 ```bash
-# 例: ios + fix の場合（@me は自分）
-gh pr create --fill --assignee @me --label "ios,fix" --milestone "<milestone>"
+# 例: iOSのリネーム整理（自分にassign、milestone付与）
+gh pr create --fill --base main --assignee @me --label "arc:iOS" --label "type:Refactor" --milestone "<milestone>"
 ```
 
-- `gh` が使えない/ネットワーク制約がある場合:
-  - `git push` 後にGitHubのWeb UIからPRを作成し、上の本文テンプレを埋める
-  - ラベル（`ios/backend/shared` + `feature/refactor/fix`）、Assignee（自分）、Milestone（直近）を必ず設定する
+補足:
+- `--label` は複数回指定できる（コロン付きラベルは引用する）
+- `--milestone` は **名前** 指定（例: `v3.0.0`）
