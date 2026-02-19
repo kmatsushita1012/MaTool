@@ -26,7 +26,7 @@ struct FestivalEditFeature {
         var hazardSections: [HazardSection]
         var isLoading: Bool = false
         @Presents var destination: Destination.State?
-        @Presents var alert: Alert.State?
+        @Presents var alert: AlertFeature.State?
     }
     
     @CasePathable
@@ -40,7 +40,7 @@ struct FestivalEditFeature {
         case hazardTapped(HazardSection)
         case hazardCreateTapped
         case destination(PresentationAction<Destination.Action>)
-        case alert(PresentationAction<Alert.Action>)
+        case alert(PresentationAction<AlertFeature.Action>)
     }
     
     @Dependency(FestivalDataFetcherKey.self) var festivalDataFetcher
@@ -62,7 +62,7 @@ struct FestivalEditFeature {
                 return .dismiss
             case .putReceived(.failure(let error)):
                 state.isLoading = false
-                state.alert = Alert.error("保存に失敗しました。\(error.localizedDescription)")
+                state.alert = AlertFeature.error("保存に失敗しました。\(error.localizedDescription)")
                 return .none
             case .onCheckpointEdit(let item):
                 state.destination = .checkpoint(

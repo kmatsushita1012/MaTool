@@ -9,10 +9,10 @@ import SwiftUI
 import ComposableArchitecture
 
 struct PublicRouteMapView: View {
-    @Perception.Bindable var store: StoreOf<PublicRoute>
+    @Perception.Bindable var store: StoreOf<PublicRouteFeature>
     @StateObject var replayController: ReplayController
     
-    init(store: StoreOf<PublicRoute>) {
+    init(store: StoreOf<PublicRouteFeature>) {
         self.store = store
         _replayController = StateObject(
             wrappedValue: ReplayController(
@@ -235,4 +235,3 @@ extension PublicRouteMapView {
         }
     }
 }
-
