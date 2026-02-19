@@ -25,3 +25,9 @@ extension FetchAll where Element == RoutePassage {
         self.init(RoutePassage.where{ $0.routeId == routeId })
     }
 }
+
+extension FetchAll where Element == HazardSection {
+    init(festivalId: Festival.ID) {
+        self.init(HazardSection.where{ $0.festivalId == festivalId })
+    }
+}
