@@ -30,14 +30,18 @@ struct LocationUsecase: LocationUsecaseProtocol {
     @Dependency(PeriodRepositoryKey.self) var periodRepository
     
     func query(by festivalId: String, user: UserRole, now: Date) async throws -> [FloatLocation] {
-        let locations: [FloatLocation]
-        
-        if case let .headquarter(userId) = user, userId == festivalId {
-            locations = try await queryForAdmin(festivalId)
-        } else {
-            locations = try await queryForPublic(festivalId: festivalId, now: now)
+        let periods = try await fetchPeriodsForLocationVisibility(festivalId: festivalId, now: now)
+
+        if LocationPublicAccess.isPublic(now: now, periods: periods) {
+            return try await locationRepository.query(by: festivalId)
         }
-        return locations
+
+        if case let .district(districtId) = user {
+            let location = try await locationRepository.get(festivalId: festivalId, districtId: districtId)
+            return location.map { [$0] } ?? []
+        }
+
+        return []
     }
     
     func get(districtId: String, user: UserRole, now: Date) async throws -> FloatLocation? {
@@ -45,16 +49,15 @@ struct LocationUsecase: LocationUsecaseProtocol {
             throw Error.notFound("指定された地区が見つかりません")
         }
 
-        let location: FloatLocation?
-        
-        if case let .headquarter(headId) = user, headId == district.festivalId {
-            location = try await getForAdmin(festivalId: headId, districtId: district.id)
-        } else if case let .district(dId) = user, dId == districtId {
-            location = try await getForAdmin(festivalId: district.festivalId, districtId: district.id)
-        } else {
-            location = try await getForPublic(festivalId: district.festivalId, districtId: district.id, now: now)
+        let periods = try await fetchPeriodsForLocationVisibility(festivalId: district.festivalId, now: now)
+        let isPublic = LocationPublicAccess.isPublic(now: now, periods: periods)
+        let canViewOutside = LocationPublicAccess.canViewOutsidePublicHours(user: user, districtId: district.id)
+
+        guard isPublic || canViewOutside else { return nil }
+
+        guard let location = try await locationRepository.get(festivalId: district.festivalId, districtId: district.id) else {
+            throw Error.notFound("位置情報が見つかりません")
         }
-        guard let location else { throw Error.notFound("位置情報が見つかりません") }
         return location
     }
     
@@ -81,28 +84,12 @@ struct LocationUsecase: LocationUsecaseProtocol {
 }
 
 extension LocationUsecase {
-    private func queryForPublic(festivalId: Festival.ID, now: Date) async throws -> [FloatLocation] {
-        let periods = try await periodRepository.query(by: festivalId, year: SimpleDate.now.year)
-        // TODO: Period修正
-        guard periods.first(where: { $0.contains(now) }) != nil else { throw Error.unauthorized("時間外のため配信を停止しています。") }
-
-        return try await locationRepository.query(by: festivalId)
-    }
-
-    private func queryForAdmin(_ id: Festival.ID) async throws -> [FloatLocation] {
-        return try await locationRepository.query(by: id)
-    }
-
-    private func getForAdmin(festivalId: String, districtId: District.ID) async throws -> FloatLocation? {
-        return try await locationRepository.get(festivalId: festivalId, districtId: districtId)
-    }
-
-    private func getForPublic(festivalId: String, districtId: District.ID, now: Date) async throws -> FloatLocation? {
-        let periods = try await periodRepository.query(by: festivalId, year: SimpleDate.now.year)
-        // TODO: Period修正
-        guard periods.first(where: { $0.contains(now) }) != nil else { throw Error.unauthorized("時間外のため配信を停止しています。") }
-        
-        return try await locationRepository.get(festivalId: festivalId, districtId: districtId)
+    private func fetchPeriodsForLocationVisibility(festivalId: Festival.ID, now: Date) async throws -> [Period] {
+        let nowYear = SimpleDate.from(now).year
+        async let currentYear = periodRepository.query(by: festivalId, year: nowYear)
+        async let nextYear = periodRepository.query(by: festivalId, year: nowYear + 1)
+        let (current, next) = try await (currentYear, nextYear)
+        return current + next
     }
 
 }

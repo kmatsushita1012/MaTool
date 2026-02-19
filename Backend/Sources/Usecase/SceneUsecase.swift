@@ -49,7 +49,7 @@ struct SceneUsecase: SceneUsecaseProtocol {
         }
 
         if isAdmin {
-            return try await fetchAdminLaunchPack(festival: festival)
+            return try await fetchAdminLaunchPack(festival: festival, user: user, now: now)
         } else {
             return try await fetchUserLaunchPack(festival: festival, now: now)
         }
@@ -63,18 +63,27 @@ struct SceneUsecase: SceneUsecaseProtocol {
     }
 
     // MARK: - Private: 管理者用
-    private func fetchAdminLaunchPack(festival: Festival) async throws -> LaunchFestivalPack {
+    private func fetchAdminLaunchPack(festival: Festival, user: UserRole, now: Date) async throws -> LaunchFestivalPack {
         async let districts = districtRepository.query(by: festival.id)
-        async let periods = periodRepository.query(by: festival.id) // 過去全て
-        async let locations = floatLocationRepository.query(by: festival.id)
         async let checkpoints = checkpointRepository.query(by: festival.id)
         async let hazardSections = hazardRepository.query(by: festival.id)
+        let periods = try await periodRepository.query(by: festival.id) // 過去全て
+
+        let locations: [FloatLocation]
+        if LocationPublicAccess.isPublic(now: now, periods: periods) {
+            locations = try await floatLocationRepository.query(by: festival.id)
+        } else if case let .district(districtId) = user {
+            let location = try await floatLocationRepository.get(festivalId: festival.id, districtId: districtId)
+            locations = location.map { [$0] } ?? []
+        } else {
+            locations = []
+        }
 
         return LaunchFestivalPack(
             festival: festival,
             districts: try await districts,
-            periods: try await periods,
-            locations: try await locations,
+            periods: periods,
+            locations: locations,
             checkpoints: try await checkpoints,
             hazardSections: try await hazardSections
         )
@@ -83,14 +92,19 @@ struct SceneUsecase: SceneUsecaseProtocol {
     // MARK: - Private: 一般ユーザー用
     private func fetchUserLaunchPack(festival: Festival, now: Date) async throws -> LaunchFestivalPack {
         async let districts = districtRepository.query(by: festival.id)
-        async let locations = floatLocationRepository.query(by: festival.id)
         let periods = try await fetchLatestPeriods(festivalId: festival.id, now: now)
+        let locations: [FloatLocation]
+        if LocationPublicAccess.isPublic(now: now, periods: periods) {
+            locations = try await floatLocationRepository.query(by: festival.id)
+        } else {
+            locations = []
+        }
 
         return LaunchFestivalPack(
             festival: festival,
             districts: try await districts,
             periods: periods,
-            locations: try await locations,
+            locations: locations,
             checkpoints: [],
             hazardSections: []
         )
