@@ -17,7 +17,7 @@ struct DistrictCreateFeature {
         var name: String = ""
         var email: String = ""
         var isLoading: Bool = false
-        @Presents var alert: Alert.State?
+        @Presents var alert: AlertFeature.State?
     }
     @CasePathable
     enum Action: Equatable, BindableAction {
@@ -25,7 +25,7 @@ struct DistrictCreateFeature {
         case createTapped
         case cancelTapped
         case createReceived(VoidTaskResult)
-        case alert(PresentationAction<Alert.Action>)
+        case alert(PresentationAction<AlertFeature.Action>)
     }
     
     @Dependency(DistrictDataFetcherKey.self) var dataFetcher
@@ -50,7 +50,7 @@ struct DistrictCreateFeature {
                 return .dismiss
             case .createReceived(.failure(let error)):
                 state.isLoading = false
-                state.alert = Alert.error(error.localizedDescription)
+                state.alert = AlertFeature.error(error.localizedDescription)
                 return .none
             case .alert:
                 state.alert = nil

@@ -35,13 +35,13 @@ struct FestivalDashboardView: View {
                 item: $store.scope(
                     state: \.destination?.changePassword, action: \.destination.changePassword)
             ) { store in
-                ChangePasswordStoreView(store: store)
+                ChangePasswordView(store: store)
             }
             .navigationDestination(
                 item: $store.scope(
                     state: \.destination?.updateEmail, action: \.destination.updateEmail)
             ) { store in
-                UpdateEmailStoreView(store: store)
+                UpdateEmailView(store: store)
             }
             .alert($store.scope(state: \.alert, action: \.alert))
             .loadingOverlay(store.isLoading)

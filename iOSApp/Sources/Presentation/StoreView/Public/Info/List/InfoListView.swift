@@ -58,7 +58,7 @@ struct InfoListView: View {
             .dismissible(backButton: false)
             .navigationDestination(item: $store.scope(state: \.destination?.district, action: \.destination.district)) { store in
                 WithPerceptionTracking{
-                    DistrictInfoStoreView(store: store)
+                    DistrictInfoView(store: store)
                 }
             }
             .alert($store.scope(state: \.alert, action: \.alert))

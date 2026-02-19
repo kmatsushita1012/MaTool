@@ -27,7 +27,7 @@ struct HeadquarterDistrictDetailFeature {
         var isLoading: Bool = false
         
         @Presents var destination: Destination.State?
-        @Presents var alert: Alert.State?
+        @Presents var alert: AlertFeature.State?
         var url: URL? = nil
     }
     
@@ -41,7 +41,7 @@ struct HeadquarterDistrictDetailFeature {
         case routeReceived(TaskResult<RouteEntry>)
         case batchExportReceived(TaskResult<URL>)
         case destination(PresentationAction<Destination.Action>)
-        case alert(PresentationAction<Alert.Action>)
+        case alert(PresentationAction<AlertFeature.Action>)
     }
     
     @Dependency(DistrictDataFetcherKey.self) var dataFetcher
@@ -91,7 +91,7 @@ struct HeadquarterDistrictDetailFeature {
                 .routeReceived(.failure(let error)),
                 .batchExportReceived(.failure(let error)):
                 state.isLoading = false
-                state.alert = Alert.error(error.localizedDescription)
+                state.alert = AlertFeature.error(error.localizedDescription)
                 return .none
             case .destination(_):
                 return .none

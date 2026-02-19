@@ -14,8 +14,8 @@ struct InfoListFeature {
     
     @Reducer
     enum Destination{
-        case festival(FestivalInfo)
-        case district(DistrictInfo)
+        case festival(FestivalInfoFeature)
+        case district(DistrictInfoFeature)
     }
     
     @ObservableState
@@ -25,7 +25,7 @@ struct InfoListFeature {
         var districts: [District] { rawDistricts.sorted() }
         var isDismissed: Bool = false
         @Presents var destination: Destination.State? = nil
-        @Presents var alert: Alert.State? = nil
+        @Presents var alert: AlertFeature.State? = nil
         var isLoading: Bool = false
         
         init(festival: Festival) {
@@ -41,7 +41,7 @@ struct InfoListFeature {
         case dismissTapped
         case districtReceived(TaskResult<District>)
         case destination(PresentationAction<Destination.Action>)
-        case alert(PresentationAction<Alert.Action>)
+        case alert(PresentationAction<AlertFeature.Action>)
     }
     
     @Dependency(DistrictDataFetcherKey.self) var dataFetcher
@@ -51,7 +51,7 @@ struct InfoListFeature {
         Reduce { state,action in
             switch action {
             case .festivalTapped:
-                state.destination = .festival(FestivalInfo.State(item: state.festival))
+                state.destination = .festival(FestivalInfoFeature.State(item: state.festival))
                 return .none
             case .districtTapped(let district):
                 state.isLoading = true
@@ -67,11 +67,11 @@ struct InfoListFeature {
                     return .none
                 }
             case .districtReceived(.success(let district)):
-                state.destination = .district(DistrictInfo.State(district))
+                state.destination = .district(DistrictInfoFeature.State(district))
                 state.isLoading = false
                 return .none
             case .districtReceived(.failure(let error)):
-                state.alert = Alert.error(error.localizedDescription)
+                state.alert = AlertFeature.error(error.localizedDescription)
                 state.isLoading = false
                 return .none
             case .destination:

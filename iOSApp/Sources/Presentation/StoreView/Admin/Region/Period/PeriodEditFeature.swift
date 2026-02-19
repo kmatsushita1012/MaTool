@@ -17,7 +17,7 @@ struct PeriodEditFeature {
         let mode: Mode
         var period: Period
         var isLoading: Bool = false
-        @Presents var alert: Alert.State?
+        @Presents var alert: AlertFeature.State?
     }
     
     @CasePathable
@@ -29,7 +29,7 @@ struct PeriodEditFeature {
         case saveReceived(VoidTaskResult)
         case deleteReceived(VoidTaskResult)
         case catched(APIError)
-        case alert(PresentationAction<Alert.Action>)
+        case alert(PresentationAction<AlertFeature.Action>)
     }
     
     @Dependency(PeriodDataFetcherKey.self) var dataFetcher
@@ -58,7 +58,7 @@ struct PeriodEditFeature {
             case .saveReceived(.failure(let error)),
                 .deleteReceived(.failure(let error)):
                 state.isLoading = false
-                state.alert = Alert.error(error.localizedDescription)
+                state.alert = AlertFeature.error(error.localizedDescription)
                 return .none
             default:
                 return .none

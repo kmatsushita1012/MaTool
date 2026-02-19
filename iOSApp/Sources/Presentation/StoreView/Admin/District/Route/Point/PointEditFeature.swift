@@ -28,7 +28,7 @@ struct PointEditFeature {
         @FetchAll var performances: [Performance]
         
         var pointType: PointType
-        @Presents var alert: Alert.State?
+        @Presents var alert: AlertFeature.State?
     }
     
     @CasePathable
@@ -38,7 +38,7 @@ struct PointEditFeature {
         case moveTapped
         case insertTapped
         case deleteTapped
-        case alert(PresentationAction<Alert.Action>)
+        case alert(PresentationAction<AlertFeature.Action>)
     }
     
     var body: some ReducerOf<PointEditFeature> {
@@ -73,7 +73,7 @@ struct PointEditFeature {
                 do {
                     try state.validate()
                 } catch  {
-                    state.alert = Alert.error(error.localizedDescription)
+                    state.alert = AlertFeature.error(error.localizedDescription)
                 }
                 return .none
             case .alert:
@@ -146,4 +146,3 @@ extension PointEditFeature.PointType {
         }
     }
 }
-
