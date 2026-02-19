@@ -11,7 +11,7 @@ enum LocationPublicAccess {
     }
 
     static func publicRange(for date: SimpleDate, periods: [Period]) -> ClosedRange<Date>? {
-        let targetPeriods = periods.filter { $0.date.sortableKey == date.sortableKey }
+        let targetPeriods = periods.filter { $0.date == date }
         guard let minStart = targetPeriods.map(\.start).min(),
               let maxEnd = targetPeriods.map(\.end).max()
         else { return nil }
