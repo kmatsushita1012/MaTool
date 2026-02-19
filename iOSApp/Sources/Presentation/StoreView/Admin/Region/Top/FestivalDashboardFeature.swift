@@ -18,8 +18,8 @@ struct FestivalDashboardFeature {
         case edit(FestivalEditFeature)
         case districts(HeadquarterDistrictListFeature)
         case periods(PeriodListFeature)
-        case changePassword(ChangePassword)
-        case updateEmail(UpdateEmail)
+        case changePassword(ChangePasswordFeature)
+        case updateEmail(UpdateEmailFeature)
     }
 
     @ObservableState
@@ -31,7 +31,7 @@ struct FestivalDashboardFeature {
         var isExportLoading: Bool = false
 
         @Presents var destination: Destination.State? = nil
-        @Presents var alert: Alert.State? = nil
+        @Presents var alert: AlertFeature.State? = nil
         var isLoading: Bool {
             isApiLoading || isAuthLoading || isExportLoading
         }
@@ -49,7 +49,7 @@ struct FestivalDashboardFeature {
         case signOutTapped
         case signOutReceived(TaskResult<UserRole>)
         case destination(PresentationAction<Destination.Action>)
-        case alert(PresentationAction<Alert.Action>)
+        case alert(PresentationAction<AlertFeature.Action>)
     }
 
     @Dependency(RouteDataFetcherKey.self) var routeDataFetcher
@@ -72,10 +72,10 @@ struct FestivalDashboardFeature {
             case .dismissTapped:
                 return .dismiss
             case .changePasswordTapped:
-                state.destination = .changePassword(ChangePassword.State())
+                state.destination = .changePassword(ChangePasswordFeature.State())
                 return .none
             case .updateEmailTapped:
-                state.destination = .updateEmail(UpdateEmail.State())
+                state.destination = .updateEmail(UpdateEmailFeature.State())
                 return .none
             case .signOutTapped:
                 state.isAuthLoading = true
@@ -84,14 +84,14 @@ struct FestivalDashboardFeature {
                 }
             case .signOutReceived(.failure(let error)):
                 state.isAuthLoading = false
-                state.alert = Alert.error("ログアウトに失敗しました　\(error.localizedDescription)")
+                state.alert = AlertFeature.error("ログアウトに失敗しました　\(error.localizedDescription)")
                 return .none
             case .destination(.presented(.edit(.putReceived(.success)))):
                 state.destination = nil
                 return .none
             case .destination(.presented(.changePassword(.received(.success)))):
                 state.destination = nil
-                state.alert = Alert.success("パスワードが変更されました")
+                state.alert = AlertFeature.success("パスワードが変更されました")
                 return .none
             case .alert:
                 state.alert = nil
