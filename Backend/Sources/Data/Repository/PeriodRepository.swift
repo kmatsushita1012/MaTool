@@ -26,7 +26,7 @@ protocol PeriodRepositoryProtocol: Sendable {
     func query(by festivalId: String) async throws -> [Period]
     func post(_ Period: Period) async throws -> Period
     func put(_ Period: Period) async throws -> Period
-    func delete(festivalId: String, date: SimpleDate) async throws
+    func delete(festivalId: String, date: SimpleDate, start: SimpleTime) async throws
 }
 
 struct PeriodRepository: PeriodRepositoryProtocol {
@@ -67,8 +67,8 @@ struct PeriodRepository: PeriodRepositoryProtocol {
         return item
     }
 
-    func delete(festivalId: String, date: SimpleDate) async throws {
-        let keys = PeriodRecord.makeKeys(festivalId: festivalId, date: date)
+    func delete(festivalId: String, date: SimpleDate, start: SimpleTime) async throws {
+        let keys = PeriodRecord.makeKeys(festivalId: festivalId, date: date, start: start)
         try await dataStore.delete(keys: ["pk": keys.pk, "sk": keys.sk])
     }
 }
@@ -84,12 +84,12 @@ fileprivate struct PeriodRecord: RecordProtocol {
 
 extension PeriodRecord {
     init(_ content: Period){
-        let keys = Self.makeKeys(festivalId: content.festivalId, date: content.date)
+        let keys = Self.makeKeys(festivalId: content.festivalId, date: content.date, start: content.start)
         self.init(pk: keys.pk, sk: keys.sk, type: Self.type, id: content.id, content: content)
     }
     
-    static func makeKeys(festivalId: String, date: SimpleDate) -> (pk: String, sk: String){
-        (pk: "\(pkPrefix)\(festivalId)", "\(skPrefix)\(date.sortableKey)" )
+    static func makeKeys(festivalId: String, date: SimpleDate, start: SimpleTime) -> (pk: String, sk: String){
+        (pk: "\(pkPrefix)\(festivalId)", "\(skPrefix)\(date.sortableKey)#\(start.sortableKey)" )
     }
     
     static func makeKeys(festivalId: String, year: Int) -> (pk: QueryCondition, sk: QueryCondition){

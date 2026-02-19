@@ -100,8 +100,8 @@ struct PublicRouteFeature {
                 state.detail = .location(float)
                 return .none
             case .floatFocusTapped:
-                return .run {[districtId = state.district.id] send in
-                    try? await locationDataFetcher.fetch(districtId: districtId)
+                return .task(Action.locationReceived) { [state] in
+                    try await locationDataFetcher.fetch(districtId: state.district.id)
                 }
             case .routeReceived(.success):
                 state.replay = .initial(state.selected?.id)
@@ -109,6 +109,11 @@ struct PublicRouteFeature {
                 return .none
             case .routeReceived(.failure(let error)):
                 state.alert = AlertFeature.error(error.localizedDescription)
+                return .none
+            case .locationReceived(.success):
+                if let coordinate = state.float?.floatLocation.coordinate {
+                    state.$mapRegion.withLock{ $0 = makeRegion(origin: coordinate, spanDelta: spanDelta) }
+                }
                 return .none
             case .locationReceived(.failure(let error)):
                 if let error = error as? APIError,
