@@ -1,5 +1,5 @@
 //
-//  CardItem.swift
+//  CardView.swift
 //  MaTool
 //
 //  Created by 松下和也 on 2025/06/03.
@@ -27,4 +27,3 @@ struct CardView: View {
         .cornerRadius(8)
     }
 }
-
