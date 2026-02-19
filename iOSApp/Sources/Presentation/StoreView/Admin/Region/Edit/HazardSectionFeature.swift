@@ -24,7 +24,7 @@ struct HazardSectionFeature {
         var manager: EditManager<HazardSection>
         var selectedPin: Coordinate?
         var mapRegion: MKCoordinateRegion?
-        @Presents var alert: Alert.State?
+        @Presents var alert: AlertFeature.State?
         
         init(_ item: HazardSection, mapRegion: MKCoordinateRegion) {
             self.manager = .init(item)
@@ -46,7 +46,7 @@ struct HazardSectionFeature {
         case insertAfterTapped(Coordinate)
         case removeTapped(Coordinate)
         case menuClosed
-        case alert(PresentationAction<Alert.Action>)
+        case alert(PresentationAction<AlertFeature.Action>)
     }
     
     var body: some ReducerOf<Self> {
@@ -76,7 +76,7 @@ struct HazardSectionFeature {
                 return .none
             case .doneTapped:
                 if !state.isValid {
-                    state.alert = Alert.error("タイトルを1文字以上、地点を2つ以上入力してください。")
+                    state.alert = AlertFeature.error("タイトルを1文字以上、地点を2つ以上入力してください。")
                 }
                 return .none
             case .redoTapped:

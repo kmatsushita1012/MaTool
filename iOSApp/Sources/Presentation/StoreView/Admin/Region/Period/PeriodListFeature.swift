@@ -35,7 +35,7 @@ struct PeriodListFeature {
         
         var isLoading = false
         @Presents var destination: Destination.State?
-        @Presents var alert: Alert.State?
+        @Presents var alert: AlertFeature.State?
     }
     
     @CasePathable
@@ -46,7 +46,7 @@ struct PeriodListFeature {
         case batchCreateTapped(Int)
         case batchCreateReceived(VoidTaskResult)
         case destination(PresentationAction<Destination.Action>)
-        case alert(PresentationAction<Alert.Action>)
+        case alert(PresentationAction<AlertFeature.Action>)
     }
     
     @Dependency(PeriodDataFetcherKey.self) var dataFetcher
@@ -77,14 +77,14 @@ struct PeriodListFeature {
                 return .none
             case .batchCreateReceived(.success):
                 state.isLoading = false
-                state.alert = Alert.notice("一括作成が完了しました。")
+                state.alert = AlertFeature.notice("一括作成が完了しました。")
                 let items = state.makePeriodsStates()
                 state.latests = items.first
                 state.archives = .init(items.dropFirst())
                 return .none
             case .batchCreateReceived(.failure(let error)):
                 state.isLoading = false
-                state.alert = Alert.error(error.localizedDescription)
+                state.alert = AlertFeature.error(error.localizedDescription)
                 return .none
             case .alert(.presented(_)):
                 state.alert = nil

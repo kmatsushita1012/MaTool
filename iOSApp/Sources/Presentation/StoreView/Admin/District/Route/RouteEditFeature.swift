@@ -40,8 +40,8 @@ struct RouteEditFeature{
     
     @Reducer
     enum AlertDestination{
-        case notice(Alert)
-        case delete(Alert)
+        case notice(AlertFeature)
+        case delete(AlertFeature)
     }
     
     @ObservableState
@@ -147,10 +147,10 @@ struct RouteEditFeature{
                 return .dismiss
             case .deleteTapped:
                 if !state.isDeleteable {
-                    state.alert = .notice(Alert.error("権限がありません"))
+                    state.alert = .notice(AlertFeature.error("権限がありません"))
                     return .none
                 }
-                state.alert = .delete(Alert.delete())
+                state.alert = .delete(AlertFeature.delete())
                 return .none
             case .wholeTapped:
                 return .task(Action.previewPrepared){ [state] in
