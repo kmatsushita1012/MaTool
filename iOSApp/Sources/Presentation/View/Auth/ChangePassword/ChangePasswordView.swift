@@ -1,5 +1,5 @@
 //
-//  ChangePasswordStoreView.swift
+//  ChangePasswordView.swift
 //  MaTool
 //
 //  Created by 松下和也 on 2025/07/17.
@@ -62,4 +62,3 @@ struct ChangePasswordView: View {
         .alert($store.scope(state: \.alert, action: \.alert))
     }
 }
-

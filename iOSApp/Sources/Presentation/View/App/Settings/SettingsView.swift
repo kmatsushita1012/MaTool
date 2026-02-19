@@ -1,5 +1,5 @@
 //
-//  SettingsStoreView.swift
+//  SettingsView.swift
 //  MaTool
 //
 //  Created by 松下和也 on 2025/04/21.

@@ -1,5 +1,5 @@
 //
-//  PeriodListView.swift
+//  PeriodArchivesView.swift
 //  MaTool
 //
 //  Created by 松下和也 on 2025/12/08.
