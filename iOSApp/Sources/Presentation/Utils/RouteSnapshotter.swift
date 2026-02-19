@@ -38,8 +38,7 @@ struct RouteSnapshotter: Equatable {
         self.period = period
         self.route = route
         self.points = points
-        let festivalId = district.festivalId
-        self.hazardSections = FetchAll(HazardSection.where{ $0.festivalId == festivalId }).wrappedValue
+        self.hazardSections = FetchAll(festivalId: district.festivalId).wrappedValue
     }
     
     private var coordinates: [Coordinate] {
@@ -91,14 +90,12 @@ struct RouteSnapshotter: Equatable {
                         UIGraphicsEndImageContext()
                     }
                     snapshot.image.draw(at: .zero)
-                    //FIXME: v3.0.0
-                    drawSlopePolyline(on: snapshot)
+                    drawHazardSectionPolylines(on: snapshot)
                     drawPolylines(on: snapshot, color: .white, lineWidth: 4)
                     drawBoundaryPolylines(on: snapshot, lineWidth: 3)
                     drawPinsAndCaptions(on: snapshot, drawnRects: &drawnRects)
                     
-                    //FIXME: v3.0.0
-                    drawSlopePoint(on: snapshot, drawnRects: &drawnRects)
+                    drawHazardSectionCaptions(on: snapshot, drawnRects: &drawnRects)
                     
                     let titleText = """
                     \(district.name)
@@ -334,41 +331,25 @@ struct RouteSnapshotter: Equatable {
         return url
     }
     
-    //FIXME: v3.0.0
-    private func drawSlopePoint(on snapshot: MKMapSnapshotter.Snapshot, drawnRects: inout [CGRect]) {
-        let toshokan = snapshot.point(for: Coordinate(latitude: 34.774803,longitude: 138.015110).toCL())
-        drawCaption(
-            for: "斜度5.8%",
-            at: toshokan,
-            pinImage: UIImage(systemName: "circle.fill")!,
-            drawnRects: &drawnRects
-        )
-        let shinmei = snapshot.point(
-            for: CLLocationCoordinate2D(
-                latitude: 34.776993,
-                longitude: 138.018933)
-        )
-        drawCaption(
-            for: "斜度1.4%",
-            at: shinmei,
-            pinImage: UIImage(systemName: "circle.fill")!,
-            drawnRects: &drawnRects
-        )
+    private func drawHazardSectionCaptions(on snapshot: MKMapSnapshotter.Snapshot, drawnRects: inout [CGRect]) {
+        let pinImage = UIImage(systemName: "circle.fill")!
+        for section in hazardSections {
+            guard !section.title.isEmpty else { continue }
+            let coordinates = section.coordinates
+            guard !coordinates.isEmpty else { continue }
+
+            let labelCoordinate = coordinates[coordinates.count / 2]
+            let point = snapshot.point(for: labelCoordinate.toCL())
+            drawCaption(for: section.title, at: point, pinImage: pinImage, drawnRects: &drawnRects)
+        }
     }
-    private func drawSlopePolyline(on snapshot: MKMapSnapshotter.Snapshot) {
-        let toshokanCoordinates = [
-            Coordinate(latitude: 34.774471, longitude: 138.015110),
-            Coordinate(latitude: 34.775118, longitude: 138.015131)
-        ]
-        drawPolyline(on: snapshot, coordinates: toshokanCoordinates, color: .orange, lineWidth: 8)
-        let shinmeiCoordinates = [
-            Coordinate(latitude: 34.775140, longitude: 138.018356),
-            Coordinate(latitude: 34.775942, longitude: 138.018427),
-            Coordinate(latitude: 34.777033, longitude: 138.018906),
-            Coordinate(latitude: 34.777707, longitude: 138.019524),
-            Coordinate(latitude: 34.778608, longitude: 138.019802)
-        ]
-        drawPolyline(on: snapshot, coordinates: shinmeiCoordinates, color: .orange, lineWidth: 8)
+
+    private func drawHazardSectionPolylines(on snapshot: MKMapSnapshotter.Snapshot) {
+        for section in hazardSections {
+            let coordinates = section.coordinates
+            guard coordinates.count > 1 else { continue }
+            drawPolyline(on: snapshot, coordinates: coordinates, color: .orange, lineWidth: 8)
+        }
     }
     
     static let a4size = CGSize(width: 594, height: 420)
