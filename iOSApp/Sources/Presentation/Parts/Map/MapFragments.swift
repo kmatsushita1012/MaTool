@@ -1,5 +1,5 @@
 //
-//  Fragments.swift
+//  MapFragments.swift
 //  MaTool
 //
 //  Created by 松下和也 on 2025/05/09.
@@ -371,4 +371,3 @@ class MapCoordinator<Parent: MapViewRepresentable>: NSObject, MKMapViewDelegate 
         parent.region = mapView.region
     }
 }
-

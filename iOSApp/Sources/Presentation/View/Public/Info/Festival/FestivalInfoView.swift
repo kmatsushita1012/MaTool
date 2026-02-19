@@ -1,5 +1,5 @@
 //
-//  FestivalInfoStoreView.swift
+//  FestivalInfoView.swift
 //  MaTool
 //
 //  Created by 松下和也 on 2025/07/29.

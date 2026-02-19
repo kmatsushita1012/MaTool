@@ -1,5 +1,5 @@
 //
-//  ConfirmSignIn.swift
+//  ConfirmSignInFeature.swift
 //  MaTool
 //
 //  Created by 松下和也 on 2025/05/21.
