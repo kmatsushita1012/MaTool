@@ -102,8 +102,14 @@ struct MapView: UIViewRepresentable {
         }
         mapView.updatePolylines(coloredPolylines)
         
-        mapView.updateFloats(from: floats)
-        mapView.updateFloat(floatAnnotation)
+        if let floatAnnotation {
+            mapView.updateFloat(floatAnnotation)
+        } else if !floats.isEmpty {
+            mapView.updateFloats(from: floats)
+        } else {
+            mapView.removeFloats()
+        }
+        
         
         let epsilon: CLLocationDegrees = 0.00001
         let latDiff = abs(region.center.latitude - mapView.region.center.latitude)
@@ -241,6 +247,11 @@ fileprivate extension MKMapView {
         removeOverlays(oldPolylines)
     }
     
+    func removeFloats() {
+        let old = annotations.compactMap { $0 as? FloatAnnotation }
+        removeAnnotations(old)
+    }
+    
     func updateFloats(from entries: [FloatEntry]){
         let existingAnnotations = annotations.compactMap { $0 as? FloatCurrentAnnotation }
 
@@ -261,10 +272,10 @@ fileprivate extension MKMapView {
         addAnnotations(annotationsToAdd)
     }
     
-    func updateFloat(_ float: FloatAnnotation?) {
+    func updateFloat(_ float: FloatAnnotation) {
         let old = annotations.compactMap { $0 as? FloatAnnotation }
         let toRemove = old.filter { $0 != float }
-        if let float, !old.contains(where: { $0 == float }) {
+        if !old.contains(where: { $0 == float }) {
             removeAnnotations(toRemove)
             addAnnotation(float)
         } else {
