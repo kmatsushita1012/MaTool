@@ -63,6 +63,6 @@ struct PeriodUsecase: PeriodUsecaseProtocol {
               target.festivalId == id else {
             throw Error.unauthorized("アクセス権限がありません。")
         }
-        return try await repository.delete(festivalId: target.festivalId, date: target.date )
+        return try await repository.delete(festivalId: target.festivalId, date: target.date, start: target.start )
     }
 }
