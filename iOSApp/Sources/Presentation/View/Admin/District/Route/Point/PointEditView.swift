@@ -20,7 +20,7 @@ struct PointEditView: View {
         Form {
             Section {
                 Picker("地点の種類", selection: $store.pointType) {
-                    ForEach(PointEditFeature.PointType.allCases, id: \.self){ type in
+                    ForEach(store.validTypes, id: \.self){ type in
                         Text(type.text).tag(type)
                     }
                 }

@@ -28,7 +28,9 @@ struct PointEditFeature {
         @FetchAll var performances: [Performance]
         
         var pointType: PointType
+        let validTypes: [PointType]
         @Presents var alert: AlertFeature.State?
+        
     }
     
     @CasePathable
@@ -93,9 +95,22 @@ extension PointEditFeature.State {
             .join(Route.all) { $0.routeId.eq($1.id) }
             .join(District.all) { $1.districtId.eq($2.id) }
             .select { $2 }).wrappedValue
-        self._checkpoints = FetchAll(Checkpoint.where{ $0.festivalId == district?.festivalId })
-        self._performances = FetchAll(Performance.where{ $0.districtId == district?.id })
+        let checkpointQuery = FetchAll(Checkpoint.where{ $0.festivalId == district?.festivalId })
+        self._checkpoints = checkpointQuery
+        let performanceQuery = FetchAll(Performance.where{ $0.districtId == district?.id })
+        self._performances =  performanceQuery
         self.pointType = .init(point: point)
+        
+        var types: [PointEditFeature.PointType] = [.start, .end, .rest]
+        if !checkpointQuery.wrappedValue.isEmpty {
+            types.append(.checkpoint)
+        }
+        if !performanceQuery.wrappedValue.isEmpty {
+            types.append(.performance)
+        }
+        types.append(.none)
+        
+        self.validTypes = types
     }
     
     var selectedCheckpoint: Checkpoint? {
