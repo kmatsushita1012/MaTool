@@ -54,6 +54,7 @@ struct HeadquarterDistrictListFeature {
                 state.isLoading = true
                 return .task(Action.selectedReceived) {
                     try await dataFetcher.fetch(districtID: district.id)
+                    try await routeDataFetcher.fetchAll(districtID: district.id, query: .latest)
                     return district
                 }
             case .createTapped:
