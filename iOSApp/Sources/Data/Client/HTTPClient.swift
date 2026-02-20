@@ -143,7 +143,8 @@ actor HTTPClient: HTTPClientProtocol {
 
         // Success path: cache and decode
         if isCache { cache.setObject(data as NSData, forKey: key) }
-        return try decodeResponse(from: data)
+        let response: Response = try decodeResponse(from: data)
+        return response
     }
 
     func request<Response: Decodable>(
