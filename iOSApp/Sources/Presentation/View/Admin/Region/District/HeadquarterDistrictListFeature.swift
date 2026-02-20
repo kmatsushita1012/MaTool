@@ -22,8 +22,7 @@ struct HeadquarterDistrictListFeature {
     @ObservableState
     struct State: Equatable {
         @FetchOne var festival: Festival
-        @FetchAll var rawDistricts: [District]
-        var districts: [District] { rawDistricts.sorted() }
+        @FetchAll var districts: [District]
         
         var isLoading: Bool = false
         var folder: ExportedFolder? = nil
@@ -112,7 +111,7 @@ extension HeadquarterDistrictListFeature.Destination.Action: Equatable {}
 
 extension HeadquarterDistrictListFeature.State{
     init(_ festival: Festival){
-        self._festival = FetchOne(wrappedValue: festival, Festival.find(festival.id))
-        self._rawDistricts = FetchAll(District.where{ $0.festivalId == festival.id })
+        self._festival = FetchOne(festival)
+        self._districts = FetchAll(festivalId: festival.id)
     }
 }

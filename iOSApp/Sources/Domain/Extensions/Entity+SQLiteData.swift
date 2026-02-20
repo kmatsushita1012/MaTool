@@ -10,7 +10,7 @@ import Shared
 
 extension FetchAll where Element == District {
     init(festivalId: Festival.ID){
-        self.init(District.where{ $0.festivalId == festivalId })
+        self.init(District.where{ $0.festivalId == festivalId }.order(by: \.order))
     }
 }
 
@@ -29,5 +29,23 @@ extension FetchAll where Element == RoutePassage {
 extension FetchAll where Element == HazardSection {
     init(festivalId: Festival.ID) {
         self.init(HazardSection.where{ $0.festivalId == festivalId })
+    }
+}
+
+extension FetchOne where Value == District {
+    init(_ value: District){
+        self.init(wrappedValue: value, District.find(value.id))
+    }
+}
+
+extension FetchOne where Value == Festival {
+    init(_ value: Festival){
+        self.init(wrappedValue: value, Festival.find(value.id))
+    }
+}
+
+extension FetchOne where Value == Period {
+    init(_ value: Period){
+        self.init(wrappedValue: value, Period.find(value.id))
     }
 }

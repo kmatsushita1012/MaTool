@@ -167,7 +167,7 @@ extension DistrictDashboardFeature.State{
     }
     
     init(_ district: District){
-        self._district = FetchOne(wrappedValue: district)
+        self._district = FetchOne(district)
         self._routes = .init(districtId: district.id, latest: true)
     }
 }

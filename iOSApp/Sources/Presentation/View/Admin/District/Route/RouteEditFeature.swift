@@ -306,8 +306,8 @@ extension RouteEditFeature.State {
         self.manager = EditManager(points.sorted())
         self.passages = FetchAll(routeId: route.id).wrappedValue
         self.route = route
-        self._district = FetchOne(wrappedValue: district, District.find(district.id))
-        self._period = FetchOne(wrappedValue: period, Period.find(period.id))
+        self._district = FetchOne(district)
+        self._period = FetchOne(period)
         
         let origin: Coordinate = district.base ?? FetchOne(wrappedValue: .init(latitude: 0.0, longitude: 0.0), Festival.where{ $0.id == district.festivalId }.select(\.base)).wrappedValue
 
