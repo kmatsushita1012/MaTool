@@ -34,5 +34,61 @@ struct DistrictInjector {
         }
         _ = try await subject.post(district)
     }
+    
+    @Test
+    func move_district() async throws {
+        let migrator = try DynamoDBMigrator(tableName: "matool_districts")
+        let results = try await migrator.scan(Legacy.District.self)
+        
+        var districts: [District] = []
+        var performances: [Performance] = []
+        
+        for (index, result) in results.enumerated() {
+            districts.append(
+                District(
+                    id: result.id,
+                    name: result.name,
+                    festivalId: result.regionId,
+                    order: index,
+                    description: result.description,
+                    base: result.base,
+                    area: result.area,
+                    image: .init(light: result.imagePath),
+                    visibility: Visibility(rawValue: result.visibility.rawValue) ?? .all
+                )
+            )
+            
+            for performance in result.performances {
+                performances.append(
+                    Performance(
+                        id: performance.id,
+                        name: performance.name,
+                        districtId: result.id,
+                        performer: performance.performer,
+                        description: performance.description
+                    )
+                )
+            }
+        }
+        
+        let districtRepository = withDependencies({
+            $0[DataStoreFactoryKey.self] = { DynamoDBStore.make(tableName: $0)}
+        }) {
+            DistrictRepository()
+        }
+        
+        for district in districts {
+            _ = try await districtRepository.post(item: district)
+        }
+        
+        let performanceRepository = withDependencies({
+            $0[DataStoreFactoryKey.self] = { DynamoDBStore.make(tableName: $0)}
+        }) {
+            PerformanceRepository()
+        }
+        
+        for performance in performances {
+            _ = try await performanceRepository.post(performance)
+        }
+    }
 }
-
