@@ -13,7 +13,7 @@ import Dependencies
 
 @Suite("District Injector")
 struct DistrictInjector {
-    @Test
+    @Test(.disabled())
     func inject_district() async throws  {
         let district = District(id: "test_district", name: "テスト町", festivalId: "test_region")
         let subject = withDependencies({
@@ -24,7 +24,7 @@ struct DistrictInjector {
         _ = try await subject.post(item: district)
     }
     
-    @Test
+    @Test(.disabled())
     func inject_performance() async throws {
         let district = Performance(id: UUID().uuidString, name: "テスト町", districtId: "test_district")
         let subject = withDependencies({
@@ -35,7 +35,7 @@ struct DistrictInjector {
         _ = try await subject.post(district)
     }
     
-    @Test
+    @Test(.disabled())
     func move_district() async throws {
         let migrator = try DynamoDBMigrator(tableName: "matool_districts")
         let results = try await migrator.scan(Legacy.District.self)

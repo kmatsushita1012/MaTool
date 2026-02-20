@@ -31,9 +31,21 @@ struct DynamoDBMigrator {
     
     // MARK: scan
     func scan<T: Codable>(_ type: T.Type, ignoreDecodeError: Bool = true) async throws -> [T] {
-        let input = ScanInput(tableName: tableName)
+        
+        var items = [[Swift.String: DynamoDBClientTypes.AttributeValue]]()
+        var exclusiveStartKey: [Swift.String: DynamoDBClientTypes.AttributeValue]? = nil
+        
+        let input = ScanInput(exclusiveStartKey: exclusiveStartKey, tableName: tableName)
         let output = try await client.scan(input: input)
-        guard let items = output.items else { return [] }
+        exclusiveStartKey = output.lastEvaluatedKey
+        items.append(contentsOf:  output.items ?? [])
+        while exclusiveStartKey != nil {
+            let input = ScanInput(exclusiveStartKey: exclusiveStartKey, tableName: tableName)
+            let output = try await client.scan(input: input)
+            exclusiveStartKey = output.lastEvaluatedKey
+            items.append(contentsOf:  output.items ?? [])
+            
+        }
         if ignoreDecodeError {
             return items.compactMap { try? decoder.decode($0, as: T.self) }
         } else {

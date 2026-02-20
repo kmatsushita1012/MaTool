@@ -12,7 +12,7 @@ import Dependencies
 import Foundation
 
 struct RouteInjector {
-    @Test func inject_routes() async throws {
+    @Test(.disabled()) func inject_routes() async throws {
         let route = Route(id: UUID().uuidString, districtId: "test_district", periodId: "88B4BE1E-1A22-4313-8070-58CF320240A6", visibility: .all, description: "")
         let subject = withDependencies({
             $0[DataStoreFactoryKey.self] = { try! DynamoDBStore(tableName: $0) }
@@ -22,7 +22,7 @@ struct RouteInjector {
         _ = try await subject.post(route)
     }
     
-    @Test func inject_points() async throws {
+    @Test(.disabled()) func inject_points() async throws {
         let point = Point(id: UUID().uuidString, routeId: "B30822CB-62F0-4926-95B3-04145DDAA779", coordinate: .init(latitude: 0, longitude: 0), time: .now, checkpointId: nil, performanceId: nil, anchor: nil)
         let subject = withDependencies({
             $0[DataStoreFactoryKey.self] = { try! DynamoDBStore(tableName: $0) }
@@ -32,7 +32,7 @@ struct RouteInjector {
         _ = try await subject.post(point)
     }
     
-    @Test
+    @Test(.disabled())
     func move_route() async throws {
         let routeMigrator = try DynamoDBMigrator(tableName: "matool_routes")
         let routes = try await routeMigrator.scan(Legacy.Route.self, ignoreDecodeError: false)
@@ -69,9 +69,7 @@ struct RouteInjector {
         var migratedRoutes: [Route] = []
         var migratedPoints: [Point] = []
         
-        let test = routes.filter{ $0.districtId == "掛川祭_城北町" }
-        
-        for route in test {
+        for route in routes {
             guard let festivalId = districtToFestival[route.districtId] else { continue }
             guard
                 let periods = periodsByFestival[festivalId],
