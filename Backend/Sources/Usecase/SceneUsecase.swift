@@ -40,7 +40,8 @@ struct SceneUsecase: SceneUsecaseProtocol {
     @Dependency(RouteRepositoryKey.self) var routeRepository
     @Dependency(PointRepositoryKey.self) var pointRepository
     @Dependency(PassageRepositoryKey.self) var passageRepository
-
+    
+    // MARK: - LaunchFestival
     func fetchLaunchFestivalPack(festivalId: Festival.ID, user: UserRole, now: Date) async throws -> LaunchFestivalPack {
         let isAdmin = (user != .guest)
 
@@ -62,7 +63,7 @@ struct SceneUsecase: SceneUsecaseProtocol {
         return try await fetchLaunchFestivalPack(festivalId: district.festivalId, user: user, now: now)
     }
 
-    // MARK: - Private: 管理者用
+    // MARK: Admin
     private func fetchAdminLaunchPack(festival: Festival, user: UserRole, now: Date) async throws -> LaunchFestivalPack {
         async let districts = districtRepository.query(by: festival.id)
         async let checkpoints = checkpointRepository.query(by: festival.id)
@@ -89,7 +90,7 @@ struct SceneUsecase: SceneUsecaseProtocol {
         )
     }
 
-    // MARK: - Private: 一般ユーザー用
+    // MARK: Public
     private func fetchUserLaunchPack(festival: Festival, now: Date) async throws -> LaunchFestivalPack {
         async let districts = districtRepository.query(by: festival.id)
         let periods = try await fetchLatestPeriods(festivalId: festival.id, now: now)
@@ -110,33 +111,24 @@ struct SceneUsecase: SceneUsecaseProtocol {
         )
     }
 
-    // MARK: - Private: latest 年取得
-    private func fetchLatestPeriods(festivalId: String, now: Date) async throws -> [Period] {
-        let nowYear = SimpleDate.from(now).year
-
-        async let nextYearPeriods = periodRepository.query(by: festivalId, year: nowYear + 1)
-        async let currentYearPeriods = periodRepository.query(by: festivalId, year: nowYear)
-
-        let (nextYear, currentYear) = try await (nextYearPeriods, currentYearPeriods)
-
-        return currentYear + nextYear
-    }
-
+    // MARK: - LaunchDistrict
     func fetchLaunchDistrictPack(districtId: District.ID, user: UserRole, now: Date) async throws -> LaunchDistrictPack {
         let district = try await getDistrict(districtId)
         async let performances = performanceRepository.query(by: districtId)
         
         let (routes, periods): ([Route], [Period]) = try await {
-            let nowYear = SimpleDate.from(now).year
-            let nextYear = nowYear + 1
-            let nextYearRoutes = try await routeRepository.query(by: districtId, year: nextYear)
-            if nextYearRoutes.isEmpty {
-                async let routes = routeRepository.query(by: districtId, year: nowYear)
-                async let periods = periodRepository.query(by: district.festivalId, year: nowYear)
-                return (routesAll: try await routes, periods: try await periods)
+            if case let .district(id) = user {
+                async let periods = fetchLatestPeriods(festivalId: district.festivalId, now: now)
+                async let routes = routeRepository.query(by: districtId)
+                return try await (routes, periods)
             } else {
-                let periods = try await periodRepository.query(by: district.festivalId, year: nextYear)
-                return (routes: nextYearRoutes, periods: periods)
+                let periods = try await fetchLatestPeriods(festivalId: district.festivalId, now: now)
+                if let first = periods.first {
+                    let routes = try await routeRepository.query(by: districtId, year: first.date.year)
+                    return (routes, periods)
+                } else {
+                    return ([], periods)
+                }
             }
         }()
 
@@ -200,5 +192,16 @@ extension SceneUsecase {
             throw Error.notFound("指定された地区が見つかりません")
         }
         return district
+    }
+    
+    private func fetchLatestPeriods(festivalId: String, now: Date) async throws -> [Period] {
+        let nowYear = SimpleDate.from(now).year
+
+        async let nextYearPeriods = periodRepository.query(by: festivalId, year: nowYear + 1)
+        async let currentYearPeriods = periodRepository.query(by: festivalId, year: nowYear)
+
+        let (nextYear, currentYear) = try await (nextYearPeriods, currentYearPeriods)
+
+        return currentYear + nextYear
     }
 }
