@@ -13,6 +13,7 @@ import Dependencies
 
 @Suite("FestivalInjector")
 struct FestivalInjector {
+    
     @Test func inject_festival() async throws {
         let festival: Festival = .init(
             id: "test_region",
@@ -49,6 +50,61 @@ struct FestivalInjector {
         }
         
         _ = try await subject.put(hazardSection)
+    }
+    
+    @Test
+    func move_festival() async throws {
+        let migrator = try DynamoDBMigrator(tableName: "matool_regions")
+        let results = try await migrator.scan(Legacy.Region.self)
+        
+        var festivals: [Festival] = []
+        var checkpoints: [Checkpoint] = []
+        
+        for result in results {
+            festivals.append(
+                Festival(
+                    id: result.id,
+                    name: result.name,
+                    subname: result.subname,
+                    description: result.description,
+                    prefecture: result.prefecture,
+                    city: result.city,
+                    base: result.base,
+                    image: .init(light: result.imagePath)
+                )
+            )
+            for checkpoint in result.milestones {
+                checkpoints.append(
+                    Checkpoint(
+                        id: checkpoint.id,
+                        name: checkpoint.name,
+                        festivalId: result.id,
+                        description: checkpoint.description
+                    )
+                )
+            }
+        }
+            
+//        let festivalRepository = withDependencies({
+//            $0[DataStoreFactoryKey.self] = { DynamoDBStore.make(tableName: $0)}
+//        }) {
+//            FestivalRepository()
+//        }
+//        
+//        for festival in festivals {
+//            _ = try await festivalRepository.put(festival)
+//        }
+        
+        let checkpointRepository = withDependencies({
+            $0[DataStoreFactoryKey.self] = { DynamoDBStore.make(tableName: $0)}
+        }) {
+            CheckpointRepository()
+        }
+
+        for checkpoint in checkpoints {
+            _ = try await checkpointRepository.put(checkpoint)
+        }
+        
     }
 }
 
