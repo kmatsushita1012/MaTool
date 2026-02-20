@@ -31,4 +31,155 @@ struct RouteInjector {
         }
         _ = try await subject.post(point)
     }
+    
+    @Test
+    func move_route() async throws {
+        let routeMigrator = try DynamoDBMigrator(tableName: "matool_routes")
+        let routes = try await routeMigrator.scan(Legacy.Route.self, ignoreDecodeError: false)
+        let districtMigrator = try DynamoDBMigrator(tableName: "matool_districts")
+        let legacyDistricts = try await districtMigrator.scan(Legacy.District.self)
+        let festivalMigrator = try DynamoDBMigrator(tableName: "matool_regions")
+        let legacyFestivals = try await festivalMigrator.scan(Legacy.Region.self)
+        
+        let districtToFestival = Dictionary(uniqueKeysWithValues: legacyDistricts.map { ($0.id, $0.regionId) })
+        let performanceByDistrictAndName: [String: [String: String]] = legacyDistricts.reduce(into: [:]) { partialResult, district in
+            partialResult[district.id] = district.performances.reduce(into: [:]) { map, performance in
+                map[performance.name] = performance.id
+            }
+        }
+        let checkpointByFestivalAndName: [String: [String: String]] = legacyFestivals.reduce(into: [:]) { partialResult, festival in
+            partialResult[festival.id] = festival.milestones.reduce(into: [:]) { map, checkpoint in
+                map[checkpoint.name] = checkpoint.id
+            }
+        }
+        
+        let periodRepository = withDependencies({
+            $0[DataStoreFactoryKey.self] = { DynamoDBStore.make(tableName: $0) }
+        }) {
+            PeriodRepository()
+        }
+        
+        let festivalIds = Set(districtToFestival.values)
+        var periodsByFestival: [String: [Period]] = [:]
+        for festivalId in festivalIds {
+            let periods = try await periodRepository.query(by: festivalId)
+            periodsByFestival[festivalId] = periods
+        }
+        
+        var migratedRoutes: [Route] = []
+        var migratedPoints: [Point] = []
+        
+        let test = routes.filter{ $0.districtId == "掛川祭_城北町" }
+        
+        for route in test {
+            guard let festivalId = districtToFestival[route.districtId] else { continue }
+            guard
+                let periods = periodsByFestival[festivalId],
+                let periodId = nearestPeriodId(for: route, periods: periods)
+            else { continue }
+            
+            migratedRoutes.append(
+                Route(
+                    id: route.id,
+                    districtId: route.districtId,
+                    periodId: periodId,
+                    visibility: .all,
+                    description: route.description
+                )
+            )
+            
+            let lastIndex = route.points.count - 1
+            let checkpointMap = checkpointByFestivalAndName[festivalId] ?? [:]
+            let performanceMap = performanceByDistrictAndName[route.districtId] ?? [:]
+            
+            for (index, point) in route.points.enumerated() {
+                let mapped = mapPoint(
+                    legacyPoint: point,
+                    index: index,
+                    lastIndex: lastIndex,
+                    route: route,
+                    checkpointByName: checkpointMap,
+                    performanceByName: performanceMap
+                )
+                migratedPoints.append(
+                    Point(
+                        id: point.id,
+                        routeId: route.id,
+                        coordinate: point.coordinate,
+                        time: mapped.time,
+                        checkpointId: mapped.checkpointId,
+                        performanceId: mapped.performanceId,
+                        anchor: mapped.anchor,
+                        index: index,
+                        isBoundary: index == 0 || index == lastIndex
+                    )
+                )
+            }
+        }
+        
+        let routeRepository = withDependencies({
+            $0[DataStoreFactoryKey.self] = { DynamoDBStore.make(tableName: $0) }
+        }) {
+            RouteRepository()
+        }
+        
+        for route in migratedRoutes {
+            _ = try await routeRepository.post(route)
+        }
+        
+        let pointRepository = withDependencies({
+            $0[DataStoreFactoryKey.self] = { DynamoDBStore.make(tableName: $0) }
+        }) {
+            PointRepository()
+        }
+        
+        for point in migratedPoints {
+            _ = try await pointRepository.post(point)
+        }
+    }
+    
+    private func mapPoint(
+        legacyPoint: Legacy.Point,
+        index: Int,
+        lastIndex: Int,
+        route: Legacy.Route,
+        checkpointByName: [String: String],
+        performanceByName: [String: String]
+    ) -> (time: SimpleTime?, checkpointId: String?, performanceId: String?, anchor: Anchor?) {
+        if index == 0 {
+            return (route.start, nil, nil, .start)
+        }
+        
+        if index == lastIndex {
+            return (route.goal, nil, nil, .end)
+        }
+        
+        let title = legacyPoint.title?.trimmingCharacters(in: .whitespacesAndNewlines)
+        if title == "休憩" {
+            return (legacyPoint.time, nil, nil, .rest)
+        }
+        
+        if let title, let checkpointId = checkpointByName[title] {
+            return (legacyPoint.time, checkpointId, nil, nil)
+        }
+        
+        if let title, let performanceId = performanceByName[title] {
+            return (legacyPoint.time, nil, performanceId, nil)
+        }
+        
+        return (legacyPoint.time, nil, nil, nil)
+    }
+    
+    private func nearestPeriodId(for route: Legacy.Route, periods: [Period]) -> String? {
+        guard !periods.isEmpty else { return nil }
+        
+        let routeStart = Date.combine(date: route.date, time: route.start)
+        return periods.min(by: { lhs, rhs in
+            let lhsStart = Date.combine(date: lhs.date, time: lhs.start)
+            let rhsStart = Date.combine(date: rhs.date, time: rhs.start)
+            let lhsDiff = abs(lhsStart.timeIntervalSince(routeStart))
+            let rhsDiff = abs(rhsStart.timeIntervalSince(routeStart))
+            return lhsDiff < rhsDiff
+        })?.id
+    }
 }
