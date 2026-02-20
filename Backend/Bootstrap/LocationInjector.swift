@@ -12,7 +12,7 @@ import Dependencies
 import Foundation
 
 struct LocationInjector {
-    @Test func inject_location() async throws {
+    @Test(.disabled()) func inject_location() async throws {
         let location = FloatLocation(id: UUID().uuidString, districtId: "test_district", coordinate: .init(latitude: 34.772985, longitude: 138.013809), timestamp: Date())
         let subject = withDependencies({
             $0[DataStoreFactoryKey.self] = { try! DynamoDBStore(tableName: $0) }
