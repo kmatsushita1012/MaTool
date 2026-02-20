@@ -300,6 +300,14 @@ extension RouteEditFeature.State {
         points.map{ PointEntry($0) }
     }
     
+    var start: Point? {
+        points.first
+    }
+    
+    var end: Point? {
+        points.last
+    }
+    
     init(mode: RouteEditFeature.EditMode, route: Route, district: District, period: Period){
         self.mode = mode
         let points: [Point] = FetchAll(routeId: route.id).wrappedValue
