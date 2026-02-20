@@ -14,7 +14,7 @@ import Dependencies
 @Suite("FestivalInjector")
 struct FestivalInjector {
     
-    @Test func inject_festival() async throws {
+    @Test(.disabled()) func inject_festival() async throws {
         let festival: Festival = .init(
             id: "test_region",
             name: "テスト祭典",
@@ -30,7 +30,7 @@ struct FestivalInjector {
         _ = try await subject.put(festival)
     }
     
-    @Test func inject_checkopoint() async throws {
+    @Test(.disabled()) func inject_checkopoint() async throws {
         let checkpoint: Checkpoint = .init(id: UUID().uuidString, name: "イシバシヤ", festivalId: "test_region", description: "なし")
         let subject = withDependencies({
             $0[DataStoreFactoryKey.self] = { DynamoDBStore.make(tableName: $0)}
@@ -41,7 +41,7 @@ struct FestivalInjector {
         _ = try await subject.post(checkpoint)
     }
     
-    @Test func inject_hazardSection() async throws {
+    @Test(.disabled()) func inject_hazardSection() async throws {
         let hazardSection: HazardSection = .init(id: UUID().uuidString, title: "斜度5%", festivalId: "test_region")
         let subject = withDependencies({
             $0[DataStoreFactoryKey.self] = { DynamoDBStore.make(tableName: $0)}
@@ -52,7 +52,7 @@ struct FestivalInjector {
         _ = try await subject.put(hazardSection)
     }
     
-    @Test
+    @Test(.disabled())
     func move_festival() async throws {
         let migrator = try DynamoDBMigrator(tableName: "matool_regions")
         let results = try await migrator.scan(Legacy.Region.self)
@@ -107,4 +107,3 @@ struct FestivalInjector {
         
     }
 }
-
