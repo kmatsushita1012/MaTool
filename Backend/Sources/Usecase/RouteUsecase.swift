@@ -63,7 +63,12 @@ struct RouteUsecase: RouteUsecaseProtocol {
                 let nextYearRoutes = try await routeRepository.query(by: districtId, year: now.year + 1)
                 if nextYearRoutes.isEmpty {
                     let thisYearRoutes = try await routeRepository.query(by: districtId, year: now.year)
-                    return thisYearRoutes
+                    if thisYearRoutes.isEmpty {
+                        let lastYearRoutes = try await routeRepository.query(by: districtId, year: now.year-1)
+                        return lastYearRoutes
+                    } else {
+                        return thisYearRoutes
+                    }
                 } else {
                     return nextYearRoutes
                 }
