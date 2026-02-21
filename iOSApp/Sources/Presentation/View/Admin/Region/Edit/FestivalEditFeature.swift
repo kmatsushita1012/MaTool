@@ -124,7 +124,7 @@ extension FestivalEditFeature.Destination.Action: Equatable{}
 extension FestivalEditFeature.State{
     init(_ festival: Festival){
         self.festival = festival
-        self._checkpoints = FetchAll(Checkpoint.where{ $0.festivalId == festival.id }).wrappedValue
-        self._hazardSections = FetchAll(HazardSection.where{ $0.festivalId == festival.id }).wrappedValue
+        self._checkpoints = FetchAll(Checkpoint.where{ $0.festivalId.eq(festival.id) }).wrappedValue
+        self._hazardSections = FetchAll(HazardSection.where{ $0.festivalId.eq(festival.id) }).wrappedValue
     }
 }
