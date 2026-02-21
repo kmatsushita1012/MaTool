@@ -1,5 +1,5 @@
 //
-//  Button+.swift
+//  Button+Toolbar.swift
 //  MaTool
 //
 //  Created by 松下和也 on 2025/12/04.
@@ -196,4 +196,3 @@ struct ToolbarAddButton: ToolbarContent {
         }
     }
 }
-
