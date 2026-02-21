@@ -65,8 +65,8 @@ struct RouteDataFetcher: RouteDataFetcherProtocol {
     private func syncPack(_ pack: RoutePack) async throws {
         let id = pack.route.id
         try await database.write { db in
-            let oldPoints = try pointStore.fetchAll(where: { $0.routeId == id }, from: db)
-            let oldPassages = try passageStore.fetchAll(where: { $0.routeId == id }, from: db)
+            let oldPoints = try pointStore.fetchAll(where: { $0.routeId.eq(id) }, from: db)
+            let oldPassages = try passageStore.fetchAll(where: { $0.routeId.eq(id) }, from: db)
             let (insertedPoints, deletedPointIds) = oldPoints.diff(with: pack.points)
             let (insertedPassages, deletedPassageIds) = oldPassages.diff(with: pack.passages)
             // delete

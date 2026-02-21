@@ -63,7 +63,7 @@ extension DistrictDataFetcher {
     private func syncPack(_ pack: DistrictPack) async throws {
         let id: District.ID = pack.district.id
         try await database.write { db in
-            let oldPerformances = try performanceStore.fetchAll(where: { $0.districtId == id }, from: db)
+            let oldPerformances = try performanceStore.fetchAll(where: { $0.districtId.eq(id) }, from: db)
             let (insertedPerformances, deletedPerformanceIds) = oldPerformances.diff(with: pack.performances)
             try districtStore.delete(pack.district.id, from: db)
             try performanceStore.deleteAll(deletedPerformanceIds, from: db)
