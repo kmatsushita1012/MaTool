@@ -53,8 +53,8 @@ struct FestivalDataFetcher: FestivalDataFetcherProtocol {
     private func syncPack(_ pack: FestivalPack) async throws {
         let id: Festival.ID = pack.festival.id
         try await database.write{ db in
-            let oldCheckpoints = try checkpointStore.fetchAll(where: { $0.festivalId == id }, from: db)
-            let oldHazardSections = try hazardSectionStore.fetchAll(where: { $0.festivalId == id }, from: db)
+            let oldCheckpoints = try checkpointStore.fetchAll(where: { $0.festivalId.eq(id) }, from: db)
+            let oldHazardSections = try hazardSectionStore.fetchAll(where: { $0.festivalId.eq(id) }, from: db)
             let (insertedCheckpoints, deletedCheckpointIds) = oldCheckpoints.diff(with: pack.checkpoints)
             let (insertedHazardSections, deletedHazardSectionIds) = oldHazardSections.diff(with: pack.hazardSections)
             try festivalStore.delete(id, from: db)
