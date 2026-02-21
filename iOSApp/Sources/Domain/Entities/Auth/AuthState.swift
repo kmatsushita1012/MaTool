@@ -21,9 +21,3 @@ enum SignInResponse {
     case success
     case newPasswordRequired
 }
-
-extension Error {
-    func toAuthError() -> AuthError {
-        return .unknown(self.localizedDescription)
-    }
-}
