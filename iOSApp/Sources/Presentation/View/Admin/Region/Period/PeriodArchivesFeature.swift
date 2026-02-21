@@ -27,7 +27,7 @@ struct PeriodArchivesFeature {
         init(festivalId: String, year: Int) {
             self.festivalId = festivalId
             self.year = year
-            self._periods = FetchAll(Period.where{ $0.festivalId == festivalId && $0.date.inYear(year) })
+            self._periods = FetchAll(Period.where{ $0.festivalId.eq(festivalId) && $0.date.inYear(year) })
         }
     }
     
