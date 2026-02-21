@@ -1,5 +1,5 @@
 //
-//  ComposableArchitecture+.swift
+//  ComposableArchitecture+TaskResult.swift
 //  MaTool
 //
 //  Created by 松下和也 on 2026/02/15.

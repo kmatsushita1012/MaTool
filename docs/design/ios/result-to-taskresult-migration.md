@@ -66,7 +66,7 @@ case .received(.failure(let error)):
 ```
 
 ## 5.4 Utility 方針
-- `iOSApp/Sources/Utils/ComposableArchitecture+.swift` の `VoidTaskResult` は継続利用。
+- `iOSApp/Sources/Utils/ComposableArchitecture+TaskResult.swift` の `VoidTaskResult` は継続利用。
 - `iOSApp/Sources/Utils/Async.swift` の `task(...) -> Result` は段階的に廃止対象。
 - 将来的には `TaskResult` 変換ヘルパーに一本化する（`Result` を返すヘルパーは削除）。
 

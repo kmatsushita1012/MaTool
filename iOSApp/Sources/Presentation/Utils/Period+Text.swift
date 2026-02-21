@@ -1,13 +1,4 @@
-//
-//  Entity+.swift
-//  MaTool
-//
-//  Created by 松下和也 on 2025/08/26.
-//
-
-import MapKit
 import Shared
-
 
 extension Period {
     var text: String {
