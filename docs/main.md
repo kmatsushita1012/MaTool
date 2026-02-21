@@ -26,3 +26,7 @@
 - Composable Architecture
 - SQLiteDate(キャッシュ兼フロントのSSOT)
 - swift-dependencies
+
+## 仕様書
+
+- CI仕様書: `docs/spec/ci-spec.md`
