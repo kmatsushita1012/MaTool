@@ -16,7 +16,6 @@ enum Status:Sendable, Equatable, Hashable {
     case apiError(Date, APIError)
 }
 
-extension Status {
 extension Status: Identifiable {
     var id: String {
         switch self {
