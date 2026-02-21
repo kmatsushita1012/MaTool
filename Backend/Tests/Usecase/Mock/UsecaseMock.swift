@@ -262,3 +262,39 @@ final class PeriodUsecaseMock: PeriodUsecaseProtocol, @unchecked Sendable {
         try deleteHandler(id, user)
     }
 }
+
+final class SceneUsecaseMock: SceneUsecaseProtocol, @unchecked Sendable {
+    init(
+        fetchLaunchFestivalByFestivalIdHandler: ((String, UserRole, Date) throws -> LaunchFestivalPack)? = nil,
+        fetchLaunchFestivalByDistrictIdHandler: ((String, UserRole, Date) throws -> LaunchFestivalPack)? = nil,
+        fetchLaunchDistrictHandler: ((String, UserRole, Date) throws -> LaunchDistrictPack)? = nil
+    ) {
+        self.fetchLaunchFestivalByFestivalIdHandler = fetchLaunchFestivalByFestivalIdHandler
+        self.fetchLaunchFestivalByDistrictIdHandler = fetchLaunchFestivalByDistrictIdHandler
+        self.fetchLaunchDistrictHandler = fetchLaunchDistrictHandler
+    }
+
+    private(set) var fetchLaunchFestivalByFestivalIdCallCount = 0
+    private let fetchLaunchFestivalByFestivalIdHandler: ((String, UserRole, Date) throws -> LaunchFestivalPack)?
+    func fetchLaunchFestivalPack(festivalId: String, user: UserRole, now: Date) async throws -> LaunchFestivalPack {
+        fetchLaunchFestivalByFestivalIdCallCount += 1
+        guard let fetchLaunchFestivalByFestivalIdHandler else { throw TestError.unimplemented }
+        return try fetchLaunchFestivalByFestivalIdHandler(festivalId, user, now)
+    }
+
+    private(set) var fetchLaunchFestivalByDistrictIdCallCount = 0
+    private let fetchLaunchFestivalByDistrictIdHandler: ((String, UserRole, Date) throws -> LaunchFestivalPack)?
+    func fetchLaunchFestivalPack(districtId: String, user: UserRole, now: Date) async throws -> LaunchFestivalPack {
+        fetchLaunchFestivalByDistrictIdCallCount += 1
+        guard let fetchLaunchFestivalByDistrictIdHandler else { throw TestError.unimplemented }
+        return try fetchLaunchFestivalByDistrictIdHandler(districtId, user, now)
+    }
+
+    private(set) var fetchLaunchDistrictCallCount = 0
+    private let fetchLaunchDistrictHandler: ((String, UserRole, Date) throws -> LaunchDistrictPack)?
+    func fetchLaunchDistrictPack(districtId: String, user: UserRole, now: Date) async throws -> LaunchDistrictPack {
+        fetchLaunchDistrictCallCount += 1
+        guard let fetchLaunchDistrictHandler else { throw TestError.unimplemented }
+        return try fetchLaunchDistrictHandler(districtId, user, now)
+    }
+}

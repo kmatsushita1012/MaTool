@@ -227,3 +227,9 @@
 - Usecase復元:
   - `FestivalUsecaseTest` / `DistrictUsecaseTest` / `PeriodUsecaseTest` を最小構成で再追加
   - 既存 `LocationUsecaseTest` / `RouteUsecaseTest` と合わせて `swift test --filter Usecase` がpass
+- Entityモック整備:
+  - `Backend/Tests/Utility/Entity+Mock.swift` に `static func mock(...)` を追加し、ID/リレーションキーを上書き可能に統一
+- Controller復元:
+  - `FestivalControllerTest` / `DistrictControllerTest` / `RouteControllerTest` / `LocationControllerTest` / `PeriodControllerTest` / `SceneControllerTest` を再追加
+  - `SceneController` テストのため `SceneUsecaseMock` を `Backend/Tests/Usecase/Mock/UsecaseMock.swift` に追加
+  - 実行確認: `swift test --filter Controller` がpass
