@@ -162,6 +162,16 @@ Shared Entity <- iOSApp
 
 ## 12. 参照ドキュメント
 
-- `./.codex/repository-architecture-analysis.md`
-- `./.codex/shared-entity-documentation.md`
-- `./.codex/test-strategy.md`
+- `docs/main.md`
+- `docs/spec/layers/backend.md`
+- `docs/spec/layers/shared.md`
+- `docs/spec/layers/iosapp.md`
+- `docs/design/research/repository-architecture-analysis.md`
+- `docs/spec/test-strategy.md`
+
+## 13. 補足（現状の分類で迷いやすい点）
+
+- `Shared/Sources/Extensions` は Domain/Infrastructure の拡張が混在しやすい。
+- 方針として、共通化できる Extension は原則 Shared へ移行する。
+- ただし Text/Format など Presentation 専用ロジックは iOS 側に残す。
+- 命名は `+<拡張対象>` を用いる（例: `Entity+Text.swift`）。

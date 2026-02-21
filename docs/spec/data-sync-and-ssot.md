@@ -141,10 +141,10 @@
 
 ## 12. 関連ドキュメント
 
-- `/Users/matsushitakazuya/private/MaTool/.codex/as-is-architecture.md`
-- `/Users/matsushitakazuya/private/MaTool/.codex/domain-model-spec.md`
-- `/Users/matsushitakazuya/private/MaTool/.codex/usecase-catalog.md`
-- `/Users/matsushitakazuya/private/MaTool/.codex/api-contract-spec.md`
+- `docs/spec/architecture-overview.md`
+- `docs/spec/domain-model.md`
+- `docs/spec/usecase-catalog.md`
+- `docs/spec/backend-api-contract.md`
 
 ## 13. Android移植時のキャッシュ方針（Room）
 
