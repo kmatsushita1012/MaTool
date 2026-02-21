@@ -168,7 +168,7 @@ extension PublicRouteFeature.State {
         mapRegion: Shared<MKCoordinateRegion>
     ) {
         self._mapRegion = mapRegion
-        self._district = FetchOne(wrappedValue: district)
+        self._district = FetchOne(district)
         let routeQuery: FetchAll<RouteEntry> = .init(districtId: district.id, latest: true)
         self._routes = routeQuery
         let selected = routeQuery.wrappedValue.first { $0.route.id == routeId }

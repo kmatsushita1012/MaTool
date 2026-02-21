@@ -179,7 +179,13 @@ extension RouteEditView {
     var info: some View {
         List{
             Section {
-                LabeledContent("日付", value: store.period.text(format: "y/m/d (w)"))
+                LabeledContent("日程", value: store.period.text(dateFormat: "y/m/d (w)"))
+                if let startTime = store.start?.time,
+                   let endTime = store.end?.time {
+                    LabeledContent("時間", value: "\(startTime.text) ~ \(endTime.text)")
+                }
+            } footer: {
+                Text("出発・到着時刻は地図編集画面から先頭・末尾のピンで編集してください")
             }
             Section(header: Text("説明")) {
                 TextEditor(text: $store.route.description.nonOptional)
@@ -264,13 +270,13 @@ extension RouteEditView {
     @ViewBuilder
     var tab: some View {
         Picker("モード", selection: $store.tab) {
-            Text("基本情報")
+            Text("基本情報編集")
                 .font(.title)
                 .tag(Tab.info)
-            Text("ルート")
+            Text("地図編集")
                 .font(.title)
                 .tag(Tab.edit)
-            Text("公開")
+            Text("一般公開版")
                 .font(.title)
                 .tag(Tab.`public`)
         }
