@@ -15,11 +15,18 @@ description: "MaToolリポジトリのGit運用（パッケージ別のブラン
 
 # ブランチ運用
 
+## 実行ディレクトリ（重要）
+
+- Gitコマンドは **必ずプロジェクトルートで実行** する（このリポジトリでは `/Users/matsushitakazuya/private/MaTool`）。
+- `git -C ...` は環境によって失敗するため **使用しない**。
+
 ## 作業前チェック
 
 - `git status` が clean か確認する（未コミット・未追跡がある場合は整理してから進める）。
   - `gh pr create` は未コミットがあっても進むが、警告が出て事故りやすいので **基本は clean 推奨**
 - ベースは `main` とする（別ブランチ運用が明示されている場合のみ従う）。
+- `Package.resolved` は **原則コミットしない**（例: `Shared/Package.resolved`, `Backend/Package.resolved`）。
+  - 例外: 新規パッケージ追加など、lock更新のコミットが必要な変更のみ含める。
 
 ## ブランチを切る（パッケージ別）
 
@@ -93,7 +100,7 @@ git push
 - 変更対象パッケージが意図どおりか（混在していたら分割を検討）
 - `git status` に未追跡ファイルが残っていないか（意図せず含めない）
   - 例: Xcode由来の `MaTool.xcworkspace/xcshareddata/` 等
-  - 例: SwiftPM由来の `Shared/Package.resolved` 等
+  - 例: SwiftPM由来の `Shared/Package.resolved`, `Backend/Package.resolved` 等
 - テスト/ビルド（可能な範囲で）を実施し、結果をPR本文に書く
 - 秘密情報（トークン等）が入っていないことを確認する
 
