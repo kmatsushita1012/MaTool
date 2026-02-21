@@ -1,10 +1,3 @@
-//
-//  Perception.swift
-//  MaTool
-//
-//  Created by 松下和也 on 2025/09/27.
-//
-
 import SwiftUI
 
 struct DismissOnChangeModifier: ViewModifier {
@@ -23,6 +16,15 @@ struct DismissOnChangeModifier: ViewModifier {
 
 extension View {
     func dismissOnChange(of isDismissed: Bool) -> some View {
-        self.modifier(DismissOnChangeModifier(isDismissed: isDismissed))
+        modifier(DismissOnChangeModifier(isDismissed: isDismissed))
+    }
+
+    @ViewBuilder
+    func searchable(text: Binding<String>, prompt: LocalizedStringKey, isEnabled: Bool) -> some View {
+        if isEnabled {
+            searchable(text: text, prompt: prompt)
+        } else {
+            self
+        }
     }
 }
