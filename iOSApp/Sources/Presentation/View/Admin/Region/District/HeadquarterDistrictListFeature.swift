@@ -138,7 +138,7 @@ struct HeadquarterDistrictListFeature {
             for district in state.districts {
                 let renderer = await PDFRenderer(path: "\(district.name).pdf")
                 guard let _ =  try? await routeDataFetcher.fetchAll(districtID: district.id, query: .latest) else { continue }
-                let routes: [Route] = FetchAll(Route.where { $0.districtId == district.id }).wrappedValue
+                let routes: [Route] = FetchAll(Route.where { $0.districtId.eq(district.id) }).wrappedValue
                 if routes.isEmpty { continue }
                 for route in routes {
                     guard (try? await routeDataFetcher.fetch(routeID: route.id)) != nil,
