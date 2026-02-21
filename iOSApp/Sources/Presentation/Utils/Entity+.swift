@@ -32,8 +32,8 @@ extension Period {
         )
     }
     
-    func text(format: String = "y/m/d") -> String {
-        date.text(format: format)
+    func text(dateFormat: String = "y/m/d") -> String {
+        "\(date.text(format: dateFormat)) \(title)"
     }
     
     var path: String {
