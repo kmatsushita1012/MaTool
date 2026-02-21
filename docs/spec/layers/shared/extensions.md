@@ -34,8 +34,17 @@
 - Sharedへ移行済み:
   - `Shared/Sources/Extensions/Entity+Copy.swift`
   - `Shared/Sources/Extensions/Entity+SQLiteData.swift`
+  - `Shared/Sources/Extensions/Array+AsyncDiff.swift`
+  - `Shared/Sources/Extensions/Array+Upsert.swift`
+  - `Shared/Sources/Extensions/Array+Diff.swift`
+  - `Shared/Sources/Extensions/Array+Mutation.swift`
+  - `Shared/Sources/Extensions/Sequence+KeyPath.swift`
+  - `Shared/Sources/Extensions/Collection+KeyPath.swift`
+  - `Shared/Sources/Extensions/Collection+Identifiable.swift`
 - iOSに残す（Presentation専用）:
+  - `iOSApp/Sources/Presentation/Utils/Anchor+Text.swift`
   - `iOSApp/Sources/Presentation/Utils/Period+Text.swift`
+- 旧 `Extension.swift` / `Extensions.swift` は廃止し、用途別に分割済み。
 
 ## 5. 今後の運用
 
