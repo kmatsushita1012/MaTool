@@ -21,7 +21,7 @@ struct OnboardingFeature {
         
         var selectedFestival: Festival? {
             didSet {
-                self._rawDistricts = FetchAll(District.where{ $0.festivalId == selectedFestival?.id })
+                self._rawDistricts = FetchAll(District.where{ $0.festivalId.eq(selectedFestival?.id) })
             }
         }
         @Shared var launchState: LaunchState
