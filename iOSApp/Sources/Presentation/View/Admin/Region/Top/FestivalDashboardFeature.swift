@@ -110,6 +110,6 @@ extension FestivalDashboardFeature.Destination.Action: Equatable {}
 
 extension FestivalDashboardFeature.State {
     init(_ festival: Festival) {
-        self._festival = FetchOne(wrappedValue: festival, Festival.find(festival.id))
+        self._festival = FetchOne(festival)
     }
 }
