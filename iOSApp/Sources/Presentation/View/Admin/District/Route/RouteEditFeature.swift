@@ -317,7 +317,7 @@ extension RouteEditFeature.State {
         self._district = FetchOne(district)
         self._period = FetchOne(period)
         
-        let origin: Coordinate = district.base ?? FetchOne(wrappedValue: .init(latitude: 0.0, longitude: 0.0), Festival.where{ $0.id == district.festivalId }.select(\.base)).wrappedValue
+        let origin: Coordinate = district.base ?? FetchOne(wrappedValue: .init(latitude: 0.0, longitude: 0.0), Festival.where{ $0.id.eq(district.festivalId) }.select(\.base)).wrappedValue
 
         self.region = makeRegion(points: points, origin: origin, spanDelta: spanDelta)
         if mode == .preview {
