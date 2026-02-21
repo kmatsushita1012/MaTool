@@ -29,7 +29,7 @@ extension FetchAll where Element == RouteSlot {
         let district = FetchOne(District.find(districtId)).wrappedValue
         self.init(
             Period
-                .where{ $0.festivalId == district?.festivalId && $0.date.inYear(year) }
+                .where{ $0.festivalId.eq(district?.festivalId) && $0.date.inYear(year) }
                 .leftJoin(Route.all){ $0.id.eq($1.periodId).and($1.districtId.eq(district?.id ?? "") )}
                 .select{
                     Element.Columns(period: $0, route: $1)
@@ -40,7 +40,7 @@ extension FetchAll where Element == RouteSlot {
     init(festivalId: Festival.ID, year: Int) {
         self.init(
             Period
-                .where{ $0.festivalId == festivalId && $0.date.inYear(year) }
+                .where{ $0.festivalId.eq(festivalId) && $0.date.inYear(year) }
                 .leftJoin(Route.all ){ $0.id.eq($1.periodId)}
                 .select{
                     Element.Columns(period: $0, route: $1)
@@ -51,13 +51,13 @@ extension FetchAll where Element == RouteSlot {
     init(districtId: District.ID, latest: Bool = false, now: SimpleDate = .now){
         let district = FetchOne(District.find(districtId)).wrappedValue
         if latest {
-            let maxYear: Int = FetchAll<Period>(Period.where{ $0.festivalId == district?.festivalId }).wrappedValue.map(\.date.year).max() ?? now.year
+            let maxYear: Int = FetchAll<Period>(Period.where{ $0.festivalId.eq(district?.festivalId) }).wrappedValue.map(\.date.year).max() ?? now.year
             self.init(districtId: districtId, year: maxYear)
         } else {
             self.init(
                 Period
-                    .where{ $0.festivalId == district?.festivalId  }
-                    .leftJoin(Route.where{ $0.districtId == district?.id } ){ $0.id.eq($1.periodId)}
+                    .where{ $0.festivalId.eq(district?.festivalId)  }
+                    .leftJoin(Route.where{ $0.districtId.eq(district?.id) } ){ $0.id.eq($1.periodId)}
                     .select{
                         Element.Columns(period: $0, route: $1)
                     }
@@ -91,8 +91,8 @@ extension FetchAll where Element == RouteEntry {
         let district = FetchOne(District.find(districtId)).wrappedValue
         self.init(
             Period
-                .where{ $0.festivalId == district?.festivalId && $0.date.inYear(year) }
-                .join(Route.where{ $0.districtId == district?.id } ){ $0.id.eq($1.periodId)}
+                .where{ $0.festivalId.eq(district?.festivalId) && $0.date.inYear(year) }
+                .join(Route.where{ $0.districtId.eq(district?.id) } ){ $0.id.eq($1.periodId)}
                 .select{
                     Element.Columns(period: $0, route: $1)
                 }
@@ -102,7 +102,7 @@ extension FetchAll where Element == RouteEntry {
     init(festivalId: Festival.ID, year: Int) {
         self.init(
             Period
-                .where{ $0.festivalId == festivalId && $0.date.inYear(year) }
+                .where{ $0.festivalId.eq(festivalId) && $0.date.inYear(year) }
                 .join(Route.all ){ $0.id.eq($1.periodId)}
                 .select{
                     Element.Columns(period: $0, route: $1)
@@ -113,13 +113,13 @@ extension FetchAll where Element == RouteEntry {
     init(districtId: District.ID, latest: Bool = false, now: SimpleDate = .now){
         let district = FetchOne(District.find(districtId)).wrappedValue
         if latest {
-            let maxYear: Int = FetchAll<Period>(Period.where{ $0.festivalId == district?.festivalId }).wrappedValue.map(\.date.year).max() ?? now.year
+            let maxYear: Int = FetchAll<Period>(Period.where{ $0.festivalId.eq(district?.festivalId) }).wrappedValue.map(\.date.year).max() ?? now.year
             self.init(districtId: districtId, year: maxYear)
         } else {
             self.init(
                 Period
-                    .where{ $0.festivalId == district?.festivalId  }
-                    .join(Route.where{ $0.districtId == district?.id } ){ $0.id.eq($1.periodId)}
+                    .where{ $0.festivalId.eq(district?.festivalId)  }
+                    .join(Route.where{ $0.districtId.eq(district?.id) } ){ $0.id.eq($1.periodId)}
                     .select{
                         Element.Columns(period: $0, route: $1)
                     }

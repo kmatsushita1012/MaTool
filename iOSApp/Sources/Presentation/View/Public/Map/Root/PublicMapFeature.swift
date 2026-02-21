@@ -168,7 +168,7 @@ extension PublicMapFeature.Content: Identifiable, Hashable  {
 
 extension PublicMapFeature.State {
     init(festival: Festival, district: District, routeId: Route.ID?) {
-        let districts: [District] = FetchAll(District.where{ $0.festivalId == festival.id }).wrappedValue
+        let districts: [District] = FetchAll(District.where{ $0.festivalId.eq(festival.id) }).wrappedValue
         let locations: PublicMapFeature.Content = .locations(festival)
         let contents = [locations]
             + districts.prioritizing(districtId: district.id)
@@ -191,7 +191,7 @@ extension PublicMapFeature.State {
     init(
         festival: Festival
     ){
-        let districts = FetchAll(District.where{ $0.festivalId == festival.id }).wrappedValue
+        let districts = FetchAll(District.where{ $0.festivalId.eq(festival.id) }).wrappedValue
         let selected: PublicMapFeature.Content = .locations(festival)
         let contents = [selected] + districts.sorted().map{ PublicMapFeature.Content.route($0) }
         

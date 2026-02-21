@@ -41,3 +41,4 @@ public extension FetchOne where Value == Period {
         self.init(wrappedValue: value, Period.find(value.id))
     }
 }
+

@@ -138,8 +138,8 @@ extension DistrictEditFeature.Destination.Action: Equatable {}
 extension DistrictEditFeature.State {
     init(_ district: District) {
         self.district = district
-        self.performances = FetchAll(Performance.where{ $0.districtId == district.id }).wrappedValue
-        self._base = FetchOne(wrappedValue: .init(latitude: 0, longitude: 0), Festival.where{ $0.id == district.festivalId }.select(\.base))
+        self.performances = FetchAll(Performance.where{ $0.districtId.eq(district.id) }).wrappedValue
+        self._base = FetchOne(wrappedValue: .init(latitude: 0, longitude: 0), Festival.where{ $0.id.eq(district.festivalId) }.select(\.base))
     }
 }
 
