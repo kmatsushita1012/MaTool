@@ -284,7 +284,6 @@
 
 ## 4. 関連仕様
 
-- ドメイン正本: `/Users/matsushitakazuya/private/MaTool/.codex/domain-model-spec.md`
-- As-Is構造: `/Users/matsushitakazuya/private/MaTool/.codex/as-is-architecture.md`
-- テスト戦略: `/Users/matsushitakazuya/private/MaTool/.codex/test-strategy.md`
-
+- ドメイン正本: `docs/spec/domain-model.md`
+- As-Is構造: `docs/spec/architecture-overview.md`
+- テスト戦略: `docs/spec/test-strategy.md`
