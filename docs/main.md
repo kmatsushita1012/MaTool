@@ -21,6 +21,9 @@
 
 個別開発設計は、機能改修・移行・リファクタのための作業設計を置く。
 
+## 仕様書
+
+- CI仕様書: `docs/spec/ci-spec.md`
 - iOS開発設計
   - `docs/design/ios/presentation-naming-migration.md`
   - `docs/design/ios/result-to-taskresult-migration.md`
