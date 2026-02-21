@@ -201,3 +201,21 @@
 - `get(username)`:
   - 正常
   - user not found
+
+## 10. 移行中ルール（2026-02）
+
+- 目的: まず `Backend` テストターゲットのコンパイルエラーを解消し、実行可能な最小セットへ戻す。
+- 旧API（`Program` 系、旧 `Route`/`Location` DTO）を参照するテストは、無理に互換実装を足さず、現行APIに合わせて更新する。
+- 更新コストが高くコンパイルを恒常的に阻害する旧テストは、一時的に削除してよい（再作成は別PRで管理）。
+- Repository モックは原則 `Backend/Tests/Data/Repository/Mocks/RepositoryMocks.swift` に集約し、テストファイル内への個別実装を増やさない。
+- 変更を進める順番:
+  1. コンパイルエラーを出している旧テストの整理（削除または現行化）
+  2. 共通モックの現行プロトコル追従
+  3. Usecase/Controller/Router の順で再テスト実装
+
+### 10.1 進捗メモ（2026-02-22）
+
+- `backend/reduce-test-compile-errors` ブランチで、旧 `Program` 系テストと旧 Router/Controller/Repository テストを整理。
+- `Backend/Tests/Data/Repository/Mocks/RepositoryMocks.swift` を現行プロトコルに合わせて再編成。
+- `Usecase` テストは `LocationUsecaseTest` / `RouteUsecaseTest` を現行APIで再構築。
+- 実行確認: `swift test --filter Usecase` は pass（`Backend/.env` の unhandled resource 表示は継続）。
