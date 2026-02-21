@@ -1,6 +1,6 @@
 # MaTool リポジトリ構造・アーキテクチャ分析
 
-このドキュメントは `./.codex/main.md` と実際のソース構成（`Backend`, `Shared`, `iOSApp`）をもとに、ディレクトリ構造とレイヤー構成を整理したものです。
+このドキュメントは `docs/main.md` と実際のソース構成（`Backend`, `Shared`, `iOSApp`）をもとに、ディレクトリ構造とレイヤー構成を整理したものです。
 
 ## 1. 全体構成（トップレベル）
 
@@ -10,7 +10,7 @@ MaTool/
 ├── Shared/       # Backend / iOSApp で共有するモデル・共通処理
 ├── iOSApp/       # SwiftUI + TCA ベースの iOS クライアント
 ├── docs/         # 設計メモ（テーブル、scene など）
-├── .codex/       # Codex 作業メモ
+├── .codex/       # Codex 作業メモ（実装正本ではない）
 └── MaTool.xcworkspace
 ```
 
