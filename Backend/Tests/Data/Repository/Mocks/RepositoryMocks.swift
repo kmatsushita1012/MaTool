@@ -410,3 +410,174 @@ final class PassageRepositoryMock: PassageRepositoryProtocol, @unchecked Sendabl
         try await deleteByRouteHandler(routeId)
     }
 }
+
+// MARK: - CheckpointRepositoryMock
+final class CheckpointRepositoryMock: CheckpointRepositoryProtocol, @unchecked Sendable {
+    init(
+        getHandler: ((String) async throws -> Checkpoint?)? = nil,
+        queryHandler: ((Festival.ID) async throws -> [Checkpoint])? = nil,
+        postHandler: ((Checkpoint) async throws -> Checkpoint)? = nil,
+        putHandler: ((Checkpoint) async throws -> Checkpoint)? = nil,
+        deleteHandler: ((Checkpoint) async throws -> Void)? = nil
+    ) {
+        self.getHandler = getHandler
+        self.queryHandler = queryHandler
+        self.postHandler = postHandler
+        self.putHandler = putHandler
+        self.deleteHandler = deleteHandler
+    }
+
+    private(set) var getCallCount = 0
+    private let getHandler: ((String) async throws -> Checkpoint?)?
+    func get(id: String) async throws -> Checkpoint? {
+        getCallCount += 1
+        guard let getHandler else { throw TestError.unimplemented }
+        return try await getHandler(id)
+    }
+
+    private(set) var queryCallCount = 0
+    private let queryHandler: ((Festival.ID) async throws -> [Checkpoint])?
+    func query(by festivalId: Festival.ID) async throws -> [Checkpoint] {
+        queryCallCount += 1
+        guard let queryHandler else { throw TestError.unimplemented }
+        return try await queryHandler(festivalId)
+    }
+
+    private(set) var postCallCount = 0
+    private let postHandler: ((Checkpoint) async throws -> Checkpoint)?
+    func post(_ item: Checkpoint) async throws -> Checkpoint {
+        postCallCount += 1
+        guard let postHandler else { throw TestError.unimplemented }
+        return try await postHandler(item)
+    }
+
+    private(set) var putCallCount = 0
+    private let putHandler: ((Checkpoint) async throws -> Checkpoint)?
+    func put(_ item: Checkpoint) async throws -> Checkpoint {
+        putCallCount += 1
+        guard let putHandler else { throw TestError.unimplemented }
+        return try await putHandler(item)
+    }
+
+    private(set) var deleteCallCount = 0
+    private let deleteHandler: ((Checkpoint) async throws -> Void)?
+    func delete(_ item: Checkpoint) async throws {
+        deleteCallCount += 1
+        guard let deleteHandler else { throw TestError.unimplemented }
+        try await deleteHandler(item)
+    }
+}
+
+// MARK: - HazardSectionRepositoryMock
+final class HazardSectionRepositoryMock: HazardSectionRepositoryProtocol, @unchecked Sendable {
+    init(
+        getHandler: ((String) async throws -> HazardSection?)? = nil,
+        queryHandler: ((String) async throws -> [HazardSection])? = nil,
+        postHandler: ((HazardSection) async throws -> HazardSection)? = nil,
+        putHandler: ((HazardSection) async throws -> HazardSection)? = nil,
+        deleteHandler: ((HazardSection) async throws -> Void)? = nil
+    ) {
+        self.getHandler = getHandler
+        self.queryHandler = queryHandler
+        self.postHandler = postHandler
+        self.putHandler = putHandler
+        self.deleteHandler = deleteHandler
+    }
+
+    private(set) var getCallCount = 0
+    private let getHandler: ((String) async throws -> HazardSection?)?
+    func get(id: String) async throws -> HazardSection? {
+        getCallCount += 1
+        guard let getHandler else { throw TestError.unimplemented }
+        return try await getHandler(id)
+    }
+
+    private(set) var queryCallCount = 0
+    private let queryHandler: ((String) async throws -> [HazardSection])?
+    func query(by festivalId: String) async throws -> [HazardSection] {
+        queryCallCount += 1
+        guard let queryHandler else { throw TestError.unimplemented }
+        return try await queryHandler(festivalId)
+    }
+
+    private(set) var postCallCount = 0
+    private let postHandler: ((HazardSection) async throws -> HazardSection)?
+    func post(_ item: HazardSection) async throws -> HazardSection {
+        postCallCount += 1
+        guard let postHandler else { throw TestError.unimplemented }
+        return try await postHandler(item)
+    }
+
+    private(set) var putCallCount = 0
+    private let putHandler: ((HazardSection) async throws -> HazardSection)?
+    func put(_ item: HazardSection) async throws -> HazardSection {
+        putCallCount += 1
+        guard let putHandler else { throw TestError.unimplemented }
+        return try await putHandler(item)
+    }
+
+    private(set) var deleteCallCount = 0
+    private let deleteHandler: ((HazardSection) async throws -> Void)?
+    func delete(_ item: HazardSection) async throws {
+        deleteCallCount += 1
+        guard let deleteHandler else { throw TestError.unimplemented }
+        try await deleteHandler(item)
+    }
+}
+
+// MARK: - PerformanceRepositoryMock
+final class PerformanceRepositoryMock: PerformanceRepositoryProtocol, @unchecked Sendable {
+    init(
+        getHandler: ((String) async throws -> Performance?)? = nil,
+        queryHandler: ((String) async throws -> [Performance])? = nil,
+        postHandler: ((Performance) async throws -> Performance)? = nil,
+        putHandler: ((Performance) async throws -> Performance)? = nil,
+        deleteHandler: ((Performance) async throws -> Void)? = nil
+    ) {
+        self.getHandler = getHandler
+        self.queryHandler = queryHandler
+        self.postHandler = postHandler
+        self.putHandler = putHandler
+        self.deleteHandler = deleteHandler
+    }
+
+    private(set) var getCallCount = 0
+    private let getHandler: ((String) async throws -> Performance?)?
+    func get(id: String) async throws -> Performance? {
+        getCallCount += 1
+        guard let getHandler else { throw TestError.unimplemented }
+        return try await getHandler(id)
+    }
+
+    private(set) var queryCallCount = 0
+    private let queryHandler: ((String) async throws -> [Performance])?
+    func query(by festivalId: String) async throws -> [Performance] {
+        queryCallCount += 1
+        guard let queryHandler else { throw TestError.unimplemented }
+        return try await queryHandler(festivalId)
+    }
+
+    private(set) var postCallCount = 0
+    private let postHandler: ((Performance) async throws -> Performance)?
+    func post(_ item: Performance) async throws -> Performance {
+        postCallCount += 1
+        guard let postHandler else { throw TestError.unimplemented }
+        return try await postHandler(item)
+    }
+
+    private(set) var putCallCount = 0
+    private let putHandler: ((Performance) async throws -> Performance)?
+    func put(_ item: Performance) async throws -> Performance {
+        putCallCount += 1
+        guard let putHandler else { throw TestError.unimplemented }
+        return try await putHandler(item)
+    }
+
+    private(set) var deleteCallCount = 0
+    private let deleteHandler: ((Performance) async throws -> Void)?
+    func delete(_ item: Performance) async throws {
+        deleteCallCount += 1
+        guard let deleteHandler else { throw TestError.unimplemented }
+        try await deleteHandler(item)
+    }
+}
