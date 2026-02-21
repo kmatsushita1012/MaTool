@@ -95,9 +95,9 @@ extension PointEditFeature.State {
             .join(Route.all) { $0.routeId.eq($1.id) }
             .join(District.all) { $1.districtId.eq($2.id) }
             .select { $2 }).wrappedValue
-        let checkpointQuery = FetchAll(Checkpoint.where{ $0.festivalId == district?.festivalId })
+        let checkpointQuery = FetchAll(Checkpoint.where{ $0.festivalId.eq(district?.festivalId) })
         self._checkpoints = checkpointQuery
-        let performanceQuery = FetchAll(Performance.where{ $0.districtId == district?.id })
+        let performanceQuery = FetchAll(Performance.where{ $0.districtId.eq(district?.id) })
         self._performances =  performanceQuery
         self.pointType = .init(point: point)
         
