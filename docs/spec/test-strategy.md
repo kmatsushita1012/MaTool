@@ -219,3 +219,11 @@
 - `Backend/Tests/Data/Repository/Mocks/RepositoryMocks.swift` を現行プロトコルに合わせて再編成。
 - `Usecase` テストは `LocationUsecaseTest` / `RouteUsecaseTest` を現行APIで再構築。
 - 実行確認: `swift test --filter Usecase` は pass（`Backend/.env` の unhandled resource 表示は継続）。
+- 復元開始順:
+  1. `RepositoryMock`（集約ファイル）整備
+  2. `UsecaseMock` 整備
+  3. `ControllerMock` 復元
+  4. `DataStoreMock` はジェネリクス影響が大きいため後続で対応
+- Usecase復元:
+  - `FestivalUsecaseTest` / `DistrictUsecaseTest` / `PeriodUsecaseTest` を最小構成で再追加
+  - 既存 `LocationUsecaseTest` / `RouteUsecaseTest` と合わせて `swift test --filter Usecase` がpass
