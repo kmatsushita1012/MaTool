@@ -2,25 +2,25 @@ import SQLiteData
 
 public extension FetchAll where Element == District {
     init(festivalId: Festival.ID) {
-        self.init(District.where { $0.festivalId == festivalId }.order(by: \.order))
+        self.init(District.where { $0.festivalId.eq(festivalId) }.order(by: \.order))
     }
 }
 
 public extension FetchAll where Element == Point {
     init(routeId: Route.ID) {
-        self.init(Point.where { $0.routeId == routeId })
+        self.init(Point.where { $0.routeId.eq(routeId) })
     }
 }
 
 public extension FetchAll where Element == RoutePassage {
     init(routeId: Route.ID) {
-        self.init(RoutePassage.where { $0.routeId == routeId })
+        self.init(RoutePassage.where { $0.routeId.eq(routeId) })
     }
 }
 
 public extension FetchAll where Element == HazardSection {
     init(festivalId: Festival.ID) {
-        self.init(HazardSection.where { $0.festivalId == festivalId })
+        self.init(HazardSection.where { $0.festivalId.eq(festivalId) })
     }
 }
 
