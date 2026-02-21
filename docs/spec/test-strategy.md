@@ -233,3 +233,9 @@
   - `FestivalControllerTest` / `DistrictControllerTest` / `RouteControllerTest` / `LocationControllerTest` / `PeriodControllerTest` / `SceneControllerTest` を再追加
   - `SceneController` テストのため `SceneUsecaseMock` を `Backend/Tests/Usecase/Mock/UsecaseMock.swift` に追加
   - 実行確認: `swift test --filter Controller` がpass
+- Router復元:
+  - `FestivalRouterTest` / `DistrictRouterTest` / `OtherRouterTest` を再追加
+  - `Application.handle` 経由で path 解決と controller 連携（`festivalId` / `districtId` / `periodId` 伝搬）を検証
+  - 実行確認: `swift test --filter Router` がpass
+- 全体確認:
+  - `swift test` が pass（37 tests / 20 suites）
