@@ -40,9 +40,9 @@ struct SettingsFeature {
             @Dependency(\.userDefaultsClient) var userDefaultsClient
             @Dependency(\.values.defaultFestivalKey) var defaultFestivalKey
             @Dependency(\.values.defaultDistrictKey) var defaultDistrictKey
-            self.selectedFestival = FetchOne(Festival.where{ $0.id ==  userDefaultsClient.string(defaultFestivalKey)}).wrappedValue
-            self.selectedDistrict = FetchOne(District.where{ $0.id ==  userDefaultsClient.string(defaultDistrictKey)}).wrappedValue
-            self._rawDistricts = FetchAll(District.where{ $0.festivalId == selectedFestival?.id })
+            self.selectedFestival = FetchOne(Festival.where{ $0.id.eq(userDefaultsClient.string(defaultFestivalKey))}).wrappedValue
+            self.selectedDistrict = FetchOne(District.where{ $0.id.eq(userDefaultsClient.string(defaultDistrictKey))}).wrappedValue
+            self._rawDistricts = FetchAll(District.where{ $0.festivalId.eq(selectedFestival?.id) })
         }
     }
 
