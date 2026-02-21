@@ -123,7 +123,7 @@ extension PeriodListFeature.Destination.Action: Equatable {}
 extension PeriodListFeature.State {
     init(festivalId: String) {
         self.festivalId = festivalId
-        self._periods = FetchAll(Period.where{ $0.festivalId == festivalId })
+        self._periods = FetchAll(Period.where{ $0.festivalId.eq(festivalId) })
         let items = makePeriodsStates()
         self.latests = items.first
         self.archives = .init(items.dropFirst())
