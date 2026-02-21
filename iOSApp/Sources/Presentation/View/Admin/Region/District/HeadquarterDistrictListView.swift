@@ -8,15 +8,22 @@
 import SwiftUI
 import ComposableArchitecture
 import NavigationSwipeControl
+import Shared
 
 @available(iOS 17.0, *)
 struct HeadquarterDistrictListView: View {
     @SwiftUI.Bindable var store: StoreOf<HeadquarterDistrictListFeature>
+    @State private var searchText: String = ""
+    
+    private var filteredDistricts: [District] {
+        guard !searchText.isEmpty else { return store.districts }
+        return store.districts.filter { $0.name.contains(searchText) }
+    }
     
     var body: some View {
         Form {
             Section(header: Text("参加町")) {
-                ForEach(store.districts) { district in
+                ForEach(filteredDistricts) { district in
                     NavigationItemView(
                         title: district.name,
                         onTap: {
@@ -37,6 +44,7 @@ struct HeadquarterDistrictListView: View {
         }
         .navigationTitle("参加町")
         .navigationBarTitleDisplayMode(.inline)
+        .searchable(text: $searchText, prompt: "町名で検索")
         .sheet(item: $store.folder){ folder in
             ShareSheet(items: folder.files)
         }
