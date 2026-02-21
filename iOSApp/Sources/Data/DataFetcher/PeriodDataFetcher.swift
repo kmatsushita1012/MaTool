@@ -74,14 +74,14 @@ struct PeriodDataFetcher: PeriodDataFetcherProtocol {
     private func fetchOldPeriods(festivalId: Festival.ID, query: Query, maxYear: Int? = nil, db: Database) throws -> [Period] {
         switch query {
         case .all:
-            try periodStore.fetchAll(where: { $0.festivalId == festivalId }, from: db)
+            try periodStore.fetchAll(where: { $0.festivalId.eq(festivalId) }, from: db)
         case .year(let year):
-            try periodStore.fetchAll(where: { $0.festivalId == festivalId && $0.date.inYear(year) }, from: db)
+            try periodStore.fetchAll(where: { $0.festivalId.eq(festivalId) && $0.date.inYear(year) }, from: db)
         case .latest:
             if let maxYear {
-                try periodStore.fetchAll(where: { $0.festivalId == festivalId && $0.date.inYear(maxYear) }, from: db)
+                try periodStore.fetchAll(where: { $0.festivalId.eq(festivalId) && $0.date.inYear(maxYear) }, from: db)
             } else {
-                try periodStore.fetchAll(where: { $0.festivalId == festivalId }, from: db)
+                try periodStore.fetchAll(where: { $0.festivalId.eq(festivalId) }, from: db)
             }
         }
     }
