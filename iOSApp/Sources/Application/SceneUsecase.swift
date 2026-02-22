@@ -17,7 +17,7 @@ protocol SceneUsecaseProtocol: Sendable {
     func launch() async -> LaunchState
     func signIn(username: String, password: String) async throws -> SignInState
     func confirmSignIn(password: String) async throws -> UserRole
-    func select(festivalId: Festival.ID) async throws
+    func select(festivalId: Festival.ID) async throws -> UserRole?
     func select(districtId: District.ID) async throws -> Route.ID?
 }
 
@@ -93,11 +93,18 @@ actor SceneUsecase: SceneUsecaseProtocol {
         return result
     }
     
-    func select(festivalId: Shared.Festival.ID) async throws {
-        try await dataFetcher.launchFestival(festivalId: festivalId, clearsExistingData: true)
+    func select(festivalId: Shared.Festival.ID) async throws -> UserRole? {
+        let previousFestivalId = userDefaults.defaultFestivalId
+        let isFestivalChanged = previousFestivalId != festivalId
+        guard isFestivalChanged else {
+            return nil
+        }
+        async let signOutTask: UserRole = authService.signOut()
+        async let launchFestivalTask: () = dataFetcher.launchFestival(festivalId: festivalId, clearsExistingData: true)
+        _ = try await (signOutTask, launchFestivalTask)
         userDefaults.defaultFestivalId = festivalId
         userDefaults.defaultDistrictId = nil
-        return
+        return .guest
     }
     
     func select(districtId: Shared.District.ID) async throws -> Route.ID? {

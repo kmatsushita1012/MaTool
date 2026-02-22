@@ -51,7 +51,7 @@ struct SettingsFeature {
         case dismissTapped
         case signOutTapped
         case signOutReceived(TaskResult<UserRole>)
-        case festivalSelectReceived(VoidTaskResult)
+        case festivalSelectReceived(TaskResult<UserRole?>)
         case districtSelectReceived(TaskResult<Route.ID?>)
         case alert(PresentationAction<AlertFeature.Action>)
     }
@@ -92,7 +92,7 @@ struct SettingsFeature {
             case .signOutReceived(.failure(let error)):
                 state.alert = AlertFeature.error("情報の取得に失敗しました \(error.localizedDescription)")
                 return .none
-            case .festivalSelectReceived(.success):
+            case .festivalSelectReceived(.success(_)):
                 state.isLoading = false
                 state.$districts = FetchAll(District.where{ $0.festivalId.eq(state.selectedFestival?.id)}.order(by: \.order))
                 return .none
