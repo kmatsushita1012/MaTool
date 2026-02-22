@@ -5,13 +5,13 @@ import Testing
 
 struct FestivalControllerTest {
     @Test
-    func get_returnsPackFromUsecase() async throws {
+    func get_正常() async throws {
         let expected = FestivalPack.mock(festival: .mock(id: "festival-1"))
-        var capturedId: String?
+        var lastCalledId: String?
 
         let mock = FestivalUsecaseMock(
             getHandler: { id in
-                capturedId = id
+                lastCalledId = id
                 return expected
             }
         )
@@ -27,12 +27,12 @@ struct FestivalControllerTest {
 
         #expect(response.statusCode == 200)
         #expect(actual == expected)
-        #expect(capturedId == "festival-1")
+        #expect(lastCalledId == "festival-1")
         #expect(mock.getCallCount == 1)
     }
 
     @Test
-    func scan_returnsFestivals() async throws {
+    func scan_正常() async throws {
         let festivals = [Festival.mock(id: "festival-1")]
         let mock = FestivalUsecaseMock(scanHandler: { festivals })
         let subject = make(usecase: mock)
@@ -47,13 +47,13 @@ struct FestivalControllerTest {
     }
 
     @Test
-    func put_usesGuestWhenUserIsNil() async throws {
+    func put_正常() async throws {
         let expected = FestivalPack.mock(festival: .mock(id: "festival-2"))
-        var capturedUser: UserRole?
+        var lastCalledUser: UserRole?
 
         let mock = FestivalUsecaseMock(
             putHandler: { pack, user in
-                capturedUser = user
+                lastCalledUser = user
                 return pack
             }
         )
@@ -70,12 +70,12 @@ struct FestivalControllerTest {
 
         #expect(response.statusCode == 200)
         #expect(actual == expected)
-        #expect(capturedUser == .guest)
+        #expect(lastCalledUser == .guest)
         #expect(mock.putCallCount == 1)
     }
 
     @Test
-    func get_missingFestivalId_throwsBadRequest() async {
+    func get_異常_条件() async {
         let subject = make(usecase: FestivalUsecaseMock())
         let request = Application.Request.make(method: .get, path: "/festivals")
 
@@ -90,7 +90,7 @@ private extension FestivalControllerTest {
         { _ in throw TestError.intentional }
     }
 
-    func make(usecase: FestivalUsecaseMock) -> FestivalController {
+    func make(usecase: FestivalUsecaseMock = .init()) -> FestivalController {
         withDependencies {
             $0[FestivalUsecaseKey.self] = usecase
         } operation: {

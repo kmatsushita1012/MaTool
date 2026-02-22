@@ -5,7 +5,7 @@ import Testing
 
 struct DistrictUsecaseTest {
     @Test
-    func query_forwardsToRepository() async throws {
+    func query_正常() async throws {
         let districts = [District.mock(id: "district-1", festivalId: "festival-1")]
         let repository = DistrictRepositoryMock(queryHandler: { _ in districts })
         let subject = make(
@@ -22,14 +22,20 @@ struct DistrictUsecaseTest {
     }
 
     @Test
-    func get_returnsDistrictPack() async throws {
+    func get_正常() async throws {
         let district = District.mock(id: "district-1", festivalId: "festival-1")
         let performances = [Performance.mock(id: "perf-1", districtId: district.id)]
+        var lastCalledDistrictId: String?
+        let districtRepository = DistrictRepositoryMock(getHandler: { id in
+            lastCalledDistrictId = id
+            return district
+        })
+        let performanceRepository = PerformanceRepositoryMock(queryHandler: { _ in performances })
 
         let subject = make(
-            districtRepository: .init(getHandler: { _ in district }),
+            districtRepository: districtRepository,
             festivalRepository: .init(),
-            performanceRepository: .init(queryHandler: { _ in performances }),
+            performanceRepository: performanceRepository,
             authManagerFactory: { throw TestError.unimplemented }
         )
 
@@ -37,10 +43,13 @@ struct DistrictUsecaseTest {
 
         #expect(result.district == district)
         #expect(result.performances == performances)
+        #expect(lastCalledDistrictId == district.id)
+        #expect(districtRepository.getCallCount == 1)
+        #expect(performanceRepository.queryCallCount == 1)
     }
 
     @Test
-    func post_unauthorized_throws() async {
+    func post_異常_条件() async {
         let subject = make(
             districtRepository: .init(),
             festivalRepository: .init(),
@@ -59,10 +68,11 @@ struct DistrictUsecaseTest {
     }
 
     @Test
-    func post_createsDistrictWithGeneratedId() async throws {
+    func post_正常() async throws {
         let festival = Festival.mock(id: "festival_2026")
         let expectedDistrictId = "festival_new"
         var posted: District?
+        var lastCalledFestivalId: String?
 
         let manager = AuthManagerMock(
             createHandler: { username, _ in
@@ -83,6 +93,7 @@ struct DistrictUsecaseTest {
                 }
             ),
             festivalRepository: .init(getHandler: { id in
+                lastCalledFestivalId = id
                 #expect(id == festival.id)
                 return festival
             }),
@@ -98,13 +109,14 @@ struct DistrictUsecaseTest {
         )
 
         #expect(manager.createCallCount == 1)
+        #expect(lastCalledFestivalId == festival.id)
         #expect(posted?.id == expectedDistrictId)
         #expect(result.district.id == expectedDistrictId)
         #expect(result.performances.isEmpty)
     }
 
     @Test
-    func put_districtRole_onlyAllowsLimitedFields() async throws {
+    func put_正常_条件1() async throws {
         let current = District(
             id: "district-1",
             name: "old",
@@ -132,17 +144,25 @@ struct DistrictUsecaseTest {
             isEditable: true
         )
         var merged: District?
+        var lastCalledGetId: String?
+        var lastCalledPutId: String?
+        let districtRepository = DistrictRepositoryMock(
+            getHandler: { id in
+                lastCalledGetId = id
+                return current
+            },
+            putHandler: { id, item in
+                lastCalledPutId = id
+                merged = item
+                return item
+            }
+        )
+        let performanceRepository = PerformanceRepositoryMock(queryHandler: { _ in [] })
 
         let subject = make(
-            districtRepository: .init(
-                getHandler: { _ in current },
-                putHandler: { _, item in
-                    merged = item
-                    return item
-                }
-            ),
+            districtRepository: districtRepository,
             festivalRepository: .init(),
-            performanceRepository: .init(queryHandler: { _ in [] }),
+            performanceRepository: performanceRepository,
             authManagerFactory: { throw TestError.unimplemented }
         )
 
@@ -159,25 +179,38 @@ struct DistrictUsecaseTest {
         #expect(merged?.group == "A")
         #expect(merged?.isEditable == false)
         #expect(result.district.order == 9)
+        #expect(result.district.name == "new")
+        #expect(lastCalledGetId == current.id)
+        #expect(lastCalledPutId == current.id)
+        #expect(districtRepository.getCallCount == 1)
+        #expect(districtRepository.putCallCount == 1)
+        #expect(performanceRepository.queryCallCount == 1)
     }
 
     @Test
-    func put_headquarterRole_onlyAllowsCoreFields() async throws {
+    func put_正常_条件2() async throws {
         let current = District.mock(id: "district-1", festivalId: "festival-1", name: "old", visibility: .all)
         var incoming = District.mock(id: current.id, festivalId: current.festivalId, name: "new", visibility: .admin)
         incoming.order = 5
         incoming.group = "B"
         incoming.isEditable = false
         var merged: District?
+        var lastCalledGetId: String?
+        var lastCalledPutId: String?
+        let districtRepository = DistrictRepositoryMock(
+            getHandler: { id in
+                lastCalledGetId = id
+                return current
+            },
+            putHandler: { id, item in
+                lastCalledPutId = id
+                merged = item
+                return item
+            }
+        )
 
         let subject = make(
-            districtRepository: .init(
-                getHandler: { _ in current },
-                putHandler: { _, item in
-                    merged = item
-                    return item
-                }
-            ),
+            districtRepository: districtRepository,
             festivalRepository: .init(),
             performanceRepository: .init(),
             authManagerFactory: { throw TestError.unimplemented }
@@ -191,15 +224,20 @@ struct DistrictUsecaseTest {
         #expect(merged?.group == "B")
         #expect(merged?.isEditable == false)
         #expect(result.order == 5)
+        #expect(result.id == current.id)
+        #expect(lastCalledGetId == current.id)
+        #expect(lastCalledPutId == current.id)
+        #expect(districtRepository.getCallCount == 1)
+        #expect(districtRepository.putCallCount == 1)
     }
 }
 
 private extension DistrictUsecaseTest {
     func make(
-        districtRepository: DistrictRepositoryMock,
-        festivalRepository: FestivalRepositoryMock,
-        performanceRepository: PerformanceRepositoryMock,
-        authManagerFactory: @escaping AuthManagerFactory
+        districtRepository: DistrictRepositoryMock = .init(),
+        festivalRepository: FestivalRepositoryMock = .init(),
+        performanceRepository: PerformanceRepositoryMock = .init(),
+        authManagerFactory: @escaping AuthManagerFactory = { throw TestError.unimplemented }
     ) -> DistrictUsecase {
         withDependencies {
             $0[DistrictRepositoryKey.self] = districtRepository
