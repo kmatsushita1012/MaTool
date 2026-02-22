@@ -56,4 +56,16 @@ public extension Period {
         let startDateTime = Date.combine(date: date, time: start)
         return datetime <= startDateTime
     }
+    
+    func priority(now: Date) -> (Int, TimeInterval) {
+        let startDateTime = Date.combine(date: date, time: start)
+        let endDateTime = Date.combine(date: date, time: end)
+        if contains(now) {
+            return (0, 0) // 最優先
+        }
+        if startDateTime > now {
+            return (1, startDateTime.timeIntervalSince(now)) // 未来は近い順
+        }
+        return (2, now.timeIntervalSince(endDateTime)) // 過去は近い順
+    }
 }
