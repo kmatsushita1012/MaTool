@@ -32,7 +32,7 @@ struct RouteDataFetcher: RouteDataFetcherProtocol {
     func fetchAll(districtID: District.ID, query: Query) async throws {
         let path = "/districts/\(districtID)/routes"
         let routes: [Route] = try await client.get(path: path, query: query.queryItems)
-        try await syncAll(routes)
+        try await syncAll(routes, districtId: districtID)
     }
 
     func fetch(routeID: Route.ID) async throws {
@@ -67,23 +67,24 @@ struct RouteDataFetcher: RouteDataFetcherProtocol {
         try await database.write { db in
             let oldPoints = try pointStore.fetchAll(where: { $0.routeId.eq(id) }, from: db)
             let oldPassages = try passageStore.fetchAll(where: { $0.routeId.eq(id) }, from: db)
-            let (insertedPoints, deletedPointIds) = oldPoints.diff(with: pack.points)
-            let (insertedPassages, deletedPassageIds) = oldPassages.diff(with: pack.passages)
+            let (upsertedPoints, deletedPointIds) = oldPoints.diffById(with: pack.points)
+            let (upsertedPassages, deletedPassageIds) = oldPassages.diffById(with: pack.passages)
             // delete
-            try routeStore.delete(pack.route.id, from: db)
+            try routeStore.upsert(pack.route, at: db)
             try pointStore.deleteAll(deletedPointIds, from: db)
             try passageStore.deleteAll(deletedPassageIds, from: db)
             // insert
-            try routeStore.insert(pack.route, at: db)
-            try pointStore.insert(insertedPoints, at: db)
-            try passageStore.insert(insertedPassages, at: db)
+            try pointStore.upsert(upsertedPoints, at: db)
+            try passageStore.upsert(upsertedPassages, at: db)
         }
     }
 
-    private func syncAll(_ routes: [Route]) async throws {
+    private func syncAll(_ routes: [Route], districtId: District.ID) async throws {
         try await database.write { db in
-            try routeStore.deleteAll(routes.map(\.id), from: db)
-            try routeStore.insert(routes, at: db)
+            let oldRoutes = try routeStore.fetchAll(where: { $0.districtId.eq(districtId) }, from: db)
+            let (_, deletedRouteIds) = oldRoutes.diffById(with: routes)
+            try routeStore.deleteAll(deletedRouteIds, from: db)
+            try routeStore.upsert(routes, at: db)
         }
     }
 }

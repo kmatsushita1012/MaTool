@@ -50,7 +50,7 @@ struct DistrictDataFetcher: DistrictDataFetcherProtocol {
     // fetch all districts for a festival
     func fetchAll(festivalID: Festival.ID) async throws {
         let districts: [District] = try await client.get(path: "/festivals/\(festivalID)/districts")
-        try await syncAll(districts)
+        try await syncAll(districts, festivalId: festivalID)
     }
     
     func fetch(districtID: District.ID) async throws {
@@ -64,24 +64,25 @@ extension DistrictDataFetcher {
         let id: District.ID = pack.district.id
         try await database.write { db in
             let oldPerformances = try performanceStore.fetchAll(where: { $0.districtId.eq(id) }, from: db)
-            let (insertedPerformances, deletedPerformanceIds) = oldPerformances.diff(with: pack.performances)
-            try districtStore.delete(pack.district.id, from: db)
+            let (upsertedPerformances, deletedPerformanceIds) = oldPerformances.diffById(with: pack.performances)
+            try districtStore.upsert(pack.district, at: db)
             try performanceStore.deleteAll(deletedPerformanceIds, from: db)
-            try districtStore.insert(pack.district, at: db)
-            try performanceStore.insert(insertedPerformances, at: db)
+            try performanceStore.upsert(upsertedPerformances, at: db)
         }
     }
     
-    private func syncAll(_ districts: [District]) async throws {
+    private func syncAll(_ districts: [District], festivalId: Festival.ID) async throws {
         try await database.write { db in
-            try districtStore.insert(districts, at: db)
+            let oldDistricts = try districtStore.fetchAll(where: { $0.festivalId.eq(festivalId) }, from: db)
+            let (_, deletedDistrictIds) = oldDistricts.diffById(with: districts)
+            try districtStore.deleteAll(deletedDistrictIds, from: db)
+            try districtStore.upsert(districts, at: db)
         }
     }
     
     private func sync(_ district: District) async throws {
         try await database.write { db in
-            try districtStore.delete(district.id, from: db)
-            try districtStore.insert(district, at: db)
+            try districtStore.upsert(district, at: db)
         }
     }
 }

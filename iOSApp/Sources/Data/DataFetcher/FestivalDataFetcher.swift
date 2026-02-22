@@ -55,21 +55,22 @@ struct FestivalDataFetcher: FestivalDataFetcherProtocol {
         try await database.write{ db in
             let oldCheckpoints = try checkpointStore.fetchAll(where: { $0.festivalId.eq(id) }, from: db)
             let oldHazardSections = try hazardSectionStore.fetchAll(where: { $0.festivalId.eq(id) }, from: db)
-            let (insertedCheckpoints, deletedCheckpointIds) = oldCheckpoints.diff(with: pack.checkpoints)
-            let (insertedHazardSections, deletedHazardSectionIds) = oldHazardSections.diff(with: pack.hazardSections)
-            try festivalStore.delete(id, from: db)
+            let (upsertedCheckpoints, deletedCheckpointIds) = oldCheckpoints.diffById(with: pack.checkpoints)
+            let (upsertedHazardSections, deletedHazardSectionIds) = oldHazardSections.diffById(with: pack.hazardSections)
+            try festivalStore.upsert(pack.festival, at: db)
             try checkpointStore.deleteAll(deletedCheckpointIds, from: db)
             try hazardSectionStore.deleteAll(deletedHazardSectionIds, from: db)
-            try festivalStore.insert(pack.festival, at: db)
-            try checkpointStore.insert(insertedCheckpoints , at: db)
-            try hazardSectionStore.insert(insertedHazardSections, at: db)
+            try checkpointStore.upsert(upsertedCheckpoints, at: db)
+            try hazardSectionStore.upsert(upsertedHazardSections, at: db)
         }
     }
     
     private func syncAll(_ festivals: [Festival]) async throws {
         try await database.write{ db in
-            try festivalStore.deleteAll(from: db)
-            try festivalStore.insert(festivals, at: db)
+            let oldFestivals = try festivalStore.fetchAll(from: db)
+            let (_, deletedFestivalIds) = oldFestivals.diffById(with: festivals)
+            try festivalStore.deleteAll(deletedFestivalIds, from: db)
+            try festivalStore.upsert(festivals, at: db)
         }
     }
 }
