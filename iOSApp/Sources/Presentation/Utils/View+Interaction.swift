@@ -22,7 +22,7 @@ extension View {
     @ViewBuilder
     func searchable(text: Binding<String>, prompt: LocalizedStringKey, isEnabled: Bool) -> some View {
         if isEnabled {
-            searchable(text: text, prompt: prompt)
+            self.searchable(text: text, prompt: prompt)
         } else {
             self
         }
