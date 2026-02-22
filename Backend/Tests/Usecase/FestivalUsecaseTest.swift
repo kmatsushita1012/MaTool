@@ -1,166 +1,121 @@
-//
-//  FestivalUsecaseTest.swift
-//  matool-backend
-//
-//  Created by 松下和也 on 2025/11/23.
-//
-
-import Testing
 import Dependencies
-@testable import Backend
 import Shared
+import Testing
+@testable import Backend
 
-// TODO: テスト
 struct FestivalUsecaseTest {
-    @Test func test_get_正常() async throws {
-        let festival = Festival(id: "g-id", name: "g-name", subname: "g-subname", prefecture: "p", city: "c", base: Coordinate(latitude: 0.0, longitude: 0.0))
-        let expected = FestivalPack(festival: festival, checkpoints: [], hazardSections: [])
-        
-        var lastCalledId: String? = nil
-        let mock = FestivalRepositoryMock(getHandler: { id in
-            lastCalledId = id
-            return festival
-        })
-        let subject = make(mock)
-        
-        
-        let result = try await subject.get("g-id")
-        
-        
-        #expect(result == expected)
-        #expect(lastCalledId == "g-id")
-        #expect(mock.getCallCount == 1)
-    }
-    
-    @Test func test_get_異常() async throws {
-        let expected = Error.internalServerError("get_failed")
-        var lastCalledId: String? = nil
-        let mock = FestivalRepositoryMock(getHandler: { id in
-            lastCalledId = id
-            throw expected
-        })
-        let subject = make(mock)
-        
-        
-        await #expect(throws: expected){
-            let _ = try await subject.get("festival-id")
-        }
-        
-        
-        #expect(lastCalledId == "festival-id")
-        #expect(mock.getCallCount == 1)
-    }
-
-    @Test func test_scan_正常() async throws {
-        let expected = Festival(id: "s-id", name: "s-name", subname: "s-subname", prefecture: "p", city: "c", base: Coordinate(latitude: 0, longitude: 0))
-        let mock = FestivalRepositoryMock(scanHandler: {
-            return [expected]
-        })
-        let subject = make(mock)
-
+    @Test
+    func scan_正常() async throws {
+        let festivals = [Festival.mock(id: "festival-1")]
+        let repository = FestivalRepositoryMock(scanHandler: { festivals })
+        let subject = make(festivalRepository: repository)
 
         let result = try await subject.scan()
 
-
-        #expect(result.count == 1)
-        #expect(result.first == expected)
-        #expect(mock.scanCallCount == 1)
+        #expect(result == festivals)
+        #expect(repository.scanCallCount == 1)
     }
 
-    @Test func test_scan_異常() async throws {
-        let expected = Error.internalServerError("scan_failed")
-        let mock = FestivalRepositoryMock(scanHandler: {
-            throw expected
-        })
-        let subject = make(mock)
-
-
-        await #expect(throws: expected) {
-            let _ = try await subject.scan()
-        }
-
-
-        #expect(mock.scanCallCount == 1)
-    }
-
-    @Test func test_put_正常() async throws {
-        let festival = Festival(id: "p-id", name: "p-name", subname: "p-subname", prefecture: "p", city: "c", base: Coordinate(latitude: 0, longitude: 0))
-        let pack = FestivalPack(festival: festival, checkpoints: [], hazardSections: [])
-        let mock = FestivalRepositoryMock(putHandler: { festival in
+    @Test
+    func get_正常() async throws {
+        let festival = Festival.mock(id: "festival-1")
+        let checkpoints = [Checkpoint.mock(id: "cp-1", festivalId: festival.id)]
+        let hazards = [HazardSection.mock(id: "hz-1", festivalId: festival.id)]
+        var lastCalledFestivalId: String?
+        let repository = FestivalRepositoryMock(getHandler: { id in
+            lastCalledFestivalId = id
             return festival
         })
-        let subject = make(mock)
+        let checkpointRepository = CheckpointRepositoryMock(queryHandler: { _ in checkpoints })
+        let hazardRepository = HazardSectionRepositoryMock(queryHandler: { _ in hazards })
 
+        let subject = make(
+            festivalRepository: repository,
+            checkpointRepository: checkpointRepository,
+            hazardSectionRepository: hazardRepository
+        )
 
-        let result = try await subject.put(pack, user: .headquarter("p-id"))
+        let result = try await subject.get(festival.id)
 
-
-        #expect(result == pack)
-        #expect(mock.putCount == 1)
+        #expect(result.festival == festival)
+        #expect(result.checkpoints == checkpoints)
+        #expect(result.hazardSections == hazards)
+        #expect(lastCalledFestivalId == festival.id)
+        #expect(repository.getCallCount == 1)
+        #expect(checkpointRepository.queryCallCount == 1)
+        #expect(hazardRepository.queryCallCount == 1)
     }
-    
-    @Test func test_put_ロールが違う() async throws {
-        let festival = Festival(id: "p-id", name: "p-name", subname: "p-subname", prefecture: "p", city: "c", base: Coordinate(latitude: 0, longitude: 0))
-        let pack = FestivalPack(festival: festival, checkpoints: [], hazardSections: [])
-        let expected = Error.unauthorized("アクセス権限がありません。")
-        let mock = FestivalRepositoryMock(putHandler: { _ in
-            throw expected
-        })
-        let subject = make(mock)
 
+    @Test
+    func get_異常_祭典未登録() async {
+        let subject = make(
+            festivalRepository: .init(getHandler: { _ in nil }),
+            checkpointRepository: .init(queryHandler: { _ in [] }),
+            hazardSectionRepository: .init(queryHandler: { _ in [] })
+        )
 
-        await #expect(throws: expected) {
-            let _ = try await subject.put(pack, user: .district("different-id"))
+        await #expect(throws: Error.notFound("指定された祭典が見つかりません。")) {
+            _ = try await subject.get("festival-missing")
         }
-
-
-        #expect(mock.putCount == 0)
     }
-    
-    @Test func test_put_idが違う() async throws {
-        let festival = Festival(id: "p-id", name: "p-name", subname: "p-subname", prefecture: "p", city: "c", base: Coordinate(latitude: 0, longitude: 0))
-        let pack = FestivalPack(festival: festival, checkpoints: [], hazardSections: [])
-        let expected = Error.unauthorized("アクセス権限がありません。")
-        let mock = FestivalRepositoryMock(putHandler: { _ in
-            throw expected
-        })
-        let subject = make(mock)
 
+    @Test
+    func put_異常_権限不一致() async {
+        let pack = FestivalPack.mock(festival: .mock(id: "festival-1"))
+        let subject = make()
 
-        await #expect(throws: expected) {
-            let _ = try await subject.put(pack, user: .headquarter("different-id"))
+        await #expect(throws: Error.unauthorized("アクセス権限がありません。")) {
+            _ = try await subject.put(pack, user: .guest)
         }
-
-
-        #expect(mock.putCount == 0)
     }
-    
-    @Test func test_put_異常() async throws {
-        let festival = Festival(id: "p-id", name: "p-name", subname: "p-subname", prefecture: "p", city: "c", base: Coordinate(latitude: 0, longitude: 0))
-        let pack = FestivalPack(festival: festival, checkpoints: [], hazardSections: [])
-        let expected = Error.internalServerError("put_failed")
-        let mock = FestivalRepositoryMock(putHandler: { _ in
-            throw expected
-        })
-        let subject = make(mock)
 
+    @Test
+    func put_正常() async throws {
+        let festival = Festival.mock(id: "festival-1", name: "new")
+        let checkpoint = Checkpoint.mock(id: "cp-1", festivalId: festival.id)
+        let hazard = HazardSection.mock(id: "hz-1", festivalId: festival.id)
+        let pack = FestivalPack.mock(festival: festival, checkpoints: [checkpoint], hazardSections: [hazard])
 
-        await #expect(throws: expected) {
-            let _ = try await subject.put(pack, user: .headquarter("p-id"))
+        var lastCalledFestivalId: String?
+        let subject = make(
+            festivalRepository: .init(putHandler: { item in
+                lastCalledFestivalId = item.id
+                return item
+            }),
+            checkpointRepository: .init(queryHandler: { _ in [] }, postHandler: { $0 }),
+            hazardSectionRepository: .init(queryHandler: { _ in [] }, postHandler: { $0 })
+        )
+
+        let result = try await subject.put(pack, user: .headquarter(festival.id))
+
+        #expect(lastCalledFestivalId == festival.id)
+        #expect(result.festival == festival)
+        #expect(result.checkpoints == [checkpoint])
+        #expect(result.hazardSections == [hazard])
+    }
+
+    @Test
+    func get_異常_依存エラーを透過() async {
+        let subject = make(festivalRepository: .init(getHandler: { _ in throw TestError.intentional }))
+
+        await #expect(throws: TestError.intentional) {
+            _ = try await subject.get("festival-1")
         }
-
-
-        #expect(mock.putCount == 1)
     }
 }
 
-extension FestivalUsecaseTest {
-    func make(_ repository: FestivalRepositoryMock = .init()) -> FestivalUsecase{
-        let subject = withDependencies({
-            $0[FestivalRepositoryKey.self] = repository
-        }){
+private extension FestivalUsecaseTest {
+    func make(
+        festivalRepository: FestivalRepositoryMock = .init(),
+        checkpointRepository: CheckpointRepositoryMock = .init(),
+        hazardSectionRepository: HazardSectionRepositoryMock = .init()
+    ) -> FestivalUsecase {
+        withDependencies {
+            $0[FestivalRepositoryKey.self] = festivalRepository
+            $0[CheckpointRepositoryKey.self] = checkpointRepository
+            $0[HazardSectionRepositoryKey.self] = hazardSectionRepository
+        } operation: {
             FestivalUsecase()
         }
-        return subject
     }
 }

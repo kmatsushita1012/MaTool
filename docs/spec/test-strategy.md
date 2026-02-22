@@ -87,6 +87,25 @@
   - 2. 出力値（body/header/status）
   - 3. 依存呼び出し（call count / 引数）
 
+### 5.1 命名規則（Backend）
+
+- テスト名は次のいずれかを使用する。
+  - `<メソッド名>_正常_条件`
+  - `<メソッド名>_異常_条件`
+- `条件` は `条件1` のような連番ではなく、`権限不一致` `未登録` `年指定あり` など分岐/エラー内容を具体的に記述する。
+- 条件分岐がない場合のみ、`<メソッド名>_正常` を許可する。
+- `<メソッド名>` 以外は日本語で記述する。
+- 正常系テストでは「結果の整合性」と「モック呼び出し確認（`callCount` / `lastCalled...`）」を同一テスト内で検証する。
+- 依存先（Repository/Usecase/Controller）が `throw` した場合に、対象がそのエラーを透過して再送出する異常系を必ず含める。
+- `Usecase` / `Controller` / `Router` の各テストファイルに、少なくとも1件の異常系テストを含める。
+
+### 5.2 make() ヘルパー規約
+
+- `withDependencies` を行う `make()` は、モック引数にデフォルト値（原則 `.init()`）を設定する。
+- これにより、各テストで必要な依存のみ差し替える。
+- テスト本体で「何も設定していない `Mock()`」を生成しない。未設定依存は `make()` のデフォルト引数に委譲する。
+- 引数キャプチャは `lastCalledId`, `lastCalledUser` などの命名で統一する。
+
 ## 6. カバレッジ運用
 
 - 目標: 行カバレッジ 100%（Backend / Shared / iOSApp それぞれ）。
@@ -201,3 +220,81 @@
 - `get(username)`:
   - 正常
   - user not found
+
+## 10. 移行中ルール（2026-02）
+
+- 目的: まず `Backend` テストターゲットのコンパイルエラーを解消し、実行可能な最小セットへ戻す。
+- 旧API（`Program` 系、旧 `Route`/`Location` DTO）を参照するテストは、無理に互換実装を足さず、現行APIに合わせて更新する。
+- 更新コストが高くコンパイルを恒常的に阻害する旧テストは、一時的に削除してよい（再作成は別PRで管理）。
+- Repository モックは原則 `Backend/Tests/Data/Repository/Mocks/RepositoryMocks.swift` に集約し、テストファイル内への個別実装を増やさない。
+- 変更を進める順番:
+  1. コンパイルエラーを出している旧テストの整理（削除または現行化）
+  2. 共通モックの現行プロトコル追従
+  3. Usecase/Controller/Router の順で再テスト実装
+
+### 10.1 進捗メモ（2026-02-22）
+
+- `backend/reduce-test-compile-errors` ブランチで、旧 `Program` 系テストと旧 Router/Controller/Repository テストを整理。
+- `Backend/Tests/Data/Repository/Mocks/RepositoryMocks.swift` を現行プロトコルに合わせて再編成。
+- `Usecase` テストは `LocationUsecaseTest` / `RouteUsecaseTest` を現行APIで再構築。
+- 実行確認: `swift test --filter Usecase` は pass（`Backend/.env` の unhandled resource 表示は継続）。
+- 復元開始順:
+  1. `RepositoryMock`（集約ファイル）整備
+  2. `UsecaseMock` 整備
+  3. `ControllerMock` 復元
+  4. `DataStoreMock` はジェネリクス影響が大きいため後続で対応
+- Usecase復元:
+  - `FestivalUsecaseTest` / `DistrictUsecaseTest` / `PeriodUsecaseTest` を最小構成で再追加
+  - 既存 `LocationUsecaseTest` / `RouteUsecaseTest` と合わせて `swift test --filter Usecase` がpass
+- Entityモック整備:
+  - `Backend/Tests/Utility/Entity+Mock.swift` に `static func mock(...)` を追加し、ID/リレーションキーを上書き可能に統一
+- Controller復元:
+  - `FestivalControllerTest` / `DistrictControllerTest` / `RouteControllerTest` / `LocationControllerTest` / `PeriodControllerTest` / `SceneControllerTest` を再追加
+  - `SceneController` テストのため `SceneUsecaseMock` を `Backend/Tests/Usecase/Mock/UsecaseMock.swift` に追加
+  - 実行確認: `swift test --filter Controller` がpass
+- Router復元:
+  - `FestivalRouterTest` / `DistrictRouterTest` / `OtherRouterTest` を再追加
+  - `Application.handle` 経由で path 解決と controller 連携（`festivalId` / `districtId` / `periodId` 伝搬）を検証
+  - 実行確認: `swift test --filter Router` がpass
+- 全体確認:
+  - `swift test` が pass（37 tests / 20 suites）
+
+### 10.2 追加進捗（2026-02-22）
+
+- テストケースを増量（95 tests / 21 suites まで拡張）
+  - `Usecase`: `Festival/District/Location/Period/Route/Scene` の正常系・権限系・NotFound系を追加
+  - `Controller`: 各Controllerの主要メソッド（`get/query/post/put/delete/launch`）の引数伝搬・分岐を追加
+  - `Router`: 各Routerで複数エンドポイントの経路検証を追加
+- カバレッジ実測（`swift test --enable-code-coverage` + `llvm-cov`）:
+  - 集計対象: `Sources/Controller`, `Sources/Usecase`, `Sources/Router`
+  - `TOTAL`: Regions 84.26% / Lines 89.68%
+  - `Usecase/SceneUsecase.swift`: Regions 71.29%（未網羅分岐が残存）
+- 方針:
+  - 「100%目標」は維持し、次は `SceneUsecase` と `RouteUsecase` の残分岐を優先して埋める
+
+### 10.3 追加進捗（2026-02-22, Repository）
+
+- `PeriodRepositoryTest` に `put_正常_レコード化してputする` と `put_異常_依存エラーを透過` を追加し、`put` の正常/異常を補完。
+- Repository テストを追加:
+  - `CheckpointRepositoryTest`
+  - `DistrictRepositoryTest`
+  - `FestivalRepositoryTest`
+  - `HazardSectionRepositoryTest`
+  - `LocationRepositoryTest`
+  - `PerformanceRepositoryTest`
+  - `PassageRepositoryTest`
+  - `PointRepositoryTest`
+  - `RouteRepositoryTest`
+- 共通化:
+  - `Backend/Tests/Utility/Helpers.swift` に `decodeFromEncodable(_:as:)` / `encodeForDataStore(_:)` を利用し、`AnyEncodable` の encode/decode 重複を削減。
+- テスト設計の適用:
+  - `make()` はデフォルト引数で依存注入を集約。
+  - 正常系は「結果整合」と「呼び出し/引数キャプチャ確認」を同一テストで実施。
+  - 依存 `throw` の透過を異常系として各対象に追加。
+- 実行確認:
+  - `swift test --filter RepositoryTest` が pass（56 tests / 10 suites）。
+
+## 11. Bootstrap 実行ポリシー
+
+- `Backend/Bootstrap` の injector/migrator テストは、sandbox 上では実行しない。
+- Bootstrap 実行はデータ書き込みを伴うため、明示的なユーザー指示がある場合のみ対象とする。

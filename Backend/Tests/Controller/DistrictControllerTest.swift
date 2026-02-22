@@ -1,231 +1,165 @@
-//
-//  DistrictControllerTest.swift
-//  matool-backend
-//
-//  Created by assistant on 2025/11/30.
-//
-
-import Foundation
-import Testing
-@testable import Backend
 import Dependencies
 import Shared
-
+import Testing
+@testable import Backend
 
 struct DistrictControllerTest {
-    let next: Handler = { _ in
-        throw TestError.unimplemented
-    }
-    let expectedHeaders: [String: String] = ["Content-Type": "application/json"]
-
-    @Test func test_query_正常() async throws {
-        let expected = [District(id: "d-id", name: "d-name", festivalId: "f-id", visibility: .all)]
-        let mock = DistrictUsecaseMock(queryHandler: { _ in expected })
-        let subject = make(mock)
-        let request = makeRequest(method: .get, parameters: ["festivalId": "f-id"])
-
-
-        let result = try await subject.query(request, next: next)
-
-
-        #expect(result.statusCode == 200)
-        #expect(result.headers == expectedHeaders)
-        let target = try [District].from(result.body)
-        #expect(target == expected)
-    }
-
-    @Test func test_query_異常() async throws {
-        let expectedError = Error.internalServerError("query_failed")
-        let mock = DistrictUsecaseMock(queryHandler: { _ in throw expectedError })
-        let subject = make(mock)
-        let request = makeRequest(method: .get, parameters: ["festivalId": "f-id"])
-
-
-        await #expect(throws: expectedError) {
-            let _ = try await subject.query(request, next: next)
-        }
-
-
-        #expect(mock.queryCallCount == 1)
-    }
-
-    @Test func test_get_正常() async throws {
-        let expected = District(id: "g-id", name: "g-name", festivalId: "f-id", visibility: .all)
-        var lastCalledId: String? = nil
+    @Test
+    func get_正常() async throws {
+        let expected = DistrictPack.mock(district: .mock(id: "district-1", festivalId: "festival-1"))
+        var lastCalledId: String?
         let mock = DistrictUsecaseMock(getHandler: { id in
             lastCalledId = id
             return expected
         })
-        let subject = make(mock)
-        let request = makeRequest(method: .get, parameters: ["districtId": "g-id"]) 
+        let subject = make(usecase: mock)
 
+        let request = Application.Request.make(method: .get, path: "/districts/district-1", parameters: ["districtId": "district-1"])
+        let response = try await subject.get(request, next: next)
+        let actual = try DistrictPack.from(response.body)
 
-        let result = try await subject.get(request, next: next)
-
-
-        #expect(lastCalledId == "g-id")
-        #expect(result.statusCode == 200)
-        #expect(result.headers == expectedHeaders)
-        let target = try District.from(result.body)
-        #expect(target == expected)
+        #expect(response.statusCode == 200)
+        #expect(actual == expected)
+        #expect(lastCalledId == "district-1")
     }
 
-    @Test func test_get_異常() async throws {
-        let expectedError = Error.internalServerError("get_failed")
-        let mock = DistrictUsecaseMock(getHandler: { _ in throw expectedError })
-        let subject = make(mock)
-        let request = makeRequest(method: .get, parameters: ["districtId": "g-id"]) 
+    @Test
+    func query_正常() async throws {
+        let expected = [District.mock(id: "district-1", festivalId: "festival-1")]
+        var lastCalledFestivalId: String?
+        let mock = DistrictUsecaseMock(queryHandler: { festivalId in
+            lastCalledFestivalId = festivalId
+            return expected
+        })
+        let subject = make(usecase: mock)
 
+        let request = Application.Request.make(method: .get, path: "/festivals/festival-1/districts", parameters: ["festivalId": "festival-1"])
+        let response = try await subject.query(request, next: next)
+        let actual = try [District].from(response.body)
 
-        await #expect(throws: expectedError) {
-            let _ = try await subject.get(request, next: next)
-        }
-
-
-        #expect(mock.getCallCount == 1)
+        #expect(response.statusCode == 200)
+        #expect(actual == expected)
+        #expect(lastCalledFestivalId == "festival-1")
     }
 
-    @Test func test_getTools_正常() async throws {
-        let now = Date()
-        let expected = DistrictTool(districtId: "district-id", districtName: "district-name", festivalId: "festival-id", festivalName: "festival-name", checkpoints: [], base: Coordinate(latitude: 1.0, longitude: 2.0), periods: [], hazardSections: [])
-        var lastCalledId: String?
+    @Test
+    func post_正常() async throws {
+        let expected = DistrictPack.mock(district: .mock(id: "district-1", festivalId: "festival-1"))
+        var lastCalledHeadquarterId: String?
+        var lastCalledName: String?
+        var lastCalledEmail: String?
         var lastCalledUser: UserRole?
-        let mock = DistrictUsecaseMock(getToolsHandler: { id, user in
-            lastCalledId = id
-            lastCalledUser = user
-            return expected
-        })
-        let subject = make(mock)
-        let request = makeRequest(method: .get, path: "", parameters: ["districtId": "district-id"], user: .district("district-id"))
 
+        let mock = DistrictUsecaseMock(
+            postHandler: { user, headquarterId, newDistrictName, email in
+                lastCalledUser = user
+                lastCalledHeadquarterId = headquarterId
+                lastCalledName = newDistrictName
+                lastCalledEmail = email
+                return expected
+            }
+        )
+        let subject = make(usecase: mock)
 
-        let result = try await subject.getTools(request, next: next)
+        let body = DistrictCreateForm(name: "new-district", email: "district@example.com")
+        let request = Application.Request.make(
+            method: .post,
+            path: "/festivals/festival-1/districts",
+            parameters: ["festivalId": "festival-1"],
+            body: try body.toString()
+        )
 
+        let response = try await subject.post(request, next: next)
+        let actual = try DistrictPack.from(response.body)
 
-        #expect(lastCalledId == "district-id")
-        #expect(lastCalledUser == .district("district-id"))
-        #expect(result.statusCode == 200)
-        #expect(result.headers == expectedHeaders)
-        let target = try DistrictTool.from(result.body)
-        #expect(target == expected)
-    }
-
-    @Test func test_getTools_異常() async throws {
-        let expectedError = Error.internalServerError("getTools_failed")
-        let mock = DistrictUsecaseMock(getToolsHandler: { _, _ in throw expectedError })
-        let subject = make(mock)
-        let request = makeRequest(method: .get, path: "", parameters: ["districtId": "district-id"], user: .district("district-id"))
-
-
-        await #expect(throws: expectedError) {
-            let _ = try await subject.getTools(request, next: next)
-        }
-
-
-        #expect(mock.getToolsCallCount == 1)
-    }
-
-    @Test func test_post_正常() async throws {
-        let expected = District(id: "p-id", name: "p-name", festivalId: "f-id", visibility: .all)
-        let dto = DistrictCreateDTO(name: "p-name", email: "a@b.c")
-        let expectedBody: String = try dto.toString()
-        let mock = DistrictUsecaseMock(postHandler: { user, headquarterId, name, email in
-            return expected
-        })
-        let subject = make(mock)
-        let request = makeRequest(method: .post, parameters: ["festivalId": "f-id"], user: .headquarter("f-id"), body: expectedBody)
-
-
-        let result = try await subject.post(request, next: next)
-
-
-        #expect(result.statusCode == 200)
-        #expect(result.headers == expectedHeaders)
-        let target = try District.from(result.body)
-        #expect(target == expected)
-    }
-
-    @Test func test_post_異常() async throws {
-        let dto = DistrictCreateDTO(name: "p-name", email: "a@b.c")
-        let expectedBody: String = try dto.toString()
-        let expectedError = Error.internalServerError("post_failed")
-        let mock = DistrictUsecaseMock(postHandler: { _, _, _, _ in throw expectedError })
-        let subject = make(mock)
-        let request = makeRequest(method: .post, parameters: ["festivalId": "f-id"], user: .headquarter("f-id"), body: expectedBody)
-
-
-        await #expect(throws: expectedError) {
-            let _ = try await subject.post(request, next: next)
-        }
-
-
+        #expect(response.statusCode == 200)
+        #expect(actual == expected)
+        #expect(lastCalledUser == .guest)
+        #expect(lastCalledHeadquarterId == "festival-1")
+        #expect(lastCalledName == "new-district")
+        #expect(lastCalledEmail == "district@example.com")
         #expect(mock.postCallCount == 1)
     }
 
-    @Test func test_put_正常() async throws {
-        let expected = District(id: "d", name: "updated", festivalId: "f", visibility: .all)
-        let body: String = try expected.toString()
+    @Test
+    func put_正常() async throws {
+        let pack = DistrictPack.mock(district: .mock(id: "district-1", festivalId: "festival-1"))
         var lastCalledId: String?
-        var lastCalledBody: District?
         var lastCalledUser: UserRole?
-        let mock = DistrictUsecaseMock(putHandler: { id, body, user in
+        let mock = DistrictUsecaseMock(putPackHandler: { id, item, user in
             lastCalledId = id
-            lastCalledBody = body
             lastCalledUser = user
-            return expected
+            return item
         })
-        let subject = make(mock)
-        let request = makeRequest(method: .put, parameters: ["districtId": "d"], user: .district("d"), body: body)
+        let subject = make(usecase: mock)
 
+        var request = Application.Request.make(
+            method: .put,
+            path: "/districts/district-1",
+            parameters: ["districtId": "district-1"],
+            body: try pack.toString()
+        )
+        request.user = .district("district-1")
 
-        let result = try await subject.put(request, next: next)
+        let response = try await subject.put(request, next: next)
+        let actual = try DistrictPack.from(response.body)
 
-
-        #expect(lastCalledId == "d")
-        #expect(lastCalledBody == expected)
-        #expect(lastCalledUser == .district("d"))
-        #expect(result.statusCode == 200)
-        #expect(result.headers == expectedHeaders)
-        let target = try District.from(result.body)
-        #expect(target == expected)
+        #expect(response.statusCode == 200)
+        #expect(actual == pack)
+        #expect(lastCalledId == "district-1")
+        #expect(lastCalledUser == .district("district-1"))
     }
 
-    @Test func test_put_異常() async throws {
-        let item = District(id: "d", name: "updated", festivalId: "f", visibility: .all)
-        let expectedBody: String = try item.toString()
-        let expectedError = Error.internalServerError("put_failed")
-        let mock = DistrictUsecaseMock(putHandler: { _, _, _ in throw expectedError })
-        let subject = make(mock)
-        let request = makeRequest(method: .put, parameters: ["districtId": "d"], user: .district("d"), body: expectedBody)
+    @Test
+    func updateDistrict_正常() async throws {
+        let district = District.mock(id: "district-1", festivalId: "festival-1")
+        var lastCalledId: String?
+        var lastCalledDistrict: District?
+        let mock = DistrictUsecaseMock(putDistrictHandler: { id, item, _ in
+            lastCalledId = id
+            lastCalledDistrict = item
+            return item
+        })
+        let subject = make(usecase: mock)
 
+        let request = Application.Request.make(
+            method: .put,
+            path: "/districts/district-1/core",
+            parameters: ["districtId": "district-1"],
+            body: try district.toString()
+        )
 
-        await #expect(throws: expectedError) {
-            let _ = try await subject.put(request, next: next)
+        let response = try await subject.updateDistrict(request, next: next)
+        let actual = try District.from(response.body)
+
+        #expect(response.statusCode == 200)
+        #expect(actual == district)
+        #expect(lastCalledId == "district-1")
+        #expect(lastCalledDistrict == district)
+    }
+
+    @Test
+    func get_異常_ユースケースエラー透過() async {
+        let mock = DistrictUsecaseMock(getHandler: { _ in throw TestError.intentional })
+        let subject = make(usecase: mock)
+        let request = Application.Request.make(method: .get, path: "/districts/district-1", parameters: ["districtId": "district-1"])
+
+        await #expect(throws: TestError.intentional) {
+            _ = try await subject.get(request, next: next)
         }
-
-
-        #expect(mock.putCallCount == 1)
     }
 }
 
-extension DistrictControllerTest {
-    private func make(_ usecase: DistrictUsecaseMock) -> DistrictController{
-        let  subject = withDependencies({
-            $0[DistrictUsecaseKey.self] = usecase
-        }){
-            DistrictController()
-        }
-        return subject
+private extension DistrictControllerTest {
+    var next: Handler {
+        { _ in throw TestError.intentional }
     }
 
-    private func makeRequest(
-        method: Application.Method,
-        path: String = "",
-        parameters: [String : String] = [:],
-        headers: [String : String] = [:],
-        user: UserRole = .guest,
-        body: String? = nil,
-    ) -> Request{
-        return Request(method: method, path: path, headers: headers, parameters: parameters, user: user, body: body)
+    func make(usecase: DistrictUsecaseMock = .init()) -> DistrictController {
+        withDependencies {
+            $0[DistrictUsecaseKey.self] = usecase
+        } operation: {
+            DistrictController()
+        }
     }
 }

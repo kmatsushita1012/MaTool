@@ -1,96 +1,67 @@
-//
-//  DistrictRepositoryTest.swift
-//  MaTool
-//
-//  Created by 松下和也 on 2025/11/14.
-//
-
-import Testing
 import Dependencies
 import Shared
+import Testing
 @testable import Backend
 
-@Suite(.disabled())
 struct DistrictRepositoryTest {
-    let district = District(id: "ID", name: "NAME", festivalId: "FESTIVAL_ID", visibility: .all)
-    let dataStore: DataStoreMock<String, District>
-    let subject: DistrictRepository
-    
-    init() {        
-        let dataStore = DataStoreMock<String, District>(response: district)
-        self.dataStore = dataStore
-        
-        self.subject = withDependencies {
-            $0.dataStoreFactory = { _ in dataStore }
+    @Test
+    func get_正常_ID検索で1件返す() async throws {
+        let district = District.mock(id: "district-1", festivalId: "festival-1")
+        var lastCalledIndexName: String?
+
+        let dataStore = DataStoreMock(
+            queryHandler: { indexName, _, _, _, _, _ in
+                lastCalledIndexName = indexName
+                return try encodeForDataStore([Record(district)])
+            }
+        )
+        let subject = make(dataStore: dataStore)
+
+        let result = try await subject.get(id: district.id)
+
+        #expect(result == district)
+        #expect(dataStore.queryCallCount == 1)
+        #expect(lastCalledIndexName == "index-TYPE")
+    }
+
+    @Test
+    func put_正常_putして同値を返す() async throws {
+        let district = District.mock(id: "district-1", festivalId: "festival-1")
+        var lastCalledRecord: Record<District>?
+
+        let dataStore = DataStoreMock(
+            putHandler: { item in
+                lastCalledRecord = try decodeFromEncodable(item, as: Record<District>.self)
+            }
+        )
+        let subject = make(dataStore: dataStore)
+
+        let result = try await subject.put(id: district.id, item: district)
+
+        #expect(result == district)
+        #expect(dataStore.putCallCount == 1)
+        #expect(lastCalledRecord?.content == district)
+    }
+
+    @Test
+    func query_異常_依存エラーを透過() async {
+        let dataStore = DataStoreMock(
+            queryHandler: { _, _, _, _, _, _ in throw TestError.intentional }
+        )
+        let subject = make(dataStore: dataStore)
+
+        await #expect(throws: TestError.intentional) {
+            _ = try await subject.query(by: "festival-1")
+        }
+    }
+}
+
+private extension DistrictRepositoryTest {
+    func make(dataStore: DataStoreMock = .init()) -> DistrictRepository {
+        withDependencies {
+            $0[DataStoreFactoryKey.self] = { _ in dataStore }
         } operation: {
             DistrictRepository()
         }
-    }
-    
-    @Test func test_get_正常() async throws {
-        let result = try await subject.get(id: "ID")
-        
-        
-        #expect(dataStore.getCallCount == 1)
-        #expect(dataStore.getArg?.0 == "ID")
-        #expect(dataStore.getArg?.1 == "id")
-        #expect(dataStore.getArg?.2 == District.self)
-        
-        #expect(result?.id == "ID")
-        #expect(result?.name == "NAME")
-        #expect(result?.festivalId == "FESTIVAL_ID")
-        #expect(result?.visibility == .all)
-    }
-    
-    @Test func test_query_正常() async throws {
-        let result = try await subject.query(by: "festivalId")
-        
-        
-        #expect(dataStore.queryCallCount == 1)
-        let queryArg = try #require(dataStore.queryArg)
-        #expect(queryArg.0 == "region_id-index")
-        let (field, value) = try #require({
-            if case let .equals(field, value) = queryArg.1 {
-                return (field, value)
-            } else {
-                return nil
-            }
-        }())
-        #expect(field == "region_id")
-        #expect(value as? String == "festivalId")
-        #expect(queryArg.2 == nil)
-        #expect(queryArg.3 == nil)
-        #expect(queryArg.4 == true)
-        #expect(queryArg.5 == District.self)
-
-        #expect(result.count == 1)
-        let item = try #require(result.first)
-        #expect(item.id == "ID")
-        #expect(item.name == "NAME")
-        #expect(item.festivalId == "FESTIVAL_ID")
-        #expect(item.visibility == .all)
-    }
-    
-    @Test func test_put_正常() async throws {
-        try await subject.put(id: "id", item: district)
-        
-        
-        #expect(dataStore.putCallCount == 1)
-        let putArg = try #require(dataStore.putArg)
-        #expect(putArg.id == "ID")
-        #expect(putArg.name == "NAME")
-        #expect(putArg.festivalId == "FESTIVAL_ID")
-        #expect(putArg.visibility == .all)
-    }
-
-    @Test func test_post_正常() async throws {
-        try await subject.post(item: district)
-
-        #expect(dataStore.putCallCount == 1)
-        let putArg = try #require(dataStore.putArg)
-        #expect(putArg.id == "ID")
-        #expect(putArg.name == "NAME")
-        #expect(putArg.festivalId == "FESTIVAL_ID")
-        #expect(putArg.visibility == .all)
     }
 }
