@@ -63,6 +63,8 @@
   - 成功・失敗・空配列・権限エラーの分岐を網羅。
 - Presentation:
   - ロジックは Feature 単位でテストし、View スナップショットは必要最小限。
+- ラージテスト:
+  - 優先シナリオは `iOSApp/UITests/LargeTestScenarios.md` を基準として運用する。
 
 ## 4. モック・差し替えルール（swift-dependencies）
 
