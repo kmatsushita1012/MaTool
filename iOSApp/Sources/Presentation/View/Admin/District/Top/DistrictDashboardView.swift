@@ -18,6 +18,7 @@ struct DistrictDashboardView: View{
         .navigationTitle(
             store.district.name
         )
+        .navigationBarTitleDisplayMode(.large)
         .navigationDestination(item: $store.scope(state: \.destination?.edit, action: \.destination.edit)) { store in
             DistrictEditView(store: store)
         }
