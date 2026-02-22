@@ -22,6 +22,16 @@ public extension Array where Element: Equatable & Hashable & Identifiable {
     }
 }
 
+public extension Array where Element: Identifiable, Element.ID: Hashable {
+    func diffById(with newElements: [Element]) -> (upserts: [Element], deletionIds: [Element.ID]) {
+        let oldIds = Set(map(\.id))
+        let newIds = Set(newElements.map(\.id))
+        let deletionIds: [Element.ID] = oldIds.subtracting(newIds).map { $0 }
+
+        return (upserts: newElements, deletionIds: deletionIds)
+    }
+}
+
 public extension Array where Element: Equatable {
     mutating func removeAll(of element: Element) {
         removeAll(where: { $0 == element })
