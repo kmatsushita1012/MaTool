@@ -32,6 +32,7 @@ extension RouteUsecaseProtocol {
 // MARK: - RouteUsecase
 struct RouteUsecase: RouteUsecaseProtocol {
     @Dependency(RouteRepositoryKey.self) var routeRepository
+    @Dependency(PeriodRepositoryKey.self) var periodRepository
     @Dependency(DistrictRepositoryKey.self) var districtRepository
     @Dependency(PointRepositoryKey.self) var pointRepository
     @Dependency(PassageRepositoryKey.self) var passageRepository
@@ -60,18 +61,14 @@ struct RouteUsecase: RouteUsecaseProtocol {
             case .year(let year):
                 return try await routeRepository.query(by: districtId, year: year)
             case .latest:
-                let nextYearRoutes = try await routeRepository.query(by: districtId, year: now.year + 1)
-                if nextYearRoutes.isEmpty {
-                    let thisYearRoutes = try await routeRepository.query(by: districtId, year: now.year)
-                    if thisYearRoutes.isEmpty {
-                        let lastYearRoutes = try await routeRepository.query(by: districtId, year: now.year-1)
-                        return lastYearRoutes
-                    } else {
-                        return thisYearRoutes
-                    }
-                } else {
-                    return nextYearRoutes
-                }
+                let (routes, _) = try await LatestPeriodRouteResolver.fetchLatestRoutes(
+                    districtId: districtId,
+                    festivalId: district.festivalId,
+                    nowYear: now.year,
+                    periodRepository: periodRepository,
+                    routeRepository: routeRepository
+                )
+                return routes
             }
         }()
         let filtered = routes.filter{
