@@ -86,6 +86,7 @@ struct SettingsView: View {
                 }
                 .padding(.horizontal)
             }
+            .preferredColorScheme(.light)
             .dismissible(backButton: false)
             .alert($store.scope(state: \.alert, action: \.alert))
             .loadingOverlay(store.isLoading)

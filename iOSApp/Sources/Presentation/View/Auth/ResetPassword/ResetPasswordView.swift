@@ -45,6 +45,7 @@ struct ResetPasswordView: View {
             }
             Spacer()
         }
+        .preferredColorScheme(.light)
         .dismissible(backButton: false, edgeSwipe: false)
         .loadingOverlay(store.isLoading)
         .alert($store.scope(state: \.alert, action: \.alert))

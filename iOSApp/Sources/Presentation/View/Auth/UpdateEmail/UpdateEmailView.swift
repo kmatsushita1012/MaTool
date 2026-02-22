@@ -46,6 +46,7 @@ struct UpdateEmailView: View {
             Spacer()
             Spacer()
         }
+        .preferredColorScheme(.light)
         .dismissible(backButton: false, edgeSwipe: false)
         .loadingOverlay(store.isLoading)
         .alert($store.scope(state: \.errorAlert, action: \.errorAlert))

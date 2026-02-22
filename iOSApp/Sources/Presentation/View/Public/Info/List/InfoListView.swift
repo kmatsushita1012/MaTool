@@ -55,6 +55,7 @@ struct InfoListView: View {
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .background(Color.white)
+            .preferredColorScheme(.light)
             .dismissible(backButton: false)
             .navigationDestination(item: $store.scope(state: \.destination?.district, action: \.destination.district)) { store in
                 WithPerceptionTracking{
