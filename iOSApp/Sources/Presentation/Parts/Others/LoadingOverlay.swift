@@ -13,7 +13,7 @@ extension View {
             self
                 .disabled(isLoading)
             if isLoading {
-                Color.black.opacity(0.2)
+                Color.primary.opacity(0.2)
                     .ignoresSafeArea()
                 ProgressView()
                     .progressViewStyle(CircularProgressViewStyle(tint: .white))
@@ -32,7 +32,7 @@ extension View {
         ZStack {
             self
             if isLoading {
-                Color.black.opacity(0.2)
+                Color.primary.opacity(0.2)
                     .ignoresSafeArea()
 
                 VStack(spacing: 16) {
@@ -47,7 +47,7 @@ extension View {
                             .font(.body)
                             .padding(8)
                     }
-                    .background(Color.black.opacity(0.5))
+                    .background(Color.primary.opacity(0.5))
                     .cornerRadius(16)
                 }
             }

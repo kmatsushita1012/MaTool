@@ -70,6 +70,9 @@ struct RouteSnapshotter: Equatable {
         options.region = region
         options.pointOfInterestFilter = .excludingAll
         options.size = size == .zero ? CGSize(width: 594, height: 420) : size
+        options.traitCollection = UITraitCollection(traitsFrom: [
+            UITraitCollection(userInterfaceStyle: .light)
+        ])
         
         let image: UIImage = try await withCheckedThrowingContinuation { continuation in
             let snapshotter = MKMapSnapshotter(options: options)

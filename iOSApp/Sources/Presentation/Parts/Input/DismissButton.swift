@@ -17,7 +17,7 @@ struct DismissButton: View {
     var body: some View{
         Button(action: action) {
             Image(systemName: "arrow.left")
-                .foregroundColor(.black)
+                .foregroundColor(.primary)
                 .frame(width: 48, height: 48)
                 .background(
                     Circle()
