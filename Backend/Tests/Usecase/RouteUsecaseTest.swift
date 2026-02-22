@@ -7,10 +7,10 @@ import Testing
 struct RouteUsecaseTest {
     @Test
     func get_正常() async throws {
-        let district = District(id: "district-1", name: "d", festivalId: "festival-1", visibility: .all)
-        let route = Route(id: "route-1", districtId: district.id, periodId: "period-1", visibility: .all)
-        let point = Point(routeId: route.id, coordinate: .init(latitude: 35, longitude: 139))
-        let passage = RoutePassage(routeId: route.id, districtId: district.id)
+        let district = District.mock(id: "district-1", festivalId: "festival-1")
+        let route = Route.mock(id: "route-1", districtId: district.id, periodId: "period-1")
+        let point = Point.mock(routeId: route.id, coordinate: .init(latitude: 35, longitude: 139))
+        let passage = RoutePassage.mock(routeId: route.id, districtId: district.id)
         var lastCalledRouteId: String?
         let routeRepository = RouteRepositoryMock(getHandler: { id in
             lastCalledRouteId = id
@@ -38,12 +38,9 @@ struct RouteUsecaseTest {
     }
 
     @Test
-    func get_異常_条件1() async {
+    func get_異常_ルート未登録() async {
         let subject = make(
-            routeRepository: .init(getHandler: { _ in nil }),
-            districtRepository: .init(),
-            pointRepository: .init(),
-            passageRepository: .init()
+            routeRepository: .init(getHandler: { _ in nil })
         )
 
         await #expect(throws: Error.notFound("指定されたルートが見つかりません")) {
@@ -52,15 +49,13 @@ struct RouteUsecaseTest {
     }
 
     @Test
-    func get_異常_条件2() async {
-        let district = District(id: "district-1", name: "d", festivalId: "festival-1", visibility: .all)
-        let route = Route(id: "route-1", districtId: district.id, periodId: "period-1", visibility: .admin)
+    func get_異常_非公開ルートをゲスト参照() async {
+        let district = District.mock(id: "district-1", festivalId: "festival-1")
+        let route = Route.mock(id: "route-1", districtId: district.id, periodId: "period-1", visibility: .admin)
 
         let subject = make(
             routeRepository: .init(getHandler: { _ in route }),
-            districtRepository: .init(getHandler: { _ in district }),
-            pointRepository: .init(),
-            passageRepository: .init()
+            districtRepository: .init(getHandler: { _ in district })
         )
 
         await #expect(throws: Error.forbidden("アクセス権限がありせん。このルートは非公開です。")) {
@@ -69,15 +64,13 @@ struct RouteUsecaseTest {
     }
 
     @Test
-    func query_正常_条件1() async throws {
+    func query_正常_全件取得() async throws {
         let district = District.mock(id: "district-1", festivalId: "festival-1")
         let routes = [Route.mock(id: "route-1", districtId: district.id)]
         let repository = RouteRepositoryMock(queryHandler: { _ in routes })
         let subject = make(
             routeRepository: repository,
-            districtRepository: .init(getHandler: { _ in district }),
-            pointRepository: .init(),
-            passageRepository: .init()
+            districtRepository: .init(getHandler: { _ in district })
         )
 
         let result = try await subject.query(by: district.id, type: .all, now: .init(year: 2026, month: 1, day: 1), user: .guest)
@@ -87,10 +80,10 @@ struct RouteUsecaseTest {
     }
 
     @Test
-    func query_正常_条件2() async throws {
-        let district = District(id: "district-1", name: "d", festivalId: "festival-1", visibility: .all)
+    func query_正常_latestで翌年を採用() async throws {
+        let district = District.mock(id: "district-1", festivalId: "festival-1")
         let now = SimpleDate(year: 2026, month: 2, day: 1)
-        let nextYearRoute = Route(id: "route-next", districtId: district.id, periodId: "period-next", visibility: .all)
+        let nextYearRoute = Route.mock(id: "route-next", districtId: district.id, periodId: "period-next")
 
         let repository = RouteRepositoryMock(
             queryHandler: { _ in [] },
@@ -101,9 +94,7 @@ struct RouteUsecaseTest {
         )
         let subject = make(
             routeRepository: repository,
-            districtRepository: .init(getHandler: { _ in district }),
-            pointRepository: .init(),
-            passageRepository: .init()
+            districtRepository: .init(getHandler: { _ in district })
         )
 
         let result = try await subject.query(by: district.id, type: .latest, now: now, user: .guest)
@@ -113,7 +104,7 @@ struct RouteUsecaseTest {
     }
 
     @Test
-    func query_正常_条件3() async throws {
+    func query_正常_latestで前年を採用() async throws {
         let district = District.mock(id: "district-1", festivalId: "festival-1")
         let lastYearRoute = Route.mock(id: "route-last", districtId: district.id)
 
@@ -126,9 +117,7 @@ struct RouteUsecaseTest {
         )
         let subject = make(
             routeRepository: repository,
-            districtRepository: .init(getHandler: { _ in district }),
-            pointRepository: .init(),
-            passageRepository: .init()
+            districtRepository: .init(getHandler: { _ in district })
         )
 
         let result = try await subject.query(
@@ -143,14 +132,9 @@ struct RouteUsecaseTest {
     }
 
     @Test
-    func post_異常_条件() async {
+    func post_異常_権限不一致() async {
         let pack = RoutePack.mock(route: .mock(id: "route-1", districtId: "district-1"), points: [], passages: [])
-        let subject = make(
-            routeRepository: .init(),
-            districtRepository: .init(),
-            pointRepository: .init(),
-            passageRepository: .init()
-        )
+        let subject = make()
 
         await #expect(throws: Error.unauthorized("アクセス権限がありません")) {
             _ = try await subject.post(districtId: "district-1", pack: pack, user: .guest)
@@ -172,7 +156,6 @@ struct RouteUsecaseTest {
         let passageRepository = PassageRepositoryMock(queryHandler: { _ in [] }, postHandler: { $0 })
         let subject = make(
             routeRepository: routeRepository,
-            districtRepository: .init(),
             pointRepository: pointRepository,
             passageRepository: passageRepository
         )
@@ -188,14 +171,11 @@ struct RouteUsecaseTest {
     }
 
     @Test
-    func put_異常_条件() async {
+    func put_異常_ルート未登録() async {
         let route = Route.mock(id: "route-1", districtId: "district-1")
         let pack = RoutePack.mock(route: route, points: [], passages: [])
         let subject = make(
-            routeRepository: .init(getHandler: { _ in nil }),
-            districtRepository: .init(),
-            pointRepository: .init(),
-            passageRepository: .init()
+            routeRepository: .init(getHandler: { _ in nil })
         )
 
         await #expect(throws: Error.notFound("指定されたルートが見つかりません")) {
@@ -215,7 +195,6 @@ struct RouteUsecaseTest {
         let pointRepository = PointRepositoryMock(queryHandler: { _ in [] }, postHandler: { $0 })
         let subject = make(
             routeRepository: routeRepository,
-            districtRepository: .init(),
             pointRepository: pointRepository,
             passageRepository: .init(queryHandler: { _ in [] })
         )
@@ -230,14 +209,11 @@ struct RouteUsecaseTest {
     }
 
     @Test
-    func delete_異常_条件() async {
-        let route = Route(id: "route-1", districtId: "district-1", periodId: "period-1")
+    func delete_異常_権限不一致() async {
+        let route = Route.mock(id: "route-1", districtId: "district-1", periodId: "period-1")
 
         let subject = make(
-            routeRepository: .init(getHandler: { _ in route }),
-            districtRepository: .init(),
-            pointRepository: .init(),
-            passageRepository: .init()
+            routeRepository: .init(getHandler: { _ in route })
         )
 
         await #expect(throws: Error.unauthorized("アクセス権限がありません")) {
@@ -257,7 +233,6 @@ struct RouteUsecaseTest {
 
         let subject = make(
             routeRepository: routeRepository,
-            districtRepository: .init(),
             pointRepository: pointRepository,
             passageRepository: passageRepository
         )
@@ -267,6 +242,24 @@ struct RouteUsecaseTest {
         #expect(routeRepository.deleteCallCount == 1)
         #expect(pointRepository.deleteByRouteCallCount == 1)
         #expect(passageRepository.deleteByRouteCallCount == 1)
+    }
+
+    @Test
+    func query_異常_依存エラーを透過() async {
+        let district = District.mock(id: "district-1", festivalId: "festival-1")
+        let subject = make(
+            routeRepository: .init(queryHandler: { _ in throw TestError.intentional }),
+            districtRepository: .init(getHandler: { _ in district })
+        )
+
+        await #expect(throws: TestError.intentional) {
+            _ = try await subject.query(
+                by: "district-1",
+                type: .all,
+                now: .init(year: 2026, month: 2, day: 22),
+                user: .guest
+            )
+        }
     }
 }
 
