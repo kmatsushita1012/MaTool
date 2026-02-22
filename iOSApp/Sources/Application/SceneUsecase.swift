@@ -13,11 +13,16 @@ enum SceneUsecaseKey: DependencyKey {
     static let liveValue: SceneUsecaseProtocol = SceneUsecase()
 }
 
+enum FestivalSelectionResult: Equatable, Sendable {
+    case unchanged
+    case changed(UserRole)
+}
+
 protocol SceneUsecaseProtocol: Sendable {
     func launch() async -> LaunchState
     func signIn(username: String, password: String) async throws -> SignInState
     func confirmSignIn(password: String) async throws -> UserRole
-    func select(festivalId: Festival.ID) async throws -> UserRole?
+    func select(festivalId: Festival.ID) async throws -> FestivalSelectionResult
     func select(districtId: District.ID) async throws -> Route.ID?
 }
 
@@ -93,18 +98,18 @@ actor SceneUsecase: SceneUsecaseProtocol {
         return result
     }
     
-    func select(festivalId: Shared.Festival.ID) async throws -> UserRole? {
+    func select(festivalId: Shared.Festival.ID) async throws -> FestivalSelectionResult {
         let previousFestivalId = userDefaults.defaultFestivalId
         let isFestivalChanged = previousFestivalId != festivalId
         guard isFestivalChanged else {
-            return nil
+            return .unchanged
         }
         async let signOutTask: UserRole = authService.signOut()
         async let launchFestivalTask: () = dataFetcher.launchFestival(festivalId: festivalId, clearsExistingData: true)
         _ = try await (signOutTask, launchFestivalTask)
         userDefaults.defaultFestivalId = festivalId
         userDefaults.defaultDistrictId = nil
-        return .guest
+        return .changed(.guest)
     }
     
     func select(districtId: Shared.District.ID) async throws -> Route.ID? {

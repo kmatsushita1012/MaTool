@@ -115,8 +115,8 @@ struct HomeFeature {
             case .destination(.presented(.settings(.districtSelectReceived(.success(let routeId))))):
                 state.currentRouteId = routeId
                 return .none
-            case .destination(.presented(.settings(.festivalSelectReceived(.success(.some(let userRole)))))):
-                // .some (NonOptional)ならサインアウトしたのでユーザーロールを変更
+            case .destination(.presented(.settings(.festivalSelectReceived(.success(.changed(let userRole)))))):
+                // 祭変更時のみユーザーロールが返る
                 state.userRole = userRole
                 state.currentRouteId = nil
                 return .none
