@@ -171,7 +171,8 @@ extension PublicRouteFeature.State {
         self._district = FetchOne(district)
         let routeQuery: FetchAll<RouteEntry> = .init(districtId: district.id, latest: true)
         self._routes = routeQuery
-        let selected = routeQuery.wrappedValue.first { $0.route.id == routeId }
+        // 存在しなければ先頭要素で代替
+        let selected = routeQuery.wrappedValue.first { $0.route.id == routeId } ?? routeQuery.wrappedValue.first
         self.selected = selected
         self.replay = .initial(selected?.id)
         self._points = FetchAll(routeId: selected?.id)
