@@ -5,7 +5,7 @@ import Testing
 
 struct SceneControllerTest {
     @Test
-    func launchFestival_正常_条件1() async throws {
+    func launchFestival_正常_festivalId指定() async throws {
         let expected = LaunchFestivalPack.mock(festival: .mock(id: "festival-1"))
         var lastCalledFestivalId: String?
         var lastCalledUser: UserRole?
@@ -36,7 +36,7 @@ struct SceneControllerTest {
     }
 
     @Test
-    func launchFestival_正常_条件2() async throws {
+    func launchFestival_正常_districtId指定() async throws {
         let expected = LaunchFestivalPack.mock(festival: .mock(id: "festival-1"))
         var lastCalledDistrictId: String?
 
@@ -64,8 +64,8 @@ struct SceneControllerTest {
     }
 
     @Test
-    func launchFestival_異常_条件() async {
-        let subject = make(usecase: SceneUsecaseMock())
+    func launchFestival_異常_パラメータ不足() async {
+        let subject = make()
         let request = Application.Request.make(method: .get, path: "/launch")
 
         await #expect(throws: Error.badRequest("不正なリクエストです。")) {
@@ -97,6 +97,21 @@ struct SceneControllerTest {
         #expect(actual == expected)
         #expect(lastCalledDistrictId == "district-1")
         #expect(mock.fetchLaunchDistrictCallCount == 1)
+    }
+
+    @Test
+    func launchDistrict_異常_ユースケースエラー透過() async {
+        let mock = SceneUsecaseMock(fetchLaunchDistrictHandler: { _, _, _ in throw TestError.intentional })
+        let subject = make(usecase: mock)
+        let request = Application.Request.make(
+            method: .get,
+            path: "/districts/district-1/launch",
+            parameters: ["districtId": "district-1"]
+        )
+
+        await #expect(throws: TestError.intentional) {
+            _ = try await subject.launchDistrict(request, next: next)
+        }
     }
 }
 

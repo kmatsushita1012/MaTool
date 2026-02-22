@@ -8,11 +8,7 @@ struct FestivalUsecaseTest {
     func scan_正常() async throws {
         let festivals = [Festival.mock(id: "festival-1")]
         let repository = FestivalRepositoryMock(scanHandler: { festivals })
-        let subject = make(
-            festivalRepository: repository,
-            checkpointRepository: .init(),
-            hazardSectionRepository: .init()
-        )
+        let subject = make(festivalRepository: repository)
 
         let result = try await subject.scan()
 
@@ -51,7 +47,7 @@ struct FestivalUsecaseTest {
     }
 
     @Test
-    func get_異常_条件() async {
+    func get_異常_祭典未登録() async {
         let subject = make(
             festivalRepository: .init(getHandler: { _ in nil }),
             checkpointRepository: .init(queryHandler: { _ in [] }),
@@ -64,13 +60,9 @@ struct FestivalUsecaseTest {
     }
 
     @Test
-    func put_異常_条件() async {
+    func put_異常_権限不一致() async {
         let pack = FestivalPack.mock(festival: .mock(id: "festival-1"))
-        let subject = make(
-            festivalRepository: .init(),
-            checkpointRepository: .init(),
-            hazardSectionRepository: .init()
-        )
+        let subject = make()
 
         await #expect(throws: Error.unauthorized("アクセス権限がありません。")) {
             _ = try await subject.put(pack, user: .guest)
@@ -100,6 +92,15 @@ struct FestivalUsecaseTest {
         #expect(result.festival == festival)
         #expect(result.checkpoints == [checkpoint])
         #expect(result.hazardSections == [hazard])
+    }
+
+    @Test
+    func get_異常_依存エラーを透過() async {
+        let subject = make(festivalRepository: .init(getHandler: { _ in throw TestError.intentional }))
+
+        await #expect(throws: TestError.intentional) {
+            _ = try await subject.get("festival-1")
+        }
     }
 }
 

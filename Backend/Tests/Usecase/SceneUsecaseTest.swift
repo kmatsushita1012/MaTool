@@ -6,7 +6,7 @@ import Testing
 
 struct SceneUsecaseTest {
     @Test
-    func fetchLaunchFestivalPack_正常_条件1() async throws {
+    func fetchLaunchFestivalPack_正常_ゲストは公開情報のみ取得() async throws {
         let now = makeDate(year: 2026, month: 2, day: 22, hour: 12)
         let festival = Festival.mock(id: "festival-1")
         let districts = [District.mock(id: "district-1", festivalId: festival.id)]
@@ -16,14 +16,7 @@ struct SceneUsecaseTest {
         let subject = make(
             festivalRepository: festivalRepository,
             districtRepository: districtRepository,
-            periodRepository: .init(queryByYearHandler: { _, _ in [] }),
-            locationRepository: .init(),
-            checkpointRepository: .init(),
-            hazardRepository: .init(),
-            performanceRepository: .init(),
-            routeRepository: .init(),
-            pointRepository: .init(),
-            passageRepository: .init()
+            periodRepository: .init(queryByYearHandler: { _, _ in [] })
         )
 
         let result = try await subject.fetchLaunchFestivalPack(festivalId: festival.id, user: .guest, now: now)
@@ -38,7 +31,7 @@ struct SceneUsecaseTest {
     }
 
     @Test
-    func fetchLaunchFestivalPack_正常_条件2() async throws {
+    func fetchLaunchFestivalPack_正常_本部権限は全情報取得() async throws {
         let now = makeDate(year: 2026, month: 2, day: 22, hour: 12)
         let festival = Festival.mock(id: "festival-1")
         let districts = [District.mock(id: "district-1", festivalId: festival.id)]
@@ -55,11 +48,7 @@ struct SceneUsecaseTest {
             periodRepository: .init(queryHandler: { _ in [period] }),
             locationRepository: .init(queryHandler: { _ in [location] }),
             checkpointRepository: .init(queryHandler: { _ in [checkpoint] }),
-            hazardRepository: .init(queryHandler: { _ in [hazard] }),
-            performanceRepository: .init(),
-            routeRepository: .init(),
-            pointRepository: .init(),
-            passageRepository: .init()
+            hazardRepository: .init(queryHandler: { _ in [hazard] })
         )
 
         let result = try await subject.fetchLaunchFestivalPack(festivalId: festival.id, user: .headquarter(festival.id), now: now)
@@ -73,18 +62,9 @@ struct SceneUsecaseTest {
     }
 
     @Test
-    func fetchLaunchFestivalPack_異常_条件() async {
+    func fetchLaunchFestivalPack_異常_地区未登録() async {
         let subject = make(
-            festivalRepository: .init(),
-            districtRepository: .init(getHandler: { _ in nil }),
-            periodRepository: .init(),
-            locationRepository: .init(),
-            checkpointRepository: .init(),
-            hazardRepository: .init(),
-            performanceRepository: .init(),
-            routeRepository: .init(),
-            pointRepository: .init(),
-            passageRepository: .init()
+            districtRepository: .init(getHandler: { _ in nil })
         )
 
         await #expect(throws: Error.notFound("District district-missing が見つかりません")) {
@@ -93,7 +73,7 @@ struct SceneUsecaseTest {
     }
 
     @Test
-    func fetchLaunchDistrictPack_正常_条件1() async throws {
+    func fetchLaunchDistrictPack_正常_地区権限は非公開ルート取得() async throws {
         let now = makeDate(year: 2026, month: 2, day: 22, hour: 12)
         let district = District.mock(id: "district-1", festivalId: "festival-1")
         let period = Period.mock(id: "period-1", festivalId: district.festivalId, date: .from(now), start: .init(hour: 11, minute: 0), end: .init(hour: 13, minute: 0))
@@ -106,12 +86,8 @@ struct SceneUsecaseTest {
         let passageRepository = PassageRepositoryMock(queryHandler: { _ in [passage] })
 
         let subject = make(
-            festivalRepository: .init(),
             districtRepository: .init(getHandler: { _ in district }),
             periodRepository: .init(queryByYearHandler: { _, _ in [period] }),
-            locationRepository: .init(),
-            checkpointRepository: .init(),
-            hazardRepository: .init(),
             performanceRepository: .init(queryHandler: { _ in [] }),
             routeRepository: routeRepository,
             pointRepository: pointRepository,
@@ -128,7 +104,7 @@ struct SceneUsecaseTest {
     }
 
     @Test
-    func fetchLaunchDistrictPack_正常_条件2() async throws {
+    func fetchLaunchDistrictPack_正常_ゲストは非公開ルート除外() async throws {
         let now = makeDate(year: 2026, month: 2, day: 22, hour: 12)
         let district = District.mock(id: "district-1", festivalId: "festival-1")
         let period = Period.mock(id: "period-1", festivalId: district.festivalId, date: .from(now), start: .init(hour: 11, minute: 0), end: .init(hour: 13, minute: 0))
@@ -144,12 +120,8 @@ struct SceneUsecaseTest {
         })
 
         let subject = make(
-            festivalRepository: .init(),
             districtRepository: .init(getHandler: { _ in district }),
             periodRepository: .init(queryByYearHandler: { _, _ in [period] }),
-            locationRepository: .init(),
-            checkpointRepository: .init(),
-            hazardRepository: .init(),
             performanceRepository: .init(queryHandler: { _ in [] }),
             routeRepository: routeRepository,
             pointRepository: pointRepository,
@@ -166,6 +138,23 @@ struct SceneUsecaseTest {
         #expect(routeRepository.queryByYearCallCount == 1)
         #expect(pointRepository.queryCallCount == 0)
         #expect(passageRepository.queryCallCount == 0)
+    }
+
+    @Test
+    func fetchLaunchDistrictPack_異常_依存エラーを透過() async {
+        let subject = make(
+            districtRepository: .init(getHandler: { _ in .mock(id: "district-1", festivalId: "festival-1") }),
+            periodRepository: .init(queryByYearHandler: { _, _ in [.mock(festivalId: "festival-1")] }),
+            routeRepository: .init(queryHandler: { _ in throw TestError.intentional })
+        )
+
+        await #expect(throws: TestError.intentional) {
+            _ = try await subject.fetchLaunchDistrictPack(
+                districtId: "district-1",
+                user: .district("district-1"),
+                now: makeDate(year: 2026, month: 2, day: 22, hour: 12)
+            )
+        }
     }
 }
 

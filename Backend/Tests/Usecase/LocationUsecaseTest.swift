@@ -8,16 +8,15 @@ struct LocationUsecaseTest {
     private let now = Date(timeIntervalSince1970: 1_700_000_000)
 
     @Test
-    func query_正常_条件1() async throws {
+    func query_正常_公開期間中は一覧を返す() async throws {
         let festivalId = "festival-1"
         let districtId = "district-1"
-        let location = FloatLocation(id: "loc-1", districtId: districtId, coordinate: .init(latitude: 35, longitude: 139), timestamp: now)
+        let location = FloatLocation.mock(id: "loc-1", districtId: districtId, coordinate: .init(latitude: 35, longitude: 139), timestamp: now)
         let period = Period(festivalId: festivalId, date: .from(now), start: .init(hour: 0, minute: 0), end: .init(hour: 23, minute: 59))
         let repository = LocationRepositoryMock(queryHandler: { _ in [location] })
 
         let subject = make(
             locationRepository: repository,
-            districtRepository: .init(),
             periodRepository: .init(queryByYearHandler: { _, _ in [period] })
         )
 
@@ -28,14 +27,13 @@ struct LocationUsecaseTest {
     }
 
     @Test
-    func query_正常_条件2() async throws {
+    func query_正常_公開期間外は空配列を返す() async throws {
         let repository = LocationRepositoryMock(queryHandler: { _ in
             Issue.record("query should not be called when non-public")
             return []
         })
         let subject = make(
             locationRepository: repository,
-            districtRepository: .init(),
             periodRepository: .init(queryByYearHandler: { _, _ in [] })
         )
 
@@ -46,12 +44,11 @@ struct LocationUsecaseTest {
     }
 
     @Test
-    func query_正常_条件3() async throws {
+    func query_正常_地区権限は自地区の現在地を返す() async throws {
         let location = FloatLocation.mock(id: "loc-1", districtId: "district-1")
         let repository = LocationRepositoryMock(getHandler: { _, _ in location })
         let subject = make(
             locationRepository: repository,
-            districtRepository: .init(),
             periodRepository: .init(queryByYearHandler: { _, _ in [] })
         )
 
@@ -63,7 +60,7 @@ struct LocationUsecaseTest {
 
     @Test
     func get_正常() async throws {
-        let district = District(id: "district-1", name: "d", festivalId: "festival-1", visibility: .all)
+        let district = District.mock(id: "district-1", festivalId: "festival-1")
         let repository = LocationRepositoryMock(getHandler: { _, _ in
             Issue.record("get should not be called when non-public")
             return nil
@@ -82,11 +79,9 @@ struct LocationUsecaseTest {
     }
 
     @Test
-    func get_異常_条件() async {
+    func get_異常_地区未登録() async {
         let subject = make(
-            locationRepository: .init(),
-            districtRepository: .init(getHandler: { _ in nil }),
-            periodRepository: .init()
+            districtRepository: .init(getHandler: { _ in nil })
         )
 
         await #expect(throws: Error.notFound("指定された地区が見つかりません")) {
@@ -95,14 +90,9 @@ struct LocationUsecaseTest {
     }
 
     @Test
-    func put_異常_条件() async {
-        let location = FloatLocation(id: "loc-2", districtId: "district-1", coordinate: .init(latitude: 35, longitude: 139), timestamp: now)
-
-        let subject = make(
-            locationRepository: .init(),
-            districtRepository: .init(),
-            periodRepository: .init()
-        )
+    func put_異常_権限不一致() async {
+        let location = FloatLocation.mock(id: "loc-2", districtId: "district-1", coordinate: .init(latitude: 35, longitude: 139), timestamp: now)
+        let subject = make()
 
         await #expect(throws: Error.unauthorized("アクセス権限がありません")) {
             _ = try await subject.put(location, user: .district("other"))
@@ -121,8 +111,7 @@ struct LocationUsecaseTest {
 
         let subject = make(
             locationRepository: repository,
-            districtRepository: .init(getHandler: { _ in district }),
-            periodRepository: .init()
+            districtRepository: .init(getHandler: { _ in district })
         )
 
         let result = try await subject.put(location, user: .district(district.id))
@@ -143,14 +132,31 @@ struct LocationUsecaseTest {
                 lastCalledFestivalId = festivalId
                 lastCalledDistrictId = districtId
             }),
-            districtRepository: .init(getHandler: { _ in district }),
-            periodRepository: .init()
+            districtRepository: .init(getHandler: { _ in district })
         )
 
         try await subject.delete(districtId: district.id, user: .district(district.id))
 
         #expect(lastCalledFestivalId == district.festivalId)
         #expect(lastCalledDistrictId == district.id)
+    }
+
+    @Test
+    func query_異常_依存エラーを透過() async {
+        let period = Period(
+            festivalId: "festival-1",
+            date: .from(now),
+            start: .init(hour: 0, minute: 0),
+            end: .init(hour: 23, minute: 59)
+        )
+        let subject = make(
+            locationRepository: .init(queryHandler: { _ in throw TestError.intentional }),
+            periodRepository: .init(queryByYearHandler: { _, _ in [period] })
+        )
+
+        await #expect(throws: TestError.intentional) {
+            _ = try await subject.query(by: "festival-1", user: .guest, now: now)
+        }
     }
 }
 

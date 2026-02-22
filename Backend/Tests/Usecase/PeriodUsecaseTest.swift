@@ -17,7 +17,7 @@ struct PeriodUsecaseTest {
     }
 
     @Test
-    func get_異常_条件() async {
+    func get_異常_日程未登録() async {
         let subject = make(repository: .init(getHandler: { _ in nil }))
 
         await #expect(throws: Error.notFound("指定された日程が取得できませんでした。")) {
@@ -50,9 +50,9 @@ struct PeriodUsecaseTest {
     }
 
     @Test
-    func post_異常_条件() async {
+    func post_異常_権限不一致() async {
         let period = Period.mock(festivalId: "festival-1")
-        let subject = make(repository: .init())
+        let subject = make()
 
         await #expect(throws: Error.unauthorized("アクセス権限がありません。")) {
             _ = try await subject.post(festivalId: "festival-1", period: period, user: .guest)
@@ -100,6 +100,15 @@ struct PeriodUsecaseTest {
 
         #expect(repository.deleteCallCount == 1)
         #expect(lastCalledFestivalId == "festival-1")
+    }
+
+    @Test
+    func query_異常_依存エラーを透過() async {
+        let subject = make(repository: .init(queryHandler: { _ in throw TestError.intentional }))
+
+        await #expect(throws: TestError.intentional) {
+            _ = try await subject.query(by: "festival-1")
+        }
     }
 }
 

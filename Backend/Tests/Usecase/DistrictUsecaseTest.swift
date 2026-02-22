@@ -9,10 +9,7 @@ struct DistrictUsecaseTest {
         let districts = [District.mock(id: "district-1", festivalId: "festival-1")]
         let repository = DistrictRepositoryMock(queryHandler: { _ in districts })
         let subject = make(
-            districtRepository: repository,
-            festivalRepository: .init(),
-            performanceRepository: .init(),
-            authManagerFactory: { throw TestError.unimplemented }
+            districtRepository: repository
         )
 
         let result = try await subject.query(by: "festival-1")
@@ -34,7 +31,6 @@ struct DistrictUsecaseTest {
 
         let subject = make(
             districtRepository: districtRepository,
-            festivalRepository: .init(),
             performanceRepository: performanceRepository,
             authManagerFactory: { throw TestError.unimplemented }
         )
@@ -49,13 +45,8 @@ struct DistrictUsecaseTest {
     }
 
     @Test
-    func post_異常_条件() async {
-        let subject = make(
-            districtRepository: .init(),
-            festivalRepository: .init(),
-            performanceRepository: .init(),
-            authManagerFactory: { throw TestError.unimplemented }
-        )
+    func post_異常_権限不一致() async {
+        let subject = make()
 
         await #expect(throws: Error.unauthorized()) {
             _ = try await subject.post(
@@ -97,7 +88,6 @@ struct DistrictUsecaseTest {
                 #expect(id == festival.id)
                 return festival
             }),
-            performanceRepository: .init(),
             authManagerFactory: { manager }
         )
 
@@ -116,7 +106,7 @@ struct DistrictUsecaseTest {
     }
 
     @Test
-    func put_正常_条件1() async throws {
+    func put_正常_地区権限は編集可能項目のみ反映() async throws {
         let current = District(
             id: "district-1",
             name: "old",
@@ -161,7 +151,6 @@ struct DistrictUsecaseTest {
 
         let subject = make(
             districtRepository: districtRepository,
-            festivalRepository: .init(),
             performanceRepository: performanceRepository,
             authManagerFactory: { throw TestError.unimplemented }
         )
@@ -188,7 +177,7 @@ struct DistrictUsecaseTest {
     }
 
     @Test
-    func put_正常_条件2() async throws {
+    func put_正常_本部権限は管理項目のみ反映() async throws {
         let current = District.mock(id: "district-1", festivalId: "festival-1", name: "old", visibility: .all)
         var incoming = District.mock(id: current.id, festivalId: current.festivalId, name: "new", visibility: .admin)
         incoming.order = 5
@@ -211,8 +200,6 @@ struct DistrictUsecaseTest {
 
         let subject = make(
             districtRepository: districtRepository,
-            festivalRepository: .init(),
-            performanceRepository: .init(),
             authManagerFactory: { throw TestError.unimplemented }
         )
 
@@ -229,6 +216,18 @@ struct DistrictUsecaseTest {
         #expect(lastCalledPutId == current.id)
         #expect(districtRepository.getCallCount == 1)
         #expect(districtRepository.putCallCount == 1)
+    }
+
+    @Test
+    func query_異常_依存エラーを透過() async {
+        let subject = make(
+            districtRepository: .init(queryHandler: { _ in throw TestError.intentional }),
+            authManagerFactory: { throw TestError.unimplemented }
+        )
+
+        await #expect(throws: TestError.intentional) {
+            _ = try await subject.query(by: "festival-1")
+        }
     }
 }
 
