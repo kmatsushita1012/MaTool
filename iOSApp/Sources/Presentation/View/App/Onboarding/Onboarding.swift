@@ -54,13 +54,14 @@ struct OnboardingFeature {
                 guard let festival = state.selectedFestival else { return .none }
                 state.isLoading = true
                 return .task(Action.festivalDidSet) {
-                    try await sceneUsecase.select(festivalId: festival.id)
+                    _ = try await sceneUsecase.select(festivalId: festival.id)
+                    return
                 }
             case .binding:
                 return .none
             case .externalGuestTapped,
                 .adminTapped:
-                guard let festival = state.selectedFestival else {
+                guard state.selectedFestival != nil else {
                     state.festivalErrorMessaage = "祭典を選択してください。"
                     return .none
                 }

@@ -13,11 +13,16 @@ enum SceneUsecaseKey: DependencyKey {
     static let liveValue: SceneUsecaseProtocol = SceneUsecase()
 }
 
+enum FestivalSelectionResult: Equatable, Sendable {
+    case unchanged
+    case changed(UserRole)
+}
+
 protocol SceneUsecaseProtocol: Sendable {
     func launch() async -> LaunchState
     func signIn(username: String, password: String) async throws -> SignInState
     func confirmSignIn(password: String) async throws -> UserRole
-    func select(festivalId: Festival.ID) async throws
+    func select(festivalId: Festival.ID) async throws -> FestivalSelectionResult
     func select(districtId: District.ID) async throws -> Route.ID?
 }
 
@@ -93,18 +98,25 @@ actor SceneUsecase: SceneUsecaseProtocol {
         return result
     }
     
-    func select(festivalId: Shared.Festival.ID) async throws {
-        try await dataFetcher.launchFestival(festivalId: festivalId)
+    func select(festivalId: Shared.Festival.ID) async throws -> FestivalSelectionResult {
+        let previousFestivalId = userDefaults.defaultFestivalId
+        let isFestivalChanged = previousFestivalId != festivalId
+        guard isFestivalChanged else {
+            return .unchanged
+        }
+        async let signOutTask: UserRole = authService.signOut()
+        async let launchFestivalTask: () = dataFetcher.launchFestival(festivalId: festivalId, clearsExistingData: true)
+        _ = try await (signOutTask, launchFestivalTask)
         userDefaults.defaultFestivalId = festivalId
         userDefaults.defaultDistrictId = nil
-        return
+        return .changed(.guest)
     }
     
     func select(districtId: Shared.District.ID) async throws -> Route.ID? {
         guard let district = FetchOne(District.find(districtId)).wrappedValue else {
             throw APIError.notFound(message: "指定された町が存在しません。")
         }
-        let currentRouteId = try await dataFetcher.launchDistrict(districtId: districtId)
+        let currentRouteId = try await dataFetcher.launchDistrict(districtId: districtId, clearsExistingData: false)
         userDefaults.defaultDistrictId = district.id
         return currentRouteId
     }
