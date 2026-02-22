@@ -32,6 +32,21 @@ struct FestivalControllerTest {
     }
 
     @Test
+    func scan_returnsFestivals() async throws {
+        let festivals = [Festival.mock(id: "festival-1")]
+        let mock = FestivalUsecaseMock(scanHandler: { festivals })
+        let subject = make(usecase: mock)
+
+        let request = Application.Request.make(method: .get, path: "/festivals")
+        let response = try await subject.scan(request, next: next)
+        let actual = try [Festival].from(response.body)
+
+        #expect(response.statusCode == 200)
+        #expect(actual == festivals)
+        #expect(mock.scanCallCount == 1)
+    }
+
+    @Test
     func put_usesGuestWhenUserIsNil() async throws {
         let expected = FestivalPack.mock(festival: .mock(id: "festival-2"))
         var capturedUser: UserRole?
@@ -57,6 +72,16 @@ struct FestivalControllerTest {
         #expect(actual == expected)
         #expect(capturedUser == .guest)
         #expect(mock.putCallCount == 1)
+    }
+
+    @Test
+    func get_missingFestivalId_throwsBadRequest() async {
+        let subject = make(usecase: FestivalUsecaseMock())
+        let request = Application.Request.make(method: .get, path: "/festivals")
+
+        await #expect(throws: Error.badRequest("送信されたデータが不十分です。")) {
+            _ = try await subject.get(request, next: next)
+        }
     }
 }
 
