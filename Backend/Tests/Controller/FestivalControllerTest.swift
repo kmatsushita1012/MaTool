@@ -75,12 +75,22 @@ struct FestivalControllerTest {
     }
 
     @Test
-    func get_異常_条件() async {
-        let subject = make(usecase: FestivalUsecaseMock())
+    func get_異常_パラメータ不足() async {
+        let subject = make()
         let request = Application.Request.make(method: .get, path: "/festivals")
 
         await #expect(throws: Error.badRequest("送信されたデータが不十分です。")) {
             _ = try await subject.get(request, next: next)
+        }
+    }
+
+    @Test
+    func scan_異常_ユースケースエラー透過() async {
+        let subject = make(usecase: FestivalUsecaseMock(scanHandler: { throw TestError.intentional }))
+        let request = Application.Request.make(method: .get, path: "/festivals")
+
+        await #expect(throws: TestError.intentional) {
+            _ = try await subject.scan(request, next: next)
         }
     }
 }
