@@ -4,11 +4,11 @@ import Testing
 
 struct FestivalRouterTest {
     @Test
-    func routesFestivalGetToFestivalController() async {
-        var capturedFestivalId: String?
+    func routesFestivalGetToFestivalController_正常() async {
+        var lastCalledFestivalId: String?
         let festivalController = FestivalControllerMock(
             getHandler: { request, _ in
-                capturedFestivalId = request.parameters["festivalId"]
+                lastCalledFestivalId = request.parameters["festivalId"]
                 return try .success()
             }
         )
@@ -31,11 +31,11 @@ struct FestivalRouterTest {
 
         #expect(response.statusCode == 200)
         #expect(festivalController.getCallCount == 1)
-        #expect(capturedFestivalId == "festival-1")
+        #expect(lastCalledFestivalId == "festival-1")
     }
 
     @Test
-    func routesDistrictPostToDistrictController() async {
+    func routesDistrictPostToDistrictController_正常() async {
         let festivalController = FestivalControllerMock()
         let districtController = DistrictControllerMock(postHandler: { _, _ in try .success() })
         let locationController = LocationControllerMock()
@@ -59,7 +59,7 @@ struct FestivalRouterTest {
     }
 
     @Test
-    func routesLaunchToSceneController() async {
+    func routesLaunchToSceneController_正常() async {
         let festivalController = FestivalControllerMock()
         let districtController = DistrictControllerMock()
         let locationController = LocationControllerMock()

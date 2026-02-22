@@ -6,17 +6,24 @@ import Testing
 
 struct RouteUsecaseTest {
     @Test
-    func get_visibilityAll_returnsRoutePack() async throws {
+    func get_正常() async throws {
         let district = District(id: "district-1", name: "d", festivalId: "festival-1", visibility: .all)
         let route = Route(id: "route-1", districtId: district.id, periodId: "period-1", visibility: .all)
         let point = Point(routeId: route.id, coordinate: .init(latitude: 35, longitude: 139))
         let passage = RoutePassage(routeId: route.id, districtId: district.id)
+        var lastCalledRouteId: String?
+        let routeRepository = RouteRepositoryMock(getHandler: { id in
+            lastCalledRouteId = id
+            return route
+        })
+        let pointRepository = PointRepositoryMock(queryHandler: { _ in [point] })
+        let passageRepository = PassageRepositoryMock(queryHandler: { _ in [passage] })
 
         let subject = make(
-            routeRepository: .init(getHandler: { _ in route }),
+            routeRepository: routeRepository,
             districtRepository: .init(getHandler: { _ in district }),
-            pointRepository: .init(queryHandler: { _ in [point] }),
-            passageRepository: .init(queryHandler: { _ in [passage] })
+            pointRepository: pointRepository,
+            passageRepository: passageRepository
         )
 
         let result = try await subject.get(id: route.id, user: .guest)
@@ -24,10 +31,14 @@ struct RouteUsecaseTest {
         #expect(result.route == route)
         #expect(result.points == [point])
         #expect(result.passages == [passage])
+        #expect(lastCalledRouteId == route.id)
+        #expect(routeRepository.getCallCount == 1)
+        #expect(pointRepository.queryCallCount == 1)
+        #expect(passageRepository.queryCallCount == 1)
     }
 
     @Test
-    func get_notFound_throws() async {
+    func get_異常_条件1() async {
         let subject = make(
             routeRepository: .init(getHandler: { _ in nil }),
             districtRepository: .init(),
@@ -41,7 +52,7 @@ struct RouteUsecaseTest {
     }
 
     @Test
-    func get_adminRoute_guestForbidden() async {
+    func get_異常_条件2() async {
         let district = District(id: "district-1", name: "d", festivalId: "festival-1", visibility: .all)
         let route = Route(id: "route-1", districtId: district.id, periodId: "period-1", visibility: .admin)
 
@@ -58,7 +69,7 @@ struct RouteUsecaseTest {
     }
 
     @Test
-    func query_all_forwardsToRepository() async throws {
+    func query_正常_条件1() async throws {
         let district = District.mock(id: "district-1", festivalId: "festival-1")
         let routes = [Route.mock(id: "route-1", districtId: district.id)]
         let repository = RouteRepositoryMock(queryHandler: { _ in routes })
@@ -76,19 +87,20 @@ struct RouteUsecaseTest {
     }
 
     @Test
-    func query_latest_prefersNextYear() async throws {
+    func query_正常_条件2() async throws {
         let district = District(id: "district-1", name: "d", festivalId: "festival-1", visibility: .all)
         let now = SimpleDate(year: 2026, month: 2, day: 1)
         let nextYearRoute = Route(id: "route-next", districtId: district.id, periodId: "period-next", visibility: .all)
 
+        let repository = RouteRepositoryMock(
+            queryHandler: { _ in [] },
+            queryByYearHandler: { _, year in
+                if year == 2027 { return [nextYearRoute] }
+                return []
+            }
+        )
         let subject = make(
-            routeRepository: .init(
-                queryHandler: { _ in [] },
-                queryByYearHandler: { _, year in
-                    if year == 2027 { return [nextYearRoute] }
-                    return []
-                }
-            ),
+            routeRepository: repository,
             districtRepository: .init(getHandler: { _ in district }),
             pointRepository: .init(),
             passageRepository: .init()
@@ -97,20 +109,23 @@ struct RouteUsecaseTest {
         let result = try await subject.query(by: district.id, type: .latest, now: now, user: .guest)
 
         #expect(result == [nextYearRoute])
+        #expect(repository.queryByYearCallCount == 1)
     }
 
     @Test
-    func query_latest_fallsBackToLastYear() async throws {
+    func query_正常_条件3() async throws {
         let district = District.mock(id: "district-1", festivalId: "festival-1")
         let lastYearRoute = Route.mock(id: "route-last", districtId: district.id)
 
-        let subject = make(
-            routeRepository: .init(
+        let repository = RouteRepositoryMock(
+                queryHandler: { _ in [] },
                 queryByYearHandler: { _, year in
                     if year == 2025 { return [lastYearRoute] }
                     return []
                 }
-            ),
+        )
+        let subject = make(
+            routeRepository: repository,
             districtRepository: .init(getHandler: { _ in district }),
             pointRepository: .init(),
             passageRepository: .init()
@@ -124,10 +139,11 @@ struct RouteUsecaseTest {
         )
 
         #expect(result == [lastYearRoute])
+        #expect(repository.queryByYearCallCount == 3)
     }
 
     @Test
-    func post_unauthorized_throws() async {
+    func post_異常_条件() async {
         let pack = RoutePack.mock(route: .mock(id: "route-1", districtId: "district-1"), points: [], passages: [])
         let subject = make(
             routeRepository: .init(),
@@ -142,7 +158,7 @@ struct RouteUsecaseTest {
     }
 
     @Test
-    func post_authorized_createsRoutePack() async throws {
+    func post_正常() async throws {
         let route = Route.mock(id: "route-1", districtId: "district-1")
         let points = [
             Point.mock(id: "p-1", routeId: route.id, index: 0, time: .init(hour: 9, minute: 0), anchor: .start),
@@ -151,11 +167,14 @@ struct RouteUsecaseTest {
         let passages = [RoutePassage.mock(id: "pa-1", routeId: route.id, districtId: route.districtId, order: 0)]
         let pack = RoutePack.mock(route: route, points: points, passages: passages)
 
+        let routeRepository = RouteRepositoryMock(postHandler: { $0 })
+        let pointRepository = PointRepositoryMock(queryHandler: { _ in [] }, postHandler: { $0 })
+        let passageRepository = PassageRepositoryMock(queryHandler: { _ in [] }, postHandler: { $0 })
         let subject = make(
-            routeRepository: .init(postHandler: { $0 }),
+            routeRepository: routeRepository,
             districtRepository: .init(),
-            pointRepository: .init(queryHandler: { _ in [] }, postHandler: { $0 }),
-            passageRepository: .init(queryHandler: { _ in [] }, postHandler: { $0 })
+            pointRepository: pointRepository,
+            passageRepository: passageRepository
         )
 
         let result = try await subject.post(districtId: route.districtId, pack: pack, user: .district(route.districtId))
@@ -163,10 +182,13 @@ struct RouteUsecaseTest {
         #expect(result.route == route)
         #expect(result.points.count == 2)
         #expect(result.passages.count == 1)
+        #expect(routeRepository.postCallCount == 1)
+        #expect(pointRepository.postCallCount == 2)
+        #expect(passageRepository.postCallCount == 1)
     }
 
     @Test
-    func put_notFound_throws() async {
+    func put_異常_条件() async {
         let route = Route.mock(id: "route-1", districtId: "district-1")
         let pack = RoutePack.mock(route: route, points: [], passages: [])
         let subject = make(
@@ -182,17 +204,19 @@ struct RouteUsecaseTest {
     }
 
     @Test
-    func put_authorized_updatesRoutePack() async throws {
+    func put_正常() async throws {
         let route = Route.mock(id: "route-1", districtId: "district-1")
         let points = [
             Point.mock(id: "p-1", routeId: route.id, index: 0, time: .init(hour: 9, minute: 0), anchor: .start),
             Point.mock(id: "p-2", routeId: route.id, index: 1, time: .init(hour: 10, minute: 0), anchor: .end)
         ]
         let pack = RoutePack.mock(route: route, points: points, passages: [])
+        let routeRepository = RouteRepositoryMock(getHandler: { _ in route }, postHandler: { $0 })
+        let pointRepository = PointRepositoryMock(queryHandler: { _ in [] }, postHandler: { $0 })
         let subject = make(
-            routeRepository: .init(getHandler: { _ in route }, postHandler: { $0 }),
+            routeRepository: routeRepository,
             districtRepository: .init(),
-            pointRepository: .init(queryHandler: { _ in [] }, postHandler: { $0 }),
+            pointRepository: pointRepository,
             passageRepository: .init(queryHandler: { _ in [] })
         )
 
@@ -200,10 +224,13 @@ struct RouteUsecaseTest {
 
         #expect(result.route == route)
         #expect(result.points.count == 2)
+        #expect(routeRepository.getCallCount == 1)
+        #expect(routeRepository.postCallCount == 1)
+        #expect(pointRepository.postCallCount == 2)
     }
 
     @Test
-    func delete_userMismatch_throwsUnauthorized() async {
+    func delete_異常_条件() async {
         let route = Route(id: "route-1", districtId: "district-1", periodId: "period-1")
 
         let subject = make(
@@ -219,7 +246,7 @@ struct RouteUsecaseTest {
     }
 
     @Test
-    func delete_authorized_deletesRoutePointsAndPassages() async throws {
+    func delete_正常() async throws {
         let route = Route.mock(id: "route-1", districtId: "district-1")
         let routeRepository = RouteRepositoryMock(
             getHandler: { _ in route },
@@ -245,10 +272,10 @@ struct RouteUsecaseTest {
 
 private extension RouteUsecaseTest {
     func make(
-        routeRepository: RouteRepositoryMock,
-        districtRepository: DistrictRepositoryMock,
-        pointRepository: PointRepositoryMock,
-        passageRepository: PassageRepositoryMock
+        routeRepository: RouteRepositoryMock = .init(),
+        districtRepository: DistrictRepositoryMock = .init(),
+        pointRepository: PointRepositoryMock = .init(),
+        passageRepository: PassageRepositoryMock = .init()
     ) -> RouteUsecase {
         withDependencies {
             $0[RouteRepositoryKey.self] = routeRepository
