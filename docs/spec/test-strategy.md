@@ -272,6 +272,28 @@
 - 方針:
   - 「100%目標」は維持し、次は `SceneUsecase` と `RouteUsecase` の残分岐を優先して埋める
 
+### 10.3 追加進捗（2026-02-22, Repository）
+
+- `PeriodRepositoryTest` に `put_正常_レコード化してputする` と `put_異常_依存エラーを透過` を追加し、`put` の正常/異常を補完。
+- Repository テストを追加:
+  - `CheckpointRepositoryTest`
+  - `DistrictRepositoryTest`
+  - `FestivalRepositoryTest`
+  - `HazardSectionRepositoryTest`
+  - `LocationRepositoryTest`
+  - `PerformanceRepositoryTest`
+  - `PassageRepositoryTest`
+  - `PointRepositoryTest`
+  - `RouteRepositoryTest`
+- 共通化:
+  - `Backend/Tests/Utility/Helpers.swift` に `decodeFromEncodable(_:as:)` / `encodeForDataStore(_:)` を利用し、`AnyEncodable` の encode/decode 重複を削減。
+- テスト設計の適用:
+  - `make()` はデフォルト引数で依存注入を集約。
+  - 正常系は「結果整合」と「呼び出し/引数キャプチャ確認」を同一テストで実施。
+  - 依存 `throw` の透過を異常系として各対象に追加。
+- 実行確認:
+  - `swift test --filter RepositoryTest` が pass（56 tests / 10 suites）。
+
 ## 11. Bootstrap 実行ポリシー
 
 - `Backend/Bootstrap` の injector/migrator テストは、sandbox 上では実行しない。
