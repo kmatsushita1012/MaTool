@@ -53,7 +53,10 @@ public struct RootSceneView: View {
                         }
                 }
             case .onboarding:
-                OnboardingView(store: .init(initialState: OnboardingFeature.State(launchState: $launchState)) { OnboardingFeature() })
+                OnboardingView(store: .init(initialState: OnboardingFeature.State(launchState: $launchState)) {
+                    OnboardingFeature() }
+                )
+                .preferredColorScheme(.light)
             case .loading:
                 loadingView
             case .error(let message):
