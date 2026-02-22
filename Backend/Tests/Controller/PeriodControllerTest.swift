@@ -5,11 +5,11 @@ import Testing
 
 struct PeriodControllerTest {
     @Test
-    func get_forwardsPeriodId() async throws {
+    func get_正常() async throws {
         let expected = Period.mock(id: "period-1", festivalId: "festival-1")
-        var capturedId: String?
+        var lastCalledId: String?
         let mock = PeriodUsecaseMock(getHandler: { id in
-            capturedId = id
+            lastCalledId = id
             return expected
         })
         let subject = make(usecase: mock)
@@ -20,19 +20,19 @@ struct PeriodControllerTest {
 
         #expect(response.statusCode == 200)
         #expect(actual == expected)
-        #expect(capturedId == "period-1")
+        #expect(lastCalledId == "period-1")
     }
 
     @Test
-    func query_withYear_usesYearSpecificUsecaseMethod() async throws {
+    func query_正常_条件1() async throws {
         let periods = [Period.mock(id: "period-1", festivalId: "festival-1")]
-        var capturedFestivalId: String?
-        var capturedYear: Int?
+        var lastCalledFestivalId: String?
+        var lastCalledYear: Int?
 
         let mock = PeriodUsecaseMock(
             queryByYearHandler: { festivalId, year in
-                capturedFestivalId = festivalId
-                capturedYear = year
+                lastCalledFestivalId = festivalId
+                lastCalledYear = year
                 return periods
             },
             queryHandler: { _ in [] }
@@ -50,14 +50,14 @@ struct PeriodControllerTest {
 
         #expect(response.statusCode == 200)
         #expect(actual == periods)
-        #expect(capturedFestivalId == "festival-1")
-        #expect(capturedYear == 2026)
+        #expect(lastCalledFestivalId == "festival-1")
+        #expect(lastCalledYear == 2026)
         #expect(mock.queryByYearCallCount == 1)
         #expect(mock.queryCallCount == 0)
     }
 
     @Test
-    func query_withoutYear_usesDefaultQuery() async throws {
+    func query_正常_条件2() async throws {
         let periods = [Period.mock(id: "period-1", festivalId: "festival-1")]
         let mock = PeriodUsecaseMock(queryHandler: { _ in periods })
         let subject = make(usecase: mock)
@@ -77,11 +77,11 @@ struct PeriodControllerTest {
     }
 
     @Test
-    func post_decodesBodyAndForwardsFestivalId() async throws {
+    func post_正常() async throws {
         let period = Period.mock(id: "period-1", festivalId: "festival-1")
-        var capturedFestivalId: String?
+        var lastCalledFestivalId: String?
         let mock = PeriodUsecaseMock(postHandler: { festivalId, item, _ in
-            capturedFestivalId = festivalId
+            lastCalledFestivalId = festivalId
             return item
         })
         let subject = make(usecase: mock)
@@ -98,15 +98,15 @@ struct PeriodControllerTest {
 
         #expect(response.statusCode == 200)
         #expect(actual == period)
-        #expect(capturedFestivalId == "festival-1")
+        #expect(lastCalledFestivalId == "festival-1")
     }
 
     @Test
-    func put_decodesBodyAndForwards() async throws {
+    func put_正常() async throws {
         let period = Period.mock(id: "period-1", festivalId: "festival-1")
-        var capturedPeriod: Period?
+        var lastCalledPeriod: Period?
         let mock = PeriodUsecaseMock(putHandler: { item, _ in
-            capturedPeriod = item
+            lastCalledPeriod = item
             return item
         })
         let subject = make(usecase: mock)
@@ -122,21 +122,21 @@ struct PeriodControllerTest {
 
         #expect(response.statusCode == 200)
         #expect(actual == period)
-        #expect(capturedPeriod == period)
+        #expect(lastCalledPeriod == period)
         #expect(mock.putCallCount == 1)
     }
 
     @Test
-    func delete_forwardsPeriodId() async throws {
-        var capturedId: String?
-        let mock = PeriodUsecaseMock(deleteHandler: { id, _ in capturedId = id })
+    func delete_正常() async throws {
+        var lastCalledId: String?
+        let mock = PeriodUsecaseMock(deleteHandler: { id, _ in lastCalledId = id })
         let subject = make(usecase: mock)
 
         let request = Application.Request.make(method: .delete, path: "/periods/period-1", parameters: ["periodId": "period-1"])
         let response = try await subject.delete(request: request, next: next)
 
         #expect(response.statusCode == 200)
-        #expect(capturedId == "period-1")
+        #expect(lastCalledId == "period-1")
         #expect(mock.deleteCallCount == 1)
     }
 }
@@ -146,7 +146,7 @@ private extension PeriodControllerTest {
         { _ in throw TestError.intentional }
     }
 
-    func make(usecase: PeriodUsecaseMock) -> PeriodController {
+    func make(usecase: PeriodUsecaseMock = .init()) -> PeriodController {
         withDependencies {
             $0[PeriodUsecaseKey.self] = usecase
         } operation: {

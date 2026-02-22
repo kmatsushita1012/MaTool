@@ -5,11 +5,11 @@ import Testing
 
 struct LocationControllerTest {
     @Test
-    func get_forwardsDistrictId() async throws {
+    func get_正常() async throws {
         let location = FloatLocation.mock(id: "loc-1", districtId: "district-1")
-        var capturedDistrictId: String?
+        var lastCalledDistrictId: String?
         let mock = LocationUsecaseMock(getHandler: { districtId, _, _ in
-            capturedDistrictId = districtId
+            lastCalledDistrictId = districtId
             return location
         })
         let subject = make(usecase: mock)
@@ -20,15 +20,15 @@ struct LocationControllerTest {
 
         #expect(response.statusCode == 200)
         #expect(actual == location)
-        #expect(capturedDistrictId == "district-1")
+        #expect(lastCalledDistrictId == "district-1")
     }
 
     @Test
-    func query_forwardsFestivalId() async throws {
+    func query_正常() async throws {
         let expected = [FloatLocation.mock(id: "loc-1", districtId: "district-1")]
-        var capturedFestivalId: String?
+        var lastCalledFestivalId: String?
         let mock = LocationUsecaseMock(queryHandler: { festivalId, _, _ in
-            capturedFestivalId = festivalId
+            lastCalledFestivalId = festivalId
             return expected
         })
         let subject = make(usecase: mock)
@@ -39,11 +39,11 @@ struct LocationControllerTest {
 
         #expect(response.statusCode == 200)
         #expect(actual == expected)
-        #expect(capturedFestivalId == "festival-1")
+        #expect(lastCalledFestivalId == "festival-1")
     }
 
     @Test
-    func put_decodesBodyAndForwards() async throws {
+    func put_正常() async throws {
         let location = FloatLocation.mock(id: "loc-1", districtId: "district-1")
         let mock = LocationUsecaseMock(putHandler: { item, _ in item })
         let subject = make(usecase: mock)
@@ -54,17 +54,18 @@ struct LocationControllerTest {
 
         #expect(response.statusCode == 200)
         #expect(actual == location)
+        #expect(mock.putCallCount == 1)
     }
 
     @Test
-    func delete_forwardsDistrictIdAndUser() async throws {
-        var capturedDistrictId: String?
-        var capturedUser: UserRole?
+    func delete_正常() async throws {
+        var lastCalledDistrictId: String?
+        var lastCalledUser: UserRole?
 
         let mock = LocationUsecaseMock(
             deleteHandler: { districtId, user in
-                capturedDistrictId = districtId
-                capturedUser = user
+                lastCalledDistrictId = districtId
+                lastCalledUser = user
             }
         )
         let subject = make(usecase: mock)
@@ -80,8 +81,8 @@ struct LocationControllerTest {
 
         #expect(response.statusCode == 200)
         #expect(response.body == "{}")
-        #expect(capturedDistrictId == "district-1")
-        #expect(capturedUser == .district("district-1"))
+        #expect(lastCalledDistrictId == "district-1")
+        #expect(lastCalledUser == .district("district-1"))
         #expect(mock.deleteCallCount == 1)
     }
 }
@@ -91,7 +92,7 @@ private extension LocationControllerTest {
         { _ in throw TestError.intentional }
     }
 
-    func make(usecase: LocationUsecaseMock) -> LocationController {
+    func make(usecase: LocationUsecaseMock = .init()) -> LocationController {
         withDependencies {
             $0[LocationUsecaseKey.self] = usecase
         } operation: {
