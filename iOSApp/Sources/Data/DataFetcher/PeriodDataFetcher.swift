@@ -64,10 +64,10 @@ struct PeriodDataFetcher: PeriodDataFetcherProtocol {
     private func syncAll(_ periods: [Period], festivalId: Festival.ID, query: Query) async throws {
         try await database.write { db in
             let oldPeriods: [Period] = try fetchOldPeriods(festivalId: festivalId, query: query, maxYear: periods.map(keyPath: \.date.year).max(), db: db)
-            let (insertedPeriods, deletedPeriodIds) = oldPeriods.diff(with: periods)
+            let (upsertedPeriods, deletedPeriodIds) = oldPeriods.diffById(with: periods)
             try periodStore.deleteAll(deletedPeriodIds, from: db)
             try routeStore.deleteAll(where: { $0.periodId.in(deletedPeriodIds) }, from: db)
-            try periodStore.insert(insertedPeriods, at: db)
+            try periodStore.upsert(upsertedPeriods, at: db)
         }
     }
     
@@ -88,8 +88,7 @@ struct PeriodDataFetcher: PeriodDataFetcherProtocol {
     
     private func sync(_ period: Period) async throws {
         try await database.write { db in
-            try periodStore.delete(period.id, from: db)
-            try periodStore.insert(period, at: db)
+            try periodStore.upsert(period, at: db)
         }
     }
 }
