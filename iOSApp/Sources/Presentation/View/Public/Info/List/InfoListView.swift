@@ -71,7 +71,7 @@ struct InfoListView: View {
     func mainItem(_ text: String) -> some View{
         Text(text)
             .font(.title)
-            .foregroundColor(.black)
+            .foregroundColor(.primary)
             .stroke(color: .white, width: 2)
             .frame(maxWidth: .infinity)
             .padding(.vertical, 8)
@@ -83,7 +83,7 @@ struct InfoListView: View {
     func listItem(_ text: String) -> some View {
         Text(text)
             .font(.title2)
-            .foregroundColor(.black)
+            .foregroundColor(.primary)
             .stroke(color: .white, width: 1)
             .frame(maxWidth: .infinity)
             .padding(.vertical, 8)
@@ -97,8 +97,8 @@ struct InfoListView: View {
         LinearGradient(
             gradient: Gradient(stops: [
                 .init(color: .clear, location: 0),
-                .init(color: .black, location: 0.05),
-                .init(color: .black, location: 0.95),
+                .init(color: .primary, location: 0.05),
+                .init(color: .primary, location: 0.95),
                 .init(color: .clear, location: 1)
             ]),
             startPoint: .top,

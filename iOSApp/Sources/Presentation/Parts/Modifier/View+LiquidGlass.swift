@@ -31,4 +31,40 @@ extension EnvironmentValues {
     }
 }
 
+private struct LiquidGlassSwitch<Base: View, Before: View, After: View>: View {
+    @Environment(\.isLiquidGlassDisabled) private var isLiquidGlassDisabled
 
+    let base: Base
+    let before: (Base) -> Before
+    let after: (Base) -> After
+
+    @ViewBuilder
+    var body: some View {
+        if isLiquidGlassDisabled {
+            before(base)
+        } else {
+            after(base)
+        }
+    }
+}
+
+extension View {
+    func ifLiquidGlass<Before: View, After: View>(
+        @ViewBuilder before: @escaping (Self) -> Before,
+        @ViewBuilder after: @escaping (Self) -> After
+    ) -> some View {
+        LiquidGlassSwitch(base: self, before: before, after: after)
+    }
+    
+    func ifLiquidGlass<Before: View>(
+        @ViewBuilder before: @escaping (Self) -> Before
+    ) -> some View {
+        LiquidGlassSwitch(base: self, before: before, after: { _ in self })
+    }
+    
+    func ifLiquidGlass<After: View>(
+        @ViewBuilder after: @escaping (Self) -> After
+    ) -> some View {
+        LiquidGlassSwitch(base: self, before: { _ in self}, after: after)
+    }
+}

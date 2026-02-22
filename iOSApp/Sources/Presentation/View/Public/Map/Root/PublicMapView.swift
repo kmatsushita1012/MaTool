@@ -27,8 +27,6 @@ struct PublicMapView: View {
             }
             .loadingOverlay(store.isLoading)
             .background(Color.map)
-            .navigationTitle("地図")
-            .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button(systemImage: "house"){
@@ -37,6 +35,11 @@ struct PublicMapView: View {
                     .tint(.black)
                 }
                 .hideSharedBackgroundVisibility()
+                
+                ToolbarItem(placement: .title){
+                    Text("地図")
+                        .foregroundStyle(.black)
+                }
             }
             .alert($store.scope(state: \.alert, action: \.alert))
             .dismissible(backButton: false)
@@ -84,7 +87,7 @@ struct PublicMapView: View {
             }
         }) {
             Text(item.text)
-                .foregroundColor(.primary)
+                .foregroundColor(.black)
                 .padding(.vertical, 8)
                 .padding(.horizontal, 16)
                 .frame(minWidth: 48)

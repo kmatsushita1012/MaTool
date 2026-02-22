@@ -82,11 +82,11 @@ struct DistrictInfoView: View {
                     }
                     .padding(.bottom, 88)
                 }
-                VStack{
-                    Spacer()
-                    mapButton()
-                        .padding(32)
-                }
+//                VStack{
+//                    Spacer()
+//                    mapButton()
+//                        .padding(32)
+//                }
             }
             .ignoresSafeArea()
             .loadingOverlay(store.isLoading)
@@ -128,13 +128,11 @@ struct DistrictInfoView: View {
                     .font(.title3)
                 Image(systemName: "paperplane.fill")
             }
-            .foregroundColor(.white)
             .padding(.horizontal, 32)
             .padding(.vertical, 8)
-            .background(
-                Capsule()
-                    .fill(Color.info)
-            )
         }
+        .clipShape(.capsule)
+        .buttonStyle(.borderedProminent)
+        .tint(Color.info)
     }
 }
