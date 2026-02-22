@@ -38,16 +38,20 @@ public struct RootSceneView: View {
             switch launchState {
             case .district(let userRole, let routeId):
                 let store = Store(initialState: HomeFeature.State(userRole: userRole, currentRouteId: routeId)) { HomeFeature() }
-                HomeView(store: store)
-                    .task {
-                        store.send(.initialize)
-                    }
+                NavigationStack{
+                    HomeView(store: store)
+                        .task {
+                            store.send(.initialize)
+                        }
+                }
             case .festival(let userRole):
                 let store = Store(initialState: HomeFeature.State(userRole: userRole)) { HomeFeature() }
-                HomeView(store: store)
-                    .task {
-                        store.send(.initialize)
-                    }
+                NavigationStack{
+                    HomeView(store: store)
+                        .task {
+                            store.send(.initialize)
+                        }
+                }
             case .onboarding:
                 OnboardingView(store: .init(initialState: OnboardingFeature.State(launchState: $launchState)) { OnboardingFeature() })
             case .loading:

@@ -12,101 +12,99 @@ struct HomeView: View {
     @Perception.Bindable var store: StoreOf<HomeFeature>
     
     var body: some View {
-        NavigationStack {
-            WithPerceptionTracking{
-                AnyView(
-                    VStack(spacing: 16) {
-                        card("MapCard")
-                            .onTapGesture {
-                                store.send(.mapTapped)
-                            }
-                        HStack(spacing: 16)  {
-                            GeometryReader { geometry in
-                                VStack(spacing: 16) {
-                                    card("InfoCard", priority: 2)
-                                        .frame(height: geometry.size.height * 3 / 5)
-                                        .onTapGesture{
-                                            store.send(.infoTapped)
-                                        }
-                                    
-                                    card("ShopCard", priority: 1)
-                                        .frame(height: geometry.size.height * 2 / 5)
-                                }
-                            }
-                            
-                            GeometryReader { geometry in
-                                VStack(spacing: 16) {
-                                    card("SettingsCard")
-                                        .frame(height: geometry.size.height * 2 / 5)
-                                        .onTapGesture {
-                                            store.send(.settingsTapped)
-                                        }
-                                    if #available(iOS 17.0, *){
-                                        card("AdminCard")
-                                            .frame(height: geometry.size.height * 3 / 5 )
-                                            .onTapGesture {
-                                                store.send(.adminTapped)
-                                            }
-                                    } else {
-                                        disabledCard("管理者用ページはお使いの端末（iOS 16）では利用できません")
-                                            .frame(height: geometry.size.height * 3 / 5 )
+        WithPerceptionTracking{
+            AnyView(
+                VStack(spacing: 16) {
+                    card("MapCard")
+                        .onTapGesture {
+                            store.send(.mapTapped)
+                        }
+                    HStack(spacing: 16)  {
+                        GeometryReader { geometry in
+                            VStack(spacing: 16) {
+                                card("InfoCard", priority: 2)
+                                    .frame(height: geometry.size.height * 3 / 5)
+                                    .onTapGesture{
+                                        store.send(.infoTapped)
                                     }
+                                
+                                card("ShopCard", priority: 1)
+                                    .frame(height: geometry.size.height * 2 / 5)
+                            }
+                        }
+                        
+                        GeometryReader { geometry in
+                            VStack(spacing: 16) {
+                                card("SettingsCard")
+                                    .frame(height: geometry.size.height * 2 / 5)
+                                    .onTapGesture {
+                                        store.send(.settingsTapped)
+                                    }
+                                if #available(iOS 17.0, *){
+                                    card("AdminCard")
+                                        .frame(height: geometry.size.height * 3 / 5 )
+                                        .onTapGesture {
+                                            store.send(.adminTapped)
+                                        }
+                                } else {
+                                    disabledCard("管理者用ページはお使いの端末（iOS 16）では利用できません")
+                                        .frame(height: geometry.size.height * 3 / 5 )
                                 }
                             }
                         }
-                        Spacer()
                     }
-                    .padding()
-                    .toolbar {
-                        ToolbarItem(placement: .principal) {
-                            Text("MaTool")
-                                .font(.custom("Kanit", size: 34))
-                                .padding()
-                        }
+                    Spacer()
+                }
+                .padding()
+                .toolbar {
+                    ToolbarItem(placement: .principal) {
+                        Text("MaTool")
+                            .font(.custom("Kanit", size: 34))
+                            .padding()
                     }
-                    .background (
-                        Image("HomeBackground")
-                            .resizable()
-                            .scaledToFill()
-                            .ignoresSafeArea(edges: [.top])
-                    )
-                    .navigationDestination(item: $store.scope(state: \.destination?.map, action: \.destination.map)) { store in
-                        PublicMapView(store: store)
-                    }
-                    .navigationDestination(item: $store.scope(state: \.destination?.info, action: \.destination.info)) { store in
-                        InfoListView(store: store)
-                    }
-                    .navigationDestination(item: $store.scope(state: \.destination?.login, action: \.destination.login)) { store in
-                        if #available(iOS 17.0, *){
-                            LoginView(store: store)
-                        } else {
-                            EmptyView()
-                        }
-                    }
-                    .navigationDestination(item: $store.scope(state: \.destination?.adminDistrict, action: \.destination.adminDistrict)) { store in
-                        if #available(iOS 17.0, *){
-                            DistrictDashboardView(store: store)
-                        } else {
-                            EmptyView()
-                        }
-                    }
-                    .navigationDestination(item: $store.scope(state: \.destination?.adminFestival, action: \.destination.adminFestival)) { store in
-                        if #available(iOS 17.0, *){
-                            FestivalDashboardView(store: store)
-                        } else {
-                            EmptyView()
-                        }
-                    }
-                    .navigationDestination(item: $store.scope(state: \.destination?.settings, action: \.destination.settings)) { store in
-                        SettingsView(store: store)
-                    }
-                    .alert($store.scope(state: \.alert, action: \.alert))
-                    .loadingOverlay(store.isLoading)
+                }
+                .background (
+                    Image("HomeBackground")
+                        .resizable()
+                        .scaledToFill()
+                        .ignoresSafeArea(edges: [.top])
                 )
-                .sheet(item: $store.status) { status in
-                    WithPerceptionTracking {
-                        AppStatusModal(status)
+                .navigationDestination(item: $store.scope(state: \.destination?.map, action: \.destination.map)) { store in
+                    PublicMapView(store: store)
+                }
+                .navigationDestination(item: $store.scope(state: \.destination?.info, action: \.destination.info)) { store in
+                    InfoListView(store: store)
+                }
+                .navigationDestination(item: $store.scope(state: \.destination?.login, action: \.destination.login)) { store in
+                    if #available(iOS 17.0, *){
+                        LoginView(store: store)
+                    } else {
+                        EmptyView()
                     }
+                }
+                .navigationDestination(item: $store.scope(state: \.destination?.adminDistrict, action: \.destination.adminDistrict)) { store in
+                    if #available(iOS 17.0, *){
+                        DistrictDashboardView(store: store)
+                    } else {
+                        EmptyView()
+                    }
+                }
+                .navigationDestination(item: $store.scope(state: \.destination?.adminFestival, action: \.destination.adminFestival)) { store in
+                    if #available(iOS 17.0, *){
+                        FestivalDashboardView(store: store)
+                    } else {
+                        EmptyView()
+                    }
+                }
+                .navigationDestination(item: $store.scope(state: \.destination?.settings, action: \.destination.settings)) { store in
+                    SettingsView(store: store)
+                }
+                .alert($store.scope(state: \.alert, action: \.alert))
+                .loadingOverlay(store.isLoading)
+            )
+            .sheet(item: $store.status) { status in
+                WithPerceptionTracking {
+                    AppStatusModal(status)
                 }
             }
         }
