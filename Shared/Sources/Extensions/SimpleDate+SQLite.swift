@@ -95,5 +95,7 @@ public extension TableColumn where QueryValue == SimpleDate.ISODateRepresentatio
 }
 
 extension SimpleDate {
-    var key: String { "\(year)-\(month)-\(day)" }
+    var key: String {
+        String(format: "%04d-%02d-%02d", year, month, day)
+    }
 }
