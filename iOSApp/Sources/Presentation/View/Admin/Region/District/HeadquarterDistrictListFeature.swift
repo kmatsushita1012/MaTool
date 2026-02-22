@@ -23,6 +23,9 @@ struct HeadquarterDistrictListFeature {
     struct State: Equatable {
         @FetchOne var festival: Festival
         @FetchAll var districts: [District]
+        var draftDistricts: [District]? = nil
+        var isReordering: Bool = false
+        var searchText: String = ""
         
         var isLoading: Bool = false
         var folder: ExportedFolder? = nil
@@ -34,6 +37,9 @@ struct HeadquarterDistrictListFeature {
         case binding(BindingAction<State>)
         case selected(District)
         case createTapped
+        case reorderTapped
+        case districtMoved(from: IndexSet, to: Int)
+        case reorderReceived(VoidTaskResult)
         case batchExportTapped
         case selectedReceived(TaskResult<District>)
         case batchExportReceived(TaskResult<[URL]>)
@@ -48,17 +54,57 @@ struct HeadquarterDistrictListFeature {
         BindingReducer()
         Reduce{ state, action in
             switch action {
+            case .binding(\.searchText):
+                if state.isReordering {
+                    state.searchText = ""
+                }
+                return .none
             case .binding:
                 return .none
             case .selected(let district):
                 state.isLoading = true
                 return .task(Action.selectedReceived) {
-                    try await dataFetcher.fetch(districtID: district.id)
-                    try await routeDataFetcher.fetchAll(districtID: district.id, query: .latest)
+                    async let districtFetch: Void = dataFetcher.fetch(districtID: district.id)
+                    async let routeFetch: Void = routeDataFetcher.fetchAll(districtID: district.id, query: .latest)
+                    _ = try await (districtFetch, routeFetch)
                     return district
                 }
             case .createTapped:
                 state.destination = .create(.init(festivalId: state.festival.id))
+                return .none
+            case .reorderTapped:
+                if state.isReordering {
+                    let changed = changedDistricts(state)
+                    guard !changed.isEmpty else {
+                        state.isReordering = false
+                        state.draftDistricts = nil
+                        return .none
+                    }
+                    state.isLoading = true
+                    return .task(Action.reorderReceived) {
+                        for district in changed {
+                            try await dataFetcher.update(district: district)
+                        }
+                    }
+                } else {
+                    guard state.searchText.isEmpty else { return .none }
+                    state.draftDistricts = state.districts.sorted()
+                    state.isReordering = true
+                    return .none
+                }
+            case let .districtMoved(from: source, to: destination):
+                guard var draftDistricts = state.draftDistricts else { return .none }
+                let orders = draftDistricts.map(\.order)
+                draftDistricts.move(fromOffsets: source, toOffset: destination)
+                for index in draftDistricts.indices {
+                    draftDistricts[index].order = orders[index]
+                }
+                state.draftDistricts = draftDistricts
+                return .none
+            case .reorderReceived(.success):
+                state.isLoading = false
+                state.isReordering = false
+                state.draftDistricts = nil
                 return .none
             case .batchExportTapped:
                 return batchExportEffect(state)
@@ -70,6 +116,7 @@ struct HeadquarterDistrictListFeature {
                 state.folder = .init(urls)
                 return .none
             case .selectedReceived(.failure(let error)),
+                .reorderReceived(.failure(let error)),
                 .batchExportReceived(.failure(let error)):
                 state.isLoading = false
                 state.alert = AlertFeature.error(error.localizedDescription)
@@ -114,5 +161,32 @@ extension HeadquarterDistrictListFeature.State{
     init(_ festival: Festival){
         self._festival = FetchOne(festival)
         self._districts = FetchAll(festivalId: festival.id)
+    }
+}
+
+private extension HeadquarterDistrictListFeature {
+    func changedDistricts(_ state: State) -> [District] {
+        guard let draftDistricts = state.draftDistricts else { return [] }
+        let orderMap = Dictionary(uniqueKeysWithValues: state.districts.map { ($0.id, $0.order) })
+        return draftDistricts.filter { district in
+            orderMap[district.id] != district.order
+        }
+    }
+}
+
+extension HeadquarterDistrictListFeature.State {
+    var filteredDistricts: [District] {
+        let source: [District]
+        if isReordering {
+            source = draftDistricts ?? districts.sorted()
+        } else {
+            source = districts.sorted()
+        }
+        guard !searchText.isEmpty else { return source }
+        return source.filter { $0.name.contains(searchText) }
+    }
+    
+    var isReorderDisabled: Bool {
+        !isReordering && !searchText.isEmpty
     }
 }
