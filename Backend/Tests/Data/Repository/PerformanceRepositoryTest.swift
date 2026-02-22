@@ -3,30 +3,32 @@ import Shared
 import Testing
 @testable import Backend
 
-struct LocationRepositoryTest {
+struct PerformanceRepositoryTest {
     @Test
-    func get_正常_祭典と地区の完全一致で取得する() async throws {
-        let location = FloatLocation.mock(id: "loc-1", districtId: "district-1")
+    func query_正常_地区配下を返す() async throws {
+        let performance = Performance.mock(id: "performance-1", districtId: "district-1")
         var lastCalledKeyConditions: [QueryCondition] = []
 
         let dataStore = DataStoreMock(
             queryHandler: { _, keyConditions, _, _, _, _ in
                 lastCalledKeyConditions = keyConditions
-                return try encodeForDataStore([Record(location)])
+                return try encodeForDataStore([Record(performance)])
             }
         )
         let subject = make(dataStore: dataStore)
 
-        let result = try await subject.get(festivalId: "festival-1", districtId: "district-1")
+        let result = try await subject.query(by: "district-1")
 
-        #expect(result == location)
+        #expect(result == [performance])
         #expect(dataStore.queryCallCount == 1)
         #expect(lastCalledKeyConditions.count == 2)
     }
 
     @Test
     func delete_正常_pkとskで削除する() async throws {
+        let item = Performance.mock(id: "performance-1", districtId: "district-1")
         var lastCalledKeys: [String: Codable] = [:]
+
         let dataStore = DataStoreMock(
             deleteHandler: { keys in
                 lastCalledKeys = keys
@@ -34,32 +36,32 @@ struct LocationRepositoryTest {
         )
         let subject = make(dataStore: dataStore)
 
-        try await subject.delete(festivalId: "festival-1", districtId: "district-1")
+        try await subject.delete(item)
 
         #expect(dataStore.deleteCallCount == 1)
-        #expect((lastCalledKeys["pk"] as? String) == "FESTIVAL#festival-1")
-        #expect((lastCalledKeys["sk"] as? String) == "LOCATION#DISTRICT#district-1")
+        #expect((lastCalledKeys["pk"] as? String) == "DISTRICT#district-1")
+        #expect((lastCalledKeys["sk"] as? String) == "PERFORMANCE#performance-1")
     }
 
     @Test
-    func put_異常_依存エラーを透過() async {
+    func get_異常_依存エラーを透過() async {
         let dataStore = DataStoreMock(
-            putHandler: { _ in throw TestError.intentional }
+            queryHandler: { _, _, _, _, _, _ in throw TestError.intentional }
         )
         let subject = make(dataStore: dataStore)
 
         await #expect(throws: TestError.intentional) {
-            _ = try await subject.put(.mock(id: "loc-1", districtId: "district-1"), festivalId: "festival-1")
+            _ = try await subject.get(id: "performance-1")
         }
     }
 }
 
-private extension LocationRepositoryTest {
-    func make(dataStore: DataStoreMock = .init()) -> LocationRepository {
+private extension PerformanceRepositoryTest {
+    func make(dataStore: DataStoreMock = .init()) -> PerformanceRepository {
         withDependencies {
             $0[DataStoreFactoryKey.self] = { _ in dataStore }
         } operation: {
-            LocationRepository()
+            PerformanceRepository()
         }
     }
 }
