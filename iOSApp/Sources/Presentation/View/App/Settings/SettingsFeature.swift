@@ -94,9 +94,9 @@ struct SettingsFeature {
             case .festivalSelectReceived(.success(let result)):
                 if case .changed = result {
                     state.selectedDistrict = nil
+                    state.$districts = FetchAll(District.where{ $0.festivalId.eq(state.selectedFestival?.id)}.order(by: \.order))
                 }
                 state.isLoading = false
-                state.$districts = FetchAll(District.where{ $0.festivalId.eq(state.selectedFestival?.id)}.order(by: \.order))
                 return .none
             case .districtSelectReceived(.success(_)):
                 state.isLoading = false
