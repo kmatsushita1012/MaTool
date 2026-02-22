@@ -76,18 +76,38 @@ struct SceneUsecaseTest {
     func fetchLaunchDistrictPack_正常_地区権限は非公開ルート取得() async throws {
         let now = makeDate(year: 2026, month: 2, day: 22, hour: 12)
         let district = District.mock(id: "district-1", festivalId: "festival-1")
-        let period = Period.mock(id: "period-1", festivalId: district.festivalId, date: .from(now), start: .init(hour: 11, minute: 0), end: .init(hour: 13, minute: 0))
-        let route = Route.mock(id: "route-1", districtId: district.id, periodId: period.id, visibility: .admin)
+        let nextYearPeriod = Period.mock(
+            id: "period-next",
+            festivalId: district.festivalId,
+            date: .init(year: 2027, month: 2, day: 22),
+            start: .init(hour: 11, minute: 0),
+            end: .init(hour: 13, minute: 0)
+        )
+        let currentYearPeriod = Period.mock(
+            id: "period-current",
+            festivalId: district.festivalId,
+            date: .init(year: 2026, month: 2, day: 22),
+            start: .init(hour: 11, minute: 0),
+            end: .init(hour: 13, minute: 0)
+        )
+        let route = Route.mock(id: "route-1", districtId: district.id, periodId: nextYearPeriod.id, visibility: .admin)
         let point = Point.mock(id: "point-1", routeId: route.id)
         let passage = RoutePassage.mock(id: "passage-1", routeId: route.id, districtId: district.id)
 
-        let routeRepository = RouteRepositoryMock(queryHandler: { _ in [route] })
+        let routeRepository = RouteRepositoryMock(queryByYearHandler: { _, year in
+            if year == 2027 { return [route] }
+            return []
+        })
         let pointRepository = PointRepositoryMock(queryHandler: { _ in [point] })
         let passageRepository = PassageRepositoryMock(queryHandler: { _ in [passage] })
 
         let subject = make(
             districtRepository: .init(getHandler: { _ in district }),
-            periodRepository: .init(queryByYearHandler: { _, _ in [period] }),
+            periodRepository: .init(queryByYearHandler: { _, year in
+                if year == 2027 { return [nextYearPeriod] }
+                if year == 2026 { return [currentYearPeriod] }
+                return []
+            }),
             performanceRepository: .init(queryHandler: { _ in [] }),
             routeRepository: routeRepository,
             pointRepository: pointRepository,
@@ -100,7 +120,7 @@ struct SceneUsecaseTest {
         #expect(result.currentRouteId == route.id)
         #expect(result.points == [point])
         #expect(result.passages == [passage])
-        #expect(routeRepository.queryCallCount == 1)
+        #expect(routeRepository.queryByYearCallCount == 1)
     }
 
     @Test
@@ -145,7 +165,7 @@ struct SceneUsecaseTest {
         let subject = make(
             districtRepository: .init(getHandler: { _ in .mock(id: "district-1", festivalId: "festival-1") }),
             periodRepository: .init(queryByYearHandler: { _, _ in [.mock(festivalId: "festival-1")] }),
-            routeRepository: .init(queryHandler: { _ in throw TestError.intentional })
+            routeRepository: .init(queryByYearHandler: { _, _ in throw TestError.intentional })
         )
 
         await #expect(throws: TestError.intentional) {
