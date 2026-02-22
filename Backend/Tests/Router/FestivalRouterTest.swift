@@ -33,4 +33,52 @@ struct FestivalRouterTest {
         #expect(festivalController.getCallCount == 1)
         #expect(capturedFestivalId == "festival-1")
     }
+
+    @Test
+    func routesDistrictPostToDistrictController() async {
+        let festivalController = FestivalControllerMock()
+        let districtController = DistrictControllerMock(postHandler: { _, _ in try .success() })
+        let locationController = LocationControllerMock()
+        let periodController = PeriodControllerMock()
+        let sceneController = SceneControllerMock()
+
+        let response = await withDependencies {
+            $0[FestivalControllerKey.self] = festivalController
+            $0[DistrictControllerKey.self] = districtController
+            $0[LocationControllerKey.self] = locationController
+            $0[PeriodControllerKey.self] = periodController
+            $0[SceneControllerKey.self] = sceneController
+        } operation: {
+            let app = Application { FestivalRouter() }
+            let request = Application.Request.make(method: .post, path: "/festivals/festival-1/districts")
+            return await app.handle(request)
+        }
+
+        #expect(response.statusCode == 200)
+        #expect(districtController.postCallCount == 1)
+    }
+
+    @Test
+    func routesLaunchToSceneController() async {
+        let festivalController = FestivalControllerMock()
+        let districtController = DistrictControllerMock()
+        let locationController = LocationControllerMock()
+        let periodController = PeriodControllerMock()
+        let sceneController = SceneControllerMock(launchFestivalHandler: { _, _ in try .success() })
+
+        let response = await withDependencies {
+            $0[FestivalControllerKey.self] = festivalController
+            $0[DistrictControllerKey.self] = districtController
+            $0[LocationControllerKey.self] = locationController
+            $0[PeriodControllerKey.self] = periodController
+            $0[SceneControllerKey.self] = sceneController
+        } operation: {
+            let app = Application { FestivalRouter() }
+            let request = Application.Request.make(method: .get, path: "/festivals/festival-1/launch")
+            return await app.handle(request)
+        }
+
+        #expect(response.statusCode == 200)
+        #expect(sceneController.launchFestivalCallCount == 1)
+    }
 }
