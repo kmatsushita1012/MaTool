@@ -51,7 +51,7 @@ struct SettingsFeature {
         case dismissTapped
         case signOutTapped
         case signOutReceived(TaskResult<UserRole>)
-        case festivalSelectReceived(TaskResult<UserRole?>)
+        case festivalSelectReceived(TaskResult<FestivalSelectionResult>)
         case districtSelectReceived(TaskResult<Route.ID?>)
         case alert(PresentationAction<AlertFeature.Action>)
     }
@@ -68,7 +68,6 @@ struct SettingsFeature {
         Reduce{ state, action in
             switch action {
             case .binding(\.selectedFestival):
-                state.selectedDistrict = nil
                 guard let festival = state.selectedFestival else { return .none }
                 state.isLoading = true
                 return .task(Action.festivalSelectReceived) {
@@ -92,7 +91,10 @@ struct SettingsFeature {
             case .signOutReceived(.failure(let error)):
                 state.alert = AlertFeature.error("情報の取得に失敗しました \(error.localizedDescription)")
                 return .none
-            case .festivalSelectReceived(.success(_)):
+            case .festivalSelectReceived(.success(let result)):
+                if case .changed = result {
+                    state.selectedDistrict = nil
+                }
                 state.isLoading = false
                 state.$districts = FetchAll(District.where{ $0.festivalId.eq(state.selectedFestival?.id)}.order(by: \.order))
                 return .none
