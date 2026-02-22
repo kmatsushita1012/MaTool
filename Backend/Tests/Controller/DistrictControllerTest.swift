@@ -137,6 +137,17 @@ struct DistrictControllerTest {
         #expect(lastCalledId == "district-1")
         #expect(lastCalledDistrict == district)
     }
+
+    @Test
+    func get_異常_ユースケースエラー透過() async {
+        let mock = DistrictUsecaseMock(getHandler: { _ in throw TestError.intentional })
+        let subject = make(usecase: mock)
+        let request = Application.Request.make(method: .get, path: "/districts/district-1", parameters: ["districtId": "district-1"])
+
+        await #expect(throws: TestError.intentional) {
+            _ = try await subject.get(request, next: next)
+        }
+    }
 }
 
 private extension DistrictControllerTest {

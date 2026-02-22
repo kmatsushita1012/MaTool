@@ -85,6 +85,21 @@ struct LocationControllerTest {
         #expect(lastCalledUser == .district("district-1"))
         #expect(mock.deleteCallCount == 1)
     }
+
+    @Test
+    func query_異常_ユースケースエラー透過() async {
+        let mock = LocationUsecaseMock(queryHandler: { _, _, _ in throw TestError.intentional })
+        let subject = make(usecase: mock)
+        let request = Application.Request.make(
+            method: .get,
+            path: "/festivals/festival-1/locations",
+            parameters: ["festivalId": "festival-1"]
+        )
+
+        await #expect(throws: TestError.intentional) {
+            _ = try await subject.query(request, next: next)
+        }
+    }
 }
 
 private extension LocationControllerTest {
