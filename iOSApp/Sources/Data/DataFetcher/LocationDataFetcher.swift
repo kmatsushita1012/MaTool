@@ -54,10 +54,10 @@ struct LocationDataFetcher: LocationDataFetcherProtocol{
 
 extension LocationDataFetcher{
     private func sync(_ locations: [FloatLocation]) async throws {
-        let ids = locations.map(\.id)
+        let districtIds = locations.map(\.districtId)
         try await database.write{ db in
-            try store.deleteAll(where: { $0.districtId.in(ids) }, from: db)
-            try store.insert(locations, at: db)
+            try store.deleteAll(where: { $0.districtId.in(districtIds) }, from: db)
+            try store.upsert(locations, at: db)
         }
     }
     
@@ -65,7 +65,7 @@ extension LocationDataFetcher{
         let districtId = location.districtId
         try await database.write{ db in
             try store.deleteAll(where: { $0.districtId.eq(districtId) }, from: db)
-            try store.insert(location, at: db)
+            try store.upsert(location, at: db)
         }
     }
 }
