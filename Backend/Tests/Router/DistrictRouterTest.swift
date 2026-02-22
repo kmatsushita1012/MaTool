@@ -12,20 +12,9 @@ struct DistrictRouterTest {
                 return try .success()
             }
         )
-        let routeController = RouteControllerMock()
-        let locationController = LocationControllerMock()
-        let sceneController = SceneControllerMock()
-
-        let response = await withDependencies {
-            $0[DistrictControllerKey.self] = districtController
-            $0[RouteControllerKey.self] = routeController
-            $0[LocationControllerKey.self] = locationController
-            $0[SceneControllerKey.self] = sceneController
-        } operation: {
-            let app = Application { DistrictRouter() }
-            let request = Application.Request.make(method: .put, path: "/districts/district-9/core")
-            return await app.handle(request)
-        }
+        let app = make(districtController: districtController)
+        let request = Application.Request.make(method: .put, path: "/districts/district-9/core")
+        let response = await app.handle(request)
 
         #expect(response.statusCode == 200)
         #expect(districtController.updateDistrictCallCount == 1)
@@ -34,21 +23,10 @@ struct DistrictRouterTest {
 
     @Test
     func routesRouteQueryToRouteController_正常() async {
-        let districtController = DistrictControllerMock()
         let routeController = RouteControllerMock(queryHandler: { _, _ in try .success() })
-        let locationController = LocationControllerMock()
-        let sceneController = SceneControllerMock()
-
-        let response = await withDependencies {
-            $0[DistrictControllerKey.self] = districtController
-            $0[RouteControllerKey.self] = routeController
-            $0[LocationControllerKey.self] = locationController
-            $0[SceneControllerKey.self] = sceneController
-        } operation: {
-            let app = Application { DistrictRouter() }
-            let request = Application.Request.make(method: .get, path: "/districts/district-1/routes")
-            return await app.handle(request)
-        }
+        let app = make(routeController: routeController)
+        let request = Application.Request.make(method: .get, path: "/districts/district-1/routes")
+        let response = await app.handle(request)
 
         #expect(response.statusCode == 200)
         #expect(routeController.queryCallCount == 1)
@@ -56,23 +34,42 @@ struct DistrictRouterTest {
 
     @Test
     func routesLaunchFestivalToSceneController_正常() async {
-        let districtController = DistrictControllerMock()
-        let routeController = RouteControllerMock()
-        let locationController = LocationControllerMock()
         let sceneController = SceneControllerMock(launchFestivalHandler: { _, _ in try .success() })
 
-        let response = await withDependencies {
+        let app = make(sceneController: sceneController)
+        let request = Application.Request.make(method: .get, path: "/districts/district-1/launch-festival")
+        let response = await app.handle(request)
+
+        #expect(response.statusCode == 200)
+        #expect(sceneController.launchFestivalCallCount == 1)
+    }
+
+    @Test
+    func routesDistrict_異常_コントローラ例外で500() async {
+        let districtController = DistrictControllerMock(getHandler: { _, _ in throw TestError.intentional })
+        let app = make(districtController: districtController)
+        let request = Application.Request.make(method: .get, path: "/districts/district-1")
+        let response = await app.handle(request)
+
+        #expect(response.statusCode == 500)
+        #expect(districtController.getCallCount == 1)
+    }
+}
+
+private extension DistrictRouterTest {
+    func make(
+        districtController: DistrictControllerMock = .init(),
+        routeController: RouteControllerMock = .init(),
+        locationController: LocationControllerMock = .init(),
+        sceneController: SceneControllerMock = .init()
+    ) -> Application {
+        withDependencies {
             $0[DistrictControllerKey.self] = districtController
             $0[RouteControllerKey.self] = routeController
             $0[LocationControllerKey.self] = locationController
             $0[SceneControllerKey.self] = sceneController
         } operation: {
-            let app = Application { DistrictRouter() }
-            let request = Application.Request.make(method: .get, path: "/districts/district-1/launch-festival")
-            return await app.handle(request)
+            Application { DistrictRouter() }
         }
-
-        #expect(response.statusCode == 200)
-        #expect(sceneController.launchFestivalCallCount == 1)
     }
 }
