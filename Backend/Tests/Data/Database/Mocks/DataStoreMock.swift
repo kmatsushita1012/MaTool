@@ -2,50 +2,55 @@
 import Foundation
 
 final class DataStoreMock<KeyType: Sendable & Codable, DataType: RecordProtocol>: DataStore {
-    let response: DataType
-
-    init(response: DataType) {
-        self.response = response
+    init(
+        putHandler: (@Sendable (DataType) async throws -> Void)? = nil,
+        getHandler: (@Sendable ([String: Codable]) async throws -> DataType?)? = nil,
+        deleteHandler: (@Sendable ([String: Codable]) async throws -> Void)? = nil,
+        scanHandler: (@Sendable (Bool) async throws -> [DataType])? = nil,
+        queryHandler: (@Sendable (String?, [QueryCondition], [FilterCondition], Int?, Bool) async throws -> [DataType])? = nil
+    ) {
+        self.putHandler = putHandler
+        self.getHandler = getHandler
+        self.deleteHandler = deleteHandler
+        self.scanHandler = scanHandler
+        self.queryHandler = queryHandler
     }
 
     nonisolated(unsafe) private(set) var putCallCount = 0
-    nonisolated(unsafe) private(set) var putArg: DataType?
+    private let putHandler: (@Sendable (DataType) async throws -> Void)?
     func put<T: RecordProtocol>(_ item: T) async throws {
         putCallCount += 1
-        putArg = try castOrThrow(item)
+        guard let putHandler else { throw TestError.unimplemented }
+        try await putHandler(try castOrThrow(item))
     }
 
     nonisolated(unsafe) private(set) var getCallCount = 0
-    nonisolated(unsafe) private(set) var getArg: [String: Codable]?
+    private let getHandler: (@Sendable ([String: Codable]) async throws -> DataType?)?
     func get<T: RecordProtocol>(keys: [String : any Codable], as type: T.Type) async throws -> T? {
         getCallCount += 1
-        getArg = keys
-        return try castOrThrow(response)
+        guard let getHandler else { throw TestError.unimplemented }
+        guard let value = try await getHandler(keys) else { return nil }
+        return try castOrThrow(value)
     }
 
     nonisolated(unsafe) private(set) var deleteCallCount = 0
-    nonisolated(unsafe) private(set) var deleteArg: [String: Codable]?
+    private let deleteHandler: (@Sendable ([String: Codable]) async throws -> Void)?
     func delete(keys: [String : any Codable]) async throws {
         deleteCallCount += 1
-        deleteArg = keys
+        guard let deleteHandler else { throw TestError.unimplemented }
+        try await deleteHandler(keys)
     }
 
     nonisolated(unsafe) private(set) var scanCallCount = 0
-    nonisolated(unsafe) private(set) var scanArgIgnoreDecodeError: Bool?
+    private let scanHandler: (@Sendable (Bool) async throws -> [DataType])?
     func scan<T: RecordProtocol>(_ type: T.Type, ignoreDecodeError: Bool) async throws -> [T] {
         scanCallCount += 1
-        scanArgIgnoreDecodeError = ignoreDecodeError
-        return [try castOrThrow(response)]
+        guard let scanHandler else { throw TestError.unimplemented }
+        return try await scanHandler(ignoreDecodeError).map { try castOrThrow($0) }
     }
 
     nonisolated(unsafe) private(set) var queryCallCount = 0
-    nonisolated(unsafe) private(set) var queryArg: (
-        String?,
-        [QueryCondition],
-        [FilterCondition],
-        Int?,
-        Bool
-    )?
+    private let queryHandler: (@Sendable (String?, [QueryCondition], [FilterCondition], Int?, Bool) async throws -> [DataType])?
     func query<T: RecordProtocol>(
         indexName: String?,
         keyConditions: [QueryCondition],
@@ -55,8 +60,8 @@ final class DataStoreMock<KeyType: Sendable & Codable, DataType: RecordProtocol>
         as type: T.Type
     ) async throws -> [T] {
         queryCallCount += 1
-        queryArg = (indexName, keyConditions, filterConditions, limit, ascending)
-        return [try castOrThrow(response)]
+        guard let queryHandler else { throw TestError.unimplemented }
+        return try await queryHandler(indexName, keyConditions, filterConditions, limit, ascending).map { try castOrThrow($0) }
     }
 }
 
