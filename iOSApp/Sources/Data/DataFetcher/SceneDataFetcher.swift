@@ -90,12 +90,12 @@ struct SceneDataFetcher: SceneDataFetcherProtocol {
             pack = try await client.get(path: path, accessToken: token)
         }
         try await database.write{ db in
-            try festivalStore.insert(pack.festival, at: db)
-            try checkpointStore.insert(pack.checkpoints, at: db)
-            try hazardSectionStore.insert(pack.hazardSections, at: db)
-            try periodStore.insert(pack.periods, at: db)
-            try districtStore.insert(pack.districts, at: db)
-            try locationStore.insert(pack.locations, at: db)
+            try festivalStore.upsert(pack.festival, at: db)
+            try checkpointStore.upsert(pack.checkpoints, at: db)
+            try hazardSectionStore.upsert(pack.hazardSections, at: db)
+            try periodStore.upsert(pack.periods, at: db)
+            try districtStore.upsert(pack.districts, at: db)
+            try locationStore.upsert(pack.locations, at: db)
         }
         return pack
     }
@@ -120,10 +120,10 @@ struct SceneDataFetcher: SceneDataFetcherProtocol {
             pack = try await client.get(path: "/districts/\(districtId)/launch", accessToken: token)
         }
         try await database.write{ db in
-            try performanceStore.insert(pack.performances, at: db)
-            try routeStore.insert(pack.routes, at: db)
-            try pointStore.insert(pack.points, at: db)
-            try passageStore.insert(pack.passages, at: db)
+            try performanceStore.upsert(pack.performances, at: db)
+            try routeStore.upsert(pack.routes, at: db)
+            try pointStore.upsert(pack.points, at: db)
+            try passageStore.upsert(pack.passages, at: db)
         }
         return pack.currentRouteId
     }    

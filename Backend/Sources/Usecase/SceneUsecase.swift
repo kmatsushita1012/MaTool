@@ -93,7 +93,11 @@ struct SceneUsecase: SceneUsecaseProtocol {
     // MARK: Public
     private func fetchUserLaunchPack(festival: Festival, now: Date) async throws -> LaunchFestivalPack {
         async let districts = districtRepository.query(by: festival.id)
-        let periods = try await fetchLatestPeriods(festivalId: festival.id, now: now)
+        let periods = try await LatestPeriodRouteResolver.fetchLatestPeriods(
+            festivalId: festival.id,
+            nowYear: SimpleDate.from(now).year,
+            periodRepository: periodRepository
+        )
         let locations: [FloatLocation]
         if LocationPublicAccess.isPublic(now: now, periods: periods) {
             locations = try await floatLocationRepository.query(by: festival.id)
@@ -116,21 +120,13 @@ struct SceneUsecase: SceneUsecaseProtocol {
         let district = try await getDistrict(districtId)
         async let performances = performanceRepository.query(by: districtId)
         
-        let (routes, periods): ([Route], [Period]) = try await {
-            if case let .district(id) = user {
-                async let periods = fetchLatestPeriods(festivalId: district.festivalId, now: now)
-                async let routes = routeRepository.query(by: districtId)
-                return try await (routes, periods)
-            } else {
-                let periods = try await fetchLatestPeriods(festivalId: district.festivalId, now: now)
-                if let first = periods.first {
-                    let routes = try await routeRepository.query(by: districtId, year: first.date.year)
-                    return (routes, periods)
-                } else {
-                    return ([], periods)
-                }
-            }
-        }()
+        let (routes, periods) = try await LatestPeriodRouteResolver.fetchLatestRoutes(
+            districtId: districtId,
+            festivalId: district.festivalId,
+            nowYear: SimpleDate.from(now).year,
+            periodRepository: periodRepository,
+            routeRepository: routeRepository
+        )
 
         let filteredRoutes = routes.filter { isVisible(visibility: $0.visibility, user: user, district: district) }
 
@@ -142,18 +138,9 @@ struct SceneUsecase: SceneUsecaseProtocol {
         }
 
         // 優先度順にソート
-        let sorted = routeWithPeriod.sorted { lhs, rhs in
-            if lhs.period.contains(now) && !rhs.period.contains(now) {
-                return true
-            } else if !lhs.period.contains(now) && rhs.period.contains(now) {
-                return false
-            } else if lhs.period.before(now) && !rhs.period.before(now) {
-                return true
-            } else if !lhs.period.before(now) && rhs.period.before(now) {
-                return false
-            } else {
-                return lhs.period.start < rhs.period.start
-            }
+        
+        let sorted = routeWithPeriod.sorted {
+            $0.period.priority(now: now) < $1.period.priority(now: now)
         }
 
         let currentRoute = sorted.first?.route
@@ -192,16 +179,5 @@ extension SceneUsecase {
             throw Error.notFound("指定された地区が見つかりません")
         }
         return district
-    }
-    
-    private func fetchLatestPeriods(festivalId: String, now: Date) async throws -> [Period] {
-        let nowYear = SimpleDate.from(now).year
-
-        async let nextYearPeriods = periodRepository.query(by: festivalId, year: nowYear + 1)
-        async let currentYearPeriods = periodRepository.query(by: festivalId, year: nowYear)
-
-        let (nextYear, currentYear) = try await (nextYearPeriods, currentYearPeriods)
-
-        return currentYear + nextYear
     }
 }

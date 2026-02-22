@@ -92,5 +92,6 @@ struct FestivalDashboardView: View {
         .navigationTitle(
             "\(store.festival.name) \(store.festival.subname)"
         )
+        .navigationBarTitleDisplayMode(.large)
     }
 }

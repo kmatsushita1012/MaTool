@@ -94,7 +94,7 @@ struct PublicRouteMapView: View {
             if let selected = store.selected {
                 ToggleSelectedItem(title: selected.text, isExpanded: $store.isMenuExpanded) // FIXME
                     .padding(8)
-                    .background(.white)
+                    .background(Color(uiColor: .systemBackground))
                     .cornerRadius(8)
                     .shadow(radius: 3)
             }
@@ -166,7 +166,7 @@ extension PublicRouteMapView {
         .fixedSize()
         .background(
             RoundedRectangle(cornerRadius: 16)
-                .fill(Color.white)
+                .fill(Color(uiColor: .systemBackground))
                 .shadow(radius: 8)
         )
     }
@@ -180,10 +180,12 @@ extension PublicRouteMapView {
             )
         )
         .padding(.horizontal, 16)
-        .background(
-            RoundedRectangle(cornerRadius: 32)
-                .fill(Color.white.opacity(0.8))
-        )
+        .ifLiquidGlass(before: {
+            $0.background(
+                RoundedRectangle(cornerRadius: 32)
+                    .fill(Color(uiColor: .systemBackground).opacity(0.8))
+            )
+        })
     }
 }
 

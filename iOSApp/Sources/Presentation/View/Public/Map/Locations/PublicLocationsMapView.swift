@@ -69,7 +69,7 @@ struct PublicLocationsMapView: View {
         .fixedSize()
         .background(
             RoundedRectangle(cornerRadius: 16)
-                .fill(Color.white)
+                .fill(Color(uiColor: .systemBackground))
                 .shadow(radius: 8)
         )
     }

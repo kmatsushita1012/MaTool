@@ -116,6 +116,15 @@ final class FloatAnnotationView: MKAnnotationView {
     }
     
     private func configure() {
+        
+        let primaryColor = UIColor{ trait in
+            trait.userInterfaceStyle == .dark ? .white : .black
+        }
+        
+        let inverseColor = UIColor{ trait in
+            trait.userInterfaceStyle == .dark ? .black : .white
+        }
+
         guard let annotation else { return }
         guard let title = annotation.title else { return }
         
@@ -129,14 +138,14 @@ final class FloatAnnotationView: MKAnnotationView {
                               height: tintedImage.size.height * scale)
         
         //影
-        let shadowColor = UIColor.white.cgColor
+        let shadowColor = inverseColor.cgColor
         let shadowOffset = CGSize(width: 0, height: 2)
         let shadowRadius: CGFloat = 4
 
         // テキスト
         let outlineFontSize = 14
-        let textColor = UIColor.black
-        let outlineColor = UIColor.white
+        let textColor = primaryColor
+        let outlineColor = inverseColor
         
         let font = UIFont.systemFont(ofSize: CGFloat(outlineFontSize), weight: .bold)
         let outlineFont = UIFont.systemFont(ofSize: font.pointSize,
