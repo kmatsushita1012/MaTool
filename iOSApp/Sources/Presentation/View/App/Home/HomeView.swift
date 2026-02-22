@@ -56,9 +56,12 @@ struct HomeView: View {
                     Spacer()
                 }
                 .padding()
+                .navigationTitle("トップ")
+                .navigationBarTitleDisplayMode(.inline)
                 .toolbar {
-                    ToolbarItem(placement: .principal) {
+                    ToolbarItem(placement: .title) {
                         Text("MaTool")
+                            .foregroundStyle(.black)
                             .font(.custom("Kanit", size: 34))
                             .padding()
                     }
