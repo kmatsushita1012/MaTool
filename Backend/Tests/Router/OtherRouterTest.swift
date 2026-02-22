@@ -4,12 +4,12 @@ import Testing
 
 struct OtherRouterTest {
     @Test
-    func routesPeriodGetToPeriodController() async {
-        var capturedPeriodId: String?
+    func routesPeriodGetToPeriodController_正常() async {
+        var lastCalledPeriodId: String?
         let routeController = RouteControllerMock()
         let periodController = PeriodControllerMock(
             getHandler: { request, _ in
-                capturedPeriodId = request.parameters["periodId"]
+                lastCalledPeriodId = request.parameters["periodId"]
                 return try .success()
             }
         )
@@ -25,11 +25,11 @@ struct OtherRouterTest {
 
         #expect(response.statusCode == 200)
         #expect(periodController.getCallCount == 1)
-        #expect(capturedPeriodId == "period-1")
+        #expect(lastCalledPeriodId == "period-1")
     }
 
     @Test
-    func routesRouteDeleteToRouteController() async {
+    func routesRouteDeleteToRouteController_正常() async {
         let routeController = RouteControllerMock(deleteHandler: { _, _ in try .success() })
         let periodController = PeriodControllerMock()
 
@@ -47,7 +47,7 @@ struct OtherRouterTest {
     }
 
     @Test
-    func routesPeriodPutToPeriodController() async {
+    func routesPeriodPutToPeriodController_正常() async {
         let routeController = RouteControllerMock()
         let periodController = PeriodControllerMock(putHandler: { _, _ in try .success() })
 

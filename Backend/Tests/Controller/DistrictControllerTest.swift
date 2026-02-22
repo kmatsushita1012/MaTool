@@ -5,11 +5,11 @@ import Testing
 
 struct DistrictControllerTest {
     @Test
-    func get_forwardsDistrictId() async throws {
+    func get_正常() async throws {
         let expected = DistrictPack.mock(district: .mock(id: "district-1", festivalId: "festival-1"))
-        var capturedId: String?
+        var lastCalledId: String?
         let mock = DistrictUsecaseMock(getHandler: { id in
-            capturedId = id
+            lastCalledId = id
             return expected
         })
         let subject = make(usecase: mock)
@@ -20,15 +20,15 @@ struct DistrictControllerTest {
 
         #expect(response.statusCode == 200)
         #expect(actual == expected)
-        #expect(capturedId == "district-1")
+        #expect(lastCalledId == "district-1")
     }
 
     @Test
-    func query_forwardsFestivalId() async throws {
+    func query_正常() async throws {
         let expected = [District.mock(id: "district-1", festivalId: "festival-1")]
-        var capturedFestivalId: String?
+        var lastCalledFestivalId: String?
         let mock = DistrictUsecaseMock(queryHandler: { festivalId in
-            capturedFestivalId = festivalId
+            lastCalledFestivalId = festivalId
             return expected
         })
         let subject = make(usecase: mock)
@@ -39,23 +39,23 @@ struct DistrictControllerTest {
 
         #expect(response.statusCode == 200)
         #expect(actual == expected)
-        #expect(capturedFestivalId == "festival-1")
+        #expect(lastCalledFestivalId == "festival-1")
     }
 
     @Test
-    func post_decodesFormAndForwardsParameters() async throws {
+    func post_正常() async throws {
         let expected = DistrictPack.mock(district: .mock(id: "district-1", festivalId: "festival-1"))
-        var capturedHeadquarterId: String?
-        var capturedName: String?
-        var capturedEmail: String?
-        var capturedUser: UserRole?
+        var lastCalledHeadquarterId: String?
+        var lastCalledName: String?
+        var lastCalledEmail: String?
+        var lastCalledUser: UserRole?
 
         let mock = DistrictUsecaseMock(
             postHandler: { user, headquarterId, newDistrictName, email in
-                capturedUser = user
-                capturedHeadquarterId = headquarterId
-                capturedName = newDistrictName
-                capturedEmail = email
+                lastCalledUser = user
+                lastCalledHeadquarterId = headquarterId
+                lastCalledName = newDistrictName
+                lastCalledEmail = email
                 return expected
             }
         )
@@ -74,21 +74,21 @@ struct DistrictControllerTest {
 
         #expect(response.statusCode == 200)
         #expect(actual == expected)
-        #expect(capturedUser == .guest)
-        #expect(capturedHeadquarterId == "festival-1")
-        #expect(capturedName == "new-district")
-        #expect(capturedEmail == "district@example.com")
+        #expect(lastCalledUser == .guest)
+        #expect(lastCalledHeadquarterId == "festival-1")
+        #expect(lastCalledName == "new-district")
+        #expect(lastCalledEmail == "district@example.com")
         #expect(mock.postCallCount == 1)
     }
 
     @Test
-    func put_forwardsDistrictPackAndUser() async throws {
+    func put_正常() async throws {
         let pack = DistrictPack.mock(district: .mock(id: "district-1", festivalId: "festival-1"))
-        var capturedId: String?
-        var capturedUser: UserRole?
+        var lastCalledId: String?
+        var lastCalledUser: UserRole?
         let mock = DistrictUsecaseMock(putPackHandler: { id, item, user in
-            capturedId = id
-            capturedUser = user
+            lastCalledId = id
+            lastCalledUser = user
             return item
         })
         let subject = make(usecase: mock)
@@ -106,18 +106,18 @@ struct DistrictControllerTest {
 
         #expect(response.statusCode == 200)
         #expect(actual == pack)
-        #expect(capturedId == "district-1")
-        #expect(capturedUser == .district("district-1"))
+        #expect(lastCalledId == "district-1")
+        #expect(lastCalledUser == .district("district-1"))
     }
 
     @Test
-    func updateDistrict_forwardsDistrictBody() async throws {
+    func updateDistrict_正常() async throws {
         let district = District.mock(id: "district-1", festivalId: "festival-1")
-        var capturedId: String?
-        var capturedDistrict: District?
+        var lastCalledId: String?
+        var lastCalledDistrict: District?
         let mock = DistrictUsecaseMock(putDistrictHandler: { id, item, _ in
-            capturedId = id
-            capturedDistrict = item
+            lastCalledId = id
+            lastCalledDistrict = item
             return item
         })
         let subject = make(usecase: mock)
@@ -134,8 +134,8 @@ struct DistrictControllerTest {
 
         #expect(response.statusCode == 200)
         #expect(actual == district)
-        #expect(capturedId == "district-1")
-        #expect(capturedDistrict == district)
+        #expect(lastCalledId == "district-1")
+        #expect(lastCalledDistrict == district)
     }
 }
 
@@ -144,7 +144,7 @@ private extension DistrictControllerTest {
         { _ in throw TestError.intentional }
     }
 
-    func make(usecase: DistrictUsecaseMock) -> DistrictController {
+    func make(usecase: DistrictUsecaseMock = .init()) -> DistrictController {
         withDependencies {
             $0[DistrictUsecaseKey.self] = usecase
         } operation: {

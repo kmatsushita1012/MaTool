@@ -5,13 +5,13 @@ import Testing
 
 struct RouteControllerTest {
     @Test
-    func get_forwardsRouteIdAndUser() async throws {
+    func get_正常() async throws {
         let pack = RoutePack.mock(route: .mock(id: "route-1", districtId: "district-1"))
-        var capturedId: String?
-        var capturedUser: UserRole?
+        var lastCalledId: String?
+        var lastCalledUser: UserRole?
         let mock = RouteUsecaseMock(getHandler: { id, user in
-            capturedId = id
-            capturedUser = user
+            lastCalledId = id
+            lastCalledUser = user
             return pack
         })
         let subject = make(usecase: mock)
@@ -24,22 +24,22 @@ struct RouteControllerTest {
 
         #expect(response.statusCode == 200)
         #expect(actual == pack)
-        #expect(capturedId == "route-1")
-        #expect(capturedUser == .district("district-1"))
+        #expect(lastCalledId == "route-1")
+        #expect(lastCalledUser == .district("district-1"))
     }
 
     @Test
-    func query_supportsLatestYearShortcut() async throws {
+    func query_正常_条件1() async throws {
         let routes = [Route.mock(id: "route-1", districtId: "district-1")]
-        var capturedDistrictId: String?
-        var capturedUser: UserRole?
-        var capturedType: RouteQueryType?
+        var lastCalledDistrictId: String?
+        var lastCalledUser: UserRole?
+        var lastCalledType: RouteQueryType?
 
         let mock = RouteUsecaseMock(
             queryHandler: { districtId, type, _, user in
-                capturedDistrictId = districtId
-                capturedType = type
-                capturedUser = user
+                lastCalledDistrictId = districtId
+                lastCalledType = type
+                lastCalledUser = user
                 return routes
             }
         )
@@ -57,9 +57,9 @@ struct RouteControllerTest {
 
         #expect(response.statusCode == 200)
         #expect(actual == routes)
-        #expect(capturedDistrictId == "district-1")
-        #expect(capturedUser == .district("district-1"))
-        switch capturedType {
+        #expect(lastCalledDistrictId == "district-1")
+        #expect(lastCalledUser == .district("district-1"))
+        switch lastCalledType {
         case .latest:
             #expect(Bool(true))
         default:
@@ -69,10 +69,10 @@ struct RouteControllerTest {
     }
 
     @Test
-    func query_numericYear_mapsToYearCase() async throws {
-        var capturedType: RouteQueryType?
+    func query_正常_条件2() async throws {
+        var lastCalledType: RouteQueryType?
         let mock = RouteUsecaseMock(queryHandler: { _, type, _, _ in
-            capturedType = type
+            lastCalledType = type
             return []
         })
         let subject = make(usecase: mock)
@@ -84,7 +84,7 @@ struct RouteControllerTest {
         )
         _ = try await subject.query(request, next: next)
 
-        switch capturedType {
+        switch lastCalledType {
         case .year(let year):
             #expect(year == 2026)
         default:
@@ -93,11 +93,11 @@ struct RouteControllerTest {
     }
 
     @Test
-    func post_forwardsDistrictIdAndBody() async throws {
+    func post_正常() async throws {
         let pack = RoutePack.mock(route: .mock(id: "route-1", districtId: "district-1"))
-        var capturedDistrictId: String?
+        var lastCalledDistrictId: String?
         let mock = RouteUsecaseMock(postHandler: { districtId, item, _ in
-            capturedDistrictId = districtId
+            lastCalledDistrictId = districtId
             return item
         })
         let subject = make(usecase: mock)
@@ -114,15 +114,15 @@ struct RouteControllerTest {
 
         #expect(response.statusCode == 200)
         #expect(actual == pack)
-        #expect(capturedDistrictId == "district-1")
+        #expect(lastCalledDistrictId == "district-1")
     }
 
     @Test
-    func put_forwardsRouteIdAndBody() async throws {
+    func put_正常() async throws {
         let pack = RoutePack.mock(route: .mock(id: "route-1", districtId: "district-1"))
-        var capturedId: String?
+        var lastCalledId: String?
         let mock = RouteUsecaseMock(putHandler: { id, item, _ in
-            capturedId = id
+            lastCalledId = id
             return item
         })
         let subject = make(usecase: mock)
@@ -138,15 +138,15 @@ struct RouteControllerTest {
 
         #expect(response.statusCode == 200)
         #expect(actual == pack)
-        #expect(capturedId == "route-1")
+        #expect(lastCalledId == "route-1")
         #expect(mock.putCallCount == 1)
     }
 
     @Test
-    func delete_forwardsRouteId() async throws {
-        var capturedId: String?
+    func delete_正常() async throws {
+        var lastCalledId: String?
         let mock = RouteUsecaseMock(deleteHandler: { id, _ in
-            capturedId = id
+            lastCalledId = id
         })
         let subject = make(usecase: mock)
 
@@ -154,7 +154,7 @@ struct RouteControllerTest {
         let response = try await subject.delete(request, next: next)
 
         #expect(response.statusCode == 200)
-        #expect(capturedId == "route-1")
+        #expect(lastCalledId == "route-1")
         #expect(mock.deleteCallCount == 1)
     }
 }
@@ -164,7 +164,7 @@ private extension RouteControllerTest {
         { _ in throw TestError.intentional }
     }
 
-    func make(usecase: RouteUsecaseMock) -> RouteController {
+    func make(usecase: RouteUsecaseMock = .init()) -> RouteController {
         withDependencies {
             $0[RouteUsecaseKey.self] = usecase
         } operation: {

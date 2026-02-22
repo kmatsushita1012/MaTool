@@ -5,15 +5,15 @@ import Testing
 
 struct SceneControllerTest {
     @Test
-    func launchFestival_withFestivalId_returnsPack() async throws {
+    func launchFestival_正常_条件1() async throws {
         let expected = LaunchFestivalPack.mock(festival: .mock(id: "festival-1"))
-        var capturedFestivalId: String?
-        var capturedUser: UserRole?
+        var lastCalledFestivalId: String?
+        var lastCalledUser: UserRole?
 
         let mock = SceneUsecaseMock(
             fetchLaunchFestivalByFestivalIdHandler: { festivalId, user, _ in
-                capturedFestivalId = festivalId
-                capturedUser = user
+                lastCalledFestivalId = festivalId
+                lastCalledUser = user
                 return expected
             }
         )
@@ -30,19 +30,19 @@ struct SceneControllerTest {
 
         #expect(response.statusCode == 200)
         #expect(actual == expected)
-        #expect(capturedFestivalId == "festival-1")
-        #expect(capturedUser == .guest)
+        #expect(lastCalledFestivalId == "festival-1")
+        #expect(lastCalledUser == .guest)
         #expect(mock.fetchLaunchFestivalByFestivalIdCallCount == 1)
     }
 
     @Test
-    func launchFestival_withDistrictId_returnsPack() async throws {
+    func launchFestival_正常_条件2() async throws {
         let expected = LaunchFestivalPack.mock(festival: .mock(id: "festival-1"))
-        var capturedDistrictId: String?
+        var lastCalledDistrictId: String?
 
         let mock = SceneUsecaseMock(
             fetchLaunchFestivalByDistrictIdHandler: { districtId, _, _ in
-                capturedDistrictId = districtId
+                lastCalledDistrictId = districtId
                 return expected
             }
         )
@@ -59,12 +59,12 @@ struct SceneControllerTest {
 
         #expect(response.statusCode == 200)
         #expect(actual == expected)
-        #expect(capturedDistrictId == "district-1")
+        #expect(lastCalledDistrictId == "district-1")
         #expect(mock.fetchLaunchFestivalByDistrictIdCallCount == 1)
     }
 
     @Test
-    func launchFestival_missingIds_throwsBadRequest() async {
+    func launchFestival_異常_条件() async {
         let subject = make(usecase: SceneUsecaseMock())
         let request = Application.Request.make(method: .get, path: "/launch")
 
@@ -74,12 +74,12 @@ struct SceneControllerTest {
     }
 
     @Test
-    func launchDistrict_forwardsDistrictId() async throws {
+    func launchDistrict_正常() async throws {
         let expected = LaunchDistrictPack.mock(currentRouteId: "route-1")
-        var capturedDistrictId: String?
+        var lastCalledDistrictId: String?
 
         let mock = SceneUsecaseMock(fetchLaunchDistrictHandler: { districtId, _, _ in
-            capturedDistrictId = districtId
+            lastCalledDistrictId = districtId
             return expected
         })
         let subject = make(usecase: mock)
@@ -95,7 +95,7 @@ struct SceneControllerTest {
 
         #expect(response.statusCode == 200)
         #expect(actual == expected)
-        #expect(capturedDistrictId == "district-1")
+        #expect(lastCalledDistrictId == "district-1")
         #expect(mock.fetchLaunchDistrictCallCount == 1)
     }
 }
@@ -105,7 +105,7 @@ private extension SceneControllerTest {
         { _ in throw TestError.intentional }
     }
 
-    func make(usecase: SceneUsecaseMock) -> SceneController {
+    func make(usecase: SceneUsecaseMock = .init()) -> SceneController {
         withDependencies {
             $0[SceneUsecaseKey.self] = usecase
         } operation: {

@@ -4,11 +4,11 @@ import Testing
 
 struct DistrictRouterTest {
     @Test
-    func routesDistrictCoreToUpdateDistrictController() async {
-        var capturedDistrictId: String?
+    func routesDistrictCoreToUpdateDistrictController_正常() async {
+        var lastCalledDistrictId: String?
         let districtController = DistrictControllerMock(
             updateDistrictHandler: { request, _ in
-                capturedDistrictId = request.parameters["districtId"]
+                lastCalledDistrictId = request.parameters["districtId"]
                 return try .success()
             }
         )
@@ -29,11 +29,11 @@ struct DistrictRouterTest {
 
         #expect(response.statusCode == 200)
         #expect(districtController.updateDistrictCallCount == 1)
-        #expect(capturedDistrictId == "district-9")
+        #expect(lastCalledDistrictId == "district-9")
     }
 
     @Test
-    func routesRouteQueryToRouteController() async {
+    func routesRouteQueryToRouteController_正常() async {
         let districtController = DistrictControllerMock()
         let routeController = RouteControllerMock(queryHandler: { _, _ in try .success() })
         let locationController = LocationControllerMock()
@@ -55,7 +55,7 @@ struct DistrictRouterTest {
     }
 
     @Test
-    func routesLaunchFestivalToSceneController() async {
+    func routesLaunchFestivalToSceneController_正常() async {
         let districtController = DistrictControllerMock()
         let routeController = RouteControllerMock()
         let locationController = LocationControllerMock()

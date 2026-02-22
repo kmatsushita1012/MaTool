@@ -6,14 +6,16 @@ import Testing
 
 struct SceneUsecaseTest {
     @Test
-    func fetchLaunchFestivalPack_guest_returnsPublicShape() async throws {
+    func fetchLaunchFestivalPack_正常_条件1() async throws {
         let now = makeDate(year: 2026, month: 2, day: 22, hour: 12)
         let festival = Festival.mock(id: "festival-1")
         let districts = [District.mock(id: "district-1", festivalId: festival.id)]
 
+        let festivalRepository = FestivalRepositoryMock(getHandler: { _ in festival })
+        let districtRepository = DistrictRepositoryMock(queryHandler: { _ in districts })
         let subject = make(
-            festivalRepository: .init(getHandler: { _ in festival }),
-            districtRepository: .init(queryHandler: { _ in districts }),
+            festivalRepository: festivalRepository,
+            districtRepository: districtRepository,
             periodRepository: .init(queryByYearHandler: { _, _ in [] }),
             locationRepository: .init(),
             checkpointRepository: .init(),
@@ -31,10 +33,12 @@ struct SceneUsecaseTest {
         #expect(result.locations.isEmpty)
         #expect(result.checkpoints.isEmpty)
         #expect(result.hazardSections.isEmpty)
+        #expect(festivalRepository.getCallCount == 1)
+        #expect(districtRepository.queryCallCount == 1)
     }
 
     @Test
-    func fetchLaunchFestivalPack_headquarter_includesAdminData() async throws {
+    func fetchLaunchFestivalPack_正常_条件2() async throws {
         let now = makeDate(year: 2026, month: 2, day: 22, hour: 12)
         let festival = Festival.mock(id: "festival-1")
         let districts = [District.mock(id: "district-1", festivalId: festival.id)]
@@ -43,9 +47,11 @@ struct SceneUsecaseTest {
         let checkpoint = Checkpoint.mock(id: "cp-1", festivalId: festival.id)
         let hazard = HazardSection.mock(id: "hz-1", festivalId: festival.id)
 
+        let festivalRepository = FestivalRepositoryMock(getHandler: { _ in festival })
+        let districtRepository = DistrictRepositoryMock(queryHandler: { _ in districts })
         let subject = make(
-            festivalRepository: .init(getHandler: { _ in festival }),
-            districtRepository: .init(queryHandler: { _ in districts }),
+            festivalRepository: festivalRepository,
+            districtRepository: districtRepository,
             periodRepository: .init(queryHandler: { _ in [period] }),
             locationRepository: .init(queryHandler: { _ in [location] }),
             checkpointRepository: .init(queryHandler: { _ in [checkpoint] }),
@@ -62,10 +68,12 @@ struct SceneUsecaseTest {
         #expect(result.locations == [location])
         #expect(result.checkpoints == [checkpoint])
         #expect(result.hazardSections == [hazard])
+        #expect(festivalRepository.getCallCount == 1)
+        #expect(districtRepository.queryCallCount == 1)
     }
 
     @Test
-    func fetchLaunchFestivalPack_byDistrictId_notFound_throws() async {
+    func fetchLaunchFestivalPack_異常_条件() async {
         let subject = make(
             festivalRepository: .init(),
             districtRepository: .init(getHandler: { _ in nil }),
@@ -85,7 +93,7 @@ struct SceneUsecaseTest {
     }
 
     @Test
-    func fetchLaunchDistrictPack_districtUser_usesAllRoutes() async throws {
+    func fetchLaunchDistrictPack_正常_条件1() async throws {
         let now = makeDate(year: 2026, month: 2, day: 22, hour: 12)
         let district = District.mock(id: "district-1", festivalId: "festival-1")
         let period = Period.mock(id: "period-1", festivalId: district.festivalId, date: .from(now), start: .init(hour: 11, minute: 0), end: .init(hour: 13, minute: 0))
@@ -120,11 +128,20 @@ struct SceneUsecaseTest {
     }
 
     @Test
-    func fetchLaunchDistrictPack_guest_filtersAdminRoutes() async throws {
+    func fetchLaunchDistrictPack_正常_条件2() async throws {
         let now = makeDate(year: 2026, month: 2, day: 22, hour: 12)
         let district = District.mock(id: "district-1", festivalId: "festival-1")
         let period = Period.mock(id: "period-1", festivalId: district.festivalId, date: .from(now), start: .init(hour: 11, minute: 0), end: .init(hour: 13, minute: 0))
         let adminRoute = Route.mock(id: "route-1", districtId: district.id, periodId: period.id, visibility: .admin)
+        let routeRepository = RouteRepositoryMock(queryByYearHandler: { _, _ in [adminRoute] })
+        let pointRepository = PointRepositoryMock(queryHandler: { _ in
+            Issue.record("points should not be queried when route is filtered")
+            return []
+        })
+        let passageRepository = PassageRepositoryMock(queryHandler: { _ in
+            Issue.record("passages should not be queried when route is filtered")
+            return []
+        })
 
         let subject = make(
             festivalRepository: .init(),
@@ -134,15 +151,9 @@ struct SceneUsecaseTest {
             checkpointRepository: .init(),
             hazardRepository: .init(),
             performanceRepository: .init(queryHandler: { _ in [] }),
-            routeRepository: .init(queryByYearHandler: { _, _ in [adminRoute] }),
-            pointRepository: .init(queryHandler: { _ in
-                Issue.record("points should not be queried when route is filtered")
-                return []
-            }),
-            passageRepository: .init(queryHandler: { _ in
-                Issue.record("passages should not be queried when route is filtered")
-                return []
-            })
+            routeRepository: routeRepository,
+            pointRepository: pointRepository,
+            passageRepository: passageRepository
         )
 
         let result = try await subject.fetchLaunchDistrictPack(districtId: district.id, user: .guest, now: now)
@@ -151,21 +162,25 @@ struct SceneUsecaseTest {
         #expect(result.currentRouteId == nil)
         #expect(result.points.isEmpty)
         #expect(result.passages.isEmpty)
+        #expect(result.performances.isEmpty)
+        #expect(routeRepository.queryByYearCallCount == 1)
+        #expect(pointRepository.queryCallCount == 0)
+        #expect(passageRepository.queryCallCount == 0)
     }
 }
 
 private extension SceneUsecaseTest {
     func make(
-        festivalRepository: FestivalRepositoryMock,
-        districtRepository: DistrictRepositoryMock,
-        periodRepository: PeriodRepositoryMock,
-        locationRepository: LocationRepositoryMock,
-        checkpointRepository: CheckpointRepositoryMock,
-        hazardRepository: HazardSectionRepositoryMock,
-        performanceRepository: PerformanceRepositoryMock,
-        routeRepository: RouteRepositoryMock,
-        pointRepository: PointRepositoryMock,
-        passageRepository: PassageRepositoryMock
+        festivalRepository: FestivalRepositoryMock = .init(),
+        districtRepository: DistrictRepositoryMock = .init(),
+        periodRepository: PeriodRepositoryMock = .init(),
+        locationRepository: LocationRepositoryMock = .init(),
+        checkpointRepository: CheckpointRepositoryMock = .init(),
+        hazardRepository: HazardSectionRepositoryMock = .init(),
+        performanceRepository: PerformanceRepositoryMock = .init(),
+        routeRepository: RouteRepositoryMock = .init(),
+        pointRepository: PointRepositoryMock = .init(),
+        passageRepository: PassageRepositoryMock = .init()
     ) -> SceneUsecase {
         withDependencies {
             $0[FestivalRepositoryKey.self] = festivalRepository

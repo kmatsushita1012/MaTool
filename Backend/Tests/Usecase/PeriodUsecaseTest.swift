@@ -5,7 +5,7 @@ import Testing
 
 struct PeriodUsecaseTest {
     @Test
-    func get_returnsPeriod() async throws {
+    func get_正常() async throws {
         let period = Period.mock(id: "period-1", festivalId: "festival-1")
         let repository = PeriodRepositoryMock(getHandler: { _ in period })
         let subject = make(repository: repository)
@@ -17,7 +17,7 @@ struct PeriodUsecaseTest {
     }
 
     @Test
-    func get_notFound_throws() async {
+    func get_異常_条件() async {
         let subject = make(repository: .init(getHandler: { _ in nil }))
 
         await #expect(throws: Error.notFound("指定された日程が取得できませんでした。")) {
@@ -26,7 +26,7 @@ struct PeriodUsecaseTest {
     }
 
     @Test
-    func queryByYear_forwardsToRepository() async throws {
+    func queryByYear_正常() async throws {
         let periods = [Period.mock(id: "period-1", festivalId: "festival-1", date: .init(year: 2026, month: 2, day: 22))]
         let repository = PeriodRepositoryMock(queryByYearHandler: { _, _ in periods })
 
@@ -38,7 +38,7 @@ struct PeriodUsecaseTest {
     }
 
     @Test
-    func query_withoutYear_forwardsToRepository() async throws {
+    func query_正常() async throws {
         let periods = [Period.mock(id: "period-2", festivalId: "festival-1")]
         let repository = PeriodRepositoryMock(queryHandler: { _ in periods })
         let subject = make(repository: repository)
@@ -50,7 +50,7 @@ struct PeriodUsecaseTest {
     }
 
     @Test
-    func post_unauthorized_throws() async {
+    func post_異常_条件() async {
         let period = Period.mock(festivalId: "festival-1")
         let subject = make(repository: .init())
 
@@ -60,7 +60,7 @@ struct PeriodUsecaseTest {
     }
 
     @Test
-    func post_authorized_createsPeriod() async throws {
+    func post_正常() async throws {
         let period = Period.mock(id: "period-1", festivalId: "festival-1")
         let repository = PeriodRepositoryMock(postHandler: { $0 })
         let subject = make(repository: repository)
@@ -72,7 +72,7 @@ struct PeriodUsecaseTest {
     }
 
     @Test
-    func put_authorized_updatesPeriod() async throws {
+    func put_正常() async throws {
         let period = Period.mock(id: "period-1", festivalId: "festival-1")
         let repository = PeriodRepositoryMock(putHandler: { $0 })
         let subject = make(repository: repository)
@@ -84,14 +84,14 @@ struct PeriodUsecaseTest {
     }
 
     @Test
-    func delete_authorized_deletesByCompositeKey() async throws {
+    func delete_正常() async throws {
         let period = Period.mock(id: "period-1", festivalId: "festival-1", date: .init(year: 2026, month: 2, day: 22), start: .init(hour: 10, minute: 0))
-        var capturedFestivalId: String?
+        var lastCalledFestivalId: String?
 
         let repository = PeriodRepositoryMock(
             getHandler: { _ in period },
             deleteHandler: { festivalId, _, _ in
-                capturedFestivalId = festivalId
+                lastCalledFestivalId = festivalId
             }
         )
         let subject = make(repository: repository)
@@ -99,12 +99,12 @@ struct PeriodUsecaseTest {
         try await subject.delete(id: period.id, user: .headquarter("festival-1"))
 
         #expect(repository.deleteCallCount == 1)
-        #expect(capturedFestivalId == "festival-1")
+        #expect(lastCalledFestivalId == "festival-1")
     }
 }
 
 private extension PeriodUsecaseTest {
-    func make(repository: PeriodRepositoryMock) -> PeriodUsecase {
+    func make(repository: PeriodRepositoryMock = .init()) -> PeriodUsecase {
         withDependencies {
             $0[PeriodRepositoryKey.self] = repository
         } operation: {

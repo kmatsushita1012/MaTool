@@ -5,7 +5,7 @@ import Testing
 
 struct FestivalUsecaseTest {
     @Test
-    func scan_forwardsToRepository() async throws {
+    func scan_正常() async throws {
         let festivals = [Festival.mock(id: "festival-1")]
         let repository = FestivalRepositoryMock(scanHandler: { festivals })
         let subject = make(
@@ -21,15 +21,22 @@ struct FestivalUsecaseTest {
     }
 
     @Test
-    func get_returnsFestivalPack() async throws {
+    func get_正常() async throws {
         let festival = Festival.mock(id: "festival-1")
         let checkpoints = [Checkpoint.mock(id: "cp-1", festivalId: festival.id)]
         let hazards = [HazardSection.mock(id: "hz-1", festivalId: festival.id)]
+        var lastCalledFestivalId: String?
+        let repository = FestivalRepositoryMock(getHandler: { id in
+            lastCalledFestivalId = id
+            return festival
+        })
+        let checkpointRepository = CheckpointRepositoryMock(queryHandler: { _ in checkpoints })
+        let hazardRepository = HazardSectionRepositoryMock(queryHandler: { _ in hazards })
 
         let subject = make(
-            festivalRepository: .init(getHandler: { _ in festival }),
-            checkpointRepository: .init(queryHandler: { _ in checkpoints }),
-            hazardSectionRepository: .init(queryHandler: { _ in hazards })
+            festivalRepository: repository,
+            checkpointRepository: checkpointRepository,
+            hazardSectionRepository: hazardRepository
         )
 
         let result = try await subject.get(festival.id)
@@ -37,10 +44,14 @@ struct FestivalUsecaseTest {
         #expect(result.festival == festival)
         #expect(result.checkpoints == checkpoints)
         #expect(result.hazardSections == hazards)
+        #expect(lastCalledFestivalId == festival.id)
+        #expect(repository.getCallCount == 1)
+        #expect(checkpointRepository.queryCallCount == 1)
+        #expect(hazardRepository.queryCallCount == 1)
     }
 
     @Test
-    func get_notFound_throws() async {
+    func get_異常_条件() async {
         let subject = make(
             festivalRepository: .init(getHandler: { _ in nil }),
             checkpointRepository: .init(queryHandler: { _ in [] }),
@@ -53,7 +64,7 @@ struct FestivalUsecaseTest {
     }
 
     @Test
-    func put_unauthorized_throws() async {
+    func put_異常_条件() async {
         let pack = FestivalPack.mock(festival: .mock(id: "festival-1"))
         let subject = make(
             festivalRepository: .init(),
@@ -67,16 +78,16 @@ struct FestivalUsecaseTest {
     }
 
     @Test
-    func put_authorized_updatesFestivalAndChildren() async throws {
+    func put_正常() async throws {
         let festival = Festival.mock(id: "festival-1", name: "new")
         let checkpoint = Checkpoint.mock(id: "cp-1", festivalId: festival.id)
         let hazard = HazardSection.mock(id: "hz-1", festivalId: festival.id)
         let pack = FestivalPack.mock(festival: festival, checkpoints: [checkpoint], hazardSections: [hazard])
 
-        var putFestivalCalled = false
+        var lastCalledFestivalId: String?
         let subject = make(
             festivalRepository: .init(putHandler: { item in
-                putFestivalCalled = true
+                lastCalledFestivalId = item.id
                 return item
             }),
             checkpointRepository: .init(queryHandler: { _ in [] }, postHandler: { $0 }),
@@ -85,7 +96,7 @@ struct FestivalUsecaseTest {
 
         let result = try await subject.put(pack, user: .headquarter(festival.id))
 
-        #expect(putFestivalCalled)
+        #expect(lastCalledFestivalId == festival.id)
         #expect(result.festival == festival)
         #expect(result.checkpoints == [checkpoint])
         #expect(result.hazardSections == [hazard])
@@ -94,9 +105,9 @@ struct FestivalUsecaseTest {
 
 private extension FestivalUsecaseTest {
     func make(
-        festivalRepository: FestivalRepositoryMock,
-        checkpointRepository: CheckpointRepositoryMock,
-        hazardSectionRepository: HazardSectionRepositoryMock
+        festivalRepository: FestivalRepositoryMock = .init(),
+        checkpointRepository: CheckpointRepositoryMock = .init(),
+        hazardSectionRepository: HazardSectionRepositoryMock = .init()
     ) -> FestivalUsecase {
         withDependencies {
             $0[FestivalRepositoryKey.self] = festivalRepository
