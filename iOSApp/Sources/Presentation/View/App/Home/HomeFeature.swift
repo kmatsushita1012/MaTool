@@ -112,6 +112,14 @@ struct HomeFeature {
             case .settingsPrepared(.failure(let error)):
                 state.alert = AlertFeature.error("設定画面の準備に失敗しました。\n\(error)")
                 return .none
+            case .destination(.presented(.settings(.districtSelectReceived(.success(let routeId))))):
+                state.currentRouteId = routeId
+                return .none
+            case .destination(.presented(.settings(.festivalSelectReceived(.success(.changed(let userRole)))))):
+                // 祭変更時のみユーザーロールが返る
+                state.userRole = userRole
+                state.currentRouteId = nil
+                return .none
             case .destination(.presented(let childAction)):
                 switch childAction {
                 case .login(.received(.success(.signedIn(let userRole)))),
