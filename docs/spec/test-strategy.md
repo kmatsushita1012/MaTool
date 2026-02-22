@@ -239,3 +239,16 @@
   - 実行確認: `swift test --filter Router` がpass
 - 全体確認:
   - `swift test` が pass（37 tests / 20 suites）
+
+### 10.2 追加進捗（2026-02-22）
+
+- テストケースを増量（95 tests / 21 suites まで拡張）
+  - `Usecase`: `Festival/District/Location/Period/Route/Scene` の正常系・権限系・NotFound系を追加
+  - `Controller`: 各Controllerの主要メソッド（`get/query/post/put/delete/launch`）の引数伝搬・分岐を追加
+  - `Router`: 各Routerで複数エンドポイントの経路検証を追加
+- カバレッジ実測（`swift test --enable-code-coverage` + `llvm-cov`）:
+  - 集計対象: `Sources/Controller`, `Sources/Usecase`, `Sources/Router`
+  - `TOTAL`: Regions 84.26% / Lines 89.68%
+  - `Usecase/SceneUsecase.swift`: Regions 71.29%（未網羅分岐が残存）
+- 方針:
+  - 「100%目標」は維持し、次は `SceneUsecase` と `RouteUsecase` の残分岐を優先して埋める

@@ -96,9 +96,24 @@ extension Point {
         id: String = "point-id",
         routeId: Route.ID = "route-id",
         coordinate: Coordinate = .init(latitude: 35.0, longitude: 139.0),
-        index: Int = 0
+        index: Int = 0,
+        time: SimpleTime? = nil,
+        checkpointId: Checkpoint.ID? = nil,
+        performanceId: Performance.ID? = nil,
+        anchor: Anchor? = nil,
+        isBoundary: Bool = false
     ) -> Self {
-        .init(id: id, routeId: routeId, coordinate: coordinate, index: index)
+        .init(
+            id: id,
+            routeId: routeId,
+            coordinate: coordinate,
+            time: time,
+            checkpointId: checkpointId,
+            performanceId: performanceId,
+            anchor: anchor,
+            index: index,
+            isBoundary: isBoundary
+        )
     }
 }
 
