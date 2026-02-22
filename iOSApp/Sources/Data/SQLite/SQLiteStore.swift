@@ -54,6 +54,7 @@ enum FloatLocationStoreKey: DependencyKey {
 protocol SQLiteStoreProtocol<Content>: Sendable {
     associatedtype Content: PrimaryKeyedTable & Sendable & Identifiable
     
+    func fetchAll(from db: Database) throws -> [Content]
     func fetchAll(@QueryFragmentBuilder<Bool> where predicate: (Content.TableColumns) -> [QueryFragment], from db: Database) throws -> [Content]
     @available(*, deprecated)
     func insert(_ item: Content, at db: Database) throws
@@ -69,6 +70,10 @@ protocol SQLiteStoreProtocol<Content>: Sendable {
 struct SQLiteStore<Content: PrimaryKeyedTable & Sendable & Identifiable>: SQLiteStoreProtocol {
     func fetchAll(@QueryFragmentBuilder<Bool> where predicate: (Content.TableColumns) -> [QueryFragment], from db: Database) throws -> [Content] {
         try Content.where(predicate).fetchAll(db).map{  Content.init(queryOutput: $0) }
+    }
+    
+    func fetchAll(from db: Database) throws -> [Content] {
+        try Content.fetchAll(db).map{  Content.init(queryOutput: $0) }
     }
     
     
