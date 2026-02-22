@@ -24,7 +24,7 @@ struct PeriodControllerTest {
     }
 
     @Test
-    func query_正常_条件1() async throws {
+    func query_正常_年指定あり() async throws {
         let periods = [Period.mock(id: "period-1", festivalId: "festival-1")]
         var lastCalledFestivalId: String?
         var lastCalledYear: Int?
@@ -57,7 +57,7 @@ struct PeriodControllerTest {
     }
 
     @Test
-    func query_正常_条件2() async throws {
+    func query_正常_年指定なし() async throws {
         let periods = [Period.mock(id: "period-1", festivalId: "festival-1")]
         let mock = PeriodUsecaseMock(queryHandler: { _ in periods })
         let subject = make(usecase: mock)
@@ -138,6 +138,17 @@ struct PeriodControllerTest {
         #expect(response.statusCode == 200)
         #expect(lastCalledId == "period-1")
         #expect(mock.deleteCallCount == 1)
+    }
+
+    @Test
+    func get_異常_ユースケースエラー透過() async {
+        let mock = PeriodUsecaseMock(getHandler: { _ in throw TestError.intentional })
+        let subject = make(usecase: mock)
+        let request = Application.Request.make(method: .get, path: "/periods/period-1", parameters: ["periodId": "period-1"])
+
+        await #expect(throws: TestError.intentional) {
+            _ = try await subject.get(request: request, next: next)
+        }
     }
 }
 

@@ -29,7 +29,7 @@ struct RouteControllerTest {
     }
 
     @Test
-    func query_正常_条件1() async throws {
+    func query_正常_latest指定() async throws {
         let routes = [Route.mock(id: "route-1", districtId: "district-1")]
         var lastCalledDistrictId: String?
         var lastCalledUser: UserRole?
@@ -69,7 +69,7 @@ struct RouteControllerTest {
     }
 
     @Test
-    func query_正常_条件2() async throws {
+    func query_正常_年指定() async throws {
         var lastCalledType: RouteQueryType?
         let mock = RouteUsecaseMock(queryHandler: { _, type, _, _ in
             lastCalledType = type
@@ -156,6 +156,17 @@ struct RouteControllerTest {
         #expect(response.statusCode == 200)
         #expect(lastCalledId == "route-1")
         #expect(mock.deleteCallCount == 1)
+    }
+
+    @Test
+    func get_異常_ユースケースエラー透過() async {
+        let mock = RouteUsecaseMock(getHandler: { _, _ in throw TestError.intentional })
+        let subject = make(usecase: mock)
+        let request = Application.Request.make(method: .get, path: "/routes/route-1", parameters: ["routeId": "route-1"])
+
+        await #expect(throws: TestError.intentional) {
+            _ = try await subject.get(request, next: next)
+        }
     }
 }
 
