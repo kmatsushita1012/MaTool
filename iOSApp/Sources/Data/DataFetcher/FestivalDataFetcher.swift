@@ -67,7 +67,7 @@ struct FestivalDataFetcher: FestivalDataFetcherProtocol {
     
     private func syncAll(_ festivals: [Festival]) async throws {
         try await database.write{ db in
-            let oldFestivals = try festivalStore.fetchAll(where: { _ in [] }, from: db)
+            let oldFestivals = try festivalStore.fetchAll(from: db)
             let (_, deletedFestivalIds) = oldFestivals.diffById(with: festivals)
             try festivalStore.deleteAll(deletedFestivalIds, from: db)
             try festivalStore.upsert(festivals, at: db)
