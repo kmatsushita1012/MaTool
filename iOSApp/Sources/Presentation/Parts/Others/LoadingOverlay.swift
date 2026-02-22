@@ -11,6 +11,7 @@ extension View {
     func loadingOverlay(_ isLoading: Bool) -> some View {
         ZStack {
             self
+                .disabled(isLoading)
             if isLoading {
                 Color.black.opacity(0.2)
                     .ignoresSafeArea()
