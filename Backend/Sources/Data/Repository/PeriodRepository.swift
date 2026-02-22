@@ -73,7 +73,7 @@ struct PeriodRepository: PeriodRepositoryProtocol {
     }
 }
 
-fileprivate struct PeriodRecord: RecordProtocol {
+struct PeriodRecord: RecordProtocol {
     typealias Content = Period
     let pk: String
     let sk: String
@@ -109,4 +109,3 @@ extension PeriodRecord {
     static let type = String(describing: Period.self).uppercased()
     static let indexName = "index-type-id"
 }
-
