@@ -54,18 +54,26 @@ enum FloatLocationStoreKey: DependencyKey {
 protocol SQLiteStoreProtocol<Content>: Sendable {
     associatedtype Content: PrimaryKeyedTable & Sendable & Identifiable
     
+    func fetchAll(from db: Database) throws -> [Content]
     func fetchAll(@QueryFragmentBuilder<Bool> where predicate: (Content.TableColumns) -> [QueryFragment], from db: Database) throws -> [Content]
+    @available(*, deprecated)
     func insert(_ item: Content, at db: Database) throws
+    @available(*, deprecated)
     func insert(_ items: [Content], at db: Database) throws
+    func upsert(_ item: Content, at db: Database) throws
+    func upsert(_ items: [Content], at db: Database) throws
     func deleteAll(@QueryFragmentBuilder<Bool> where predicate: (Content.TableColumns) -> [QueryFragment], from db: Database) throws
     func deleteAll(_ primaryKeys: some Sequence<some QueryExpression<Content.PrimaryKey>> , from db: Database) throws
     func deleteAll(from db: Database) throws
 }
 
 struct SQLiteStore<Content: PrimaryKeyedTable & Sendable & Identifiable>: SQLiteStoreProtocol {
-    
     func fetchAll(@QueryFragmentBuilder<Bool> where predicate: (Content.TableColumns) -> [QueryFragment], from db: Database) throws -> [Content] {
         try Content.where(predicate).fetchAll(db).map{  Content.init(queryOutput: $0) }
+    }
+    
+    func fetchAll(from db: Database) throws -> [Content] {
+        try Content.fetchAll(db).map{  Content.init(queryOutput: $0) }
     }
     
     
@@ -76,6 +84,15 @@ struct SQLiteStore<Content: PrimaryKeyedTable & Sendable & Identifiable>: SQLite
     func insert(_ items: [Content], at db: Database) throws {
         _ = try Content.insert { items }.execute(db)
     }
+    
+    func upsert(_ item: Content, at db: GRDB.Database) throws {
+        _ = try Content.upsert{ item }.execute(db)
+    }
+    
+    func upsert(_ items: [Content], at db: GRDB.Database) throws {
+        _ = try Content.upsert{ items }.execute(db)
+    }
+    
     
     func deleteAll(@QueryFragmentBuilder<Bool> where predicate: (Content.TableColumns) -> [QueryFragment], from db: Database) throws {
         _ = try Content.where(predicate).delete().execute(db)
