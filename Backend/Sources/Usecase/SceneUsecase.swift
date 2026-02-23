@@ -146,11 +146,14 @@ struct SceneUsecase: SceneUsecaseProtocol {
         let currentRoute = sorted.first?.route
         let points = currentRoute != nil ? try await pointRepository.query(by: currentRoute!.id) : []
         let passages = currentRoute != nil ? try await passageRepository.query(by: currentRoute!.id) : []
+        let sanitizedPoints = currentRoute != nil
+        ? removeTimeIfNeeded(routeVisibility: currentRoute!.visibility, district: district, points: points, user: user)
+        : points
 
         return .init(
             performances: try await performances,
             routes: filteredRoutes,
-            points: points,
+            points: sanitizedPoints,
             passages: passages,
             currentRouteId: currentRoute?.id
         )
@@ -179,5 +182,31 @@ extension SceneUsecase {
             throw Error.notFound("指定された地区が見つかりません")
         }
         return district
+    }
+
+    fileprivate func removeTimeIfNeeded(routeVisibility: Visibility, district: District, points: [Point], user: UserRole) -> [Point] {
+        guard routeVisibility == .route else {
+            return points
+        }
+
+        let hasAccess: Bool
+        switch user {
+        case .guest:
+            hasAccess = false
+        case .district(let id):
+            hasAccess = id == district.id
+        case .headquarter(let id):
+            hasAccess = id == district.festivalId
+        }
+
+        guard !hasAccess else {
+            return points
+        }
+
+        return points.map {
+            var point = $0
+            point.time = nil
+            return point
+        }
     }
 }

@@ -25,6 +25,8 @@ protocol DistrictUsecaseProtocol: Sendable {
 // MARK: - DistrictUsecase
 struct DistrictUsecase: DistrictUsecaseProtocol {
     @Dependency(DistrictRepositoryKey.self) var repository
+    @Dependency(RouteRepositoryKey.self) var routeRepository
+    @Dependency(PeriodRepositoryKey.self) var periodRepository
     @Dependency(FestivalRepositoryKey.self) var festivalRepository
     @Dependency(PerformanceRepositoryKey.self) var peformanceRepository
     @Dependency(AuthManagerFactoryKey.self) var managerFactory
@@ -87,6 +89,14 @@ struct DistrictUsecase: DistrictUsecaseProtocol {
         }
         let mergedDistrict = mergeForDistrictRole(current: current, incoming: item.district)
         let district = try await repository.put(id: id, item: mergedDistrict)
+        if current.visibility != district.visibility {
+            try await applyVisibilityToLatestYearRoutes(
+                districtId: id,
+                festivalId: district.festivalId,
+                visibility: district.visibility,
+                nowYear: SimpleDate.now.year
+            )
+        }
         
         let oldPerformances = try await peformanceRepository.query(by: districtId)
         let performances = try await oldPerformances.update(with: item.performances, repository: peformanceRepository)
@@ -140,4 +150,29 @@ extension DistrictUsecase {
         return "\(prefix)_\(name)"
     }
 
+    private func applyVisibilityToLatestYearRoutes(
+        districtId: District.ID,
+        festivalId: Festival.ID,
+        visibility: Visibility,
+        nowYear: Int
+    ) async throws {
+        let (routes, _) = try await LatestPeriodRouteResolver.fetchLatestRoutes(
+            districtId: districtId,
+            festivalId: festivalId,
+            nowYear: nowYear,
+            periodRepository: periodRepository,
+            routeRepository: routeRepository
+        )
+        let routeRepository = routeRepository
+        try await withThrowingTaskGroup(of: Void.self) { group in
+            for route in routes {
+                group.addTask {
+                    var updated = route
+                    updated.visibility = visibility
+                    _ = try await routeRepository.put(updated)
+                }
+            }
+            try await group.waitForAll()
+        }
+    }
 }

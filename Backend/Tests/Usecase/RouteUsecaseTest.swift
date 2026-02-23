@@ -64,6 +64,29 @@ struct RouteUsecaseTest {
     }
 
     @Test
+    func get_正常_visibilityRouteで対象外ユーザーの時刻をマスク() async throws {
+        let district = District.mock(id: "district-1", festivalId: "festival-1")
+        let route = Route.mock(id: "route-1", districtId: district.id, periodId: "period-1", visibility: .route)
+        let point = Point.mock(
+            id: "point-1",
+            routeId: route.id,
+            coordinate: .init(latitude: 35, longitude: 139),
+            time: .init(hour: 10, minute: 30)
+        )
+        let subject = make(
+            routeRepository: .init(getHandler: { _ in route }),
+            districtRepository: .init(getHandler: { _ in district }),
+            pointRepository: .init(queryHandler: { _ in [point] }),
+            passageRepository: .init(queryHandler: { _ in [] })
+        )
+
+        let result = try await subject.get(id: route.id, user: .guest)
+
+        #expect(result.points.count == 1)
+        #expect(result.points[0].time == nil)
+    }
+
+    @Test
     func query_正常_全件取得() async throws {
         let district = District.mock(id: "district-1", festivalId: "festival-1")
         let routes = [Route.mock(id: "route-1", districtId: district.id)]

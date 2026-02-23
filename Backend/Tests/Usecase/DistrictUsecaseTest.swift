@@ -107,6 +107,7 @@ struct DistrictUsecaseTest {
 
     @Test
     func put_正常_地区権限は編集可能項目のみ反映() async throws {
+        let nowYear = SimpleDate.now.year
         let current = District(
             id: "district-1",
             name: "old",
@@ -136,6 +137,7 @@ struct DistrictUsecaseTest {
         var merged: District?
         var lastCalledGetId: String?
         var lastCalledPutId: String?
+        var updatedRoutes: [Route] = []
         let districtRepository = DistrictRepositoryMock(
             getHandler: { id in
                 lastCalledGetId = id
@@ -148,9 +150,32 @@ struct DistrictUsecaseTest {
             }
         )
         let performanceRepository = PerformanceRepositoryMock(queryHandler: { _ in [] })
+        let currentYearPeriod = Period.mock(id: "period-\(nowYear)", festivalId: current.festivalId, date: .init(year: nowYear, month: 1, day: 1))
+        let lastYearPeriod = Period.mock(id: "period-\(nowYear - 1)", festivalId: current.festivalId, date: .init(year: nowYear - 1, month: 1, day: 1))
+        let periodRepository = PeriodRepositoryMock(queryByYearHandler: { _, year in
+            if year == nowYear + 1 { return [] }
+            if year == nowYear { return [currentYearPeriod] }
+            if year == nowYear - 1 { return [lastYearPeriod] }
+            return []
+        })
+        let routeRepository = RouteRepositoryMock(
+            queryByYearHandler: { _, year in
+                guard year == nowYear else { return [] }
+                return [
+                    Route.mock(id: "route-1", districtId: current.id, periodId: currentYearPeriod.id, visibility: .all),
+                    Route.mock(id: "route-2", districtId: current.id, periodId: currentYearPeriod.id, visibility: .route),
+                ]
+            },
+            putHandler: {
+                updatedRoutes.append($0)
+                return $0
+            }
+        )
 
         let subject = make(
             districtRepository: districtRepository,
+            routeRepository: routeRepository,
+            periodRepository: periodRepository,
             performanceRepository: performanceRepository,
             authManagerFactory: { throw TestError.unimplemented }
         )
@@ -173,7 +198,50 @@ struct DistrictUsecaseTest {
         #expect(lastCalledPutId == current.id)
         #expect(districtRepository.getCallCount == 1)
         #expect(districtRepository.putCallCount == 1)
+        #expect(periodRepository.queryByYearCallCount == 3)
+        #expect(routeRepository.queryByYearCallCount == 1)
+        #expect(routeRepository.putCallCount == 2)
+        #expect(updatedRoutes.count == 2)
+        #expect(updatedRoutes.allSatisfy { $0.visibility == .admin })
         #expect(performanceRepository.queryCallCount == 1)
+    }
+
+    @Test
+    func put_正常_地区権限_visibility不変ならRoute更新しない() async throws {
+        let current = District.mock(id: "district-1", festivalId: "festival-1", visibility: .route)
+        let incoming = District.mock(id: "district-1", festivalId: "festival-1", visibility: .route)
+
+        let districtRepository = DistrictRepositoryMock(
+            getHandler: { _ in current },
+            putHandler: { _, _ in incoming }
+        )
+        let routeRepository = RouteRepositoryMock(
+            queryByYearHandler: { _, _ in
+                Issue.record("route queryByYear should not be called when visibility is unchanged")
+                return []
+            },
+            putHandler: { route in
+                Issue.record("route put should not be called when visibility is unchanged: \(route.id)")
+                return route
+            }
+        )
+
+        let subject = make(
+            districtRepository: districtRepository,
+            routeRepository: routeRepository,
+            periodRepository: .init(queryByYearHandler: { _, _ in [] }),
+            performanceRepository: .init(queryHandler: { _ in [] }),
+            authManagerFactory: { throw TestError.unimplemented }
+        )
+
+        _ = try await subject.put(
+            id: current.id,
+            item: .mock(district: incoming, performances: []),
+            user: .district(current.id)
+        )
+
+        #expect(routeRepository.queryByYearCallCount == 0)
+        #expect(routeRepository.putCallCount == 0)
     }
 
     @Test
@@ -234,12 +302,16 @@ struct DistrictUsecaseTest {
 private extension DistrictUsecaseTest {
     func make(
         districtRepository: DistrictRepositoryMock = .init(),
+        routeRepository: RouteRepositoryMock = .init(),
+        periodRepository: PeriodRepositoryMock = .init(),
         festivalRepository: FestivalRepositoryMock = .init(),
         performanceRepository: PerformanceRepositoryMock = .init(),
         authManagerFactory: @escaping AuthManagerFactory = { throw TestError.unimplemented }
     ) -> DistrictUsecase {
         withDependencies {
             $0[DistrictRepositoryKey.self] = districtRepository
+            $0[RouteRepositoryKey.self] = routeRepository
+            $0[PeriodRepositoryKey.self] = periodRepository
             $0[FestivalRepositoryKey.self] = festivalRepository
             $0[PerformanceRepositoryKey.self] = performanceRepository
             $0[AuthManagerFactoryKey.self] = authManagerFactory
