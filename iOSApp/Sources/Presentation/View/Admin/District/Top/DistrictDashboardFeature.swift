@@ -93,7 +93,7 @@ struct DistrictDashboardFeature {
                         RouteEditFeature.State(mode: .update, route: route, district: state.district, period: item.period)
                     )
                 } else {
-                    let route = Route(id: UUID().uuidString, districtId: state.district.id, periodId: item.period.id)
+                    let route = Route(id: UUID().uuidString, districtId: state.district.id, periodId: item.period.id, visibility: state.district.visibility)
                     state.destination = .route(
                         RouteEditFeature.State(
                             mode: .create,
