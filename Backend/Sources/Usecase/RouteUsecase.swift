@@ -48,8 +48,9 @@ struct RouteUsecase: RouteUsecaseProtocol {
         }
         let points = try await pointRepository.query(by: route.id)
         let passages = try await passageRepository.query(by: route.id)
+        let sanitizedPoints = removeTimeIfNeeded(routeVisibility: route.visibility, district: district, points: points, user: user)
         
-        return .init(route: route, points: points, passages: passages)
+        return .init(route: route, points: sanitizedPoints, passages: passages)
     }
     
     func query(by districtId: String, type: RouteQueryType, now: SimpleDate, user: UserRole) async throws -> [Route] {
@@ -149,27 +150,30 @@ extension RouteUsecase {
         return district
     }
     
-    private func removeTimeIfNeeded(district: District, points: [Point], user: UserRole) -> [Point] {
-        if district.visibility == .route {
-            let hasAccess: Bool
-            switch user {
-            case .guest:
-                hasAccess = false
-            case .district(let id):
-                hasAccess = id == district.id
-            case .headquarter(let festivalId):
-                hasAccess = festivalId == district.festivalId
-            }
-            
-            if !hasAccess {
-                return points.map{
-                    var point = $0
-                    point.time = nil
-                    return point
-                }
-            }
+    private func removeTimeIfNeeded(routeVisibility: Visibility, district: District, points: [Point], user: UserRole) -> [Point] {
+        guard routeVisibility == .route else {
+            return points
         }
-        return points
+
+        let hasAccess: Bool
+        switch user {
+        case .guest:
+            hasAccess = false
+        case .district(let id):
+            hasAccess = id == district.id
+        case .headquarter(let festivalId):
+            hasAccess = festivalId == district.festivalId
+        }
+
+        guard !hasAccess else {
+            return points
+        }
+
+        return points.map {
+            var point = $0
+            point.time = nil
+            return point
+        }
     }
 }
 
