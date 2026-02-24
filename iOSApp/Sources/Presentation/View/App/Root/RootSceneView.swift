@@ -1,11 +1,10 @@
 //
-//  iOSApp.swift
+//  RootSceneView.swift
 //  MaTool
 //
 //  Created by 松下和也 on 2025/10/30.
 //
 
-// iOSApp/AppInitializer.swift
 import Foundation
 import ComposableArchitecture
 import Dependencies
@@ -58,25 +57,15 @@ public struct RootSceneView: View {
                 )
                 .preferredColorScheme(.light)
             case .loading:
-                loadingView
+                LoadingView()
+                    .preferredColorScheme(.light)
             case .error(let message):
                 errorView(message)
             }
         }
         .environment(\.isLiquidGlassDisabled, !isLiquidGlassEnabled)
     }
-    
-    @ViewBuilder
-    var loadingView: some View {
-        VStack {
-            Spacer()
-            ProgressView()
-                .progressViewStyle(CircularProgressViewStyle(tint: .white))
-                .scaleEffect(2)
-            Spacer()
-        }
-    }
-    
+
     @ViewBuilder
     func errorView(_ message: String) -> some View {
         VStack {
