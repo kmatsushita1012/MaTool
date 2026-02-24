@@ -228,7 +228,6 @@ struct RouteUsecaseTest {
     func post_正常() async throws {
         let route = Route.mock(id: "route-1", districtId: "district-1")
         var district = District.mock(id: route.districtId, festivalId: "festival-1")
-        district.isEditable = false
         let points = [
             Point.mock(id: "p-1", routeId: route.id, index: 0, time: .init(hour: 9, minute: 0), anchor: .start),
             Point.mock(id: "p-2", routeId: route.id, index: 1, time: .init(hour: 10, minute: 0), anchor: .end)
@@ -273,7 +272,6 @@ struct RouteUsecaseTest {
     func put_正常() async throws {
         let route = Route.mock(id: "route-1", districtId: "district-1")
         var district = District.mock(id: route.districtId, festivalId: "festival-1")
-        district.isEditable = false
         let points = [
             Point.mock(id: "p-1", routeId: route.id, index: 0, time: .init(hour: 9, minute: 0), anchor: .start),
             Point.mock(id: "p-2", routeId: route.id, index: 1, time: .init(hour: 10, minute: 0), anchor: .end)
@@ -314,7 +312,6 @@ struct RouteUsecaseTest {
     func delete_正常() async throws {
         let route = Route.mock(id: "route-1", districtId: "district-1")
         var district = District.mock(id: route.districtId, festivalId: "festival-1")
-        district.isEditable = false
         let routeRepository = RouteRepositoryMock(
             getHandler: { _ in route },
             deleteHandler: { _ in }
@@ -345,13 +342,13 @@ struct RouteUsecaseTest {
         let subject = make(
             districtRepository: .init(getHandler: { _ in
                 var item = district
-                item.isEditable = true
+                item.isEditable = false
                 return item
             }),
             festivalRepository: .init(getHandler: { _ in festival })
         )
 
-        await #expect(throws: Error.forbidden("祭本部編集中のためRoute更新はできません")) {
+        await #expect(throws: Error.forbidden("祭本部がルートの更新を停止しています。")) {
             _ = try await subject.post(districtId: route.districtId, pack: pack, user: .district(route.districtId))
         }
     }
@@ -366,13 +363,13 @@ struct RouteUsecaseTest {
             routeRepository: .init(getHandler: { _ in route }),
             districtRepository: .init(getHandler: { _ in
                 var item = district
-                item.isEditable = true
+                item.isEditable = false
                 return item
             }),
             festivalRepository: .init(getHandler: { _ in festival })
         )
 
-        await #expect(throws: Error.forbidden("祭本部編集中のためRoute更新はできません")) {
+        await #expect(throws: Error.forbidden("祭本部がルートの更新を停止しています。")) {
             _ = try await subject.put(id: route.id, pack: pack, user: .district(route.districtId))
         }
     }
@@ -386,13 +383,13 @@ struct RouteUsecaseTest {
             routeRepository: .init(getHandler: { _ in route }),
             districtRepository: .init(getHandler: { _ in
                 var item = district
-                item.isEditable = true
+                item.isEditable = false
                 return item
             }),
             festivalRepository: .init(getHandler: { _ in festival })
         )
 
-        await #expect(throws: Error.forbidden("祭本部編集中のためRoute更新はできません")) {
+        await #expect(throws: Error.forbidden("祭本部がルートの更新を停止しています。")) {
             try await subject.delete(id: route.id, user: .district(route.districtId))
         }
     }
