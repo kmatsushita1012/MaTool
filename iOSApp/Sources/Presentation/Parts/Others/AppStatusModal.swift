@@ -9,45 +9,64 @@ import SwiftUI
 
 struct AppStatusModal: View {
     let result: StatusCheckResult
+    let canDismiss: Bool
     
-    init(_ result: StatusCheckResult){
+    init(_ result: StatusCheckResult, canDismiss: Bool = true){
         self.result = result
+        self.canDismiss = canDismiss
     }
     
     @Environment(\.dismiss) var dismiss
     @Environment(\.openURL) var openURL
 
     var body: some View {
-        VStack(spacing: 24) {
-            switch result {
-            case .maintenance(let message, let until):
-                Text("メンテナンス中")
-                    .font(.largeTitle)
-                    .bold()
-                Text(message)
-                    .font(.body)
+        ZStack{
+            Image("OnboardingBackground")
+                .resizable()
+                .scaledToFill()
+                .ignoresSafeArea()
+                .allowsHitTesting(false)
+                .accessibilityHidden(true)
+            VStack(alignment: .center, spacing: 32) {
+                switch result {
+                case .maintenance(let message, let until):
+                    VStack(spacing: 16) {
+                        Text("メンテナンス中")
+                            .font(.title)
+                        Text(message)
+                        Text("終了予定日:\(until.text(of: "yyyy/MM/dd"))")
+                    }
                     .padding()
-                Text("\(until.text(year: false)) まで")
-                    .font(.body)
+                    .background(.ultraThinMaterial)
+                    .clipShape(
+                        RoundedRectangle(cornerRadius: 16)
+                    )
+                case .updateRequired(let storeURL):
+                    VStack(spacing: 16) {
+                        Text("アップデートが必要です")
+                            .font(.title)
+                        Text("ご迷惑をおかけしますが、最新の機能を提供できるようになります。")
+                    }
                     .padding()
-            case .updateRequired(let storeURL):
-                Text("アップデートが必要です")
-                    .font(.largeTitle)
-                    .bold()
-                
-                Button("App Storeへ") {
-                    openURL(storeURL)
+                    .background(.ultraThinMaterial)
+                    .clipShape(
+                        RoundedRectangle(cornerRadius: 16)
+                    )
+                    Button("App Storeでアップデート") {
+                        openURL(storeURL)
+                    }
+                    .buttonStyle(PrimaryButtonStyle(backgroundColor: .launch))
                 }
-                .buttonStyle(PrimaryButtonStyle())
-                .padding(.horizontal)
+                if canDismiss {
+                    Button("閉じる") {
+                        dismiss()
+                    }
+                    .padding(.horizontal)
+                    .buttonStyle(SecondaryButtonStyle(foregroundColor: .launch, borderColor: .launch))
+                }
+                
             }
-
-            Button("閉じる") {
-                dismiss()
-            }
-            .buttonStyle(SecondaryButtonStyle())
-            .padding(.horizontal)
+            .padding()
         }
-        .padding()
     }
 }
