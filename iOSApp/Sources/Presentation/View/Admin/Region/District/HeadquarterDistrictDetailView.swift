@@ -26,6 +26,8 @@ struct HeadquarterDistrictDetailView: View {
                         .keyboardType(.numberPad)
                         .multilineTextAlignment(.trailing)
                 }
+                Toggle("ルート更新を停止", isOn: $store.district.isEditable.inverted)
+
             } footer: {
                 Text("編集する際は右上の「編集」ボタンを押してください。")
             }

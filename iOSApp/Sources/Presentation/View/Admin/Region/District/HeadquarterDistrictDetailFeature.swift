@@ -81,7 +81,7 @@ struct HeadquarterDistrictDetailFeature {
                 return .none
             case .routeReceived(.success(let entry)):
                 state.isLoading = false
-                state.destination = .route(.init(mode: .preview, route: entry.route, district: state.district, period: entry.period))
+                state.destination = try? { .route(try .init(mode: .preview, route: entry.route)) }()
                 return .none
             case .batchExportReceived(.success(let url)):
                 state.isLoading = false
