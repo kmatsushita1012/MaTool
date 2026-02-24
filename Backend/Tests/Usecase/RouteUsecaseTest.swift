@@ -227,6 +227,7 @@ struct RouteUsecaseTest {
     @Test
     func post_正常() async throws {
         let route = Route.mock(id: "route-1", districtId: "district-1")
+        var district = District.mock(id: route.districtId, festivalId: "festival-1")
         let points = [
             Point.mock(id: "p-1", routeId: route.id, index: 0, time: .init(hour: 9, minute: 0), anchor: .start),
             Point.mock(id: "p-2", routeId: route.id, index: 1, time: .init(hour: 10, minute: 0), anchor: .end)
@@ -239,6 +240,7 @@ struct RouteUsecaseTest {
         let passageRepository = PassageRepositoryMock(queryHandler: { _ in [] }, postHandler: { $0 })
         let subject = make(
             routeRepository: routeRepository,
+            districtRepository: .init(getHandler: { _ in district }),
             pointRepository: pointRepository,
             passageRepository: passageRepository
         )
@@ -269,6 +271,7 @@ struct RouteUsecaseTest {
     @Test
     func put_正常() async throws {
         let route = Route.mock(id: "route-1", districtId: "district-1")
+        var district = District.mock(id: route.districtId, festivalId: "festival-1")
         let points = [
             Point.mock(id: "p-1", routeId: route.id, index: 0, time: .init(hour: 9, minute: 0), anchor: .start),
             Point.mock(id: "p-2", routeId: route.id, index: 1, time: .init(hour: 10, minute: 0), anchor: .end)
@@ -278,6 +281,7 @@ struct RouteUsecaseTest {
         let pointRepository = PointRepositoryMock(queryHandler: { _ in [] }, postHandler: { $0 })
         let subject = make(
             routeRepository: routeRepository,
+            districtRepository: .init(getHandler: { _ in district }),
             pointRepository: pointRepository,
             passageRepository: .init(queryHandler: { _ in [] })
         )
@@ -307,6 +311,7 @@ struct RouteUsecaseTest {
     @Test
     func delete_正常() async throws {
         let route = Route.mock(id: "route-1", districtId: "district-1")
+        var district = District.mock(id: route.districtId, festivalId: "festival-1")
         let routeRepository = RouteRepositoryMock(
             getHandler: { _ in route },
             deleteHandler: { _ in }
@@ -316,6 +321,7 @@ struct RouteUsecaseTest {
 
         let subject = make(
             routeRepository: routeRepository,
+            districtRepository: .init(getHandler: { _ in district }),
             pointRepository: pointRepository,
             passageRepository: passageRepository
         )
@@ -325,6 +331,67 @@ struct RouteUsecaseTest {
         #expect(routeRepository.deleteCallCount == 1)
         #expect(pointRepository.deleteByRouteCallCount == 1)
         #expect(passageRepository.deleteByRouteCallCount == 1)
+    }
+
+    @Test
+    func post_異常_本部編集中で更新禁止() async {
+        let route = Route.mock(id: "route-1", districtId: "district-1")
+        let district = District.mock(id: route.districtId, festivalId: "festival-1")
+        let festival = Festival.mock(id: district.festivalId, subname: "祭本部")
+        let pack = RoutePack.mock(route: route, points: [], passages: [])
+        let subject = make(
+            districtRepository: .init(getHandler: { _ in
+                var item = district
+                item.isEditable = false
+                return item
+            }),
+            festivalRepository: .init(getHandler: { _ in festival })
+        )
+
+        await #expect(throws: Error.forbidden("祭本部がルートの更新を停止しています。")) {
+            _ = try await subject.post(districtId: route.districtId, pack: pack, user: .district(route.districtId))
+        }
+    }
+
+    @Test
+    func put_異常_本部編集中で更新禁止() async {
+        let route = Route.mock(id: "route-1", districtId: "district-1")
+        let district = District.mock(id: route.districtId, festivalId: "festival-1")
+        let festival = Festival.mock(id: district.festivalId, subname: "祭本部")
+        let pack = RoutePack.mock(route: route, points: [], passages: [])
+        let subject = make(
+            routeRepository: .init(getHandler: { _ in route }),
+            districtRepository: .init(getHandler: { _ in
+                var item = district
+                item.isEditable = false
+                return item
+            }),
+            festivalRepository: .init(getHandler: { _ in festival })
+        )
+
+        await #expect(throws: Error.forbidden("祭本部がルートの更新を停止しています。")) {
+            _ = try await subject.put(id: route.id, pack: pack, user: .district(route.districtId))
+        }
+    }
+
+    @Test
+    func delete_異常_本部編集中で更新禁止() async {
+        let route = Route.mock(id: "route-1", districtId: "district-1")
+        let district = District.mock(id: route.districtId, festivalId: "festival-1")
+        let festival = Festival.mock(id: district.festivalId, subname: "祭本部")
+        let subject = make(
+            routeRepository: .init(getHandler: { _ in route }),
+            districtRepository: .init(getHandler: { _ in
+                var item = district
+                item.isEditable = false
+                return item
+            }),
+            festivalRepository: .init(getHandler: { _ in festival })
+        )
+
+        await #expect(throws: Error.forbidden("祭本部がルートの更新を停止しています。")) {
+            try await subject.delete(id: route.id, user: .district(route.districtId))
+        }
     }
 
     @Test
@@ -351,6 +418,7 @@ private extension RouteUsecaseTest {
         routeRepository: RouteRepositoryMock = .init(),
         periodRepository: PeriodRepositoryMock = .init(),
         districtRepository: DistrictRepositoryMock = .init(),
+        festivalRepository: FestivalRepositoryMock = .init(),
         pointRepository: PointRepositoryMock = .init(),
         passageRepository: PassageRepositoryMock = .init()
     ) -> RouteUsecase {
@@ -358,6 +426,7 @@ private extension RouteUsecaseTest {
             $0[RouteRepositoryKey.self] = routeRepository
             $0[PeriodRepositoryKey.self] = periodRepository
             $0[DistrictRepositoryKey.self] = districtRepository
+            $0[FestivalRepositoryKey.self] = festivalRepository
             $0[PointRepositoryKey.self] = pointRepository
             $0[PassageRepositoryKey.self] = passageRepository
         } operation: {

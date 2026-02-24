@@ -77,3 +77,12 @@ extension Binding where Value == SimpleTime? {
         )
     }
 }
+
+extension Binding where Value == Bool {
+    var inverted: Binding<Bool> {
+        Binding<Bool>(
+            get: { !self.wrappedValue },
+            set: { self.wrappedValue = !$0 }
+        )
+    }
+}
