@@ -105,11 +105,6 @@ struct HomeView: View {
                 .alert($store.scope(state: \.alert, action: \.alert))
                 .loadingOverlay(store.isLoading)
             )
-            .sheet(item: $store.status) { status in
-                WithPerceptionTracking {
-                    AppStatusModal(status)
-                }
-            }
         }
     }
     
