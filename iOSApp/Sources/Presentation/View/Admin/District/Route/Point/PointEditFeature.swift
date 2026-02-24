@@ -37,6 +37,7 @@ struct PointEditFeature {
     enum Action: BindableAction, Equatable {
         case binding(BindingAction<State>)
         case doneTapped
+        case cancelTapped
         case moveTapped
         case insertTapped
         case deleteTapped
@@ -62,6 +63,8 @@ struct PointEditFeature {
             case .alert:
                 state.alert = nil
                 return .none
+            case .cancelTapped:
+                return .dismiss
             default:
                 return .none
             }
