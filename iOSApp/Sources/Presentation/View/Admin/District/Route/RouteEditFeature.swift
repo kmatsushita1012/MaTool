@@ -51,6 +51,7 @@ struct RouteEditFeature{
         var passages: [RoutePassage]
         
         @FetchOne var district: District
+        @FetchOne var festival: Festival
         @FetchOne var period: Period
         
         let mode: EditMode
@@ -308,16 +309,22 @@ extension RouteEditFeature.State {
         points.last
     }
     
-    init(mode: RouteEditFeature.EditMode, route: Route, district: District, period: Period){
+    init(mode: RouteEditFeature.EditMode, route: Route) throws {
         self.mode = mode
         let points: [Point] = FetchAll(routeId: route.id).wrappedValue
         self.manager = EditManager(points.sorted())
         self.passages = FetchAll(routeId: route.id).wrappedValue
         self.route = route
-        self._district = FetchOne(district)
-        self._period = FetchOne(period)
+        guard let districtQuery: FetchOne<District> = .init(id: route.districtId),
+            let periodQuery: FetchOne<Period> = .init(id: route.periodId),
+            let festivalQuery: FetchOne<Festival> = .init(id: districtQuery.wrappedValue.festivalId) else {
+            throw PresentationError.notFound
+        }
+        self._district = districtQuery
+        self._period = periodQuery
+        self._festival = festivalQuery
         
-        let origin: Coordinate = district.base ?? FetchOne(wrappedValue: .init(latitude: 0.0, longitude: 0.0), Festival.where{ $0.id.eq(district.festivalId) }.select(\.base)).wrappedValue
+        let origin: Coordinate = districtQuery.wrappedValue.base ?? festivalQuery.wrappedValue.base
 
         self.region = makeRegion(points: points, origin: origin, spanDelta: spanDelta)
         if mode == .preview {
