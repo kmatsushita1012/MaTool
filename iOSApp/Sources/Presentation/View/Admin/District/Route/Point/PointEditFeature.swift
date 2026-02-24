@@ -48,26 +48,7 @@ struct PointEditFeature {
         Reduce { state, action in
             switch action{
             case .binding(\.pointType):
-                state.point.checkpointId = nil
-                state.point.performanceId = nil
-                switch state.pointType{
-                case .checkpoint:
-                    state.point.anchor = nil
-                    state.point.time = .now
-                case .performance:
-                    state.point.anchor = nil
-                case .start:
-                    state.point.anchor = .start
-                    state.point.time = .now
-                case .end:
-                    state.point.anchor = .end
-                    state.point.time = .now
-                case .rest:
-                    state.point.anchor = .rest
-                    state.point.time = .now
-                case .none:
-                    state.point.time = nil
-                }
+                state.point.apply(pointType: state.pointType)
                 return .none
             case .doneTapped,
                 .moveTapped,
@@ -158,6 +139,36 @@ extension PointEditFeature.PointType {
             self = .rest
         } else {
             self = .none
+        }
+    }
+}
+
+fileprivate extension Point {
+    /// nil のときだけ現在時刻を入れる
+    private mutating func setNowIfTimeNil() {
+        if time == nil { time = .now }
+    }
+    mutating func apply(pointType: PointEditFeature.PointType) {
+        checkpointId = nil
+        performanceId = nil
+        switch pointType {
+        case .checkpoint:
+            anchor = nil
+            setNowIfTimeNil()
+        case .performance:
+            anchor = nil
+        case .start:
+            anchor = .start
+            setNowIfTimeNil()
+        case .end:
+            anchor = .end
+            setNowIfTimeNil()
+        case .rest:
+            anchor = .rest
+            setNowIfTimeNil()
+        case .none:
+            anchor = nil
+            time = nil
         }
     }
 }
