@@ -157,7 +157,7 @@ extension RouteUsecase {
     }
 
     private func ensureRouteEditable(district: District) async throws {
-        guard district.isEditable else { return }
+        if district.isEditable { return }
         guard let festival = try await festivalRepository.get(id: district.festivalId) else {
             throw Error.notFound("所属する祭典が見つかりません")
         }
