@@ -88,20 +88,11 @@ struct DistrictDashboardFeature {
                 return .none
             case .routeEditReceived(.success(let item)):
                 state.isRouteLoading = false
-                if let route = item.route {
-                    state.destination = .route(
-                        RouteEditFeature.State(mode: .update, route: route, district: state.district, period: item.period)
-                    )
+                if let route = item.route{
+                    state.destination = try? { .route(try .init(mode: .update, route: route)) }()
                 } else {
                     let route = Route(id: UUID().uuidString, districtId: state.district.id, periodId: item.period.id)
-                    state.destination = .route(
-                        RouteEditFeature.State(
-                            mode: .create,
-                            route: route,
-                            district: state.district,
-                            period: item.period
-                        )
-                    )
+                    state.destination = try? { .route(try .init(mode: .create, route: route)) }()
                 }
                 return .none
             case .routeEditReceived(.failure(let error)):
