@@ -161,7 +161,7 @@ extension RouteUsecase {
         guard let festival = try await festivalRepository.get(id: district.festivalId) else {
             throw Error.notFound("所属する祭典が見つかりません")
         }
-        throw Error.forbidden("\(festival.subname)編集中のためRoute更新はできません")
+        throw Error.forbidden("\(festival.subname)がルートの更新を停止しています。")
     }
     
     private func removeTimeIfNeeded(district: District, points: [Point], user: UserRole) -> [Point] {
