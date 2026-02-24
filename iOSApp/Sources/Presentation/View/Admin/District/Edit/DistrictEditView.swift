@@ -43,7 +43,7 @@ struct DistrictEditView: View {
                         .font(.body)
                 }
             }
-            Section(header: Text("ルート"), footer: Text("直近のルートの公開範囲が変更されます")) {
+            Section(header: Text("ルート"), footer: Text("最新年の全てのルートの公開範囲が変更されます")) {
                 Picker("デフォルトの公開範囲", selection: $store.district.visibility) {
                     ForEach(Visibility.allCases) { option in
                         Text(option.label).tag(option)
