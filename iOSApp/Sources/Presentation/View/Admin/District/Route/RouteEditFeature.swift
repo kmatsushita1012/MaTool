@@ -51,6 +51,7 @@ struct RouteEditFeature{
         var passages: [RoutePassage]
         
         @FetchOne var district: District
+        @FetchOne var festival: Festival
         @FetchOne var period: Period
         
         let mode: EditMode
@@ -69,6 +70,7 @@ struct RouteEditFeature{
     @CasePathable
     enum Action: Equatable, BindableAction{
         case binding(BindingAction<State>)
+        case onAppear
         case mapLongPressed(Coordinate)
         case pointTapped(PointEntry)
         case undoTapped
@@ -99,6 +101,11 @@ struct RouteEditFeature{
         BindingReducer()
         Reduce{ state, action in
             switch action {
+            case .onAppear:
+                if !state.district.isEditable && state.isSaveable {
+                    state.alert = .notice(.notice("\(state.festival.subname)がルートの更新を停止しています。"))
+                }
+                return .none
             case .mapLongPressed(let coordinate):
                 switch state.operation {
                 case .add:
@@ -308,16 +315,22 @@ extension RouteEditFeature.State {
         points.last
     }
     
-    init(mode: RouteEditFeature.EditMode, route: Route, district: District, period: Period){
+    init(mode: RouteEditFeature.EditMode, route: Route) throws {
         self.mode = mode
         let points: [Point] = FetchAll(routeId: route.id).wrappedValue
         self.manager = EditManager(points.sorted())
         self.passages = FetchAll(routeId: route.id).wrappedValue
         self.route = route
-        self._district = FetchOne(district)
-        self._period = FetchOne(period)
+        guard let districtQuery: FetchOne<District> = .init(id: route.districtId),
+            let periodQuery: FetchOne<Period> = .init(id: route.periodId),
+            let festivalQuery: FetchOne<Festival> = .init(id: districtQuery.wrappedValue.festivalId) else {
+            throw PresentationError.notFound
+        }
+        self._district = districtQuery
+        self._period = periodQuery
+        self._festival = festivalQuery
         
-        let origin: Coordinate = district.base ?? FetchOne(wrappedValue: .init(latitude: 0.0, longitude: 0.0), Festival.where{ $0.id.eq(district.festivalId) }.select(\.base)).wrappedValue
+        let origin: Coordinate = districtQuery.wrappedValue.base ?? festivalQuery.wrappedValue.base
 
         self.region = makeRegion(points: points, origin: origin, spanDelta: spanDelta)
         if mode == .preview {
