@@ -70,6 +70,7 @@ struct RouteEditFeature{
     @CasePathable
     enum Action: Equatable, BindableAction{
         case binding(BindingAction<State>)
+        case onAppear
         case mapLongPressed(Coordinate)
         case pointTapped(PointEntry)
         case undoTapped
@@ -100,6 +101,11 @@ struct RouteEditFeature{
         BindingReducer()
         Reduce{ state, action in
             switch action {
+            case .onAppear:
+                if !state.district.isEditable && state.isSaveable {
+                    state.alert = .notice(.notice("\(state.festival.subname)がルートの更新を停止しています。"))
+                }
+                return .none
             case .mapLongPressed(let coordinate):
                 switch state.operation {
                 case .add:
