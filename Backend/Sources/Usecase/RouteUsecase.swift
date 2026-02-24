@@ -34,6 +34,7 @@ struct RouteUsecase: RouteUsecaseProtocol {
     @Dependency(RouteRepositoryKey.self) var routeRepository
     @Dependency(PeriodRepositoryKey.self) var periodRepository
     @Dependency(DistrictRepositoryKey.self) var districtRepository
+    @Dependency(FestivalRepositoryKey.self) var festivalRepository
     @Dependency(PointRepositoryKey.self) var pointRepository
     @Dependency(PassageRepositoryKey.self) var passageRepository
     
@@ -83,6 +84,8 @@ struct RouteUsecase: RouteUsecaseProtocol {
               pack.route.districtId == user.id else {
             throw Error.unauthorized("アクセス権限がありません")
         }
+        let district = try await getDistrict(districtId)
+        try await ensureRouteEditable(district: district)
         let reindexedPoints = pack.points.reindexed()
         let reindexedPassages = pack.passages.reindexed()
         try pack.points.validate()
@@ -102,6 +105,8 @@ struct RouteUsecase: RouteUsecaseProtocol {
               old.districtId == user.id else {
             throw Error.unauthorized("アクセス権限がありません")
         }
+        let district = try await getDistrict(old.districtId)
+        try await ensureRouteEditable(district: district)
         let reindexedPoints = pack.points.reindexed()
         let reindexedPassages = pack.passages.reindexed()
         try pack.points.validate()
@@ -120,6 +125,8 @@ struct RouteUsecase: RouteUsecaseProtocol {
         if old.districtId != user.id {
             throw Error.unauthorized("アクセス権限がありません")
         }
+        let district = try await getDistrict(old.districtId)
+        try await ensureRouteEditable(district: district)
         try await routeRepository.delete(id: id)
         _ = try await pointRepository.delete(by: id)
         _ = try await passageRepository.delete(by: id)
@@ -148,6 +155,14 @@ extension RouteUsecase {
             throw Error.notFound("指定された地区が見つかりません")
         }
         return district
+    }
+
+    private func ensureRouteEditable(district: District) async throws {
+        if district.isEditable { return }
+        guard let festival = try await festivalRepository.get(id: district.festivalId) else {
+            throw Error.notFound("所属する祭典が見つかりません")
+        }
+        throw Error.forbidden("\(festival.subname)がルートの更新を停止しています。")
     }
     
     private func removeTimeIfNeeded(routeVisibility: Visibility, district: District, points: [Point], user: UserRole) -> [Point] {
