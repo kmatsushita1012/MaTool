@@ -31,7 +31,6 @@ struct HomeFeature {
         var isLoading: Bool {
             isDestinationLoading
         }
-        var status: StatusCheckResult? = nil
         @Presents var destination: Destination.State?
         @Presents var alert: AlertFeature.State?
         
@@ -50,7 +49,6 @@ struct HomeFeature {
         case infoTapped
         case adminTapped
         case settingsTapped
-        case statusReceived(StatusCheckResult?)
         case settingsPrepared(VoidTaskResult)
         case destination(PresentationAction<Destination.Action>)
         case alert(PresentationAction<AlertFeature.Action>)
@@ -58,7 +56,6 @@ struct HomeFeature {
     
     @Dependency(\.authService) var authService
     @Dependency(UserDefaltsManagerKey.self) var userDefaults
-    @Dependency(\.appStatusClient) var appStatusClient
     @Dependency(FestivalDataFetcherKey.self) var festivalDataFetcher
     
     var body: some ReducerOf<HomeFeature> {
@@ -68,12 +65,6 @@ struct HomeFeature {
             case .binding:
                 return .none
             case .initialize:
-                return .run { send in
-                    let result = await appStatusClient.checkStatus()
-                    await send(.statusReceived(result))
-                }
-            case .statusReceived(let value):
-                state.status = value
                 return .none
             case .mapTapped:
                 guard let festivalId = userDefaults.defaultFestivalId,
