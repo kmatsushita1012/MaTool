@@ -3,6 +3,7 @@ import Shared
 import Testing
 @testable import Backend
 
+@Suite(.serialized)
 struct DistrictUsecaseTest {
     @Test
     func query_正常() async throws {
