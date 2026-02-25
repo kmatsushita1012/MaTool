@@ -19,7 +19,7 @@ enum FestivalSelectionResult: Equatable, Sendable {
 }
 
 protocol SceneUsecaseProtocol: Sendable {
-    func launch() async -> LaunchState
+    func launch() async -> (LaunchState, StatusCheckResult?)
     func signIn(username: String, password: String) async throws -> SignInState
     func confirmSignIn(password: String) async throws -> UserRole
     func select(festivalId: Festival.ID) async throws -> FestivalSelectionResult
@@ -32,17 +32,19 @@ actor SceneUsecase: SceneUsecaseProtocol {
     @Dependency(SceneDataFetcherKey.self) var dataFetcher
     @Dependency(FestivalDataFetcherKey.self) var festivalDataFetcher
     @Dependency(AuthServiceKey.self) var authService
+    @Dependency(AppStatusClientKey.self) var appStatusClient
     
     init(userDefaults: UserDefalutsManagerProtocol = UserDefaltsManager()){
         self.userDefaults = userDefaults
     }
     
-    func launch() async -> LaunchState {
+    func launch() async -> (LaunchState, StatusCheckResult?) {
+        async let appStatusTask = appStatusClient.checkStatus()
         do {
             try authService.initialize()
             guard let festivalId = userDefaults.defaultFestivalId else {
                 try await festivalDataFetcher.fetchAll()
-                return .onboarding
+                return (.onboarding, await appStatusTask)
             }
             let userRole = await {
                 do {
@@ -56,13 +58,13 @@ actor SceneUsecase: SceneUsecaseProtocol {
             if let districtId = userDefaults.defaultDistrictId {
                 async let districtTask = dataFetcher.launchDistrict(districtId: districtId)
                 let (_, routeId) = try await(festivalTask, districtTask)
-                return .district(userRole, routeId)
+                return (.district(userRole, routeId), await appStatusTask)
             } else {
                 try await festivalTask
-                return .festival(userRole)
+                return (.festival(userRole), await appStatusTask)
             }
         } catch {
-            return .error(error.localizedDescription)
+            return (.error(error.localizedDescription), await appStatusTask)
         }
     }
     
