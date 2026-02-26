@@ -44,6 +44,9 @@ struct TimePicker: View {
             selection: $time.fullDate,
             displayedComponents: [.hourAndMinute]
         )
+        .onAppear {
+            UIDatePicker.appearance().minuteInterval = 5
+        }
     }
 }
 
