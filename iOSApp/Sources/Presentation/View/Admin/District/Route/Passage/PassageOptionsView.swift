@@ -13,12 +13,13 @@ import Shared
 struct PassageOptionsView: View {
     
     @FetchAll var districts: [District]
+    let myDistrictId: District.ID
     let selected: (_ districtId: District.ID?, _ memo: String?) -> Void
-    @State private var selectedDistrictId: District.ID?
     @State private var memo: String = ""
     
-    init(festivalId: Festival.ID, selected: @escaping (_ districtId: District.ID?, _ memo: String?) -> Void) {
+    init(festivalId: Festival.ID, myDistrictId: District.ID, selected: @escaping (_ districtId: District.ID?, _ memo: String?) -> Void) {
         self._districts = FetchAll(festivalId: festivalId)
+        self.myDistrictId = myDistrictId
         self.selected = selected
     }
     
@@ -30,7 +31,11 @@ struct PassageOptionsView: View {
     }
     
     private var isDoneEnabled: Bool {
-        selectedDistrictId != nil || normalizedMemo != nil
+        normalizedMemo != nil
+    }
+    
+    private var prioritizedDistricts: [District] {
+        districts.prioritizingForPassage(myDistrictId: myDistrictId)
     }
     
     var body: some View {
@@ -40,19 +45,12 @@ struct PassageOptionsView: View {
             }
             
             Section("町一覧") {
-                ForEach(districts) { district in
-                    Button {
-                        selectedDistrictId = district.id
-                    } label: {
-                        HStack {
-                            Text(district.name)
-                            Spacer()
-                            if selectedDistrictId == district.id {
-                                Image(systemName: "checkmark")
-                                    .foregroundStyle(.accent)
-                            }
-                        }
+                ForEach(prioritizedDistricts) { district in
+                    Button(district.name){
+                        selected(district.id, nil)
+                        dismiss()
                     }
+                    .tint(.primary)
                 }
             }
         }
@@ -61,7 +59,8 @@ struct PassageOptionsView: View {
                 dismiss()
             }
             ToolbarSaveButton(isDisabled: !isDoneEnabled) {
-                selected(selectedDistrictId, normalizedMemo)
+                selected(nil, normalizedMemo)
+                dismiss()
             }
             ToolbarItem(placement: .title){
                 Text("通過する町を選択")
