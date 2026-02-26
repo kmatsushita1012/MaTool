@@ -5,19 +5,31 @@
 //  Created by 松下和也 on 2025/10/30.
 //
 
-public struct Festival: Entity {
+import Foundation
+import SQLiteData
+
+@Table public struct Festival: Entity, Identifiable {
     public let id: String
     public var name: String
     public var subname: String
     @NullEncodable public var description: String?
     public var prefecture: String
     public var city: String
+    @Column(as: Coordinate.JSONRepresentation.self)
     public var base: Coordinate
-    public var spans: [Span]
-    public var milestones: [Information]
-    @NullEncodable public var imagePath:String?
-    
-    public init(id: String, name: String, subname: String, description: String? = nil, prefecture: String, city: String, base: Coordinate, spans: [Span] = [], milestones: [Information] = [], imagePath: String? = nil) {
+    @Column(as: ImagePath.JSONRepresentation.self)
+    public var image: ImagePath
+
+    public init(
+        id: String,
+        name: String,
+        subname: String,
+        description: String? = nil,
+        prefecture: String = "",
+        city: String = "",
+        base: Coordinate,
+        image: ImagePath = .init()
+    ) {
         self.id = id
         self.name = name
         self.subname = subname
@@ -25,11 +37,38 @@ public struct Festival: Entity {
         self.prefecture = prefecture
         self.city = city
         self.base = base
-        self.spans = spans
-        self.milestones = milestones
-        self.imagePath = imagePath
+        self.image = image
     }
-    
 }
 
-extension Festival: Identifiable {}
+
+// MARK: - Checkpoint
+@Table public struct Checkpoint: Entity, Identifiable {
+    public let id: String
+    public let festivalId: Festival.ID
+    public var name: String
+    @NullEncodable public var description: String? = nil
+    
+    public init(id: String, name: String = "", festivalId:Festival.ID, description: String? = nil) {
+        self.id = id
+        self.name = name
+        self.festivalId = festivalId
+        self.description = description
+    }
+}
+
+// MARK: - HazardSection
+@Table public struct HazardSection: Entity, Identifiable {
+    public let id: String
+    public var title: String
+    public let festivalId: Festival.ID
+    @Column(as: [Coordinate].JSONRepresentation.self)
+    public var coordinates: [Coordinate]
+    
+    public init(id: String, title: String = "", festivalId: Festival.ID, coordinates: [Coordinate] = []) {
+        self.id = id
+        self.title = title
+        self.festivalId = festivalId
+        self.coordinates = coordinates
+    }
+}

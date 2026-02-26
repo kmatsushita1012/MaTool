@@ -1,1410 +1,459 @@
-//
-//  RouteUsecaseTest.swift
-//  matool-backend
-//
-//  Created by 松下和也 on 2025/11/30.
-//
-
+import Dependencies
 import Foundation
+import Shared
 import Testing
 @testable import Backend
-import Dependencies
-import Shared
 
 struct RouteUsecaseTest {
-
-    @Test func test_query_正常() async throws {
-        let districtId = "district-id"
-        let district = District(id: districtId, name: "district-name", festivalId: "festival-id", visibility: .all)
-        let route = Route(id: "route-id", districtId: districtId, start: SimpleTime(hour: 10, minute: 0), goal: SimpleTime(hour: 11, minute: 0))
-        let expected = RouteItem(from: route)
-        
-        var lastCalledDistrictId: String? = nil
-        let districtRepositoryMock = DistrictRepositoryMock(getHandler: { id in
-            lastCalledDistrictId = id
-            return district
-        })
-        var lastCalledQueryDistrictId: String? = nil
-        let routeRepositoryMock = RouteRepositoryMock(queryHandler: { districtId in
-            lastCalledQueryDistrictId = districtId
-            return [route]
-        })
-        let subject = make(routeRepository: routeRepositoryMock, districtRepository: districtRepositoryMock)
-        
-        
-        let result = try await subject.query(by: districtId, user: .district(districtId))
-        
-        
-        #expect(result.count == 1)
-        #expect(result.first?.id == expected.id)
-        #expect(lastCalledDistrictId == districtId)
-        #expect(lastCalledQueryDistrictId == districtId)
-        #expect(routeRepositoryMock.queryCallCount == 1)
-        #expect(districtRepositoryMock.getCallCount == 1)
-    }
-    
-    @Test func test_query_異常_地区が見つからない() async throws {
-        let districtId = "district-id"
-        var lastCalledDistrictId: String? = nil
-        let districtRepositoryMock = DistrictRepositoryMock(getHandler: { id in
-            lastCalledDistrictId = id
-            return nil
-        })
-        let routeRepositoryMock = RouteRepositoryMock()
-        let subject = make(routeRepository: routeRepositoryMock, districtRepository: districtRepositoryMock)
-        
-        
-        await #expect(throws: Error.notFound("指定された地区が見つかりません")) {
-            let _ = try await subject.query(by: districtId, user: .district(districtId))
-        }
-        
-        
-        #expect(lastCalledDistrictId == districtId)
-        #expect(districtRepositoryMock.getCallCount == 1)
-        #expect(routeRepositoryMock.queryCallCount == 0)
-    }
-    
-    @Test func test_query_異常_AdminOnlyで権限なし_Guest() async throws {
-        let districtId = "district-id"
-        var lastCalledDistrictId: String? = nil
-        let district = District(id: districtId, name: "district-name", festivalId: "festival-id", visibility: .admin)
-        let districtRepositoryMock = DistrictRepositoryMock(getHandler: { id in
-            lastCalledDistrictId = id
-            return district
-        })
-        let routeRepositoryMock = RouteRepositoryMock()
-        let subject = make(routeRepository: routeRepositoryMock, districtRepository: districtRepositoryMock)
-        
-        
-        await #expect(throws: Error.unauthorized("アクセス権限がありません")) {
-            let _ = try await subject.query(by: districtId, user: .guest)
-        }
-        
-        
-        #expect(lastCalledDistrictId == districtId)
-        #expect(districtRepositoryMock.getCallCount == 1)
-        #expect(routeRepositoryMock.queryCallCount == 0)
-    }
-    
-    @Test func test_query_異常_AdminOnlyで権限なし_異なるDistrict() async throws {
-        let districtId = "district-id"
-        var lastCalledDistrictId: String? = nil
-        let district = District(id: districtId, name: "district-name", festivalId: "festival-id", visibility: .admin)
-        let districtRepositoryMock = DistrictRepositoryMock(getHandler: { id in
-            lastCalledDistrictId = id
-            return district
-        })
-        let routeRepositoryMock = RouteRepositoryMock()
-        let subject = make(routeRepository: routeRepositoryMock, districtRepository: districtRepositoryMock)
-        
-        
-        await #expect(throws: Error.unauthorized("アクセス権限がありません")) {
-            let _ = try await subject.query(by: districtId, user: .district("other-district-id"))
-        }
-        
-        
-        #expect(lastCalledDistrictId == districtId)
-        #expect(districtRepositoryMock.getCallCount == 1)
-        #expect(routeRepositoryMock.queryCallCount == 0)
-    }
-    
-    @Test func test_query_正常_AdminOnlyでheadquarter権限あり() async throws {
-        let districtId = "district-id"
-        let festivalId = "festival-id"
-        var lastCalledDistrictId: String? = nil
-        let district = District(id: districtId, name: "district-name", festivalId: festivalId, visibility: .admin)
-        let route = Route(id: "route-id", districtId: districtId, start: SimpleTime(hour: 10, minute: 0), goal: SimpleTime(hour: 11, minute: 0))
-        var lastCalledQueryDistrictId: String? = nil
-        let districtRepositoryMock = DistrictRepositoryMock(getHandler: { id in
-            lastCalledDistrictId = id
-            return district
-        })
-        let routeRepositoryMock = RouteRepositoryMock(queryHandler: { districtId in
-            lastCalledQueryDistrictId = districtId
-            return [route]
-        })
-        let subject = make(routeRepository: routeRepositoryMock, districtRepository: districtRepositoryMock)
-        
-        
-        let result = try await subject.query(by: districtId, user: .headquarter(festivalId))
-        
-        
-        #expect(result.count == 1)
-        #expect(lastCalledDistrictId == districtId)
-        #expect(lastCalledQueryDistrictId == districtId)
-        #expect(districtRepositoryMock.getCallCount == 1)
-        #expect(routeRepositoryMock.queryCallCount == 1)
-    }
-    
-    @Test func test_query_異常_routeRepositoryエラー() async throws {
-        let districtId = "district-id"
-        let district = District(id: districtId, name: "district-name", festivalId: "festival-id", visibility: .all)
-        let districtRepositoryMock = DistrictRepositoryMock(getHandler: { _ in district })
-        let routeRepositoryMock = RouteRepositoryMock(queryHandler: { _ in
-            throw Error.internalServerError("query_failed")
-        })
-        let subject = make(routeRepository: routeRepositoryMock, districtRepository: districtRepositoryMock)
-        
-        
-        await #expect(throws: Error.internalServerError("query_failed")) {
-            let _ = try await subject.query(by: districtId, user: .district(districtId))
-        }
-        
-        
-        #expect(districtRepositoryMock.getCallCount == 1)
-        #expect(routeRepositoryMock.queryCallCount == 1)
-    }
-    
-    @Test func test_get_正常() async throws {
-        let routeId = "route-id"
-        let districtId = "district-id"
-        let route = Route(id: routeId, districtId: districtId, start: SimpleTime(hour: 10, minute: 0), goal: SimpleTime(hour: 11, minute: 0))
-        let district = District(id: districtId, name: "district-name", festivalId: "festival-id", visibility: .all)
-        
-        var lastCalledRouteId: String? = nil
-        let routeRepositoryMock = RouteRepositoryMock(getHandler: { id in
+    @Test
+    func get_正常() async throws {
+        let district = District.mock(id: "district-1", festivalId: "festival-1")
+        let route = Route.mock(id: "route-1", districtId: district.id, periodId: "period-1")
+        let point = Point.mock(routeId: route.id, coordinate: .init(latitude: 35, longitude: 139))
+        let passage = RoutePassage.mock(routeId: route.id, districtId: district.id)
+        var lastCalledRouteId: String?
+        let routeRepository = RouteRepositoryMock(getHandler: { id in
             lastCalledRouteId = id
             return route
         })
-        var lastCalledDistrictId: String? = nil
-        let districtRepositoryMock = DistrictRepositoryMock(getHandler: { id in
-            lastCalledDistrictId = id
-            return district
-        })
-        let subject = make(routeRepository: routeRepositoryMock, districtRepository: districtRepositoryMock)
-        
-        
-        let result = try await subject.get(id: routeId, user: .district(districtId))
-        
-        
-        #expect(result.id == routeId)
-        #expect(lastCalledRouteId == routeId)
-        #expect(lastCalledDistrictId == districtId)
-        #expect(routeRepositoryMock.getCallCount == 1)
-        #expect(districtRepositoryMock.getCallCount == 1)
+        let pointRepository = PointRepositoryMock(queryHandler: { _ in [point] })
+        let passageRepository = PassageRepositoryMock(queryHandler: { _ in [passage] })
+
+        let subject = make(
+            routeRepository: routeRepository,
+            districtRepository: .init(getHandler: { _ in district }),
+            pointRepository: pointRepository,
+            passageRepository: passageRepository
+        )
+
+        let result = try await subject.get(id: route.id, user: .guest)
+
+        #expect(result.route == route)
+        #expect(result.points == [point])
+        #expect(result.passages == [passage])
+        #expect(lastCalledRouteId == route.id)
+        #expect(routeRepository.getCallCount == 1)
+        #expect(pointRepository.queryCallCount == 1)
+        #expect(passageRepository.queryCallCount == 1)
     }
-    
-    @Test func test_get_異常_ルートが見つからない() async throws {
-        let routeId = "route-id"
-        var lastCalledRouteId: String? = nil
-        let routeRepositoryMock = RouteRepositoryMock(getHandler: { id in
-            lastCalledRouteId = id
-            return nil
-        })
-        let districtRepositoryMock = DistrictRepositoryMock()
-        let subject = make(routeRepository: routeRepositoryMock, districtRepository: districtRepositoryMock)
-        
-        
+
+    @Test
+    func get_異常_ルート未登録() async {
+        let subject = make(
+            routeRepository: .init(getHandler: { _ in nil })
+        )
+
         await #expect(throws: Error.notFound("指定されたルートが見つかりません")) {
-            let _ = try await subject.get(id: routeId, user: .district("district-id"))
+            _ = try await subject.get(id: "route-missing", user: .guest)
         }
-        
-        
-        #expect(lastCalledRouteId == routeId)
-        #expect(routeRepositoryMock.getCallCount == 1)
     }
-    
-    @Test func test_get_異常_AdminOnlyで権限なし() async throws {
-        let routeId = "route-id"
-        let districtId = "district-id"
-        let route = Route(id: routeId, districtId: districtId, start: SimpleTime(hour: 10, minute: 0), goal: SimpleTime(hour: 11, minute: 0))
-        let district = District(id: districtId, name: "district-name", festivalId: "festival-id", visibility: .admin)
-        
-        let routeRepositoryMock = RouteRepositoryMock(getHandler: { _ in
-            return route
-        })
-        let districtRepositoryMock = DistrictRepositoryMock(getHandler: { _ in
-            return district
-        })
-        let subject = make(routeRepository: routeRepositoryMock, districtRepository: districtRepositoryMock)
-        
-        
-        await #expect(throws: Error.unauthorized("アクセス権限がありません")) {
-            let _ = try await subject.get(id: routeId, user: .guest)
+
+    @Test
+    func get_異常_非公開ルートをゲスト参照() async {
+        let district = District.mock(id: "district-1", festivalId: "festival-1")
+        let route = Route.mock(id: "route-1", districtId: district.id, periodId: "period-1", visibility: .admin)
+
+        let subject = make(
+            routeRepository: .init(getHandler: { _ in route }),
+            districtRepository: .init(getHandler: { _ in district })
+        )
+
+        await #expect(throws: Error.forbidden("アクセス権限がありせん。このルートは非公開です。")) {
+            _ = try await subject.get(id: route.id, user: .guest)
         }
-        
-        
-        #expect(routeRepositoryMock.getCallCount == 1)
-        #expect(districtRepositoryMock.getCallCount == 1)
     }
-    
-    @Test func test_get_Partialで権限なし_Guest() async throws {
-        let routeId = "route-id"
-        let districtId = "district-id"
-        let route = Route(id: routeId, districtId: districtId, start: SimpleTime(hour: 10, minute: 0), goal: SimpleTime(hour: 11, minute: 0))
-        let district = District(id: districtId, name: "district-name", festivalId: "festival-id", visibility: .route)
-        
-        let routeRepositoryMock = RouteRepositoryMock(getHandler: { _ in
-            return route
-        })
-        let districtRepositoryMock = DistrictRepositoryMock(getHandler: { _ in
-            return district
-        })
-        let subject = make(routeRepository: routeRepositoryMock, districtRepository: districtRepositoryMock)
-        
-        
-        let result = try await subject.get(id: routeId, user: .guest)
-        
-        
-        #expect(result.id == routeId)
-        #expect(result.start == SimpleTime(hour: 0, minute: 0))
-        #expect(result.goal == SimpleTime(hour: 0, minute: 0))
-        #expect(routeRepositoryMock.getCallCount == 1)
-        #expect(districtRepositoryMock.getCallCount == 1)
+
+    @Test
+    func get_正常_visibilityRouteで対象外ユーザーの時刻をマスク() async throws {
+        let district = District.mock(id: "district-1", festivalId: "festival-1")
+        let route = Route.mock(id: "route-1", districtId: district.id, periodId: "period-1", visibility: .route)
+        let point = Point.mock(
+            id: "point-1",
+            routeId: route.id,
+            coordinate: .init(latitude: 35, longitude: 139),
+            time: .init(hour: 10, minute: 30)
+        )
+        let subject = make(
+            routeRepository: .init(getHandler: { _ in route }),
+            districtRepository: .init(getHandler: { _ in district }),
+            pointRepository: .init(queryHandler: { _ in [point] }),
+            passageRepository: .init(queryHandler: { _ in [] })
+        )
+
+        let result = try await subject.get(id: route.id, user: .guest)
+
+        #expect(result.points.count == 1)
+        #expect(result.points[0].time == nil)
     }
-    
-    @Test func test_get_Partialで権限なし_異なるDistrict() async throws {
-        let routeId = "route-id"
-        let districtId = "district-id"
-        let route = Route(id: routeId, districtId: districtId, start: SimpleTime(hour: 10, minute: 0), goal: SimpleTime(hour: 11, minute: 0))
-        let district = District(id: districtId, name: "district-name", festivalId: "festival-id", visibility: .route)
-        
-        let routeRepositoryMock = RouteRepositoryMock(getHandler: { _ in
-            return route
-        })
-        let districtRepositoryMock = DistrictRepositoryMock(getHandler: { _ in
-            return district
-        })
-        let subject = make(routeRepository: routeRepositoryMock, districtRepository: districtRepositoryMock)
-        
-        
-        let result = try await subject.get(id: routeId, user: .district("other-district-id"))
-        
-        
-        #expect(result.id == routeId)
-        #expect(result.start == SimpleTime(hour: 0, minute: 0))
-        #expect(result.goal == SimpleTime(hour: 0, minute: 0))
-        #expect(routeRepositoryMock.getCallCount == 1)
-        #expect(districtRepositoryMock.getCallCount == 1)
+
+    @Test
+    func query_正常_全件取得() async throws {
+        let district = District.mock(id: "district-1", festivalId: "festival-1")
+        let routes = [Route.mock(id: "route-1", districtId: district.id)]
+        let repository = RouteRepositoryMock(queryHandler: { _ in routes })
+        let subject = make(
+            routeRepository: repository,
+            districtRepository: .init(getHandler: { _ in district })
+        )
+
+        let result = try await subject.query(by: district.id, type: .all, now: .init(year: 2026, month: 1, day: 1), user: .guest)
+
+        #expect(result == routes)
+        #expect(repository.queryCallCount == 1)
     }
-    
-    @Test func test_get_Partialで権限あり_District() async throws {
-        let routeId = "route-id"
-        let districtId = "district-id"
-        let route = Route(id: routeId, districtId: districtId, start: SimpleTime(hour: 10, minute: 0), goal: SimpleTime(hour: 11, minute: 0))
-        let district = District(id: districtId, name: "district-name", festivalId: "festival-id", visibility: .route)
-        
-        let routeRepositoryMock = RouteRepositoryMock(getHandler: { _ in
-            return route
-        })
-        let districtRepositoryMock = DistrictRepositoryMock(getHandler: { _ in
-            return district
-        })
-        let subject = make(routeRepository: routeRepositoryMock, districtRepository: districtRepositoryMock)
-        
-        
-        let result = try await subject.get(id: routeId, user: .district(districtId))
-        
-        
-        #expect(result.id == routeId)
-        #expect(result.start == SimpleTime(hour: 10, minute: 0))
-        #expect(result.goal == SimpleTime(hour: 11, minute: 0))
-        #expect(routeRepositoryMock.getCallCount == 1)
-        #expect(districtRepositoryMock.getCallCount == 1)
-    }
-    
-    @Test func test_get_Partialで権限あり_Headquarter() async throws {
-        let routeId = "route-id"
-        let districtId = "district-id"
-        let festivalId = "festival-id"
-        let route = Route(id: routeId, districtId: districtId, start: SimpleTime(hour: 10, minute: 0), goal: SimpleTime(hour: 11, minute: 0))
-        let district = District(id: districtId, name: "district-name", festivalId: festivalId, visibility: .route)
-        
-        let routeRepositoryMock = RouteRepositoryMock(getHandler: { _ in
-            return route
-        })
-        let districtRepositoryMock = DistrictRepositoryMock(getHandler: { _ in
-            return district
-        })
-        let subject = make(routeRepository: routeRepositoryMock, districtRepository: districtRepositoryMock)
-        
-        
-        let result = try await subject.get(id: routeId, user: .headquarter(festivalId))
-        
-        
-        #expect(result.id == routeId)
-        #expect(result.start == SimpleTime(hour: 10, minute: 0))
-        #expect(result.goal == SimpleTime(hour: 11, minute: 0))
-        #expect(routeRepositoryMock.getCallCount == 1)
-        #expect(districtRepositoryMock.getCallCount == 1)
-    }
-    
-    @Test func test_get_正常_AdminOnlyでheadquarter権限あり() async throws {
-        let routeId = "route-id"
-        let districtId = "district-id"
-        let festivalId = "festival-id"
-        let route = Route(id: routeId, districtId: districtId, start: SimpleTime(hour: 10, minute: 0), goal: SimpleTime(hour: 11, minute: 0))
-        let district = District(id: districtId, name: "district-name", festivalId: festivalId, visibility: .admin)
-        
-        let routeRepositoryMock = RouteRepositoryMock(getHandler: { _ in route })
-        let districtRepositoryMock = DistrictRepositoryMock(getHandler: { _ in district })
-        let subject = make(routeRepository: routeRepositoryMock, districtRepository: districtRepositoryMock)
-        
-        
-        let result = try await subject.get(id: routeId, user: .headquarter(festivalId))
-        
-        
-        #expect(result.id == routeId)
-        #expect(routeRepositoryMock.getCallCount == 1)
-        #expect(districtRepositoryMock.getCallCount == 1)
-    }
-    
-    @Test func test_get_異常_AdminOnlyで権限なし_異なるDistrict() async throws {
-        let routeId = "route-id"
-        let districtId = "district-id"
-        let route = Route(id: routeId, districtId: districtId, start: SimpleTime(hour: 10, minute: 0), goal: SimpleTime(hour: 11, minute: 0))
-        let district = District(id: districtId, name: "district-name", festivalId: "festival-id", visibility: .admin)
-        
-        let routeRepositoryMock = RouteRepositoryMock(getHandler: { _ in route })
-        let districtRepositoryMock = DistrictRepositoryMock(getHandler: { _ in district })
-        let subject = make(routeRepository: routeRepositoryMock, districtRepository: districtRepositoryMock)
-        
-        
-        await #expect(throws: Error.unauthorized("アクセス権限がありません")) {
-            let _ = try await subject.get(id: routeId, user: .district("other-district-id"))
-        }
-        
-        
-        #expect(routeRepositoryMock.getCallCount == 1)
-        #expect(districtRepositoryMock.getCallCount == 1)
-    }
-    
-    @Test func test_get_異常_routeRepositoryエラー() async throws {
-        let routeId = "route-id"
-        let districtId = "district-id"
-        let routeRepositoryMock = RouteRepositoryMock(getHandler: { _ in
-            throw Error.internalServerError("get_failed")
-        })
-        let districtRepositoryMock = DistrictRepositoryMock()
-        let subject = make(routeRepository: routeRepositoryMock, districtRepository: districtRepositoryMock)
-        
-        
-        await #expect(throws: Error.internalServerError("get_failed")) {
-            let _ = try await subject.get(id: routeId, user: .district(districtId))
-        }
-        
-        
-        #expect(routeRepositoryMock.getCallCount == 1)
-    }
-    
-    @Test func test_get_異常_districtRepositoryエラー() async throws {
-        let routeId = "route-id"
-        let districtId = "district-id"
-        let route = Route(id: routeId, districtId: districtId, start: SimpleTime(hour: 10, minute: 0), goal: SimpleTime(hour: 11, minute: 0))
-        let routeRepositoryMock = RouteRepositoryMock(getHandler: { _ in route })
-        let districtRepositoryMock = DistrictRepositoryMock(getHandler: { _ in
-            throw Error.internalServerError("district_get_failed")
-        })
-        let subject = make(routeRepository: routeRepositoryMock, districtRepository: districtRepositoryMock)
-        
-        
-        await #expect(throws: Error.internalServerError("district_get_failed")) {
-            let _ = try await subject.get(id: routeId, user: .district(districtId))
-        }
-        
-        
-        #expect(routeRepositoryMock.getCallCount == 1)
-        #expect(districtRepositoryMock.getCallCount == 1)
-    }
-    
-    @Test func test_post_正常() async throws {
-        let districtId = "district-id"
-        let route = Route(id: "route-id", districtId: districtId, start: SimpleTime(hour: 10, minute: 0), goal: SimpleTime(hour: 11, minute: 0))
-        
-        var lastPostedRoute: Route? = nil
-        let routeRepositoryMock = RouteRepositoryMock(postHandler: { route in
-            lastPostedRoute = route
-            return route
-        })
-        let subject = make(routeRepository: routeRepositoryMock)
-        
-        
-        let result = try await subject.post(districtId: districtId, route: route, user: .district(districtId))
-        
-        
-        #expect(result.id == route.id)
-        #expect(lastPostedRoute?.id == route.id)
-        #expect(routeRepositoryMock.postCallCount == 1)
-    }
-    
-    @Test func test_post_異常_権限なし() async throws {
-        let districtId = "district-id"
-        let route = Route(id: "route-id", districtId: districtId, start: SimpleTime(hour: 10, minute: 0), goal: SimpleTime(hour: 11, minute: 0))
-        let routeRepositoryMock = RouteRepositoryMock()
-        let subject = make(routeRepository: routeRepositoryMock)
-        
-        
-        await #expect(throws: Error.unauthorized("アクセス権限がありません")) {
-            let _ = try await subject.post(districtId: districtId, route: route, user: .guest)
-        }
-        
-        
-        #expect(routeRepositoryMock.postCallCount == 0)
-    }
-    
-    @Test func test_post_異常_districtId不一致() async throws {
-        let districtId = "district-id"
-        let route = Route(id: "route-id", districtId: districtId, start: SimpleTime(hour: 10, minute: 0), goal: SimpleTime(hour: 11, minute: 0))
-        let routeRepositoryMock = RouteRepositoryMock()
-        let subject = make(routeRepository: routeRepositoryMock)
-        
-        
-        await #expect(throws: Error.unauthorized("アクセス権限がありません")) {
-            let _ = try await subject.post(districtId: "other-id", route: route, user: .district(districtId))
-        }
-        
-        
-        #expect(routeRepositoryMock.postCallCount == 0)
-    }
-    
-    @Test func test_post_異常_routeDistrictId不一致() async throws {
-        let districtId = "district-id"
-        let route = Route(id: "route-id", districtId: "other-district-id", start: SimpleTime(hour: 10, minute: 0), goal: SimpleTime(hour: 11, minute: 0))
-        let routeRepositoryMock = RouteRepositoryMock()
-        let subject = make(routeRepository: routeRepositoryMock)
-        
-        
-        await #expect(throws: Error.unauthorized("アクセス権限がありません")) {
-            let _ = try await subject.post(districtId: districtId, route: route, user: .district(districtId))
-        }
-        
-        
-        #expect(routeRepositoryMock.postCallCount == 0)
-    }
-    
-    @Test func test_post_異常_routeRepositoryエラー() async throws {
-        let districtId = "district-id"
-        let route = Route(id: "route-id", districtId: districtId, start: SimpleTime(hour: 10, minute: 0), goal: SimpleTime(hour: 11, minute: 0))
-        let routeRepositoryMock = RouteRepositoryMock(postHandler: { _ in
-            throw Error.internalServerError("post_failed")
-        })
-        let subject = make(routeRepository: routeRepositoryMock)
-        
-        
-        await #expect(throws: Error.internalServerError("post_failed")) {
-            let _ = try await subject.post(districtId: districtId, route: route, user: .district(districtId))
-        }
-        
-        
-        #expect(routeRepositoryMock.postCallCount == 1)
-    }
-    
-    @Test func test_put_正常() async throws {
-        let routeId = "route-id"
-        let districtId = "district-id"
-        let oldRoute = Route(id: routeId, districtId: districtId, start: SimpleTime(hour: 10, minute: 0), goal: SimpleTime(hour: 11, minute: 0))
-        let newRoute = Route(id: routeId, districtId: districtId, title: "updated", start: SimpleTime(hour: 12, minute: 0), goal: SimpleTime(hour: 13, minute: 0))
-        
-        var lastCalledRouteId: String? = nil
-        var lastPutRoute: Route? = nil
-        let routeRepositoryMock = RouteRepositoryMock(
-            getHandler: { id in
-                lastCalledRouteId = id
-                return oldRoute
-            },
-            putHandler: { route in
-                lastPutRoute = route
-                return route
+
+    @Test
+    func query_正常_latest_翌年Periodありで翌年Routeを採用() async throws {
+        let district = District.mock(id: "district-1", festivalId: "festival-1")
+        let now = SimpleDate(year: 2026, month: 2, day: 1)
+        let nextYearRoute = Route.mock(id: "route-next", districtId: district.id, periodId: "period-next")
+        var queriedYears: [Int] = []
+
+        let repository = RouteRepositoryMock(
+            queryHandler: { _ in [] },
+            queryByYearHandler: { _, year in
+                queriedYears.append(year)
+                if year == 2027 { return [nextYearRoute] }
+                return []
             }
         )
-        let subject = make(routeRepository: routeRepositoryMock)
-        
-        
-        let result = try await subject.put(id: routeId, route: newRoute, user: .district(districtId))
-        
-        
-        #expect(result.title == "updated")
-        #expect(lastCalledRouteId == routeId)
-        #expect(lastPutRoute?.title == "updated")
-        #expect(lastPutRoute?.id == routeId)
-        #expect(routeRepositoryMock.getCallCount == 1)
-        #expect(routeRepositoryMock.putCallCount == 1)
-    }
-    
-    @Test func test_put_異常_ルートが見つからない() async throws {
-        let routeId = "route-id"
-        let districtId = "district-id"
-        let route = Route(id: routeId, districtId: districtId, start: SimpleTime(hour: 10, minute: 0), goal: SimpleTime(hour: 11, minute: 0))
-        var lastCalledRouteId: String? = nil
-        let routeRepositoryMock = RouteRepositoryMock(getHandler: { id in
-            lastCalledRouteId = id
-            return nil
-        })
-        let subject = make(routeRepository: routeRepositoryMock)
-        
-        
-        await #expect(throws: Error.notFound("指定されたルートが見つかりません")) {
-            let _ = try await subject.put(id: routeId, route: route, user: .district(districtId))
-        }
-        
-        
-        #expect(lastCalledRouteId == routeId)
-        #expect(routeRepositoryMock.getCallCount == 1)
-        #expect(routeRepositoryMock.putCallCount == 0)
-    }
-    
-    @Test func test_put_異常_権限なし_Guest() async throws {
-        let routeId = "route-id"
-        let districtId = "district-id"
-        let route = Route(id: routeId, districtId: districtId, start: SimpleTime(hour: 10, minute: 0), goal: SimpleTime(hour: 11, minute: 0))
-        let routeRepositoryMock = RouteRepositoryMock(getHandler: { _ in route })
-        let subject = make(routeRepository: routeRepositoryMock)
-        
-        
-        await #expect(throws: Error.unauthorized("アクセス権限がありません")) {
-            let _ = try await subject.put(id: routeId, route: route, user: .guest)
-        }
-        
-        
-        #expect(routeRepositoryMock.getCallCount == 1)
-        #expect(routeRepositoryMock.putCallCount == 0)
-    }
-    
-    @Test func test_put_異常_routeDistrictId不一致() async throws {
-        let routeId = "route-id"
-        let districtId = "district-id"
-        let oldRoute = Route(id: routeId, districtId: districtId, start: SimpleTime(hour: 10, minute: 0), goal: SimpleTime(hour: 11, minute: 0))
-        let newRoute = Route(id: routeId, districtId: "other-district-id", start: SimpleTime(hour: 12, minute: 0), goal: SimpleTime(hour: 13, minute: 0))
-        let routeRepositoryMock = RouteRepositoryMock(getHandler: { _ in oldRoute })
-        let subject = make(routeRepository: routeRepositoryMock)
-        
-        
-        await #expect(throws: Error.unauthorized("アクセス権限がありません")) {
-            let _ = try await subject.put(id: routeId, route: newRoute, user: .district(districtId))
-        }
-        
-        
-        #expect(routeRepositoryMock.getCallCount == 1)
-        #expect(routeRepositoryMock.putCallCount == 0)
-    }
-    
-    @Test func test_put_異常_oldDistrictId不一致() async throws {
-        let routeId = "route-id"
-        let districtId = "district-id"
-        let oldRoute = Route(id: routeId, districtId: "other-district-id", start: SimpleTime(hour: 10, minute: 0), goal: SimpleTime(hour: 11, minute: 0))
-        let newRoute = Route(id: routeId, districtId: districtId, start: SimpleTime(hour: 12, minute: 0), goal: SimpleTime(hour: 13, minute: 0))
-        let routeRepositoryMock = RouteRepositoryMock(getHandler: { _ in oldRoute })
-        let subject = make(routeRepository: routeRepositoryMock)
-        
-        
-        await #expect(throws: Error.unauthorized("アクセス権限がありません")) {
-            let _ = try await subject.put(id: routeId, route: newRoute, user: .district(districtId))
-        }
-        
-        
-        #expect(routeRepositoryMock.getCallCount == 1)
-        #expect(routeRepositoryMock.putCallCount == 0)
-    }
-    
-    @Test func test_put_異常_routeRepositoryエラー() async throws {
-        let routeId = "route-id"
-        let districtId = "district-id"
-        let oldRoute = Route(id: routeId, districtId: districtId, start: SimpleTime(hour: 10, minute: 0), goal: SimpleTime(hour: 11, minute: 0))
-        let newRoute = Route(id: routeId, districtId: districtId, start: SimpleTime(hour: 12, minute: 0), goal: SimpleTime(hour: 13, minute: 0))
-        let routeRepositoryMock = RouteRepositoryMock(
-            getHandler: { _ in oldRoute },
-            putHandler: { _ in
-                throw Error.internalServerError("put_failed")
-            }
-        )
-        let subject = make(routeRepository: routeRepositoryMock)
-        
-        
-        await #expect(throws: Error.internalServerError("put_failed")) {
-            let _ = try await subject.put(id: routeId, route: newRoute, user: .district(districtId))
-        }
-        
-        
-        #expect(routeRepositoryMock.getCallCount == 1)
-        #expect(routeRepositoryMock.putCallCount == 1)
-    }
-
-    @Test func test_delete_正常() async throws {
-        let user = UserRole.district("d-id")
-        let expected = Route(id: "route-id", districtId: "d-id", start: SimpleTime(hour: 10, minute: 0), goal: SimpleTime(hour: 11, minute: 0))
-        var lastCalledGetId: String? = nil
-        var lastCalledDeleteId: String? = nil
-        let routeRepositoryMock = RouteRepositoryMock(
-            getHandler: { id in
-                lastCalledGetId = id
-                return expected
-            },
-            deleteHandler: { id in
-                lastCalledDeleteId = id
-                return
-            }
-        )
-        let subject = make(routeRepository: routeRepositoryMock)
-        
-        
-        try await subject.delete(id: "route-id", user: .district("d-id"))
-        
-        
-        #expect(lastCalledGetId == "route-id")
-        #expect(routeRepositoryMock.getCallCount == 1)
-        #expect(lastCalledDeleteId == "route-id")
-        #expect(routeRepositoryMock.deleteCallCount == 1)
-    }
-
-    @Test func test_delete_異常_ルートが見つからない() async throws {
-        let routeRepositoryMock = RouteRepositoryMock(getHandler: { _ in nil })
-        let subject = make(routeRepository: routeRepositoryMock)
-        
-        
-        await #expect(throws: Error.notFound("指定されたルートが見つかりません")) {
-            let _ = try await subject.delete(id: "route-id", user: .district("d-id"))
-        }
-        
-        
-        #expect(routeRepositoryMock.getCallCount == 1)
-        #expect(routeRepositoryMock.deleteCallCount == 0)
-    }
-
-    @Test func test_delete_異常_ゲスト() async throws {
-        let expected = Route(id: "route-id", districtId: "d-id", start: SimpleTime(hour: 10, minute: 0), goal: SimpleTime(hour: 11, minute: 0))
-        let routeRepositoryMock = RouteRepositoryMock(getHandler: { _ in expected })
-        let subject = make(routeRepository: routeRepositoryMock)
-        
-        
-        await #expect(throws: Error.unauthorized("アクセス権限がありません")) {
-            let _ = try await subject.delete(id: "route-id", user: .guest)
-        }
-        
-        
-        #expect(routeRepositoryMock.getCallCount == 1)
-        #expect(routeRepositoryMock.deleteCallCount == 0)
-    }
-
-    @Test func test_delete_異常_別のDistrict() async throws {
-        let expected = Route(id: "route-id", districtId: "d-id", start: SimpleTime(hour: 10, minute: 0), goal: SimpleTime(hour: 11, minute: 0))
-        let routeRepositoryMock = RouteRepositoryMock(getHandler: { _ in expected })
-        let subject = make(routeRepository: routeRepositoryMock)
-        
-        
-        await #expect(throws: Error.unauthorized("アクセス権限がありません")) {
-            let _ = try await subject.delete(id: "route-id", user: .district("other-id"))
-        }
-        
-        
-        #expect(routeRepositoryMock.getCallCount == 1)
-        #expect(routeRepositoryMock.deleteCallCount == 0)
-    }
-
-
-    @Test func test_getAllRouteIds_正常() async throws {
-        let festivalId = "festival-id"
-        let district1 = District(id: "district-1", name: "district-1", festivalId: festivalId, visibility: .all)
-        let district2 = District(id: "district-2", name: "district-2", festivalId: festivalId, visibility: .all)
-        let route1 = Route(id: "route-1", districtId: "district-1", start: SimpleTime(hour: 10, minute: 0), goal: SimpleTime(hour: 11, minute: 0))
-        let route2 = Route(id: "route-2", districtId: "district-2", start: SimpleTime(hour: 12, minute: 0), goal: SimpleTime(hour: 13, minute: 0))
-        
-        var lastCalledFestivalId: String? = nil
-        let districtRepositoryMock = DistrictRepositoryMock(queryHandler: { festivalId in
-            lastCalledFestivalId = festivalId
-            return [district1, district2]
-        })
-        var calledDistrictIds: [String] = []
-        let routeRepositoryMock = RouteRepositoryMock(queryHandler: { districtId in
-            calledDistrictIds.append(districtId)
-            if districtId == "district-1" {
-                return [route1]
-            } else {
-                return [route2]
-            }
-        })
-        let subject = make(routeRepository: routeRepositoryMock, districtRepository: districtRepositoryMock)
-        
-        
-        let result = try await subject.getAllRouteIds(user: .headquarter(festivalId))
-        
-        
-        #expect(result.count == 2)
-        #expect(result.contains("route-1"))
-        #expect(result.contains("route-2"))
-        #expect(lastCalledFestivalId == festivalId)
-        #expect(calledDistrictIds.contains("district-1"))
-        #expect(calledDistrictIds.contains("district-2"))
-        #expect(districtRepositoryMock.queryCallCount == 1)
-        #expect(routeRepositoryMock.queryCallCount == 2)
-    }
-    
-    @Test func test_getAllRouteIds_異常_権限なし() async throws {
-        let routeRepositoryMock = RouteRepositoryMock()
-        let districtRepositoryMock = DistrictRepositoryMock()
-        let subject = make(routeRepository: routeRepositoryMock, districtRepository: districtRepositoryMock)
-        
-        
-        await #expect(throws: Error.unauthorized("アクセス権限がありません")) {
-            let _ = try await subject.getAllRouteIds(user: .guest)
-        }
-        
-        
-        #expect(districtRepositoryMock.queryCallCount == 0)
-        #expect(routeRepositoryMock.queryCallCount == 0)
-    }
-    
-    @Test func test_getAllRouteIds_異常_地区が見つからない() async throws {
-        let festivalId = "festival-id"
-        var lastCalledFestivalId: String? = nil
-        let districtRepositoryMock = DistrictRepositoryMock(queryHandler: { festivalId in
-            lastCalledFestivalId = festivalId
+        let periodRepository = PeriodRepositoryMock(queryByYearHandler: { _, year in
+            if year == 2027 { return [Period.mock(id: "period-2027", festivalId: district.festivalId, date: .init(year: 2027, month: 1, day: 1))] }
+            if year == 2026 { return [Period.mock(id: "period-2026", festivalId: district.festivalId, date: .init(year: 2026, month: 1, day: 1))] }
             return []
         })
-        let routeRepositoryMock = RouteRepositoryMock()
-        let subject = make(routeRepository: routeRepositoryMock, districtRepository: districtRepositoryMock)
-        
-        
+        let subject = make(
+            routeRepository: repository,
+            periodRepository: periodRepository,
+            districtRepository: .init(getHandler: { _ in district })
+        )
+
+        let result = try await subject.query(by: district.id, type: .latest, now: now, user: .guest)
+
+        #expect(result == [nextYearRoute])
+        #expect(repository.queryByYearCallCount == 1)
+        #expect(queriedYears == [2027])
+        #expect(periodRepository.queryByYearCallCount == 2)
+    }
+
+    @Test
+    func query_正常_latest_翌年Periodありで今年Routeを採用() async throws {
+        let district = District.mock(id: "district-1", festivalId: "festival-1")
+        let now = SimpleDate(year: 2026, month: 2, day: 1)
+        let currentYearRoute = Route.mock(id: "route-current", districtId: district.id)
+        var queriedYears: [Int] = []
+
+        let repository = RouteRepositoryMock(
+            queryHandler: { _ in [] },
+            queryByYearHandler: { _, year in
+                queriedYears.append(year)
+                if year == 2026 { return [currentYearRoute] }
+                return []
+            }
+        )
+        let periodRepository = PeriodRepositoryMock(queryByYearHandler: { _, year in
+            if year == 2027 { return [Period.mock(id: "period-2027", festivalId: district.festivalId, date: .init(year: 2027, month: 1, day: 1))] }
+            if year == 2026 { return [Period.mock(id: "period-2026", festivalId: district.festivalId, date: .init(year: 2026, month: 1, day: 1))] }
+            return []
+        })
+        let subject = make(
+            routeRepository: repository,
+            periodRepository: periodRepository,
+            districtRepository: .init(getHandler: { _ in district })
+        )
+
+        let result = try await subject.query(by: district.id, type: .latest, now: now, user: .guest)
+
+        #expect(result == [currentYearRoute])
+        #expect(repository.queryByYearCallCount == 2)
+        #expect(queriedYears == [2027, 2026])
+        #expect(periodRepository.queryByYearCallCount == 2)
+    }
+
+    @Test
+    func query_正常_latest_翌年Periodなしで前年Routeを採用() async throws {
+        let district = District.mock(id: "district-1", festivalId: "festival-1")
+        let lastYearRoute = Route.mock(id: "route-last", districtId: district.id)
+        var queriedYears: [Int] = []
+
+        let repository = RouteRepositoryMock(
+            queryHandler: { _ in [] },
+            queryByYearHandler: { _, year in
+                queriedYears.append(year)
+                if year == 2025 { return [lastYearRoute] }
+                return []
+            }
+        )
+        let periodRepository = PeriodRepositoryMock(queryByYearHandler: { _, year in
+            if year == 2026 { return [Period.mock(id: "period-2026", festivalId: district.festivalId, date: .init(year: 2026, month: 1, day: 1))] }
+            if year == 2025 { return [Period.mock(id: "period-2025", festivalId: district.festivalId, date: .init(year: 2025, month: 1, day: 1))] }
+            return []
+        })
+        let subject = make(
+            routeRepository: repository,
+            periodRepository: periodRepository,
+            districtRepository: .init(getHandler: { _ in district })
+        )
+
+        let result = try await subject.query(
+            by: district.id,
+            type: .latest,
+            now: .init(year: 2026, month: 2, day: 1),
+            user: .guest
+        )
+
+        #expect(result == [lastYearRoute])
+        #expect(repository.queryByYearCallCount == 2)
+        #expect(queriedYears == [2026, 2025])
+        #expect(periodRepository.queryByYearCallCount == 3)
+    }
+
+    @Test
+    func query_正常_latest_Periodなしは空配列() async throws {
+        let district = District.mock(id: "district-1", festivalId: "festival-1")
+        let repository = RouteRepositoryMock(
+            queryHandler: { _ in [] },
+            queryByYearHandler: { _, _ in
+                Issue.record("route query by year should not be called without periods")
+                return []
+            }
+        )
+        let periodRepository = PeriodRepositoryMock(queryByYearHandler: { _, _ in [] })
+        let subject = make(
+            routeRepository: repository,
+            periodRepository: periodRepository,
+            districtRepository: .init(getHandler: { _ in district })
+        )
+
+        let result = try await subject.query(
+            by: district.id,
+            type: .latest,
+            now: .init(year: 2026, month: 2, day: 1),
+            user: .guest
+        )
+
+        #expect(result.isEmpty)
+        #expect(repository.queryByYearCallCount == 0)
+        #expect(periodRepository.queryByYearCallCount == 3)
+    }
+
+    @Test
+    func post_異常_権限不一致() async {
+        let pack = RoutePack.mock(route: .mock(id: "route-1", districtId: "district-1"), points: [], passages: [])
+        let subject = make()
+
         await #expect(throws: Error.unauthorized("アクセス権限がありません")) {
-            let _ = try await subject.getAllRouteIds(user: .headquarter(festivalId))
+            _ = try await subject.post(districtId: "district-1", pack: pack, user: .guest)
         }
-        
-        
-        #expect(lastCalledFestivalId == festivalId)
-        #expect(districtRepositoryMock.queryCallCount == 1)
-        #expect(routeRepositoryMock.queryCallCount == 0)
     }
-    
-    @Test func test_getAllRouteIds_異常_districtRepositoryエラー() async throws {
-        let festivalId = "festival-id"
-        let districtRepositoryMock = DistrictRepositoryMock(queryHandler: { _ in
-            throw Error.internalServerError("query_failed")
-        })
-        let routeRepositoryMock = RouteRepositoryMock()
-        let subject = make(routeRepository: routeRepositoryMock, districtRepository: districtRepositoryMock)
-        
-        
-        await #expect(throws: Error.internalServerError("query_failed")) {
-            let _ = try await subject.getAllRouteIds(user: .headquarter(festivalId))
+
+    @Test
+    func post_正常() async throws {
+        let route = Route.mock(id: "route-1", districtId: "district-1")
+        var district = District.mock(id: route.districtId, festivalId: "festival-1")
+        let points = [
+            Point.mock(id: "p-1", routeId: route.id, index: 0, time: .init(hour: 9, minute: 0), anchor: .start),
+            Point.mock(id: "p-2", routeId: route.id, index: 1, time: .init(hour: 10, minute: 0), anchor: .end)
+        ]
+        let passages = [RoutePassage.mock(id: "pa-1", routeId: route.id, districtId: route.districtId, order: 0)]
+        let pack = RoutePack.mock(route: route, points: points, passages: passages)
+
+        let routeRepository = RouteRepositoryMock(postHandler: { $0 })
+        let pointRepository = PointRepositoryMock(queryHandler: { _ in [] }, postHandler: { $0 })
+        let passageRepository = PassageRepositoryMock(queryHandler: { _ in [] }, postHandler: { $0 })
+        let subject = make(
+            routeRepository: routeRepository,
+            districtRepository: .init(getHandler: { _ in district }),
+            pointRepository: pointRepository,
+            passageRepository: passageRepository
+        )
+
+        let result = try await subject.post(districtId: route.districtId, pack: pack, user: .district(route.districtId))
+
+        #expect(result.route == route)
+        #expect(result.points.count == 2)
+        #expect(result.passages.count == 1)
+        #expect(routeRepository.postCallCount == 1)
+        #expect(pointRepository.postCallCount == 2)
+        #expect(passageRepository.postCallCount == 1)
+    }
+
+    @Test
+    func put_異常_ルート未登録() async {
+        let route = Route.mock(id: "route-1", districtId: "district-1")
+        let pack = RoutePack.mock(route: route, points: [], passages: [])
+        let subject = make(
+            routeRepository: .init(getHandler: { _ in nil })
+        )
+
+        await #expect(throws: Error.notFound("指定されたルートが見つかりません")) {
+            _ = try await subject.put(id: route.id, pack: pack, user: .district(route.districtId))
         }
-        
-        
-        #expect(districtRepositoryMock.queryCallCount == 1)
-        #expect(routeRepositoryMock.queryCallCount == 0)
     }
-    
-    @Test func test_getAllRouteIds_異常_routeRepositoryエラー() async throws {
-        let festivalId = "festival-id"
-        let district = District(id: "district-1", name: "district-1", festivalId: festivalId, visibility: .all)
-        let districtRepositoryMock = DistrictRepositoryMock(queryHandler: { _ in [district] })
-        let routeRepositoryMock = RouteRepositoryMock(queryHandler: { _ in
-            throw Error.internalServerError("route_query_failed")
-        })
-        let subject = make(routeRepository: routeRepositoryMock, districtRepository: districtRepositoryMock)
-        
-        
-        await #expect(throws: Error.internalServerError("route_query_failed")) {
-            let _ = try await subject.getAllRouteIds(user: .headquarter(festivalId))
+
+    @Test
+    func put_正常() async throws {
+        let route = Route.mock(id: "route-1", districtId: "district-1")
+        var district = District.mock(id: route.districtId, festivalId: "festival-1")
+        let points = [
+            Point.mock(id: "p-1", routeId: route.id, index: 0, time: .init(hour: 9, minute: 0), anchor: .start),
+            Point.mock(id: "p-2", routeId: route.id, index: 1, time: .init(hour: 10, minute: 0), anchor: .end)
+        ]
+        let pack = RoutePack.mock(route: route, points: points, passages: [])
+        let routeRepository = RouteRepositoryMock(getHandler: { _ in route }, postHandler: { $0 })
+        let pointRepository = PointRepositoryMock(queryHandler: { _ in [] }, postHandler: { $0 })
+        let subject = make(
+            routeRepository: routeRepository,
+            districtRepository: .init(getHandler: { _ in district }),
+            pointRepository: pointRepository,
+            passageRepository: .init(queryHandler: { _ in [] })
+        )
+
+        let result = try await subject.put(id: route.id, pack: pack, user: .district(route.districtId))
+
+        #expect(result.route == route)
+        #expect(result.points.count == 2)
+        #expect(routeRepository.getCallCount == 1)
+        #expect(routeRepository.postCallCount == 1)
+        #expect(pointRepository.postCallCount == 2)
+    }
+
+    @Test
+    func delete_異常_権限不一致() async {
+        let route = Route.mock(id: "route-1", districtId: "district-1", periodId: "period-1")
+
+        let subject = make(
+            routeRepository: .init(getHandler: { _ in route })
+        )
+
+        await #expect(throws: Error.unauthorized("アクセス権限がありません")) {
+            try await subject.delete(id: route.id, user: .district("other"))
         }
-        
-        
-        #expect(districtRepositoryMock.queryCallCount == 1)
-        #expect(routeRepositoryMock.queryCallCount == 1)
     }
-    
-    @Test func test_getCurrent_正常() async throws {
-        let districtId = "district-id"
-        let district = District(id: districtId, name: "district-name", festivalId: "festival-id", visibility: .all)
-        let route = Route(id: "route-id", districtId: districtId, start: SimpleTime(hour: 10, minute: 0), goal: SimpleTime(hour: 11, minute: 0))
-        let location = FloatLocation(districtId: districtId, coordinate: Coordinate(latitude: 1.0, longitude: 2.0), timestamp: Date())
-        
-        var lastCalledDistrictId: String? = nil
-        let districtRepositoryMock = DistrictRepositoryMock(getHandler: { id in
-            lastCalledDistrictId = id
-            return district
-        })
-        var lastCalledQueryDistrictId: String? = nil
-        let routeRepositoryMock = RouteRepositoryMock(queryHandler: { districtId in
-            lastCalledQueryDistrictId = districtId
-            return [route]
-        })
-        var lastCalledLocationId: String? = nil
-        let locationRepositoryMock = LocationRepositoryMock(getHandler: { id in
-            lastCalledLocationId = id
-            return location
-        })
-        let subject = make(
-            routeRepository: routeRepositoryMock,
-            districtRepository: districtRepositoryMock,
-            locationRepository: locationRepositoryMock
+
+    @Test
+    func delete_正常() async throws {
+        let route = Route.mock(id: "route-1", districtId: "district-1")
+        var district = District.mock(id: route.districtId, festivalId: "festival-1")
+        let routeRepository = RouteRepositoryMock(
+            getHandler: { _ in route },
+            deleteHandler: { _ in }
         )
-        
-        
-        let fixedDate = makeDate(year: 2023, month: 11, day: 15)
-        let result = try await subject.getCurrent(districtId: districtId, user: .district(districtId), now: fixedDate)
-        
-        
-        #expect(result.districtId == districtId)
-        #expect(result.districtName == district.name)
-        #expect(result.routes?.count == 1)
-        #expect(result.current?.id == route.id)
-        #expect(result.location?.districtId == districtId)
-        #expect(lastCalledDistrictId == districtId)
-        #expect(lastCalledQueryDistrictId == districtId)
-        #expect(lastCalledLocationId == districtId)
-        #expect(districtRepositoryMock.getCallCount == 1)
-        #expect(routeRepositoryMock.queryCallCount == 1)
-        #expect(locationRepositoryMock.getCallCount == 1)
+        let pointRepository = PointRepositoryMock(deleteByRouteHandler: { _ in })
+        let passageRepository = PassageRepositoryMock(deleteByRouteHandler: { _ in })
+
+        let subject = make(
+            routeRepository: routeRepository,
+            districtRepository: .init(getHandler: { _ in district }),
+            pointRepository: pointRepository,
+            passageRepository: passageRepository
+        )
+
+        try await subject.delete(id: route.id, user: .district(route.districtId))
+
+        #expect(routeRepository.deleteCallCount == 1)
+        #expect(pointRepository.deleteByRouteCallCount == 1)
+        #expect(passageRepository.deleteByRouteCallCount == 1)
     }
-    
-    @Test func test_getCurrent_異常_地区が見つからない() async throws {
-        let districtId = "district-id"
-        var lastCalledDistrictId: String? = nil
-        let districtRepositoryMock = DistrictRepositoryMock(getHandler: { id in
-            lastCalledDistrictId = id
-            return nil
-        })
-        let routeRepositoryMock = RouteRepositoryMock()
-        let subject = make(routeRepository: routeRepositoryMock, districtRepository: districtRepositoryMock)
-        
-        
-        await #expect(throws: Error.notFound("指定された地区が見つかりません")) {
-            let fixedDate = makeDate(year: 2023, month: 11, day: 15)
-            let _ = try await subject.getCurrent(districtId: districtId, user: .district(districtId), now: fixedDate)
+
+    @Test
+    func post_異常_本部編集中で更新禁止() async {
+        let route = Route.mock(id: "route-1", districtId: "district-1")
+        let district = District.mock(id: route.districtId, festivalId: "festival-1")
+        let festival = Festival.mock(id: district.festivalId, subname: "祭本部")
+        let pack = RoutePack.mock(route: route, points: [], passages: [])
+        let subject = make(
+            districtRepository: .init(getHandler: { _ in
+                var item = district
+                item.isEditable = false
+                return item
+            }),
+            festivalRepository: .init(getHandler: { _ in festival })
+        )
+
+        await #expect(throws: Error.forbidden("祭本部がルートの更新を停止しています。")) {
+            _ = try await subject.post(districtId: route.districtId, pack: pack, user: .district(route.districtId))
         }
-        
-        
-        #expect(lastCalledDistrictId == districtId)
-        #expect(districtRepositoryMock.getCallCount == 1)
     }
-    
-    @Test func test_getCurrent_AdminOnlyで権限なし_Guest() async throws {
-        let districtId = "district-id"
-        let district = District(id: districtId, name: "district-name", festivalId: "festival-id", visibility: .admin)
-        let districtRepositoryMock = DistrictRepositoryMock(getHandler: { _ in district })
-        let routeRepositoryMock = RouteRepositoryMock()
-        let subject = make(routeRepository: routeRepositoryMock, districtRepository: districtRepositoryMock)
-        
-        
-        let fixedDate = makeDate(year: 2023, month: 11, day: 15)
-        let result = try await subject.getCurrent(districtId: districtId, user: .guest, now: fixedDate)
-        
-        
-        #expect(result.routes == nil)
-        #expect(result.current == nil)
-        #expect(result.location == nil)
-        #expect(districtRepositoryMock.getCallCount == 1)
-        #expect(routeRepositoryMock.queryCallCount == 0)
-    }
-    
-    @Test func test_getCurrent_AdminOnlyで権限なし_異なるDistrict() async throws {
-        let districtId = "district-id"
-        let district = District(id: districtId, name: "district-name", festivalId: "festival-id", visibility: .admin)
-        let districtRepositoryMock = DistrictRepositoryMock(getHandler: { _ in district })
-        let routeRepositoryMock = RouteRepositoryMock()
-        let subject = make(routeRepository: routeRepositoryMock, districtRepository: districtRepositoryMock)
-        
-        
-        let fixedDate = makeDate(year: 2023, month: 11, day: 15)
-        let result = try await subject.getCurrent(districtId: districtId, user: .district("other-district-id"), now: fixedDate)
-        
-        
-        #expect(result.routes == nil)
-        #expect(result.current == nil)
-        #expect(districtRepositoryMock.getCallCount == 1)
-        #expect(routeRepositoryMock.queryCallCount == 0)
-    }
-    
-    @Test func test_getCurrent_AdminOnlyで権限あり_District() async throws {
-        let districtId = "district-id"
-        let district = District(id: districtId, name: "district-name", festivalId: "festival-id", visibility: .admin)
-        let route = Route(id: "route-id", districtId: districtId, start: SimpleTime(hour: 10, minute: 0), goal: SimpleTime(hour: 11, minute: 0))
-        let location = FloatLocation(districtId: districtId, coordinate: Coordinate(latitude: 1.0, longitude: 2.0), timestamp: Date())
-        
-        let districtRepositoryMock = DistrictRepositoryMock(getHandler: { _ in district })
-        let routeRepositoryMock = RouteRepositoryMock(queryHandler: { _ in [route] })
-        let locationRepositoryMock = LocationRepositoryMock(getHandler: { _ in location })
+
+    @Test
+    func put_異常_本部編集中で更新禁止() async {
+        let route = Route.mock(id: "route-1", districtId: "district-1")
+        let district = District.mock(id: route.districtId, festivalId: "festival-1")
+        let festival = Festival.mock(id: district.festivalId, subname: "祭本部")
+        let pack = RoutePack.mock(route: route, points: [], passages: [])
         let subject = make(
-            routeRepository: routeRepositoryMock,
-            districtRepository: districtRepositoryMock,
-            locationRepository: locationRepositoryMock
+            routeRepository: .init(getHandler: { _ in route }),
+            districtRepository: .init(getHandler: { _ in
+                var item = district
+                item.isEditable = false
+                return item
+            }),
+            festivalRepository: .init(getHandler: { _ in festival })
         )
-        
-        
-        let fixedDate = makeDate(year: 2023, month: 11, day: 15)
-        let result = try await subject.getCurrent(districtId: districtId, user: .district(districtId), now: fixedDate)
-        
-        
-        #expect(result.routes?.count == 1)
-        #expect(result.current?.id == route.id)
-        #expect(result.location?.districtId == districtId)
-        #expect(districtRepositoryMock.getCallCount == 1)
-        #expect(routeRepositoryMock.queryCallCount == 1)
-        #expect(locationRepositoryMock.getCallCount == 1)
+
+        await #expect(throws: Error.forbidden("祭本部がルートの更新を停止しています。")) {
+            _ = try await subject.put(id: route.id, pack: pack, user: .district(route.districtId))
+        }
     }
-    
-    @Test func test_getCurrent_AdminOnlyで権限あり_Headquarter() async throws {
-        let districtId = "district-id"
-        let festivalId = "festival-id"
-        let district = District(id: districtId, name: "district-name", festivalId: festivalId, visibility: .admin)
-        let route = Route(id: "route-id", districtId: districtId, start: SimpleTime(hour: 10, minute: 0), goal: SimpleTime(hour: 11, minute: 0))
-        let location = FloatLocation(districtId: districtId, coordinate: Coordinate(latitude: 1.0, longitude: 2.0), timestamp: Date())
-        
-        let districtRepositoryMock = DistrictRepositoryMock(getHandler: { _ in district })
-        let routeRepositoryMock = RouteRepositoryMock(queryHandler: { _ in [route] })
-        let locationRepositoryMock = LocationRepositoryMock(getHandler: { _ in location })
+
+    @Test
+    func delete_異常_本部編集中で更新禁止() async {
+        let route = Route.mock(id: "route-1", districtId: "district-1")
+        let district = District.mock(id: route.districtId, festivalId: "festival-1")
+        let festival = Festival.mock(id: district.festivalId, subname: "祭本部")
         let subject = make(
-            routeRepository: routeRepositoryMock,
-            districtRepository: districtRepositoryMock,
-            locationRepository: locationRepositoryMock
+            routeRepository: .init(getHandler: { _ in route }),
+            districtRepository: .init(getHandler: { _ in
+                var item = district
+                item.isEditable = false
+                return item
+            }),
+            festivalRepository: .init(getHandler: { _ in festival })
         )
-        
-        
-        let fixedDate = makeDate(year: 2023, month: 11, day: 15)
-        let result = try await subject.getCurrent(districtId: districtId, user: .headquarter(festivalId), now: fixedDate)
-        
-        
-        #expect(result.routes?.count == 1)
-        #expect(result.current?.id == route.id)
-        #expect(result.location?.districtId == districtId)
-        #expect(districtRepositoryMock.getCallCount == 1)
-        #expect(routeRepositoryMock.queryCallCount == 1)
-        #expect(locationRepositoryMock.getCallCount == 1)
+
+        await #expect(throws: Error.forbidden("祭本部がルートの更新を停止しています。")) {
+            try await subject.delete(id: route.id, user: .district(route.districtId))
+        }
     }
-    
-    @Test func test_getCurrent_正常_AdminAccessでLocation取得() async throws {
-        let districtId = "district-id"
-        let festivalId = "festival-id"
-        let district = District(id: districtId, name: "district-name", festivalId: festivalId, visibility: .all)
-        let route = Route(id: "route-id", districtId: districtId, start: SimpleTime(hour: 10, minute: 0), goal: SimpleTime(hour: 11, minute: 0))
-        let location = FloatLocation(districtId: districtId, coordinate: Coordinate(latitude: 1.0, longitude: 2.0), timestamp: Date())
-        
-        let districtRepositoryMock = DistrictRepositoryMock(getHandler: { _ in district })
-        let routeRepositoryMock = RouteRepositoryMock(queryHandler: { _ in [route] })
-        let locationRepositoryMock = LocationRepositoryMock(getHandler: { _ in location })
-        let festivalRepositoryMock = FestivalRepositoryMock()
+
+    @Test
+    func query_異常_依存エラーを透過() async {
+        let district = District.mock(id: "district-1", festivalId: "festival-1")
         let subject = make(
-            routeRepository: routeRepositoryMock,
-            districtRepository: districtRepositoryMock,
-            locationRepository: locationRepositoryMock,
-            festivalRepository: festivalRepositoryMock
+            routeRepository: .init(queryHandler: { _ in throw TestError.intentional }),
+            districtRepository: .init(getHandler: { _ in district })
         )
-        
-        
-        let fixedDate = makeDate(year: 2023, month: 11, day: 15)
-        let result = try await subject.getCurrent(districtId: districtId, user: .headquarter(festivalId), now: fixedDate)
-        
-        
-        #expect(result.location?.districtId == districtId)
-        #expect(locationRepositoryMock.getCallCount == 1)
-        #expect(festivalRepositoryMock.getCallCount == 0)
-        #expect(districtRepositoryMock.getCallCount == 1)
-        #expect(routeRepositoryMock.queryCallCount == 1)
-    }
-    
-    @Test func test_getCurrent_正常_PublicAccessでLocation取得() async throws {
-        let districtId = "district-id"
-        let festivalId = "festival-id"
-        let district = District(id: districtId, name: "district-name", festivalId: festivalId, visibility: .all)
-        let route = Route(id: "route-id", districtId: districtId, start: SimpleTime(hour: 10, minute: 0), goal: SimpleTime(hour: 11, minute: 0))
-        let location = FloatLocation(districtId: districtId, coordinate: Coordinate(latitude: 1.0, longitude: 2.0), timestamp: Date())
-        let fixedDate = makeDate(year: 2023, month: 11, day: 15) // 2023-11-15 00:00:00 UTC
-        let festival = Festival(id: festivalId, name: "festival", subname: "sub", prefecture: "p", city: "c", base: Coordinate(latitude: 0, longitude: 0), spans: [Span(id: "span-id", start: fixedDate.addingTimeInterval(-3600), end: fixedDate.addingTimeInterval(3600))])
-        
-        let districtRepositoryMock = DistrictRepositoryMock(getHandler: { _ in district })
-        let routeRepositoryMock = RouteRepositoryMock(queryHandler: { _ in [route] })
-        let locationRepositoryMock = LocationRepositoryMock(getHandler: { _ in location })
-        let festivalRepositoryMock = FestivalRepositoryMock(getHandler: { _ in festival })
-        let subject = make(
-            routeRepository: routeRepositoryMock,
-            districtRepository: districtRepositoryMock,
-            locationRepository: locationRepositoryMock,
-            festivalRepository: festivalRepositoryMock
-        )
-        
-        
-        let result = try await subject.getCurrent(districtId: districtId, user: .guest, now: fixedDate)
-        
-        
-        #expect(result.location?.districtId == districtId)
-        #expect(locationRepositoryMock.getCallCount == 1)
-        #expect(festivalRepositoryMock.getCallCount == 1)
-    }
-    
-    @Test func test_getCurrent_異常_PublicAccessで期間外() async throws {
-        let districtId = "district-id"
-        let festivalId = "festival-id"
-        let district = District(id: districtId, name: "district-name", festivalId: festivalId, visibility: .all)
-        let route = Route(id: "route-id", districtId: districtId, start: SimpleTime(hour: 10, minute: 0), goal: SimpleTime(hour: 11, minute: 0))
-        let fixedDate = makeDate(year: 2023, month: 11, day: 15) // 2023-11-15 00:00:00 UTC
-        let pastDate = fixedDate.addingTimeInterval(-86400 * 2)
-        let futureDate = fixedDate.addingTimeInterval(-86400)
-        let festival = Festival(id: festivalId, name: "festival", subname: "sub", prefecture: "p", city: "c", base: Coordinate(latitude: 0, longitude: 0), spans: [Span(id: "span-id", start: pastDate, end: futureDate)])
-        
-        let districtRepositoryMock = DistrictRepositoryMock(getHandler: { _ in district })
-        let routeRepositoryMock = RouteRepositoryMock(queryHandler: { _ in [route] })
-        let locationRepositoryMock = LocationRepositoryMock()
-        let festivalRepositoryMock = FestivalRepositoryMock(getHandler: { _ in festival })
-        let subject = make(
-            routeRepository: routeRepositoryMock,
-            districtRepository: districtRepositoryMock,
-            locationRepository: locationRepositoryMock,
-            festivalRepository: festivalRepositoryMock
-        )
-        
-        
-        let result = try await subject.getCurrent(districtId: districtId, user: .guest, now: fixedDate)
-        
-        
-        #expect(result.location == nil)
-        #expect(festivalRepositoryMock.getCallCount == 1)
-        #expect(locationRepositoryMock.getCallCount == 0)
-    }
-    
-    @Test func test_getCurrent_正常_Partialで時間削除() async throws {
-        let districtId = "district-id"
-        let district = District(id: districtId, name: "district-name", festivalId: "festival-id", visibility: .route)
-        let route = Route(id: "route-id", districtId: districtId, start: SimpleTime(hour: 10, minute: 0), goal: SimpleTime(hour: 11, minute: 0))
-        
-        let districtRepositoryMock = DistrictRepositoryMock(getHandler: { _ in district })
-        let routeRepositoryMock = RouteRepositoryMock(queryHandler: { _ in [route] })
-        let subject = make(routeRepository: routeRepositoryMock, districtRepository: districtRepositoryMock)
-        
-        
-        let fixedDate = makeDate(year: 2023, month: 11, day: 15)
-        let result = try await subject.getCurrent(districtId: districtId, user: .guest, now: fixedDate)
-        
-        
-        #expect(result.current?.id == route.id)
-        #expect(result.current?.start == SimpleTime(hour: 0, minute: 0))
-        #expect(result.current?.goal == SimpleTime(hour: 0, minute: 0))
-        #expect(districtRepositoryMock.getCallCount == 1)
-        #expect(routeRepositoryMock.queryCallCount == 1)
-    }
-    
-    @Test func test_getCurrent_正常_routeListが空() async throws {
-        let districtId = "district-id"
-        let district = District(id: districtId, name: "district-name", festivalId: "festival-id", visibility: .all)
-        let fixedDate = makeDate(year: 2023, month: 11, day: 15)
-        
-        let districtRepositoryMock = DistrictRepositoryMock(getHandler: { _ in district })
-        let routeRepositoryMock = RouteRepositoryMock(queryHandler: { _ in [] })
-        let subject = make(routeRepository: routeRepositoryMock, districtRepository: districtRepositoryMock)
-        
-        
-        let result = try await subject.getCurrent(districtId: districtId, user: .district(districtId), now: fixedDate)
-        
-        
-        #expect(result.routes?.isEmpty == true)
-        #expect(result.current == nil)
-        #expect(districtRepositoryMock.getCallCount == 1)
-        #expect(routeRepositoryMock.queryCallCount == 1)
-    }
-    
-    @Test func test_getCurrent_正常_進行中のルートを選択() async throws {
-        let districtId = "district-id"
-        let district = District(id: districtId, name: "district-name", festivalId: "festival-id", visibility: .all)
-        // 2023-11-15 00:45:00 UTC (進行中のルートを選択)
-        let fixedDate = makeDate(year: 2023, month: 11, day: 15, hour: 0, minute: 45)
-        let routeDate = SimpleDate(year: 2023, month: 11, day: 15)
-        let route1 = Route(id: "route-1", districtId: districtId, date: routeDate, start: SimpleTime(hour: 8, minute: 0), goal: SimpleTime(hour: 9, minute: 0))
-        let route2 = Route(id: "route-2", districtId: districtId, date: routeDate, start: SimpleTime(hour: 0, minute: 30), goal: SimpleTime(hour: 1, minute: 0)) // 進行中
-        let route3 = Route(id: "route-3", districtId: districtId, date: routeDate, start: SimpleTime(hour: 2, minute: 0), goal: SimpleTime(hour: 3, minute: 0))
-        
-        let districtRepositoryMock = DistrictRepositoryMock(getHandler: { _ in district })
-        let routeRepositoryMock = RouteRepositoryMock(queryHandler: { _ in [route1, route2, route3] })
-        let subject = make(routeRepository: routeRepositoryMock, districtRepository: districtRepositoryMock)
-        
-        
-        let result = try await subject.getCurrent(districtId: districtId, user: .district(districtId), now: fixedDate)
-        
-        
-        #expect(result.current?.id == "route-2")
-        #expect(districtRepositoryMock.getCallCount == 1)
-        #expect(routeRepositoryMock.queryCallCount == 1)
-    }
-    
-    @Test func test_getCurrent_正常_未来のルートを選択() async throws {
-        let districtId = "district-id"
-        let district = District(id: districtId, name: "district-name", festivalId: "festival-id", visibility: .all)
-        // 2023-11-15 00:00:00 UTC (未来のルートを選択)
-        let fixedDate = makeDate(year: 2023, month: 11, day: 15)
-        let routeDate = SimpleDate(year: 2023, month: 11, day: 15)
-        let route1 = Route(id: "route-1", districtId: districtId, date: routeDate, start: SimpleTime(hour: 1, minute: 0), goal: SimpleTime(hour: 2, minute: 0)) // 未来
-        let route2 = Route(id: "route-2", districtId: districtId, date: routeDate, start: SimpleTime(hour: 3, minute: 0), goal: SimpleTime(hour: 4, minute: 0))
-        
-        let districtRepositoryMock = DistrictRepositoryMock(getHandler: { _ in district })
-        let routeRepositoryMock = RouteRepositoryMock(queryHandler: { _ in [route1, route2] })
-        let subject = make(routeRepository: routeRepositoryMock, districtRepository: districtRepositoryMock)
-        
-        
-        let result = try await subject.getCurrent(districtId: districtId, user: .district(districtId), now: fixedDate)
-        
-        
-        #expect(result.current?.id == "route-1")
-        #expect(districtRepositoryMock.getCallCount == 1)
-        #expect(routeRepositoryMock.queryCallCount == 1)
-    }
-    
-    @Test func test_getCurrent_正常_過去のルートを選択() async throws {
-        let districtId = "district-id"
-        let district = District(id: districtId, name: "district-name", festivalId: "festival-id", visibility: .all)
-        // 2023-11-15 00:00:00 UTC (過去のルートを選択 - 前日のルートが選択される)
-        let fixedDate = makeDate(year: 2023, month: 11, day: 15)
-        let routeDate = SimpleDate(year: 2023, month: 11, day: 14)
-        let route1 = Route(id: "route-1", districtId: districtId, date: routeDate, start: SimpleTime(hour: 20, minute: 0), goal: SimpleTime(hour: 21, minute: 0)) // 過去
-        let route2 = Route(id: "route-2", districtId: districtId, date: routeDate, start: SimpleTime(hour: 22, minute: 0), goal: SimpleTime(hour: 23, minute: 0))
-        
-        let districtRepositoryMock = DistrictRepositoryMock(getHandler: { _ in district })
-        let routeRepositoryMock = RouteRepositoryMock(queryHandler: { _ in [route1, route2] })
-        let subject = make(routeRepository: routeRepositoryMock, districtRepository: districtRepositoryMock)
-        
-        
-        let result = try await subject.getCurrent(districtId: districtId, user: .district(districtId), now: fixedDate)
-        
-        
-        #expect(result.current?.id == "route-1")
-        #expect(districtRepositoryMock.getCallCount == 1)
-        #expect(routeRepositoryMock.queryCallCount == 1)
-    }
-    
-    @Test func test_getCurrent_正常_AdminAccessでLocationが見つからない() async throws {
-        let districtId = "district-id"
-        let festivalId = "festival-id"
-        let district = District(id: districtId, name: "district-name", festivalId: festivalId, visibility: .all)
-        let route = Route(id: "route-id", districtId: districtId, start: SimpleTime(hour: 10, minute: 0), goal: SimpleTime(hour: 11, minute: 0))
-        let fixedDate = makeDate(year: 2023, month: 11, day: 15)
-        
-        let districtRepositoryMock = DistrictRepositoryMock(getHandler: { _ in district })
-        let routeRepositoryMock = RouteRepositoryMock(queryHandler: { _ in [route] })
-        let locationRepositoryMock = LocationRepositoryMock(getHandler: { _ in nil })
-        let subject = make(
-            routeRepository: routeRepositoryMock,
-            districtRepository: districtRepositoryMock,
-            locationRepository: locationRepositoryMock
-        )
-        
-        
-        let result = try await subject.getCurrent(districtId: districtId, user: .headquarter(festivalId), now: fixedDate)
-        
-        
-        #expect(result.location == nil)
-        #expect(locationRepositoryMock.getCallCount == 1)
-        #expect(districtRepositoryMock.getCallCount == 1)
-        #expect(routeRepositoryMock.queryCallCount == 1)
-    }
-    
-    @Test func test_getCurrent_正常_PublicAccessでFestivalが見つからない() async throws {
-        let districtId = "district-id"
-        let festivalId = "festival-id"
-        let district = District(id: districtId, name: "district-name", festivalId: festivalId, visibility: .all)
-        let route = Route(id: "route-id", districtId: districtId, start: SimpleTime(hour: 10, minute: 0), goal: SimpleTime(hour: 11, minute: 0))
-        let fixedDate = makeDate(year: 2023, month: 11, day: 15)
-        
-        let districtRepositoryMock = DistrictRepositoryMock(getHandler: { _ in district })
-        let routeRepositoryMock = RouteRepositoryMock(queryHandler: { _ in [route] })
-        let locationRepositoryMock = LocationRepositoryMock()
-        let festivalRepositoryMock = FestivalRepositoryMock(getHandler: { _ in nil })
-        let subject = make(
-            routeRepository: routeRepositoryMock,
-            districtRepository: districtRepositoryMock,
-            locationRepository: locationRepositoryMock,
-            festivalRepository: festivalRepositoryMock
-        )
-        
-        
-        let result = try await subject.getCurrent(districtId: districtId, user: .guest, now: fixedDate)
-        
-        
-        #expect(result.location == nil)
-        #expect(festivalRepositoryMock.getCallCount == 1)
-        #expect(locationRepositoryMock.getCallCount == 0)
-        #expect(districtRepositoryMock.getCallCount == 1)
-        #expect(routeRepositoryMock.queryCallCount == 1)
-    }
-    
-    @Test func test_getCurrent_正常_PublicAccessでLocationが見つからない() async throws {
-        let districtId = "district-id"
-        let festivalId = "festival-id"
-        let district = District(id: districtId, name: "district-name", festivalId: festivalId, visibility: .all)
-        let route = Route(id: "route-id", districtId: districtId, start: SimpleTime(hour: 10, minute: 0), goal: SimpleTime(hour: 11, minute: 0))
-        let fixedDate = Date(timeIntervalSince1970: 1700000000)
-        let festival = Festival(id: festivalId, name: "festival", subname: "sub", prefecture: "p", city: "c", base: Coordinate(latitude: 0, longitude: 0), spans: [Span(id: "span-id", start: fixedDate.addingTimeInterval(-3600), end: fixedDate.addingTimeInterval(3600))])
-        
-        let districtRepositoryMock = DistrictRepositoryMock(getHandler: { _ in district })
-        let routeRepositoryMock = RouteRepositoryMock(queryHandler: { _ in [route] })
-        let locationRepositoryMock = LocationRepositoryMock(getHandler: { _ in nil })
-        let festivalRepositoryMock = FestivalRepositoryMock(getHandler: { _ in festival })
-        let subject = make(
-            routeRepository: routeRepositoryMock,
-            districtRepository: districtRepositoryMock,
-            locationRepository: locationRepositoryMock,
-            festivalRepository: festivalRepositoryMock
-        )
-        
-        
-        let result = try await subject.getCurrent(districtId: districtId, user: .guest, now: fixedDate)
-        
-        
-        #expect(result.location == nil)
-        #expect(festivalRepositoryMock.getCallCount == 1)
-        #expect(locationRepositoryMock.getCallCount == 1)
-        #expect(districtRepositoryMock.getCallCount == 1)
-        #expect(routeRepositoryMock.queryCallCount == 1)
-    }
-    
-    @Test func test_getCurrent_正常_routeListがnilの場合() async throws {
-        let districtId = "district-id"
-        let district = District(id: districtId, name: "district-name", festivalId: "festival-id", visibility: .admin)
-        let fixedDate = Date(timeIntervalSince1970: 1700000000)
-        
-        let districtRepositoryMock = DistrictRepositoryMock(getHandler: { _ in district })
-        let routeRepositoryMock = RouteRepositoryMock()
-        let subject = make(routeRepository: routeRepositoryMock, districtRepository: districtRepositoryMock)
-        
-        
-        let result = try await subject.getCurrent(districtId: districtId, user: .guest, now: fixedDate)
-        
-        
-        #expect(result.routes == nil)
-        #expect(result.current == nil)
-        #expect(districtRepositoryMock.getCallCount == 1)
-        #expect(routeRepositoryMock.queryCallCount == 0)
-    }
-    
-    @Test func test_getCurrent_異常_routeRepositoryエラー() async throws {
-        let districtId = "district-id"
-        let district = District(id: districtId, name: "district-name", festivalId: "festival-id", visibility: .all)
-        let fixedDate = Date(timeIntervalSince1970: 1700000000)
-        let districtRepositoryMock = DistrictRepositoryMock(getHandler: { _ in district })
-        let routeRepositoryMock = RouteRepositoryMock(queryHandler: { _ in
-            throw Error.internalServerError("query_failed")
-        })
-        let subject = make(routeRepository: routeRepositoryMock, districtRepository: districtRepositoryMock)
-        
-        
-        let result = try await subject.getCurrent(districtId: districtId, user: .district(districtId), now: fixedDate)
-        
-        
-        #expect(result.routes == nil)
-        #expect(result.current == nil)
-        #expect(districtRepositoryMock.getCallCount == 1)
-        #expect(routeRepositoryMock.queryCallCount == 1)
-    }
-    
-    @Test func test_getCurrent_異常_AdminAccessでlocationRepositoryエラー() async throws {
-        let districtId = "district-id"
-        let festivalId = "festival-id"
-        let district = District(id: districtId, name: "district-name", festivalId: festivalId, visibility: .all)
-        let route = Route(id: "route-id", districtId: districtId, start: SimpleTime(hour: 10, minute: 0), goal: SimpleTime(hour: 11, minute: 0))
-        let fixedDate = Date(timeIntervalSince1970: 1700000000)
-        let districtRepositoryMock = DistrictRepositoryMock(getHandler: { _ in district })
-        let routeRepositoryMock = RouteRepositoryMock(queryHandler: { _ in [route] })
-        let locationRepositoryMock = LocationRepositoryMock(getHandler: { _ in
-            throw Error.internalServerError("location_get_failed")
-        })
-        let subject = make(
-            routeRepository: routeRepositoryMock,
-            districtRepository: districtRepositoryMock,
-            locationRepository: locationRepositoryMock
-        )
-        
-        
-        let result = try await subject.getCurrent(districtId: districtId, user: .headquarter(festivalId), now: fixedDate)
-        
-        
-        #expect(result.location == nil)
-        #expect(locationRepositoryMock.getCallCount == 1)
-        #expect(districtRepositoryMock.getCallCount == 1)
-        #expect(routeRepositoryMock.queryCallCount == 1)
-    }
-    
-    @Test func test_getCurrent_異常_PublicAccessでlocationRepositoryエラー() async throws {
-        let districtId = "district-id"
-        let festivalId = "festival-id"
-        let district = District(id: districtId, name: "district-name", festivalId: festivalId, visibility: .all)
-        let route = Route(id: "route-id", districtId: districtId, start: SimpleTime(hour: 10, minute: 0), goal: SimpleTime(hour: 11, minute: 0))
-        let fixedDate = Date(timeIntervalSince1970: 1700000000)
-        let festival = Festival(id: festivalId, name: "festival", subname: "sub", prefecture: "p", city: "c", base: Coordinate(latitude: 0, longitude: 0), spans: [Span(id: "span-id", start: fixedDate.addingTimeInterval(-3600), end: fixedDate.addingTimeInterval(3600))])
-        let districtRepositoryMock = DistrictRepositoryMock(getHandler: { _ in district })
-        let routeRepositoryMock = RouteRepositoryMock(queryHandler: { _ in [route] })
-        let locationRepositoryMock = LocationRepositoryMock(getHandler: { _ in
-            throw Error.internalServerError("location_get_failed")
-        })
-        let festivalRepositoryMock = FestivalRepositoryMock(getHandler: { _ in festival })
-        let subject = make(
-            routeRepository: routeRepositoryMock,
-            districtRepository: districtRepositoryMock,
-            locationRepository: locationRepositoryMock,
-            festivalRepository: festivalRepositoryMock
-        )
-        
-        
-        let result = try await subject.getCurrent(districtId: districtId, user: .guest, now: fixedDate)
-        
-        
-        #expect(result.location == nil)
-        #expect(festivalRepositoryMock.getCallCount == 1)
-        #expect(locationRepositoryMock.getCallCount == 1)
-        #expect(districtRepositoryMock.getCallCount == 1)
-        #expect(routeRepositoryMock.queryCallCount == 1)
-    }
-    
-    @Test func test_getCurrent_異常_PublicAccessでfestivalRepositoryエラー() async throws {
-        let districtId = "district-id"
-        let festivalId = "festival-id"
-        let district = District(id: districtId, name: "district-name", festivalId: festivalId, visibility: .all)
-        let route = Route(id: "route-id", districtId: districtId, start: SimpleTime(hour: 10, minute: 0), goal: SimpleTime(hour: 11, minute: 0))
-        let fixedDate = Date(timeIntervalSince1970: 1700000000)
-        let districtRepositoryMock = DistrictRepositoryMock(getHandler: { _ in district })
-        let routeRepositoryMock = RouteRepositoryMock(queryHandler: { _ in [route] })
-        let locationRepositoryMock = LocationRepositoryMock()
-        let festivalRepositoryMock = FestivalRepositoryMock(getHandler: { _ in
-            throw Error.internalServerError("festival_get_failed")
-        })
-        let subject = make(
-            routeRepository: routeRepositoryMock,
-            districtRepository: districtRepositoryMock,
-            locationRepository: locationRepositoryMock,
-            festivalRepository: festivalRepositoryMock
-        )
-        
-        
-        let result = try await subject.getCurrent(districtId: districtId, user: .guest, now: fixedDate)
-        
-        
-        #expect(result.location == nil)
-        #expect(festivalRepositoryMock.getCallCount == 1)
-        #expect(locationRepositoryMock.getCallCount == 0)
-        #expect(districtRepositoryMock.getCallCount == 1)
-        #expect(routeRepositoryMock.queryCallCount == 1)
+
+        await #expect(throws: TestError.intentional) {
+            _ = try await subject.query(
+                by: "district-1",
+                type: .all,
+                now: .init(year: 2026, month: 2, day: 22),
+                user: .guest
+            )
+        }
     }
 }
 
-extension RouteUsecaseTest {
+private extension RouteUsecaseTest {
     func make(
         routeRepository: RouteRepositoryMock = .init(),
+        periodRepository: PeriodRepositoryMock = .init(),
         districtRepository: DistrictRepositoryMock = .init(),
-        locationRepository: LocationRepositoryMock = .init(),
-        festivalRepository: FestivalRepositoryMock = .init()
+        festivalRepository: FestivalRepositoryMock = .init(),
+        pointRepository: PointRepositoryMock = .init(),
+        passageRepository: PassageRepositoryMock = .init()
     ) -> RouteUsecase {
-        let subject = withDependencies {
+        withDependencies {
             $0[RouteRepositoryKey.self] = routeRepository
+            $0[PeriodRepositoryKey.self] = periodRepository
             $0[DistrictRepositoryKey.self] = districtRepository
-            $0[LocationRepositoryKey.self] = locationRepository
             $0[FestivalRepositoryKey.self] = festivalRepository
+            $0[PointRepositoryKey.self] = pointRepository
+            $0[PassageRepositoryKey.self] = passageRepository
         } operation: {
             RouteUsecase()
         }
-        return subject
     }
-}
-
-
-fileprivate func makeDate(
-    year: Int,
-    month: Int,
-    day: Int,
-    hour: Int = 0,
-    minute: Int = 0,
-    second: Int = 0
-) -> Date {
-    var calendar = Calendar.current
-    var comps = DateComponents()
-    comps.year = year
-    comps.month = month
-    comps.day = day
-    comps.hour = hour
-    comps.minute = minute
-    comps.second = second
-    return calendar.date(from: comps)!
 }

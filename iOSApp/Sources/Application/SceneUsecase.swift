@@ -1,0 +1,125 @@
+//
+//  SceneUsecase.swift
+//  MaTool
+//
+//  Created by 松下和也 on 2026/01/16.
+//
+
+import Dependencies
+import Shared
+import SQLiteData
+
+enum SceneUsecaseKey: DependencyKey {
+    static let liveValue: SceneUsecaseProtocol = SceneUsecase()
+}
+
+enum FestivalSelectionResult: Equatable, Sendable {
+    case unchanged
+    case changed(UserRole)
+}
+
+protocol SceneUsecaseProtocol: Sendable {
+    func launch() async -> (LaunchState, StatusCheckResult?)
+    func signIn(username: String, password: String) async throws -> SignInState
+    func confirmSignIn(password: String) async throws -> UserRole
+    func select(festivalId: Festival.ID) async throws -> FestivalSelectionResult
+    func select(districtId: District.ID) async throws -> Route.ID?
+}
+
+actor SceneUsecase: SceneUsecaseProtocol {
+    var userDefaults: UserDefalutsManagerProtocol
+    
+    @Dependency(SceneDataFetcherKey.self) var dataFetcher
+    @Dependency(FestivalDataFetcherKey.self) var festivalDataFetcher
+    @Dependency(AuthServiceKey.self) var authService
+    @Dependency(AppStatusClientKey.self) var appStatusClient
+    
+    init(userDefaults: UserDefalutsManagerProtocol = UserDefaltsManager()){
+        self.userDefaults = userDefaults
+    }
+    
+    func launch() async -> (LaunchState, StatusCheckResult?) {
+        async let appStatusTask = appStatusClient.checkStatus()
+        do {
+            try authService.initialize()
+            guard let festivalId = userDefaults.defaultFestivalId else {
+                try await festivalDataFetcher.fetchAll()
+                return (.onboarding, await appStatusTask)
+            }
+            let userRole = await {
+                do {
+                    return try await authService.getUserRole()
+                } catch {
+                    return .guest
+                }
+            }()
+            
+            async let festivalTask: () = dataFetcher.launchFestival(festivalId: festivalId)
+            if let districtId = userDefaults.defaultDistrictId {
+                async let districtTask = dataFetcher.launchDistrict(districtId: districtId)
+                let (_, routeId) = try await(festivalTask, districtTask)
+                return (.district(userRole, routeId), await appStatusTask)
+            } else {
+                try await festivalTask
+                return (.festival(userRole), await appStatusTask)
+            }
+        } catch {
+            return (.error(error.localizedDescription), await appStatusTask)
+        }
+    }
+    
+    func signIn(username: String, password: String) async throws -> SignInState {
+        let signInResult = try await authService.signIn(username, password: password)
+        if case .signedIn(.headquarter(let festivalId)) = signInResult {
+            try await dataFetcher.launchFestival(festivalId: festivalId)
+            userDefaults.defaultDistrictId = nil
+            userDefaults.defaultFestivalId = festivalId
+        } else if case .signedIn(.district(let districtId)) = signInResult {
+            async let festivalTask = dataFetcher.launchFestival(districtId: districtId)
+            async let districtTask = dataFetcher.launchDistrict(districtId: districtId)
+            let (festivalId, _) = try await (festivalTask, districtTask)
+            userDefaults.defaultFestivalId = festivalId
+            userDefaults.defaultDistrictId = districtId
+        }
+        return signInResult
+    }
+    
+    func confirmSignIn(password: String) async throws -> UserRole {
+        let result = try await authService.confirmSignIn(password: password)
+        if case .headquarter(let festivalId) = result {
+            try await dataFetcher.launchFestival(festivalId: festivalId)
+            userDefaults.defaultDistrictId = nil
+            userDefaults.defaultFestivalId = festivalId
+        } else if case .district(let districtId) = result {
+            async let festivalTask = dataFetcher.launchFestival(districtId: districtId)
+            async let districtTask = dataFetcher.launchDistrict(districtId: districtId)
+            let (festivalId, _) = try await (festivalTask, districtTask)
+            userDefaults.defaultFestivalId = festivalId
+            userDefaults.defaultDistrictId = districtId
+        }
+        return result
+    }
+    
+    func select(festivalId: Shared.Festival.ID) async throws -> FestivalSelectionResult {
+        let previousFestivalId = userDefaults.defaultFestivalId
+        let isFestivalChanged = previousFestivalId != festivalId
+        guard isFestivalChanged else {
+            return .unchanged
+        }
+        async let signOutTask: UserRole = authService.signOut()
+        async let launchFestivalTask: () = dataFetcher.launchFestival(festivalId: festivalId, clearsExistingData: true)
+        _ = try await (signOutTask, launchFestivalTask)
+        userDefaults.defaultFestivalId = festivalId
+        userDefaults.defaultDistrictId = nil
+        return .changed(.guest)
+    }
+    
+    func select(districtId: Shared.District.ID) async throws -> Route.ID? {
+        guard let district = FetchOne(District.find(districtId)).wrappedValue else {
+            throw APIError.notFound(message: "指定された町が存在しません。")
+        }
+        let currentRouteId = try await dataFetcher.launchDistrict(districtId: districtId, clearsExistingData: false)
+        userDefaults.defaultDistrictId = district.id
+        return currentRouteId
+    }
+}

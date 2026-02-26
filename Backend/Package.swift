@@ -18,7 +18,8 @@ let package = Package(
         .package(url: "https://github.com/swift-server/swift-aws-lambda-events.git", from: "1.2.3"),
         .package(url: "https://github.com/swift-server/swift-service-lifecycle.git", from: "2.9.0"),
         .package(url: "https://github.com/pointfreeco/swift-case-paths.git", from: "1.7.2"),
-        .package(url: "https://github.com/thebarndog/swift-dotenv.git", from: "2.1.0")
+        .package(url: "https://github.com/thebarndog/swift-dotenv.git", from: "2.1.0"),
+        .package( url: "https://github.com/groue/GRDB.swift.git", from: "7.6.0")
     ],
     targets: [
         .executableTarget(
@@ -32,7 +33,8 @@ let package = Package(
                 .product(name: "AWSLambdaEvents", package: "swift-aws-lambda-events"),
                 .product(name: "ServiceLifecycle", package: "swift-service-lifecycle"),
                 .product(name: "CasePaths", package: "swift-case-paths"),
-                .product(name: "SwiftDotenv", package: "swift-dotenv")
+                .product(name: "SwiftDotenv", package: "swift-dotenv"),
+                .product(name: "GRDB", package: "GRDB.swift")
             ],
             path: "Sources",
             resources: [
@@ -41,8 +43,17 @@ let package = Package(
         ),
         .testTarget(
             name: "BackendTests",
-            dependencies: ["Backend"],
+            dependencies: [
+                "Backend",
+                .product(name: "DependenciesTestSupport", package: "swift-dependencies"),
+            ],
             path: "Tests"
+        ),
+        // 初期データ注入　マイグレーション等を実行
+        .testTarget(
+            name: "BackendBootstrap",
+            dependencies: ["Backend"],
+            path: "Bootstrap"
         ),
     ]
 )

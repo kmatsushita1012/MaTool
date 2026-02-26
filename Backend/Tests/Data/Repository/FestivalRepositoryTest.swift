@@ -1,75 +1,69 @@
-//
-//  FestivalRepositoryTest.swift
-//  MaTool
-//
-//  Created by 松下和也 on 2025/11/14.
-//
-
-import Testing
 import Dependencies
 import Shared
+import Testing
 @testable import Backend
 
 struct FestivalRepositoryTest {
+    @Test
+    func get_正常_pkとskで取得する() async throws {
+        let festival = Festival.mock(id: "festival-1")
+        var lastCalledKeys: [String: Codable] = [:]
 
-    let festival: Festival = Festival(
-        id: "ID",
-        name: "NAME",
-        subname: "SUBNAME",
-        description: "DESCRIPTION",
-        prefecture: "PREFECTURE",
-        city: "CITY",
-        base: Coordinate(
-            latitude: 0.0, longitude: 0.0
-        ),
-        spans: [],
-        milestones: [],
-        imagePath: "IMAGE_PATH"
-    )
-    let dataStore: DataStoreMock<String, Festival>
-    let subject: FestivalRepository
+        let dataStore = DataStoreMock(
+            getHandler: { keys, _ in
+                lastCalledKeys = keys
+                return try encodeForDataStore(Record(festival))
+            }
+        )
+        let subject = make(dataStore: dataStore)
 
-    init() {
-        let dataStore = DataStoreMock<String, Festival>(response: festival)
-        self.dataStore = dataStore
+        let result = try await subject.get(id: festival.id)
 
-        self.subject = withDependencies {
-            $0.dataStoreFactory = { _ in dataStore }
+        #expect(result == festival)
+        #expect(dataStore.getCallCount == 1)
+        #expect((lastCalledKeys["pk"] as? String) == "FESTIVAL#\(festival.id)")
+        #expect((lastCalledKeys["sk"] as? String) == "METADATA")
+    }
+
+    @Test
+    func scan_正常_TYPEインデックス検索する() async throws {
+        let festival = Festival.mock(id: "festival-1")
+        var lastCalledIndexName: String?
+
+        let dataStore = DataStoreMock(
+            queryHandler: { indexName, _, _, _, _, _ in
+                lastCalledIndexName = indexName
+                return try encodeForDataStore([Record(festival)])
+            }
+        )
+        let subject = make(dataStore: dataStore)
+
+        let result = try await subject.scan()
+
+        #expect(result == [festival])
+        #expect(dataStore.queryCallCount == 1)
+        #expect(lastCalledIndexName == "index-TYPE")
+    }
+
+    @Test
+    func put_異常_依存エラーを透過() async {
+        let dataStore = DataStoreMock(
+            putHandler: { _ in throw TestError.intentional }
+        )
+        let subject = make(dataStore: dataStore)
+
+        await #expect(throws: TestError.intentional) {
+            _ = try await subject.put(.mock(id: "festival-1"))
+        }
+    }
+}
+
+private extension FestivalRepositoryTest {
+    func make(dataStore: DataStoreMock = .init()) -> FestivalRepository {
+        withDependencies {
+            $0[DataStoreFactoryKey.self] = { _ in dataStore }
         } operation: {
             FestivalRepository()
         }
-    }
-
-    @Test func test_get_正常() async throws {
-        let result = try await subject.get(id: "ID")
-
-        #expect(dataStore.getCallCount == 1)
-        let arg = try #require(dataStore.getArg)
-        #expect(arg.0 == "ID")
-        #expect(arg.1 == "id")
-        #expect(arg.2 == Festival.self)
-
-        let item = try #require(result)
-        #expect(item.id == "ID")
-        #expect(item.name == "NAME")
-    }
-
-    @Test func test_scan_正常() async throws {
-        let result = try await subject.scan()
-
-        #expect(dataStore.scanCallCount == 1)
-        #expect(dataStore.scanArg == Festival.self)
-
-        let item = try #require(result.first)
-        #expect(item.id == "ID")
-        #expect(item.name == "NAME")
-    }
-
-    @Test func test_put_正常() async throws {
-        try await subject.put(festival)
-
-        #expect(dataStore.putCallCount == 1)
-        #expect(dataStore.putArg?.id == "ID")
-        #expect(dataStore.putArg?.name == "NAME")
     }
 }

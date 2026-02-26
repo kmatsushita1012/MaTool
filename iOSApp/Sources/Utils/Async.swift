@@ -1,5 +1,5 @@
 //
-//  async.swift
+//  Async.swift
 //  MaTool
 //
 //  Created by 松下和也 on 2025/04/02.
@@ -102,11 +102,36 @@ func withTimeout<T>(
         group.addTask {
             try await operation()
         }
+
         group.addTask {
-            try await Task.sleep(nanoseconds: UInt64(seconds) * 1_000_000_000)
-            throw AuthError.timeout("Operation timed out")
+            try await Task.sleep(
+                nanoseconds: UInt64(seconds) * 1_000_000_000
+            )
+            throw AuthError.timeout("タイムアウトしました")
         }
-        defer { group.cancelAll() } // 必ずキャンセルは投げておく
-        return try await group.next()!
+
+        guard let result = try await group.next() else {
+            throw CancellationError()
+        }
+
+        group.cancelAll()
+        return result
     }
+}
+
+func task<Value, Error: Swift.Error>(_ operation: () async throws -> Value, defaultError: Error) async -> Result<Value, Error> {
+    do {
+        let value = try await operation()
+        return .success(value)
+    } catch {
+        guard let error = error as? Error else {
+            return .failure(defaultError)
+        }
+        return .failure(error)
+    }
+}
+
+func task(_ operation: () async throws -> Void) async -> VoidResult<APIError> {
+    let result: Result<Void, APIError> = await task(operation, defaultError: APIError.unknown(message: "予期しないエラーが発生しました"))
+    return result.map{ VoidSuccess() }
 }

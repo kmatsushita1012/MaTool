@@ -1,5 +1,5 @@
 //
-//  LocationSharingUsecase.swift
+//  LocationService.swift
 //  MaTool
 //
 //  Created by 松下和也 on 2025/04/20.
@@ -37,7 +37,7 @@ protocol LocationServiceProtocol: Sendable {
 // MARK: - LocationService
 actor LocationService: LocationServiceProtocol {
     
-    @Dependency(\.apiRepository) var apiRepository
+    @Dependency(LocationDataFetcherKey.self) var dataFetcher
     @Dependency(\.locationProvider) var locationProvider
 
     private var trackingTask: Task<Void, Never>?
@@ -133,27 +133,30 @@ actor LocationService: LocationServiceProtocol {
             appendHistory(.locationError(Date()))
         case .success(let cllocation):
             let location = FloatLocation(
+                id: UUID().uuidString,
                 districtId: id,
                 coordinate: Coordinate.fromCL(cllocation.coordinate),
                 timestamp: Date.now
             )
-            let result = await apiRepository.putLocation(location)
-            switch result {
-            case .success:
+            do {
+                try await dataFetcher.update(location)
                 appendHistory(.update(location))
-            case .failure(let error):
+            } catch let error as APIError {
                 appendHistory(.apiError(Date(), error))
+            } catch {
+                appendHistory(.apiError(Date(), .unknown(message: error.localizedDescription)))
             }
         }
     }
 
     private func delete(_ id: String) async {
-        let result = await apiRepository.deleteLocation(id)
-        switch result {
-        case .success:
+        do {
+            try await dataFetcher.delete(districtId: id)
             appendHistory(.delete(Date()))
-        case .failure(let error):
+        } catch let error as APIError {
             appendHistory(.apiError(Date(), error))
+        } catch {
+            appendHistory(.apiError(Date(), .unknown(message: error.localizedDescription)))
         }
     }
     

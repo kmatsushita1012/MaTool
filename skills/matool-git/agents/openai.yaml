@@ -1,0 +1,7 @@
+interface:
+  display_name: "MaTool Git"
+  short_description: "MaTool向けGit運用（ブランチ/日本語コミット/PR）"
+  default_prompt: "Use $matool-git to MaToolの変更で、ブランチprefix（ios/backend/shared、docsのみはmeta、codex/*は禁止）→日本語コミット（適切な粒度）→push（初回のみ-u）→PR作成（arc/typeラベル、assignee=@me、milestone=直近）までの手順とコマンドを提示して。"
+
+policy:
+  allow_implicit_invocation: true
