@@ -82,7 +82,7 @@ struct RouteEditFeature{
         case partialTapped
         case copyTapped
         case passageAddTapped
-        case passageSelected(District)
+        case passageSelected(districtId: District.ID?, memo: String?)
         case passageMoved(from: IndexSet, to: Int)
         case passageDeleteTapped(Int)
         case sourceSelected(RouteEntry)
@@ -181,8 +181,8 @@ struct RouteEditFeature{
             case .passageAddTapped:
                 state.destination = .passage
                 return .none
-            case .passageSelected(let district):
-                state.passages.append(.init(routeId: state.route.id, districtId: district.id))
+            case .passageSelected(let districtId, let memo):
+                state.passages.append(.init(routeId: state.route.id, districtId: districtId, memo: memo))
                 state.destination = nil
                 return .none
             case .passageDeleteTapped(let index):

@@ -69,7 +69,7 @@ struct PassageRepository: PassageRepositoryProtocol {
     }
     
     func delete(_ item: Shared.RoutePassage) async throws {
-        let keys = PRecord.makeKeys(routeId: item.routeId, districtId: item.districtId)
+        let keys = PRecord.makeKeys(routeId: item.routeId, id: item.id)
         _ = try await store.delete(pk: keys.pk, sk: keys.sk)
     }
     
@@ -104,12 +104,12 @@ struct PassageRepository: PassageRepositoryProtocol {
 
 extension PRecord {
     init(_ content: RoutePassage) {
-        let keys = Self.makeKeys(routeId: content.routeId, districtId: content.districtId)
+        let keys = Self.makeKeys(routeId: content.routeId, id: content.id)
         self.init(pk: keys.pk, sk: keys.sk, type: Self.type, content: content)
     }
     // update
-    static func makeKeys(routeId: String, districtId: String) -> (pk: String, sk: String) {
-        (pk: "\(pkPrefix)\(routeId)", sk: "\(skPrefix)\(districtId)")
+    static func makeKeys(routeId: String, id: String) -> (pk: String, sk: String) {
+        (pk: "\(pkPrefix)\(routeId)", sk: "\(skPrefix)\(id)")
     }
     // query
     static func makeKeys(routeId: String) -> (pk: QueryCondition, sk: QueryCondition) {
@@ -117,11 +117,11 @@ extension PRecord {
     }
     
     static func makeKeys(_ id: String) -> (indexName: String, pk: QueryCondition, sk: QueryCondition) {
-        (indexName: Self.typeIndex, pk: .equals("type", type), sk: .beginsWith("sk", skPrefix))
+        (indexName: Self.typeIndex, pk: .equals("type", type), sk: .equals("sk", "\(skPrefix)\(id)"))
     }
 
     static let pkPrefix: String = "ROUTE#"
-    static let skPrefix: String = "DISTRICT#"
+    static let skPrefix: String = "PASSAGE#"
     static let type = String(describing: RoutePassage.self).uppercased()
     static let typeIndex = "index-TYPE"
 }
