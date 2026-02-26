@@ -58,7 +58,7 @@ struct PassageOptionsView: View {
             ToolbarCancelButton {
                 dismiss()
             }
-            ToolbarSaveButton(isDisabled: !isDoneEnabled) {
+            ToolbarDoneButton(isDisabled: !isDoneEnabled) {
                 selected(nil, normalizedMemo)
                 dismiss()
             }
