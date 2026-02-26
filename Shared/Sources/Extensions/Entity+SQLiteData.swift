@@ -2,7 +2,7 @@ import SQLiteData
 import CasePaths
 
 public extension FetchAll where Element == District {
-    init(festivalId: Festival.ID) {
+    init(festivalId: Festival.ID?) {
         self.init(District.where { $0.festivalId.eq(festivalId) }.order(by: \.order))
     }
 }
