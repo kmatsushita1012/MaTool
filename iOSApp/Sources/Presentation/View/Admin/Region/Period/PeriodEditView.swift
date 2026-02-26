@@ -18,12 +18,16 @@ struct PeriodEditView: View {
         content
             .navigationTitle(store.mode.title)
             .toolbar{
-                ToolbarDoneButton {
-                    store.send(.doneTapped)
+                ToolbarCancelButton {
+                    store.send(.cancelTapped)
+                }
+                ToolbarSaveButton {
+                    store.send(.saveTapped)
                 }
             }
             .loadingOverlay(store.isLoading)
             .alert($store.scope(state: \.alert, action: \.alert))
+            .dismissible(backButton: false)
     }
     
     @ViewBuilder
