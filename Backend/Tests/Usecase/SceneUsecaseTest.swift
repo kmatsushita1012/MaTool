@@ -161,6 +161,31 @@ struct SceneUsecaseTest {
     }
 
     @Test
+    func fetchLaunchDistrictPack_正常_visibilityRouteで対象外ユーザーの時刻をマスク() async throws {
+        let now = makeDate(year: 2026, month: 2, day: 22, hour: 12)
+        let district = District.mock(id: "district-1", festivalId: "festival-1")
+        let period = Period.mock(id: "period-1", festivalId: district.festivalId, date: .from(now), start: .init(hour: 11, minute: 0), end: .init(hour: 13, minute: 0))
+        let route = Route.mock(id: "route-1", districtId: district.id, periodId: period.id, visibility: .route)
+        let point = Point.mock(id: "point-1", routeId: route.id, time: .init(hour: 12, minute: 34))
+
+        let subject = make(
+            districtRepository: .init(getHandler: { _ in district }),
+            periodRepository: .init(queryByYearHandler: { _, _ in [period] }),
+            performanceRepository: .init(queryHandler: { _ in [] }),
+            routeRepository: .init(queryByYearHandler: { _, _ in [route] }),
+            pointRepository: .init(queryHandler: { _ in [point] }),
+            passageRepository: .init(queryHandler: { _ in [] })
+        )
+
+        let result = try await subject.fetchLaunchDistrictPack(districtId: district.id, user: .guest, now: now)
+
+        #expect(result.routes == [route])
+        #expect(result.currentRouteId == route.id)
+        #expect(result.points.count == 1)
+        #expect(result.points[0].time == nil)
+    }
+
+    @Test
     func fetchLaunchDistrictPack_異常_依存エラーを透過() async {
         let subject = make(
             districtRepository: .init(getHandler: { _ in .mock(id: "district-1", festivalId: "festival-1") }),
