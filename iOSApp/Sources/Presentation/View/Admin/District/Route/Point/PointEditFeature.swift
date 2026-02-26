@@ -39,7 +39,8 @@ struct PointEditFeature {
         case doneTapped
         case cancelTapped
         case moveTapped
-        case insertTapped
+        case insertBeforeTapped
+        case insertAfterTapped
         case deleteTapped
         case alert(PresentationAction<AlertFeature.Action>)
     }
@@ -53,7 +54,8 @@ struct PointEditFeature {
                 return .none
             case .doneTapped,
                 .moveTapped,
-                .insertTapped:
+                .insertBeforeTapped,
+                .insertAfterTapped:
                 do {
                     try state.validate()
                 } catch  {
@@ -73,15 +75,12 @@ struct PointEditFeature {
 }
 
 extension PointEditFeature.State {
-    init(_ point: Point){
+    init?(_ point: Point, districtId: District.ID){
         self.point = point
-        let district = FetchOne(Point
-            .join(Route.all) { $0.routeId.eq($1.id) }
-            .join(District.all) { $1.districtId.eq($2.id) }
-            .select { $2 }).wrappedValue
-        let checkpointQuery = FetchAll(Checkpoint.where{ $0.festivalId.eq(district?.festivalId) })
+        guard let district: District = FetchOne(id: districtId)?.wrappedValue else { return nil }
+        let checkpointQuery = FetchAll(Checkpoint.where{ $0.festivalId.eq(district.festivalId) })
         self._checkpoints = checkpointQuery
-        let performanceQuery = FetchAll(Performance.where{ $0.districtId.eq(district?.id) })
+        let performanceQuery = FetchAll(Performance.where{ $0.districtId.eq(district.id) })
         self._performances =  performanceQuery
         self.pointType = .init(point: point)
         
