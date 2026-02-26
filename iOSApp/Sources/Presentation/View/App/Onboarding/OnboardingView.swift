@@ -51,7 +51,6 @@ struct OnboardingView: View {
                             },
                             isNullable: false,
                             errorMessage: store.festivalErrorMessaage,
-                            footer: "「テスト」は業務用です。選択しないでください。\n設定画面から変更が可能です。",
                             borderColor : .onboarding
                         )
                         .padding(.horizontal)
@@ -61,7 +60,7 @@ struct OnboardingView: View {
                             .frame(maxWidth: .infinity, alignment: .leading)
                             .padding(.horizontal)
                         Menu {
-                            ForEach(store.districts, id: \.self) { district in
+                            ForEach(store.districts.reversed(), id: \.self) { district in
                                 Button(district.name) {
                                     store.send(.districtSelected(district))
                                 }
