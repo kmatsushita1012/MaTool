@@ -290,7 +290,7 @@ extension RouteEditFeature.State {
         case .update:
             return "編集"
         case .preview:
-            return "修正"
+            return "確認と修正"
         }
     }
     
@@ -333,11 +333,7 @@ extension RouteEditFeature.State {
         let origin: Coordinate = districtQuery.wrappedValue.base ?? festivalQuery.wrappedValue.base
 
         self.region = makeRegion(points: points, origin: origin, spanDelta: spanDelta)
-        if mode == .preview {
-            self.tab = .edit
-        }else{
             self.tab = .info
-        }
     }
 }
 
