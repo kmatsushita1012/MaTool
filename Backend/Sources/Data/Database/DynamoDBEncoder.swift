@@ -15,7 +15,9 @@ struct DynamoDBEncoder {
     func encode<T: Encodable>(_ object: T) throws -> [String: DynamoDBClientTypes.AttributeValue] {
 
         // ① Codable → Data
-        let data = try JSONEncoder().encode(object)
+        let encoder = JSONEncoder()
+        encoder.keyEncodingStrategy = .convertToSnakeCase
+        let data = try encoder.encode(object)
 
         // ② Data → Any (JSONオブジェクト)
         let jsonObject = try JSONSerialization.jsonObject(with: data)
@@ -51,36 +53,27 @@ struct DynamoDBEncoder {
     private func convertToAttributeValue(_ value: Any) throws -> DynamoDBClientTypes.AttributeValue {
 
         switch value {
-
-        case let v as String:
-            return .s(v)
-
-        case let v as Int:
-            return .n(String(v))
-
-        case let v as Double:
-            return .n(String(v))
-
-        case let v as NSNumber:
-            // BoolとNumberを区別
-            if CFGetTypeID(v) == CFBooleanGetTypeID() {
-                return .bool(v.boolValue)
+        case let n as NSNumber:
+            let type = String(cString: n.objCType)
+            if type == "c" || type == "B" {          // Bool (char / _Bool)
+                return .bool(n.boolValue)
             } else {
-                return .n(v.stringValue)
+                return .n(n.stringValue)
             }
-
         case let v as Bool:
             return .bool(v)
-
+        case let v as String:
+            return .s(v)
+        case let v as Int:
+            return .n(String(v))
+        case let v as Double:
+            return .n(String(v))
         case let v as [Any]:
             return .l(try v.map { try convertToAttributeValue($0) })
-
         case let v as [String: Any]:
             return .m(try v.mapValues { try convertToAttributeValue($0) })
-
         case _ as NSNull:
             return .null(true)
-
         default:
             throw NSError(domain: "DynamoDBEncoder",
                           code: -1,
