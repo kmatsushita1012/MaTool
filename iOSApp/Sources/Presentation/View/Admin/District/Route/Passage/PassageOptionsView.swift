@@ -13,24 +13,53 @@ import Shared
 struct PassageOptionsView: View {
     
     @FetchAll var districts: [District]
-    let selected: (District) -> Void
+    let myDistrictId: District.ID
+    let selected: (_ districtId: District.ID?, _ memo: String?) -> Void
+    @State private var memo: String = ""
     
-    init(festivalId: Festival.ID, selected: @escaping (District) -> Void) {
+    init(festivalId: Festival.ID, myDistrictId: District.ID, selected: @escaping (_ districtId: District.ID?, _ memo: String?) -> Void) {
         self._districts = FetchAll(festivalId: festivalId)
+        self.myDistrictId = myDistrictId
         self.selected = selected
     }
     
     @Environment(\.dismiss) var dismiss
     
+    private var normalizedMemo: String? {
+        let value = memo.trimmingCharacters(in: .whitespacesAndNewlines)
+        return value.isEmpty ? nil : value
+    }
+    
+    private var isDoneEnabled: Bool {
+        normalizedMemo != nil
+    }
+    
+    private var prioritizedDistricts: [District] {
+        districts.prioritizingForPassage(myDistrictId: myDistrictId)
+    }
+    
     var body: some View {
-        List(districts) { district in
-            Button(district.name){
-                selected(district)
+        List {
+            Section {
+                TextField("自由入力（例: 〇〇神社）", text: $memo, axis: .vertical)
             }
-            .tint(.primary)
+            
+            Section("町一覧") {
+                ForEach(prioritizedDistricts) { district in
+                    Button(district.name){
+                        selected(district.id, nil)
+                        dismiss()
+                    }
+                    .tint(.primary)
+                }
+            }
         }
         .toolbar {
             ToolbarCancelButton {
+                dismiss()
+            }
+            ToolbarDoneButton(isDisabled: !isDoneEnabled) {
+                selected(nil, normalizedMemo)
                 dismiss()
             }
             ToolbarItem(placement: .title){
