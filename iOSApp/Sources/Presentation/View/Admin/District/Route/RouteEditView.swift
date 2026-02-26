@@ -52,8 +52,8 @@ struct RouteEditView: View {
                 }
             case .passage:
                 NavigationStack{
-                    PassageOptionsView(festivalId: store.district.festivalId) {
-                        store.send(.passageSelected($0))
+                    PassageOptionsView(festivalId: store.district.festivalId, myDistrictId: store.district.id) {
+                        store.send(.passageSelected(districtId: $0, memo: $1))
                     }
                 }
             }
@@ -249,7 +249,7 @@ extension RouteEditView {
             
             if store.isDeleteable {
                 Section {
-                    Button("削除", systemImage: "trash", role: .destructive){
+                    Button("ルートを削除", systemImage: "trash", role: .destructive){
                         store.send(.deleteTapped)
                     }
                     .labelStyle(.titleAndIcon)
@@ -369,4 +369,3 @@ struct PreviewView: View {
         }
     }
 }
-

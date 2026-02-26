@@ -30,7 +30,7 @@ extension RepositoryTest.Passage {
         #expect(dataStore.queryCallCount == 1)
         #expect(lastCalledIndexName == "index-TYPE")
         #expect(lastCalledKeyConditions.contains(where: { isEquals($0, field: "type", value: "ROUTEPASSAGE") }))
-        #expect(lastCalledKeyConditions.contains(where: { isBeginsWith($0, field: "sk", prefix: "DISTRICT#") }))
+        #expect(lastCalledKeyConditions.contains(where: { isEquals($0, field: "sk", value: "PASSAGE#\(passage.id)") }))
     }
 
     @Test
@@ -54,7 +54,7 @@ extension RepositoryTest.Passage {
         #expect(dataStore.queryCallCount == 1)
         #expect(lastCalledAscending == true)
         #expect(lastCalledKeyConditions.contains(where: { isEquals($0, field: "pk", value: "ROUTE#\(passage.routeId)") }))
-        #expect(lastCalledKeyConditions.contains(where: { isBeginsWith($0, field: "sk", prefix: "DISTRICT#") }))
+        #expect(lastCalledKeyConditions.contains(where: { isBeginsWith($0, field: "sk", prefix: "PASSAGE#") }))
     }
 
     @Test
@@ -75,7 +75,7 @@ extension RepositoryTest.Passage {
         #expect(dataStore.putCallCount == 1)
         #expect(lastCalledRecord?.content == passage)
         #expect(lastCalledRecord?.pk == "ROUTE#\(passage.routeId)")
-        #expect(lastCalledRecord?.sk == "DISTRICT#\(passage.districtId)")
+        #expect(lastCalledRecord?.sk == "PASSAGE#\(passage.id)")
     }
 
     @Test
@@ -96,7 +96,7 @@ extension RepositoryTest.Passage {
         #expect(dataStore.putCallCount == 1)
         #expect(lastCalledRecord?.content == passage)
         #expect(lastCalledRecord?.pk == "ROUTE#\(passage.routeId)")
-        #expect(lastCalledRecord?.sk == "DISTRICT#\(passage.districtId)")
+        #expect(lastCalledRecord?.sk == "PASSAGE#\(passage.id)")
     }
 
     @Test
@@ -115,7 +115,7 @@ extension RepositoryTest.Passage {
 
         #expect(dataStore.deleteCallCount == 1)
         #expect((lastCalledKeys["pk"] as? String) == "ROUTE#\(passage.routeId)")
-        #expect((lastCalledKeys["sk"] as? String) == "DISTRICT#\(passage.districtId)")
+        #expect((lastCalledKeys["sk"] as? String) == "PASSAGE#\(passage.id)")
     }
 
     @Test
@@ -140,8 +140,8 @@ extension RepositoryTest.Passage {
 
         #expect(dataStore.queryCallCount == 1)
         #expect(dataStore.deleteCallCount == 2)
-        #expect(lastCalledDeleteKeys.contains("ROUTE#route-1|DISTRICT#district-1"))
-        #expect(lastCalledDeleteKeys.contains("ROUTE#route-1|DISTRICT#district-2"))
+        #expect(lastCalledDeleteKeys.contains("ROUTE#route-1|PASSAGE#passage-1"))
+        #expect(lastCalledDeleteKeys.contains("ROUTE#route-1|PASSAGE#passage-2"))
     }
 
     @Test
