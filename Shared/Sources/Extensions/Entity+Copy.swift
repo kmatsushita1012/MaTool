@@ -29,7 +29,7 @@ public extension Array where Element == Point {
 
 public extension RoutePassage {
     func copyWith(routeId: Route.ID) -> Self {
-        .init(routeId: routeId, districtId: self.districtId)
+        .init(routeId: routeId, districtId: self.districtId, memo: self.memo, order: self.order)
     }
 }
 
