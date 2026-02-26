@@ -125,7 +125,7 @@ struct RouteEditFeature{
                     return .none
                 }
             case .pointTapped(let entry):
-                state.point = PointEditFeature.State(entry.point)
+                state.point = PointEditFeature.State(entry.point, districtId: state.district.id)
                 state.operation = .add
                 return .none
             case .undoTapped:
@@ -222,10 +222,20 @@ struct RouteEditFeature{
                     state.point = nil
                 }
                 return .none
-            case .point(.presented(.insertTapped)):
+            case .point(.presented(.insertBeforeTapped)):
                 if let (point, index) = findPointIndex(state){
                     state.points[index] = point
                     state.operation = .insert(index)
+                    state.point = nil
+                }
+                return .none
+            case .point(.presented(.insertAfterTapped)):
+                if let (point, index) = findPointIndex(state){
+                    state.points[index] = point
+                    let targetIndex = index + 1
+                    if targetIndex < state.points.count {
+                        state.operation = .insert(targetIndex)
+                    }
                     state.point = nil
                 }
                 return .none
