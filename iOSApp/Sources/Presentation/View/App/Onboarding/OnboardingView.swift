@@ -51,7 +51,6 @@ struct OnboardingView: View {
                             },
                             isNullable: false,
                             errorMessage: store.festivalErrorMessaage,
-                            footer: "「テスト」は業務用です。選択しないでください。\n設定画面から変更が可能です。",
                             borderColor : .onboarding
                         )
                         .padding(.horizontal)

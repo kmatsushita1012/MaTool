@@ -41,6 +41,7 @@ struct SettingsFeature {
             @Dependency(\.values.defaultDistrictKey) var defaultDistrictKey
             self.selectedFestival = FetchOne(Festival.where{ $0.id.eq(userDefaultsClient.string(defaultFestivalKey))}).wrappedValue
             self.selectedDistrict = FetchOne(District.where{ $0.id.eq(userDefaultsClient.string(defaultDistrictKey))}).wrappedValue
+            self._festivals = FetchAll()
             self._districts = FetchAll(District.where{ $0.festivalId.eq(selectedFestival?.id) }.order(by: \.order))
         }
     }

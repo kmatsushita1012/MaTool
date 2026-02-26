@@ -1,6 +1,20 @@
 import SQLiteData
 import CasePaths
 
+public extension FetchAll where Element == Festival {
+    init() {
+        self.init(Festival.where{ festival in
+                #if DEBUG
+                true
+                #else
+                !festival.id.contains("test")
+                #endif
+            }
+        )
+    }
+}
+
+
 public extension FetchAll where Element == District {
     init(festivalId: Festival.ID?) {
         self.init(District.where { $0.festivalId.eq(festivalId) }.order(by: \.order))
