@@ -72,6 +72,9 @@ struct PointEditView: View {
         .navigationBarTitleDisplayMode(.inline)
         .alert($store.scope(state: \.alert, action: \.alert))
         .toolbar {
+            ToolbarCancelButton {
+                store.send(.cancelTapped)
+            }
             ToolbarDoneButton {
                 store.send(.doneTapped)
             }

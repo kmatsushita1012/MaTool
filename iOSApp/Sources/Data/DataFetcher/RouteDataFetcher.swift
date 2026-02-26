@@ -30,13 +30,14 @@ struct RouteDataFetcher: RouteDataFetcherProtocol {
     @Dependency(\.defaultDatabase) var database
 
     func fetchAll(districtID: District.ID, query: Query) async throws {
-        let path = "/districts/\(districtID)/routes"
-        let routes: [Route] = try await client.get(path: path, query: query.queryItems)
+        let token = try await getToken()
+        let routes: [Route] = try await client.get(path: "/districts/\(districtID)/routes", query: query.queryItems, accessToken: token)
         try await syncAll(routes, districtId: districtID)
     }
 
     func fetch(routeID: Route.ID) async throws {
-        let pack: RoutePack = try await client.get(path: "/routes/\(routeID)")
+        let token = try await getToken()
+        let pack: RoutePack = try await client.get(path: "/routes/\(routeID)", accessToken: token)
         try await syncPack(pack)
     }
 
