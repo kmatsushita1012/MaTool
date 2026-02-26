@@ -115,7 +115,8 @@ func setupDatabase() throws -> DatabaseQueue {
             CREATE TABLE IF NOT EXISTS "routePassages" (
                 "id" TEXT PRIMARY KEY NOT NULL,
                 "routeId" TEXT NOT NULL,
-                "districtId" TEXT NOT NULL,
+                "districtId" TEXT,
+                "memo" TEXT,
                 "order" INTEGER NOT NULL DEFAULT 0
             )
         """).execute(db)
