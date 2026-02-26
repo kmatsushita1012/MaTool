@@ -53,7 +53,7 @@ struct RouteEditView: View {
             case .passage:
                 NavigationStack{
                     PassageOptionsView(festivalId: store.district.festivalId) {
-                        store.send(.passageSelected($0))
+                        store.send(.passageSelected(districtId: $0, memo: $1))
                     }
                 }
             }
@@ -369,4 +369,3 @@ struct PreviewView: View {
         }
     }
 }
-
