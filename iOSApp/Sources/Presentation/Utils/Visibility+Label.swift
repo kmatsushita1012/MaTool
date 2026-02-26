@@ -12,7 +12,7 @@ extension Visibility {
         case .admin:
             return "非公開"
         case .route:
-            return "経路のみ公開"
+            return "時刻を非表示"
         case .all:
             return "全て公開"
         }
