@@ -91,7 +91,7 @@ struct DistrictDashboardFeature {
                 if let route = item.route{
                     state.destination = try? { .route(try .init(mode: .update, route: route)) }()
                 } else {
-                    let route = Route(id: UUID().uuidString, districtId: state.district.id, periodId: item.period.id)
+                    let route = Route(id: UUID().uuidString, districtId: state.district.id, periodId: item.period.id, visibility: state.district.visibility)
                     state.destination = try? { .route(try .init(mode: .create, route: route)) }()
                 }
                 return .none

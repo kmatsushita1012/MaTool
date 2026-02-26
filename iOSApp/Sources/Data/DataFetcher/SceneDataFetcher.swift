@@ -83,7 +83,7 @@ struct SceneDataFetcher: SceneDataFetcherProtocol {
                 try districtStore.deleteAll(from: db)
                 try locationStore.deleteAll(from: db)
             }
-            async let fetchTask: LaunchFestivalPack = client.get(path: path, accessToken: token)
+            async let fetchTask: LaunchFestivalPack = client.get(path: path, accessToken: token, isCache: false)
             let result = try await (fetchTask, deleteTask)
             pack = result.0
         } else {
@@ -113,11 +113,11 @@ struct SceneDataFetcher: SceneDataFetcherProtocol {
                 try pointStore.deleteAll(from: db)
                 try passageStore.deleteAll(from: db)
             }
-            async let fetchTask: LaunchDistrictPack = client.get(path: "/districts/\(districtId)/launch", accessToken: token)
+            async let fetchTask: LaunchDistrictPack = client.get(path: "/districts/\(districtId)/launch", accessToken: token, isCache: false)
             let result = try await (fetchTask, deleteTask)
             pack = result.0
         } else {
-            pack = try await client.get(path: "/districts/\(districtId)/launch", accessToken: token)
+            pack = try await client.get(path: "/districts/\(districtId)/launch", accessToken: token, isCache: false)
         }
         try await database.write{ db in
             try performanceStore.upsert(pack.performances, at: db)
