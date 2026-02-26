@@ -49,4 +49,17 @@ public extension Array where Element == District {
         
         return prioritized + others
     }
+    
+    // Keep original sequence while prioritizing:
+    // 1) my district
+    // 2) same group as my district
+    // 3) all others
+    func prioritizingForPassage(myDistrictId: District.ID) -> [District] {
+        guard let me = first(where: { $0.id == myDistrictId }) else {
+            return self
+        }
+        let sameGroup = filter { $0.id != myDistrictId && $0.group == me.group }
+        let others = filter { $0.id != myDistrictId && $0.group != me.group }
+        return [me] + sameGroup + others
+    }
 }

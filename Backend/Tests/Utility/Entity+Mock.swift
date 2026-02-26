@@ -121,10 +121,11 @@ extension RoutePassage {
     static func mock(
         id: String = "passage-id",
         routeId: Route.ID = "route-id",
-        districtId: District.ID = "district-id",
+        districtId: District.ID? = "district-id",
+        memo: String? = nil,
         order: Int = 0
     ) -> Self {
-        .init(id: id, routeId: routeId, districtId: districtId, order: order)
+        .init(id: id, routeId: routeId, districtId: districtId, memo: memo, order: order)
     }
 }
 

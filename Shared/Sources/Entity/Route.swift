@@ -74,18 +74,21 @@ import Foundation
 @Table public struct RoutePassage: Entity, Identifiable {
     public let id: String
     public let routeId: Route.ID
-    public let districtId: District.ID
+    public let districtId: District.ID?
+    @NullEncodable public var memo: String?
     public var order: Int
     
     public init(
         id: Self.ID = UUID().uuidString,
         routeId: Route.ID,
-        districtId: District.ID,
+        districtId: District.ID? = nil,
+        memo: String? = nil,
         order: Int = 0
     ) {
         self.id = id
         self.routeId = routeId
         self.districtId = districtId
+        self.memo = memo
         self.order = order
     }
 }
