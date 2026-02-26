@@ -33,16 +33,31 @@ struct RouteInjector {
     }
     
     @Test func update_visibility() async throws {
-        let districts: [District] = (try await DistrictRepository().query(by: "掛川祭_年番本部"))
+        let store = try DynamoDBStore(tableName: "matool")
+        let districtRepository: DistrictRepository = withDependencies( {
+            $0[DataStoreFactoryKey.self] = { _ in store }
+        }) {
+            DistrictRepository()
+        }
+        let periodRepository: PeriodRepository = withDependencies( {
+            $0[DataStoreFactoryKey.self] = { _ in store }
+        }) {
+            PeriodRepository()
+        }
+        let routeRepository: RouteRepository = withDependencies( {
+            $0[DataStoreFactoryKey.self] = { _ in store }
+            $0[PeriodRepositoryKey.self] = periodRepository
+        }) {
+            RouteRepository()
+        }
+        let districts: [District] = (try await districtRepository.query(by: "掛川祭_年番本部"))
         for district in districts {
-            let routeRepository = RouteRepository()
             let routes = try await routeRepository.query(by: district.id)
             for route in routes {
                 var updated = route
                 updated.visibility = district.visibility
                 try await routeRepository.put(updated)
             }
-            return
         }
     }
     
