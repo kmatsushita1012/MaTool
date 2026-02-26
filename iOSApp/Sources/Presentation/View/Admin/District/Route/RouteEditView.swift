@@ -249,7 +249,7 @@ extension RouteEditView {
             
             if store.isDeleteable {
                 Section {
-                    Button("削除", systemImage: "trash", role: .destructive){
+                    Button("ルートを削除", systemImage: "trash", role: .destructive){
                         store.send(.deleteTapped)
                     }
                     .labelStyle(.titleAndIcon)
