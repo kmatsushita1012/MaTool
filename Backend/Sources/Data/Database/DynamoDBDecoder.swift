@@ -10,38 +10,59 @@ import AWSDynamoDB
 
 // MARK: - DynamoDBDecoder
 struct DynamoDBDecoder {
-    private let jsonDecoder = JSONDecoder()
-    
-    func decode<T: Codable>(_ item: [String: DynamoDBClientTypes.AttributeValue], as type: T.Type) throws -> T {
-        let decodedDict = decodeFromAttributes(item)
-        let data = try JSONSerialization.data(withJSONObject: decodedDict)
+
+    private let jsonDecoder: JSONDecoder
+
+    init() {
+        let dec = JSONDecoder()
+        // ✅ snake_case -> camelCase をここで自動変換
+        dec.keyDecodingStrategy = .convertFromSnakeCase
+        self.jsonDecoder = dec
+    }
+
+    func decode<T: Decodable>(
+        _ item: [String: DynamoDBClientTypes.AttributeValue],
+        as type: T.Type
+    ) throws -> T {
+
+        let dict = decodeAttributesToJSONObject(item)   // snake_case keys のまま
+        let data = try JSONSerialization.data(withJSONObject: dict, options: [])
         return try jsonDecoder.decode(T.self, from: data)
     }
     
-    private func decodeFromAttributes(_ item: [String: DynamoDBClientTypes.AttributeValue]) -> [String: Any] {
+    // MARK: - AttributeValue -> JSON object graph
+
+    private func decodeAttributesToJSONObject(
+        _ item: [String: DynamoDBClientTypes.AttributeValue]
+    ) -> [String: Any] {
+
         var dict: [String: Any] = [:]
+        dict.reserveCapacity(item.count)
+
         for (k, v) in item {
-            let camelKey = snakeToCamel(k) // ← ここで変換
-            dict[camelKey] = decodeFromAttribute(v)
+            dict[k] = decodeAttributeToAny(v)
         }
         return dict
     }
     
-    private func decodeFromAttribute(_ value: DynamoDBClientTypes.AttributeValue) -> Any {
+    private func decodeAttributeToAny(_ value: DynamoDBClientTypes.AttributeValue) -> Any {
         switch value {
-        case .s(let s): return s
-        case .n(let n): return Double(n) ?? n
-        case .bool(let b): return b
-        case .l(let arr): return arr.map { decodeFromAttribute($0) }
-        case .m(let map): return decodeFromAttributes(map)
-        default: return NSNull()
+        case .s(let s):
+            return s
+        case .n(let n):
+            if let i = Int(n) { return i }
+            if let d = Double(n) { return d }
+            return n
+        case .bool(let b):
+            return b
+        case .l(let arr):
+            return arr.map(decodeAttributeToAny)
+        case .m(let map):
+            return decodeAttributesToJSONObject(map)
+        case .null:
+            return NSNull()
+        default:
+            return NSNull()
         }
-    }
-    
-    private func snakeToCamel(_ key: String) -> String {
-        let parts = key.split(separator: "_")
-        let first = parts.first?.lowercased() ?? ""
-        let rest = parts.dropFirst().map { $0.capitalized }
-        return ([first] + rest).joined()
     }
 }

@@ -2,8 +2,13 @@ import Dependencies
 import Shared
 import Testing
 @testable import Backend
+import DependenciesTestSupport
 
-struct PassageRepositoryTest {
+extension RepositoryTest{
+    @Suite struct Passage {}
+}
+
+extension RepositoryTest.Passage {
     @Test
     func get_正常_TYPEインデックス検索で先頭を返す() async throws {
         let passage = RoutePassage.mock(id: "passage-1", routeId: "route-1", districtId: "district-1")
@@ -164,7 +169,7 @@ struct PassageRepositoryTest {
     }
 }
 
-private extension PassageRepositoryTest {
+private extension RepositoryTest.Passage {
     func make(dataStore: DataStoreMock = .init()) -> PassageRepository {
         withDependencies {
             $0[DataStoreFactoryKey.self] = { _ in dataStore }
