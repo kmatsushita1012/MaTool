@@ -43,7 +43,10 @@ let package = Package(
         ),
         .testTarget(
             name: "BackendTests",
-            dependencies: ["Backend"],
+            dependencies: [
+                "Backend",
+                .product(name: "DependenciesTestSupport", package: "swift-dependencies"),
+            ],
             path: "Tests"
         ),
         // 初期データ注入　マイグレーション等を実行
