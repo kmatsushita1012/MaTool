@@ -32,6 +32,35 @@ struct RouteInjector {
         _ = try await subject.post(point)
     }
     
+    @Test func update_visibility() async throws {
+        let store = try DynamoDBStore(tableName: "matool")
+        let districtRepository: DistrictRepository = withDependencies( {
+            $0[DataStoreFactoryKey.self] = { _ in store }
+        }) {
+            DistrictRepository()
+        }
+        let periodRepository: PeriodRepository = withDependencies( {
+            $0[DataStoreFactoryKey.self] = { _ in store }
+        }) {
+            PeriodRepository()
+        }
+        let routeRepository: RouteRepository = withDependencies( {
+            $0[DataStoreFactoryKey.self] = { _ in store }
+            $0[PeriodRepositoryKey.self] = periodRepository
+        }) {
+            RouteRepository()
+        }
+        let districts: [District] = (try await districtRepository.query(by: "掛川祭_年番本部"))
+        for district in districts {
+            let routes = try await routeRepository.query(by: district.id)
+            for route in routes {
+                var updated = route
+                updated.visibility = district.visibility
+                try await routeRepository.put(updated)
+            }
+        }
+    }
+    
     @Test(.disabled())
     func move_route() async throws {
         let routeMigrator = try DynamoDBMigrator(tableName: "matool_routes")
@@ -71,17 +100,29 @@ struct RouteInjector {
         
         for route in routes {
             guard let festivalId = districtToFestival[route.districtId] else { continue }
+            guard let district = legacyDistricts.first(where: { $0.id == route.districtId }) else { continue }
             guard
                 let periods = periodsByFestival[festivalId],
                 let periodId = nearestPeriodId(for: route, periods: periods)
             else { continue }
+            
+            let visibility: Shared.Visibility = {
+                switch district.visibility {
+                case .admin:
+                    .admin
+                case .route:
+                    .route
+                case .all:
+                    .all
+                }
+            }()
             
             migratedRoutes.append(
                 Route(
                     id: route.id,
                     districtId: route.districtId,
                     periodId: periodId,
-                    visibility: .all,
+                    visibility: visibility,
                     description: route.description
                 )
             )
