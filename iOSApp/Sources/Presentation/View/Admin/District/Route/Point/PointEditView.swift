@@ -45,18 +45,17 @@ struct PointEditView: View {
             }
             
             Section {
-                Button(action: {
+                Button("この地点を移動", systemImage: "arrow.up.right"){
                     store.send(.moveTapped)
-                }) {
-                    Label("この地点を移動", systemImage: "line.diagonal.arrow")
-                        .font(.body)
                 }
-                Button(action: {
-                    store.send(.insertTapped)
-                }) {
-                    Label("この地点の前に新しい地点を挿入", systemImage: "plus.circle")
-                        .font(.body)
+                Button("この地点の前に新しい地点を挿入", systemImage: "arrow.turn.left.up"){
+                    store.send(.insertBeforeTapped)
                 }
+                Button("この地点の後に新しい地点を挿入", systemImage: "arrow.turn.right.up"){
+                    store.send(.insertAfterTapped)
+                }
+            } footer: {
+                Text("ボタンを押した後、地図を長押しして地点の移動・挿入ができます。")
             }
             Section {
                 Button(action: {
@@ -136,11 +135,7 @@ struct PointEditView: View {
     
     @ViewBuilder
     var timePicker: some View {
-        DateTimePicker(
-            "時刻を選択",
-            selection: $store.point.time.fullDate,
-            displayedComponents: [.hourAndMinute]
-        )
+        TimePicker("時刻を選択", selection: $store.point.time.unwrapped)
         .datePickerStyle(.compact)
     }
     
