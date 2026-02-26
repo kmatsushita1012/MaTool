@@ -9,13 +9,13 @@ public extension FetchAll where Element == District {
 
 public extension FetchAll where Element == Point {
     init(routeId: Route.ID) {
-        self.init(Point.where { $0.routeId.eq(routeId) })
+        self.init(Point.where { $0.routeId.eq(routeId) }.order(by: \.index))
     }
 }
 
 public extension FetchAll where Element == RoutePassage {
     init(routeId: Route.ID) {
-        self.init(RoutePassage.where { $0.routeId.eq(routeId) })
+        self.init(RoutePassage.where { $0.routeId.eq(routeId) }.order(by: \.order))
     }
 }
 
