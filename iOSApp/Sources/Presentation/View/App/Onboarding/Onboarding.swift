@@ -29,6 +29,13 @@ struct OnboardingFeature {
         var isLoading: Bool = false
         
         init(launchState: Shared<LaunchState>) {
+            self._festivals = FetchAll(Festival.where{ festival in
+                #if RELEASE
+                festival.id.contains("test")
+                #else
+                true
+                #endif
+            })
             self._launchState = launchState
         }
     }
