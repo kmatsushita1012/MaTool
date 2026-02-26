@@ -61,7 +61,7 @@ struct OnboardingView: View {
                             .frame(maxWidth: .infinity, alignment: .leading)
                             .padding(.horizontal)
                         Menu {
-                            ForEach(store.districts, id: \.self) { district in
+                            ForEach(store.districts.reversed(), id: \.self) { district in
                                 Button(district.name) {
                                     store.send(.districtSelected(district))
                                 }
