@@ -116,6 +116,7 @@ func setupDatabase() throws -> DatabaseQueue {
                 "id" TEXT PRIMARY KEY NOT NULL,
                 "routeId" TEXT NOT NULL,
                 "districtId" TEXT NOT NULL,
+                "memo" TEXT,
                 "order" INTEGER NOT NULL DEFAULT 0
             )
         """).execute(db)
