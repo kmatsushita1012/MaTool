@@ -274,16 +274,13 @@ extension RouteEditView {
     var tab: some View {
         Picker("モード", selection: $store.tab) {
             Text("基本情報編集")
-                .font(.title)
                 .tag(Tab.info)
             Text("地図編集")
-                .font(.title)
                 .tag(Tab.edit)
             Text("一般公開版")
-                .font(.title)
                 .tag(Tab.`public`)
         }
-        .pickerStyle(.segmented)
+        .routeSegmentPickerStyle()
         .frame(maxWidth: .infinity)
     }
     
@@ -316,6 +313,31 @@ extension RouteEditView {
         Button(systemImage: "point.topright.arrow.triangle.backward.to.point.bottomleft.scurvepath") {
             store.send(.wholeTapped)
         }
+    }
+}
+
+private struct RouteSegmentPickerStyleModifier: ViewModifier {
+    init() {
+        UISegmentedControl.appearance().setTitleTextAttributes(
+            [.font: UIFont.preferredFont(forTextStyle: .body)],
+            for: .normal
+        )
+        UISegmentedControl.appearance().setTitleTextAttributes(
+            [.font: UIFont.preferredFont(forTextStyle: .headline)],
+            for: .selected
+        )
+    }
+    
+    func body(content: Content) -> some View {
+        content
+            .pickerStyle(.segmented)
+            .controlSize(.large)
+    }
+}
+
+private extension View {
+    func routeSegmentPickerStyle() -> some View {
+        modifier(RouteSegmentPickerStyleModifier())
     }
 }
 
