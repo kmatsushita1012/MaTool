@@ -18,26 +18,18 @@ jobs:
         xcode-version: "26.0"
 
     - name: Ensure SPM Cache Dir Exists
-      run: mkdir -p Shared/Caches/org.swift.swiftpm
+      run: mkdir -p ~/Library/Caches/org.swift.swiftpm
 
      # --- SPM キャッシュ ---
-    - name: Cache SPM
-      uses: actions/cache@v3
+    - name: Restore SPM Cache
+      id: cache-spm-restore
+      uses: actions/cache/restore@v4
       with:
         path: |
           ~/Library/Caches/org.swift.swiftpm/
-        key: ${{ runner.os }}-spm-Shared-26.0
+        key: ${{ runner.os }}-xcode26-spm-shared-${{ hashFiles('Shared/Package.resolved') }}
         restore-keys: |
-          ${{ runner.os }}-spm-Shared-
-
-    # --- DerivedData キャッシュ ---
-    - name: Cache DerivedData
-      uses: actions/cache@v3
-      with:
-        path: Shared/.derivedData
-        key: ${{ runner.os }}-derived-26.0
-        restore-keys: |
-          ${{ runner.os }}-derived-
+          ${{ runner.os }}-xcode26-spm-shared-
 
     - name: Build & Test
       run: |
@@ -56,6 +48,14 @@ jobs:
           ENABLE_SWIFT_MACROS=YES \
           test \
           | tee build/reports/shared-test.log
+
+    - name: Save SPM Cache
+      if: success() && (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/heads/release-'))
+      uses: actions/cache/save@v4
+      with:
+        path: |
+          ~/Library/Caches/org.swift.swiftpm/
+        key: ${{ steps.cache-spm-restore.outputs.cache-primary-key }}
 
     - name: Upload Test Results
       if: always()

@@ -17,23 +17,17 @@ jobs:
           xcode-version: "26.0"
 
       - name: Ensure SPM Cache Dir Exists
-        run: mkdir -p iOSApp/Caches/org.swift.swiftpm
+        run: mkdir -p ~/Library/Caches/org.swift.swiftpm
 
-      - name: Cache SPM
-        uses: actions/cache@v3
+      - name: Restore SPM Cache
+        id: cache-spm-restore
+        uses: actions/cache/restore@v4
         with:
-          path: iOSApp/Caches/org.swift.swiftpm
-          key: ${{ runner.os }}-spm-iOSApp-${{ hashFiles('iOSApp/Package.resolved') }}
+          path: |
+            ~/Library/Caches/org.swift.swiftpm/
+          key: ${{ runner.os }}-xcode26-spm-iosapp-${{ hashFiles('iOSApp/Package.resolved', 'Shared/Package.resolved') }}
           restore-keys: |
-            ${{ runner.os }}-spm-iOSApp-
-
-      - name: Cache DerivedData
-        uses: actions/cache@v3
-        with:
-          path: iOSApp/.derivedData
-          key: ${{ runner.os }}-derived-${{ hashFiles('iOSApp/MaTool.xcodeproj/project.pbxproj', '**/*.swift', '**/*.h') }}
-          restore-keys: |
-            ${{ runner.os }}-derived-
+            ${{ runner.os }}-xcode26-spm-iosapp-
 
       - name: Build
         run: |
@@ -66,3 +60,11 @@ jobs:
       - name: Upload to App Store Connect
         run: |
           xcrun altool --upload-app -f build/export/MaTool.ipa -t ios -u ${{ secrets.APPLE_ID }} -p ${{ secrets.APP_SPECIFIC_PASSWORD }} --type ios
+
+      - name: Save SPM Cache
+        if: success() && (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/heads/release-'))
+        uses: actions/cache/save@v4
+        with:
+          path: |
+            ~/Library/Caches/org.swift.swiftpm/
+          key: ${{ steps.cache-spm-restore.outputs.cache-primary-key }}
