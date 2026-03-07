@@ -31,6 +31,7 @@ extension Application.Response {
 
 extension Application.Response {
     static func error(_ error: Swift.Error) -> Self {
+        print("Error \(error)")
         if let apiError = error as? Error {
             let body = apiError.response
             
