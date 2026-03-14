@@ -319,6 +319,43 @@ struct RouteUsecaseTest {
     }
 
     @Test
+    func post_異常_PointValidationErrorはBadRequest() async {
+        let route = Route.mock(id: "route-1", districtId: "district-1")
+        let district = District.mock(id: route.districtId, festivalId: "festival-1")
+        let points = [
+            Point.mock(id: "p-1", routeId: route.id, index: 0, time: .init(hour: 9, minute: 0), anchor: .start),
+            Point.mock(id: "p-2", routeId: route.id, index: 1, time: .init(hour: 10, minute: 0), anchor: .start)
+        ]
+        let pack = RoutePack.mock(route: route, points: points, passages: [])
+        let subject = make(
+            districtRepository: .init(getHandler: { _ in district })
+        )
+
+        await #expect(throws: Error.badRequest("複数の出発地点が設定されています")) {
+            _ = try await subject.post(districtId: route.districtId, pack: pack, user: .district(route.districtId))
+        }
+    }
+
+    @Test
+    func put_異常_PointValidationErrorはBadRequest() async {
+        let route = Route.mock(id: "route-1", districtId: "district-1")
+        let district = District.mock(id: route.districtId, festivalId: "festival-1")
+        let points = [
+            Point.mock(id: "p-1", routeId: route.id, index: 0, time: .init(hour: 9, minute: 0), anchor: .start),
+            Point.mock(id: "p-2", routeId: route.id, index: 1, time: .init(hour: 10, minute: 0), anchor: .start)
+        ]
+        let pack = RoutePack.mock(route: route, points: points, passages: [])
+        let subject = make(
+            routeRepository: .init(getHandler: { _ in route }),
+            districtRepository: .init(getHandler: { _ in district })
+        )
+
+        await #expect(throws: Error.badRequest("複数の出発地点が設定されています")) {
+            _ = try await subject.put(id: route.id, pack: pack, user: .district(route.districtId))
+        }
+    }
+
+    @Test
     func delete_異常_権限不一致() async {
         let route = Route.mock(id: "route-1", districtId: "district-1", periodId: "period-1")
 
