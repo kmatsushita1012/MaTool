@@ -88,7 +88,7 @@ struct RouteUsecase: RouteUsecaseProtocol {
         try await ensureRouteEditable(district: district)
         let reindexedPoints = pack.points.reindexed()
         let reindexedPassages = pack.passages.reindexed()
-        try pack.points.validate()
+        try validatePoints(reindexedPoints)
         let oldPoints = try await pointRepository.query(by: pack.route.id)
         let oldPassages = try await passageRepository.query(by: pack.route.id)
         let route = try await routeRepository.post(pack.route)
@@ -109,7 +109,7 @@ struct RouteUsecase: RouteUsecaseProtocol {
         try await ensureRouteEditable(district: district)
         let reindexedPoints = pack.points.reindexed()
         let reindexedPassages = pack.passages.reindexed()
-        try pack.points.validate()
+        try validatePoints(reindexedPoints)
         let oldPoints = try await pointRepository.query(by: pack.route.id)
         let oldPassages = try await passageRepository.query(by: pack.route.id)
         let route = try await routeRepository.post(pack.route)
@@ -163,6 +163,14 @@ extension RouteUsecase {
             throw Error.notFound("所属する祭典が見つかりません")
         }
         throw Error.forbidden("\(festival.subname)がルートの更新を停止しています。")
+    }
+
+    private func validatePoints(_ points: [Point]) throws {
+        do {
+            try points.validate()
+        } catch let error as Point.Error {
+            throw Error.badRequest(error.errorDescription ?? "地点データが不正です。")
+        }
     }
     
     private func removeTimeIfNeeded(routeVisibility: Visibility, district: District, points: [Point], user: UserRole) -> [Point] {
