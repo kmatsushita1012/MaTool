@@ -302,7 +302,7 @@ extension RouteEditView {
     
     @ViewBuilder
     var partialButton: some View {
-        Button(systemImage: "camera") {
+        Button("部分出力") {
             store.send(.partialTapped)
         }
         .disabled(!store.isPartialEnable)
@@ -310,7 +310,7 @@ extension RouteEditView {
     
     @ViewBuilder
     var wholeButton: some View {
-        Button(systemImage: "point.topright.arrow.triangle.backward.to.point.bottomleft.scurvepath") {
+        Button("全体出力") {
             store.send(.wholeTapped)
         }
     }
