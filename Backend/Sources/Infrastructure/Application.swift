@@ -35,6 +35,14 @@ final class Application: @unchecked Sendable {
         let statusCode: Int
         let headers: [String: String]
         let body: String
+        let isBase64Encoded: Bool
+
+        init(statusCode: Int, headers: [String: String], body: String, isBase64Encoded: Bool = false) {
+            self.statusCode = statusCode
+            self.headers = headers
+            self.body = body
+            self.isBase64Encoded = isBase64Encoded
+        }
     }
     
     enum Error: Swift.Error, Sendable, Equatable {
@@ -192,4 +200,3 @@ enum ApplicationBuilder {
         components
     }
 }
-

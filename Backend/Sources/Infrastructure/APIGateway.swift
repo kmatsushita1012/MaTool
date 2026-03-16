@@ -45,7 +45,8 @@ extension APIGateway {
         return APIGatewayV2Response(
             statusCode: .init(code: res.statusCode),
             headers: res.headers,
-            body: res.body
+            body: res.body,
+            isBase64Encoded: res.isBase64Encoded
         )
     }
 }

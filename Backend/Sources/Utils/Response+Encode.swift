@@ -9,6 +9,15 @@ import Shared
 import Foundation
 
 extension Application.Response {
+    static func binary(base64 body: String, contentType: String) -> Self {
+        .init(
+            statusCode: 200,
+            headers: ["Content-Type": contentType],
+            body: body,
+            isBase64Encoded: true
+        )
+    }
+
     static func success<T: Encodable>(_ body: T) throws -> Self {
         guard let json = try? body.toString() else {
             throw Error.encodingError("エンコードに失敗しました。")

@@ -29,6 +29,24 @@ struct OtherRouterTest {
     }
 
     @Test
+    func routesRouteSnapshotGetToSnapshotController_正常() async {
+        var calledRouteId: String?
+        let app = make(routeSnapshotController: .init(
+            getHandler: { request, _ in
+                calledRouteId = request.parameters["routeId"]
+                return .binary(base64: "ZmFrZQ==", contentType: "image/png")
+            }
+        ))
+        let request = Application.Request.make(method: .get, path: "/routes/route-1/snapshot")
+        let response = await app.handle(request)
+
+        #expect(response.statusCode == 200)
+        #expect(response.headers["Content-Type"] == "image/png")
+        #expect(response.isBase64Encoded == true)
+        #expect(calledRouteId == "route-1")
+    }
+
+    @Test
     func routesPeriodPutToPeriodController_正常() async {
         let app = make(periodController: .init(putHandler: { _, _ in try .success() }))
         let request = Application.Request.make(method: .put, path: "/periods/period-1")
@@ -50,10 +68,12 @@ struct OtherRouterTest {
 private extension OtherRouterTest {
     func make(
         routeController: RouteControllerMock = .init(),
+        routeSnapshotController: RouteSnapshotControllerMock = .init(),
         periodController: PeriodControllerMock = .init()
     ) -> Application {
         withDependencies {
             $0[RouteControllerKey.self] = routeController
+            $0[RouteSnapshotControllerKey.self] = routeSnapshotController
             $0[PeriodControllerKey.self] = periodController
         } operation: {
             Application { OtherRouter() }
