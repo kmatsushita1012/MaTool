@@ -125,32 +125,11 @@ struct RouteSnapshotter: Equatable {
     }
 
     private func drawBoundaryPolylines(on snapshot: MKMapSnapshotter.Snapshot, lineWidth: CGFloat) {
-        let segments = splitCoordinatesByBoundary()
+        let segments = RouteBoundarySegmenter.splitCoordinatesByBoundary(points: points)
         for (index, segment) in segments.enumerated() {
             let color: UIColor = (index % 2 == 0) ? .systemBlue : .systemGreen
             drawPolyline(on: snapshot, coordinates: segment, color: color, lineWidth: lineWidth)
         }
-    }
-
-    private func splitCoordinatesByBoundary() -> [[Coordinate]] {
-        let coords = coordinates
-        guard points.count == coords.count else { return [coords] }
-
-        var result: [[Coordinate]] = []
-        var current: [Coordinate] = []
-
-        for (index, coord) in coords.enumerated() {
-            current.append(coord)
-
-            let isBoundary = points[index].isBoundary
-            if isBoundary && !current.isEmpty {
-                result.append(current)
-                current = [coord]
-            }
-        }
-
-        if !current.isEmpty { result.append(current) }
-        return result.filter { $0.count >= 2 }
     }
     
     private func drawPolyline(on snapshot: MKMapSnapshotter.Snapshot, coordinates: [Coordinate], color: UIColor, lineWidth: CGFloat ) {
