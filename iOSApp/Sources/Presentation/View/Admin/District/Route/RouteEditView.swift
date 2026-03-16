@@ -273,11 +273,11 @@ extension RouteEditView {
     @ViewBuilder
     var tab: some View {
         Picker("モード", selection: $store.tab) {
-            Text("基本情報編集")
+            Text("基本情報")
                 .tag(Tab.info)
             Text("地図編集")
                 .tag(Tab.edit)
-            Text("一般公開版")
+            Text("一般公開")
                 .tag(Tab.`public`)
         }
         .routeSegmentPickerStyle()
