@@ -19,13 +19,12 @@ protocol RouteSnapshotControllerProtocol: Sendable {
 
 // MARK: - RouteSnapshotController
 struct RouteSnapshotController: RouteSnapshotControllerProtocol {
+    @Dependency(RouteSnapshotUsecaseKey.self) var usecase
+
     func get(_ request: Request, next: Handler) async throws -> Response {
         let routeId = try request.parameter("routeId", as: String.self)
         print("route snapshot requested: \(routeId)")
-        return .binary(base64: Self.placeholderPngBase64, contentType: "image/png")
+        let payload = try await usecase.get(routeId: routeId)
+        return .binary(base64: payload.base64Body, contentType: payload.contentType)
     }
-}
-
-private extension RouteSnapshotController {
-    static let placeholderPngBase64 = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO7Z0XcAAAAASUVORK5CYII="
 }

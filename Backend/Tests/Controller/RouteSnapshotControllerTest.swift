@@ -1,10 +1,19 @@
+import Dependencies
 import Testing
 @testable import Backend
 
 struct RouteSnapshotControllerTest {
     @Test
     func get_正常_固定PNGを返す() async throws {
-        let subject = RouteSnapshotController()
+        let subject = withDependencies {
+            $0[RouteSnapshotUsecaseKey.self] = RouteSnapshotUsecaseMock(
+                getHandler: { _ in
+                    .init(contentType: "image/png", base64Body: "ZmFrZQ==")
+                }
+            )
+        } operation: {
+            RouteSnapshotController()
+        }
         let request = Application.Request.make(
             method: .get,
             path: "/routes/route-1/snapshot",
@@ -16,7 +25,7 @@ struct RouteSnapshotControllerTest {
         #expect(response.statusCode == 200)
         #expect(response.headers["Content-Type"] == "image/png")
         #expect(response.isBase64Encoded == true)
-        #expect(response.body.isEmpty == false)
+        #expect(response.body == "ZmFrZQ==")
     }
 
     @Test
