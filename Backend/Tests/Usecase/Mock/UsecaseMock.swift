@@ -153,9 +153,11 @@ final class RouteUsecaseMock: RouteUsecaseProtocol, @unchecked Sendable {
 
 final class RouteSnapshotUsecaseMock: RouteSnapshotUsecaseProtocol, @unchecked Sendable {
     init(
-        getHandler: ((String) throws -> RouteSnapshotPayload)? = nil
+        getHandler: ((String) throws -> RouteSnapshotPayload)? = nil,
+        postHandler: ((RoutePack) throws -> RouteSnapshotPayload)? = nil
     ) {
         self.getHandler = getHandler
+        self.postHandler = postHandler
     }
 
     private(set) var getCallCount = 0
@@ -164,6 +166,14 @@ final class RouteSnapshotUsecaseMock: RouteSnapshotUsecaseProtocol, @unchecked S
         getCallCount += 1
         guard let getHandler else { throw TestError.unimplemented }
         return try getHandler(routeId)
+    }
+
+    private(set) var postCallCount = 0
+    private let postHandler: ((RoutePack) throws -> RouteSnapshotPayload)?
+    func post(routePack: RoutePack) async throws -> RouteSnapshotPayload {
+        postCallCount += 1
+        guard let postHandler else { throw TestError.unimplemented }
+        return try postHandler(routePack)
     }
 }
 

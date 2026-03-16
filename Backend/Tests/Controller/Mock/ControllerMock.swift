@@ -150,9 +150,11 @@ final class RouteControllerMock: RouteControllerProtocol, @unchecked Sendable {
 
 final class RouteSnapshotControllerMock: RouteSnapshotControllerProtocol, @unchecked Sendable {
     init(
-        getHandler: ((Request, Handler) throws -> Response)? = nil
+        getHandler: ((Request, Handler) throws -> Response)? = nil,
+        postHandler: ((Request, Handler) throws -> Response)? = nil
     ) {
         self.getHandler = getHandler
+        self.postHandler = postHandler
     }
 
     private(set) var getCallCount = 0
@@ -161,6 +163,14 @@ final class RouteSnapshotControllerMock: RouteSnapshotControllerProtocol, @unche
         getCallCount += 1
         guard let getHandler else { throw TestError.unimplemented }
         return try getHandler(request, next)
+    }
+
+    private(set) var postCallCount = 0
+    private let postHandler: ((Request, Handler) throws -> Response)?
+    func post(_ request: Request, next: Handler) async throws -> Response {
+        postCallCount += 1
+        guard let postHandler else { throw TestError.unimplemented }
+        return try postHandler(request, next)
     }
 }
 
