@@ -151,6 +151,22 @@ final class RouteUsecaseMock: RouteUsecaseProtocol, @unchecked Sendable {
     }
 }
 
+final class RouteSnapshotUsecaseMock: RouteSnapshotUsecaseProtocol, @unchecked Sendable {
+    init(
+        getHandler: ((String) throws -> RouteSnapshotPayload)? = nil
+    ) {
+        self.getHandler = getHandler
+    }
+
+    private(set) var getCallCount = 0
+    private let getHandler: ((String) throws -> RouteSnapshotPayload)?
+    func get(routeId: String) async throws -> RouteSnapshotPayload {
+        getCallCount += 1
+        guard let getHandler else { throw TestError.unimplemented }
+        return try getHandler(routeId)
+    }
+}
+
 final class LocationUsecaseMock: LocationUsecaseProtocol, @unchecked Sendable {
     init(
         queryHandler: ((String, UserRole, Date) throws -> [FloatLocation])? = nil,
