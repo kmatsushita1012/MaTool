@@ -154,10 +154,12 @@ final class RouteUsecaseMock: RouteUsecaseProtocol, @unchecked Sendable {
 final class RouteSnapshotUsecaseMock: RouteSnapshotUsecaseProtocol, @unchecked Sendable {
     init(
         getHandler: ((String) throws -> RouteSnapshotPayload)? = nil,
-        postHandler: ((RoutePack) throws -> RouteSnapshotPayload)? = nil
+        postHandler: ((RoutePack) throws -> RouteSnapshotPayload)? = nil,
+        postDistrictHandler: ((String, String) throws -> RouteSnapshotPayload)? = nil
     ) {
         self.getHandler = getHandler
         self.postHandler = postHandler
+        self.postDistrictHandler = postDistrictHandler
     }
 
     private(set) var getCallCount = 0
@@ -174,6 +176,14 @@ final class RouteSnapshotUsecaseMock: RouteSnapshotUsecaseProtocol, @unchecked S
         postCallCount += 1
         guard let postHandler else { throw TestError.unimplemented }
         return try postHandler(routePack)
+    }
+
+    private(set) var postDistrictCallCount = 0
+    private let postDistrictHandler: ((String, String) throws -> RouteSnapshotPayload)?
+    func postDistrict(districtId: String, year: String) async throws -> RouteSnapshotPayload {
+        postDistrictCallCount += 1
+        guard let postDistrictHandler else { throw TestError.unimplemented }
+        return try postDistrictHandler(districtId, year)
     }
 }
 

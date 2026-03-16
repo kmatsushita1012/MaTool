@@ -29,6 +29,27 @@ struct DistrictRouterTest {
     }
 
     @Test
+    func routesDistrictRouteSnapshotsToSnapshotController_正常() async {
+        let app = make(routeSnapshotController: .init(
+            postDistrictHandler: { request, _ in
+                #expect(request.parameters["districtId"] == "district-1")
+                #expect(request.parameters["year"] == "2026")
+                return .binary(base64: "cGRm", contentType: "application/pdf")
+            }
+        ))
+        let request = Application.Request.make(
+            method: .post,
+            path: "/districts/district-1/route-snapshots",
+            parameters: ["year": "2026"]
+        )
+        let response = await app.handle(request)
+
+        #expect(response.statusCode == 200)
+        #expect(response.headers["Content-Type"] == "application/pdf")
+        #expect(response.isBase64Encoded == true)
+    }
+
+    @Test
     func routesLaunchFestivalToSceneController_正常() async {
         let app = make(sceneController: .init(launchFestivalHandler: { _, _ in try .success() }))
         let request = Application.Request.make(method: .get, path: "/districts/district-1/launch-festival")
@@ -51,12 +72,14 @@ private extension DistrictRouterTest {
     func make(
         districtController: DistrictControllerMock = .init(),
         routeController: RouteControllerMock = .init(),
+        routeSnapshotController: RouteSnapshotControllerMock = .init(),
         locationController: LocationControllerMock = .init(),
         sceneController: SceneControllerMock = .init()
     ) -> Application {
         withDependencies {
             $0[DistrictControllerKey.self] = districtController
             $0[RouteControllerKey.self] = routeController
+            $0[RouteSnapshotControllerKey.self] = routeSnapshotController
             $0[LocationControllerKey.self] = locationController
             $0[SceneControllerKey.self] = sceneController
         } operation: {
