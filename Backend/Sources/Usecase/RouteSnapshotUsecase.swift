@@ -21,6 +21,7 @@ struct RouteSnapshotPayload: Equatable, Sendable {
 protocol RouteSnapshotUsecaseProtocol: Sendable {
     func get(routeId: String) async throws -> RouteSnapshotPayload
     func post(routePack: RoutePack) async throws -> RouteSnapshotPayload
+    func postDistrict(districtId: String, year: String) async throws -> RouteSnapshotPayload
 }
 
 struct RouteSnapshotUsecase: RouteSnapshotUsecaseProtocol {
@@ -37,8 +38,26 @@ struct RouteSnapshotUsecase: RouteSnapshotUsecaseProtocol {
         _ = routePack
         return .init(contentType: "image/png", base64Body: Self.placeholderPngBase64)
     }
+
+    func postDistrict(districtId: String, year: String) async throws -> RouteSnapshotPayload {
+        let routes: [Route]
+        if year == "latest" {
+            routes = try await routeRepository.query(by: districtId)
+        } else {
+            guard let year = Int(year) else {
+                throw Error.badRequest("year は latest または yyyy を指定してください")
+            }
+            routes = try await routeRepository.query(by: districtId, year: year)
+        }
+
+        guard !routes.isEmpty else {
+            throw Error.notFound("指定された条件でルートが見つかりません")
+        }
+        return .init(contentType: "application/pdf", base64Body: Self.placeholderPdfBase64)
+    }
 }
 
 private extension RouteSnapshotUsecase {
     static let placeholderPngBase64 = "iVBORw0KGgoAAAANSUhEUgAAAlIAAAGkCAIAAAB1nly9AAAFAElEQVR42u3VwREAAATAMExte+ZwkhH6aUZPAMAPJQEAtgcAtgcAtgcAtgcAtgcAtgcAtgcAtgcAtgcAtgcAtgeA7QGA7QGA7QGA7QGA7QGA7QGA7QGA7QGA7QGA7QGA7QFgewBgewBgewBgewBgewBgewBgewBgewBgewBgewBgewDYHgDYHgDYHgDYHgDYHgDYHgDYHgDYHgDYHgDYHgDYHgC2BwC2BwC2BwC2BwC2BwC2BwC2BwC2BwC2BwC2BwC2BwC2B4DtAYDtAYDtAYDtAYDtAYDtAYDtAYDtAYDtAYDtAYDtAWB7AGB7AGB7AGB7AGB7AGB7AGB7AGB7AGB7AGB7AGB7ANgeANgeANgeANgeANgeANgeANgeANgeANgeANgeANgeALYHALYHALYHALYHALYHALYHALYHALYHALYHALYHALYHgO0BgO0BgO0BgO0BgO0BgO0BgO0BgO0BgO0BgO0BgO0BgO0BYHsAYHsAYHsAYHsAYHsAYHsAYHsAYHsAYHsAYHsAYHsA2B4A2B4A2B4A2B4A2B4A2B4A2B4A2B4A2B4A2B4A2B4AtgcAtgcAtgcAtgcAtgcAtgcAtgcAtgcAtgcAtgcAtgeA7QGA7QGA7QGA7QGA7QGA7QGA7QGA7QGA7QGA7QGA7QGA7QFgewBgewBgewBgewBgewBgewBgewBgewBgewBgewBgewDYHgDYHgDYHgDYHgDYHgDYHgDYHgDYHgDYHgDYHgDYHgC2BwC2BwC2BwC2BwC2BwC2BwC2BwC2BwC2BwC2BwC2B4DtAYDtAYDtAYDtAYDtAYDtAYDtAYDtAYDtAYDtAYDtAWB7AGB7AGB7AGB7AGB7AGB7AGB7AGB7AGB7AGB7AGB7AGB7ANgeANgeANgeANgeANgeANgeANgeANgeANgeANgeANgeALYHALYHALYHALYHALYHALYHALYHALYHALYHALYHALYHgO0BgO0BgO0BgO0BgO0BgO0BgO0BgO0BgO0BgO0BgO0BYHsAYHsAYHsAYHsAYHsAYHsAYHsAYHsAYHsAYHsAYHsA2J4EANgeANgeANgeANgeANgeANgeANgeANgeANgeANgeANgeALYHALYHALYHALYHALYHALYHALYHALYHALYHALYHALYHgO0BgO0BgO0BgO0BgO0BgO0BgO0BgO0BgO0BgO0BgO0BYHsAYHsAYHsAYHsAYHsAYHsAYHsAYHsAYHsAYHsAYHsA2B4A2B4A2B4A2B4A2B4A2B4A2B4A2B4A2B4A2B4A2B4A2B4AtgcAtgcAtgcAtgcAtgcAtgcAtgcAtgcAtgcAtgcAtgeA7QGA7QGA7QGA7QGA7QGA7QGA7QGA7QGA7QGA7QGA7QFgewBgewBgewBgewBgewBgewBgewBgewBgewBgewBgewDYHgDYHgDYHgDYHgDYHgDYHgDYHgDYHgDYHgDYHgDYHgC2BwC2BwC2BwC2BwC2BwC2BwC2BwC2BwC2BwC2BwC2BwC2B4DtAYDtAYDtAYDtAYDtAYDtAYDtAYDtAYDtAYDtAYDtAWB7AGB7AGB7AGB7AGB7AGB7AGB7AGB7AGB7AGB7AGB7ANgeANgeANgeANgeANgeANgeANgeANgeANgeANgeANgeALYHALYHALYHALYHALYHALYHALYHALYHALYHALYHALYHALYHgO0BgO0BgO0BwA0Lt6oEv1DQ0uUAAAAASUVORK5CYII="
+    static let placeholderPdfBase64 = "JVBERi0xLjQKJUVPRgo="
 }

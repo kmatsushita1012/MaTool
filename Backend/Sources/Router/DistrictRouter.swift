@@ -10,6 +10,7 @@ import Dependencies
 struct DistrictRouter: Router {
     @Dependency(DistrictControllerKey.self) var districtController
     @Dependency(RouteControllerKey.self) var routeController
+    @Dependency(RouteSnapshotControllerKey.self) var routeSnapshotController
     @Dependency(LocationControllerKey.self) var locationController
     @Dependency(SceneControllerKey.self) var sceneController
     
@@ -20,6 +21,7 @@ struct DistrictRouter: Router {
         // MARK: - Route
         app.get(path: "/districts/:districtId/routes", routeController.query)
         app.post(path: "/districts/:districtId/routes", routeController.post)
+        app.post(path: "/districts/:districtId/route-snapshots", routeSnapshotController.postDistrict)
         // MARK: - Location
         app.get(path: "/districts/:districtId/locations", locationController.get)
         app.put(path: "/districts/:districtId/locations", locationController.put)
