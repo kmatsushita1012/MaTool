@@ -22,10 +22,18 @@ let package = Package(
         .package( url: "https://github.com/groue/GRDB.swift.git", from: "7.6.0")
     ],
     targets: [
+        .systemLibrary(
+            name: "CCairo",
+            pkgConfig: "cairo",
+            providers: [
+                .brew(["cairo"])
+            ]
+        ),
         .executableTarget(
             name: "Backend",
             dependencies: [
                 "Shared",
+                "CCairo",
                 .product(name: "AWSDynamoDB", package: "aws-sdk-swift"),
                 .product(name: "AWSCognitoIdentityProvider", package: "aws-sdk-swift"),
                 .product(name: "Dependencies", package: "swift-dependencies"),
