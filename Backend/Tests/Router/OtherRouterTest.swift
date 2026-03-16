@@ -47,6 +47,21 @@ struct OtherRouterTest {
     }
 
     @Test
+    func routesRouteSnapshotPostToSnapshotController_正常() async {
+        let app = make(routeSnapshotController: .init(
+            postHandler: { _, _ in
+                .binary(base64: "cG9zdA==", contentType: "image/png")
+            }
+        ))
+        let request = Application.Request.make(method: .post, path: "/routes/snapshot")
+        let response = await app.handle(request)
+
+        #expect(response.statusCode == 200)
+        #expect(response.headers["Content-Type"] == "image/png")
+        #expect(response.isBase64Encoded == true)
+    }
+
+    @Test
     func routesPeriodPutToPeriodController_正常() async {
         let app = make(periodController: .init(putHandler: { _, _ in try .success() }))
         let request = Application.Request.make(method: .put, path: "/periods/period-1")

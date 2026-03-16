@@ -36,4 +36,15 @@ struct RouteSnapshotUsecaseTest {
             _ = try await subject.get(routeId: "missing")
         }
     }
+
+    @Test
+    func post_正常_RoutePack入力でPNGペイロードを返す() async throws {
+        let subject = RouteSnapshotUsecase()
+        let pack = RoutePack.mock(route: .mock(id: "route-1", districtId: "district-1"))
+
+        let result = try await subject.post(routePack: pack)
+
+        #expect(result.contentType == "image/png")
+        #expect(result.base64Body.isEmpty == false)
+    }
 }
