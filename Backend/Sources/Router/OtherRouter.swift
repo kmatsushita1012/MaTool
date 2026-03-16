@@ -10,10 +10,12 @@ import Dependencies
 struct OtherRouter: Router {
     
     @Dependency(RouteControllerKey.self) var routeController
+    @Dependency(RouteSnapshotControllerKey.self) var routeSnapshotController
     @Dependency(PeriodControllerKey.self) var periodController
     
     func body(_ app: Application) {
         // MARK: - Route
+        app.get(path: "/routes/:routeId/snapshot", routeSnapshotController.get)
         app.get(path: "/routes/:routeId", routeController.get)
         app.put(path: "/routes/:routeId", routeController.put)
         app.delete(path: "/routes/:routeId", routeController.delete)

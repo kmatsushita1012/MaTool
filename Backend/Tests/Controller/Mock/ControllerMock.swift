@@ -148,6 +148,22 @@ final class RouteControllerMock: RouteControllerProtocol, @unchecked Sendable {
     }
 }
 
+final class RouteSnapshotControllerMock: RouteSnapshotControllerProtocol, @unchecked Sendable {
+    init(
+        getHandler: ((Request, Handler) throws -> Response)? = nil
+    ) {
+        self.getHandler = getHandler
+    }
+
+    private(set) var getCallCount = 0
+    private let getHandler: ((Request, Handler) throws -> Response)?
+    func get(_ request: Request, next: Handler) async throws -> Response {
+        getCallCount += 1
+        guard let getHandler else { throw TestError.unimplemented }
+        return try getHandler(request, next)
+    }
+}
+
 final class LocationControllerMock: LocationControllerProtocol, @unchecked Sendable {
     init(
         getHandler: ((Request, Handler) throws -> Response)? = nil,
