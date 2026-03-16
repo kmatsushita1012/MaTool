@@ -16,6 +16,7 @@ struct OtherRouter: Router {
     func body(_ app: Application) {
         // MARK: - Route
         app.get(path: "/routes/:routeId/snapshot", routeSnapshotController.get)
+        app.post(path: "/routes/snapshot", routeSnapshotController.post)
         app.get(path: "/routes/:routeId", routeController.get)
         app.put(path: "/routes/:routeId", routeController.put)
         app.delete(path: "/routes/:routeId", routeController.delete)
