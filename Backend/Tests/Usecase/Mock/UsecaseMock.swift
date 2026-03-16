@@ -299,6 +299,32 @@ final class PeriodUsecaseMock: PeriodUsecaseProtocol, @unchecked Sendable {
     }
 }
 
+final class RouteSnapshotRendererMock: RouteSnapshotRendererProtocol, @unchecked Sendable {
+    init(
+        renderPNGHandler: ((String, [Point]) throws -> Data)? = nil,
+        renderPDFHandler: (([RouteSnapshotPageInput]) throws -> Data)? = nil
+    ) {
+        self.renderPNGHandler = renderPNGHandler
+        self.renderPDFHandler = renderPDFHandler
+    }
+
+    private(set) var renderPNGCallCount = 0
+    private let renderPNGHandler: ((String, [Point]) throws -> Data)?
+    func renderPNG(routeId: String, points: [Point]) throws -> Data {
+        renderPNGCallCount += 1
+        guard let renderPNGHandler else { throw TestError.unimplemented }
+        return try renderPNGHandler(routeId, points)
+    }
+
+    private(set) var renderPDFCallCount = 0
+    private let renderPDFHandler: (([RouteSnapshotPageInput]) throws -> Data)?
+    func renderPDF(pages: [RouteSnapshotPageInput]) throws -> Data {
+        renderPDFCallCount += 1
+        guard let renderPDFHandler else { throw TestError.unimplemented }
+        return try renderPDFHandler(pages)
+    }
+}
+
 final class SceneUsecaseMock: SceneUsecaseProtocol, @unchecked Sendable {
     init(
         fetchLaunchFestivalByFestivalIdHandler: ((String, UserRole, Date) throws -> LaunchFestivalPack)? = nil,

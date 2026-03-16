@@ -26,17 +26,21 @@ protocol RouteSnapshotUsecaseProtocol: Sendable {
 
 struct RouteSnapshotUsecase: RouteSnapshotUsecaseProtocol {
     @Dependency(RouteRepositoryKey.self) var routeRepository
+    @Dependency(PointRepositoryKey.self) var pointRepository
+    @Dependency(RouteSnapshotRendererKey.self) var renderer
 
     func get(routeId: String) async throws -> RouteSnapshotPayload {
-        guard let _ = try await routeRepository.get(id: routeId) else {
+        guard let route = try await routeRepository.get(id: routeId) else {
             throw Error.notFound("指定されたルートが見つかりません")
         }
-        return .init(contentType: "image/png", base64Body: Self.placeholderPngBase64)
+        let points = try await pointRepository.query(by: route.id)
+        let data = try renderer.renderPNG(routeId: route.id, points: points)
+        return .init(contentType: "image/png", base64Body: data.base64EncodedString())
     }
 
     func post(routePack: RoutePack) async throws -> RouteSnapshotPayload {
-        _ = routePack
-        return .init(contentType: "image/png", base64Body: Self.placeholderPngBase64)
+        let data = try renderer.renderPNG(routeId: routePack.route.id, points: routePack.points)
+        return .init(contentType: "image/png", base64Body: data.base64EncodedString())
     }
 
     func postDistrict(districtId: String, year: String) async throws -> RouteSnapshotPayload {
@@ -53,11 +57,13 @@ struct RouteSnapshotUsecase: RouteSnapshotUsecaseProtocol {
         guard !routes.isEmpty else {
             throw Error.notFound("指定された条件でルートが見つかりません")
         }
-        return .init(contentType: "application/pdf", base64Body: Self.placeholderPdfBase64)
+        var pages: [RouteSnapshotPageInput] = []
+        pages.reserveCapacity(routes.count)
+        for route in routes {
+            let points = try await pointRepository.query(by: route.id)
+            pages.append(.init(routeId: route.id, points: points))
+        }
+        let data = try renderer.renderPDF(pages: pages)
+        return .init(contentType: "application/pdf", base64Body: data.base64EncodedString())
     }
-}
-
-private extension RouteSnapshotUsecase {
-    static let placeholderPngBase64 = "iVBORw0KGgoAAAANSUhEUgAAAlIAAAGkCAIAAAB1nly9AAAFAElEQVR42u3VwREAAATAMExte+ZwkhH6aUZPAMAPJQEAtgcAtgcAtgcAtgcAtgcAtgcAtgcAtgcAtgcAtgcAtgeA7QGA7QGA7QGA7QGA7QGA7QGA7QGA7QGA7QGA7QGA7QFgewBgewBgewBgewBgewBgewBgewBgewBgewBgewBgewDYHgDYHgDYHgDYHgDYHgDYHgDYHgDYHgDYHgDYHgDYHgC2BwC2BwC2BwC2BwC2BwC2BwC2BwC2BwC2BwC2BwC2BwC2B4DtAYDtAYDtAYDtAYDtAYDtAYDtAYDtAYDtAYDtAYDtAWB7AGB7AGB7AGB7AGB7AGB7AGB7AGB7AGB7AGB7AGB7ANgeANgeANgeANgeANgeANgeANgeANgeANgeANgeANgeALYHALYHALYHALYHALYHALYHALYHALYHALYHALYHALYHgO0BgO0BgO0BgO0BgO0BgO0BgO0BgO0BgO0BgO0BgO0BgO0BYHsAYHsAYHsAYHsAYHsAYHsAYHsAYHsAYHsAYHsAYHsA2B4A2B4A2B4A2B4A2B4A2B4A2B4A2B4A2B4A2B4A2B4AtgcAtgcAtgcAtgcAtgcAtgcAtgcAtgcAtgcAtgcAtgeA7QGA7QGA7QGA7QGA7QGA7QGA7QGA7QGA7QGA7QGA7QGA7QFgewBgewBgewBgewBgewBgewBgewBgewBgewBgewBgewDYHgDYHgDYHgDYHgDYHgDYHgDYHgDYHgDYHgDYHgDYHgC2BwC2BwC2BwC2BwC2BwC2BwC2BwC2BwC2BwC2BwC2B4DtAYDtAYDtAYDtAYDtAYDtAYDtAYDtAYDtAYDtAYDtAWB7AGB7AGB7AGB7AGB7AGB7AGB7AGB7AGB7AGB7AGB7AGB7ANgeANgeANgeANgeANgeANgeANgeANgeANgeANgeANgeALYHALYHALYHALYHALYHALYHALYHALYHALYHALYHALYHgO0BgO0BgO0BgO0BgO0BgO0BgO0BgO0BgO0BgO0BgO0BYHsAYHsAYHsAYHsAYHsAYHsAYHsAYHsAYHsAYHsAYHsA2J4EANgeANgeANgeANgeANgeANgeANgeANgeANgeANgeANgeALYHALYHALYHALYHALYHALYHALYHALYHALYHALYHALYHgO0BgO0BgO0BgO0BgO0BgO0BgO0BgO0BgO0BgO0BgO0BYHsAYHsAYHsAYHsAYHsAYHsAYHsAYHsAYHsAYHsAYHsA2B4A2B4A2B4A2B4A2B4A2B4A2B4A2B4A2B4A2B4A2B4A2B4AtgcAtgcAtgcAtgcAtgcAtgcAtgcAtgcAtgcAtgcAtgeA7QGA7QGA7QGA7QGA7QGA7QGA7QGA7QGA7QGA7QGA7QFgewBgewBgewBgewBgewBgewBgewBgewBgewBgewBgewDYHgDYHgDYHgDYHgDYHgDYHgDYHgDYHgDYHgDYHgDYHgC2BwC2BwC2BwC2BwC2BwC2BwC2BwC2BwC2BwC2BwC2BwC2B4DtAYDtAYDtAYDtAYDtAYDtAYDtAYDtAYDtAYDtAYDtAWB7AGB7AGB7AGB7AGB7AGB7AGB7AGB7AGB7AGB7AGB7ANgeANgeANgeANgeANgeANgeANgeANgeANgeANgeANgeALYHALYHALYHALYHALYHALYHALYHALYHALYHALYHALYHALYHgO0BgO0BgO0BwA0Lt6oEv1DQ0uUAAAAASUVORK5CYII="
-    static let placeholderPdfBase64 = "JVBERi0xLjQKJUVPRgo="
 }
