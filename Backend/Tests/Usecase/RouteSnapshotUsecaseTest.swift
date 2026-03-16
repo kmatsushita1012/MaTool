@@ -47,4 +47,36 @@ struct RouteSnapshotUsecaseTest {
         #expect(result.contentType == "image/png")
         #expect(result.base64Body.isEmpty == false)
     }
+
+    @Test
+    func postDistrict_正常_年指定でPDFを返す() async throws {
+        let repository = RouteRepositoryMock(queryByYearHandler: { _, _ in
+            [.mock(id: "route-1", districtId: "district-1")]
+        })
+        let subject = withDependencies {
+            $0[RouteRepositoryKey.self] = repository
+        } operation: {
+            RouteSnapshotUsecase()
+        }
+
+        let result = try await subject.postDistrict(districtId: "district-1", year: "2026")
+
+        #expect(result.contentType == "application/pdf")
+        #expect(result.base64Body.isEmpty == false)
+        #expect(repository.queryByYearCallCount == 1)
+    }
+
+    @Test
+    func postDistrict_異常_対象なしはnotFound() async {
+        let repository = RouteRepositoryMock(queryByYearHandler: { _, _ in [] })
+        let subject = withDependencies {
+            $0[RouteRepositoryKey.self] = repository
+        } operation: {
+            RouteSnapshotUsecase()
+        }
+
+        await #expect(throws: Error.notFound("指定された条件でルートが見つかりません")) {
+            _ = try await subject.postDistrict(districtId: "district-1", year: "2026")
+        }
+    }
 }

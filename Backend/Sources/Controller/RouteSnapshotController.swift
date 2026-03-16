@@ -17,6 +17,7 @@ enum RouteSnapshotControllerKey: DependencyKey {
 protocol RouteSnapshotControllerProtocol: Sendable {
     func get(_ request: Request, next: Handler) async throws -> Response
     func post(_ request: Request, next: Handler) async throws -> Response
+    func postDistrict(_ request: Request, next: Handler) async throws -> Response
 }
 
 // MARK: - RouteSnapshotController
@@ -34,6 +35,14 @@ struct RouteSnapshotController: RouteSnapshotControllerProtocol {
         let routePack = try request.body(as: RoutePack.self)
         print("route snapshot requested by route pack: \(routePack.route.id)")
         let payload = try await usecase.post(routePack: routePack)
+        return .binary(base64: payload.base64Body, contentType: payload.contentType)
+    }
+
+    func postDistrict(_ request: Request, next: Handler) async throws -> Response {
+        let districtId = try request.parameter("districtId", as: String.self)
+        let year = try request.parameter("year", as: String.self)
+        print("district route snapshots requested: districtId=\(districtId), year=\(year)")
+        let payload = try await usecase.postDistrict(districtId: districtId, year: year)
         return .binary(base64: payload.base64Body, contentType: payload.contentType)
     }
 }
