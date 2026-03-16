@@ -27,5 +27,6 @@ struct RouteSnapshotController: RouteSnapshotControllerProtocol {
 }
 
 private extension RouteSnapshotController {
-    static let placeholderPngBase64 = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO7Z0XcAAAAASUVORK5CYII="
+    // 1x1 blue PNG
+    static let placeholderPngBase64 = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAIAAACQd1PeAAAADUlEQVR42mNk+M/wHwAE/wJ/l8sRPwAAAABJRU5ErkJggg=="
 }
