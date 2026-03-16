@@ -65,6 +65,33 @@ struct RouteSnapshotControllerTest {
         #expect(response.isBase64Encoded == true)
         #expect(response.body == "cG9zdA==")
     }
+
+    @Test
+    func postDistrict_正常_districtYearでPDFを返す() async throws {
+        let subject = withDependencies {
+            $0[RouteSnapshotUsecaseKey.self] = RouteSnapshotUsecaseMock(
+                postDistrictHandler: { districtId, year in
+                    #expect(districtId == "district-1")
+                    #expect(year == "latest")
+                    return .init(contentType: "application/pdf", base64Body: "cGRm")
+                }
+            )
+        } operation: {
+            RouteSnapshotController()
+        }
+        let request = Application.Request.make(
+            method: .post,
+            path: "/districts/district-1/route-snapshots",
+            parameters: ["districtId": "district-1", "year": "latest"]
+        )
+
+        let response = try await subject.postDistrict(request, next: next)
+
+        #expect(response.statusCode == 200)
+        #expect(response.headers["Content-Type"] == "application/pdf")
+        #expect(response.isBase64Encoded == true)
+        #expect(response.body == "cGRm")
+    }
 }
 
 private extension RouteSnapshotControllerTest {
