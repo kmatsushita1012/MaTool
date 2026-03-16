@@ -1,5 +1,6 @@
 import Dependencies
 import Foundation
+import Shared
 
 enum RouteSnapshotUsecaseKey: DependencyKey {
     static let liveValue: RouteSnapshotUsecaseProtocol = RouteSnapshotUsecase()
@@ -19,6 +20,7 @@ struct RouteSnapshotPayload: Equatable, Sendable {
 
 protocol RouteSnapshotUsecaseProtocol: Sendable {
     func get(routeId: String) async throws -> RouteSnapshotPayload
+    func post(routePack: RoutePack) async throws -> RouteSnapshotPayload
 }
 
 struct RouteSnapshotUsecase: RouteSnapshotUsecaseProtocol {
@@ -28,6 +30,11 @@ struct RouteSnapshotUsecase: RouteSnapshotUsecaseProtocol {
         guard let _ = try await routeRepository.get(id: routeId) else {
             throw Error.notFound("指定されたルートが見つかりません")
         }
+        return .init(contentType: "image/png", base64Body: Self.placeholderPngBase64)
+    }
+
+    func post(routePack: RoutePack) async throws -> RouteSnapshotPayload {
+        _ = routePack
         return .init(contentType: "image/png", base64Body: Self.placeholderPngBase64)
     }
 }
