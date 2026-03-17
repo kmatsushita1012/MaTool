@@ -1,4 +1,4 @@
-module CCairo [system] {
+module CLibCairo [system] {
   header "shim.h"
   link "cairo"
   export *

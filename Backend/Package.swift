@@ -12,6 +12,9 @@ let package = Package(
     ],
     dependencies: [
         .package(path: "../Shared"),
+        .package(url: "https://github.com/rhx/SwiftCairo.git", branch: "main"),
+        .package(url: "https://github.com/rhx/SwiftPango.git", branch: "main"),
+        .package(url: "https://github.com/rhx/SwiftPangoCairo.git", branch: "main"),
         .package(url: "https://github.com/pointfreeco/swift-dependencies", from: "1.4.0"),
         .package(url: "https://github.com/awslabs/aws-sdk-swift.git", from: "1.5.18"),
         .package(url: "https://github.com/awslabs/swift-aws-lambda-runtime.git", from: "2.0.0"),
@@ -23,7 +26,7 @@ let package = Package(
     ],
     targets: [
         .systemLibrary(
-            name: "CCairo",
+            name: "CLibCairo",
             pkgConfig: "cairo",
             providers: [
                 .brew(["cairo"])
@@ -33,7 +36,10 @@ let package = Package(
             name: "Backend",
             dependencies: [
                 "Shared",
-                "CCairo",
+                "CLibCairo",
+                .product(name: "Cairo", package: "SwiftCairo"),
+                .product(name: "Pango", package: "SwiftPango"),
+                .product(name: "PangoCairo", package: "SwiftPangoCairo"),
                 .product(name: "AWSDynamoDB", package: "aws-sdk-swift"),
                 .product(name: "AWSCognitoIdentityProvider", package: "aws-sdk-swift"),
                 .product(name: "Dependencies", package: "swift-dependencies"),

@@ -1,5 +1,5 @@
 {
-  "originHash" : "755094acb1935f25e06b4ebf2a6c6bd6859fd6bee746b1e8d6a47eb7e403b156",
+  "originHash" : "e1dce371ea79a6bdfdb5f0239d634811d8bf939d7bbbf5138e24fd52606fd0ca",
   "pins" : [
     {
       "identity" : "aws-crt-swift",
@@ -26,6 +26,15 @@
       "state" : {
         "revision" : "fd16d76fd8b9a976d88bfb6cacc05ca8d19c91b6",
         "version" : "1.1.0"
+      }
+    },
+    {
+      "identity" : "gir2swift",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/rhx/gir2swift.git",
+      "state" : {
+        "branch" : "main",
+        "revision" : "e2b894e3ba0197d7c2ebe1cde62e5c1faa404b75"
       }
     },
     {
@@ -398,6 +407,87 @@
       }
     },
     {
+      "identity" : "swiftcairo",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/rhx/SwiftCairo.git",
+      "state" : {
+        "branch" : "main",
+        "revision" : "87cd2aa586853fbeed192a42455fc43e9289b605"
+      }
+    },
+    {
+      "identity" : "swiftgio",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/rhx/SwiftGIO.git",
+      "state" : {
+        "branch" : "main",
+        "revision" : "9a2ee26f08383d489988a837006992323b005bec"
+      }
+    },
+    {
+      "identity" : "swiftglib",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/rhx/SwiftGLib.git",
+      "state" : {
+        "branch" : "main",
+        "revision" : "10e8466b10c73f098c5336d2c7a7483c4b2a13c3"
+      }
+    },
+    {
+      "identity" : "swiftgmodule",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/rhx/SwiftGModule.git",
+      "state" : {
+        "branch" : "main",
+        "revision" : "eecf947483b81361a1ff242b606d581358963a15"
+      }
+    },
+    {
+      "identity" : "swiftgobject",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/rhx/SwiftGObject.git",
+      "state" : {
+        "branch" : "main",
+        "revision" : "a959fc96fe441048c71972a6708ef9fea22ccbb6"
+      }
+    },
+    {
+      "identity" : "swiftharfbuzz",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/rhx/SwiftHarfBuzz.git",
+      "state" : {
+        "branch" : "main",
+        "revision" : "788b7a619aa1a494e4c712c11b138dd216d2db43"
+      }
+    },
+    {
+      "identity" : "swiftlibxml",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/rhx/SwiftLibXML.git",
+      "state" : {
+        "branch" : "main",
+        "revision" : "35dea8fe9a65a8971eb5fde906fd41b07d855d6a"
+      }
+    },
+    {
+      "identity" : "swiftpango",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/rhx/SwiftPango.git",
+      "state" : {
+        "branch" : "main",
+        "revision" : "1670dc5109759fe53beaaa1aac2a77e131735500"
+      }
+    },
+    {
+      "identity" : "swiftpangocairo",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/rhx/SwiftPangoCairo.git",
+      "state" : {
+        "branch" : "main",
+        "revision" : "0318374a18fc8ac183ad906d83df5b19c9e03f48"
+      }
+    },
+    {
       "identity" : "thrift-swift",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/undefinedlabs/Thrift-Swift",
@@ -413,6 +503,15 @@
       "state" : {
         "revision" : "4c27acf5394b645b70d8ba19dc249c0472d5f618",
         "version" : "1.7.0"
+      }
+    },
+    {
+      "identity" : "yams",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/jpsim/Yams.git",
+      "state" : {
+        "revision" : "9ff1cc9327586db4e0c8f46f064b6a82ec1566fa",
+        "version" : "4.0.6"
       }
     }
   ],
