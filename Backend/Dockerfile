@@ -50,18 +50,20 @@ RUN strip .build/release/Backend
 
 RUN ls -lh .build/release/Backend
 
+# 実行バイナリがリンクする共有ライブラリを抽出して同梱する
+RUN mkdir -p /workspace/runtime-lib && \
+    ldd .build/release/Backend | awk '/=> \\/usr\\/lib64\\// {print $3}' | sort -u > /tmp/runtime-libs.txt && \
+    xargs -a /tmp/runtime-libs.txt -I{} cp -av {} /workspace/runtime-lib/ && \
+    ls -lh /workspace/runtime-lib
+
 # ============================
 # Stage 2: Lambda Runtime (AL2023)
 # ============================
 FROM public.ecr.aws/lambda/provided:al2023
 
-RUN dnf update -y && \
-    dnf install -y \
-        cairo \
-    && dnf clean all && \
-    ls -l /usr/lib64/libcairo.so.2
-
-ENV LD_LIBRARY_PATH="/usr/lib64:/lib64:${LD_LIBRARY_PATH}"
+# build stage で収集した共有ライブラリを同梱
+COPY --from=build /workspace/runtime-lib /opt/lib
+ENV LD_LIBRARY_PATH="/opt/lib:/usr/lib64:/lib64:${LD_LIBRARY_PATH}"
 
 # ビルド済みバイナリをコピー
 COPY --from=build /workspace/Backend/.build/release/Backend /var/runtime/bootstrap
