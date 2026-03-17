@@ -62,6 +62,8 @@ struct RouteHistoryView: View {
             }
             .foregroundStyle(.primary)
         }
+        .navigationTitle("コピー元のルートを選択")
+        .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarCancelButton {
                 dismiss()
