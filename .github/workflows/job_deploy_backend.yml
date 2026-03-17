@@ -27,15 +27,22 @@ jobs:
           # Backend/Dockerfile を使ってルートをコンテキストにビルド
           docker build -t matoolapi -f Backend/Dockerfile .
 
-          # イメージから bootstrap を抽出（Lambda用の最小実行ファイル名が bootstrap の場合）
+          # イメージからバイナリと共有ライブラリを抽出
           docker create --name extract matoolapi
-          docker cp extract:/var/runtime/bootstrap ./bootstrap || true
+          docker cp extract:/var/runtime/bootstrap ./bootstrap.bin || true
+          docker cp extract:/opt/lib ./lib || true
           docker rm extract || true
 
-          # 如果 bootstrap が PATH にない場合や、別の場所にあるなら Dockerfile 側で配置を合わせてください
-          if [ -f ./bootstrap ]; then
-            chmod +x ./bootstrap
-            zip -r lambda.zip bootstrap
+          # Lambda custom runtime 用 bootstrap ラッパーを作成
+          if [ -f ./bootstrap.bin ]; then
+            printf '%s\n' \
+              '#!/bin/sh' \
+              'export LD_LIBRARY_PATH="$LAMBDA_TASK_ROOT/lib:$LD_LIBRARY_PATH"' \
+              'exec "$LAMBDA_TASK_ROOT/bootstrap.bin"' \
+              > ./bootstrap
+
+            chmod +x ./bootstrap ./bootstrap.bin
+            zip -r lambda.zip bootstrap bootstrap.bin lib
             ls -l lambda.zip
           else
             echo "Error: bootstrap not found in image. Inspect Dockerfile and image layout."
