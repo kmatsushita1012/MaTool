@@ -19,6 +19,7 @@ struct RouteEditView: View {
     @SwiftUI.Bindable var store: StoreOf<RouteEditFeature>
     @State private var selectedDetent: PresentationDetent = .large
     @State private var pickerHeight: CGFloat = 0
+    @State private var didTriggerSubmitLongPress = false
     
     var body: some View {
         Group{
@@ -113,10 +114,11 @@ extension RouteEditView {
                 case .edit, .public:
                     undoButton
                     redoButton
+                    Spacer()
+                    longPressModeView
                 }
                 Spacer()
-                partialButton
-                wholeButton
+                submitButton
             }
             .frame(maxWidth: .infinity)
             .padding(.horizontal)
@@ -164,12 +166,15 @@ extension RouteEditView {
                 undoButton
                 redoButton
             }
+            ToolbarSpacer(placement: .bottomBar)
+            ToolbarItemGroup(placement: .bottomBar){
+                longPressModeView
+            }
             
         }
         ToolbarSpacer(placement: .bottomBar)
         ToolbarItemGroup(placement: .bottomBar){
-            partialButton
-            wholeButton
+            submitButton
         }
     }
 }
@@ -301,17 +306,57 @@ extension RouteEditView {
     }
     
     @ViewBuilder
-    var partialButton: some View {
-        Button("部分出力") {
-            store.send(.partialTapped)
+    var submitButton: some View {
+        Button("提出用") {
+            if didTriggerSubmitLongPress {
+                didTriggerSubmitLongPress = false
+                return
+            }
+            store.send(.wholeTapped)
         }
-        .disabled(!store.isPartialEnable)
+        .simultaneousGesture(
+            LongPressGesture(minimumDuration: 0.6).onEnded { _ in
+                if store.isPartialEnable {
+                    didTriggerSubmitLongPress = true
+                    store.isSubmitDialogPresented = true
+                }
+            }
+        )
+        .confirmationDialog(
+            "提出用PDFの出力方法を選択",
+            isPresented: $store.isSubmitDialogPresented,
+            titleVisibility: .visible
+        ) {
+            Button("全体を出力") {
+                store.send(.wholeTapped)
+            }
+            Button("表示範囲を出力") {
+                store.send(.partialTapped)
+            }
+            .disabled(!store.isPartialEnable)
+        }
     }
     
     @ViewBuilder
-    var wholeButton: some View {
-        Button("全体出力") {
-            store.send(.wholeTapped)
+    var longPressModeView: some View {
+        VStack(alignment: .center, spacing: 0) {
+            Text("地図を長押しで")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+            Text("地点を\(operationLabel)")
+                .foregroundStyle(.primary)
+        }
+        .frame(width: 100)
+    }
+    
+    var operationLabel: String {
+        switch store.operation {
+        case .add:
+            return "追加"
+        case .insert:
+            return "挿入"
+        case .move:
+            return "移動"
         }
     }
 }
