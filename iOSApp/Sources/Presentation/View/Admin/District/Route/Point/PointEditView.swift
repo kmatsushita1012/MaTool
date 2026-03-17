@@ -152,13 +152,13 @@ fileprivate extension PointEditFeature.PointType {
     var text: String {
         switch self {
         case .checkpoint:
-            return "重要地点（交差点等）"
+            return "交差点"
         case .performance:
             return "余興"
         case .start:
-            return "出発地点"
+            return "出発"
         case .end:
-            return "到着地点"
+            return "到着"
         case .rest:
             return "休憩"
         case .none:
