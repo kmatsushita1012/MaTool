@@ -15,6 +15,10 @@ RUN dnf update -y && \
         openssl-devel \
         libxml2-devel \
         libcurl-devel \
+        cairo-devel \
+        pango-devel \
+        harfbuzz-devel \
+        gobject-introspection-devel \
         binutils \
     && dnf clean all
 
