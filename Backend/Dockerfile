@@ -15,6 +15,7 @@ RUN dnf update -y && \
         openssl-devel \
         libxml2-devel \
         libcurl-devel \
+        cairo-devel \
         binutils \
     && dnf clean all
 
@@ -53,6 +54,11 @@ RUN ls -lh .build/release/Backend
 # Stage 2: Lambda Runtime (AL2023)
 # ============================
 FROM public.ecr.aws/lambda/provided:al2023
+
+RUN dnf update -y && \
+    dnf install -y \
+        cairo \
+    && dnf clean all
 
 # ビルド済みバイナリをコピー
 COPY --from=build /workspace/Backend/.build/release/Backend /var/runtime/bootstrap
