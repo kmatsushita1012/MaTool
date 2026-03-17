@@ -58,7 +58,10 @@ FROM public.ecr.aws/lambda/provided:al2023
 RUN dnf update -y && \
     dnf install -y \
         cairo \
-    && dnf clean all
+    && dnf clean all && \
+    ls -l /usr/lib64/libcairo.so.2
+
+ENV LD_LIBRARY_PATH="/usr/lib64:/lib64:${LD_LIBRARY_PATH}"
 
 # ビルド済みバイナリをコピー
 COPY --from=build /workspace/Backend/.build/release/Backend /var/runtime/bootstrap
