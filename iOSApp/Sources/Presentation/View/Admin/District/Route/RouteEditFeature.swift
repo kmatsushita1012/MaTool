@@ -57,6 +57,7 @@ struct RouteEditFeature{
         let mode: EditMode
         var operation: Operation = .add
         var isLoading: Bool = false
+        var isSubmitDialogPresented: Bool = false
         var tab: Tab
         var region: MKCoordinateRegion
         var size: CGSize?
