@@ -36,6 +36,7 @@ struct TimePicker: View {
     init(_ title: String = "時刻を選択", selection time: Binding<SimpleTime>) {
         self.title = title
         self._time = time
+        UIDatePicker.appearance().minuteInterval = 5
     }
     
     var body: some View {
@@ -44,9 +45,6 @@ struct TimePicker: View {
             selection: $time.fullDate,
             displayedComponents: [.hourAndMinute]
         )
-        .onAppear {
-            UIDatePicker.appearance().minuteInterval = 5
-        }
     }
 }
 
