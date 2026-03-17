@@ -116,6 +116,7 @@ final class Application: @unchecked Sendable {
         do {
             return try await apply(layers)(request)
         } catch {
+            print(error)
             return .error(error)
         }
         
