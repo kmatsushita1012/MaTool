@@ -1,4 +1,5 @@
-import CCairo
+import CLibCairo
+import CPango
 import Dependencies
 import Foundation
 import Shared
@@ -87,7 +88,7 @@ private extension CairoRouteSnapshotRenderer {
     func drawPage(context: OpaquePointer?, routeId: String, points: [Point]) {
         drawBackground(context: context)
         drawRoute(context: context, points: points)
-        drawTitle(context: context, routeId: routeId)
+        drawTitle(context: context, routeId: routeId, pointsCount: points.count)
     }
 
     func drawBackground(context: OpaquePointer?) {
@@ -96,12 +97,28 @@ private extension CairoRouteSnapshotRenderer {
         cairo_fill(context)
     }
 
-    func drawTitle(context: OpaquePointer?, routeId: String) {
+    func drawTitle(context: OpaquePointer?, routeId: String, pointsCount: Int) {
+        guard let context else { return }
+
+        let title = "\(routeId)"
+        let subtitle = "ポイント数: \(pointsCount)"
+
         cairo_set_source_rgb(context, 0.05, 0.12, 0.24)
-        cairo_select_font_face(context, "Sans", CAIRO_FONT_SLANT_NORMAL, CAIRO_FONT_WEIGHT_BOLD)
-        cairo_set_font_size(context, 16)
-        cairo_move_to(context, 16, 28)
-        cairo_show_text(context, routeId)
+        drawPangoText(
+            context: context,
+            text: title,
+            fontDescription: "Noto Sans CJK JP Bold 16",
+            x: 16,
+            y: 12
+        )
+        cairo_set_source_rgb(context, 0.18, 0.22, 0.30)
+        drawPangoText(
+            context: context,
+            text: subtitle,
+            fontDescription: "Noto Sans CJK JP 12",
+            x: 16,
+            y: 34
+        )
     }
 
     func drawRoute(context: OpaquePointer?, points: [Point]) {
@@ -143,5 +160,33 @@ private extension CairoRouteSnapshotRenderer {
             let y = Double(canvasHeight) - padding - ((coordinate.latitude - minLat) / latRange) * height
             return (x, y)
         }
+    }
+
+    func drawPangoText(
+        context: OpaquePointer,
+        text: String,
+        fontDescription: String,
+        x: Double,
+        y: Double
+    ) {
+        guard let layout = pango_cairo_create_layout(context) else { return }
+        defer { g_object_unref(layout) }
+
+        if let font = pango_font_description_from_string(fontDescription) {
+            pango_layout_set_font_description(layout, font)
+            pango_font_description_free(font)
+        }
+
+        text.withCString { cText in
+            pango_layout_set_text(layout, cText, -1)
+        }
+
+        let maxWidth = Int((Double(canvasWidth) - 32.0) * Double(PANGO_SCALE))
+        pango_layout_set_width(layout, Int32(maxWidth))
+        pango_layout_set_wrap(layout, PANGO_WRAP_WORD_CHAR)
+        pango_layout_set_ellipsize(layout, PANGO_ELLIPSIZE_END)
+
+        cairo_move_to(context, x, y)
+        pango_cairo_show_layout(context, layout)
     }
 }
