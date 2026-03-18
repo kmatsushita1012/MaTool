@@ -83,14 +83,14 @@ struct PointEditView: View {
     @ViewBuilder
     var checkpoint: some View {
         if #available(iOS 18.0, *) {
-            Picker("重要地点の種類", selection: $store.point.checkpointId) {
+            Picker("交差点の種類", selection: $store.point.checkpointId) {
                 checkpointPickerContent
             } currentValueLabel: {
                 Text(store.selectedCheckpoint?.name ?? "未選択")
             }
             .pickerStyle(.menu)
         } else {
-            Picker("重要地点の種類", selection: $store.point.checkpointId) {
+            Picker("交差点の種類", selection: $store.point.checkpointId) {
                checkpointPickerContent
             }
             .pickerStyle(.menu)
