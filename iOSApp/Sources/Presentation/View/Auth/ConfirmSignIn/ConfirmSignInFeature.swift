@@ -51,14 +51,7 @@ struct ConfirmSignInFeature {
             case .dismissTapped:
                 return .dismiss
             case .received(.success(let userRole)):
-                switch userRole {
-                case .headquarter(let id):
-                    return .none
-                case .district(let id):
-                    return .none
-                case .guest:
-                    return .none
-                }
+                return .none
             case .received(.failure(let error)):
                 state.isLoading = false
                 state.alert = AlertFeature.error("送信に失敗しました。\(error.localizedDescription)")
