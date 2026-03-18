@@ -29,6 +29,7 @@ protocol SceneUsecaseProtocol: Sendable {
 
 actor SceneUsecase: SceneUsecaseProtocol {
     var userDefaults: UserDefalutsManagerProtocol
+    private var launchErrorCount: Int = 0
     
     @Dependency(SceneDataFetcherKey.self) var dataFetcher
     @Dependency(FestivalDataFetcherKey.self) var festivalDataFetcher
@@ -45,6 +46,7 @@ actor SceneUsecase: SceneUsecaseProtocol {
             try authService.initialize()
             guard let festivalId = userDefaults.defaultFestivalId else {
                 try await festivalDataFetcher.fetchAll()
+                launchErrorCount = 0
                 return (.onboarding, await appStatusTask)
             }
             let userRole = await {
@@ -59,12 +61,25 @@ actor SceneUsecase: SceneUsecaseProtocol {
             if let districtId = userDefaults.defaultDistrictId {
                 async let districtTask = dataFetcher.launchDistrict(districtId: districtId)
                 let (_, routeId) = try await(festivalTask, districtTask)
+                launchErrorCount = 0
                 return (.district(userRole, routeId), await appStatusTask)
             } else {
                 try await festivalTask
+                launchErrorCount = 0
                 return (.festival(userRole), await appStatusTask)
             }
         } catch {
+            launchErrorCount += 1
+            if launchErrorCount == 1 {
+                do {
+                    userDefaults.defaultFestivalId = nil
+                    userDefaults.defaultDistrictId = nil
+                    try await festivalDataFetcher.fetchAll()
+                    return (.onboarding, await appStatusTask)
+                } catch {
+                    return (.error(error.localizedDescription), await appStatusTask)
+                }
+            }
             return (.error(error.localizedDescription), await appStatusTask)
         }
     }

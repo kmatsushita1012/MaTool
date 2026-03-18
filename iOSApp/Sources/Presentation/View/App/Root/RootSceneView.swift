@@ -37,10 +37,10 @@ public struct RootSceneView: View {
             isPerceptionCheckingEnabled = false
         }
         self._launchState = Shared(value: .loading)
-        prepareDependencies {
-            if let database = try? setupDatabase() {
-                $0.defaultDatabase = database
-            }
+        do {
+            try setupDefaultDatabase()
+        } catch {
+            fatalError("Failed to setup default database: \(error.localizedDescription)")
         }
     }
 
@@ -93,7 +93,9 @@ public struct RootSceneView: View {
     func errorView(_ message: String) -> some View {
         VStack {
             Spacer()
-            Text("エラー　\(message)")
+            Text("申し訳ございません。システムエラーにより停止しています。\n\(message)")
+                .multilineTextAlignment(.center)
+                .padding(.horizontal, 24)
             Spacer()
         }
     }
