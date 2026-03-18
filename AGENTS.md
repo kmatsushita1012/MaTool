@@ -5,6 +5,14 @@
 - Run Git commands from the project root: `/Users/matsushitakazuya/private/MaTool`.
 - Do not use `git -C ...` in this repository because it may fail in this environment.
 
+## Branch naming rule (MaTool)
+
+- Branch prefixes must be package-based: `ios/`, `backend/`, `shared/`, `meta/`.
+- Do not use `feature/` in this repository.
+- Choose one package scope first, then create a branch in that scope.
+- Example: `ios/confirm-signin-via-scene-usecase`
+- Before `gh pr create`, verify `git branch --show-current` matches one of the allowed prefixes.
+
 ## Package.resolved rule
 
 - Do not commit `Package.resolved` changes by default.
