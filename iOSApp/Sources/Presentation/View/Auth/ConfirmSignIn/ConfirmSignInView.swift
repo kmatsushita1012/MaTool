@@ -18,10 +18,10 @@ struct ConfirmSignInView: View {
             Text("パスワード変更")
                 .font(.largeTitle)
                 .padding()
-            SecureField("新しいパスワード", text: $store.password1)
+            TextField("新しいパスワード", text: $store.password1)
                 .textFieldStyle(RoundedBorderTextFieldStyle())
                 .padding()
-            SecureField("新しいパスワード（確認用）", text: $store.password2)
+            TextField("新しいパスワード（確認用）", text: $store.password2)
                 .textFieldStyle(RoundedBorderTextFieldStyle())
                 .padding()
             Button(action: {
