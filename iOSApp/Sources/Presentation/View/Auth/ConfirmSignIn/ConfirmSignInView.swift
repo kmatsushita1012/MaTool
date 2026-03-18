@@ -38,7 +38,7 @@ struct ConfirmSignInView: View {
         }
         .padding()
         .toolbar {
-            ToolbarBackButton {
+            ToolbarBackButton(isDisabled: store.isLoading) {
                 store.send(.dismissTapped)
             }
         }
