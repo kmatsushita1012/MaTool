@@ -4,6 +4,7 @@
 
 - Run Git commands from the project root: `/Users/matsushitakazuya/private/MaTool`.
 - Do not use `git -C ...` in this repository because it may fail in this environment.
+- Before any branch/commit/PR operation, read and follow [$matool-git](/Users/matsushitakazuya/.codex/skills/matool-git/SKILL.md).
 
 ## Package.resolved rule
 
