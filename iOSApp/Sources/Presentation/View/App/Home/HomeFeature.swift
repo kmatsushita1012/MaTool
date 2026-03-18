@@ -50,6 +50,8 @@ struct HomeFeature {
         case adminTapped
         case settingsTapped
         case settingsPrepared(VoidTaskResult)
+        case loginSucceeded(UserRole)
+        case loginSucceededAfterDismiss(UserRole)
         case destination(PresentationAction<Destination.Action>)
         case alert(PresentationAction<AlertFeature.Action>)
     }
@@ -103,6 +105,17 @@ struct HomeFeature {
             case .settingsPrepared(.failure(let error)):
                 state.alert = AlertFeature.error("設定画面の準備に失敗しました。\n\(error)")
                 return .none
+            case .loginSucceededAfterDismiss(let userRole):
+                state.userRole = userRole
+                state.isDestinationLoading = false
+                switch userRole {
+                case .headquarter(let id):
+                    return adminFestivalPrepared(state: &state, action: action, festivalId: id)
+                case .district(let id):
+                    return adminDistrictPrepared(state: &state, action: action, districtId: id)
+                case .guest:
+                    return .none
+                }
             case .destination(.presented(.settings(.districtSelectReceived(.success(let routeId))))):
                 state.currentRouteId = routeId
                 return .none
@@ -111,41 +124,32 @@ struct HomeFeature {
                 state.userRole = userRole
                 state.currentRouteId = nil
                 return .none
-            case .destination(.presented(let childAction)):
-                switch childAction {
-                case .login(.received(.success(.signedIn(let userRole)))),
-                        .login(.destination(.presented(.confirmSignIn(.received(.success(let userRole)))))):
-                    state.userRole = userRole
-                    switch state.userRole {
-                    case .headquarter(let id):
-                        return adminFestivalPrepared(state: &state, action: action, festivalId: id)
-                    case .district(let id):
-                        return adminDistrictPrepared(state: &state, action: action, districtId: id)
-                    case .guest:
-                        return .none
-                    }
-                case .info(.destination(.presented(.district(.mapTapped)))):
-                    guard let districtId = state.destination?.info?.destination?.district?.district.id else {
-                        return .none
-                    }
-                    if #available(iOS 17, *) {
-                        return .none // FIXME:
-                    }else{
-                        state.isDestinationLoading = true
-                        state.destination = nil
-                        return .none // FIXME:
-                    }
-                case .adminDistrict(.signOutReceived(.success(let userRole))),
-                    .adminFestival(.signOutReceived(.success(let userRole))):
-                    state.userRole = userRole
-                    state.destination = nil
-                    return .none
-                case .settings(.signOutReceived(.success(let userRole))):
-                    state.userRole = userRole
-                    return .none
-                default:
+            case .destination(.presented(.login(.received(.success(.signedIn(let userRole)))))),
+                .destination(.presented(.login(.destination(.presented(.confirmSignIn(.received(.success(let userRole)))))))):
+                state.destination = nil
+                state.isDestinationLoading = true
+                return .run { send in
+                    await send(.loginSucceededAfterDismiss(userRole))
+                }
+            case .destination(.presented(.info(.destination(.presented(.district(.mapTapped)))))):
+                guard let districtId = state.destination?.info?.destination?.district?.district.id else {
                     return .none
                 }
+                if #available(iOS 17, *) {
+                    return .none // FIXME:
+                }else{
+                    state.isDestinationLoading = true
+                    state.destination = nil
+                    return .none // FIXME:
+                }
+            case .destination(.presented(.adminDistrict(.signOutReceived(.success(let userRole))))),
+                .destination(.presented(.adminFestival(.signOutReceived(.success(let userRole))))):
+                state.userRole = userRole
+                state.destination = nil
+                return .none
+            case .destination(.presented(.settings(.signOutReceived(.success(let userRole))))):
+                state.userRole = userRole
+                return .none
             case .alert:
                 state.alert = nil
                 return .none

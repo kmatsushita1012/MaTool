@@ -21,6 +21,7 @@ enum FestivalSelectionResult: Equatable, Sendable {
 protocol SceneUsecaseProtocol: Sendable {
     func launch() async -> (LaunchState, StatusCheckResult?)
     func signIn(username: String, password: String) async throws -> SignInState
+    func isValidPassword(_ password: String) -> Bool
     func confirmSignIn(password: String) async throws -> UserRole
     func select(festivalId: Festival.ID) async throws -> FestivalSelectionResult
     func select(districtId: District.ID) async throws -> Route.ID?
@@ -82,6 +83,11 @@ actor SceneUsecase: SceneUsecaseProtocol {
             userDefaults.defaultDistrictId = districtId
         }
         return signInResult
+    }
+
+    nonisolated func isValidPassword(_ password: String) -> Bool {
+        @Dependency(AuthServiceKey.self) var authService
+        return authService.isValidPassword(password)
     }
     
     func confirmSignIn(password: String) async throws -> UserRole {
