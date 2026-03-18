@@ -28,6 +28,12 @@ struct FestivalEditView: View{
         .navigationBarTitleDisplayMode(.inline)
         .loadingOverlay(store.isLoading)
         .dismissible(backButton: false, edgeSwipe: false)
+        .alert($store.scope(state: \.alert, action: \.alert))
+        .navigationDestination(
+            item: $store.scope(state: \.destination?.base, action:  \.destination.base)
+        ) { store in
+            DistrictBaseEditView(store: store)
+        }
         .navigationDestination(
             item: $store.scope(state: \.destination?.checkpoint, action:  \.destination.checkpoint)
         ) { store in
@@ -43,6 +49,21 @@ struct FestivalEditView: View{
     @ViewBuilder
     var content: some View {
         List {
+            Section(header: Text("祭典名")) {
+                TextField("祭典名を入力", text: $store.festival.name)
+            }
+            Section(header: Text("本部名")) {
+                TextField("本部名を入力", text: $store.festival.subname)
+            }
+            Section(header: Text("本部所在地")) {
+                NavigationItemView(
+                    title: "地図で選択",
+                    status: store.baseStatusText,
+                    onTap: {
+                        store.send(.baseTapped)
+                    }
+                )
+            }
             Section(header: Text("説明")) {
                 TextEditor(text: $store.festival.description.nonOptional)
                     .frame(height:120)
@@ -53,7 +74,7 @@ struct FestivalEditView: View{
             Section(header: Text("市区町村")) {
                 TextField("市区町村を入力",text: $store.festival.city)
             }
-            Section(header: Text("重要地点")) {
+            Section(header: Text("交差点")) {
                 ForEach(store.checkpoints) { checkpoint in
                     NavigationItemView(
                         title: checkpoint.name,
@@ -80,5 +101,14 @@ struct FestivalEditView: View{
                 }
             }
         }
+    }
+}
+
+private extension FestivalEditFeature.State {
+    var baseStatusText: String {
+        if base == nil {
+            return "未設定"
+        }
+        return "設定済み"
     }
 }
