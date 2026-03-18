@@ -34,6 +34,15 @@ struct PeriodListView: View {
     @ViewBuilder
     var content: some View {
         Form {
+            if store.latests == nil && store.archives.isEmpty {
+                Section {
+                    ContentUnavailableView {
+                        Label("日程がありません", systemImage: "calendar.badge.plus")
+                    } description: {
+                        Text("右上の追加ボタンから日程を追加できます。")
+                    }
+                }
+            }
             if let latest = store.latests {
                 Section(latest.text) {
                     ForEach(latest.periods) { period in
