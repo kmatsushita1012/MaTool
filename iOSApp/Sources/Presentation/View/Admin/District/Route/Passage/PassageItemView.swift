@@ -15,6 +15,8 @@ struct PassageItemView: View {
 
     let canMoveUp: Bool
     let canMoveDown: Bool
+    let onInsertAbove: () -> Void
+    let onInsertBelow: () -> Void
     let onMoveUp: () -> Void
     let onMoveDown: () -> Void
     let onDelete: () -> Void
@@ -23,6 +25,8 @@ struct PassageItemView: View {
         passage: RoutePassage,
         canMoveUp: Bool,
         canMoveDown: Bool,
+        onInsertAbove: @escaping () -> Void,
+        onInsertBelow: @escaping () -> Void,
         onMoveUp: @escaping () -> Void,
         onMoveDown: @escaping () -> Void,
         onDelete: @escaping () -> Void
@@ -31,6 +35,8 @@ struct PassageItemView: View {
         self._district = FetchOne(District.find(passage.districtId ?? "__none__"))
         self.canMoveUp = canMoveUp
         self.canMoveDown = canMoveDown
+        self.onInsertAbove = onInsertAbove
+        self.onInsertBelow = onInsertBelow
         self.onMoveUp = onMoveUp
         self.onMoveDown = onMoveDown
         self.onDelete = onDelete
@@ -56,6 +62,16 @@ struct PassageItemView: View {
             Spacer()
 
             Menu {
+                Button("上に追加", systemImage: "plus.circle") {
+                    onInsertAbove()
+                }
+
+                Button("下に追加", systemImage: "plus.circle") {
+                    onInsertBelow()
+                }
+
+                Divider()
+
                 Button("上へ移動", systemImage: "arrow.up") {
                     onMoveUp()
                 }
