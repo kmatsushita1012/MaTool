@@ -115,7 +115,7 @@ extension PointEditFeature.State {
         switch pointType {
         case .checkpoint:
             if point.checkpointId == nil {
-                throw Point.Error.unknown("重要地点の種類が選択されていません")
+                throw Point.Error.unknown("交差点の種類が選択されていません")
             }
         case .performance:
             if point.performanceId == nil {
