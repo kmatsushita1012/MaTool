@@ -44,42 +44,37 @@ jobs:
             -scheme iOSApp \
             -resolvePackageDependencies
 
-      - name: Select latest iPhone simulator
+      - name: Select latest plain iPhone simulator
         id: sim
         shell: bash
         run: |
           set -euxo pipefail
 
-          echo "Resolving destinations..."
-
           DESTS="$(
             xcodebuild \
               -project iOSApp/MaTool.xcodeproj \
               -scheme iOSApp \
-              -showdestinations
+              -showdestinations \
+              -skipMacroValidation \
+              -skipPackagePluginValidation
           )"
-
-          echo "---- Raw destinations ----"
-          printf '%s\n' "$DESTS"
-          echo "--------------------------"
 
           DEST_LINE="$(
-            printf '%s\n' "$DESTS" \
-            | grep 'platform:iOS Simulator' \
-            | grep -E 'iPhone [0-9]+,' \
-            | sed -E 's/.*OS:([0-9.]+).*/\1 &/' \
-            | sort -t' ' -k1,1V \
-            | tail -1
+            printf '%s\n' "$DESTS" | awk '
+              /platform:iOS Simulator/ && /name:iPhone / &&
+              $0 !~ /Pro/ && $0 !~ /Max/ && $0 !~ /Air/ && $0 !~ /16e/ {
+                match($0, /OS:[0-9.]+/)
+                os = substr($0, RSTART + 3, RLENGTH - 3)
+                print os " " $0
+              }
+            ' | sort -V | tail -1 | cut -d' ' -f2-
           )"
 
-          if [ -z "${DEST_LINE:-}" ]; then
-            echo "No suitable iPhone simulator found"
-            exit 1
-          fi
+          [ -n "$DEST_LINE" ]
 
-          DESTINATION_ID="$(echo "$DEST_LINE" | sed -E 's/.*id:([^,}]*).*/\1/')"
-          DEVICE_NAME="$(echo "$DEST_LINE" | sed -E 's/.*name:([^,]+).*/\1/')"
-          OS_VERSION="$(echo "$DEST_LINE" | sed -E 's/.*OS:([^,}]+).*/\1/')"
+          DESTINATION_ID="$(printf '%s\n' "$DEST_LINE" | sed -E 's/.*id:([^,}]*).*/\1/')"
+          DEVICE_NAME="$(printf '%s\n' "$DEST_LINE" | sed -E 's/.*name:([^}]*)[[:space:]]*}/\1/' | xargs)"
+          OS_VERSION="$(printf '%s\n' "$DEST_LINE" | sed -E 's/.*OS:([^,}]+).*/\1/' | xargs)"
 
           echo "Selected simulator:"
           echo "  Device: $DEVICE_NAME"
