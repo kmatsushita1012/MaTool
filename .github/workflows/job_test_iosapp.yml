@@ -37,6 +37,13 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-derived-
 
+      - name: Resolve packages
+        run: |
+          xcodebuild \
+            -project iOSApp/MaTool.xcodeproj \
+            -scheme iOSApp \
+            -resolvePackageDependencies
+
       - name: Select latest iPhone simulator
         id: sim
         shell: bash
