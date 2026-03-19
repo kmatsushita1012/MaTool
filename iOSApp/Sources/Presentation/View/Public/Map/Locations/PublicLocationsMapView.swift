@@ -14,7 +14,8 @@ struct PublicLocationsMapView: View {
     
     var body: some View {
         WithPerceptionTracking{
-            MapView(style: .public, floats: store.floats, region: $store.mapRegion, floatTapped: { store.send(.floatTapped($0)) })
+            @Binding(store.$mapRegion) var mapRegion
+            MapView(style: .public, floats: store.floats, region: $mapRegion, floatTapped: { store.send(.floatTapped($0)) })
             .ignoresSafeArea(edges: .bottom)
             .safeAreaInset(edge: .bottom){
                 if isLiquidGlassDisabled {
