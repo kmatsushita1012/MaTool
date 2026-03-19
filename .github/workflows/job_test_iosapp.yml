@@ -44,7 +44,7 @@ jobs:
           xcodebuild \
             -project iOSApp/MaTool.xcodeproj \
             -scheme iOSApp \
-            -destination 'platform=iOS Simulator,name=iPhone 17,OS=26.3' \
+            -destination 'platform=iOS Simulator,name=iPhone 17,OS=26.2' \
             -configuration Debug \
             -derivedDataPath iOSApp/.derivedData \
             -enableCodeCoverage YES \
