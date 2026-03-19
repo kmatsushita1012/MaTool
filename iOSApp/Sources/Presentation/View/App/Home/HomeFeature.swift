@@ -124,13 +124,12 @@ struct HomeFeature {
                 state.userRole = userRole
                 state.currentRouteId = nil
                 return .none
-            case .destination(.presented(.login(.received(.success(.signedIn(let userRole)))))),
-                .destination(.presented(.login(.destination(.presented(.confirmSignIn(.received(.success(let userRole)))))))):
-                state.destination = nil
+            case .destination(.presented(.login(.received(.success(.signedIn(let userRole)))))):
+                return .send(.loginSucceededAfterDismiss(userRole))
+            case .destination(.presented(.login(.destination(.presented(.confirmSignIn(.received(.success(let userRole)))))))):
+                state.destination = nil // 2階層の遷移はあらかじめdestinationをnilにしないと作動しない
                 state.isDestinationLoading = true
-                return .run { send in
-                    await send(.loginSucceededAfterDismiss(userRole))
-                }
+                return .send(.loginSucceededAfterDismiss(userRole))
             case .destination(.presented(.info(.destination(.presented(.district(.mapTapped)))))):
                 guard let districtId = state.destination?.info?.destination?.district?.district.id else {
                     return .none
