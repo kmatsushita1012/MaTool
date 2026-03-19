@@ -211,12 +211,24 @@ extension RouteEditView {
             }
             
             Section {
+                Button("自動判定", systemImage: "sparkles"){
+                    store.send(.autoPassageTapped)
+                }
+                .disabled(store.isAutoPassageDisabled)
+                .labelStyle(.titleAndIcon)
+
                 ForEach(store.passages) { passage in
                     if let index = store.passages.firstIndex(of: passage){
                         PassageItemView(
                             passage: passage,
                             canMoveUp: index > 0,
                             canMoveDown: index < store.passages.count - 1,
+                            onInsertAbove: {
+                                store.send(.passageInsertAboveTapped(index))
+                            },
+                            onInsertBelow: {
+                                store.send(.passageInsertBelowTapped(index))
+                            },
                             onMoveUp: {
                                 withAnimation {
                                     store.send(.passageMoved(from: IndexSet(integer: index), to: index - 1))
@@ -249,6 +261,8 @@ extension RouteEditView {
                 HStack{
                     Text("通過する町")
                 }
+            } footer: {
+                Text("自動判定を実行すると既存の入力は削除されます。結果には誤差が生じる可能性があるので、必ず確認してください。")
             }
             .formStyle(.columns)
             

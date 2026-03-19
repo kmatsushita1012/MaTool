@@ -10,12 +10,7 @@ import Dependencies
 import Foundation
 import Shared
 
-func setupDatabase() throws -> DatabaseQueue {
-    let databasePath = URL.documentsDirectory
-        .appending(path: "matool.sqlite")
-        .path()
-    
-    let database: DatabaseQueue = try DatabaseQueue(path: databasePath)
+private func makeDatabaseMigrator() -> DatabaseMigrator {
     var migrator = DatabaseMigrator()
     
     migrator.registerMigration("CreateAllTables") { db in
@@ -130,9 +125,21 @@ func setupDatabase() throws -> DatabaseQueue {
             )
         """).execute(db)
     }
-    
-    try migrator.migrate(database)
-    
-    return database
+    return migrator
 }
 
+private func makeDefaultDatabase() throws -> DatabaseQueue {
+    let databasePath = URL.documentsDirectory
+        .appending(path: "matool.sqlite")
+        .path()
+    return try DatabaseQueue(path: databasePath)
+}
+
+func setupDefaultDatabase() throws {
+    let database = try makeDefaultDatabase()
+    let migrator = makeDatabaseMigrator()
+    try migrator.migrate(database)
+    prepareDependencies {
+        $0.defaultDatabase = database
+    }
+}
