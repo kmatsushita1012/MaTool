@@ -12,10 +12,10 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v4
 
-    - name: Setup Xcode
+    - name: Setup Xcode 26.3
       uses: maxim-lobanov/setup-xcode@v1
       with:
-        xcode-version: "26.0"
+        xcode-version: "26.3"
 
     - name: Ensure SPM Cache Dir Exists
       run: mkdir -p Backend/Caches/org.swift.swiftpm
@@ -31,7 +31,7 @@ jobs:
       with:
         path: |
           ~/Library/Caches/org.swift.swiftpm/
-        key: ${{ runner.os }}-spm-Backend-26.0
+        key: ${{ runner.os }}-spm-Backend-26.3
         restore-keys: |
           ${{ runner.os }}-spm-Backend-
 
@@ -40,7 +40,7 @@ jobs:
       uses: actions/cache@v3
       with:
         path: Backend/.derivedData
-        key: ${{ runner.os }}-derived-26.0
+        key: ${{ runner.os }}-derived-26.3
         restore-keys: |
           ${{ runner.os }}-derived-
 
