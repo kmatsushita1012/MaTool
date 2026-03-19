@@ -14,48 +14,7 @@ struct HomeView: View {
     var body: some View {
         WithPerceptionTracking{
             AnyView(
-                VStack(spacing: 16) {
-                    card("MapCard")
-                        .onTapGesture {
-                            store.send(.mapTapped)
-                        }
-                    HStack(spacing: 16)  {
-                        GeometryReader { geometry in
-                            VStack(spacing: 16) {
-                                card("InfoCard", priority: 2)
-                                    .frame(height: geometry.size.height * 3 / 5)
-                                    .onTapGesture{
-                                        store.send(.infoTapped)
-                                    }
-                                
-                                card("ShopCard", priority: 1)
-                                    .frame(height: geometry.size.height * 2 / 5)
-                            }
-                        }
-                        
-                        GeometryReader { geometry in
-                            VStack(spacing: 16) {
-                                card("SettingsCard")
-                                    .frame(height: geometry.size.height * 2 / 5)
-                                    .onTapGesture {
-                                        store.send(.settingsTapped)
-                                    }
-                                if #available(iOS 17.0, *){
-                                    card("AdminCard")
-                                        .frame(height: geometry.size.height * 3 / 5 )
-                                        .onTapGesture {
-                                            store.send(.adminTapped)
-                                        }
-                                } else {
-                                    disabledCard("管理者用ページはお使いの端末（iOS 16）では利用できません")
-                                        .frame(height: geometry.size.height * 3 / 5 )
-                                }
-                            }
-                        }
-                    }
-                    Spacer()
-                }
-                .padding()
+                content
                 .navigationTitle("トップ")
                 .navigationBarTitleDisplayMode(.inline)
                 .toolbar {
@@ -66,12 +25,6 @@ struct HomeView: View {
                             .padding()
                     }
                 }
-                .background (
-                    Image("HomeBackground")
-                        .resizable()
-                        .scaledToFill()
-                        .ignoresSafeArea(edges: [.top])
-                )
                 .navigationDestination(item: $store.scope(state: \.destination?.map, action: \.destination.map)) { store in
                     PublicMapView(store: store)
                 }
@@ -106,6 +59,58 @@ struct HomeView: View {
                 .loadingOverlay(store.isLoading)
             )
         }
+    }
+    
+    @ViewBuilder
+    var content: some View {
+        VStack(spacing: 16) {
+            card("MapCard")
+                .onTapGesture {
+                    store.send(.mapTapped)
+                }
+            HStack(spacing: 16)  {
+                GeometryReader { geometry in
+                    VStack(spacing: 16) {
+                        card("InfoCard", priority: 2)
+                            .frame(height: geometry.size.height * 3 / 5)
+                            .onTapGesture{
+                                store.send(.infoTapped)
+                            }
+                        
+                        card("ShopCard", priority: 1)
+                            .frame(height: geometry.size.height * 2 / 5)
+                    }
+                }
+                
+                GeometryReader { geometry in
+                    VStack(spacing: 16) {
+                        card("SettingsCard")
+                            .frame(height: geometry.size.height * 2 / 5)
+                            .onTapGesture {
+                                store.send(.settingsTapped)
+                            }
+                        if #available(iOS 17.0, *){
+                            card("AdminCard")
+                                .frame(height: geometry.size.height * 3 / 5 )
+                                .onTapGesture {
+                                    store.send(.adminTapped)
+                                }
+                        } else {
+                            disabledCard("管理者用ページはお使いの端末（iOS 16）では利用できません")
+                                .frame(height: geometry.size.height * 3 / 5 )
+                        }
+                    }
+                }
+            }
+            Spacer()
+        }
+        .padding()
+        .background (
+            Image("HomeBackground")
+                .resizable()
+                .scaledToFill()
+                .ignoresSafeArea(edges: [.top])
+        )
     }
     
     @ViewBuilder
