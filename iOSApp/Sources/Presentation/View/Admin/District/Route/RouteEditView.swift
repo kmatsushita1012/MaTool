@@ -187,6 +187,9 @@ extension RouteEditView {
     var info: some View {
         List{
             Section {
+                if store.mode == .preview {
+                    LabeledContent("町名", value: store.district.name)
+                }
                 LabeledContent("日程", value: store.period.text(dateFormat: "y/m/d (w)"))
                 if let startTime = store.start?.time,
                    let endTime = store.end?.time {
