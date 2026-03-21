@@ -50,6 +50,7 @@ actor MapLocationProvider: NSObject, MapLocationProviderProtocol {
             manager.desiredAccuracy = kCLLocationAccuracyBest
             manager.distanceFilter = kCLDistanceFilterNone
             manager.pausesLocationUpdatesAutomatically = true
+            manager.allowsBackgroundLocationUpdates = false
             return manager
         }
         self.manager = manager
@@ -62,7 +63,6 @@ actor MapLocationProvider: NSObject, MapLocationProviderProtocol {
 
     func startTracking() async {
         await setupLocationManagerIfNeeded()
-        manager?.allowsBackgroundLocationUpdates = false
         manager?.startUpdatingLocation()
         isTracking = true
 
@@ -73,7 +73,6 @@ actor MapLocationProvider: NSObject, MapLocationProviderProtocol {
 
     func stopTracking() async {
         manager?.stopUpdatingLocation()
-        manager?.allowsBackgroundLocationUpdates = false
         isTracking = false
     }
 
@@ -102,4 +101,3 @@ extension MapLocationProvider: CLLocationManagerDelegate {
         Task { await updateValue(.failure(error)) }
     }
 }
-

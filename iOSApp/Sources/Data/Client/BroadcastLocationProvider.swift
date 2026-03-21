@@ -53,6 +53,7 @@ actor BroadcastLocationProvider: NSObject, BroadcastLocationProviderProtocol {
             manager.distanceFilter = kCLDistanceFilterNone
             manager.activityType = .fitness
             manager.pausesLocationUpdatesAutomatically = false
+            manager.allowsBackgroundLocationUpdates = true
             if #available(iOS 11.0, *) {
                 manager.showsBackgroundLocationIndicator = true
             }
@@ -69,7 +70,6 @@ actor BroadcastLocationProvider: NSObject, BroadcastLocationProviderProtocol {
 
     func startTracking(onUpdate: ((AsyncValue<CLLocation>) async -> Void)?) async {
         await setupLocationManagerIfNeeded()
-        manager?.allowsBackgroundLocationUpdates = true
         if self.onUpdate == nil, onUpdate != nil {
             self.onUpdate = onUpdate
         }
@@ -83,7 +83,6 @@ actor BroadcastLocationProvider: NSObject, BroadcastLocationProviderProtocol {
 
     func stopTracking() async {
         manager?.stopUpdatingLocation()
-        manager?.allowsBackgroundLocationUpdates = false
         isTracking = false
         onUpdate = nil
     }
@@ -130,4 +129,3 @@ extension BroadcastLocationProviderProtocol {
         await startTracking(onUpdate: onUpdate)
     }
 }
-
