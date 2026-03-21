@@ -128,7 +128,7 @@ actor SceneUsecase: SceneUsecaseProtocol {
             return .unchanged
         }
         async let signOutTask: UserRole = authService.signOut()
-        async let launchFestivalTask: () = dataFetcher.launchFestival(festivalId: festivalId, clearsExistingData: true)
+        async let launchFestivalTask: () = dataFetcher.launchFestival(festivalId: festivalId, clearsExistingData: false)
         _ = try await (signOutTask, launchFestivalTask)
         userDefaults.defaultFestivalId = festivalId
         userDefaults.defaultDistrictId = nil
