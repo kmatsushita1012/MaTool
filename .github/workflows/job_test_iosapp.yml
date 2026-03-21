@@ -37,6 +37,52 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-derived-
 
+      - name: Resolve packages
+        run: |
+          xcodebuild \
+            -project iOSApp/MaTool.xcodeproj \
+            -scheme iOSApp \
+            -resolvePackageDependencies
+
+      - name: Select latest plain iPhone simulator
+        id: sim
+        shell: bash
+        run: |
+          set -euxo pipefail
+
+          DESTS="$(
+            xcodebuild \
+              -project iOSApp/MaTool.xcodeproj \
+              -scheme iOSApp \
+              -showdestinations \
+              -skipMacroValidation \
+              -skipPackagePluginValidation
+          )"
+
+          DEST_LINE="$(
+            printf '%s\n' "$DESTS" | awk '
+              /platform:iOS Simulator/ && /name:iPhone / &&
+              $0 !~ /Pro/ && $0 !~ /Max/ && $0 !~ /Air/ && $0 !~ /16e/ {
+                match($0, /OS:[0-9.]+/)
+                os = substr($0, RSTART + 3, RLENGTH - 3)
+                print os " " $0
+              }
+            ' | sort -V | tail -1 | cut -d' ' -f2-
+          )"
+
+          [ -n "$DEST_LINE" ]
+
+          DESTINATION_ID="$(printf '%s\n' "$DEST_LINE" | sed -E 's/.*id:([^,}]*).*/\1/')"
+          DEVICE_NAME="$(printf '%s\n' "$DEST_LINE" | sed -E 's/.*name:([^}]*)[[:space:]]*}/\1/' | xargs)"
+          OS_VERSION="$(printf '%s\n' "$DEST_LINE" | sed -E 's/.*OS:([^,}]+).*/\1/' | xargs)"
+
+          echo "Selected simulator:"
+          echo "  Device: $DEVICE_NAME"
+          echo "  OS:     iOS $OS_VERSION"
+          echo "  UDID:   $DESTINATION_ID"
+
+          echo "DESTINATION_ID=$DESTINATION_ID" >> "$GITHUB_OUTPUT"
+
       - name: Build&Test
         run: |
           set -o pipefail
@@ -44,7 +90,7 @@ jobs:
           xcodebuild \
             -project iOSApp/MaTool.xcodeproj \
             -scheme iOSApp \
-            -destination 'platform=iOS Simulator,name=iPhone 17,OS=26.2' \
+            -destination "id=${{ steps.sim.outputs.DESTINATION_ID }}" \
             -configuration Debug \
             -derivedDataPath iOSApp/.derivedData \
             -enableCodeCoverage YES \
