@@ -17,3 +17,5 @@ struct MaToolApp: App {
         }
     }
 }
+
+// 差分用
