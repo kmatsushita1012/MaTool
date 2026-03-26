@@ -11,7 +11,7 @@ enum SceneUsecaseKey: DependencyKey {
 protocol SceneUsecaseProtocol: Sendable {
     func fetchLaunchFestivalPack(festivalId: Festival.ID, user: UserRole, now: Date) async throws -> LaunchFestivalPack
     func fetchLaunchFestivalPack(districtId: District.ID, user: UserRole, now: Date) async throws -> LaunchFestivalPack
-    func fetchLaunchDistrictPack(districtId: District.ID, user: UserRole, now: Date) async throws -> LaunchDistrictPack
+    func fetchLaunchDistrictPack(districtId: District.ID, user: UserRole, now: Date, periodId: Period.ID?) async throws -> LaunchDistrictPack
 }
 
 extension SceneUsecaseProtocol {
@@ -24,7 +24,11 @@ extension SceneUsecaseProtocol {
     }
     
     func fetchLaunchDistrictPack(districtId: District.ID, user: UserRole) async throws -> LaunchDistrictPack {
-        try await fetchLaunchDistrictPack(districtId: districtId, user: user, now: .now)
+        try await fetchLaunchDistrictPack(districtId: districtId, user: user, now: .now, periodId: nil)
+    }
+    
+    func fetchLaunchDistrictPack(districtId: District.ID, user: UserRole, periodId: Period.ID?) async throws -> LaunchDistrictPack {
+        try await fetchLaunchDistrictPack(districtId: districtId, user: user, now: .now, periodId: periodId)
     }
 }
 
@@ -116,7 +120,7 @@ struct SceneUsecase: SceneUsecaseProtocol {
     }
 
     // MARK: - LaunchDistrict
-    func fetchLaunchDistrictPack(districtId: District.ID, user: UserRole, now: Date) async throws -> LaunchDistrictPack {
+    func fetchLaunchDistrictPack(districtId: District.ID, user: UserRole, now: Date, periodId: Period.ID?) async throws -> LaunchDistrictPack {
         let district = try await getDistrict(districtId)
         async let performances = performanceRepository.query(by: districtId)
         
@@ -143,7 +147,13 @@ struct SceneUsecase: SceneUsecaseProtocol {
             $0.period.priority(now: now) < $1.period.priority(now: now)
         }
 
-        let currentRoute = sorted.first?.route
+        let currentRoute: Route? = {
+            if let periodId,
+               let requested = routeWithPeriod.first(where: { $0.route.periodId == periodId }) {
+                return requested.route
+            }
+            return sorted.first?.route
+        }()
         let points = currentRoute != nil ? try await pointRepository.query(by: currentRoute!.id) : []
         let passages = currentRoute != nil ? try await passageRepository.query(by: currentRoute!.id) : []
         let sanitizedPoints = currentRoute != nil
