@@ -15,7 +15,7 @@ enum SceneDataFetcherKey: DependencyKey {
 protocol SceneDataFetcherProtocol: DataFetcher {
     func launchFestival(festivalId: Festival.ID, clearsExistingData: Bool) async throws
     func launchFestival(districtId: District.ID, clearsExistingData: Bool) async throws -> Festival.ID
-    func launchDistrict(districtId: District.ID, clearsExistingData: Bool) async throws -> Route.ID?
+    func launchDistrict(districtId: District.ID, periodId: Period.ID?, clearsExistingData: Bool) async throws -> Route.ID?
 }
 
 extension SceneDataFetcherProtocol {
@@ -27,8 +27,16 @@ extension SceneDataFetcherProtocol {
         try await launchFestival(districtId: districtId, clearsExistingData: true)
     }
     
+    func launchDistrict(districtId: District.ID, periodId: Period.ID?) async throws -> Route.ID? {
+        try await launchDistrict(districtId: districtId, periodId: periodId, clearsExistingData: true)
+    }
+    
     func launchDistrict(districtId: District.ID) async throws -> Route.ID? {
-        try await launchDistrict(districtId: districtId, clearsExistingData: true)
+        try await launchDistrict(districtId: districtId, periodId: nil, clearsExistingData: true)
+    }
+    
+    func launchDistrict(districtId: District.ID, clearsExistingData: Bool) async throws -> Route.ID? {
+        try await launchDistrict(districtId: districtId, periodId: nil, clearsExistingData: clearsExistingData)
     }
 }
 
@@ -102,10 +110,18 @@ struct SceneDataFetcher: SceneDataFetcherProtocol {
     
     func launchDistrict(
         districtId: Shared.District.ID,
+        periodId: Period.ID?,
         clearsExistingData: Bool
     ) async throws -> Route.ID? {
         let token = try await getToken()
         let pack: LaunchDistrictPack
+        let query: [String: Any] = {
+            if let periodId {
+                return ["periodId": periodId]
+            } else {
+                return [:]
+            }
+        }()
         if clearsExistingData {
             async let deleteTask: () = database.write{ db in
                 try performanceStore.deleteAll(from: db)
@@ -113,11 +129,11 @@ struct SceneDataFetcher: SceneDataFetcherProtocol {
                 try pointStore.deleteAll(from: db)
                 try passageStore.deleteAll(from: db)
             }
-            async let fetchTask: LaunchDistrictPack = client.get(path: "/districts/\(districtId)/launch", accessToken: token, isCache: false)
+            async let fetchTask: LaunchDistrictPack = client.get(path: "/districts/\(districtId)/launch", query: query, accessToken: token, isCache: false)
             let result = try await (fetchTask, deleteTask)
             pack = result.0
         } else {
-            pack = try await client.get(path: "/districts/\(districtId)/launch", accessToken: token, isCache: false)
+            pack = try await client.get(path: "/districts/\(districtId)/launch", query: query, accessToken: token, isCache: false)
         }
         try await database.write{ db in
             try performanceStore.upsert(pack.performances, at: db)

@@ -267,7 +267,7 @@ final class SceneUsecaseMock: SceneUsecaseProtocol, @unchecked Sendable {
     init(
         fetchLaunchFestivalByFestivalIdHandler: ((String, UserRole, Date) throws -> LaunchFestivalPack)? = nil,
         fetchLaunchFestivalByDistrictIdHandler: ((String, UserRole, Date) throws -> LaunchFestivalPack)? = nil,
-        fetchLaunchDistrictHandler: ((String, UserRole, Date) throws -> LaunchDistrictPack)? = nil
+        fetchLaunchDistrictHandler: ((String, UserRole, Date, Period.ID?) throws -> LaunchDistrictPack)? = nil
     ) {
         self.fetchLaunchFestivalByFestivalIdHandler = fetchLaunchFestivalByFestivalIdHandler
         self.fetchLaunchFestivalByDistrictIdHandler = fetchLaunchFestivalByDistrictIdHandler
@@ -291,10 +291,10 @@ final class SceneUsecaseMock: SceneUsecaseProtocol, @unchecked Sendable {
     }
 
     private(set) var fetchLaunchDistrictCallCount = 0
-    private let fetchLaunchDistrictHandler: ((String, UserRole, Date) throws -> LaunchDistrictPack)?
-    func fetchLaunchDistrictPack(districtId: String, user: UserRole, now: Date) async throws -> LaunchDistrictPack {
+    private let fetchLaunchDistrictHandler: ((String, UserRole, Date, Period.ID?) throws -> LaunchDistrictPack)?
+    func fetchLaunchDistrictPack(districtId: String, user: UserRole, now: Date, periodId: Period.ID?) async throws -> LaunchDistrictPack {
         fetchLaunchDistrictCallCount += 1
         guard let fetchLaunchDistrictHandler else { throw TestError.unimplemented }
-        return try fetchLaunchDistrictHandler(districtId, user, now)
+        return try fetchLaunchDistrictHandler(districtId, user, now, periodId)
     }
 }
