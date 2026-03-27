@@ -77,7 +77,7 @@
 - 概要: District作成（招待）
 - 認証: 必要（`headquarter(festivalId)`）
 - Path: `festivalId: String`
-- Body: `DistrictCreateForm`
+- Body: `DistrictCreateForm`（`name`, `email`, `reissue`）
 - Response `200`: `DistrictPack`
 - Errors: `401`, `404`, `409`, `500`
 
@@ -251,4 +251,3 @@
   - `/Users/matsushitakazuya/private/MaTool/Backend/Sources/Core/Request+.swift`
   - `/Users/matsushitakazuya/private/MaTool/Backend/Sources/Core/Response+.swift`
   - `/Users/matsushitakazuya/private/MaTool/Backend/Sources/Core/Error+.swift`
-
