@@ -48,20 +48,22 @@ struct DistrictControllerTest {
         var lastCalledHeadquarterId: String?
         var lastCalledName: String?
         var lastCalledEmail: String?
+        var lastCalledReissue: Bool?
         var lastCalledUser: UserRole?
 
         let mock = DistrictUsecaseMock(
-            postHandler: { user, headquarterId, newDistrictName, email in
+            postHandler: { user, headquarterId, newDistrictName, email, reissue in
                 lastCalledUser = user
                 lastCalledHeadquarterId = headquarterId
                 lastCalledName = newDistrictName
                 lastCalledEmail = email
+                lastCalledReissue = reissue
                 return expected
             }
         )
         let subject = make(usecase: mock)
 
-        let body = DistrictCreateForm(name: "new-district", email: "district@example.com")
+        let body = DistrictCreateForm(name: "new-district", email: "district@example.com", reissue: true)
         let request = Application.Request.make(
             method: .post,
             path: "/festivals/festival-1/districts",
@@ -78,6 +80,7 @@ struct DistrictControllerTest {
         #expect(lastCalledHeadquarterId == "festival-1")
         #expect(lastCalledName == "new-district")
         #expect(lastCalledEmail == "district@example.com")
+        #expect(lastCalledReissue == true)
         #expect(mock.postCallCount == 1)
     }
 

@@ -54,7 +54,8 @@ struct DistrictUsecaseTest {
                 user: .guest,
                 headquarterId: "festival-1",
                 newDistrictName: "new",
-                email: "a@example.com"
+                email: "a@example.com",
+                reissue: false
             )
         }
     }
@@ -96,7 +97,8 @@ struct DistrictUsecaseTest {
             user: .headquarter(festival.id),
             headquarterId: festival.id,
             newDistrictName: "new",
-            email: "district@example.com"
+            email: "district@example.com",
+            reissue: false
         )
 
         #expect(manager.createCallCount == 1)
@@ -104,6 +106,95 @@ struct DistrictUsecaseTest {
         #expect(posted?.id == expectedDistrictId)
         #expect(result.district.id == expectedDistrictId)
         #expect(result.performances.isEmpty)
+    }
+
+    @Test
+    func post_正常_再発行() async throws {
+        let festival = Festival.mock(id: "festival_2026")
+        let districtId = "festival_new"
+        let district = District.mock(id: districtId, festivalId: festival.id)
+        let performances = [Performance.mock(id: "perf-1", districtId: districtId)]
+
+        var deletedUsername: String?
+        var createdUsername: String?
+        var createdEmail: String?
+
+        let manager = AuthManagerMock(
+            createHandler: { username, email in
+                createdUsername = username
+                createdEmail = email
+                return .district(username)
+            },
+            deleteHandler: { username in
+                deletedUsername = username
+            }
+        )
+
+        let districtRepository = DistrictRepositoryMock(
+            getHandler: { id in
+                if id == districtId { return district }
+                return nil
+            },
+            postHandler: { item in
+                Issue.record("reissue=true では district post されない想定: \(item.id)")
+                return item
+            }
+        )
+
+        let subject = make(
+            districtRepository: districtRepository,
+            festivalRepository: .init(getHandler: { _ in festival }),
+            performanceRepository: .init(queryHandler: { id in
+                #expect(id == districtId)
+                return performances
+            }),
+            authManagerFactory: { manager }
+        )
+
+        let result = try await subject.post(
+            user: .headquarter(festival.id),
+            headquarterId: festival.id,
+            newDistrictName: "new",
+            email: "reissue@example.com",
+            reissue: true
+        )
+
+        #expect(manager.deleteCallCount == 1)
+        #expect(manager.createCallCount == 1)
+        #expect(deletedUsername == districtId)
+        #expect(createdUsername == districtId)
+        #expect(createdEmail == "reissue@example.com")
+        #expect(districtRepository.postCallCount == 0)
+        #expect(result.district == district)
+        #expect(result.performances == performances)
+    }
+
+    @Test
+    func post_異常_再発行対象が存在しない() async {
+        let festival = Festival.mock(id: "festival_2026")
+        let manager = AuthManagerMock(
+            createHandler: { _, _ in .district("unused") },
+            deleteHandler: { _ in }
+        )
+
+        let subject = make(
+            districtRepository: .init(getHandler: { _ in nil }),
+            festivalRepository: .init(getHandler: { _ in festival }),
+            authManagerFactory: { manager }
+        )
+
+        await #expect(throws: Error.notFound("再発行対象の地区が見つかりません")) {
+            _ = try await subject.post(
+                user: .headquarter(festival.id),
+                headquarterId: festival.id,
+                newDistrictName: "new",
+                email: "reissue@example.com",
+                reissue: true
+            )
+        }
+
+        #expect(manager.deleteCallCount == 0)
+        #expect(manager.createCallCount == 0)
     }
 
     @Test
