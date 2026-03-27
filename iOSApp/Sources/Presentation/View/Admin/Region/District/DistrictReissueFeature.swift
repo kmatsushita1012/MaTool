@@ -1,54 +1,57 @@
 //
-//  DistrictCreateFeature.swift
+//  DistrictReissueFeature.swift
 //  MaTool
 //
-//  Created by 松下和也 on 2025/05/12.
+//  Created by Codex on 2026/03/28.
 //
 
 import ComposableArchitecture
 import Shared
 
 @Reducer
-struct DistrictCreateFeature {
-    
+struct DistrictReissueFeature {
     @ObservableState
     struct State: Equatable {
-        let festivalId: Festival.ID
-        var name: String = ""
+        let district: District
         var email: String = ""
         var isLoading: Bool = false
         @Presents var alert: AlertFeature.State?
     }
+
     @CasePathable
     enum Action: Equatable, BindableAction {
         case binding(BindingAction<State>)
-        case createTapped
+        case reissueTapped
         case cancelTapped
-        case createReceived(VoidTaskResult)
+        case reissueReceived(VoidTaskResult)
         case alert(PresentationAction<AlertFeature.Action>)
     }
-    
+
     @Dependency(DistrictDataFetcherKey.self) var dataFetcher
     @Dependency(\.dismiss) var dismiss
-    
-    var body: some ReducerOf<DistrictCreateFeature> {
+
+    var body: some ReducerOf<DistrictReissueFeature> {
         BindingReducer()
-        Reduce{ state, action in
+        Reduce { state, action in
             switch action {
             case .binding:
                 return .none
-            case .createTapped:
-                if state.name.isEmpty || state.email.isEmpty {
+            case .reissueTapped:
+                guard !state.email.isEmpty else {
+                    state.alert = AlertFeature.error("メールアドレスを入力してください。")
                     return .none
                 }
                 state.isLoading = true
-                return createEffect(state)
+                return .task(Action.reissueReceived) { [state] in
+                    try await dataFetcher.reissue(districtId: state.district.id, email: state.email)
+                    await dismiss()
+                }
             case .cancelTapped:
                 return .dismiss
-            case .createReceived(.success):
+            case .reissueReceived(.success):
                 state.isLoading = false
                 return .none
-            case .createReceived(.failure(let error)):
+            case .reissueReceived(.failure(let error)):
                 state.isLoading = false
                 state.alert = AlertFeature.error(error.localizedDescription)
                 return .none
@@ -59,15 +62,5 @@ struct DistrictCreateFeature {
         }
         .ifLet(\.$alert, action: \.alert)
     }
-
-    private func createEffect(_ state: State) -> Effect<Action> {
-        .task(Action.createReceived) { [state] in
-            try await dataFetcher.create(
-                name: state.name,
-                email: state.email,
-                festivalId: state.festivalId
-            )
-            await dismiss()
-        }
-    }
 }
+
