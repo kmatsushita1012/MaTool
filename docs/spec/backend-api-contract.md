@@ -77,9 +77,17 @@
 - 概要: District作成（招待）
 - 認証: 必要（`headquarter(festivalId)`）
 - Path: `festivalId: String`
-- Body: `DistrictCreateForm`（`name`, `email`, `reissue`）
+- Body: `DistrictCreateForm`
 - Response `200`: `DistrictPack`
 - Errors: `401`, `404`, `409`, `500`
+
+### POST `/districts/:districtId/reissue`
+- 概要: Districtアカウント再発行（Cognito再作成）
+- 認証: 必要（`headquarter(district.festivalId)`）
+- Path: `districtId: String`
+- Body: `DistrictReissueForm`（`email`）
+- Response `200`: `DistrictPack`
+- Errors: `401`, `404`, `500`
 
 ### GET `/districts/:districtId`
 - 概要: District詳細取得
