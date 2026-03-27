@@ -51,6 +51,14 @@ struct CognitoAuthManager: AuthManager {
         let user: UserRole = .district(id)
         return user
     }
+
+    func delete(username: String) async throws {
+        let input = AdminDeleteUserInput(
+            userPoolId: userPoolId,
+            username: username
+        )
+        _ = try await client.adminDeleteUser(input: input)
+    }
     
     func get(accessToken: String) async throws -> UserRole {
         let input = GetUserInput(
@@ -86,4 +94,3 @@ struct CognitoAuthManager: AuthManager {
         }
     }
 }
-
