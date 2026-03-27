@@ -51,7 +51,13 @@ struct DistrictController: DistrictControllerProtocol {
         let regionId = try request.parameter("festivalId", as: String.self)
         let body = try request.body(as: DistrictCreateForm.self)
         let user = request.user ?? .guest
-        let result = try await usecase.post(user: user, headquarterId: regionId, newDistrictName: body.name, email: body.email)
+        let result = try await usecase.post(
+            user: user,
+            headquarterId: regionId,
+            newDistrictName: body.name,
+            email: body.email,
+            reissue: body.reissue
+        )
         return try .success(result)
 	}
 
