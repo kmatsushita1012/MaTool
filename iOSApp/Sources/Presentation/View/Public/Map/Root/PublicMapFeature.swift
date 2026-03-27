@@ -120,13 +120,23 @@ struct PublicMapFeature {
                 state.alert = AlertFeature.error(error.localizedDescription)
                 return .none
             case .destination:
-                return .none
+                return destinationAction(state: &state, action: action)
             case .alert:
                 state.alert = nil
                 return .none
             }
         }
         .ifLet(\.$destination, action: \.destination)
+    }
+    
+    private func destinationAction(state: inout State, action: Action) -> Effect<Action> {
+        switch action {
+        case .destination(.presented(.route(.selected(let entry)))):
+            state.currentPeriodId = entry.period.id
+            return .none
+        default:
+            return .none
+        }
     }
     
     func routeEffect(_ district: District, periodId: Period.ID?) -> Effect<Action> {
