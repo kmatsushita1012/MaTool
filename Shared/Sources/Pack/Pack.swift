@@ -30,10 +30,12 @@ public struct DistrictPack: Pack {
 public struct DistrictCreateForm: Pack {
     public let name: String
     public let email: String
+    public let reissue: Bool
     
-    public init(name: String, email: String) {
+    public init(name: String, email: String, reissue: Bool = false) {
         self.name = name
         self.email = email
+        self.reissue = reissue
     }
 }
 
