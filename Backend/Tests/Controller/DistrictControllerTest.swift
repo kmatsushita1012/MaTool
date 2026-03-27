@@ -48,22 +48,20 @@ struct DistrictControllerTest {
         var lastCalledHeadquarterId: String?
         var lastCalledName: String?
         var lastCalledEmail: String?
-        var lastCalledReissue: Bool?
         var lastCalledUser: UserRole?
 
         let mock = DistrictUsecaseMock(
-            postHandler: { user, headquarterId, newDistrictName, email, reissue in
+            postHandler: { user, headquarterId, newDistrictName, email in
                 lastCalledUser = user
                 lastCalledHeadquarterId = headquarterId
                 lastCalledName = newDistrictName
                 lastCalledEmail = email
-                lastCalledReissue = reissue
                 return expected
             }
         )
         let subject = make(usecase: mock)
 
-        let body = DistrictCreateForm(name: "new-district", email: "district@example.com", reissue: true)
+        let body = DistrictCreateForm(name: "new-district", email: "district@example.com")
         let request = Application.Request.make(
             method: .post,
             path: "/festivals/festival-1/districts",
@@ -80,8 +78,43 @@ struct DistrictControllerTest {
         #expect(lastCalledHeadquarterId == "festival-1")
         #expect(lastCalledName == "new-district")
         #expect(lastCalledEmail == "district@example.com")
-        #expect(lastCalledReissue == true)
         #expect(mock.postCallCount == 1)
+    }
+
+    @Test
+    func postReissue_正常() async throws {
+        let expected = DistrictPack.mock(district: .mock(id: "district-1", festivalId: "festival-1"))
+        var lastCalledDistrictId: String?
+        var lastCalledEmail: String?
+        var lastCalledUser: UserRole?
+
+        let mock = DistrictUsecaseMock(
+            postReissueHandler: { user, districtId, email in
+                lastCalledUser = user
+                lastCalledDistrictId = districtId
+                lastCalledEmail = email
+                return expected
+            }
+        )
+        let subject = make(usecase: mock)
+
+        let body = DistrictReissueForm(email: "new@example.com")
+        let request = Application.Request.make(
+            method: .post,
+            path: "/districts/district-1/reissue",
+            parameters: ["districtId": "district-1"],
+            body: try body.toString()
+        )
+
+        let response = try await subject.postReissue(request, next: next)
+        let actual = try DistrictPack.from(response.body)
+
+        #expect(response.statusCode == 200)
+        #expect(actual == expected)
+        #expect(lastCalledUser == .guest)
+        #expect(lastCalledDistrictId == "district-1")
+        #expect(lastCalledEmail == "new@example.com")
+        #expect(mock.postReissueCallCount == 1)
     }
 
     @Test
