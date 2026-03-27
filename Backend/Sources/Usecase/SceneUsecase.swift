@@ -23,6 +23,10 @@ extension SceneUsecaseProtocol {
         try await fetchLaunchFestivalPack(districtId: districtId, user: user, now: .now)
     }
     
+    func fetchLaunchDistrictPack(districtId: District.ID, user: UserRole, now: Date) async throws -> LaunchDistrictPack {
+        try await fetchLaunchDistrictPack(districtId: districtId, user: user, now: now, periodId: nil)
+    }
+    
     func fetchLaunchDistrictPack(districtId: District.ID, user: UserRole) async throws -> LaunchDistrictPack {
         try await fetchLaunchDistrictPack(districtId: districtId, user: user, now: .now, periodId: nil)
     }
