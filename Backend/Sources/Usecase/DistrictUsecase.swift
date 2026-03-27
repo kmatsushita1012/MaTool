@@ -93,7 +93,10 @@ struct DistrictUsecase: DistrictUsecaseProtocol {
             try await manager.delete(username: districtId)
         } catch {
             // 再発行時は存在しないユーザーでも継続して作成できるようにする
+            print("[DistrictUsecase] postReissue delete failed but continue. districtId=\(districtId) error=\(error)")
         }
+        // Cognitoの反映待ち。直後にcreateすると UsernameExistsException が返るケースがある
+        try await Task.sleep(nanoseconds: 1_000_000_000)
         _ = try await manager.create(username: districtId, email: email)
 
         let performances = try await peformanceRepository.query(by: districtId)
