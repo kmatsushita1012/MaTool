@@ -14,7 +14,8 @@ enum DistrictDataFetcherKey: DependencyKey {
 }
 
 protocol DistrictDataFetcherProtocol: DataFetcher {
-    func create(name: String, email: String, festivalId: String, reissue: Bool) async throws
+    func create(name: String, email: String, festivalId: String) async throws
+    func reissue(districtId: District.ID, email: String) async throws
     func update(district: District, performances: [Performance]) async throws
     func update(district: District) async throws
     func fetchAll(festivalID: Festival.ID) async throws
@@ -27,10 +28,17 @@ struct DistrictDataFetcher: DistrictDataFetcherProtocol {
     @Dependency(PerformanceStoreKey.self) var performanceStore
     @Dependency(\.defaultDatabase) var database
     
-    func create(name: String, email: String, festivalId: String, reissue: Bool) async throws {
-        let draft: DistrictCreateForm = .init(name: name, email: email, reissue: reissue)
+    func create(name: String, email: String, festivalId: String) async throws {
+        let draft: DistrictCreateForm = .init(name: name, email: email)
         let token = try await getToken()
         let result: DistrictPack = try await client.post(path: "/festivals/\(festivalId)/districts", body: draft, accessToken: token)
+        try await syncPack(result)
+    }
+
+    func reissue(districtId: District.ID, email: String) async throws {
+        let draft: DistrictReissueForm = .init(email: email)
+        let token = try await getToken()
+        let result: DistrictPack = try await client.post(path: "/districts/\(districtId)/reissue", body: draft, accessToken: token)
         try await syncPack(result)
     }
     
