@@ -26,38 +26,47 @@ struct CognitoAuthManager: AuthManager {
     }
 
     func create(username: String, email: String) async throws -> UserRole {
-        // リクエスト作成
-        let input = AdminCreateUserInput(
-            desiredDeliveryMediums: [.email],
-            forceAliasCreation: false,
-            userAttributes: [
-                .init(name: "email", value: email),
-                .init(name: "email_verified", value: "true"),
-                .init(name: "custom:role", value: "district")
-            ],
-            userPoolId: userPoolId,
-            username: username
+        let input = makeCreateInput(
+            username: username,
+            email: email,
+            messageAction: nil
         )
-        
-        //登録
-        let response = try await client.adminCreateUser(input: input)
-        
-        // レスポンスを確認
-        guard let userReponse = response.user else { throw Error.unauthorized()}
-        let id = userReponse.username
-        let attributes = userReponse.attributes
-        let role = attributes?.first{ $0.name == "custom:role"}
-        guard let id, role?.value == "district" else { throw Error.unauthorized() }
-        let user: UserRole = .district(id)
-        return user
+        do {
+            let response = try await client.adminCreateUser(input: input)
+            return try parseCreatedUser(response: response)
+        } catch let error as CognitoIdentityProviderErrorType {
+            switch error {
+            case .usernameExistsException(let detail):
+                print("[CognitoAuthManager] adminCreateUser username exists. fallback to RESEND. username=\(username) detail=\(String(describing: detail))")
+                let resendInput = makeCreateInput(
+                    username: username,
+                    email: email,
+                    messageAction: .resend
+                )
+                let resendResponse = try await client.adminCreateUser(input: resendInput)
+                return try parseCreatedUser(response: resendResponse)
+            default:
+                throw error
+            }
+        }
     }
 
     func delete(username: String) async throws {
-        let input = AdminDeleteUserInput(
+        let disableInput = AdminDisableUserInput(
             userPoolId: userPoolId,
             username: username
         )
-        _ = try await client.adminDeleteUser(input: input)
+        print("[CognitoAuthManager] adminDisableUser start. username=\(username)")
+        let disableResponse = try await client.adminDisableUser(input: disableInput)
+        print("[CognitoAuthManager] adminDisableUser success. username=\(username) response=\(String(describing: disableResponse))")
+
+        let deleteInput = AdminDeleteUserInput(
+            userPoolId: userPoolId,
+            username: username
+        )
+        print("[CognitoAuthManager] adminDeleteUser start. username=\(username)")
+        let deleteResponse = try await client.adminDeleteUser(input: deleteInput)
+        print("[CognitoAuthManager] adminDeleteUser success. username=\(username) response=\(String(describing: deleteResponse))")
     }
     
     func get(accessToken: String) async throws -> UserRole {
@@ -79,6 +88,34 @@ struct CognitoAuthManager: AuthManager {
         
         let user = try parseUserRole(attributes: response.userAttributes, id: response.username)
         return user
+    }
+
+    private func makeCreateInput(
+        username: String,
+        email: String,
+        messageAction: CognitoIdentityProviderClientTypes.MessageActionType?
+    ) -> AdminCreateUserInput {
+        AdminCreateUserInput(
+            desiredDeliveryMediums: [.email],
+            forceAliasCreation: false,
+            messageAction: messageAction,
+            userAttributes: [
+                .init(name: "email", value: email),
+                .init(name: "email_verified", value: "true"),
+                .init(name: "custom:role", value: "district")
+            ],
+            userPoolId: userPoolId,
+            username: username
+        )
+    }
+
+    private func parseCreatedUser(response: AdminCreateUserOutput) throws -> UserRole {
+        guard let userReponse = response.user else { throw Error.unauthorized() }
+        let id = userReponse.username
+        let attributes = userReponse.attributes
+        let role = attributes?.first { $0.name == "custom:role" }
+        guard let id, role?.value == "district" else { throw Error.unauthorized() }
+        return .district(id)
     }
     
     private func parseUserRole(attributes: [CognitoIdentityProviderClientTypes.AttributeType]?, id: String?) throws -> UserRole {
