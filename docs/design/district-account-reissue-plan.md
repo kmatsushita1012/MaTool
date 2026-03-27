@@ -2,162 +2,127 @@
 
 ## 目的
 
-- `DistrictCreateFeature/View` と `POST /festivals/:festivalId/districts` に「アカウント再発行」機能を追加する。
-- 事故・引き継ぎ時に、Districtデータ本体は維持したまま Cognito ユーザーのみ再作成できるようにする。
+- Districtデータを保持したまま、Cognitoアカウントのみ安全に再発行できるようにする。
+- 再発行対象を `name` ではなく `districtId` で特定し、誤操作リスクを下げる。
 
-## 背景
+## 仕様方針（変更後）
 
-- 現在の District 作成 API は「Districtデータ新規作成 + Cognito招待作成」のみを想定している。
-- 既存 District に対してログイン不能等の復旧をしたい場合、データを作り直さず Cognito 側だけ再発行したい。
+- 再発行は District作成APIとは分離する。
+- 新API: `POST /districts/:districtId/reissue`
+- UI導線:
+  - `HeadquarterDistrictDetailView` に「アカウント再発行」ボタンを追加
+  - タップで再発行専用画面へ遷移
+  - 専用画面はメールアドレス入力欄のみ持つ
+- 再発行専用画面は TCA Feature/View で実装する。
 
 ## スコープ
 
-- iOS:
-  - `iOSApp/Sources/Presentation/View/Admin/Region/District/DistrictCreateFeature.swift`
-  - `iOSApp/Sources/Presentation/View/Admin/Region/District/DistrictCreateView.swift`
+- iOS
+  - `iOSApp/Sources/Presentation/View/Admin/Region/District/HeadquarterDistrictDetailFeature.swift`
+  - `iOSApp/Sources/Presentation/View/Admin/Region/District/HeadquarterDistrictDetailView.swift`
+  - `iOSApp/Sources/Presentation/View/Admin/Region/District/DistrictReissueFeature.swift`（新規）
+  - `iOSApp/Sources/Presentation/View/Admin/Region/District/DistrictReissueView.swift`（新規）
   - `iOSApp/Sources/Data/DataFetcher/DistrictDataFetcher.swift`
-- Shared:
-  - `Shared/Sources/Pack/Pack.swift` (`DistrictCreateForm`)
-- Backend:
+- Backend
+  - `Backend/Sources/Router/DistrictRouter.swift`
   - `Backend/Sources/Controller/DistrictController.swift`
   - `Backend/Sources/Usecase/DistrictUsecase.swift`
   - `Backend/Sources/Data/Auth/AuthManager.swift`
   - `Backend/Sources/Data/Auth/CognitoAuthManager.swift`
+- Shared
+  - `Shared/Sources/Pack/Pack.swift` (`DistrictReissueForm` 追加)
 
-## 要件
+## API設計
 
-1. Viewに再発行用トグルを追加する。
-2. トグルのフッター（caption）で「Districtデータは残るが、アカウント再登録が必要」旨を表示する。
-3. トグルON時に「本当に再発行しますか？アカウントの再登録が必要です」の確認アラートを表示する。
-4. トグルONで作成実行時は、Districtデータを新規作成せず、既存Districtを維持したまま Cognito ユーザーを削除→新規作成する。
-5. トグルOFF時は既存挙動（新規District作成）を維持する。
-
-## 仕様詳細
-
-## UI仕様（DistrictCreateView）
-
-- 追加状態:
-  - `isReissue: Bool = false`
-  - `@Presents var confirmAlert: AlertFeature.State?`（既存 `alert` と用途分離する場合）
-- 入力項目:
-  - 既存の `name`, `email` は継続利用。
-- 追加セクション:
-  - Toggleラベル例: `アカウントを再発行する`
-  - Footer文言例: `ONにすると地区データはそのまま保持され、アカウントのみ再登録が必要になります。`
-- 保存時挙動:
-  - `isReissue == false`: 既存どおり即 `createTapped` 実行。
-  - `isReissue == true`: 確認アラートを出し、OK時のみAPI実行。
-- 確認アラート文言案:
-  - タイトル: `アカウントを再発行しますか？`
-  - 本文: `実行すると既存アカウントは無効になり、再登録が必要です。`
-  - ボタン: `再発行する` / `キャンセル`
-
-## API契約変更
-
-### エンドポイント
+### 既存（維持）
 
 - `POST /festivals/:festivalId/districts`
+  - 用途: 新規District作成
+  - Body: `DistrictCreateForm { name, email }`
 
-### Request (`DistrictCreateForm`)
+### 新規
 
-- 追加フィールド:
-  - `reissue: Bool`（default `false`）
+- `POST /districts/:districtId/reissue`
+  - 用途: 既存Districtのアカウント再発行
+  - Body: `DistrictReissueForm { email }`
+  - Auth: `headquarter(district.festivalId)` のみ許可
+  - Response: `DistrictPack`
 
-```json
-{
-  "name": "第一町",
-  "email": "district@example.com",
-  "reissue": true
-}
-```
+## Backend詳細
 
-### Response
+### Controller
 
-- 既存どおり `DistrictPack` を返却。
+- `DistrictController.postReissue` を追加。
+- Path `districtId` と body `email` を受け取り、Usecaseへ委譲。
 
-## Backend仕様（Usecase分岐）
+### Usecase
 
-`DistrictUsecase.post(user:headquarterId:newDistrictName:email:reissue:)` に拡張し、以下で分岐する。
+- `DistrictUsecase.postReissue(user:districtId:email:)` を追加。
+- 処理手順:
+  1. `districtId` で District 取得（なければ `404`）
+  2. user が `headquarter` かつ `district.festivalId` 一致を確認（不一致は `401`）
+  3. Cognitoユーザー削除（`username = districtId`）
+  4. Cognitoユーザー新規作成（`username = districtId`, `email = body.email`）
+  5. Districtデータは更新/新規作成しない
+  6. 既存 `District + performances` を `DistrictPack` で返却
 
-1. 共通
-- 認可: `headquarter(festivalId)` のみ許可。
-- District ID: 既存仕様同様 `makeDistrictId(name, festival)` を使用。
+### AuthManager
 
-2. `reissue == false`（新規作成）
-- 現行ロジック維持。
-- District存在時は `409 conflict`。
-- Cognito作成後、Districtを新規保存。
+- `delete(username:)` を追加済み。
+- `CognitoAuthManager` で `AdminDeleteUser` を利用。
 
-3. `reissue == true`（再発行）
-- 対象Districtが存在しない場合: `404 notFound`。
-- 対象Districtが存在する場合:
-  - Cognitoユーザー削除（username = districtId）
-  - Cognitoユーザー新規作成（username = districtId, email = request.email）
-  - District repository への `post` は行わない（既存データ維持）
-  - 既存District + 既存Performance を返す（`DistrictPack`）
+## iOS詳細
 
-## AuthManager拡張
+### HeadquarterDistrictDetail
 
-- `AuthManager` に削除APIを追加:
-  - `func delete(username: String) async throws`
-- `CognitoAuthManager` 実装:
-  - AWS Cognito `AdminDeleteUser` を利用。
-- エラー方針:
-  - ユーザー不存在時を許容するかは要件選択。
-  - 本設計では運用復旧優先のため「不存在は無視して再作成継続」を推奨。
+- `Destination` に `reissue(DistrictReissueFeature)` を追加。
+- 「アカウント再発行」ボタンで専用画面に遷移。
 
-## データ整合性方針
+### DistrictReissueFeature / View（新規）
 
-- 再発行では District/Performance/Route などのドメインデータを一切変更しない。
-- 変更対象は Cognito ユーザーのみ。
-- 監査性のため、将来的に `reissue` 実行ログ（festivalId, districtId, operator）を記録する余地を残す。
+- State
+  - `district`
+  - `email`
+  - `isLoading`
+  - `alert`
+- View
+  - メールアドレス入力欄のみ
+  - 右上に「再発行」
+  - キャンセルボタン
+  - フッターに「再登録が必要」注意文
+- 実行
+  - `DistrictDataFetcher.reissue(districtId:email:)` を呼ぶ
+  - 成功で画面を閉じる
 
 ## エラーケース
 
-- `401 unauthorized`: HQ権限不一致。
-- `404 notFound`: `reissue=true` で対象Districtなし。
-- `409 conflict`: `reissue=false` で同名District既存。
-- `500`: Cognito操作失敗、Repository取得失敗など。
-
-## テスト計画
-
-## Backend
-
-- `Backend/Tests/Usecase/DistrictUsecaseTest.swift`
-  - `post reissue=false`: 既存回帰（現行テスト維持）。
-  - `post reissue=true && district exists`: delete/create が呼ばれ、repository.post が呼ばれない。
-  - `post reissue=true && district not found`: notFound。
-  - `post reissue=true && unauthorized`: unauthorized。
-- `Backend/Tests/Controller/DistrictControllerTest.swift`
-  - `DistrictCreateForm.reissue` のデコードと usecase 引き渡し確認。
-
-## iOS
-
-- `DistrictCreateFeature` reducer test 追加:
-  - `isReissue=false` では即API呼び出し。
-  - `isReissue=true` では確認アラート表示。
-  - 確認OKでAPI呼び出し、キャンセルで未実行。
-- `DistrictDataFetcher`:
-  - POST body に `reissue` が含まれることを検証。
+- `401 unauthorized`
+  - HQ権限不一致
+- `404 notFound`
+  - 指定 `districtId` が存在しない
+- `500`
+  - Cognito操作失敗など
 
 ## 受け入れ条件
 
-1. 再発行トグルとcaptionがDistrict作成画面に表示される。
-2. 再発行トグルONで作成時、確認アラートが表示される。
-3. 再発行実行時、Districtデータは増えず、既存Districtが維持される。
-4. Cognitoユーザーは削除後に同一 username で再作成される。
-5. トグルOFFでは従来の新規作成挙動に回帰がない。
+1. `HeadquarterDistrictDetailView` から再発行専用画面へ遷移できる。
+2. 専用画面には新しいメールアドレス入力欄のみ表示される。
+3. 再発行実行で Districtデータ件数は増えない。
+4. Cognitoユーザーは `districtId` をキーに削除→再作成される。
+5. 既存の District新規作成API は従来どおり動作する。
 
-## 実装順（推奨）
+## テスト計画
 
-1. Shared `DistrictCreateForm` に `reissue` 追加。
-2. Backend `Controller/Usecase/AuthManager` を拡張。
-3. iOS DataFetcher と Feature/View を更新。
-4. Backend/iOS テスト追加。
-5. API契約書 `docs/spec/backend-api-contract.md` の POST `/festivals/:festivalId/districts` を更新。
+- Backend
+  - `DistrictControllerTest`: `postReissue` 追加
+  - `DistrictUsecaseTest`: `postReissue` 正常/異常（notFound/unauthorized）
+  - `DistrictRouterTest`: `/districts/:districtId/reissue` のルーティング
+- iOS
+  - `HeadquarterDistrictDetailFeature`: `reissueTapped` で destination 遷移
+  - `DistrictReissueFeature`: 入力検証、再発行成功/失敗
 
 ## 非スコープ
 
-- District ID 生成ルール変更。
-- 既存Districtの名称変更・統合。
-- Bootstrap やマイグレーション処理。
+- District名ベースの再発行
+- District作成画面での再発行実行
+- Districtデータ本体の更新
