@@ -43,7 +43,7 @@ final class DistrictUsecaseMock: DistrictUsecaseProtocol, @unchecked Sendable {
     init(
         queryHandler: ((String) throws -> [District])? = nil,
         getHandler: ((String) throws -> DistrictPack)? = nil,
-        postHandler: ((UserRole, String, String, String) throws -> DistrictPack)? = nil,
+        postHandler: ((UserRole, String, String, String, Bool) throws -> DistrictPack)? = nil,
         putPackHandler: ((String, DistrictPack, UserRole) throws -> DistrictPack)? = nil,
         putDistrictHandler: ((String, District, UserRole) throws -> District)? = nil
     ) {
@@ -71,11 +71,11 @@ final class DistrictUsecaseMock: DistrictUsecaseProtocol, @unchecked Sendable {
     }
 
     private(set) var postCallCount = 0
-    private let postHandler: ((UserRole, String, String, String) throws -> DistrictPack)?
-    func post(user: UserRole, headquarterId: String, newDistrictName: String, email: String) async throws -> DistrictPack {
+    private let postHandler: ((UserRole, String, String, String, Bool) throws -> DistrictPack)?
+    func post(user: UserRole, headquarterId: String, newDistrictName: String, email: String, reissue: Bool) async throws -> DistrictPack {
         postCallCount += 1
         guard let postHandler else { throw TestError.unimplemented }
-        return try postHandler(user, headquarterId, newDistrictName, email)
+        return try postHandler(user, headquarterId, newDistrictName, email, reissue)
     }
 
     private(set) var putPackCallCount = 0
