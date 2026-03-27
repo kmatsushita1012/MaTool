@@ -25,11 +25,6 @@ struct DistrictCreateView: View {
                     .autocapitalization(.none)
                     .disableAutocorrection(true)
             }
-            Section {
-                Toggle("アカウント再発行", isOn: $store.isReissue)
-            } footer: {
-                Text("ONの場合、地区データは保持されますがアカウントの再登録が必要です。")
-            }
         }
         .navigationTitle("新規作成")
         .toolbar {
@@ -43,7 +38,6 @@ struct DistrictCreateView: View {
         .navigationBarTitleDisplayMode(.inline)
         .dismissible(backButton: false)
         .loadingOverlay(store.isLoading)
-        .alert($store.scope(state: \.reissueConfirmAlert, action: \.reissueConfirmAlert))
         .alert($store.scope(state: \.alert, action: \.alert))
     }
 }
