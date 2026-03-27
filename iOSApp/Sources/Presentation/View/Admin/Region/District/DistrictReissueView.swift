@@ -15,11 +15,13 @@ struct DistrictReissueView: View {
 
     var body: some View {
         List {
-            Section(header: Text("新しいメールアドレス")) {
+            Section {
                 TextField("メールアドレスを入力", text: $store.email)
                     .textContentType(.emailAddress)
                     .autocapitalization(.none)
                     .disableAutocorrection(true)
+            } header: {
+                Text("新しいメールアドレス")
             } footer: {
                 Text("再発行すると既存アカウントは無効になり、ここで入力したメールアドレスで再登録が必要になります。")
             }
