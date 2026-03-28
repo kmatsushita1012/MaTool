@@ -34,20 +34,9 @@ struct CognitoAuthManager: AuthManager {
         do {
             let response = try await client.adminCreateUser(input: input)
             return try parseCreatedUser(response: response)
-        } catch let error as CognitoIdentityProviderErrorType {
-            switch error {
-            case .usernameExistsException(let detail):
-                print("[CognitoAuthManager] adminCreateUser username exists. fallback to RESEND. username=\(username) detail=\(String(describing: detail))")
-                let resendInput = makeCreateInput(
-                    username: username,
-                    email: email,
-                    messageAction: .resend
-                )
-                let resendResponse = try await client.adminCreateUser(input: resendInput)
-                return try parseCreatedUser(response: resendResponse)
-            default:
-                throw error
-            }
+        } catch {
+            print("[CognitoAuthManager] createUser failed \(error)")
+            throw error
         }
     }
 
