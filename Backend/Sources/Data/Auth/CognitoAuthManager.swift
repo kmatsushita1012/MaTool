@@ -45,17 +45,13 @@ struct CognitoAuthManager: AuthManager {
             userPoolId: userPoolId,
             username: username
         )
-        print("[CognitoAuthManager] adminDisableUser start. username=\(username)")
-        let disableResponse = try await client.adminDisableUser(input: disableInput)
-        print("[CognitoAuthManager] adminDisableUser success. username=\(username) response=\(String(describing: disableResponse))")
+        _ = try await client.adminDisableUser(input: disableInput)
 
         let deleteInput = AdminDeleteUserInput(
             userPoolId: userPoolId,
             username: username
         )
-        print("[CognitoAuthManager] adminDeleteUser start. username=\(username)")
-        let deleteResponse = try await client.adminDeleteUser(input: deleteInput)
-        print("[CognitoAuthManager] adminDeleteUser success. username=\(username) response=\(String(describing: deleteResponse))")
+        _ = try await client.adminDeleteUser(input: deleteInput)
     }
     
     func get(accessToken: String) async throws -> UserRole {
