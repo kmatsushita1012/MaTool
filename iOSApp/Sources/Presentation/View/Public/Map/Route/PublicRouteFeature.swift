@@ -73,7 +73,7 @@ struct PublicRouteFeature {
         case alert(PresentationAction<AlertFeature.Action>)
     }
 
-    @Dependency(\.locationProvider) var locationProvider
+    @Dependency(\.mapLocationProvider) var mapLocationProvider
     @Dependency(RouteDataFetcherKey.self) var dataFetcher
     @Dependency(LocationDataFetcherKey.self) var locationDataFetcher
 
@@ -138,7 +138,7 @@ struct PublicRouteFeature {
                 return .none
             case .userFocusTapped:
                 return .run { send in
-                    let result = await locationProvider.getLocation()
+                    let result = await mapLocationProvider.getLocation()
                     guard let coordinate = result.value?.coordinate else { return }
                     await send(.userLocationReceived(Coordinate.fromCL(coordinate)))
                 }
