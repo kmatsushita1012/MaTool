@@ -77,14 +77,10 @@ struct MapView: UIViewRepresentable {
         mapView.delegate = context.coordinator
         mapView.setRegion(region, animated: false)
         mapView.showsUserLocation = true
-        
         // 長押しジェスチャー追加
         let longPress = UILongPressGestureRecognizer(target: context.coordinator, action: #selector(Coordinator.handleLongPress(_:)))
         mapView.addGestureRecognizer(longPress)
-        mapView.pointOfInterestFilter = MKPointOfInterestFilter(excluding: [
-            .restaurant,
-            .nightlife
-        ])
+        
         mapView.showsCompass = false
         
         return mapView
@@ -120,6 +116,12 @@ struct MapView: UIViewRepresentable {
         
         if size != mapView.frame.size{
             size = mapView.frame.size
+        }
+        
+        if style == .admin || style == .edit {
+            mapView.pointOfInterestFilter = MKPointOfInterestFilter(including: .includedForAdmin)
+        } else {
+            mapView.pointOfInterestFilter = MKPointOfInterestFilter(excluding: .excludedForPublic)
         }
     }
     
@@ -295,3 +297,57 @@ extension MapView: Equatable {
     }
 }
 
+extension Array where Element == MKPointOfInterestCategory {
+    static var excludedForPublic : [MKPointOfInterestCategory] {
+        var categories: [MKPointOfInterestCategory] = [
+            .nightlife,
+            .restaurant
+        ]
+        if #available(iOS 18.0, *) {
+            categories.append(contentsOf: [
+                .beauty
+            ])
+        }
+        return categories
+    }
+    
+    static var includedForAdmin: [MKPointOfInterestCategory] {
+        var categories: [MKPointOfInterestCategory] = [
+            .airport,
+            .aquarium,
+            .bank,
+            .beach,
+            .campground,
+            .fireStation,
+            .hospital,
+            .library,
+            .museum,
+            .nationalPark,
+            .park,
+            .publicTransport,
+            .police,
+            .postOffice,
+            .restroom,
+            .stadium,
+            .school,
+            .university,
+            .zoo
+        ]
+        if #available(iOS 18.0, *) {
+            categories.append(contentsOf: [
+                .castle,
+                .conventionCenter,
+                .fortress,
+                .fairground,
+                .golf,
+                .miniGolf,
+                .kayaking,
+                .landmark,
+                .mailbox,
+                .musicVenue,
+                .nationalMonument
+            ])
+        }
+        return categories
+    }
+}

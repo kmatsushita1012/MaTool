@@ -14,7 +14,7 @@ struct MenuSelector<T: Hashable>: View {
     let label: (T?) -> String
     var isNullable: Bool = true
     var errorMessage: String?
-    var footer: String?
+    var footer: String? = nil
     var borderColor: Color = .blue
     
     var body: some View {

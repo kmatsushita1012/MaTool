@@ -45,18 +45,17 @@ struct PointEditView: View {
             }
             
             Section {
-                Button(action: {
+                Button("この地点を移動", systemImage: "arrow.up.right"){
                     store.send(.moveTapped)
-                }) {
-                    Label("この地点を移動", systemImage: "line.diagonal.arrow")
-                        .font(.body)
                 }
-                Button(action: {
-                    store.send(.insertTapped)
-                }) {
-                    Label("この地点の前に新しい地点を挿入", systemImage: "plus.circle")
-                        .font(.body)
+                Button("この地点の前に新しい地点を挿入", systemImage: "arrow.turn.left.up"){
+                    store.send(.insertBeforeTapped)
                 }
+                Button("この地点の後に新しい地点を挿入", systemImage: "arrow.turn.right.up"){
+                    store.send(.insertAfterTapped)
+                }
+            } footer: {
+                Text("ボタンを押した後、地図を長押しして地点の移動・挿入ができます。")
             }
             Section {
                 Button(action: {
@@ -84,14 +83,14 @@ struct PointEditView: View {
     @ViewBuilder
     var checkpoint: some View {
         if #available(iOS 18.0, *) {
-            Picker("重要地点の種類", selection: $store.point.checkpointId) {
+            Picker("交差点の種類", selection: $store.point.checkpointId) {
                 checkpointPickerContent
             } currentValueLabel: {
                 Text(store.selectedCheckpoint?.name ?? "未選択")
             }
             .pickerStyle(.menu)
         } else {
-            Picker("重要地点の種類", selection: $store.point.checkpointId) {
+            Picker("交差点の種類", selection: $store.point.checkpointId) {
                checkpointPickerContent
             }
             .pickerStyle(.menu)
@@ -136,11 +135,7 @@ struct PointEditView: View {
     
     @ViewBuilder
     var timePicker: some View {
-        DateTimePicker(
-            "時刻を選択",
-            selection: $store.point.time.fullDate,
-            displayedComponents: [.hourAndMinute]
-        )
+        TimePicker("時刻を選択", selection: $store.point.time.unwrapped)
         .datePickerStyle(.compact)
     }
     
@@ -157,13 +152,13 @@ fileprivate extension PointEditFeature.PointType {
     var text: String {
         switch self {
         case .checkpoint:
-            return "重要地点（交差点等）"
+            return "交差点"
         case .performance:
             return "余興"
         case .start:
-            return "出発地点"
+            return "出発"
         case .end:
-            return "到着地点"
+            return "到着"
         case .rest:
             return "休憩"
         case .none:

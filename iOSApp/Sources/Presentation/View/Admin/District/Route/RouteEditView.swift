@@ -19,6 +19,7 @@ struct RouteEditView: View {
     @SwiftUI.Bindable var store: StoreOf<RouteEditFeature>
     @State private var selectedDetent: PresentationDetent = .large
     @State private var pickerHeight: CGFloat = 0
+    @State private var didTriggerSubmitLongPress = false
     
     var body: some View {
         Group{
@@ -113,10 +114,11 @@ extension RouteEditView {
                 case .edit, .public:
                     undoButton
                     redoButton
+                    Spacer()
+                    longPressModeView
                 }
                 Spacer()
-                partialButton
-                wholeButton
+                submitButton
             }
             .frame(maxWidth: .infinity)
             .padding(.horizontal)
@@ -164,12 +166,15 @@ extension RouteEditView {
                 undoButton
                 redoButton
             }
+            ToolbarSpacer(placement: .bottomBar)
+            ToolbarItemGroup(placement: .bottomBar){
+                longPressModeView
+            }
             
         }
         ToolbarSpacer(placement: .bottomBar)
         ToolbarItemGroup(placement: .bottomBar){
-            partialButton
-            wholeButton
+            submitButton
         }
     }
 }
@@ -182,6 +187,9 @@ extension RouteEditView {
     var info: some View {
         List{
             Section {
+                if store.mode == .preview {
+                    LabeledContent("町名", value: store.district.name)
+                }
                 LabeledContent("日程", value: store.period.text(dateFormat: "y/m/d (w)"))
                 if let startTime = store.start?.time,
                    let endTime = store.end?.time {
@@ -206,12 +214,24 @@ extension RouteEditView {
             }
             
             Section {
+                Button("自動判定", systemImage: "sparkles"){
+                    store.send(.autoPassageTapped)
+                }
+                .disabled(store.isAutoPassageDisabled)
+                .labelStyle(.titleAndIcon)
+
                 ForEach(store.passages) { passage in
                     if let index = store.passages.firstIndex(of: passage){
                         PassageItemView(
                             passage: passage,
                             canMoveUp: index > 0,
                             canMoveDown: index < store.passages.count - 1,
+                            onInsertAbove: {
+                                store.send(.passageInsertAboveTapped(index))
+                            },
+                            onInsertBelow: {
+                                store.send(.passageInsertBelowTapped(index))
+                            },
                             onMoveUp: {
                                 withAnimation {
                                     store.send(.passageMoved(from: IndexSet(integer: index), to: index - 1))
@@ -244,6 +264,8 @@ extension RouteEditView {
                 HStack{
                     Text("通過する町")
                 }
+            } footer: {
+                Text("自動判定を実行すると既存の入力は削除されます。結果には誤差が生じる可能性があるので、必ず確認してください。")
             }
             .formStyle(.columns)
             
@@ -273,17 +295,14 @@ extension RouteEditView {
     @ViewBuilder
     var tab: some View {
         Picker("モード", selection: $store.tab) {
-            Text("基本情報編集")
-                .font(.title)
+            Text("基本情報")
                 .tag(Tab.info)
             Text("地図編集")
-                .font(.title)
                 .tag(Tab.edit)
-            Text("一般公開版")
-                .font(.title)
+            Text("一般公開")
                 .tag(Tab.`public`)
         }
-        .pickerStyle(.segmented)
+        .routeSegmentPickerStyle()
         .frame(maxWidth: .infinity)
     }
     
@@ -304,18 +323,83 @@ extension RouteEditView {
     }
     
     @ViewBuilder
-    var partialButton: some View {
-        Button(systemImage: "camera") {
-            store.send(.partialTapped)
+    var submitButton: some View {
+        Button("提出用") {
+            if didTriggerSubmitLongPress {
+                didTriggerSubmitLongPress = false
+                return
+            }
+            store.send(.wholeTapped)
         }
-        .disabled(!store.isPartialEnable)
+        .simultaneousGesture(
+            LongPressGesture(minimumDuration: 0.6).onEnded { _ in
+                if store.isPartialEnable {
+                    didTriggerSubmitLongPress = true
+                    store.isSubmitDialogPresented = true
+                }
+            }
+        )
+        .confirmationDialog(
+            "提出用PDFの出力方法を選択",
+            isPresented: $store.isSubmitDialogPresented,
+            titleVisibility: .visible
+        ) {
+            Button("全体を出力") {
+                store.send(.wholeTapped)
+            }
+            Button("表示範囲を出力") {
+                store.send(.partialTapped)
+            }
+            .disabled(!store.isPartialEnable)
+        }
     }
     
     @ViewBuilder
-    var wholeButton: some View {
-        Button(systemImage: "point.topright.arrow.triangle.backward.to.point.bottomleft.scurvepath") {
-            store.send(.wholeTapped)
+    var longPressModeView: some View {
+        VStack(alignment: .center, spacing: 0) {
+            Text("地図を長押しで")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+            Text("地点を\(operationLabel)")
+                .foregroundStyle(.primary)
         }
+        .frame(width: 100)
+    }
+    
+    var operationLabel: String {
+        switch store.operation {
+        case .add:
+            return "追加"
+        case .insert:
+            return "挿入"
+        case .move:
+            return "移動"
+        }
+    }
+}
+
+private struct RouteSegmentPickerStyleModifier: ViewModifier {
+    init() {
+        UISegmentedControl.appearance().setTitleTextAttributes(
+            [.font: UIFont.preferredFont(forTextStyle: .body)],
+            for: .normal
+        )
+        UISegmentedControl.appearance().setTitleTextAttributes(
+            [.font: UIFont.preferredFont(forTextStyle: .headline)],
+            for: .selected
+        )
+    }
+    
+    func body(content: Content) -> some View {
+        content
+            .pickerStyle(.segmented)
+            .controlSize(.large)
+    }
+}
+
+private extension View {
+    func routeSegmentPickerStyle() -> some View {
+        modifier(RouteSegmentPickerStyleModifier())
     }
 }
 

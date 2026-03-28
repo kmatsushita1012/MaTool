@@ -21,6 +21,7 @@ enum FestivalSelectionResult: Equatable, Sendable {
 protocol SceneUsecaseProtocol: Sendable {
     func launch() async -> (LaunchState, StatusCheckResult?)
     func signIn(username: String, password: String) async throws -> SignInState
+    func isValidPassword(_ password: String) -> Bool
     func confirmSignIn(password: String) async throws -> UserRole
     func select(festivalId: Festival.ID) async throws -> FestivalSelectionResult
     func select(districtId: District.ID) async throws -> Route.ID?
@@ -28,6 +29,7 @@ protocol SceneUsecaseProtocol: Sendable {
 
 actor SceneUsecase: SceneUsecaseProtocol {
     var userDefaults: UserDefalutsManagerProtocol
+    private var launchErrorCount: Int = 0
     
     @Dependency(SceneDataFetcherKey.self) var dataFetcher
     @Dependency(FestivalDataFetcherKey.self) var festivalDataFetcher
@@ -44,6 +46,7 @@ actor SceneUsecase: SceneUsecaseProtocol {
             try authService.initialize()
             guard let festivalId = userDefaults.defaultFestivalId else {
                 try await festivalDataFetcher.fetchAll()
+                launchErrorCount = 0
                 return (.onboarding, await appStatusTask)
             }
             let userRole = await {
@@ -58,12 +61,25 @@ actor SceneUsecase: SceneUsecaseProtocol {
             if let districtId = userDefaults.defaultDistrictId {
                 async let districtTask = dataFetcher.launchDistrict(districtId: districtId)
                 let (_, routeId) = try await(festivalTask, districtTask)
+                launchErrorCount = 0
                 return (.district(userRole, routeId), await appStatusTask)
             } else {
                 try await festivalTask
+                launchErrorCount = 0
                 return (.festival(userRole), await appStatusTask)
             }
         } catch {
+            launchErrorCount += 1
+            if launchErrorCount == 1 {
+                do {
+                    userDefaults.defaultFestivalId = nil
+                    userDefaults.defaultDistrictId = nil
+                    try await festivalDataFetcher.fetchAll()
+                    return (.onboarding, await appStatusTask)
+                } catch {
+                    return (.error(error.localizedDescription), await appStatusTask)
+                }
+            }
             return (.error(error.localizedDescription), await appStatusTask)
         }
     }
@@ -82,6 +98,11 @@ actor SceneUsecase: SceneUsecaseProtocol {
             userDefaults.defaultDistrictId = districtId
         }
         return signInResult
+    }
+
+    nonisolated func isValidPassword(_ password: String) -> Bool {
+        @Dependency(AuthServiceKey.self) var authService
+        return authService.isValidPassword(password)
     }
     
     func confirmSignIn(password: String) async throws -> UserRole {
@@ -107,7 +128,7 @@ actor SceneUsecase: SceneUsecaseProtocol {
             return .unchanged
         }
         async let signOutTask: UserRole = authService.signOut()
-        async let launchFestivalTask: () = dataFetcher.launchFestival(festivalId: festivalId, clearsExistingData: true)
+        async let launchFestivalTask: () = dataFetcher.launchFestival(festivalId: festivalId, clearsExistingData: false)
         _ = try await (signOutTask, launchFestivalTask)
         userDefaults.defaultFestivalId = festivalId
         userDefaults.defaultDistrictId = nil

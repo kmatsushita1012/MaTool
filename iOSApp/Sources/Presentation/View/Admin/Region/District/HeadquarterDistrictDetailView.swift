@@ -46,6 +46,15 @@ struct HeadquarterDistrictDetailView: View {
                     Text("経路図一括出力")
                 }
             }
+            Section {
+                Button(role: .destructive) {
+                    store.send(.reissueTapped)
+                } label: {
+                    Text("アカウント再発行")
+                }
+            } footer: {
+                Text("町データは保持されます。再発行後は入力したメールアドレスでアカウント再登録が必要です。")
+            }
         }
         .navigationTitle(store.district.name)
         .navigationBarTitleDisplayMode(.inline)
@@ -70,6 +79,11 @@ struct HeadquarterDistrictDetailView: View {
             item: $store.scope(state: \.destination?.route, action: \.destination.route)
         ) { store in
             RouteEditView(store: store)
+        }
+        .navigationDestination(
+            item: $store.scope(state: \.destination?.reissue, action: \.destination.reissue)
+        ) { store in
+            DistrictReissueView(store: store)
         }
         .alert($store.scope(state: \.alert, action: \.alert))
         .loadingOverlay(store.isLoading)

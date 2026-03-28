@@ -47,6 +47,13 @@ extension Binding where Value == SimpleTime? {
             set: { self.wrappedValue = SimpleTime.from($0) }
         )
     }
+    
+    var unwrapped: Binding<SimpleTime> {
+        Binding<SimpleTime>(
+            get: { self.wrappedValue ?? .now },
+            set: { self.wrappedValue = $0 }
+        )
+    }
 }
 
 extension Binding where Value == SimpleDate {

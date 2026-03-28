@@ -102,7 +102,7 @@ struct RouteSnapshotter: Equatable {
                     
                     let titleText = """
                     \(district.name)
-                    \(period.text(dateFormat: "y年m月d日 (w)")) \(period.title)
+                    \(period.text(dateFormat: "y年m月d日 (w)"))
                     開始時刻 \(points.first?.time?.text ?? period.start.text)
                     終了時刻 \(points.last?.time?.text ?? period.end.text)
                     """

@@ -57,7 +57,9 @@ struct RouteEditFeature{
         let mode: EditMode
         var operation: Operation = .add
         var isLoading: Bool = false
+        var isSubmitDialogPresented: Bool = false
         var tab: Tab
+        var passageInsertIndex: Int? = nil
         var region: MKCoordinateRegion
         var size: CGSize?
         
@@ -73,6 +75,7 @@ struct RouteEditFeature{
         case onAppear
         case mapLongPressed(Coordinate)
         case pointTapped(PointEntry)
+        case autoPassageTapped
         case undoTapped
         case redoTapped
         case saveTapped
@@ -82,6 +85,8 @@ struct RouteEditFeature{
         case partialTapped
         case copyTapped
         case passageAddTapped
+        case passageInsertAboveTapped(Int)
+        case passageInsertBelowTapped(Int)
         case passageSelected(districtId: District.ID?, memo: String?)
         case passageMoved(from: IndexSet, to: Int)
         case passageDeleteTapped(Int)
@@ -125,8 +130,13 @@ struct RouteEditFeature{
                     return .none
                 }
             case .pointTapped(let entry):
-                state.point = PointEditFeature.State(entry.point)
+                state.point = PointEditFeature.State(entry.point, districtId: state.district.id)
                 state.operation = .add
+                return .none
+            case .autoPassageTapped:
+                let districts: [District] = FetchAll(festivalId: state.district.festivalId).wrappedValue
+                let detector = RoutePassageAutoDetector(mode: .includeTouch)
+                state.passages = detector.makePassages(routeId: state.route.id, points: state.points, districts: districts)
                 return .none
             case .undoTapped:
                 state.manager.undo()
@@ -179,10 +189,27 @@ struct RouteEditFeature{
                 state.destination = .history
                 return .none
             case .passageAddTapped:
+                state.passageInsertIndex = nil
+                state.destination = .passage
+                return .none
+            case .passageInsertAboveTapped(let index):
+                state.passageInsertIndex = index
+                state.destination = .passage
+                return .none
+            case .passageInsertBelowTapped(let index):
+                state.passageInsertIndex = min(index + 1, state.passages.count)
                 state.destination = .passage
                 return .none
             case .passageSelected(let districtId, let memo):
-                state.passages.append(.init(routeId: state.route.id, districtId: districtId, memo: memo))
+                let newPassage = RoutePassage(routeId: state.route.id, districtId: districtId, memo: memo)
+                if let insertIndex = state.passageInsertIndex,
+                   insertIndex >= 0,
+                   insertIndex <= state.passages.count {
+                    state.passages.insert(newPassage, at: insertIndex)
+                } else {
+                    state.passages.append(newPassage)
+                }
+                state.passageInsertIndex = nil
                 state.destination = nil
                 return .none
             case .passageDeleteTapped(let index):
@@ -222,10 +249,20 @@ struct RouteEditFeature{
                     state.point = nil
                 }
                 return .none
-            case .point(.presented(.insertTapped)):
+            case .point(.presented(.insertBeforeTapped)):
                 if let (point, index) = findPointIndex(state){
                     state.points[index] = point
                     state.operation = .insert(index)
+                    state.point = nil
+                }
+                return .none
+            case .point(.presented(.insertAfterTapped)):
+                if let (point, index) = findPointIndex(state){
+                    state.points[index] = point
+                    let targetIndex = index + 1
+                    if targetIndex < state.points.count {
+                        state.operation = .insert(targetIndex)
+                    }
                     state.point = nil
                 }
                 return .none
@@ -283,6 +320,7 @@ extension RouteEditFeature.State {
     var isSaveable: Bool { mode != .preview }
     var isDeleteable: Bool { mode == .update}
     var isPartialEnable: Bool { tab != .info }
+    var isAutoPassageDisabled: Bool { points.count < 2 }
     var title: String {
         switch mode {
         case .create:
@@ -290,7 +328,7 @@ extension RouteEditFeature.State {
         case .update:
             return "編集"
         case .preview:
-            return "修正"
+            return "確認と修正"
         }
     }
     
@@ -333,11 +371,7 @@ extension RouteEditFeature.State {
         let origin: Coordinate = districtQuery.wrappedValue.base ?? festivalQuery.wrappedValue.base
 
         self.region = makeRegion(points: points, origin: origin, spanDelta: spanDelta)
-        if mode == .preview {
-            self.tab = .edit
-        }else{
             self.tab = .info
-        }
     }
 }
 

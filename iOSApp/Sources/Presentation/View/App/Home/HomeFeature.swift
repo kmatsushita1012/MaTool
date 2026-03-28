@@ -50,6 +50,8 @@ struct HomeFeature {
         case adminTapped
         case settingsTapped
         case settingsPrepared(VoidTaskResult)
+        case loginSucceeded(UserRole)
+        case loginSucceededAfterDismiss(UserRole)
         case destination(PresentationAction<Destination.Action>)
         case alert(PresentationAction<AlertFeature.Action>)
     }
@@ -111,41 +113,37 @@ struct HomeFeature {
                 state.userRole = userRole
                 state.currentRouteId = nil
                 return .none
-            case .destination(.presented(let childAction)):
-                switch childAction {
-                case .login(.received(.success(.signedIn(let userRole)))),
-                        .login(.destination(.presented(.confirmSignIn(.received(.success(let userRole)))))):
-                    state.userRole = userRole
-                    switch state.userRole {
-                    case .headquarter(let id):
-                        return adminFestivalPrepared(state: &state, action: action, festivalId: id)
-                    case .district(let id):
-                        return adminDistrictPrepared(state: &state, action: action, districtId: id)
-                    case .guest:
-                        return .none
-                    }
-                case .info(.destination(.presented(.district(.mapTapped)))):
-                    guard let districtId = state.destination?.info?.destination?.district?.district.id else {
-                        return .none
-                    }
-                    if #available(iOS 17, *) {
-                        return .none // FIXME:
-                    }else{
-                        state.isDestinationLoading = true
-                        state.destination = nil
-                        return .none // FIXME:
-                    }
-                case .adminDistrict(.signOutReceived(.success(let userRole))),
-                    .adminFestival(.signOutReceived(.success(let userRole))):
-                    state.userRole = userRole
-                    state.destination = nil
-                    return .none
-                case .settings(.signOutReceived(.success(let userRole))):
-                    state.userRole = userRole
-                    return .none
-                default:
+            case .destination(.presented(.login(.received(.success(.signedIn(let userRole)))))),
+                    .destination(.presented(.login(.confirmSignInCompleted(let userRole)))):
+                state.userRole = userRole
+                state.destination = nil
+                switch userRole {
+                case .headquarter(let id):
+                    return adminFestivalPrepared(state: &state, action: action, festivalId: id)
+                case .district(let id):
+                    return adminDistrictPrepared(state: &state, action: action, districtId: id)
+                case .guest:
                     return .none
                 }
+            case .destination(.presented(.info(.destination(.presented(.district(.mapTapped)))))):
+                guard let districtId = state.destination?.info?.destination?.district?.district.id else {
+                    return .none
+                }
+                if #available(iOS 17, *) {
+                    return .none // FIXME:
+                }else{
+                    state.isDestinationLoading = true
+                    state.destination = nil
+                    return .none // FIXME:
+                }
+            case .destination(.presented(.adminDistrict(.signOutReceived(.success(let userRole))))),
+                .destination(.presented(.adminFestival(.signOutReceived(.success(let userRole))))):
+                state.userRole = userRole
+                state.destination = nil
+                return .none
+            case .destination(.presented(.settings(.signOutReceived(.success(let userRole))))):
+                state.userRole = userRole
+                return .none
             case .alert:
                 state.alert = nil
                 return .none

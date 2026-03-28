@@ -38,12 +38,13 @@ struct PublicRouteMapView: View {
     
     var body: some View {
         WithPerceptionTracking{
+            @Binding(store.$mapRegion) var mapRegion
             ZStack{
                 MapView(
                     style: .public,
                     points: store.points,
                     floatAnnotation: floatAnnotation,
-                    region: $store.mapRegion,
+                    region: $mapRegion,
                     pointTapped: { store.send(.pointTapped($0))},
                     floatTapped: { store.send(.locationTapped($0)) }
                 )
