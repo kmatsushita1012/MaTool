@@ -26,30 +26,27 @@ struct CognitoAuthManager: AuthManager {
     }
 
     func create(username: String, email: String) async throws -> UserRole {
-        // リクエスト作成
-        let input = AdminCreateUserInput(
-            desiredDeliveryMediums: [.email],
-            forceAliasCreation: false,
-            userAttributes: [
-                .init(name: "email", value: email),
-                .init(name: "email_verified", value: "true"),
-                .init(name: "custom:role", value: "district")
-            ],
+        let input = makeCreateInput(
+            username: username,
+            email: email,
+            messageAction: nil
+        )
+        let response = try await client.adminCreateUser(input: input)
+        return try parseCreatedUser(response: response)
+    }
+
+    func delete(username: String) async throws {
+        let disableInput = AdminDisableUserInput(
             userPoolId: userPoolId,
             username: username
         )
-        
-        //登録
-        let response = try await client.adminCreateUser(input: input)
-        
-        // レスポンスを確認
-        guard let userReponse = response.user else { throw Error.unauthorized()}
-        let id = userReponse.username
-        let attributes = userReponse.attributes
-        let role = attributes?.first{ $0.name == "custom:role"}
-        guard let id, role?.value == "district" else { throw Error.unauthorized() }
-        let user: UserRole = .district(id)
-        return user
+        _ = try await client.adminDisableUser(input: disableInput)
+
+        let deleteInput = AdminDeleteUserInput(
+            userPoolId: userPoolId,
+            username: username
+        )
+        _ = try await client.adminDeleteUser(input: deleteInput)
     }
     
     func get(accessToken: String) async throws -> UserRole {
@@ -72,6 +69,34 @@ struct CognitoAuthManager: AuthManager {
         let user = try parseUserRole(attributes: response.userAttributes, id: response.username)
         return user
     }
+
+    private func makeCreateInput(
+        username: String,
+        email: String,
+        messageAction: CognitoIdentityProviderClientTypes.MessageActionType?
+    ) -> AdminCreateUserInput {
+        AdminCreateUserInput(
+            desiredDeliveryMediums: [.email],
+            forceAliasCreation: false,
+            messageAction: messageAction,
+            userAttributes: [
+                .init(name: "email", value: email),
+                .init(name: "email_verified", value: "true"),
+                .init(name: "custom:role", value: "district")
+            ],
+            userPoolId: userPoolId,
+            username: username
+        )
+    }
+
+    private func parseCreatedUser(response: AdminCreateUserOutput) throws -> UserRole {
+        guard let userReponse = response.user else { throw Error.unauthorized() }
+        let id = userReponse.username
+        let attributes = userReponse.attributes
+        let role = attributes?.first { $0.name == "custom:role" }
+        guard let id, role?.value == "district" else { throw Error.unauthorized() }
+        return .district(id)
+    }
     
     private func parseUserRole(attributes: [CognitoIdentityProviderClientTypes.AttributeType]?, id: String?) throws -> UserRole {
         let role = attributes?.first{ $0.name == "custom:role"}?.value
@@ -86,4 +111,3 @@ struct CognitoAuthManager: AuthManager {
         }
     }
 }
-

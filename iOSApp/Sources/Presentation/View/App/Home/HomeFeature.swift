@@ -105,17 +105,6 @@ struct HomeFeature {
             case .settingsPrepared(.failure(let error)):
                 state.alert = AlertFeature.error("設定画面の準備に失敗しました。\n\(error)")
                 return .none
-            case .loginSucceededAfterDismiss(let userRole):
-                state.userRole = userRole
-                state.isDestinationLoading = false
-                switch userRole {
-                case .headquarter(let id):
-                    return adminFestivalPrepared(state: &state, action: action, festivalId: id)
-                case .district(let id):
-                    return adminDistrictPrepared(state: &state, action: action, districtId: id)
-                case .guest:
-                    return .none
-                }
             case .destination(.presented(.settings(.districtSelectReceived(.success(let routeId))))):
                 state.currentRouteId = routeId
                 return .none
@@ -124,12 +113,18 @@ struct HomeFeature {
                 state.userRole = userRole
                 state.currentRouteId = nil
                 return .none
-            case .destination(.presented(.login(.received(.success(.signedIn(let userRole)))))):
-                return .send(.loginSucceededAfterDismiss(userRole))
-            case .destination(.presented(.login(.destination(.presented(.confirmSignIn(.received(.success(let userRole)))))))):
-                state.destination = nil // 2階層の遷移はあらかじめdestinationをnilにしないと作動しない
-                state.isDestinationLoading = true
-                return .send(.loginSucceededAfterDismiss(userRole))
+            case .destination(.presented(.login(.received(.success(.signedIn(let userRole)))))),
+                    .destination(.presented(.login(.confirmSignInCompleted(let userRole)))):
+                state.userRole = userRole
+                state.destination = nil
+                switch userRole {
+                case .headquarter(let id):
+                    return adminFestivalPrepared(state: &state, action: action, festivalId: id)
+                case .district(let id):
+                    return adminDistrictPrepared(state: &state, action: action, districtId: id)
+                case .guest:
+                    return .none
+                }
             case .destination(.presented(.info(.destination(.presented(.district(.mapTapped)))))):
                 guard let districtId = state.destination?.info?.destination?.district?.district.id else {
                     return .none
