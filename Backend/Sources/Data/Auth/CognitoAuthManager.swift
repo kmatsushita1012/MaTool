@@ -31,13 +31,8 @@ struct CognitoAuthManager: AuthManager {
             email: email,
             messageAction: nil
         )
-        do {
-            let response = try await client.adminCreateUser(input: input)
-            return try parseCreatedUser(response: response)
-        } catch {
-            print("[CognitoAuthManager] createUser failed \(error)")
-            throw error
-        }
+        let response = try await client.adminCreateUser(input: input)
+        return try parseCreatedUser(response: response)
     }
 
     func delete(username: String) async throws {
