@@ -627,8 +627,6 @@
 				kind = upToNextMajorVersion;
 				minimumVersion = 1.25.2;
 			};
-			traits = (
-			);
 		};
 		29CC9E402F1523B800C4CD50 /* XCRemoteSwiftPackageReference "sqlite-data" */ = {
 			isa = XCRemoteSwiftPackageReference;
@@ -637,8 +635,6 @@
 				kind = upToNextMajorVersion;
 				minimumVersion = 1.4.3;
 			};
-			traits = (
-			);
 		};
 		29F7B72D2EC871F10099607E /* XCRemoteSwiftPackageReference "amplify-ios" */ = {
 			isa = XCRemoteSwiftPackageReference;
