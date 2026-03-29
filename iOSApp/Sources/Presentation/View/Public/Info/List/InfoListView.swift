@@ -26,9 +26,7 @@ struct InfoListView: View {
                 VStack{
                     mainItem(store.festival.name)
                         .onTapGesture{
-                            #if DEBUG
                             store.send(.festivalTapped)
-                            #endif
                         }
                 }
                 .padding(.horizontal, 96)
@@ -60,6 +58,11 @@ struct InfoListView: View {
             .navigationDestination(item: $store.scope(state: \.destination?.district, action: \.destination.district)) { store in
                 WithPerceptionTracking{
                     DistrictInfoView(store: store)
+                }
+            }
+            .navigationDestination(item: $store.scope(state: \.destination?.festival, action: \.destination.festival)) { store in
+                WithPerceptionTracking {
+                    FestivalInfoView(store: store)
                 }
             }
             .alert($store.scope(state: \.alert, action: \.alert))
