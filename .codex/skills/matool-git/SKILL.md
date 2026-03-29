@@ -88,6 +88,26 @@ git push -u origin HEAD
 git push
 ```
 
+# 実行・環境ルール（運用）
+
+## iOSApp作業後の確認
+
+- `iOSApp/` に変更がある作業の最後は、原則としてiOSAppをSimulatorでlaunchして確認する。
+- 実行手順は [$matool-build-test](/Users/matsushitakazuya/private/MaTool/.codex/skills/matool-build-test/SKILL.md) に従う。
+
+## iOSApp + Backend を同時に作業する場合
+
+- まず `backend/<topic>` ブランチをpushして、Backend側の変更を先に共有可能な状態にする。
+- iOSApp検証時は、APIルートURLを `dev-XXX` 形式に切り替えてlaunch確認する（`XXX` は `backend/<topic>` の `<topic>` と一致させる）。
+- この `dev-XXX` への切替は **一時変更** として扱い、コミットしない。
+- PR作成前に `git status` / `git diff` で残差分を確認し、URL切替が残っていたらその箇所のみrevertする。
+- URL切替を誤ってpushした場合も、PR作成前にその変更だけを打ち消すコミット（または差分除去）を行う。
+
+## Backend単独作業の場合
+
+- 明示指示があるまで、Backendはローカルrun（My Mac）で確認する。
+- pushはユーザー指示が出てから実施する。
+
 # PR作成
 
 ## 前提（gh）
