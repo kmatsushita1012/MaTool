@@ -2,7 +2,24 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-REPO_ROOT="$(cd "${SCRIPT_DIR}/../../.." && pwd)"
+
+find_repo_root() {
+  local dir="${SCRIPT_DIR}"
+  while [[ "${dir}" != "/" ]]; do
+    if [[ -f "${dir}/Backend/Package.swift" && -f "${dir}/Shared/Package.swift" ]]; then
+      echo "${dir}"
+      return 0
+    fi
+    dir="$(dirname "${dir}")"
+  done
+  return 1
+}
+
+REPO_ROOT="$(find_repo_root || true)"
+[[ -n "${REPO_ROOT}" ]] || {
+  echo "[ERROR] Could not locate repository root from ${SCRIPT_DIR}" >&2
+  exit 1
+}
 
 ACTION="${1:-list}"
 IOS_BUILD_DESTINATION="${IOS_BUILD_DESTINATION:-generic/platform=iOS Simulator}"
