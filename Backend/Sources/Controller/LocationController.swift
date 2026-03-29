@@ -33,21 +33,21 @@ struct LocationController: LocationControllerProtocol {
 		let districtId = try request.parameter("districtId", as: String.self)
 		let user = request.user ?? .guest
         let result = try await usecase.get(districtId: districtId, user: user, now: Date())
-		return try .success(result.roundedTimestamp())
+		return try .success(result.asResponse())
 	}
 
 	func query(_ request: Request, next: Handler) async throws -> Response {
 		let festivalId = try request.parameter("festivalId", as: String.self)
 		let user = request.user ?? .guest
 		let result = try await usecase.query(by: festivalId, user: user, now: Date())
-		return try .success(result.roundedTimestamp())
+		return try .success(result.asResponse())
 	}
 
 	func put(_ request: Request, next: Handler) async throws -> Response {
 		let body = try request.body(as: FloatLocation.self)
 		let user = request.user ?? .guest
 		let result = try await usecase.put(body, user: user)
-		return try .success(result.roundedTimestamp())
+		return try .success(result.asResponse())
 	}
 
 	func delete(_ request: Request, next: Handler) async throws -> Response {
