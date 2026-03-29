@@ -28,6 +28,7 @@ struct PublicMapFeature {
     struct State: Equatable{
         let contents: [Content]
         var selectedContent: Content
+        var currentPeriodId: Period.ID? = nil
         var isLoading: Bool = false
         var isDismissed: Bool = false
         @Presents var destination: Destination.State?
@@ -75,9 +76,16 @@ struct PublicMapFeature {
                     return .none
                 }
             case .contentSelected(let value):
+                let wasLocations: Bool = {
+                    if case .locations = state.selectedContent {
+                        return true
+                    }
+                    return false
+                }()
                 state.selectedContent = value
                 switch value {
                 case .locations(let festival):
+                    state.currentPeriodId = nil
                     state.destination = .locations(
                         PublicLocationsFeature.State(
                             festival,
@@ -86,11 +94,20 @@ struct PublicMapFeature {
                     )
                     return .none
                 case .route(let district):
+                    if wasLocations {
+                        state.currentPeriodId = nil
+                    }
                     state.isLoading = true
-                    return routeEffect(district)
+                    return routeEffect(district, periodId: state.currentPeriodId)
                 }
             case .routePrepared(let district, let routeId):
                 state.isLoading = false
+                if let routeId,
+                   let route = FetchOne(Route.find(routeId)).wrappedValue {
+                    state.currentPeriodId = route.periodId
+                } else {
+                    state.currentPeriodId = nil
+                }
                 state.destination = .route(
                     PublicRouteFeature.State(
                         district,
@@ -103,7 +120,7 @@ struct PublicMapFeature {
                 state.alert = AlertFeature.error(error.localizedDescription)
                 return .none
             case .destination:
-                return .none
+                return destinationAction(state: &state, action: action)
             case .alert:
                 state.alert = nil
                 return .none
@@ -112,9 +129,19 @@ struct PublicMapFeature {
         .ifLet(\.$destination, action: \.destination)
     }
     
-    func routeEffect(_ district: District) -> Effect<Action> {
+    private func destinationAction(state: inout State, action: Action) -> Effect<Action> {
+        switch action {
+        case .destination(.presented(.route(.selected(let entry)))):
+            state.currentPeriodId = entry.period.id
+            return .none
+        default:
+            return .none
+        }
+    }
+    
+    func routeEffect(_ district: District, periodId: Period.ID?) -> Effect<Action> {
         .run { send in
-            let result = await task({ try await sceneDataFetcher.launchDistrict(districtId: district.id) }, defaultError: APIError.unknown(message: "予期しないエラーが発生しました。"))
+            let result = await task({ try await sceneDataFetcher.launchDistrict(districtId: district.id, periodId: periodId) }, defaultError: APIError.unknown(message: "予期しないエラーが発生しました。"))
             switch result {
             case .success(let routeId):
                 await send(.routePrepared(district, routeId))
@@ -177,6 +204,12 @@ extension PublicMapFeature.State {
         let selected = contents[1]
         self.contents = contents
         self.selectedContent = selected
+        if let routeId,
+           let route = FetchOne(Route.find(routeId)).wrappedValue {
+            self.currentPeriodId = route.periodId
+        } else {
+            self.currentPeriodId = nil
+        }
         
         self._mapRegion = Shared(value: makeRegion(origin: festival.base, spanDelta: spanDelta))
         self.destination = .route(
@@ -197,6 +230,7 @@ extension PublicMapFeature.State {
         
         self.contents = contents
         self.selectedContent = selected
+        self.currentPeriodId = nil
         
         self._mapRegion = Shared(value: makeRegion(origin: festival.base, spanDelta: spanDelta))
         self.destination = .locations(

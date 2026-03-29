@@ -12,10 +12,12 @@ final class AuthManagerMock: AuthManager, @unchecked Sendable {
     
     init(
         createHandler: ((String, String) throws -> UserRole)? = nil,
+        deleteHandler: ((String) throws -> Void)? = nil,
         getAccessTokenHandler: ((String) throws -> UserRole)? = nil,
         getUserNameHandler: ((String) throws -> UserRole)? = nil
     ) {
         self.createHandler = createHandler
+        self.deleteHandler = deleteHandler
         self.getAccessTokenHandler = getAccessTokenHandler
         self.getUserNameHandler = getUserNameHandler
     }
@@ -26,6 +28,14 @@ final class AuthManagerMock: AuthManager, @unchecked Sendable {
         createCallCount+=1
         guard let createHandler else { throw TestError.unimplemented }
         return try createHandler(username, email)
+    }
+
+    var deleteCallCount: Int = 0
+    var deleteHandler: ((String) throws -> Void)?
+    func delete(username: String) async throws {
+        deleteCallCount += 1
+        guard let deleteHandler else { throw TestError.unimplemented }
+        try deleteHandler(username)
     }
     
     var getAccessTokenCallCount: Int = 0

@@ -11,6 +11,10 @@ import SQLiteData
 
 @Reducer
 struct InfoListFeature {
+    enum MapRequest: Equatable {
+        case locations(Festival)
+        case route(festival: Festival, district: District, routeId: Route.ID?)
+    }
     
     @Reducer
     enum Destination{
@@ -38,6 +42,7 @@ struct InfoListFeature {
     enum Action: Equatable {
         case festivalTapped
         case districtTapped(District)
+        case mapRequested(MapRequest)
         case dismissTapped
         case districtReceived(TaskResult<District>)
         case destination(PresentationAction<Destination.Action>)
@@ -59,6 +64,8 @@ struct InfoListFeature {
                     try await dataFetcher.fetch(districtID: district.id)
                     return district
                 }
+            case .mapRequested:
+                return .none
             case .dismissTapped:
                 if #available(iOS 17.0, *) {
                     return .dismiss
@@ -73,6 +80,18 @@ struct InfoListFeature {
             case .districtReceived(.failure(let error)):
                 state.alert = AlertFeature.error(error.localizedDescription)
                 state.isLoading = false
+                return .none
+            case .destination(.presented(.festival(.mapTapped))):
+                state.destination = nil
+                return .send(.mapRequested(.locations(state.festival)))
+            case .destination(.presented(.district(.routeIdReceived(.success(let routeId))))):
+                guard let district = state.destination?.district?.district else {
+                    return .none
+                }
+                state.destination = nil
+                return .send(.mapRequested(.route(festival: state.festival, district: district, routeId: routeId)))
+            case .destination(.presented(.district(.routeIdReceived(.failure(let error))))):
+                state.alert = AlertFeature.error(error.localizedDescription)
                 return .none
             case .destination:
                 return .none
