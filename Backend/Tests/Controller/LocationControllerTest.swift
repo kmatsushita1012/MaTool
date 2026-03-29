@@ -1,4 +1,5 @@
 import Dependencies
+import Foundation
 import Shared
 import Testing
 @testable import Backend
@@ -100,6 +101,29 @@ struct LocationControllerTest {
             _ = try await subject.query(request, next: next)
         }
     }
+
+    @Test
+    func get_返却時にtimestampの小数点以下を丸める() async throws {
+        let source = FloatLocation.mock(
+            id: "loc-1",
+            districtId: "district-1",
+            timestamp: Date(timeIntervalSince1970: 1_700_000_000.6)
+        )
+        let mock = LocationUsecaseMock(getHandler: { _, _, _ in source })
+        let subject = make(usecase: mock)
+        let request = Application.Request.make(
+            method: .get,
+            path: "/districts/district-1/locations",
+            parameters: ["districtId": "district-1"]
+        )
+
+        let response = try await subject.get(request, next: next)
+        let actual = try FloatLocation?.from(response.body)
+        let jsonTimestamp = try timestamp(from: response.body)
+
+        #expect(actual?.timestamp.timeIntervalSince1970 == 1_700_000_001)
+        #expect(jsonTimestamp == 1_700_000_001)
+    }
 }
 
 private extension LocationControllerTest {
@@ -113,5 +137,13 @@ private extension LocationControllerTest {
         } operation: {
             LocationController()
         }
+    }
+
+    func timestamp(from json: String) throws -> TimeInterval {
+        let data = Data(json.utf8)
+        let object = try JSONSerialization.jsonObject(with: data)
+        let dictionary = try #require(object as? [String: Any])
+        let number = try #require(dictionary["timestamp"] as? NSNumber)
+        return number.doubleValue
     }
 }

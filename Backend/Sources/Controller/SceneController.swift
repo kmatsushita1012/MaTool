@@ -24,7 +24,7 @@ struct SceneController: SceneControlelrProtocol {
         } else {
             throw Error.badRequest("不正なリクエストです。")
         }
-        return try .success(pack)
+        return try .success(pack.roundedLocationTimestamps())
     }
 
     func launchDistrict(_ request: Request, next: Handler) async throws -> Response {

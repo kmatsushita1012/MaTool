@@ -1,4 +1,5 @@
 import Dependencies
+import Foundation
 import Shared
 import Testing
 @testable import Backend
@@ -116,6 +117,36 @@ struct SceneControllerTest {
             _ = try await subject.launchDistrict(request, next: next)
         }
     }
+
+    @Test
+    func launchFestival_返却時にlocations_timestampの小数点以下を丸める() async throws {
+        let location = FloatLocation.mock(
+            id: "loc-1",
+            districtId: "district-1",
+            timestamp: Date(timeIntervalSince1970: 1_700_000_000.6)
+        )
+        let expected = LaunchFestivalPack.mock(
+            festival: .mock(id: "festival-1"),
+            locations: [location]
+        )
+        let mock = SceneUsecaseMock(
+            fetchLaunchFestivalByFestivalIdHandler: { _, _, _ in expected }
+        )
+        let subject = make(usecase: mock)
+
+        let request = Application.Request.make(
+            method: .get,
+            path: "/festivals/festival-1/launch",
+            parameters: ["festivalId": "festival-1"]
+        )
+
+        let response = try await subject.launchFestival(request, next: next)
+        let actual = try LaunchFestivalPack.from(response.body)
+        let jsonTimestamp = try firstLocationTimestamp(from: response.body)
+
+        #expect(actual.locations.first?.timestamp.timeIntervalSince1970 == 1_700_000_001)
+        #expect(jsonTimestamp == 1_700_000_001)
+    }
 }
 
 private extension SceneControllerTest {
@@ -129,5 +160,15 @@ private extension SceneControllerTest {
         } operation: {
             SceneController()
         }
+    }
+
+    func firstLocationTimestamp(from json: String) throws -> TimeInterval {
+        let data = Data(json.utf8)
+        let object = try JSONSerialization.jsonObject(with: data)
+        let dictionary = try #require(object as? [String: Any])
+        let locations = try #require(dictionary["locations"] as? [[String: Any]])
+        let first = try #require(locations.first)
+        let number = try #require(first["timestamp"] as? NSNumber)
+        return number.doubleValue
     }
 }
