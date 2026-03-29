@@ -143,9 +143,12 @@ struct SceneControllerTest {
         let response = try await subject.launchFestival(request, next: next)
         let actual = try LaunchFestivalPack.from(response.body)
         let jsonTimestamp = try firstLocationTimestamp(from: response.body)
+        let body = response.body
 
         #expect(actual.locations.first?.timestamp.timeIntervalSince1970 == 1_700_000_001)
         #expect(jsonTimestamp == 1_700_000_001)
+        #expect(body.contains("\"timestamp\":1700000001"))
+        #expect(!containsDecimalTimestamp(body))
     }
 }
 
@@ -170,5 +173,9 @@ private extension SceneControllerTest {
         let first = try #require(locations.first)
         let number = try #require(first["timestamp"] as? NSNumber)
         return number.doubleValue
+    }
+
+    func containsDecimalTimestamp(_ json: String) -> Bool {
+        json.range(of: #""timestamp":\d+\."#, options: .regularExpression) != nil
     }
 }

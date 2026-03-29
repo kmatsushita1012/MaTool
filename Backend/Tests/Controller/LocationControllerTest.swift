@@ -120,9 +120,12 @@ struct LocationControllerTest {
         let response = try await subject.get(request, next: next)
         let actual = try FloatLocation?.from(response.body)
         let jsonTimestamp = try timestamp(from: response.body)
+        let body = response.body
 
         #expect(actual?.timestamp.timeIntervalSince1970 == 1_700_000_001)
         #expect(jsonTimestamp == 1_700_000_001)
+        #expect(body.contains("\"timestamp\":1700000001"))
+        #expect(!containsDecimalTimestamp(body))
     }
 }
 
@@ -145,5 +148,9 @@ private extension LocationControllerTest {
         let dictionary = try #require(object as? [String: Any])
         let number = try #require(dictionary["timestamp"] as? NSNumber)
         return number.doubleValue
+    }
+
+    func containsDecimalTimestamp(_ json: String) -> Bool {
+        json.range(of: #""timestamp":\d+\."#, options: .regularExpression) != nil
     }
 }
