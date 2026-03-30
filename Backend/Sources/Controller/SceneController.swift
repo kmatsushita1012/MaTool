@@ -29,8 +29,9 @@ struct SceneController: SceneControlelrProtocol {
 
     func launchDistrict(_ request: Request, next: Handler) async throws -> Response {
         let districtId = try request.parameter("districtId", as: String.self)
+        let periodId = try? request.parameter("periodId", as: Period.ID.self)
         let user = request.user ?? .guest
-        let pack = try await sceneUsecase.fetchLaunchDistrictPack(districtId: districtId, user: user)
+        let pack = try await sceneUsecase.fetchLaunchDistrictPack(districtId: districtId, user: user, periodId: periodId)
         return try .success(pack)
     }
 }

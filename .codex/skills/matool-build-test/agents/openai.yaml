@@ -1,0 +1,4 @@
+interface:
+  display_name: "MaTool Build/Test"
+  short_description: "MaToolのBackend/iOSAppを安全にbuild/testする（Bootstrap除外）"
+  default_prompt: "Use this skill to run safe build and test commands for MaTool Backend and iOSApp while never executing BackendBootstrap."

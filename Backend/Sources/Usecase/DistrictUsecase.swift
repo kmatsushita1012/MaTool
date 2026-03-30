@@ -18,6 +18,7 @@ protocol DistrictUsecaseProtocol: Sendable {
     func query(by regionId: String) async throws -> [District]
     func get(_ id: String) async throws -> DistrictPack
     func post(user: UserRole, headquarterId: String, newDistrictName: String, email: String) async throws -> DistrictPack
+    func postReissue(user: UserRole, districtId: String, email: String) async throws -> DistrictPack
     func put(id: String, item: DistrictPack, user: UserRole) async throws -> DistrictPack
     func put(id: String, district: District, user: UserRole) async throws -> District
 }
@@ -77,6 +78,28 @@ struct DistrictUsecase: DistrictUsecaseProtocol {
 
         let district = try await repository.post(item: item)
         return .init(district: district, performances: [])
+    }
+
+    func postReissue(user: UserRole, districtId: String, email: String) async throws -> DistrictPack {
+        guard let district = try await repository.get(id: districtId) else {
+            throw Error.notFound("再発行対象の地区が見つかりません")
+        }
+        guard case let .headquarter(headquarterId) = user, district.festivalId == headquarterId else {
+            throw Error.unauthorized()
+        }
+
+        let manager = try await managerFactory()
+        do {
+            try await manager.delete(username: districtId)
+        } catch {
+            // 再発行時は存在しないユーザーでも継続して作成できるようにする
+        }
+        // Cognitoの反映待ち。直後にcreateすると UsernameExistsException が返るケースがある
+        try await Task.sleep(nanoseconds: 1_000_000_000)
+        _ = try await manager.create(username: districtId, email: email)
+
+        let performances = try await peformanceRepository.query(by: districtId)
+        return .init(district: district, performances: performances)
     }
     // District権限
     func put(id: String, item: DistrictPack, user: UserRole) async throws -> DistrictPack {
