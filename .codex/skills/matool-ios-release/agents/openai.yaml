@@ -1,0 +1,7 @@
+interface:
+  display_name: "MaTool iOS Release"
+  short_description: "main→release-ios PR作成と次版ブランチ作成を標準化する"
+  default_prompt: "Use $matool-ios-release to mainからrelease-iosへのPR作成（タイトル iOS: vX.X.X、labelはarc:iOSのみ、milestone設定）と、mainから次バージョン更新ブランチ作成（既定はpatch bump、必要なら指定版）まで実行して。"
+
+policy:
+  allow_implicit_invocation: true
