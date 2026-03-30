@@ -16,6 +16,7 @@ struct HeadquarterDistrictDetailFeature {
     @Reducer
     enum Destination {
         case route(RouteEditFeature)
+        case reissue(DistrictReissueFeature)
     }
     
     @ObservableState
@@ -35,6 +36,7 @@ struct HeadquarterDistrictDetailFeature {
     enum Action: Equatable, BindableAction {
         case binding(BindingAction<State>)
         case editTapped
+        case reissueTapped
         case routeSelected(RouteSlot)
         case batchExportTapped
         case updateReceived(VoidTaskResult)
@@ -65,6 +67,9 @@ struct HeadquarterDistrictDetailFeature {
                 } else {
                     return .none
                 }
+            case .reissueTapped:
+                state.destination = .reissue(.init(district: state.district))
+                return .none
             case .routeSelected(let slot):
                 guard let route = slot.route else { return .none }
                 state.isLoading = true

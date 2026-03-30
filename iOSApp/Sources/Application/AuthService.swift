@@ -22,7 +22,7 @@ extension DependencyValues {
 
 // MARK: - AuthServiceProtocol
 protocol AuthServiceProtocol: Sendable {
-    nonisolated func initialize() throws
+    func initialize() throws
     func signIn(_ username: String, password: String) async throws -> SignInState
     func confirmSignIn(password: String) async throws -> UserRole
     func signOut() async throws -> UserRole
@@ -32,18 +32,15 @@ protocol AuthServiceProtocol: Sendable {
     func confirmResetPassword(username: String, newPassword: String, code: String)  async throws
     func updateEmail(to newEmail: String) async throws -> UpdateEmailState
     func confirmUpdateEmail(code: String) async throws
-    nonisolated func isValidPassword(_ password: String) -> Bool
+    func isValidPassword(_ password: String) -> Bool
     func getUserRole() async throws -> UserRole
 }
 
 // MARK: - AuthService
-actor AuthService: AuthServiceProtocol {
+struct AuthService: AuthServiceProtocol {
     @Dependency(\.authProvider) var authProvider
-    
-    private var userRole: UserRole = .guest
-    
-    nonisolated func initialize() throws {
-        @Dependency(\.authProvider) var authProvider
+
+    func initialize() throws {
         return try authProvider.initialize()
     }
     
@@ -71,14 +68,10 @@ actor AuthService: AuthServiceProtocol {
     
     func signOut() async throws -> UserRole {
         _ = try await authProvider.signOut()
-        userRole = .guest
-        return userRole
+        return .guest
     }
     
     func getAccessToken() async -> String? {
-        if userRole == .guest {
-            return nil
-        }
         return try? await authProvider.getTokens()
     }
     
@@ -106,7 +99,7 @@ actor AuthService: AuthServiceProtocol {
         try await authProvider.confirmUpdateEmail(code)
     }
     
-    nonisolated func isValidPassword(_ password: String) -> Bool {
+    func isValidPassword(_ password: String) -> Bool {
         let lengthRule = password.count >= 8
         let hasNumber = password.range(of: "[0-9]", options: .regularExpression) != nil
         let hasUppercase = password.range(of: "[A-Z]", options: .regularExpression) != nil
@@ -117,12 +110,9 @@ actor AuthService: AuthServiceProtocol {
     
     func getUserRole() async throws -> UserRole {
         do {
-            let value = try await authProvider.getUserRole()
-            userRole = value
-            return value
+            return try await authProvider.getUserRole()
         } catch {
             try? await authProvider.signOut()
-            userRole = .guest
             return .guest
         }
     }
