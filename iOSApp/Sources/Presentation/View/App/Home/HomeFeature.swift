@@ -125,16 +125,15 @@ struct HomeFeature {
                 case .guest:
                     return .none
                 }
-            case .destination(.presented(.info(.destination(.presented(.district(.mapTapped)))))):
-                guard let districtId = state.destination?.info?.destination?.district?.district.id else {
+            case .destination(.presented(.info(.mapRequested(let request)))):
+                switch request {
+                case .locations(let festival):
+                    state.destination = .map(.init(festival: festival))
                     return .none
-                }
-                if #available(iOS 17, *) {
-                    return .none // FIXME:
-                }else{
-                    state.isDestinationLoading = true
-                    state.destination = nil
-                    return .none // FIXME:
+                case .route(let festival, let district, let routeId):
+                    state.currentRouteId = routeId
+                    state.destination = .map(.init(festival: festival, district: district, routeId: routeId))
+                    return .none
                 }
             case .destination(.presented(.adminDistrict(.signOutReceived(.success(let userRole))))),
                 .destination(.presented(.adminFestival(.signOutReceived(.success(let userRole))))):
