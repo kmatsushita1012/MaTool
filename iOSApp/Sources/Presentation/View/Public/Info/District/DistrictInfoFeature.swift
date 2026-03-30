@@ -27,9 +27,11 @@ struct DistrictInfoFeature {
         case binding(BindingAction<State>)
         case dismissTapped
         case mapTapped
+        case routeIdReceived(TaskResult<Route.ID?>)
     }
     
     @Dependency(\.dismiss) var dismiss
+    @Dependency(SceneDataFetcherKey.self) var sceneDataFetcher
     
     var body: some ReducerOf<DistrictInfoFeature> {
         BindingReducer()
@@ -47,6 +49,14 @@ struct DistrictInfoFeature {
             //　MARK: Homeに移譲
             case .mapTapped:
                 state.isLoading = true
+                return .task(Action.routeIdReceived) { [districtId = state.district.id] in
+                    try await sceneDataFetcher.launchDistrict(districtId: districtId, clearsExistingData: false)
+                }
+            case .routeIdReceived(.success):
+                state.isLoading = false
+                return .none
+            case .routeIdReceived(.failure):
+                state.isLoading = false
                 return .none
             }
         }
