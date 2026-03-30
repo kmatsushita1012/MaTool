@@ -34,9 +34,9 @@ Supported actions:
 
 ```bash
 # Backend
-(cd Backend && swift build --product Backend)
-(cd Backend && swift test --filter BackendTests)
-(cd Backend && swift run Backend)
+xcodebuild -workspace MaTool.xcworkspace -scheme Backend -destination 'platform=macOS' build
+xcodebuild -workspace MaTool.xcworkspace -scheme BackendTests -destination 'platform=macOS' test
+# run: build Backend scheme, then execute built Backend binary on My Mac
 
 # iOSApp
 xcodebuild -workspace MaTool.xcworkspace -scheme iOSApp -destination 'generic/platform=iOS Simulator' build
@@ -54,7 +54,7 @@ xcrun simctl launch booted <bundle-id>
 - Override iOS destination/device when task context requires specific OS/device reproduction.
 - `ios-run` is fronted by Simulator.app by default (`OPEN_SIMULATOR_APP=1`).
 - After iOSApp code changes, run `ios-run` unless the user explicitly says not to.
-- Backend run target is My Mac (`swift run` from `Backend/`).
+- Backend build/test/run uses Workspace schemes (`Backend`, `BackendTests`) on My Mac by default.
 
 ## Scheme/Package Expectations
 
