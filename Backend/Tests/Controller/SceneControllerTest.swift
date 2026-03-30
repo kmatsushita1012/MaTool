@@ -77,9 +77,11 @@ struct SceneControllerTest {
     func launchDistrict_正常() async throws {
         let expected = LaunchDistrictPack.mock(currentRouteId: "route-1")
         var lastCalledDistrictId: String?
+        var lastCalledPeriodId: Period.ID?
 
-        let mock = SceneUsecaseMock(fetchLaunchDistrictHandler: { districtId, _, _ in
+        let mock = SceneUsecaseMock(fetchLaunchDistrictHandler: { districtId, _, _, periodId in
             lastCalledDistrictId = districtId
+            lastCalledPeriodId = periodId
             return expected
         })
         let subject = make(usecase: mock)
@@ -87,7 +89,7 @@ struct SceneControllerTest {
         let request = Application.Request.make(
             method: .get,
             path: "/districts/district-1/launch",
-            parameters: ["districtId": "district-1"]
+            parameters: ["districtId": "district-1", "periodId": "period-1"]
         )
 
         let response = try await subject.launchDistrict(request, next: next)
@@ -96,12 +98,13 @@ struct SceneControllerTest {
         #expect(response.statusCode == 200)
         #expect(actual == expected)
         #expect(lastCalledDistrictId == "district-1")
+        #expect(lastCalledPeriodId == "period-1")
         #expect(mock.fetchLaunchDistrictCallCount == 1)
     }
 
     @Test
     func launchDistrict_異常_ユースケースエラー透過() async {
-        let mock = SceneUsecaseMock(fetchLaunchDistrictHandler: { _, _, _ in throw TestError.intentional })
+        let mock = SceneUsecaseMock(fetchLaunchDistrictHandler: { _, _, _, _ in throw TestError.intentional })
         let subject = make(usecase: mock)
         let request = Application.Request.make(
             method: .get,
