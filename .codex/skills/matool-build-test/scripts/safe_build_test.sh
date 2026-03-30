@@ -2,26 +2,29 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT=""
 
-find_repo_root() {
-  local dir="${SCRIPT_DIR}"
+detect_repo_root() {
+  local dir
+  dir="${SCRIPT_DIR}"
   while [[ "${dir}" != "/" ]]; do
-    if [[ -f "${dir}/Backend/Package.swift" && -f "${dir}/Shared/Package.swift" ]]; then
+    if [[ -f "${dir}/Backend/Package.swift" && -f "${dir}/AGENTS.md" ]]; then
       echo "${dir}"
       return 0
     fi
-    dir="$(dirname "${dir}")"
+    dir="$(cd "${dir}/.." && pwd)"
   done
   return 1
 }
 
-REPO_ROOT="$(find_repo_root || true)"
+REPO_ROOT="$(detect_repo_root || true)"
 [[ -n "${REPO_ROOT}" ]] || {
-  echo "[ERROR] Could not locate repository root from ${SCRIPT_DIR}" >&2
+  echo "[ERROR] Could not detect MaTool repository root from ${SCRIPT_DIR}" >&2
   exit 1
 }
 
 ACTION="${1:-list}"
+BACKEND_DESTINATION="${BACKEND_DESTINATION:-platform=macOS}"
 IOS_BUILD_DESTINATION="${IOS_BUILD_DESTINATION:-generic/platform=iOS Simulator}"
 IOS_TEST_DESTINATION="${IOS_TEST_DESTINATION:-}"
 IOS_RUN_DESTINATION="${IOS_RUN_DESTINATION:-}"
@@ -70,16 +73,23 @@ verify_structure() {
 
 cmd_backend_build() {
   (
-    cd "${REPO_ROOT}/Backend"
-    swift build --product Backend
+    cd "${REPO_ROOT}"
+    xcodebuild \
+      -workspace MaTool.xcworkspace \
+      -scheme Backend \
+      -destination "${BACKEND_DESTINATION}" \
+      build
   )
 }
 
 cmd_backend_test() {
   (
-    cd "${REPO_ROOT}/Backend"
-    # Always filter to BackendTests so BackendBootstrap never runs.
-    swift test --filter BackendTests
+    cd "${REPO_ROOT}"
+    xcodebuild \
+      -workspace MaTool.xcworkspace \
+      -scheme BackendTests \
+      -destination "${BACKEND_DESTINATION}" \
+      test
   )
 }
 
@@ -108,10 +118,31 @@ cmd_ios_test() {
 }
 
 cmd_backend_run() {
+  local executable_path
+
+  cmd_backend_build
+  executable_path="$(resolve_backend_executable)"
+  [[ -x "${executable_path}" ]] || fail "Backend executable not found: ${executable_path}"
+
   (
-    cd "${REPO_ROOT}/Backend"
-    swift run Backend
+    cd "${REPO_ROOT}"
+    "${executable_path}"
   )
+}
+
+resolve_backend_executable() {
+  python3 -c '
+import glob
+import os
+
+paths = [
+    p for p in glob.glob(os.path.expanduser("~/Library/Developer/Xcode/DerivedData/**/Build/Products/**/Backend"), recursive=True)
+    if os.path.isfile(p) and os.access(p, os.X_OK)
+]
+if not paths:
+    raise SystemExit(1)
+print(max(paths, key=os.path.getmtime))
+'
 }
 
 cmd_ios_run() {
@@ -280,9 +311,9 @@ print("unknown")
 
 Actions:
   list          - Print this plan only
-  backend-build - cd Backend && swift build --product Backend
-  backend-test  - cd Backend && swift test --filter BackendTests
-  backend-run   - cd Backend && swift run Backend
+  backend-build - xcodebuild -workspace MaTool.xcworkspace -scheme Backend -destination '${BACKEND_DESTINATION}' build
+  backend-test  - xcodebuild -workspace MaTool.xcworkspace -scheme BackendTests -destination '${BACKEND_DESTINATION}' test
+  backend-run   - Build Backend scheme, resolve executable path, and run on My Mac
   ios-build     - xcodebuild -workspace MaTool.xcworkspace -scheme iOSApp -destination '${IOS_BUILD_DESTINATION}' build
   ios-test      - xcodebuild -workspace MaTool.xcworkspace -scheme iOSAppTests -destination '<auto id=... or IOS_TEST_DESTINATION>' test
   ios-run       - Build iOSApp and launch on '<auto id=... or IOS_RUN_DESTINATION>'
