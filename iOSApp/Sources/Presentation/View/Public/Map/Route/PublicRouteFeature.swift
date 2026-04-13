@@ -196,7 +196,7 @@ extension PublicRouteFeature.State {
             } else {
                 false
             }
-        }
+        }.sorted()
     }
 
     var isReplayEnable: Bool {
