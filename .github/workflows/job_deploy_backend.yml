@@ -185,7 +185,7 @@ jobs:
 
           echo "✅ $default stage deployed successfully"
 
-      - name: Smoke test deployed festivals endpoint
+      - name: Smoke test deployed health endpoint
         env:
           AWS_REGION: ${{ secrets.AWS_REGION }}
           API_GATEWAY_ID: ${{ secrets.API_GATEWAY_ID }}
@@ -196,17 +196,17 @@ jobs:
           BASE_URL="https://${API_GATEWAY_ID}.execute-api.${AWS_REGION}.amazonaws.com"
 
           if [ "$STAGE_NAME" = "prod" ]; then
-            URL="${BASE_URL}/festivals"
+            URL="${BASE_URL}/health"
           else
-            URL="${BASE_URL}/${STAGE_NAME}/festivals"
+            URL="${BASE_URL}/${STAGE_NAME}/health"
           fi
 
           echo "Smoke test target: $URL"
-          STATUS_CODE=$(curl -sS -o /tmp/festivals_response.txt -w "%{http_code}" --max-time 20 "$URL")
+          STATUS_CODE=$(curl -sS -o /tmp/health_response.txt -w "%{http_code}" --max-time 20 "$URL")
           echo "Response status: $STATUS_CODE"
 
           if [ "$STATUS_CODE" -ge 500 ]; then
             echo "Smoke test failed. Response body:"
-            cat /tmp/festivals_response.txt
+            cat /tmp/health_response.txt
             exit 1
           fi
