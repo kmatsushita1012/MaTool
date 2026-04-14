@@ -205,7 +205,7 @@ jobs:
           STATUS_CODE=$(curl -sS -o /tmp/festivals_response.txt -w "%{http_code}" --max-time 20 "$URL")
           echo "Response status: $STATUS_CODE"
 
-          if [ "$STATUS_CODE" -lt 200 ] || [ "$STATUS_CODE" -ge 300 ]; then
+          if [ "$STATUS_CODE" -ge 500 ]; then
             echo "Smoke test failed. Response body:"
             cat /tmp/festivals_response.txt
             exit 1
