@@ -14,12 +14,8 @@ struct OtherRouter: Router {
     
     func body(_ app: Application) {
         // MARK: - Health
-        app.get(path: "/health") { _ in
-            .init(
-                statusCode: 200,
-                headers: ["content-type": "application/json"],
-                body: #"{"status":"ok"}"#
-            )
+        app.get(path: "/health") { _, _ in
+            try .success()
         }
         // MARK: - Route
         app.get(path: "/routes/:routeId", routeController.get)
