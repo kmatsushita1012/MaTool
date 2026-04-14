@@ -184,3 +184,29 @@ jobs:
             --deployment-id "$DEPLOY_ID"
 
           echo "✅ $default stage deployed successfully"
+
+      - name: Smoke test deployed festivals endpoint
+        env:
+          AWS_REGION: ${{ secrets.AWS_REGION }}
+          API_GATEWAY_ID: ${{ secrets.API_GATEWAY_ID }}
+        run: |
+          set -euo pipefail
+
+          STAGE_NAME=${{ steps.set_stage.outputs.stage }}
+          BASE_URL="https://${API_GATEWAY_ID}.execute-api.${AWS_REGION}.amazonaws.com"
+
+          if [ "$STAGE_NAME" = "prod" ]; then
+            URL="${BASE_URL}/festivals"
+          else
+            URL="${BASE_URL}/${STAGE_NAME}/festivals"
+          fi
+
+          echo "Smoke test target: $URL"
+          STATUS_CODE=$(curl -sS -o /tmp/festivals_response.txt -w "%{http_code}" --max-time 20 "$URL")
+          echo "Response status: $STATUS_CODE"
+
+          if [ "$STATUS_CODE" -lt 200 ] || [ "$STATUS_CODE" -ge 300 ]; then
+            echo "Smoke test failed. Response body:"
+            cat /tmp/festivals_response.txt
+            exit 1
+          fi
