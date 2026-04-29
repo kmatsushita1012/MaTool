@@ -3,6 +3,7 @@ on:
   push:
     branches:
       - 'release-ios'
+      - 'ios/backend-url-from-env'
 
 jobs:
   deploy_iosapp:
