@@ -27,13 +27,17 @@ struct ConstantValues:Sendable {
 }
 
 extension ConstantValues: DependencyKey {
+    private static let apiBaseUrlInfoKey = "MATOOL_API_BASE_URL"
+
     static let liveValue = Self(
         apiBaseUrl: {
-            #if DEBUG
-                ""
-            #else
-                ""
-            #endif
+            guard
+                let value = Bundle.main.object(forInfoDictionaryKey: apiBaseUrlInfoKey) as? String,
+                !value.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+            else {
+                fatalError("\(apiBaseUrlInfoKey) が設定されていません")
+            }
+            return value
         }(),
         appStatusUrl: "https://studiomk-app-assets.s3.ap-northeast-1.amazonaws.com/MaTool/app-config.json",
         defaultFestivalKey: "region",
@@ -52,4 +56,3 @@ extension ConstantValues: DependencyKey {
         }()
     )
 }
-

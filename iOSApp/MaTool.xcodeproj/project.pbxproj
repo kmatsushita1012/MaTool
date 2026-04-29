@@ -38,6 +38,8 @@
 		291604FD2EB3665900E6C6E3 /* MaTool.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = MaTool.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		291604FE2EB3666400E6C6E3 /* iOSAppTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = iOSAppTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		291604FF2EB3666900E6C6E3 /* iOSAppUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = iOSAppUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		292F30002F0000010053637A /* Debug.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Config/Debug.xcconfig; sourceTree = "<group>"; };
+		292F30012F0000010053637A /* Release.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Config/Release.xcconfig; sourceTree = "<group>"; };
 		29C6740A2EB36ADC003DCA4C /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		29C674172EB37948003DCA4C /* amplifyconfiguration.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = amplifyconfiguration.json; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -98,6 +100,8 @@
 				298DACCA2EB361990053637A /* Sources */,
 				298DABD92EB361980053637A /* UITests */,
 				29C674152EB3742E003DCA4C /* Preview Content */,
+				292F30002F0000010053637A /* Debug.xcconfig */,
+				292F30012F0000010053637A /* Release.xcconfig */,
 				29C6740A2EB36ADC003DCA4C /* Info.plist */,
 				29C674172EB37948003DCA4C /* amplifyconfiguration.json */,
 				291605212EB3680E00E6C6E3 /* Frameworks */,
@@ -417,6 +421,7 @@
 		};
 		298BD7C12D71E46900CB63F1 /* Debug */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = 292F30002F0000010053637A /* Debug.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
@@ -431,6 +436,7 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "MaTool -祭-";
+				INFOPLIST_KEY_MATOOL_API_BASE_URL = "$(MATOOL_API_BASE_URL)";
 				INFOPLIST_KEY_NSLocationAlwaysAndWhenInUseUsageDescription = "現在地を表示するために、位置情報の「使用中のみ許可」が必要です。また管理者が位置情報を配信する場合にも「常に許可」が必要です。";
 				INFOPLIST_KEY_NSLocationAlwaysUsageDescription = "管理者が位置情報を配信する場合にも「常に許可」が必要です。";
 				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "現在地を表示するために、位置情報の「使用中のみ許可」が必要です。また管理者が位置情報を配信する場合にも「使用中のみ許可」が必要です。";
@@ -458,6 +464,7 @@
 		};
 		298BD7C22D71E46900CB63F1 /* Release */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = 292F30012F0000010053637A /* Release.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
@@ -471,6 +478,7 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "MaTool -祭-";
+				INFOPLIST_KEY_MATOOL_API_BASE_URL = "$(MATOOL_API_BASE_URL)";
 				INFOPLIST_KEY_NSLocationAlwaysAndWhenInUseUsageDescription = "現在地を表示するために、位置情報の「使用中のみ許可」が必要です。また管理者が位置情報を配信する場合にも「常に許可」が必要です。";
 				INFOPLIST_KEY_NSLocationAlwaysUsageDescription = "管理者が位置情報を配信する場合にも「常に許可」が必要です。";
 				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "現在地を表示するために、位置情報の「使用中のみ許可」が必要です。また管理者が位置情報を配信する場合にも「使用中のみ許可」が必要です。";
