@@ -38,6 +38,8 @@ jobs:
             ${{ runner.os }}-derived-
 
       - name: Resolve packages
+        env:
+          MATOOL_API_BASE_URL: ${{ secrets.MATOOL_API_BASE_URL }}
         run: |
           ./iOSApp/Scripts/generate_env_xcconfig.sh
           xcodebuild \
