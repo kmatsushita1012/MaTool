@@ -8,6 +8,8 @@
 
 /* Begin PBXBuildFile section */
 		2957A6C52F6BE2E8005B5EB4 /* ComposableArchitecture in Frameworks */ = {isa = PBXBuildFile; productRef = 2957A6C42F6BE2E8005B5EB4 /* ComposableArchitecture */; };
+		292F30022F0000010053637A /* Debug.xcconfig in Resources */ = {isa = PBXBuildFile; fileRef = 292F30002F0000010053637A /* Debug.xcconfig */; };
+		292F30032F0000010053637A /* Release.xcconfig in Resources */ = {isa = PBXBuildFile; fileRef = 292F30012F0000010053637A /* Release.xcconfig */; };
 		29C674182EB37948003DCA4C /* amplifyconfiguration.json in Resources */ = {isa = PBXBuildFile; fileRef = 29C674172EB37948003DCA4C /* amplifyconfiguration.json */; };
 		29CC9E422F1523B800C4CD50 /* SQLiteData in Frameworks */ = {isa = PBXBuildFile; productRef = 29CC9E412F1523B800C4CD50 /* SQLiteData */; };
 		29F7B72F2EC871F10099607E /* AWSCognitoAuthPlugin in Frameworks */ = {isa = PBXBuildFile; productRef = 29F7B72E2EC871F10099607E /* AWSCognitoAuthPlugin */; };
@@ -236,6 +238,8 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				292F30022F0000010053637A /* Debug.xcconfig in Resources */,
+				292F30032F0000010053637A /* Release.xcconfig in Resources */,
 				29C674182EB37948003DCA4C /* amplifyconfiguration.json in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -436,7 +440,6 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "MaTool -祭-";
-				INFOPLIST_KEY_MATOOL_API_BASE_URL = "$(MATOOL_API_BASE_URL)";
 				INFOPLIST_KEY_NSLocationAlwaysAndWhenInUseUsageDescription = "現在地を表示するために、位置情報の「使用中のみ許可」が必要です。また管理者が位置情報を配信する場合にも「常に許可」が必要です。";
 				INFOPLIST_KEY_NSLocationAlwaysUsageDescription = "管理者が位置情報を配信する場合にも「常に許可」が必要です。";
 				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "現在地を表示するために、位置情報の「使用中のみ許可」が必要です。また管理者が位置情報を配信する場合にも「使用中のみ許可」が必要です。";
@@ -478,7 +481,6 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "MaTool -祭-";
-				INFOPLIST_KEY_MATOOL_API_BASE_URL = "$(MATOOL_API_BASE_URL)";
 				INFOPLIST_KEY_NSLocationAlwaysAndWhenInUseUsageDescription = "現在地を表示するために、位置情報の「使用中のみ許可」が必要です。また管理者が位置情報を配信する場合にも「常に許可」が必要です。";
 				INFOPLIST_KEY_NSLocationAlwaysUsageDescription = "管理者が位置情報を配信する場合にも「常に許可」が必要です。";
 				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "現在地を表示するために、位置情報の「使用中のみ許可」が必要です。また管理者が位置情報を配信する場合にも「使用中のみ許可」が必要です。";
