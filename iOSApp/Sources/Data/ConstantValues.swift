@@ -27,16 +27,37 @@ struct ConstantValues:Sendable {
 }
 
 extension ConstantValues: DependencyKey {
-    private static let apiBaseUrlInfoKey = "MATOOL_API_BASE_URL"
+    private static let apiBaseUrlKey = "MATOOL_API_BASE_URL"
 
     static let liveValue = Self(
         apiBaseUrl: {
-            guard
-                let value = Bundle.main.object(forInfoDictionaryKey: apiBaseUrlInfoKey) as? String,
-                !value.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-            else {
-                fatalError("\(apiBaseUrlInfoKey) が設定されていません")
+            let configName: String = {
+                #if DEBUG
+                    "Debug"
+                #else
+                    "Release"
+                #endif
+            }()
+
+            guard let url = Bundle.main.url(forResource: configName, withExtension: "xcconfig") else {
+                fatalError("\(configName).xcconfig がアプリに含まれていません")
             }
+
+            guard let content = try? String(contentsOf: url, encoding: .utf8) else {
+                fatalError("\(configName).xcconfig の読み込みに失敗しました")
+            }
+
+            let prefix = "\(apiBaseUrlKey) ="
+            let lines = content.components(separatedBy: .newlines)
+
+            guard
+                let line = lines.first(where: { $0.trimmingCharacters(in: .whitespaces).hasPrefix(prefix) }),
+                let value = line.split(separator: "=", maxSplits: 1).last?.trimmingCharacters(in: .whitespacesAndNewlines),
+                !value.isEmpty
+            else {
+                fatalError("\(configName).xcconfig に \(apiBaseUrlKey) が設定されていません")
+            }
+
             return value
         }(),
         appStatusUrl: "https://studiomk-app-assets.s3.ap-northeast-1.amazonaws.com/MaTool/app-config.json",
