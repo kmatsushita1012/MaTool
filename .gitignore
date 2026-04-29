@@ -98,6 +98,9 @@ playground.xcworkspace
 *.pem
 *.cert
 *.mobileprovision
+iOSApp/Config/Debug.xcconfig
+iOSApp/Config/Release.xcconfig
+iOSApp/Config/Local.env.xcconfig
 
 # =========================================
 # Editor / Tool

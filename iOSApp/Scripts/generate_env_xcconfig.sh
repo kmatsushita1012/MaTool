@@ -1,0 +1,41 @@
+#!/bin/sh
+set -eu
+
+SCRIPT_DIR="$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)"
+IOSAPP_DIR="$(CDPATH= cd -- "$SCRIPT_DIR/.." && pwd)"
+ROOT_DIR="$(CDPATH= cd -- "$IOSAPP_DIR/.." && pwd)"
+DEBUG_OUTPUT_PATH="$IOSAPP_DIR/Config/Debug.xcconfig"
+RELEASE_OUTPUT_PATH="$IOSAPP_DIR/Config/Release.xcconfig"
+
+ENV_PATH=""
+if [ -f "$ROOT_DIR/.env" ]; then
+  ENV_PATH="$ROOT_DIR/.env"
+elif [ -f "$IOSAPP_DIR/.env" ]; then
+  ENV_PATH="$IOSAPP_DIR/.env"
+fi
+
+DEFAULT_DEBUG_URL=""
+DEFAULT_RELEASE_URL=""
+
+DEBUG_URL="${MATOOL_API_BASE_URL_DEBUG:-}"
+RELEASE_URL="${MATOOL_API_BASE_URL_RELEASE:-}"
+COMMON_URL="${MATOOL_API_BASE_URL:-${API_BASE_URL:-}}"
+
+if [ -n "$ENV_PATH" ]; then
+  set -a
+  # shellcheck disable=SC1090
+  . "$ENV_PATH"
+  set +a
+fi
+
+COMMON_URL="${COMMON_URL:-${MATOOL_API_BASE_URL:-${API_BASE_URL:-}}}"
+DEBUG_URL="${DEBUG_URL:-${MATOOL_API_BASE_URL_DEBUG:-${COMMON_URL:-}}}"
+RELEASE_URL="${RELEASE_URL:-${MATOOL_API_BASE_URL_RELEASE:-${COMMON_URL:-}}}"
+
+DEBUG_URL="${DEBUG_URL:-${COMMON_URL:-$DEFAULT_DEBUG_URL}}"
+RELEASE_URL="${RELEASE_URL:-${COMMON_URL:-$DEFAULT_RELEASE_URL}}"
+
+mkdir -p "$IOSAPP_DIR/Config"
+
+printf 'MATOOL_API_BASE_URL = %s\n' "$DEBUG_URL" > "$DEBUG_OUTPUT_PATH"
+printf 'MATOOL_API_BASE_URL = %s\n' "$RELEASE_URL" > "$RELEASE_OUTPUT_PATH"

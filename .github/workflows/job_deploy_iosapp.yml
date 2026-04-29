@@ -35,6 +35,12 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-derived-
 
+      - name: Create iOS config files
+        env:
+          MATOOL_API_BASE_URL_RELEASE: ${{ secrets.MATOOL_API_BASE_URL }}
+        run: |
+          ./iOSApp/Scripts/generate_env_xcconfig.sh
+
       - name: Build
         run: |
           xcodebuild archive \
