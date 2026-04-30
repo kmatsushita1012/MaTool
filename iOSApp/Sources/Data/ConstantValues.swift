@@ -27,21 +27,50 @@ struct ConstantValues:Sendable {
 }
 
 extension ConstantValues: DependencyKey {
-    static let liveValue = Self(
-        apiBaseUrl: {
+    private static let apiBaseUrlKey = "MATOOL_API_BASE_URL"
+    private static let userGuideUrlKey = "MATOOL_USER_GUIDE_URL"
+    private static let contactUrlKey = "MATOOL_CONTACT_URL"
+
+    private static func value(fromXCConfig key: String) -> String {
+        let configName: String = {
             #if DEBUG
-                ""
+                "Debug"
             #else
-                ""
+                "Release"
             #endif
-        }(),
+        }()
+
+        guard let url = Bundle.main.url(forResource: configName, withExtension: "xcconfig") else {
+            fatalError("\(configName).xcconfig がアプリに含まれていません")
+        }
+
+        guard let content = try? String(contentsOf: url, encoding: .utf8) else {
+            fatalError("\(configName).xcconfig の読み込みに失敗しました")
+        }
+
+        let prefix = "\(key) ="
+        let lines = content.components(separatedBy: .newlines)
+
+        guard
+            let line = lines.first(where: { $0.trimmingCharacters(in: .whitespaces).hasPrefix(prefix) }),
+            let value = line.split(separator: "=", maxSplits: 1).last?.trimmingCharacters(in: .whitespacesAndNewlines),
+            !value.isEmpty
+        else {
+            fatalError("\(configName).xcconfig に \(key) が設定されていません")
+        }
+
+        return value
+    }
+
+    static let liveValue = Self(
+        apiBaseUrl: value(fromXCConfig: apiBaseUrlKey),
         appStatusUrl: "https://studiomk-app-assets.s3.ap-northeast-1.amazonaws.com/MaTool/app-config.json",
         defaultFestivalKey: "region",
         defaultDistrictKey: "district",
         loginIdKey: "login",
         hasLaunchedBeforeKey: "hasLaunchedBefore",
-        userGuideUrl: "",
-        contactURL: "",
+        userGuideUrl: value(fromXCConfig: userGuideUrlKey),
+        contactURL: value(fromXCConfig: contactUrlKey),
         isLiquidGlassEnabled: {
             let uiDesignRequiresCompatibility = Bundle.main.object(forInfoDictionaryKey: "UIDesignRequiresCompatibility") as? Bool ?? false
             if #available(iOS 26.0, *), !uiDesignRequiresCompatibility {
@@ -52,4 +81,3 @@ extension ConstantValues: DependencyKey {
         }()
     )
 }
-
