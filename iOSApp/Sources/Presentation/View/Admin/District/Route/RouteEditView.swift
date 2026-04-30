@@ -198,7 +198,7 @@ extension RouteEditView {
             } footer: {
                 Text("出発・到着時刻は地図編集画面から先頭・末尾のピンで編集してください")
             }
-            Section(header: Text("備考")) {
+            Section(header: Text("備考（任意）")) {
                 TextEditor(text: $store.route.description.nonOptional)
                     .frame(height:64)
             }
