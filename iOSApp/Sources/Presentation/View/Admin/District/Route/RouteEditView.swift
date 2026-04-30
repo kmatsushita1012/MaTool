@@ -47,7 +47,7 @@ struct RouteEditView: View {
                 PreviewView(item: item)
             case .history:
                 NavigationStack {
-                    RouteHistoryView(.init(districtId: store.district.id) {
+                    RouteHistoryView(.init(districtId: store.district.id, excludingRouteId: store.route.id) {
                         store.send(.sourceSelected($0))
                     })
                 }
