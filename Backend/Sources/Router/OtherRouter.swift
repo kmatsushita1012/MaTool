@@ -13,6 +13,10 @@ struct OtherRouter: Router {
     @Dependency(PeriodControllerKey.self) var periodController
     
     func body(_ app: Application) {
+        // MARK: - Health
+        app.get(path: "/health") { _, _ in
+            try .success()
+        }
         // MARK: - Route
         app.get(path: "/routes/:routeId", routeController.get)
         app.put(path: "/routes/:routeId", routeController.put)
