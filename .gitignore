@@ -46,6 +46,7 @@ build/
 # =========================================
 Packages/
 .build/
+.xcode-source-packages/checkouts/
 
 # ================================
 # Swift Package Manager (.swiftpm)
