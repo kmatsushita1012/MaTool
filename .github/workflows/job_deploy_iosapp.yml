@@ -21,6 +21,11 @@ jobs:
           AMPLIFYCONFIGURATION_JSON_B64: ${{ secrets.AMPLIFYCONFIGURATION_JSON_B64 }}
         run: |
           echo "$AMPLIFYCONFIGURATION_JSON_B64" | base64 --decode > iOSApp/amplifyconfiguration.json
+      
+      - name: DEBUG amplifyconfiguration.json
+        run: |
+          ls iOSApp/amplifyconfiguration.json
+          cat iOSApp/amplifyconfiguration.json
 
       - name: Ensure SPM Cache Dir Exists
         run: mkdir -p iOSApp/Caches/org.swift.swiftpm
