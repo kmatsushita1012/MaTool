@@ -17,6 +17,12 @@ jobs:
         with:
           xcode-version: "26.3"
 
+      - name: Create amplifyconfiguration.json
+        env:
+          AMPLIFYCONFIGURATION_JSON_B64: ${{ secrets.AMPLIFYCONFIGURATION_JSON_B64 }}
+        run: |
+          echo "$AMPLIFYCONFIGURATION_JSON_B64" | base64 --decode > iOSApp/amplifyconfiguration.json
+
       - name: Ensure SPM Cache Dir Exists
         run: mkdir -p iOSApp/Caches/org.swift.swiftpm
       
@@ -38,7 +44,13 @@ jobs:
             ${{ runner.os }}-derived-
 
       - name: Resolve packages
+        env:
+          MATOOL_API_BASE_URL: ${{ secrets.MATOOL_API_BASE_URL }}
+          MATOOL_USER_GUIDE_URL: ${{ secrets.MATOOL_USER_GUIDE_URL }}
+          MATOOL_CONTACT_URL: ${{ secrets.MATOOL_CONTACT_URL }}
         run: |
+          chmod +x .github/scripts/generate_ios_xcconfig.sh
+          ./.github/scripts/generate_ios_xcconfig.sh
           xcodebuild \
             -project iOSApp/MaTool.xcodeproj \
             -scheme iOSApp \

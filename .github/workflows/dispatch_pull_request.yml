@@ -46,6 +46,7 @@ jobs:
     needs: detect-changes
     if: ${{ needs.detect-changes.outputs.iosapp_changed == 'true' || needs.detect-changes.outputs.shared_changed == 'true' }}
     uses: ./.github/workflows/job_test_iosapp.yml
+    secrets: inherit
 
   # ==== 条件付きでSharedテスト ====
   shared-tests:

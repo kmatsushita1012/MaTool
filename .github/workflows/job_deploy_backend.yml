@@ -27,18 +27,21 @@ jobs:
           # Backend/Dockerfile を使ってルートをコンテキストにビルド
           docker build -t matoolapi -f Backend/Dockerfile .
 
-          # イメージから bootstrap を抽出（Lambda用の最小実行ファイル名が bootstrap の場合）
+          # イメージから Lambda 配布物一式を抽出
           docker create --name extract matoolapi
-          docker cp extract:/var/runtime/bootstrap ./bootstrap || true
+          mkdir -p lambda-dist
+          docker cp extract:/var/task/. ./lambda-dist
           docker rm extract || true
 
-          # 如果 bootstrap が PATH にない場合や、別の場所にあるなら Dockerfile 側で配置を合わせてください
-          if [ -f ./bootstrap ]; then
-            chmod +x ./bootstrap
-            zip -r lambda.zip bootstrap
+          if [ -f ./lambda-dist/bootstrap ]; then
+            chmod +x ./lambda-dist/bootstrap ./lambda-dist/MaToolAPI
+            (
+              cd lambda-dist
+              zip -r ../lambda.zip .
+            )
             ls -l lambda.zip
           else
-            echo "Error: bootstrap not found in image. Inspect Dockerfile and image layout."
+            echo "Error: Lambda package not found in image. Inspect Dockerfile and image layout."
             exit 1
           fi
 
@@ -181,3 +184,29 @@ jobs:
             --deployment-id "$DEPLOY_ID"
 
           echo "✅ $default stage deployed successfully"
+
+      - name: Smoke test deployed health endpoint
+        env:
+          AWS_REGION: ${{ secrets.AWS_REGION }}
+          API_GATEWAY_ID: ${{ secrets.API_GATEWAY_ID }}
+        run: |
+          set -euo pipefail
+
+          STAGE_NAME=${{ steps.set_stage.outputs.stage }}
+          BASE_URL="https://${API_GATEWAY_ID}.execute-api.${AWS_REGION}.amazonaws.com"
+
+          if [ "$STAGE_NAME" = "prod" ]; then
+            URL="${BASE_URL}/health"
+          else
+            URL="${BASE_URL}/${STAGE_NAME}/health"
+          fi
+
+          echo "Smoke test target: $URL"
+          STATUS_CODE=$(curl -sS -o /tmp/health_response.txt -w "%{http_code}" --max-time 20 "$URL")
+          echo "Response status: $STATUS_CODE"
+
+          if [ "$STATUS_CODE" -ge 500 ]; then
+            echo "Smoke test failed. Response body:"
+            cat /tmp/health_response.txt
+            exit 1
+          fi
