@@ -67,7 +67,7 @@ struct PointEditView: View {
                 }
             }
         }
-        .navigationTitle("地点")
+        .navigationTitle("地点編集")
         .navigationBarTitleDisplayMode(.inline)
         .alert($store.scope(state: \.alert, action: \.alert))
         .toolbar {

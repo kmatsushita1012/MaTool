@@ -46,6 +46,7 @@ build/
 # =========================================
 Packages/
 .build/
+.xcode-source-packages/checkouts/
 
 # ================================
 # Swift Package Manager (.swiftpm)
@@ -101,6 +102,7 @@ playground.xcworkspace
 iOSApp/Config/Debug.xcconfig
 iOSApp/Config/Release.xcconfig
 iOSApp/Config/Local.env.xcconfig
+iOSApp/amplifyconfiguration.json
 
 # =========================================
 # Editor / Tool
