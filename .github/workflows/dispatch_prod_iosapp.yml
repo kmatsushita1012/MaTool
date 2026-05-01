@@ -3,6 +3,7 @@ on:
   push:
     branches:
       - 'release-ios'
+      - 'ios/nenban-onboarding'
 
 jobs:
   deploy_iosapp:
