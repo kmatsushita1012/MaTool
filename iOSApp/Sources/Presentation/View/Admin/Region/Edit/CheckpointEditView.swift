@@ -23,6 +23,12 @@ struct CheckpointEditView: View {
                 TextEditor(text: $store.item.description.nonOptional)
                     .frame(height:60)
             }
+            Section {
+                Button("削除", systemImage: "trash", role: .destructive) {
+                    store.send(.deleteTapped)
+                }
+                .foregroundStyle(.red)
+            }
         }
         .navigationTitle(store.title)
         .navigationBarTitleDisplayMode(.inline)
