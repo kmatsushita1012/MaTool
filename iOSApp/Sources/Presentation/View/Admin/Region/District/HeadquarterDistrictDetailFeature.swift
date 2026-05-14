@@ -39,6 +39,7 @@ struct HeadquarterDistrictDetailFeature {
         case reissueTapped
         case routeSelected(RouteSlot)
         case batchExportTapped
+        case tableExportTapped
         case updateReceived(VoidTaskResult)
         case routeReceived(TaskResult<RouteEntry>)
         case batchExportReceived(TaskResult<URL>)
@@ -80,7 +81,10 @@ struct HeadquarterDistrictDetailFeature {
                 }
             case .batchExportTapped:
                 state.isLoading = true
-                return batchExportEffect(state.routes, path: "\(state.district.name).pdf")
+                return exportEffect(state: state, path: "\(state.district.name).pdf", includesRouteMap: true)
+            case .tableExportTapped:
+                state.isLoading = true
+                return exportEffect(state: state, path: "\(state.district.name)_行動表.pdf", includesRouteMap: false)
             case .updateReceived(.success):
                 state.isLoading = false
                 return .none
@@ -108,11 +112,20 @@ struct HeadquarterDistrictDetailFeature {
         .ifLet(\.$alert, action: \.alert)
     }
     
-    func batchExportEffect(_ items: [RouteSlot], path: String) -> Effect<Action> {
+    func exportEffect(state: State, path: String, includesRouteMap: Bool) -> Effect<Action> {
         .task(Action.batchExportReceived) {
             //非同期並列にするとBEでアクセス過多
             let renderer = await PDFRenderer(path: path)
-            for item in items {
+            let tableSnapshotter = await ActionTableSnapshotter(district: state.district, slots: state.routes)
+            let tablePages = await tableSnapshotter.takeAll()
+            for page in tablePages {
+                await renderer.addPage(with: page)
+            }
+            guard includesRouteMap else {
+                let url = await renderer.finalize()
+                return url
+            }
+            for item in state.routes {
                 guard let route = item.route,
                       let _ = try? await routeDataFetcher.fetch(routeID: route.id),
                       let snapshotter = try? await RouteSnapshotter(route),

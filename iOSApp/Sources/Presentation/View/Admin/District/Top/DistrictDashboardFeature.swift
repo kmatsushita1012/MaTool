@@ -31,6 +31,8 @@ struct DistrictDashboardFeature {
         
         var isRouteLoading: Bool = false
         var isAWSLoading: Bool = false
+        var isExportLoading: Bool = false
+        var url: URL? = nil
         
         // Navigation
         @Presents var destination: Destination.State?
@@ -46,6 +48,9 @@ struct DistrictDashboardFeature {
         case routeCreatePrepared
         case locationPrepared(isTracking: Bool, Interval: Interval?)
         case onLocation
+        case submissionExportTapped
+        case tableExportTapped
+        case exportReceived(TaskResult<URL>)
         case destination(PresentationAction<Destination.Action>)
         case signOutTapped
         case signOutReceived(TaskResult<UserRole>)
@@ -114,6 +119,20 @@ struct DistrictDashboardFeature {
                     let interval = await locationService.getInterval()
                     await send(.locationPrepared(isTracking: isTracking, Interval: interval))
                 }
+            case .submissionExportTapped:
+                state.isExportLoading = true
+                return exportEffect(state: state, path: "\(state.district.name).pdf", includesRouteMap: true)
+            case .tableExportTapped:
+                state.isExportLoading = true
+                return exportEffect(state: state, path: "\(state.district.name)_行動表.pdf", includesRouteMap: false)
+            case .exportReceived(.success(let url)):
+                state.isExportLoading = false
+                state.url = url
+                return .none
+            case .exportReceived(.failure(let error)):
+                state.isExportLoading = false
+                state.alert = .error(error.localizedDescription)
+                return .none
             case .destination(.presented(let childAction)):
                 switch childAction {
                 case .edit(.postReceived(.success)):
@@ -154,11 +173,37 @@ extension DistrictDashboardFeature.Destination.Action: Equatable {}
 
 extension DistrictDashboardFeature.State{
     var isLoading: Bool {
-        isAWSLoading || isRouteLoading
+        isAWSLoading || isRouteLoading || isExportLoading
     }
     
     init(_ district: District){
         self._district = FetchOne(district)
         self._routes = .init(districtId: district.id, latest: true)
+    }
+}
+
+private extension DistrictDashboardFeature {
+    func exportEffect(state: State, path: String, includesRouteMap: Bool) -> Effect<Action> {
+        .task(Action.exportReceived) {
+            let renderer = await PDFRenderer(path: path)
+            let tableSnapshotter = await ActionTableSnapshotter(district: state.district, slots: state.routes)
+            let tablePages = await tableSnapshotter.takeAll()
+            for page in tablePages {
+                await renderer.addPage(with: page)
+            }
+            guard includesRouteMap else {
+                let url = await renderer.finalize()
+                return url
+            }
+            for item in state.routes {
+                guard let route = item.route,
+                      let _ = try? await routeDateFetcher.fetch(routeID: route.id),
+                      let snapshotter = try? await RouteSnapshotter(route),
+                      let image = try? await snapshotter.take() else { continue }
+                await renderer.addPage(with: image)
+            }
+            let url = await renderer.finalize()
+            return url
+        }
     }
 }

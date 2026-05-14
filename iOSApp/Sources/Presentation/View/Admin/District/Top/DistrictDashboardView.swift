@@ -15,29 +15,7 @@ struct DistrictDashboardView: View{
     
     var body: some View {
         content
-        .navigationTitle(
-            store.district.name
-        )
-        .navigationBarTitleDisplayMode(.large)
-        .navigationDestination(item: $store.scope(state: \.destination?.edit, action: \.destination.edit)) { store in
-            DistrictEditView(store: store)
-        }
-        .navigationDestination(item: $store.scope(state: \.destination?.location, action: \.destination.location)) { store in
-            LocationTrackingView(store: store)
-        }
-        .navigationDestination(item: $store.scope(state: \.destination?.route, action: \.destination.route)) { store in
-            RouteEditView(store: store)
-        }
-        .navigationDestination(
-            item: $store.scope(state: \.destination?.changePassword, action: \.destination.changePassword)
-        ) { store in
-            ChangePasswordView(store: store)
-        }
-        .navigationDestination(
-            item: $store.scope(state: \.destination?.updateEmail, action: \.destination.updateEmail)
-        ) { store in
-            UpdateEmailView(store: store)
-        }
+            .destination(store: $store)
         .alert($store.scope(state: \.alert, action: \.alert))
         .loadingOverlay(store.isLoading)
     }
@@ -68,6 +46,18 @@ struct DistrictDashboardView: View{
                     )
                 }
             }
+            Section(header: Text("ルート出力")) {
+                Button(action: {
+                    store.send(.submissionExportTapped)
+                }) {
+                    Text("提出資料出力")
+                }
+                Button(action: {
+                    store.send(.tableExportTapped)
+                }) {
+                    Text("行動表出力")
+                }
+            }
             Section {
                 Button(action: {
                     store.send(.changePasswordTapped)
@@ -88,6 +78,40 @@ struct DistrictDashboardView: View{
                         .foregroundColor(.red)
                 }
             }
+        }
+        .navigationTitle(
+            store.district.name
+        )
+        .navigationBarTitleDisplayMode(.large)
+    }
+}
+
+private extension View {
+    @available(iOS 17.0, *)
+    @ViewBuilder
+    func destination(store: SwiftUI.Bindable<StoreOf<DistrictDashboardFeature>>) -> some View {
+        self
+//        .sheet(item: store.url) { url in
+//            ShareSheet(item: url)
+//        }
+        .navigationDestination(item: store.scope(state: \.destination?.edit, action: \.destination.edit)) { store in
+            DistrictEditView(store: store)
+        }
+        .navigationDestination(item: store.scope(state: \.destination?.location, action: \.destination.location)) { store in
+            LocationTrackingView(store: store)
+        }
+        .navigationDestination(item: store.scope(state: \.destination?.route, action: \.destination.route)) { store in
+            RouteEditView(store: store)
+        }
+        .navigationDestination(
+            item: store.scope(state: \.destination?.changePassword, action: \.destination.changePassword)
+        ) { store in
+            ChangePasswordView(store: store)
+        }
+        .navigationDestination(
+            item: store.scope(state: \.destination?.updateEmail, action: \.destination.updateEmail)
+        ) { store in
+            UpdateEmailView(store: store)
         }
     }
 }

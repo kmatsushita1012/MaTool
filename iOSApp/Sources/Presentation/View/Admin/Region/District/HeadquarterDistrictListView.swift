@@ -41,7 +41,7 @@ struct HeadquarterDistrictListView: View {
                     Button(action: {
                         store.send(.batchExportTapped)
                     }) {
-                        Text("経路図一括出力")
+                        Text("提出資料出力")
                     }
                 }
             }
