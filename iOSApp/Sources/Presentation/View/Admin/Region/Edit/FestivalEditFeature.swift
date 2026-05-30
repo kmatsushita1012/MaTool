@@ -126,6 +126,11 @@ struct FestivalEditFeature {
                 state.checkpoints.upsert(item)
                 state.destination = nil
                 return .none
+            case .destination(.presented(.checkpoint(.deleteTapped))):
+                guard let item = state.destination?.checkpoint?.item else { return .none }
+                state.checkpoints.removeAll(of: item)
+                state.destination = nil
+                return .none
             case .destination(.presented(.hazard(.doneTapped))):
                 guard state.destination?.hazard?.isValid ?? false,
                     let item = state.destination?.hazard?.item else { return .none }

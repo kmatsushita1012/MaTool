@@ -22,6 +22,7 @@ struct CheckpointEditFeature {
         case binding(BindingAction<State>)
         case cancelTapped
         case doneTapped
+        case deleteTapped
     }
     
     @Dependency(\.dismiss) var dismiss
@@ -35,6 +36,8 @@ struct CheckpointEditFeature {
             case .cancelTapped:
                 return .dismiss
             case .doneTapped:
+                return .none
+            case .deleteTapped:
                 return .none
             }
         }
