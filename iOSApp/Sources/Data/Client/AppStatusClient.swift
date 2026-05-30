@@ -77,7 +77,9 @@ actor AppStatusClient: AppStatusClientProtocol {
         }
         let decoder = JSONDecoder()
         decoder.dateDecodingStrategy = .iso8601
-        let status = try decoder.decode(AppStatus.self, from: data)
+        let status = try await Task.detached(priority: nil) {
+            try decoder.decode(AppStatus.self, from: data)
+        }.value
         return status
     }
 

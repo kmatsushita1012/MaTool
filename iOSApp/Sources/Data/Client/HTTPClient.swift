@@ -117,13 +117,13 @@ actor HTTPClient: HTTPClientProtocol {
     ) async throws -> Response {
         let url = try makeURL(path: path, query: query)
 
-        let bodyData = try encodeBody(body)
+        let bodyData = try await encodeBody(body)
 
         let key = cacheKey(url: url, method: method, bodyData: bodyData ?? nil)
 
         // Cache hit
         if isCache, let cached = cache.object(forKey: key) {
-            return try decodeResponse(from: cached as Data)
+            return try await decodeResponse(from: cached as Data)
         }
 
         // Build request and execute
@@ -137,13 +137,13 @@ actor HTTPClient: HTTPClientProtocol {
 
         // If we have HTTP response, check status code
         if let http = http, !(200...299).contains(http.statusCode),
-           let response: ErrorResponse = try decodeResponse(from: data){
+           let response: ErrorResponse = try await decodeResponse(from: data){
             throw APIError(statusCode: http.statusCode, message: response.localizedDescription)
         }
 
         // Success path: cache and decode
         if isCache { cache.setObject(data as NSData, forKey: key) }
-        let response: Response = try decodeResponse(from: data)
+        let response: Response = try await decodeResponse(from: data)
         return response
     }
 
@@ -225,13 +225,17 @@ actor HTTPClient: HTTPClientProtocol {
         return request
     }
 
-    private func encodeBody<Body: Encodable>(_ body: Body?) throws -> Data? {
+    private func encodeBody<Body: Encodable>(_ body: Body?) async throws -> Data? {
         guard let body else { return nil }
-        return try jsonEncoder.encode(body)
+        return try await Task.detached(priority: nil) { [jsonEncoder] in
+            try jsonEncoder.encode(body)
+        }.value
     }
 
-    private func decodeResponse<Response: Decodable>(from data: Data) throws -> Response {
-        try jsonDecoder.decode(Response.self, from: data)
+    private func decodeResponse<Response: Decodable>(from data: Data) async throws -> Response {
+        try await Task.detached(priority: nil) { [jsonDecoder] in
+            try jsonDecoder.decode(Response.self, from: data)
+        }.value
     }
 
     private func execute(request: URLRequest) async throws -> (Data, HTTPURLResponse?) {
