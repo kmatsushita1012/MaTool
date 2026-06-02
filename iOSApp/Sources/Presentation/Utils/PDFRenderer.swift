@@ -242,7 +242,7 @@ struct ActionTableSnapshotter: Sendable {
         daySlots.map { slot in
             let entries: [String] = {
                 guard let route = slot.route else { return [] }
-                let passages = FetchAll(routeId: route.id).wrappedValue
+                let passages:[RoutePassage] = FetchAll(routeId: route.id).wrappedValue
                 return passages.prefix(linesPerPeriod * columnsPerLine).map(passageTitle)
             }()
             return Row(
