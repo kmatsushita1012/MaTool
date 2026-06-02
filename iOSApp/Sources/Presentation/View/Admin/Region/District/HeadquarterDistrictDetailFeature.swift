@@ -116,6 +116,14 @@ struct HeadquarterDistrictDetailFeature {
         .task(Action.batchExportReceived) {
             //非同期並列にするとBEでアクセス過多
             let renderer = await PDFRenderer(path: path)
+            let routes = state.routes.compactMap(\.route)
+            for route in routes {
+                do {
+                    try await routeDataFetcher.fetch(routeID: route.id)
+                } catch {
+                    continue
+                }
+            }
             let tableSnapshotter = await ActionTableSnapshotter(district: state.district, slots: state.routes)
             let tablePages = await tableSnapshotter.takeAll()
             for page in tablePages {
@@ -125,10 +133,8 @@ struct HeadquarterDistrictDetailFeature {
                 let url = await renderer.finalize()
                 return url
             }
-            for item in state.routes {
-                guard let route = item.route,
-                      let _ = try? await routeDataFetcher.fetch(routeID: route.id),
-                      let snapshotter = try? await RouteSnapshotter(route),
+            for route in routes {
+                guard let snapshotter = try? await RouteSnapshotter(route),
                       let image = try? await snapshotter.take() else { continue }
                 await renderer.addPage(with: image)
             }

@@ -37,11 +37,13 @@ final class PDFRenderer: Sendable {
 struct ActionTableSnapshotter: Sendable {
     private struct Row: Sendable {
         let period: Period
-        let fieldCount: Int
+        let entries: [String]
     }
 
     private let district: District
     private let slots: [RouteSlot]
+    private let linesPerPeriod = 5
+    private let columnsPerLine = 5
 
     init(district: District, slots: [RouteSlot]) {
         self.district = district
@@ -65,17 +67,15 @@ struct ActionTableSnapshotter: Sendable {
             UIColor.white.setFill()
             context.fill(CGRect(origin: .zero, size: pageSize))
 
-            let tableTop: CGFloat = 132
-            let tableBottom: CGFloat = 792
-            let tableLeft: CGFloat = 36
-            let tableRight: CGFloat = pageSize.width - 36
+            // 見本画像に合わせてヘッダ余白を大きく確保
+            let tableTop: CGFloat = 320
+            let tableBottom: CGFloat = 760
+            let tableLeft: CGFloat = 42
+            let tableRight: CGFloat = pageSize.width - 42
 
             drawHeader(in: context.cgContext, size: pageSize, date: date)
 
             let rows = makeRows(from: daySlots)
-            let rowCount = max(rows.count, 1)
-            let maxFieldCount = max(rows.map(\.fieldCount).max() ?? 4, 4)
-            let contentColumnCount = max(maxFieldCount * 2 - 1, 1)
             let tableRect = CGRect(
                 x: tableLeft,
                 y: tableTop,
@@ -85,8 +85,6 @@ struct ActionTableSnapshotter: Sendable {
             drawTable(
                 in: context.cgContext,
                 tableRect: tableRect,
-                rowCount: rowCount,
-                contentColumnCount: contentColumnCount,
                 rows: rows
             )
         }
@@ -103,7 +101,7 @@ struct ActionTableSnapshotter: Sendable {
         ]
         let titleSize = titleText.size(withAttributes: titleAttributes)
         titleText.draw(
-            at: CGPoint(x: (size.width - titleSize.width) / 2, y: 20),
+            at: CGPoint(x: (size.width - titleSize.width) / 2, y: 196),
             withAttributes: titleAttributes
         )
 
@@ -111,73 +109,96 @@ struct ActionTableSnapshotter: Sendable {
             .font: UIFont.systemFont(ofSize: 20, weight: .bold),
             .foregroundColor: UIColor.black
         ]
-        dateText.draw(at: CGPoint(x: 36, y: 78), withAttributes: textAttr)
+        dateText.draw(at: CGPoint(x: 42, y: 278), withAttributes: textAttr)
 
         let districtSize = districtText.size(withAttributes: textAttr)
         districtText.draw(
-            at: CGPoint(x: size.width - districtSize.width - 36, y: 78),
+            at: CGPoint(x: size.width - districtSize.width - 42, y: 278),
             withAttributes: textAttr
         )
-
-        ctx.setStrokeColor(UIColor.black.cgColor)
-        ctx.setLineWidth(1)
-        ctx.move(to: CGPoint(x: 36, y: 116))
-        ctx.addLine(to: CGPoint(x: size.width - 36, y: 116))
-        ctx.strokePath()
     }
 
     private func drawTable(
         in ctx: CGContext,
         tableRect: CGRect,
-        rowCount: Int,
-        contentColumnCount: Int,
         rows: [Row]
     ) {
-        let leftColumnWidth: CGFloat = 64
+        let leftColumnWidth: CGFloat = 62
+        let totalLineCount = max(rows.count * linesPerPeriod, 1)
+        let lineHeight = tableRect.height / CGFloat(totalLineCount)
+        let bodyLeft = tableRect.minX + leftColumnWidth
         let bodyWidth = tableRect.width - leftColumnWidth
-        let contentWidth = bodyWidth / CGFloat(max(contentColumnCount, 1))
-        let rowHeight = tableRect.height / CGFloat(max(rowCount, 1))
 
         ctx.setStrokeColor(UIColor.black.cgColor)
         ctx.setLineWidth(1.2)
         ctx.stroke(tableRect)
 
-        let splitX = tableRect.minX + leftColumnWidth
-        ctx.move(to: CGPoint(x: splitX, y: tableRect.minY))
-        ctx.addLine(to: CGPoint(x: splitX, y: tableRect.maxY))
-
-        for column in 1..<contentColumnCount {
-            let x = splitX + CGFloat(column) * contentWidth
-            ctx.move(to: CGPoint(x: x, y: tableRect.minY))
-            ctx.addLine(to: CGPoint(x: x, y: tableRect.maxY))
-        }
-
-        for row in 1..<rowCount {
-            let y = tableRect.minY + CGFloat(row) * rowHeight
-            ctx.move(to: CGPoint(x: tableRect.minX, y: y))
-            ctx.addLine(to: CGPoint(x: tableRect.maxX, y: y))
-        }
+        // 見出し(左列)の区切り縦線は残す
+        ctx.move(to: CGPoint(x: bodyLeft, y: tableRect.minY))
+        ctx.addLine(to: CGPoint(x: bodyLeft, y: tableRect.maxY))
         ctx.strokePath()
 
-        for rowIndex in 0..<rowCount {
-            guard rowIndex < rows.count else { continue }
-            let row = rows[rowIndex]
-            let y = tableRect.minY + CGFloat(rowIndex) * rowHeight
+        var currentY = tableRect.minY
+        for row in rows {
+            let rowLineCount = linesPerPeriod
+            let rowHeight = CGFloat(rowLineCount) * lineHeight
             drawVerticalText(
                 row.period.title,
-                in: CGRect(x: tableRect.minX, y: y, width: leftColumnWidth, height: rowHeight)
+                in: CGRect(x: tableRect.minX, y: currentY, width: leftColumnWidth, height: rowHeight)
             )
-            for columnIndex in 0..<contentColumnCount {
+            for line in 0..<rowLineCount {
+                let baseIndex = line * columnsPerLine
                 let rect = CGRect(
-                    x: splitX + CGFloat(columnIndex) * contentWidth,
-                    y: y,
-                    width: contentWidth,
-                    height: rowHeight
+                    x: bodyLeft,
+                    y: currentY + CGFloat(line) * lineHeight,
+                    width: bodyWidth,
+                    height: lineHeight
                 )
-                if columnIndex % 2 == 1 {
-                    drawCenteredText("→", in: rect, fontSize: 16)
-                }
+                drawArrowGuides(in: rect)
+                drawEntryTexts(
+                    row.entries,
+                    baseIndex: baseIndex,
+                    in: rect
+                )
             }
+
+            // 横線は各日程(時間帯)の境界線のみ
+            let separatorY = currentY + rowHeight
+            if separatorY < tableRect.maxY - 0.5 {
+                ctx.move(to: CGPoint(x: tableRect.minX, y: separatorY))
+                ctx.addLine(to: CGPoint(x: tableRect.maxX, y: separatorY))
+                ctx.strokePath()
+            }
+            currentY += rowHeight
+        }
+    }
+
+    private func drawEntryTexts(_ entries: [String], baseIndex: Int, in rect: CGRect) {
+        let columnWidth = rect.width / CGFloat(columnsPerLine)
+        for column in 0..<columnsPerLine {
+            let entryIndex = baseIndex + column
+            guard entryIndex < entries.count else { continue }
+            let cellRect = CGRect(
+                x: rect.minX + CGFloat(column) * columnWidth,
+                y: rect.minY,
+                width: columnWidth,
+                height: rect.height
+            )
+            drawCenteredText(entries[entryIndex], in: cellRect, fontSize: 13)
+        }
+    }
+
+    private func drawArrowGuides(in rect: CGRect) {
+        // 5列の入力欄を想定し、矢印は列間(4箇所)に整列表示
+        let gapCount = max(columnsPerLine - 1, 1)
+        let bodyWidth = rect.width - 24
+        for index in 0..<gapCount {
+            let x = rect.minX + 12 + bodyWidth * CGFloat(index + 1) / CGFloat(columnsPerLine)
+            drawCenteredText(
+                "→",
+                in: CGRect(x: x - 10, y: rect.minY, width: 20, height: rect.height),
+                fontSize: 14
+            )
         }
     }
 
@@ -219,14 +240,29 @@ struct ActionTableSnapshotter: Sendable {
 
     private func makeRows(from daySlots: [RouteSlot]) -> [Row] {
         daySlots.map { slot in
-            let fieldCount: Int
-            if let route = slot.route {
-                let passages: [RoutePassage] = FetchAll(routeId: route.id).wrappedValue.sorted { $0.order < $1.order }
-                fieldCount = max(passages.count, 4)
-            } else {
-                fieldCount = 4
-            }
-            return Row(period: slot.period, fieldCount: fieldCount)
+            let entries: [String] = {
+                guard let route = slot.route else { return [] }
+                let passages = FetchAll(routeId: route.id).wrappedValue
+                return passages.prefix(linesPerPeriod * columnsPerLine).map(passageTitle)
+            }()
+            return Row(
+                period: slot.period,
+                entries: entries
+            )
         }
+    }
+
+    private func passageTitle(_ passage: RoutePassage) -> String {
+        if let districtId = passage.districtId,
+           let district = FetchOne(District.find(districtId)).wrappedValue {
+            return district.name
+        }
+
+        if let memo = passage.memo?.trimmingCharacters(in: .whitespacesAndNewlines),
+           !memo.isEmpty {
+            return memo
+        }
+
+        return "(未設定)"
     }
 }

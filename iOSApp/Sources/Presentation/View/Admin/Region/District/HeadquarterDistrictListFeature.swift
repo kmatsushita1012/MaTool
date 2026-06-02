@@ -143,6 +143,14 @@ struct HeadquarterDistrictListFeature {
                 let renderer = await PDFRenderer(path: "\(district.name)\(suffix).pdf")
                 guard let _ =  try? await routeDataFetcher.fetchAll(districtID: district.id, query: .year(2025)) else { continue }
                 let slots: [RouteSlot] = FetchAll(districtId: district.id, latest: true).wrappedValue
+                let routes = slots.compactMap(\.route)
+                for route in routes {
+                    do {
+                        try await routeDataFetcher.fetch(routeID: route.id)
+                    } catch {
+                        continue
+                    }
+                }
                 let tableSnapshotter = await ActionTableSnapshotter(district: district, slots: slots)
                 let tablePages = await tableSnapshotter.takeAll()
                 for page in tablePages {
@@ -153,11 +161,9 @@ struct HeadquarterDistrictListFeature {
                     urls.append(url)
                     continue
                 }
-                let routes: [Route] = slots.compactMap(\.route)
                 if !routes.isEmpty {
                     for route in routes {
-                        guard (try? await routeDataFetcher.fetch(routeID: route.id)) != nil,
-                              let snapshotter = try? await RouteSnapshotter(route),
+                        guard let snapshotter = try? await RouteSnapshotter(route),
                               let image = try? await snapshotter.take() else { continue }
                         await renderer.addPage(with: image)
                     }

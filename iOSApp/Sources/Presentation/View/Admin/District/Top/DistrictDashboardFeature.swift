@@ -40,7 +40,8 @@ struct DistrictDashboardFeature {
     }
     
     @CasePathable
-    enum Action: Equatable {
+    enum Action: Equatable, BindableAction {
+        case binding(BindingAction<State>)
         case onEdit
         case onRouteEdit(RouteSlot)
         case changePasswordTapped
@@ -65,8 +66,11 @@ struct DistrictDashboardFeature {
     @Dependency(\.dismiss) var dismiss
     
     var body: some ReducerOf<DistrictDashboardFeature> {
+        BindingReducer()
         Reduce{ state, action in
             switch action {
+            case .binding:
+                return .none
             case .onEdit:
                 state.destination = .edit(.init(state.district))
                 return .none
@@ -186,6 +190,14 @@ private extension DistrictDashboardFeature {
     func exportEffect(state: State, path: String, includesRouteMap: Bool) -> Effect<Action> {
         .task(Action.exportReceived) {
             let renderer = await PDFRenderer(path: path)
+            let routes = state.routes.compactMap(\.route)
+            for route in routes {
+                do {
+                    try await routeDateFetcher.fetch(routeID: route.id)
+                } catch {
+                    continue
+                }
+            }
             let tableSnapshotter = await ActionTableSnapshotter(district: state.district, slots: state.routes)
             let tablePages = await tableSnapshotter.takeAll()
             for page in tablePages {
@@ -195,10 +207,8 @@ private extension DistrictDashboardFeature {
                 let url = await renderer.finalize()
                 return url
             }
-            for item in state.routes {
-                guard let route = item.route,
-                      let _ = try? await routeDateFetcher.fetch(routeID: route.id),
-                      let snapshotter = try? await RouteSnapshotter(route),
+            for route in routes {
+                guard let snapshotter = try? await RouteSnapshotter(route),
                       let image = try? await snapshotter.take() else { continue }
                 await renderer.addPage(with: image)
             }
