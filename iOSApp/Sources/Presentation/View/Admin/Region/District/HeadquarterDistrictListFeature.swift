@@ -41,6 +41,7 @@ struct HeadquarterDistrictListFeature {
         case districtMoved(from: IndexSet, to: Int)
         case reorderReceived(VoidTaskResult)
         case batchExportTapped
+        case tableExportTapped
         case selectedReceived(TaskResult<District>)
         case batchExportReceived(TaskResult<[URL]>)
         case destination(PresentationAction<Destination.Action>)
@@ -65,7 +66,7 @@ struct HeadquarterDistrictListFeature {
                 state.isLoading = true
                 return .task(Action.selectedReceived) {
                     async let districtFetch: Void = dataFetcher.fetch(districtID: district.id)
-                    async let routeFetch: Void = routeDataFetcher.fetchAll(districtID: district.id, query: .latest)
+                    async let routeFetch: Void = routeDataFetcher.fetchAll(districtID: district.id, query: .year(2025))
                     _ = try await (districtFetch, routeFetch)
                     return district
                 }
@@ -107,7 +108,9 @@ struct HeadquarterDistrictListFeature {
                 state.draftDistricts = nil
                 return .none
             case .batchExportTapped:
-                return batchExportEffect(state)
+                return batchExportEffect(state, includesRouteMap: true)
+            case .tableExportTapped:
+                return batchExportEffect(state, includesRouteMap: false)
             case .selectedReceived(.success(let district)):
                 state.isLoading = false
                 state.destination = .detail(.init(district))
@@ -131,20 +134,39 @@ struct HeadquarterDistrictListFeature {
         .ifLet(\.$alert, action: \.alert)
     }
     
-    func batchExportEffect(_ state: State) -> Effect<Action> {
+    func batchExportEffect(_ state: State, includesRouteMap: Bool) -> Effect<Action> {
         .task(Action.batchExportReceived) {
             var urls: [URL] = []
             //非同期並列にするとBEでアクセス過多
             for district in state.districts {
-                let renderer = await PDFRenderer(path: "\(district.name).pdf")
-                guard let _ =  try? await routeDataFetcher.fetchAll(districtID: district.id, query: .latest) else { continue }
-                let routes: [Route] = FetchAll(Route.where { $0.districtId.eq(district.id) }).wrappedValue
-                if routes.isEmpty { continue }
+                let suffix = includesRouteMap ? "" : "_行動表"
+                let renderer = await PDFRenderer(path: "\(district.name)\(suffix).pdf")
+                guard let _ =  try? await routeDataFetcher.fetchAll(districtID: district.id, query: .year(2025)) else { continue }
+                let slots: [RouteSlot] = FetchAll(districtId: district.id, latest: true).wrappedValue
+                let routes = slots.compactMap(\.route)
                 for route in routes {
-                    guard (try? await routeDataFetcher.fetch(routeID: route.id)) != nil,
-                          let snapshotter = try? await RouteSnapshotter(route),
-                          let image = try? await snapshotter.take() else { continue }
-                    await renderer.addPage(with: image)
+                    do {
+                        try await routeDataFetcher.fetch(routeID: route.id)
+                    } catch {
+                        continue
+                    }
+                }
+                let tableSnapshotter = await ActionTableSnapshotter(district: district, slots: slots)
+                let tablePages = await tableSnapshotter.takeAll()
+                for page in tablePages {
+                    await renderer.addPage(with: page)
+                }
+                guard includesRouteMap else {
+                    let url = await renderer.finalize()
+                    urls.append(url)
+                    continue
+                }
+                if !routes.isEmpty {
+                    for route in routes {
+                        guard let snapshotter = try? await RouteSnapshotter(route),
+                              let image = try? await snapshotter.take() else { continue }
+                        await renderer.addPage(with: image)
+                    }
                 }
                 let url = await renderer.finalize()
                 urls.append(url)
