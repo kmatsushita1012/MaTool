@@ -44,6 +44,11 @@ struct ActionTableSnapshotter: Sendable {
     private let slots: [RouteSlot]
     private let linesPerPeriod = 5
     private let columnsPerLine = 5
+    private let pageLift: CGFloat = -24
+    private let titleFontSize: CGFloat = 31
+    private let subtitleFontSize: CGFloat = 22
+    private let rowFontSize: CGFloat = 15
+    private let arrowFontSize: CGFloat = 16
 
     init(district: District, slots: [RouteSlot]) {
         self.district = district
@@ -68,8 +73,8 @@ struct ActionTableSnapshotter: Sendable {
             context.fill(CGRect(origin: .zero, size: pageSize))
 
             // 見本画像に合わせてヘッダ余白を大きく確保
-            let tableTop: CGFloat = 320
-            let tableBottom: CGFloat = 760
+            let tableTop: CGFloat = 320 + pageLift
+            let tableBottom: CGFloat = 760 + pageLift
             let tableLeft: CGFloat = 42
             let tableRight: CGFloat = pageSize.width - 42
 
@@ -96,24 +101,24 @@ struct ActionTableSnapshotter: Sendable {
         let titleText = "行動表"
 
         let titleAttributes: [NSAttributedString.Key: Any] = [
-            .font: UIFont.systemFont(ofSize: 28, weight: .bold),
+            .font: UIFont.systemFont(ofSize: titleFontSize, weight: .bold),
             .foregroundColor: UIColor.black
         ]
         let titleSize = titleText.size(withAttributes: titleAttributes)
         titleText.draw(
-            at: CGPoint(x: (size.width - titleSize.width) / 2, y: 196),
+            at: CGPoint(x: (size.width - titleSize.width) / 2, y: 196 + pageLift),
             withAttributes: titleAttributes
         )
 
         let textAttr: [NSAttributedString.Key: Any] = [
-            .font: UIFont.systemFont(ofSize: 20, weight: .bold),
+            .font: UIFont.systemFont(ofSize: subtitleFontSize, weight: .bold),
             .foregroundColor: UIColor.black
         ]
-        dateText.draw(at: CGPoint(x: 42, y: 278), withAttributes: textAttr)
+        dateText.draw(at: CGPoint(x: 42, y: 278 + pageLift), withAttributes: textAttr)
 
         let districtSize = districtText.size(withAttributes: textAttr)
         districtText.draw(
-            at: CGPoint(x: size.width - districtSize.width - 42, y: 278),
+            at: CGPoint(x: size.width - districtSize.width - 42, y: 278 + pageLift),
             withAttributes: textAttr
         )
     }
@@ -184,7 +189,7 @@ struct ActionTableSnapshotter: Sendable {
                 width: columnWidth,
                 height: rect.height
             )
-            drawCenteredText(entries[entryIndex], in: cellRect, fontSize: 13)
+            drawCenteredText(entries[entryIndex], in: cellRect, fontSize: rowFontSize)
         }
     }
 
@@ -197,7 +202,7 @@ struct ActionTableSnapshotter: Sendable {
             drawCenteredText(
                 "→",
                 in: CGRect(x: x - 10, y: rect.minY, width: 20, height: rect.height),
-                fontSize: 14
+                fontSize: arrowFontSize
             )
         }
     }
@@ -213,9 +218,9 @@ struct ActionTableSnapshotter: Sendable {
         ]
         let drawRect = CGRect(
             x: rect.minX + 4,
-            y: rect.midY - (fontSize + 6) / 2,
+            y: rect.midY - (fontSize + 8) / 2,
             width: rect.width - 8,
-            height: fontSize + 8
+            height: fontSize + 10
         )
         (text as NSString).draw(in: drawRect, withAttributes: attrs)
     }
@@ -223,8 +228,8 @@ struct ActionTableSnapshotter: Sendable {
     private func drawVerticalText(_ text: String, in rect: CGRect) {
         let chars = text.map { String($0) }
         guard !chars.isEmpty else { return }
-        let fontSize: CGFloat = 15
-        let totalHeight = CGFloat(chars.count) * (fontSize + 2)
+        let fontSize: CGFloat = 17
+        let totalHeight = CGFloat(chars.count) * (fontSize + 3)
         var currentY = rect.midY - totalHeight / 2
         for char in chars {
             let attrs: [NSAttributedString.Key: Any] = [
@@ -234,7 +239,7 @@ struct ActionTableSnapshotter: Sendable {
             let size = char.size(withAttributes: attrs)
             let x = rect.midX - size.width / 2
             char.draw(at: CGPoint(x: x, y: currentY), withAttributes: attrs)
-            currentY += fontSize + 2
+            currentY += fontSize + 3
         }
     }
 
