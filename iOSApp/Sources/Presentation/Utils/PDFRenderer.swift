@@ -44,7 +44,7 @@ struct ActionTableSnapshotter: Sendable {
     private let slots: [RouteSlot]
     private let linesPerPeriod = 5
     private let columnsPerLine = 5
-    private let pageLift: CGFloat = -24
+    private let pageLift: CGFloat = -48
     private let titleFontSize: CGFloat = 31
     private let subtitleFontSize: CGFloat = 22
     private let rowFontSize: CGFloat = 15
@@ -73,8 +73,8 @@ struct ActionTableSnapshotter: Sendable {
             context.fill(CGRect(origin: .zero, size: pageSize))
 
             // 見本画像に合わせてヘッダ余白を大きく確保
-            let tableTop: CGFloat = 320 + pageLift
-            let tableBottom: CGFloat = 760 + pageLift
+            let tableTop: CGFloat = 260 + pageLift
+            let tableBottom: CGFloat = 820 + pageLift
             let tableLeft: CGFloat = 42
             let tableRight: CGFloat = pageSize.width - 42
 
@@ -106,7 +106,7 @@ struct ActionTableSnapshotter: Sendable {
         ]
         let titleSize = titleText.size(withAttributes: titleAttributes)
         titleText.draw(
-            at: CGPoint(x: (size.width - titleSize.width) / 2, y: 196 + pageLift),
+            at: CGPoint(x: (size.width - titleSize.width) / 2, y: 136 + pageLift),
             withAttributes: titleAttributes
         )
 
@@ -114,11 +114,11 @@ struct ActionTableSnapshotter: Sendable {
             .font: UIFont.systemFont(ofSize: subtitleFontSize, weight: .bold),
             .foregroundColor: UIColor.black
         ]
-        dateText.draw(at: CGPoint(x: 42, y: 278 + pageLift), withAttributes: textAttr)
+        dateText.draw(at: CGPoint(x: 42, y: 218 + pageLift), withAttributes: textAttr)
 
         let districtSize = districtText.size(withAttributes: textAttr)
         districtText.draw(
-            at: CGPoint(x: size.width - districtSize.width - 42, y: 278 + pageLift),
+            at: CGPoint(x: size.width - districtSize.width - 42, y: 218 + pageLift),
             withAttributes: textAttr
         )
     }
