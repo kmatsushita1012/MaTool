@@ -52,6 +52,10 @@ struct LoginFeature {
                 return .task(Action.received) { [state] in
                     try await sceneUsecase.signIn(username: state.id, password: state.password)
                 }
+                return .run { [state] send in
+                    let result = try await sceneUsecase.signIn(username: state.id, password: state.password)
+                    send(.received(result))
+                }
             case .dismissTapped:
                 return .dismiss
             case .resetPasswordTapped:

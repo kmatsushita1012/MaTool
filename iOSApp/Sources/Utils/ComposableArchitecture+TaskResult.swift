@@ -19,7 +19,7 @@ extension VoidResult where Success == VoidSuccess {
     }
 }
 
-typealias VoidTaskResult = TaskResult<VoidSuccess>
+typealias VoidTaskResult = Result<VoidSuccess, Error>
 
 extension TaskResult where Success == VoidSuccess {
     init(catching body: @Sendable () async throws -> Void) async {
@@ -33,11 +33,11 @@ extension TaskResult where Success == VoidSuccess {
 }
 
 extension Effect {
-    static func task<Success>(_ action: @escaping (TaskResult<Success>) -> Action, operation: @escaping @Sendable () async throws -> Success ) -> Self {
+    static func task<Success>(_ action: @escaping (Result<Success, Error>) -> Action, operation: @escaping @Sendable () async throws -> Success ) -> Self {
         return Self.run { send in
             await send(
                 action(
-                    TaskResult {
+                    Result{
                         try await operation()
                     }
                 )

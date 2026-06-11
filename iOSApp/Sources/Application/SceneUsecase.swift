@@ -85,7 +85,9 @@ actor SceneUsecase: SceneUsecaseProtocol {
     }
     
     func signIn(username: String, password: String) async throws -> SignInState {
+        print("Usecase start")
         let signInResult = try await authService.signIn(username, password: password)
+        print("Usecase signIn")
         if case .signedIn(.headquarter(let festivalId)) = signInResult {
             try await dataFetcher.launchFestival(festivalId: festivalId)
             userDefaults.defaultDistrictId = nil

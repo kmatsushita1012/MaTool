@@ -46,7 +46,9 @@ struct AuthService: AuthServiceProtocol {
     
     func signIn(_ username: String, password: String) async throws -> SignInState {
         try? await authProvider.signOut()
+        print("signOut")
         let result = try await authProvider.signIn(username, password)
+        print("signIn")
         switch result {
         case .newPasswordRequired:
             return .newPasswordRequired

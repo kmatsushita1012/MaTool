@@ -97,15 +97,19 @@ extension AuthProvider: DependencyKey {
             
             getTokens: {
                 do {
-                    let session = try await Amplify.Auth.fetchAuthSession() as? AWSAuthCognitoSession
-                    let result = session?.getCognitoTokens()
+                    guard let session = try await Amplify.Auth.fetchAuthSession() as? AWSAuthCognitoSession else {
+                        throw AuthError.unknown("予期せぬエラーが発生しました")
+                    }
+                    if !session.isSignedIn  {
+                        throw AuthError.auth("ログインしていません。")
+                    }
+                        
+                    let result = session.getCognitoTokens()
                     switch result {
                     case .success(let tokens):
                         return tokens.accessToken
                     case .failure(let error):
                         throw error
-                    case .none:
-                        throw AuthError.unknown("アクセストークンの取得に失敗しました。")
                     }
                 } catch {
                     try Self.rethrowAsAuthErrorIfNeeded(error, operation: "getTokens")
