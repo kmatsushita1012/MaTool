@@ -245,7 +245,7 @@ actor HTTPClient: HTTPClientProtocol {
 
     private func decodeAPIError(from data: Data, httpStatus: Int) -> Error {
         if !data.isEmpty, let decoded = try? jsonDecoder.decode(ErrorResponse.self, from: data) {
-            let description = decoded.localizedDescription ?? decoded.message
+            let description = decoded.localizedDescription
             return NSError(domain: "HTTP Error", code: httpStatus, userInfo: [NSLocalizedDescriptionKey: description])
         }
         if let text = String(data: data, encoding: .utf8), !text.isEmpty {
