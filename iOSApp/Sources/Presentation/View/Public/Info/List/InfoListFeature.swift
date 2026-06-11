@@ -44,7 +44,7 @@ struct InfoListFeature {
         case districtTapped(District)
         case mapRequested(MapRequest)
         case dismissTapped
-        case districtReceived(TaskResult<District>)
+        case districtReceived(Result<District, AppError>)
         case destination(PresentationAction<Destination.Action>)
         case alert(PresentationAction<AlertFeature.Action>)
     }
@@ -78,7 +78,7 @@ struct InfoListFeature {
                 state.isLoading = false
                 return .none
             case .districtReceived(.failure(let error)):
-                state.alert = AlertFeature.error(error.localizedDescription)
+                state.alert = AlertFeature.error(error.message)
                 state.isLoading = false
                 return .none
             case .destination(.presented(.festival(.mapTapped))):
@@ -91,7 +91,7 @@ struct InfoListFeature {
                 state.destination = nil
                 return .send(.mapRequested(.route(festival: state.festival, district: district, routeId: routeId)))
             case .destination(.presented(.district(.routeIdReceived(.failure(let error))))):
-                state.alert = AlertFeature.error(error.localizedDescription)
+                state.alert = AlertFeature.error(error.message)
                 return .none
             case .destination:
                 return .none

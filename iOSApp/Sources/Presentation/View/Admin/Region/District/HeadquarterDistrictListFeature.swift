@@ -39,11 +39,11 @@ struct HeadquarterDistrictListFeature {
         case createTapped
         case reorderTapped
         case districtMoved(from: IndexSet, to: Int)
-        case reorderReceived(VoidTaskResult)
+        case reorderReceived(VoidAppResult)
         case batchExportTapped
         case tableExportTapped
-        case selectedReceived(TaskResult<District>)
-        case batchExportReceived(TaskResult<[URL]>)
+        case selectedReceived(Result<District, AppError>)
+        case batchExportReceived(Result<[URL], AppError>)
         case destination(PresentationAction<Destination.Action>)
         case alert(PresentationAction<AlertFeature.Action>)
     }
@@ -122,7 +122,7 @@ struct HeadquarterDistrictListFeature {
                 .reorderReceived(.failure(let error)),
                 .batchExportReceived(.failure(let error)):
                 state.isLoading = false
-                state.alert = AlertFeature.error(error.localizedDescription)
+                state.alert = AlertFeature.error(error.message)
                 return .none
             case .destination:
                 return .none

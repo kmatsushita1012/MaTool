@@ -1,7 +1,7 @@
 import Shared
 
 extension Error {
-    func toAuthError() -> AuthError {
-        .unknown(localizedDescription)
+    func toAppError() -> AppError {
+        asAppError
     }
 }

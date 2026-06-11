@@ -31,7 +31,7 @@ struct LoginFeature {
         case binding(BindingAction<State>)
         case dismissTapped
         case signInTapped
-        case received(TaskResult<SignInState>)
+        case received(Result<SignInState, AppError>)
         case resetPasswordTapped
         case destination(PresentationAction<Destination.Action>)
         case confirmSignInCompleted(UserRole)
@@ -52,10 +52,6 @@ struct LoginFeature {
                 return .task(Action.received) { [state] in
                     try await sceneUsecase.signIn(username: state.id, password: state.password)
                 }
-                return .run { [state] send in
-                    let result = try await sceneUsecase.signIn(username: state.id, password: state.password)
-                    send(.received(result))
-                }
             case .dismissTapped:
                 return .dismiss
             case .resetPasswordTapped:
@@ -68,7 +64,7 @@ struct LoginFeature {
                 return .none
             case .received(.failure(let error)):
                 state.isLoading = false
-                state.errorMessage = error.localizedDescription
+                state.errorMessage = error.message
                 return .none
             case .destination(.presented(.resetPassword(.confirmResetReceived(.success)))):
                 state.destination = nil

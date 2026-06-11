@@ -37,7 +37,7 @@ struct FestivalEditFeature {
         case saveTapped
         case cancelTapped
         case baseTapped
-        case putReceived(VoidTaskResult)
+        case putReceived(VoidAppResult)
         case onCheckpointEdit(Checkpoint)
         case onCheckpointAdd
         case hazardTapped(HazardSection)
@@ -89,7 +89,7 @@ struct FestivalEditFeature {
                 return .none
             case .putReceived(.failure(let error)):
                 state.isLoading = false
-                state.alert = AlertFeature.error("保存に失敗しました。\(error.localizedDescription)")
+                state.alert = AlertFeature.error("保存に失敗しました。\(error.message)")
                 return .none
             case .onCheckpointEdit(let item):
                 state.destination = .checkpoint(

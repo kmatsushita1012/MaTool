@@ -39,8 +39,8 @@ struct UpdateEmailFeature {
         }
         
         case resendTapped
-        case updateReceived(TaskResult<UpdateEmailState>)
-        case confirmUpdateReceived(VoidTaskResult)
+        case updateReceived(Result<UpdateEmailState, AppError>)
+        case confirmUpdateReceived(VoidAppResult)
         case errorAlert(PresentationAction<AlertFeature.Action>)
         case completeAlert(PresentationAction<AlertFeature.Action>)
     }
@@ -78,7 +78,7 @@ struct UpdateEmailFeature {
                 return .none
             case .updateReceived(.failure(let error)):
                 state.isLoading = false
-                state.errorAlert = .error(error.localizedDescription)
+                state.errorAlert = .error(error.message)
                 return .none
             case .confirmUpdateReceived(.success):
                 state.isLoading = false
@@ -86,7 +86,7 @@ struct UpdateEmailFeature {
                 return .none
             case .confirmUpdateReceived(.failure(let error)):
                 state.isLoading = false
-                state.errorAlert = .error(error.localizedDescription)
+                state.errorAlert = .error(error.message)
                 return .none
             case .errorAlert:
                 state.errorAlert = nil

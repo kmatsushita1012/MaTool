@@ -40,8 +40,8 @@ struct OnboardingFeature {
         case externalGuestTapped
         case adminTapped
         case districtSelected(District)
-        case festivalDidSet(VoidTaskResult)
-        case districtDidSet(TaskResult<Route.ID?>)
+        case festivalDidSet(VoidAppResult)
+        case districtDidSet(Result<Route.ID?, AppError>)
     }
     
     @Dependency(SceneUsecaseKey.self) var sceneUsecase

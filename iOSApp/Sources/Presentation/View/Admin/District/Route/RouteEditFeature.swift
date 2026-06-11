@@ -91,10 +91,10 @@ struct RouteEditFeature{
         case passageMoved(from: IndexSet, to: Int)
         case passageDeleteTapped(Int)
         case sourceSelected(RouteEntry)
-        case saveReceived(VoidTaskResult)
-        case copyPrepared(TaskResult<Route.ID>)
-        case deleteReceived(VoidTaskResult)
-        case previewPrepared(TaskResult<ExportedItem>)
+        case saveReceived(VoidAppResult)
+        case copyPrepared(Result<Route.ID, AppError>)
+        case deleteReceived(VoidAppResult)
+        case previewPrepared(Result<ExportedItem, AppError>)
         case point(PresentationAction<PointEditFeature.Action>)
         case alert(PresentationAction<AlertDestination.Action>)
     }
@@ -156,7 +156,7 @@ struct RouteEditFeature{
                     case .update:
                         try await dataFetcher.update(state.route, points: state.points, passages: state.passages)
                     case .preview:
-                        throw APIError.unknown(message: "権限がありません")
+                        throw AppError.be(.forbidden("権限がありません"))
                     }
                     await dismiss()
                 }
@@ -298,7 +298,7 @@ struct RouteEditFeature{
                 .copyPrepared(.failure(let error)),
                 .previewPrepared(.failure(let error)):
                 state.isLoading = false
-                state.alert = .notice(.error(error.localizedDescription))
+                state.alert = .notice(.error(error))
                 return .none
             default:
                 return .none
