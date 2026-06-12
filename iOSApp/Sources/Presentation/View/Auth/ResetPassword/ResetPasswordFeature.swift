@@ -33,8 +33,8 @@ struct ResetPasswordFeature {
         case binding(BindingAction<State>)
         case enterUsername(NavigationAction)
         case enterCode(NavigationAction)
-        case resetReceived(VoidTaskResult)
-        case confirmResetReceived(VoidTaskResult)
+        case resetReceived(VoidAppResult)
+        case confirmResetReceived(VoidAppResult)
         case resendTapped
         case alert(PresentationAction<AlertFeature.Action>)
         
@@ -89,14 +89,14 @@ struct ResetPasswordFeature {
                 return .none
             case .resetReceived(.failure(let error)):
                 state.isLoading = false
-                state.alert = AlertFeature.error("リセットに失敗しました。\(error.localizedDescription)")
+                state.alert = AlertFeature.error("リセットに失敗しました。\(error.message)")
                 return .none
             case .confirmResetReceived(.success):
                 state.isLoading = false
                 return .none
             case .confirmResetReceived(.failure(let error)):
                 state.isLoading = false
-                state.alert = AlertFeature.error("リセットに失敗しました。\(error.localizedDescription)")
+                state.alert = AlertFeature.error("リセットに失敗しました。\(error.message)")
                 return .none
             case .alert:
                 state.alert = nil

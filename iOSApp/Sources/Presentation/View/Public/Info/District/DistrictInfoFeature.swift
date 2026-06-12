@@ -27,7 +27,7 @@ struct DistrictInfoFeature {
         case binding(BindingAction<State>)
         case dismissTapped
         case mapTapped
-        case routeIdReceived(TaskResult<Route.ID?>)
+        case routeIdReceived(AppResult<Route.ID?>)
     }
     
     @Dependency(\.dismiss) var dismiss

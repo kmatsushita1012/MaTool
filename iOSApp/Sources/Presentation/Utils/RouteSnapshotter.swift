@@ -12,12 +12,6 @@ import SQLiteData
 
 @MainActor
 struct RouteSnapshotter: Equatable {
-    enum Error: Swift.Error {
-        case notFound
-        case snapshotterNotAvailable
-        case imageCreationFailed
-    }
-    
     var route: Route
     var period: Period
     var points: [Point]
@@ -32,7 +26,7 @@ struct RouteSnapshotter: Equatable {
     init (route: Route, points: [Point]) throws {
         guard let district: District = FetchOne(District.find(route.districtId)).wrappedValue,
               let period: Period = FetchOne(Period.find(route.periodId)).wrappedValue else {
-            throw Error.notFound
+            throw AppError.export(.notFound("必要な情報の取得に失敗しました。"))
         }
         self.district = district
         self.period = period
@@ -79,11 +73,11 @@ struct RouteSnapshotter: Equatable {
             withExtendedLifetime(snapshotter) {
                 snapshotter.start { snapshot, error in
                     if let error = error {
-                        continuation.resume(throwing: error)
+                        continuation.resume(throwing: error.asAppError)
                         return
                     }
                     guard let snapshot = snapshot else {
-                        continuation.resume(throwing: Self.Error.snapshotterNotAvailable)
+                        continuation.resume(throwing: AppError.export(.conflict("Snapshotterサービスが利用できません。")))
                         return
                     }
                     
@@ -109,7 +103,7 @@ struct RouteSnapshotter: Equatable {
                     drawTitleTextBlock(text: titleText, in: options, drawnRects: &drawnRects)
                     
                     guard let image = UIGraphicsGetImageFromCurrentImageContext() else {
-                        continuation.resume(throwing: Self.Error.imageCreationFailed)
+                        continuation.resume(throwing: AppError.export(.conflict("地図の画像を作成できませんでした。")))
                         return
                     }
                     
@@ -356,17 +350,4 @@ struct RouteSnapshotter: Equatable {
     }
     
     static let a4size = CGSize(width: 594, height: 420)
-}
-
-extension RouteSnapshotter.Error {
-    var localizedDescription: String {
-        switch self {
-        case .notFound:
-            "必要な情報の取得に失敗しました。"
-        case .imageCreationFailed:
-            "地図の画像を作成できませんでした。"
-        case .snapshotterNotAvailable:
-            "Snapshotterサービスが利用できません。"
-        }
-    }
 }

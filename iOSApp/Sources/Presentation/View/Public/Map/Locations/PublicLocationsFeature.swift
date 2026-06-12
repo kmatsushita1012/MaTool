@@ -31,7 +31,7 @@ struct PublicLocationsFeature {
         case userFocusTapped
         case userLocationReceived(Coordinate)
         case reloadTapped
-        case reloadReceived(VoidTaskResult)
+        case reloadReceived(VoidAppResult)
         case alert(PresentationAction<AlertFeature.Action>)
     }
     
@@ -64,7 +64,7 @@ struct PublicLocationsFeature {
                     await send(.userLocationReceived(Coordinate.fromCL(coordinate)))
                 }
             case .reloadReceived(.failure(let error)):
-                state.alert = AlertFeature.error(error.localizedDescription)
+                state.alert = AlertFeature.error(error.message)
                 return .none
             default:
                 return .none

@@ -49,7 +49,7 @@ struct HomeFeature {
         case infoTapped
         case adminTapped
         case settingsTapped
-        case settingsPrepared(VoidTaskResult)
+        case settingsPrepared(VoidAppResult)
         case loginSucceeded(UserRole)
         case loginSucceededAfterDismiss(UserRole)
         case destination(PresentationAction<Destination.Action>)

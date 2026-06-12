@@ -23,7 +23,7 @@ struct DistrictReissueFeature {
         case binding(BindingAction<State>)
         case reissueTapped
         case cancelTapped
-        case reissueReceived(VoidTaskResult)
+        case reissueReceived(VoidAppResult)
         case alert(PresentationAction<AlertFeature.Action>)
     }
 
@@ -53,7 +53,7 @@ struct DistrictReissueFeature {
                 return .none
             case .reissueReceived(.failure(let error)):
                 state.isLoading = false
-                state.alert = AlertFeature.error(error.localizedDescription)
+                state.alert = AlertFeature.error(error.message)
                 return .none
             case .alert:
                 state.alert = nil

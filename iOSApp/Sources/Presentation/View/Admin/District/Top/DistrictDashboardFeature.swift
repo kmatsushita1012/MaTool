@@ -51,11 +51,11 @@ struct DistrictDashboardFeature {
         case onLocation
         case submissionExportTapped
         case tableExportTapped
-        case exportReceived(TaskResult<URL>)
+        case exportReceived(AppResult<URL>)
         case destination(PresentationAction<Destination.Action>)
         case signOutTapped
-        case signOutReceived(TaskResult<UserRole>)
-        case routeEditReceived(TaskResult<RouteSlot>)
+        case signOutReceived(AppResult<UserRole>)
+        case routeEditReceived(AppResult<RouteSlot>)
         case dismissTapped
         case alert(PresentationAction<AlertFeature.Action>)
     }
@@ -106,7 +106,7 @@ struct DistrictDashboardFeature {
                 return .none
             case .routeEditReceived(.failure(let error)):
                 state.isRouteLoading = false
-                state.alert = .error(error.localizedDescription)
+                state.alert = .error(error.message)
                 return .none
             case .locationPrepared(isTracking: let isTracking, Interval: let interval):
                 state.destination = .location(
@@ -135,7 +135,7 @@ struct DistrictDashboardFeature {
                 return .none
             case .exportReceived(.failure(let error)):
                 state.isExportLoading = false
-                state.alert = .error(error.localizedDescription)
+                state.alert = .error(error.message)
                 return .none
             case .destination(.presented(let childAction)):
                 switch childAction {
@@ -156,7 +156,7 @@ struct DistrictDashboardFeature {
                 }
             case .signOutReceived(.failure(let error)):
                 state.isAWSLoading = false
-                state.alert = .error("ログアウトに失敗しました。 \(error.localizedDescription)")
+                state.alert = .error("ログアウトに失敗しました。 \(error.message)")
                 return .none
             case .dismissTapped:
                 return .dismiss

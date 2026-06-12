@@ -77,10 +77,10 @@ actor SceneUsecase: SceneUsecaseProtocol {
                     try await festivalDataFetcher.fetchAll()
                     return (.onboarding, await appStatusTask)
                 } catch {
-                    return (.error(error.localizedDescription), await appStatusTask)
+                    return (.error(error.asAppError.message), await appStatusTask)
                 }
             }
-            return (.error(error.localizedDescription), await appStatusTask)
+            return (.error(error.asAppError.message), await appStatusTask)
         }
     }
     
@@ -137,7 +137,7 @@ actor SceneUsecase: SceneUsecaseProtocol {
     
     func select(districtId: Shared.District.ID) async throws -> Route.ID? {
         guard let district = FetchOne(District.find(districtId)).wrappedValue else {
-            throw APIError.notFound(message: "指定された町が存在しません。")
+            throw AppError.be(.notFound("指定された町が存在しません。"))
         }
         let currentRouteId = try await dataFetcher.launchDistrict(districtId: districtId, clearsExistingData: false)
         userDefaults.defaultDistrictId = district.id
