@@ -122,8 +122,10 @@ actor HTTPClient: HTTPClientProtocol {
         let key = cacheKey(url: url, method: method, bodyData: bodyData ?? nil)
 
         // Cache hit
-        if isCache, let cached = cache.object(forKey: key) {
-            return try await decodeResponse(from: cached as Data)
+        if isCache,
+            let cached = cache.object(forKey: key),
+           let decodecCache: Response = try? await decodeResponse(from: cached as Data){
+            return decodecCache
         }
 
         // Build request and execute
