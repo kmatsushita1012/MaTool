@@ -92,9 +92,9 @@ struct RouteEditFeature{
         case passageDeleteTapped(Int)
         case sourceSelected(RouteEntry)
         case saveReceived(VoidAppResult)
-        case copyPrepared(Result<Route.ID, AppError>)
+        case copyPrepared(AppResult<Route.ID>)
         case deleteReceived(VoidAppResult)
-        case previewPrepared(Result<ExportedItem, AppError>)
+        case previewPrepared(AppResult<ExportedItem>)
         case point(PresentationAction<PointEditFeature.Action>)
         case alert(PresentationAction<AlertDestination.Action>)
     }

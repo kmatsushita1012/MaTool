@@ -47,7 +47,7 @@ struct FestivalDashboardFeature {
         case changePasswordTapped
         case updateEmailTapped
         case signOutTapped
-        case signOutReceived(Result<UserRole, AppError>)
+        case signOutReceived(AppResult<UserRole>)
         case destination(PresentationAction<Destination.Action>)
         case alert(PresentationAction<AlertFeature.Action>)
     }

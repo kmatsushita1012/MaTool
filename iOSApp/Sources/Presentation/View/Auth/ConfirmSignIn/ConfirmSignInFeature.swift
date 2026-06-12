@@ -24,7 +24,7 @@ struct ConfirmSignInFeature {
         case binding(BindingAction<State>)
         case submitTapped
         case dismissTapped
-        case received(Result<UserRole, AppError>)
+        case received(AppResult<UserRole>)
         case alert(PresentationAction<AlertFeature.Action>)
     }
     

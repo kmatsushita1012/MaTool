@@ -51,9 +51,9 @@ struct SettingsFeature {
         case binding(BindingAction<State>)
         case dismissTapped
         case signOutTapped
-        case signOutReceived(Result<UserRole, AppError>)
-        case festivalSelectReceived(Result<FestivalSelectionResult, AppError>)
-        case districtSelectReceived(Result<Route.ID?, AppError>)
+        case signOutReceived(AppResult<UserRole>)
+        case festivalSelectReceived(AppResult<FestivalSelectionResult>)
+        case districtSelectReceived(AppResult<Route.ID?>)
         case alert(PresentationAction<AlertFeature.Action>)
     }
     

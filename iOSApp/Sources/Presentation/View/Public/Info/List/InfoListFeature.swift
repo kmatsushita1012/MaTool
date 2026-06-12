@@ -44,7 +44,7 @@ struct InfoListFeature {
         case districtTapped(District)
         case mapRequested(MapRequest)
         case dismissTapped
-        case districtReceived(Result<District, AppError>)
+        case districtReceived(AppResult<District>)
         case destination(PresentationAction<Destination.Action>)
         case alert(PresentationAction<AlertFeature.Action>)
     }

@@ -41,8 +41,8 @@ struct HeadquarterDistrictDetailFeature {
         case batchExportTapped
         case tableExportTapped
         case updateReceived(VoidAppResult)
-        case routeReceived(Result<RouteEntry, AppError>)
-        case batchExportReceived(Result<URL, AppError>)
+        case routeReceived(AppResult<RouteEntry>)
+        case batchExportReceived(AppResult<URL>)
         case destination(PresentationAction<Destination.Action>)
         case alert(PresentationAction<AlertFeature.Action>)
     }

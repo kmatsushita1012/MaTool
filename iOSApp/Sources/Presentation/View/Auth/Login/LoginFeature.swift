@@ -31,7 +31,7 @@ struct LoginFeature {
         case binding(BindingAction<State>)
         case dismissTapped
         case signInTapped
-        case received(Result<SignInState, AppError>)
+        case received(AppResult<SignInState>)
         case resetPasswordTapped
         case destination(PresentationAction<Destination.Action>)
         case confirmSignInCompleted(UserRole)

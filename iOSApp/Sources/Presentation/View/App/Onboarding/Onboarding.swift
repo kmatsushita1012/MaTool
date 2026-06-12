@@ -41,7 +41,7 @@ struct OnboardingFeature {
         case adminTapped
         case districtSelected(District)
         case festivalDidSet(VoidAppResult)
-        case districtDidSet(Result<Route.ID?, AppError>)
+        case districtDidSet(AppResult<Route.ID?>)
     }
     
     @Dependency(SceneUsecaseKey.self) var sceneUsecase

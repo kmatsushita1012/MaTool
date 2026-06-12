@@ -39,7 +39,7 @@ struct UpdateEmailFeature {
         }
         
         case resendTapped
-        case updateReceived(Result<UpdateEmailState, AppError>)
+        case updateReceived(AppResult<UpdateEmailState>)
         case confirmUpdateReceived(VoidAppResult)
         case errorAlert(PresentationAction<AlertFeature.Action>)
         case completeAlert(PresentationAction<AlertFeature.Action>)

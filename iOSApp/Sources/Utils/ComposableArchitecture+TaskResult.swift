@@ -13,6 +13,7 @@ struct VoidSuccess: Equatable {
 
 typealias VoidResult<Failure: Swift.Error> = Result<VoidSuccess, Failure>
 typealias VoidAppResult = VoidResult<AppError>
+typealias AppResult<Success> = Result<Success, AppError>
 
 extension VoidResult where Success == VoidSuccess {
     static var success: Self {
@@ -21,7 +22,7 @@ extension VoidResult where Success == VoidSuccess {
 }
 
 extension Effect {
-    static func task<Success>(_ action: @escaping (Result<Success, AppError>) -> Action, operation: @escaping @Sendable () async throws -> Success ) -> Self {
+    static func task<Success>(_ action: @escaping (AppResult<Success>) -> Action, operation: @escaping @Sendable () async throws -> Success ) -> Self {
         return Self.run { send in
             do {
                 let value = try await operation()

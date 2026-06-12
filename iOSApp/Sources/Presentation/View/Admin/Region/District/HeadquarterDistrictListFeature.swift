@@ -42,8 +42,8 @@ struct HeadquarterDistrictListFeature {
         case reorderReceived(VoidAppResult)
         case batchExportTapped
         case tableExportTapped
-        case selectedReceived(Result<District, AppError>)
-        case batchExportReceived(Result<[URL], AppError>)
+        case selectedReceived(AppResult<District>)
+        case batchExportReceived(AppResult<[URL]>)
         case destination(PresentationAction<Destination.Action>)
         case alert(PresentationAction<AlertFeature.Action>)
     }

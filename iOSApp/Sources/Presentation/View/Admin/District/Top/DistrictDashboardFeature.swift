@@ -51,11 +51,11 @@ struct DistrictDashboardFeature {
         case onLocation
         case submissionExportTapped
         case tableExportTapped
-        case exportReceived(Result<URL, AppError>)
+        case exportReceived(AppResult<URL>)
         case destination(PresentationAction<Destination.Action>)
         case signOutTapped
-        case signOutReceived(Result<UserRole, AppError>)
-        case routeEditReceived(Result<RouteSlot, AppError>)
+        case signOutReceived(AppResult<UserRole>)
+        case routeEditReceived(AppResult<RouteSlot>)
         case dismissTapped
         case alert(PresentationAction<AlertFeature.Action>)
     }

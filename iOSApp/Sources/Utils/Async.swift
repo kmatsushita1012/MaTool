@@ -119,7 +119,7 @@ func withTimeout<T>(
     }
 }
 
-func task<Value>(_ operation: () async throws -> Value, defaultError: AppError = .system(.unknown("予期しないエラーが発生しました。"))) async -> Result<Value, AppError> {
+func task<Value>(_ operation: () async throws -> Value, defaultError: AppError = .system(.unknown("予期しないエラーが発生しました。"))) async -> AppResult<Value> {
     do {
         let value = try await operation()
         return .success(value)
@@ -133,6 +133,6 @@ func task<Value>(_ operation: () async throws -> Value, defaultError: AppError =
 }
 
 func task(_ operation: () async throws -> Void) async -> VoidAppResult {
-    let result: Result<Void, AppError> = await task(operation, defaultError: .system(.unknown("予期しないエラーが発生しました。")))
+    let result: AppResult<Void> = await task(operation, defaultError: .system(.unknown("予期しないエラーが発生しました。")))
     return result.map{ VoidSuccess() }
 }
