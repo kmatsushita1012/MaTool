@@ -10,7 +10,7 @@ extension Status {
         case .locationError(let date):
             return "\(date.text(of: "HH:mm:ss")) 取得失敗"
         case .apiError(let date, let error):
-            return "\(date.text(of: "HH:mm:ss")) 送信失敗 \(error.localizedDescription)"
+            return "\(date.text(of: "HH:mm:ss")) 送信失敗 \(error.message)"
         case .delete(let date):
             return "\(date.text(of: "HH:mm:ss")) 削除済み"
         }

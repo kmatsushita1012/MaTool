@@ -8,38 +8,10 @@
 import Foundation
 import Amplify
 
-enum AuthError: LocalizedError, Equatable {
-    case network(String)
-    case encoding(String)
-    case decoding(String)
-    case unknown(String)
-    case auth(String)
-    case timeout(String)
-    
-    var errorDescription: String? {
-        switch self {
-        case .network(let message):
-            return "\(message)"
-        case .encoding(let message):
-            return "\(message)"
-        case .decoding(let message):
-            return "\(message)"
-        case .unknown(let message):
-            return "\(message)"
-        case .auth(let message):
-            return "\(message)"
-        case .timeout(let message):
-            return "タイムアウト \(message) このエラーが繰り返し発生する場合は、設定画面からログアウトし、再度サインインしてください。"
-        }
-    }
-}
-
-extension AuthError {
-    static func parse(_ error: Error, operation: String) -> AuthError? {
-        // FIXME: エラー網羅後に削除
-        print(error)
-        if let authError = error as? AuthError {
-            return authError
+extension AppError {
+    static func parseAuth(_ error: Error, operation: String) -> AppError? {
+        if let appError = error as? AppError {
+            return appError
         }
 
         if let amplifyError = error as? any AmplifyError {
@@ -51,32 +23,32 @@ extension AuthError {
             )
 
             if isAuthRelated(description: description) {
-                return .auth(message)
+                return .auth(.unauthorized(message))
             }
             if isNetworkRelated(description: description) {
-                return .network(message)
+                return .auth(.network(message))
             }
-            return .unknown(message)
+            return .auth(.unknown(message))
         }
 
         if error is CancellationError {
-            return .timeout(operation)
+            return .auth(.timeout(operation))
         }
 
         let nsError = error as NSError
         if nsError.domain == NSURLErrorDomain {
             switch nsError.code {
             case NSURLErrorTimedOut:
-                return .timeout(operation)
+                return .auth(.timeout(operation))
             case NSURLErrorNotConnectedToInternet,
                 NSURLErrorNetworkConnectionLost,
                 NSURLErrorCannotFindHost,
                 NSURLErrorCannotConnectToHost,
                 NSURLErrorDNSLookupFailed:
-                return .network(composeMessage(
+                return .auth(.network(composeMessage(
                     main: "通信環境が不安定なため処理に失敗しました。",
                     recovery: "通信状況をご確認のうえ、時間をおいて再試行してください。"
-                ))
+                )))
             default:
                 break
             }
@@ -98,7 +70,6 @@ extension AuthError {
 
     private static func localizedAmplifyDescription(_ description: String) -> String {
         switch normalize(description) {
-        // MARK: - 出現を確認済
         case "Incorrect username or password":
             return "ユーザー名またはパスワードが正しくありません。"
         case "Username is required to signIn":
@@ -111,7 +82,6 @@ extension AuthError {
             return "認証コードが正しくありません。もう一度お試しください。"
         case "Attempt limit exceeded, please try after some time":
             return "試行回数が限界に達しています。しばらくしてから再度お試しください。"
-        // MARK: - 未確認
         case "Username is required to signUp":
             return "サインアップに必要なユーザー名が入力されていません。"
         case "Password is required to signUp":
@@ -219,132 +189,35 @@ extension AuthError {
             "A network error occurred while trying to fetch user sub",
             "A network error occurred while trying to fetch AWS Cognito Tokens":
             return "通信エラーのため、認証情報を取得できませんでした。"
-        case "There is no user signed in to the Auth category":
-            return "サインイン中のユーザーがいないため、認証操作を実行できませんでした。"
         default:
-            return "認証処理でエラーが発生しました。"
+            return description
         }
     }
 
     private static func localizedAmplifyRecovery(_ recovery: String) -> String {
-        switch normalize(recovery) {
-        // MARK: - 確認
-        case "Check whether the given values are correct and the user is authorized to perform the operation":
-            return "入力値（ユーザー名・パスワード）と、操作権限が正しいか確認してください。"
-        case "Make sure that a valid username is passed during signIn":
-            return "サインイン時に有効なユーザー名を入力してください。"
-        case "Make sure that a valid password is passed during signIn":
-            return "サインイン時に有効なパスワードを入力してください。"
-        case "Retry with a valid code":
-            return "有効な確認コードを入力し、もう一度試してみてください。"
-        // MARK: - 未確認
-        case "Make sure that a valid username is passed for signUp":
-            return "サインアップ時に有効なユーザー名を入力してください。"
-        case "Make sure that a valid password is passed for signUp":
-            return "サインアップ時に有効なパスワードを入力してください。"
-        case "Make sure that a valid username is passed for confirmSignUp":
-            return "サインアップ確認時に有効なユーザー名を入力してください。"
-        case "Make sure that a valid code is passed for confirmSignUp":
-            return "サインアップ確認時に有効な確認コードを入力してください。"
-        case "Make sure that a valid challenge response is passed for confirmSignIn":
-            return "サインイン確認時に有効な応答値を指定してください。"
-        case "Make sure that a valid username is passed for confirmResetPassword":
-            return "パスワード再設定確認時に有効なユーザー名を入力してください。"
-        case "Make sure that a valid newPassword is passed for confirmResetPassword":
-            return "パスワード再設定確認時に有効な新しいパスワードを入力してください。"
-        case "Make sure that a valid confirmationCode is passed for confirmResetPassword":
-            return "パスワード再設定確認時に有効な確認コードを入力してください。"
-        case "Make sure that a valid username is passed for resetPassword":
-            return "パスワードリセット時に有効なユーザー名を入力してください。"
-        case "Make sure the plugin configuration is JSONValue":
-            return "認証プラグイン設定をJSON形式で正しく設定してください。"
-        case "Make sure the value for the plugin is a dictionary literal":
-            return "認証プラグイン設定を辞書形式で正しく設定してください。"
-        case "Make sure that the signIn URL has not been modified during the signIn flow":
-            return "サインイン中にURLが書き換わっていないか確認し、再試行してください。"
-        case "Present the signIn UI again for the user to sign in":
-            return "サインイン画面を再表示し、再度サインインしてください。"
-        case "Present the signOut UI again for the user to sign out":
-            return "サインアウト操作を再実行してください。"
-        case "Retry by providing a presentation context to present the webUI":
-            return "表示コンテキストを正しく指定して再試行してください。"
-        case "Make sure that the app can present an ASWebAuthenticationSession":
-            return "アプリがASWebAuthenticationSessionを表示できる状態か確認してください。"
-        case "Check the configuration to make sure that HostedUI related information are present":
-            return "Hosted UIの設定値（URL等）が正しいか確認してください。"
-        case "Reach out with amplify team via github to raise an issue":
-            return "同じ事象が続く場合は実装設定を見直し、必要ならAmplifyのIssue情報を確認してください。"
-        case "Check if the the configuration provided are correct":
-            return "認証設定値が正しいか確認してください。"
-        case "SignIn to Auth category by using one of the sign in methods and then call user attributes apis":
-            return "サインイン後に、再度同じ操作を行ってください。"
-        case "Get the current user Auth.getCurrentUser() and make the request":
-            return "サインイン状態を確認し、必要に応じて再ログインしてから再試行してください。"
-        case "Call Auth.signIn to sign in a user or enable unauthenticated access in AWS Cognito Identity Pool":
-            return "サインインするか、必要に応じてIdentity Poolの未認証アクセス設定を確認してください。"
-        case "Call Auth.signIn to sign in a user and then call Auth.fetchSession":
-            return "再ログイン後に処理を再試行してください。"
-        case "Follow the steps to configure AWS Cognito Identity Pool and try again":
-            return "AWS Cognito Identity Poolを設定したうえで再試行してください。"
-        case "Change password require a user signed in to Auth category, use one of the signIn apis to signIn":
-            return "サインイン後にパスワード変更を再実行してください。"
-        case "Re-authenticate the user by using one of the signIn apis",
-            "Invoke Auth.signIn to re-authenticate the user":
-            return "再ログインしてから再試行してください。"
-        case "Try again with exponential backoff":
-            return "通信状況をご確認のうえ、少し時間をおいて再試行してください。"
-        case "SignIn to Auth category by using one of the sign in methods and then try again":
-            return "サインイン後に再試行してください。"
-        case "Tokens are not valid with user signed in through AWS Cognito Identity Pool":
-            return "User Pool経由でサインインし直して再試行してください。"
-        case "User sub are not valid with user signed in through AWS Cognito Identity Pool":
-            return "User Pool経由でサインインし直して再試行してください。"
-        case "Invoke the associate WebAuthn credential flow again":
-            return "WebAuthn登録を再実行してください。"
-        case "Remove the old WebAuthn credential and try again":
-            return "既存のWebAuthn資格情報を削除してから再試行してください。"
-        case "Invoke the sign in with WebAuthn flow again":
-            return "WebAuthnサインインを再実行してください。"
-        case "Make sure that the parameters passed are valid":
-            return "入力された値が正しいか確認してください。"
-        default:
-            return "インターネット接続状況を確認してください。繋がっている場合はしばらく待ってから再試行してください。"
-        }
-    }
-
-    private static func normalize(_ text: String) -> String {
-        var value = text.trimmingCharacters(in: .whitespacesAndNewlines)
-        if value.hasSuffix(".") {
-            value.removeLast()
-        }
-        return value
+        recovery
     }
 
     private static func isAuthRelated(description: String) -> Bool {
-        let lower = description.lowercased()
-        return lower.contains("signed in")
-            || lower.contains("session expired")
-            || lower.contains("validate the user")
-            || lower.contains("incorrect username or password")
-            || lower.contains("authorized to perform the operation")
-            || lower.contains("change password")
-            || lower.contains("fetch attributes")
-            || lower.contains("update attributes")
-            || lower.contains("confirm attribute")
-            || lower.contains("cognito tokens")
-            || lower.contains("required to signin")
-            || lower.contains("required to signup")
-            || lower.contains("required to confirmsignup")
-            || lower.contains("required to confirmsignin")
-            || lower.contains("required to resetpassword")
-            || lower.contains("required to confirmresetpassword")
-            || lower.contains("challengeresponse")
+        let value = normalize(description)
+        return value.contains("password")
+            || value.contains("username")
+            || value.contains("sign")
+            || value.contains("session")
+            || value.contains("credential")
+            || value.contains("token")
+            || value.contains("auth")
     }
 
     private static func isNetworkRelated(description: String) -> Bool {
-        let lower = description.lowercased()
-        return lower.contains("network error")
-            || lower.contains("cannot connect")
-            || lower.contains("timed out")
+        let value = normalize(description)
+        return value.contains("network")
+            || value.contains("connection")
+            || value.contains("timeout")
+            || value.contains("host")
+    }
+
+    private static func normalize(_ text: String) -> String {
+        text.trimmingCharacters(in: .whitespacesAndNewlines)
     }
 }

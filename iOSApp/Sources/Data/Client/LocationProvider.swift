@@ -89,10 +89,10 @@ actor LocationProvider: NSObject, LocationProviderProtocol {
 
     func getLocation() -> AsyncValue<CLLocation> {
         if manager?.authorizationStatus == .denied {
-            return .failure(LocationError.authorizationDenied)
+            return .failure(AppError.location(.permissionDenied("位置情報の利用が許可されていません。")))
         }
         if !CLLocationManager.locationServicesEnabled() {
-            return .failure(LocationError.servicesDisabled)
+            return .failure(AppError.location(.servicesDisabled("位置情報サービスが無効です。")))
         }
         
         return value
@@ -126,10 +126,4 @@ extension LocationProviderProtocol {
     func startTracking(backgroundUpdatesAllowed: Bool, onUpdate: ((AsyncValue<CLLocation>) async -> Void)? = nil) async -> Void {
         await startTracking(backgroundUpdatesAllowed: backgroundUpdatesAllowed, onUpdate: onUpdate)
     }
-}
-
-
-enum LocationError: Error {
-    case authorizationDenied
-    case servicesDisabled
 }

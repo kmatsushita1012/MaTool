@@ -85,7 +85,7 @@ extension AsyncValue: Equatable where T: Equatable {
         case (.loading, .loading):
             return true
         case (.failure(let lhsError), .failure(let rhsError)):
-            return lhsError.localizedDescription == rhsError.localizedDescription // エラーの比較
+            return lhsError.asAppError == rhsError.asAppError
         case (.success(let lhsValue), .success(let rhsValue)):
             return lhsValue == rhsValue
         default:
@@ -107,7 +107,7 @@ func withTimeout<T>(
             try await Task.sleep(
                 nanoseconds: UInt64(seconds) * 1_000_000_000
             )
-            throw AuthError.timeout("タイムアウトしました")
+            throw AppError.auth(.timeout("タイムアウトしました"))
         }
 
         guard let result = try await group.next() else {
@@ -119,19 +119,20 @@ func withTimeout<T>(
     }
 }
 
-func task<Value, Error: Swift.Error>(_ operation: () async throws -> Value, defaultError: Error) async -> Result<Value, Error> {
+func task<Value>(_ operation: () async throws -> Value, defaultError: AppError = .system(.unknown("予期しないエラーが発生しました。"))) async -> AppResult<Value> {
     do {
         let value = try await operation()
         return .success(value)
     } catch {
-        guard let error = error as? Error else {
+        let appError = error.asAppError
+        if case .system(.unexpected) = appError {
             return .failure(defaultError)
         }
-        return .failure(error)
+        return .failure(appError)
     }
 }
 
-func task(_ operation: () async throws -> Void) async -> VoidResult<APIError> {
-    let result: Result<Void, APIError> = await task(operation, defaultError: APIError.unknown(message: "予期しないエラーが発生しました"))
+func task(_ operation: () async throws -> Void) async -> VoidAppResult {
+    let result: AppResult<Void> = await task(operation, defaultError: .system(.unknown("予期しないエラーが発生しました。")))
     return result.map{ VoidSuccess() }
 }

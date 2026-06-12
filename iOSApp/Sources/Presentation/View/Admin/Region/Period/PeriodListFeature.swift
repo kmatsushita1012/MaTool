@@ -44,7 +44,7 @@ struct PeriodListFeature {
         case archiveTapped(State.YearlyPeriods)
         case periodCreateTapped
         case batchCreateTapped(Int)
-        case batchCreateReceived(VoidTaskResult)
+        case batchCreateReceived(VoidAppResult)
         case destination(PresentationAction<Destination.Action>)
         case alert(PresentationAction<AlertFeature.Action>)
     }
@@ -84,7 +84,7 @@ struct PeriodListFeature {
                 return .none
             case .batchCreateReceived(.failure(let error)):
                 state.isLoading = false
-                state.alert = AlertFeature.error(error.localizedDescription)
+                state.alert = AlertFeature.error(error.message)
                 return .none
             case .alert(.presented(_)):
                 state.alert = nil

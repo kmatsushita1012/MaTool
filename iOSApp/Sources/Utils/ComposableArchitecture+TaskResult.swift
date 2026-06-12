@@ -12,6 +12,8 @@ struct VoidSuccess: Equatable {
 }
 
 typealias VoidResult<Failure: Swift.Error> = Result<VoidSuccess, Failure>
+typealias VoidAppResult = VoidResult<AppError>
+typealias AppResult<Success> = Result<Success, AppError>
 
 extension VoidResult where Success == VoidSuccess {
     static var success: Self {
@@ -19,41 +21,26 @@ extension VoidResult where Success == VoidSuccess {
     }
 }
 
-typealias VoidTaskResult = TaskResult<VoidSuccess>
-
-extension TaskResult where Success == VoidSuccess {
-    init(catching body: @Sendable () async throws -> Void) async {
-        do {
-            try await body()
-            self = .success(VoidSuccess())
-        } catch {
-            self = .failure(error)
-        }
-    }
-}
-
 extension Effect {
-    static func task<Success>(_ action: @escaping (TaskResult<Success>) -> Action, operation: @escaping @Sendable () async throws -> Success ) -> Self {
+    static func task<Success>(_ action: @escaping (AppResult<Success>) -> Action, operation: @escaping @Sendable () async throws -> Success ) -> Self {
         return Self.run { send in
-            await send(
-                action(
-                    TaskResult {
-                        try await operation()
-                    }
-                )
-            )
+            do {
+                let value = try await operation()
+                await send(action(.success(value)))
+            } catch {
+                await send(action(.failure(error.asAppError)))
+            }
         }
     }
     
-    static func task(_ action: @escaping (VoidTaskResult) -> Action, operation: @escaping @Sendable () async throws -> Void) -> Self {
+    static func task(_ action: @escaping (VoidAppResult) -> Action, operation: @escaping @Sendable () async throws -> Void) -> Self {
         return Self.run { send in
-            await send(
-                action(
-                    VoidTaskResult {
-                        try await operation()
-                    }
-                )
-            )
+            do {
+                try await operation()
+                await send(action(.success))
+            } catch {
+                await send(action(.failure(error.asAppError)))
+            }
         }
     }
 }

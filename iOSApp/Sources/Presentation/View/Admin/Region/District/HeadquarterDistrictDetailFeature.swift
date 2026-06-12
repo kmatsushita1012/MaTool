@@ -40,9 +40,9 @@ struct HeadquarterDistrictDetailFeature {
         case routeSelected(RouteSlot)
         case batchExportTapped
         case tableExportTapped
-        case updateReceived(VoidTaskResult)
-        case routeReceived(TaskResult<RouteEntry>)
-        case batchExportReceived(TaskResult<URL>)
+        case updateReceived(VoidAppResult)
+        case routeReceived(AppResult<RouteEntry>)
+        case batchExportReceived(AppResult<URL>)
         case destination(PresentationAction<Destination.Action>)
         case alert(PresentationAction<AlertFeature.Action>)
     }
@@ -100,7 +100,7 @@ struct HeadquarterDistrictDetailFeature {
                 .routeReceived(.failure(let error)),
                 .batchExportReceived(.failure(let error)):
                 state.isLoading = false
-                state.alert = AlertFeature.error(error.localizedDescription)
+                state.alert = AlertFeature.error(error.message)
                 return .none
             case .destination(_):
                 return .none

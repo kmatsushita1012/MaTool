@@ -24,7 +24,7 @@ struct ConfirmSignInFeature {
         case binding(BindingAction<State>)
         case submitTapped
         case dismissTapped
-        case received(TaskResult<UserRole>)
+        case received(AppResult<UserRole>)
         case alert(PresentationAction<AlertFeature.Action>)
     }
     
@@ -54,7 +54,7 @@ struct ConfirmSignInFeature {
                 return .none
             case .received(.failure(let error)):
                 state.isLoading = false
-                state.alert = AlertFeature.error("送信に失敗しました。\(error.localizedDescription)")
+                state.alert = AlertFeature.error("送信に失敗しました。\(error.message)")
                 return .none
             case .alert:
                 state.alert = nil

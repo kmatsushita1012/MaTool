@@ -57,7 +57,7 @@ extension AuthProvider: DependencyKey {
                     } else if case .confirmSignInWithNewPassword = result.nextStep {
                         return .newPasswordRequired
                     } else {
-                        throw AuthError.unknown("予期しないエラーです \(result.nextStep)")
+                        throw AppError.auth(.unknown("予期しないエラーです \(result.nextStep)"))
                     }
                 } catch {
                     try Self.rethrowAsAuthErrorIfNeeded(error, operation: "signIn")
@@ -97,15 +97,19 @@ extension AuthProvider: DependencyKey {
             
             getTokens: {
                 do {
-                    let session = try await Amplify.Auth.fetchAuthSession() as? AWSAuthCognitoSession
-                    let result = session?.getCognitoTokens()
+                    guard let session = try await Amplify.Auth.fetchAuthSession() as? AWSAuthCognitoSession else {
+                        throw AppError.auth(.unknown("予期せぬエラーが発生しました"))
+                    }
+                    if !session.isSignedIn  {
+                        throw AppError.auth(.unauthorized("ログインしていません。"))
+                    }
+                        
+                    let result = session.getCognitoTokens()
                     switch result {
                     case .success(let tokens):
                         return tokens.accessToken
                     case .failure(let error):
                         throw error
-                    case .none:
-                        throw AuthError.unknown("アクセストークンの取得に失敗しました。")
                     }
                 } catch {
                     try Self.rethrowAsAuthErrorIfNeeded(error, operation: "getTokens")
@@ -186,9 +190,9 @@ extension AuthProvider: DependencyKey {
 
 private extension AuthProvider {
     static func rethrowAsAuthErrorIfNeeded(_ error: Error, operation: String) throws -> Never {
-        if let parsed = AuthError.parse(error, operation: operation) {
+        if let parsed = AppError.parseAuth(error, operation: operation) {
             throw parsed
         }
-        throw error
+        throw error.asAppError
     }
 }

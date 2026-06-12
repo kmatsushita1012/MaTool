@@ -59,7 +59,7 @@ struct PointEditFeature {
                 do {
                     try state.validate()
                 } catch  {
-                    state.alert = AlertFeature.error(error.localizedDescription)
+                    state.alert = AlertFeature.error(error.asAppError.message)
                 }
                 return .none
             case .alert:

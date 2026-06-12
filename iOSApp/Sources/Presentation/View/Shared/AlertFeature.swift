@@ -11,6 +11,10 @@ extension AlertState {
     static func error(_ text: String, title: String = "エラー") -> AlertState<AlertFeature.Action> {
         return AlertFeature.error(text, title: title)
     }
+
+    static func error(_ error: AppError, title: String = "エラー") -> AlertState<AlertFeature.Action> {
+        AlertFeature.error(error.message, title: title)
+    }
     
     static func success(_ text: String, title: String = "完了") -> AlertState<AlertFeature.Action> {
         return AlertFeature.success(text, title: title)

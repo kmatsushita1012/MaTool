@@ -13,7 +13,7 @@ enum Status:Sendable, Equatable, Hashable {
     case delete(Date)
     case loading(Date)
     case locationError(Date)
-    case apiError(Date, APIError)
+    case apiError(Date, AppError)
 }
 
 extension Status: Identifiable {

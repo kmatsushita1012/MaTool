@@ -31,7 +31,7 @@ struct LoginFeature {
         case binding(BindingAction<State>)
         case dismissTapped
         case signInTapped
-        case received(TaskResult<SignInState>)
+        case received(AppResult<SignInState>)
         case resetPasswordTapped
         case destination(PresentationAction<Destination.Action>)
         case confirmSignInCompleted(UserRole)
@@ -64,7 +64,7 @@ struct LoginFeature {
                 return .none
             case .received(.failure(let error)):
                 state.isLoading = false
-                state.errorMessage = error.localizedDescription
+                state.errorMessage = error.message
                 return .none
             case .destination(.presented(.resetPassword(.confirmResetReceived(.success)))):
                 state.destination = nil

@@ -29,7 +29,7 @@ extension AuthProvider {
             return .district("祭_町")
         },
         getTokens: {
-            throw AuthError.unknown("Mock")
+            throw AppError.auth(.unknown("Mock"))
         },
         signOut: {
             return ()

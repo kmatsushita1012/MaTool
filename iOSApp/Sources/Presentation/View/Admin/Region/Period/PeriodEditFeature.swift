@@ -27,9 +27,9 @@ struct PeriodEditFeature {
         case cancelTapped
         case deleteTapped
         case dateChanged(SimpleDate)
-        case saveReceived(VoidTaskResult)
-        case deleteReceived(VoidTaskResult)
-        case catched(APIError)
+        case saveReceived(VoidAppResult)
+        case deleteReceived(VoidAppResult)
+        case catched(AppError)
         case alert(PresentationAction<AlertFeature.Action>)
     }
     
@@ -61,7 +61,7 @@ struct PeriodEditFeature {
             case .saveReceived(.failure(let error)),
                 .deleteReceived(.failure(let error)):
                 state.isLoading = false
-                state.alert = AlertFeature.error(error.localizedDescription)
+                state.alert = AlertFeature.error(error.message)
                 return .none
             default:
                 return .none

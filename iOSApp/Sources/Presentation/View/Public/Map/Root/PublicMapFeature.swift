@@ -43,7 +43,7 @@ struct PublicMapFeature {
         case dismissTapped
         case contentSelected(Content)
         case routePrepared(District, Route.ID?)
-        case errorCaught(APIError)
+        case errorCaught(AppError)
         case destination(PresentationAction<Destination.Action>)
         case alert(PresentationAction<AlertFeature.Action>)
     }
@@ -117,7 +117,7 @@ struct PublicMapFeature {
                 )
                 return .none
             case .errorCaught(let error):
-                state.alert = AlertFeature.error(error.localizedDescription)
+                state.alert = .error(error)
                 return .none
             case .destination:
                 return destinationAction(state: &state, action: action)
@@ -141,7 +141,7 @@ struct PublicMapFeature {
     
     func routeEffect(_ district: District, periodId: Period.ID?) -> Effect<Action> {
         .run { send in
-            let result = await task({ try await sceneDataFetcher.launchDistrict(districtId: district.id, periodId: periodId) }, defaultError: APIError.unknown(message: "予期しないエラーが発生しました。"))
+            let result = await task({ try await sceneDataFetcher.launchDistrict(districtId: district.id, periodId: periodId, clearsExistingData: false) }, defaultError: .system(.unknown("予期しないエラーが発生しました。")))
             switch result {
             case .success(let routeId):
                 await send(.routePrepared(district, routeId))

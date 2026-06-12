@@ -51,9 +51,9 @@ struct SettingsFeature {
         case binding(BindingAction<State>)
         case dismissTapped
         case signOutTapped
-        case signOutReceived(TaskResult<UserRole>)
-        case festivalSelectReceived(TaskResult<FestivalSelectionResult>)
-        case districtSelectReceived(TaskResult<Route.ID?>)
+        case signOutReceived(AppResult<UserRole>)
+        case festivalSelectReceived(AppResult<FestivalSelectionResult>)
+        case districtSelectReceived(AppResult<Route.ID?>)
         case alert(PresentationAction<AlertFeature.Action>)
     }
     
@@ -90,7 +90,7 @@ struct SettingsFeature {
                 state.alert = AlertFeature.success("ログアウトしました")
                 return .none
             case .signOutReceived(.failure(let error)):
-                state.alert = AlertFeature.error("情報の取得に失敗しました \(error.localizedDescription)")
+                state.alert = AlertFeature.error("情報の取得に失敗しました \(error.message)")
                 return .none
             case .festivalSelectReceived(.success(let result)):
                 if case .changed = result {
@@ -105,7 +105,7 @@ struct SettingsFeature {
             case .festivalSelectReceived(.failure(let error)),
                 .districtSelectReceived(.failure(let error)):
                 state.isLoading = false
-                state.alert = AlertFeature.error("情報の取得に失敗しました \(error.localizedDescription)")
+                state.alert = AlertFeature.error("情報の取得に失敗しました \(error.message)")
                 return .none
             case .alert:
                 state.alert = nil

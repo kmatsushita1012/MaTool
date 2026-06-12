@@ -24,7 +24,7 @@ struct DistrictCreateFeature {
         case binding(BindingAction<State>)
         case createTapped
         case cancelTapped
-        case createReceived(VoidTaskResult)
+        case createReceived(VoidAppResult)
         case alert(PresentationAction<AlertFeature.Action>)
     }
     
@@ -50,7 +50,7 @@ struct DistrictCreateFeature {
                 return .none
             case .createReceived(.failure(let error)):
                 state.isLoading = false
-                state.alert = AlertFeature.error(error.localizedDescription)
+                state.alert = AlertFeature.error(error.message)
                 return .none
             case .alert:
                 state.alert = nil

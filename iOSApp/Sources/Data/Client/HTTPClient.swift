@@ -122,8 +122,10 @@ actor HTTPClient: HTTPClientProtocol {
         let key = cacheKey(url: url, method: method, bodyData: bodyData ?? nil)
 
         // Cache hit
-        if isCache, let cached = cache.object(forKey: key) {
-            return try await decodeResponse(from: cached as Data)
+        if isCache,
+            let cached = cache.object(forKey: key),
+           let decodecCache: Response = try? await decodeResponse(from: cached as Data){
+            return decodecCache
         }
 
         // Build request and execute
@@ -132,13 +134,13 @@ actor HTTPClient: HTTPClientProtocol {
         do {
             (data, http) = try await execute(request: urlRequest)
         } catch {
-            throw APIError(statusCode: nil, message: "実行中にエラーが発生しました。インターネット接続を確認してください。")
+            throw AppError(statusCode: nil, message: "実行中にエラーが発生しました。インターネット接続を確認してください。")
         }
 
         // If we have HTTP response, check status code
         if let http = http, !(200...299).contains(http.statusCode),
            let response: ErrorResponse = try await decodeResponse(from: data){
-            throw APIError(statusCode: http.statusCode, message: response.localizedDescription)
+            throw AppError(statusCode: http.statusCode, message: response.localizedDescription)
         }
 
         // Success path: cache and decode
@@ -193,7 +195,7 @@ actor HTTPClient: HTTPClientProtocol {
 
     private func makeURL(path: String, query: [String: Any]) throws -> URL {
         guard var components = URLComponents(string: base + path) else {
-            throw NSError(domain: "Invalid URL", code: -1)
+            throw AppError.system(.invalidURL("URLComponents の生成に失敗しました。"))
         }
         if !query.isEmpty {
             components.queryItems = query.compactMap { key, value in
@@ -207,7 +209,7 @@ actor HTTPClient: HTTPClientProtocol {
             }
         }
         guard let url = components.url else {
-            throw NSError(domain: "Invalid URL", code: -1)
+            throw AppError.system(.invalidURL("URL の生成に失敗しました。"))
         }
         return url
     }
@@ -227,31 +229,28 @@ actor HTTPClient: HTTPClientProtocol {
 
     private func encodeBody<Body: Encodable>(_ body: Body?) async throws -> Data? {
         guard let body else { return nil }
-        return try await Task.detached(priority: nil) { [jsonEncoder] in
-            try jsonEncoder.encode(body)
-        }.value
+        do {
+            return try await Task.detached(priority: nil) { [jsonEncoder] in
+                try jsonEncoder.encode(body)
+            }.value
+        } catch {
+            throw AppError.system(.encoding(error.localizedDescription))
+        }
     }
 
     private func decodeResponse<Response: Decodable>(from data: Data) async throws -> Response {
-        try await Task.detached(priority: nil) { [jsonDecoder] in
-            try jsonDecoder.decode(Response.self, from: data)
-        }.value
+        do {
+            return try await Task.detached(priority: nil) { [jsonDecoder] in
+                try jsonDecoder.decode(Response.self, from: data)
+            }.value
+        } catch {
+            throw AppError.system(.decoding(error.localizedDescription))
+        }
     }
 
     private func execute(request: URLRequest) async throws -> (Data, HTTPURLResponse?) {
         let (data, response) = try await session.data(for: request)
         return (data, response as? HTTPURLResponse)
-    }
-
-    private func decodeAPIError(from data: Data, httpStatus: Int) -> Error {
-        if !data.isEmpty, let decoded = try? jsonDecoder.decode(ErrorResponse.self, from: data) {
-            let description = decoded.localizedDescription
-            return NSError(domain: "HTTP Error", code: httpStatus, userInfo: [NSLocalizedDescriptionKey: description])
-        }
-        if let text = String(data: data, encoding: .utf8), !text.isEmpty {
-            return NSError(domain: "HTTP Error", code: httpStatus, userInfo: [NSLocalizedDescriptionKey: text])
-        }
-        return NSError(domain: "HTTP Error", code: httpStatus, userInfo: [NSLocalizedDescriptionKey: "HTTP Error \(httpStatus)"])
     }
 
     private func cacheKey(url: URL, method: String, bodyData: Data?) -> NSString {
