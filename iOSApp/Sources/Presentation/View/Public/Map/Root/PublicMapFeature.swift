@@ -141,7 +141,7 @@ struct PublicMapFeature {
     
     func routeEffect(_ district: District, periodId: Period.ID?) -> Effect<Action> {
         .run { send in
-            let result = await task({ try await sceneDataFetcher.launchDistrict(districtId: district.id, periodId: periodId) }, defaultError: .system(.unknown("予期しないエラーが発生しました。")))
+            let result = await task({ try await sceneDataFetcher.launchDistrict(districtId: district.id, periodId: periodId, clearsExistingData: false) }, defaultError: .system(.unknown("予期しないエラーが発生しました。")))
             switch result {
             case .success(let routeId):
                 await send(.routePrepared(district, routeId))
