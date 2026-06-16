@@ -66,7 +66,7 @@ struct HeadquarterDistrictListFeature {
                 state.isLoading = true
                 return .task(Action.selectedReceived) {
                     async let districtFetch: Void = dataFetcher.fetch(districtID: district.id)
-                    async let routeFetch: Void = routeDataFetcher.fetchAll(districtID: district.id, query: .year(2025))
+                    async let routeFetch: Void = routeDataFetcher.fetchAll(districtID: district.id, query: .latest)
                     _ = try await (districtFetch, routeFetch)
                     return district
                 }
