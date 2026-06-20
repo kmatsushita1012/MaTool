@@ -110,7 +110,7 @@ struct HeadquarterDistrictDetailFeature {
                 state.isLoading = false
                 state.destination = try? { .route(try .init(mode: .preview, route: entry.route)) }()
                 return .none
-            case .destination(.presented(.route(.modified))):
+            case .destination(.presented(.route(.modified(.success)))):
                 guard let routeState = state.destination?.route else { return .none }
                 let draft = RouteDraft(
                     route: routeState.route,

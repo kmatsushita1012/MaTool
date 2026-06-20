@@ -79,7 +79,7 @@ struct RouteEditFeature{
         case undoTapped
         case redoTapped
         case saveTapped
-        case modified
+        case modified(VoidAppResult)
         case cancelTapped
         case deleteTapped
         case wholeTapped
@@ -156,8 +156,7 @@ struct RouteEditFeature{
                 }
                 switch state.mode {
                 case .preview:
-                    return .run { send in
-                        await send(.modified)
+                    return .task(Action.modified) {
                         await dismiss()
                     }
                 case .create, .update:
@@ -174,7 +173,10 @@ struct RouteEditFeature{
                         await dismiss()
                     }
                 }
-            case .modified:
+            case .modified(.success):
+                return .none
+            case .modified(.failure(let error)):
+                state.alert = .notice(.error(error.localizedDescription))
                 return .none
             case .cancelTapped:
                 return .dismiss
