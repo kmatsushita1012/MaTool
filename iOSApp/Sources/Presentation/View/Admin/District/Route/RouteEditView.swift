@@ -69,7 +69,7 @@ struct RouteEditView: View {
     
     @ToolbarContentBuilder
     var toolbar: some ToolbarContent {
-        ToolbarSaveButton(isDisabled: !store.isSaveable){
+        ToolbarSaveButton(title: store.saveButtonTitle, isDisabled: store.isConfirmDisabled){
             store.send(.saveTapped)
         }
         ToolbarCancelButton {

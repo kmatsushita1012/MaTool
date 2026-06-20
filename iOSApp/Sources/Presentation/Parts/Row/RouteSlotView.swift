@@ -9,14 +9,16 @@ import SwiftUI
 
 struct RouteSlotView: View {
     let item: RouteSlot
+    let statusText: String
     var onTap: (() -> Void)? = nil
     
     var status: String {
-        item.route != nil ? "作成済" : "未作成"
+        statusText
     }
     
-    init(_ item: RouteSlot, onTap: (() -> Void)? = nil) {
+    init(_ item: RouteSlot, statusText: String? = nil, onTap: (() -> Void)? = nil) {
         self.item = item
+        self.statusText = statusText ?? (item.route != nil ? "作成済" : "未作成")
         self.onTap = onTap
     }
     
