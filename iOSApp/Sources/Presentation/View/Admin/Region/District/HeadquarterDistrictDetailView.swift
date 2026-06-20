@@ -34,10 +34,22 @@ struct HeadquarterDistrictDetailView: View {
             .disabled(!store.isEditable)
             Section(header: Text("ルート")) {
                 ForEach(store.routes) { pair in
-                    RouteSlotView(pair){
+                    let statusText: String? = {
+                        guard let route = pair.route,
+                              store.routeDrafts[route.id] != nil else { return nil }
+                        return "修正済"
+                    }()
+                    RouteSlotView(
+                        pair,
+                        statusText: statusText
+                    ) {
                         store.send(.routeSelected(pair))
                     }
                 }
+                Button("修正をリセット") {
+                    store.send(.resetDraftsTapped)
+                }
+                .disabled(store.routeDrafts.isEmpty)
             }
             Section {
                 Button(action: {
