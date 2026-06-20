@@ -111,6 +111,7 @@ struct ActionTableSnapshotter: Sendable {
 
     private let district: District
     private let slots: [RouteSlot]
+    private let passagesByRouteID: [Route.ID: [RoutePassage]]
     private let linesPerPeriod = 5
     private let columnsPerLine = 5
     private let pageLift: CGFloat = -48
@@ -121,9 +122,10 @@ struct ActionTableSnapshotter: Sendable {
     private let arrowFontSize: CGFloat = 16
     private let arrowWidth: CGFloat = 20
 
-    init(district: District, slots: [RouteSlot]) {
+    init(district: District, slots: [RouteSlot], passagesByRouteID: [Route.ID: [RoutePassage]] = [:]) {
         self.district = district
         self.slots = slots
+        self.passagesByRouteID = passagesByRouteID
     }
 
     func takeAll() -> [UIImage] {
@@ -324,7 +326,7 @@ struct ActionTableSnapshotter: Sendable {
         daySlots.map { slot in
             let entries: [String] = {
                 guard let route = slot.route else { return [] }
-                let passages:[RoutePassage] = FetchAll(routeId: route.id).wrappedValue
+                let passages: [RoutePassage] = passagesByRouteID[route.id] ?? FetchAll(routeId: route.id).wrappedValue
                 return passages.prefix(linesPerPeriod * columnsPerLine).map(passageTitle)
             }()
             return Row(

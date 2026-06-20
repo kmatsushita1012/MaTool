@@ -79,6 +79,7 @@ struct RouteEditFeature{
         case undoTapped
         case redoTapped
         case saveTapped
+        case modified(VoidAppResult)
         case cancelTapped
         case deleteTapped
         case wholeTapped
@@ -107,7 +108,7 @@ struct RouteEditFeature{
         Reduce{ state, action in
             switch action {
             case .onAppear:
-                if !state.district.isEditable && state.isSaveable {
+                if !state.district.isEditable && state.mode != .preview {
                     state.alert = .notice(.notice("\(state.festival.subname)がルートの更新を停止しています。"))
                 }
                 return .none
@@ -147,19 +148,36 @@ struct RouteEditFeature{
                 state.operation = .add
                 return .none
             case .saveTapped:
-                state.isLoading = true
-                return .task(Action.saveReceived) {[state] in
+                do {
                     try state.points.validate()
-                    switch state.mode {
-                    case .create:
-                        try await dataFetcher.create(districtID: state.route.districtId, route: state.route, points: state.points, passages: state.passages)
-                    case .update:
-                        try await dataFetcher.update(state.route, points: state.points, passages: state.passages)
-                    case .preview:
-                        throw AppError.be(.forbidden("権限がありません"))
-                    }
-                    await dismiss()
+                } catch {
+                    state.alert = .notice(.error(error.localizedDescription))
+                    return .none
                 }
+                switch state.mode {
+                case .preview:
+                    return .task(Action.modified) {
+                        await dismiss()
+                    }
+                case .create, .update:
+                    state.isLoading = true
+                    return .task(Action.saveReceived) {[state] in
+                        switch state.mode {
+                        case .create:
+                            try await dataFetcher.create(districtID: state.route.districtId, route: state.route, points: state.points, passages: state.passages)
+                        case .update:
+                            try await dataFetcher.update(state.route, points: state.points, passages: state.passages)
+                        case .preview:
+                            throw AppError.be(.forbidden("権限がありません"))
+                        }
+                        await dismiss()
+                    }
+                }
+            case .modified(.success):
+                return .none
+            case .modified(.failure(let error)):
+                state.alert = .notice(.error(error.localizedDescription))
+                return .none
             case .cancelTapped:
                 return .dismiss
             case .deleteTapped:
@@ -318,9 +336,18 @@ extension RouteEditFeature.State {
     var canUndo: Bool { manager.canUndo }
     var canRedo: Bool{ manager.canRedo }
     var isSaveable: Bool { mode != .preview }
+    var isConfirmDisabled: Bool { false }
     var isDeleteable: Bool { mode == .update}
     var isPartialEnable: Bool { tab != .info }
     var isAutoPassageDisabled: Bool { points.count < 2 }
+    var saveButtonTitle: String {
+        switch mode {
+        case .preview:
+            return "修正"
+        case .create, .update:
+            return "保存"
+        }
+    }
     var title: String {
         switch mode {
         case .create:
@@ -354,13 +381,18 @@ extension RouteEditFeature.State {
     }
     
     init(mode: RouteEditFeature.EditMode, route: Route) throws {
-        self.mode = mode
         let points: [Point] = FetchAll(routeId: route.id).wrappedValue
-        self.manager = EditManager(points.sorted())
-        self.passages = FetchAll(routeId: route.id).wrappedValue
-        self.route = route
-        guard let districtQuery: FetchOne<District> = .init(id: route.districtId),
-            let periodQuery: FetchOne<Period> = .init(id: route.periodId),
+        let passages: [RoutePassage] = FetchAll(routeId: route.id).wrappedValue
+        try self.init(mode: mode, draft: RouteDraft(route: route, points: points, passages: passages))
+    }
+
+    init(mode: RouteEditFeature.EditMode, draft: RouteDraft) throws {
+        self.mode = mode
+        self.manager = EditManager(draft.points.sorted())
+        self.passages = draft.passages
+        self.route = draft.route
+        guard let districtQuery: FetchOne<District> = .init(id: draft.route.districtId),
+            let periodQuery: FetchOne<Period> = .init(id: draft.route.periodId),
             let festivalQuery: FetchOne<Festival> = .init(id: districtQuery.wrappedValue.festivalId) else {
             throw PresentationError.notFound
         }
@@ -370,8 +402,8 @@ extension RouteEditFeature.State {
         
         let origin: Coordinate = districtQuery.wrappedValue.base ?? festivalQuery.wrappedValue.base
 
-        self.region = makeRegion(points: points, origin: origin, spanDelta: spanDelta)
-            self.tab = .info
+        self.region = makeRegion(points: draft.points, origin: origin, spanDelta: spanDelta)
+        self.tab = .info
     }
 }
 
