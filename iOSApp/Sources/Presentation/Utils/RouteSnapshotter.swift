@@ -33,10 +33,6 @@ struct RouteSnapshotter: Equatable {
         self.route = route
         self.points = points
         self.hazardSections = FetchAll(festivalId: district.festivalId).wrappedValue
-        print("[RouteSnapshotter] route=\(route.id) district=\(district.id) festival=\(district.festivalId) points=\(points.count) hazardSections=\(hazardSections.count)")
-        for section in hazardSections {
-            print("[RouteSnapshotter] hazard id=\(section.id) title=\(section.title) coords=\(section.coordinates.count)")
-        }
     }
     
     private var coordinates: [Coordinate] {
@@ -91,10 +87,11 @@ struct RouteSnapshotter: Equatable {
                         UIGraphicsEndImageContext()
                     }
                     snapshot.image.draw(at: .zero)
+                    drawHazardSectionPolylines(on: snapshot)
                     drawPolylines(on: snapshot, color: .white, lineWidth: 4)
                     drawBoundaryPolylines(on: snapshot, lineWidth: 3)
                     drawPinsAndCaptions(on: snapshot, drawnRects: &drawnRects)
-                    drawHazardSectionPolylines(on: snapshot)
+                    
                     drawHazardSectionCaptions(on: snapshot, drawnRects: &drawnRects)
                     
                     let titleText = """
@@ -340,7 +337,6 @@ struct RouteSnapshotter: Equatable {
 
             let labelCoordinate = coordinates[coordinates.count / 2]
             let point = snapshot.point(for: labelCoordinate.toCL())
-            print("[RouteSnapshotter] draw caption id=\(section.id) title=\(section.title) label=\(labelCoordinate.latitude),\(labelCoordinate.longitude) point=\(point.x),\(point.y)")
             drawCaption(for: section.title, at: point, pinImage: pinImage, drawnRects: &drawnRects)
         }
     }
@@ -349,7 +345,6 @@ struct RouteSnapshotter: Equatable {
         for section in hazardSections {
             let coordinates = section.coordinates
             guard coordinates.count > 1 else { continue }
-            print("[RouteSnapshotter] draw polyline id=\(section.id) coords=\(coordinates.count)")
             drawPolyline(on: snapshot, coordinates: coordinates, color: .orange, lineWidth: 8)
         }
     }

@@ -110,7 +110,13 @@ struct HeadquarterDistrictDetailFeature {
                 state.isLoading = false
                 state.destination = try? { .route(try .init(mode: .preview, route: entry.route)) }()
                 return .none
-            case .destination(.presented(.route(.delegate(.applied(let draft))))):
+            case .destination(.presented(.route(.modified))):
+                guard let routeState = state.destination?.route else { return .none }
+                let draft = RouteDraft(
+                    route: routeState.route,
+                    points: routeState.points,
+                    passages: routeState.passages
+                )
                 state.routeDrafts[draft.route.id] = draft
                 if let index = state.routes.firstIndex(where: { $0.route?.id == draft.route.id }) {
                     let slot = state.routes[index]

@@ -71,10 +71,6 @@ struct RouteEditFeature{
     
     @CasePathable
     enum Action: Equatable, BindableAction{
-        enum Delegate: Equatable {
-            case applied(RouteDraft)
-        }
-
         case binding(BindingAction<State>)
         case onAppear
         case mapLongPressed(Coordinate)
@@ -83,6 +79,7 @@ struct RouteEditFeature{
         case undoTapped
         case redoTapped
         case saveTapped
+        case modified
         case cancelTapped
         case deleteTapped
         case wholeTapped
@@ -99,7 +96,6 @@ struct RouteEditFeature{
         case copyPrepared(AppResult<Route.ID>)
         case deleteReceived(VoidAppResult)
         case previewPrepared(AppResult<ExportedItem>)
-        case delegate(Delegate)
         case point(PresentationAction<PointEditFeature.Action>)
         case alert(PresentationAction<AlertDestination.Action>)
     }
@@ -160,9 +156,8 @@ struct RouteEditFeature{
                 }
                 switch state.mode {
                 case .preview:
-                    let draft = RouteDraft(route: state.route, points: state.points, passages: state.passages)
                     return .run { send in
-                        await send(.delegate(.applied(draft)))
+                        await send(.modified)
                         await dismiss()
                     }
                 case .create, .update:
@@ -179,6 +174,8 @@ struct RouteEditFeature{
                         await dismiss()
                     }
                 }
+            case .modified:
+                return .none
             case .cancelTapped:
                 return .dismiss
             case .deleteTapped:
