@@ -23,7 +23,7 @@ struct HeadquarterDistrictDetailFeature {
     struct State: Equatable {
         var district: District
         var routes: [RouteSlot]
-        var originalRoutes: [Route.ID: Route] = [:]
+        fileprivate var originalRoutes: [Route.ID: Route] = [:]
         var routeDrafts: [Route.ID: RouteDraft] = [:]
         
         var isEditable: Bool = false
