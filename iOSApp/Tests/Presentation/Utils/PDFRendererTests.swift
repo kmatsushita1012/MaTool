@@ -1,13 +1,9 @@
 import Testing
+import CoreGraphics
 @testable import iOSApp
 
 
-struct iOSAppTest {
-    @Test func example() async throws {
-        let sum = 1 + 2
-        #expect(sum == 3)
-    }
-
+struct PDFRendererTests {
     @Test func 行動表レイアウトは矢印用の余白を確保する() {
         let rect = CGRect(x: 0, y: 0, width: 250, height: 24)
         let layout = ActionTableLineLayout(rect: rect, columns: 5, arrowWidth: 20)
