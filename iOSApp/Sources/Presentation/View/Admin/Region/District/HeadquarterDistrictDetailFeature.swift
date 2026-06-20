@@ -23,7 +23,6 @@ struct HeadquarterDistrictDetailFeature {
     struct State: Equatable {
         var district: District
         var routes: [RouteSlot]
-        fileprivate var originalRoutes: [Route.ID: Route] = [:]
         var routeDrafts: [Route.ID: RouteDraft] = [:]
         
         var isEditable: Bool = false
@@ -94,14 +93,8 @@ struct HeadquarterDistrictDetailFeature {
                 return exportEffect(state: state, path: "\(state.district.name)_行動表.pdf", includesRouteMap: false)
             case .resetDraftsTapped:
                 guard !state.routeDrafts.isEmpty else { return .none }
-                let draftIDs = Set(state.routeDrafts.keys)
                 state.routeDrafts = [:]
-                for index in state.routes.indices {
-                    guard let route = state.routes[index].route,
-                          draftIDs.contains(route.id),
-                          let originalRoute = state.originalRoutes[route.id] else { continue }
-                    state.routes[index] = RouteSlot(period: state.routes[index].period, route: originalRoute)
-                }
+                state.routes = FetchAll(districtId: state.district.id, latest: true).wrappedValue
                 return .none
             case .updateReceived(.success):
                 state.isLoading = false
@@ -203,10 +196,6 @@ extension HeadquarterDistrictDetailFeature.State {
         let routes: [RouteSlot] = FetchAll(districtId: district.id, latest: true).wrappedValue
         self.district = district
         self.routes = routes
-        self.originalRoutes = Dictionary(uniqueKeysWithValues: routes.compactMap {
-            guard let route = $0.route else { return nil }
-            return (route.id, route)
-        })
     }
     
 }
