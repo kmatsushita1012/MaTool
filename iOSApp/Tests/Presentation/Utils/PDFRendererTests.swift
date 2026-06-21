@@ -37,7 +37,7 @@ struct PDFRendererTests {
         #expect(longFontSize >= 9)
     }
 
-    @Test func 行動表は自町の通過町を自町と表示する() {
+    @Test @MainActor func 行動表は自町の通過町を自町と表示する() {
         let district = District(id: "district-1", name: "中央町", festivalId: "festival-1")
         let route = Route(id: "route-1", districtId: district.id, periodId: "period-1")
         let passage = RoutePassage(routeId: route.id, districtId: district.id, memo: "中央町を通過")
