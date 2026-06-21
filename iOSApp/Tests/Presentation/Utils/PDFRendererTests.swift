@@ -1,5 +1,6 @@
 import Testing
 import CoreGraphics
+import Shared
 @testable import iOSApp
 
 
