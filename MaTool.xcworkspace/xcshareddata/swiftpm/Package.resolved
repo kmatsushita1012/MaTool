@@ -1,5 +1,5 @@
 {
-  "originHash" : "9ca5c42b47c92991b8ca35da13bdfb0837c84e481179b56b8df9ca17492e44ef",
+  "originHash" : "c063b1c8deb18081db8e34b60cbeced99d7e2a4a238e753b90ac34cc135c6490",
   "pins" : [
     {
       "identity" : "amplify-ios",
@@ -249,8 +249,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/pointfreeco/swift-dependencies",
       "state" : {
-        "revision" : "706feb7858a7f6c242879d137b8ee30926aa5b26",
-        "version" : "1.12.0"
+        "revision" : "8dc1fbf2f6255a73dec53b4648164884898db4c5",
+        "version" : "1.14.1"
       }
     },
     {

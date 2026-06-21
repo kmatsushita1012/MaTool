@@ -12,7 +12,7 @@ let package = Package(
     ],
     dependencies: [
         .package(path: "../Shared"),
-        .package(url: "https://github.com/pointfreeco/swift-dependencies", from: "1.4.0"),
+        .package(url: "https://github.com/pointfreeco/swift-dependencies", from: "1.14.1"),
         .package(url: "https://github.com/awslabs/aws-sdk-swift.git", from: "1.5.18"),
         .package(url: "https://github.com/awslabs/swift-aws-lambda-runtime.git", from: "2.0.0"),
         .package(url: "https://github.com/swift-server/swift-aws-lambda-events.git", from: "1.2.3"),
