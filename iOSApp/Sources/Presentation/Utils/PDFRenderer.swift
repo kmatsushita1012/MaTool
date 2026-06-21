@@ -327,7 +327,7 @@ struct ActionTableSnapshotter: Sendable {
             let entries: [String] = {
                 guard let route = slot.route else { return [] }
                 let passages: [RoutePassage] = passagesByRouteID[route.id] ?? FetchAll(routeId: route.id).wrappedValue
-                return passages.prefix(linesPerPeriod * columnsPerLine).map(passageTitle)
+                return passages.prefix(linesPerPeriod * columnsPerLine).map { Self.passageTitle($0, routeDistrictId: route.districtId) }
             }()
             return Row(
                 period: slot.period,
@@ -336,7 +336,11 @@ struct ActionTableSnapshotter: Sendable {
         }
     }
 
-    private func passageTitle(_ passage: RoutePassage) -> String {
+    static func passageTitle(_ passage: RoutePassage, routeDistrictId: District.ID) -> String {
+        if passage.districtId == routeDistrictId {
+            return "自町"
+        }
+
         if let districtId = passage.districtId,
            let district = FetchOne(District.find(districtId)).wrappedValue {
             return district.name
