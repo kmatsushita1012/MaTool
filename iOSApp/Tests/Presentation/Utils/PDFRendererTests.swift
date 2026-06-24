@@ -1,5 +1,6 @@
 import Testing
 import CoreGraphics
+import UIKit
 import Shared
 @testable import iOSApp
 
@@ -44,5 +45,77 @@ struct PDFRendererTests {
 
         let title = ActionTableSnapshotter.passageTitle(passage, routeDistrictId: route.districtId)
         #expect(title == "自町")
+    }
+
+    @Test func ルート地図キャプションは赤丸矩形を避ける() {
+        let planner = RouteMapCaptionLayoutPlanner()
+        let input = RouteMapCaptionLayoutPlanner.CaptionInput(
+            text: "1",
+            anchor: CGPoint(x: 20, y: 20),
+            textSize: CGSize(width: 10, height: 10),
+            padding: 2,
+            margin: 5
+        )
+        let pinRect = CGRect(x: 25, y: 1, width: 14, height: 14)
+
+        let placements = planner.placeCaptions(inputs: [input], occupiedRects: [pinRect])
+
+        #expect(placements.count == 1)
+        #expect(!placements[0].rect.intersects(pinRect))
+        #expect(placements[0].rect.origin.y > 20)
+    }
+
+    @Test func ルート地図キャプションは後続が詰む場合に前の候補を戻して再探索する() {
+        let planner = RouteMapCaptionLayoutPlanner()
+        let inputs = [
+            RouteMapCaptionLayoutPlanner.CaptionInput(
+                text: "A",
+                anchor: CGPoint(x: 20, y: 20),
+                textSize: CGSize(width: 10, height: 10),
+                padding: 2,
+                margin: 5
+            ),
+            RouteMapCaptionLayoutPlanner.CaptionInput(
+                text: "B",
+                anchor: CGPoint(x: 44, y: 20),
+                textSize: CGSize(width: 10, height: 10),
+                padding: 2,
+                margin: 5
+            )
+        ]
+        let occupiedRects = [
+            CGRect(x: 49, y: 1, width: 14, height: 14),
+            CGRect(x: 49, y: 25, width: 14, height: 14),
+            CGRect(x: 25, y: 25, width: 14, height: 14)
+        ]
+
+        let placements = planner.placeCaptions(inputs: inputs, occupiedRects: occupiedRects)
+
+        #expect(placements.count == 2)
+        #expect(placements[0].rect.origin.x < 20)
+        #expect(placements[1].rect.origin.x == 25)
+        #expect(placements[1].rect.origin.y == 1)
+    }
+
+    @Test func ルート地図キャプションは全方向が塞がっても最後の候補で返す() {
+        let planner = RouteMapCaptionLayoutPlanner()
+        let input = RouteMapCaptionLayoutPlanner.CaptionInput(
+            text: "1",
+            anchor: CGPoint(x: 20, y: 20),
+            textSize: CGSize(width: 10, height: 10),
+            padding: 2,
+            margin: 5
+        )
+        let occupiedRects = [
+            CGRect(x: 25, y: 1, width: 14, height: 14),
+            CGRect(x: 25, y: 25, width: 14, height: 14),
+            CGRect(x: 1, y: 25, width: 14, height: 14),
+            CGRect(x: 1, y: 1, width: 14, height: 14)
+        ]
+
+        let placements = planner.placeCaptions(inputs: [input], occupiedRects: occupiedRects)
+
+        #expect(placements.count == 1)
+        #expect(placements[0].rect.origin == CGPoint(x: 1, y: 1))
     }
 }
