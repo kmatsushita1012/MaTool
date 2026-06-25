@@ -59,6 +59,8 @@ struct RouteEditFeature{
         var isLoading: Bool = false
         var isSubmitDialogPresented: Bool = false
         var tab: Tab
+        var districtAreaOverlays: [DistrictAreaOverlay]
+        var isDistrictAreaOverlayVisible: Bool = false
         var passageInsertIndex: Int? = nil
         var region: MKCoordinateRegion
         var size: CGSize?
@@ -75,6 +77,7 @@ struct RouteEditFeature{
         case onAppear
         case mapLongPressed(Coordinate)
         case pointTapped(PointEntry)
+        case districtAreaOverlayTapped
         case autoPassageTapped
         case undoTapped
         case redoTapped
@@ -133,6 +136,10 @@ struct RouteEditFeature{
             case .pointTapped(let entry):
                 state.point = PointEditFeature.State(entry.point, districtId: state.district.id)
                 state.operation = .add
+                return .none
+            case .districtAreaOverlayTapped:
+                guard state.canShowDistrictAreaOverlay else { return .none }
+                state.isDistrictAreaOverlayVisible.toggle()
                 return .none
             case .autoPassageTapped:
                 let districts: [District] = FetchAll(festivalId: state.district.festivalId).wrappedValue
@@ -340,6 +347,7 @@ extension RouteEditFeature.State {
     var isDeleteable: Bool { mode == .update}
     var isPartialEnable: Bool { tab != .info }
     var isAutoPassageDisabled: Bool { points.count < 2 }
+    var canShowDistrictAreaOverlay: Bool { mode == .preview && !districtAreaOverlays.isEmpty }
     var saveButtonTitle: String {
         switch mode {
         case .preview:
@@ -399,6 +407,9 @@ extension RouteEditFeature.State {
         self._district = districtQuery
         self._period = periodQuery
         self._festival = festivalQuery
+        self.districtAreaOverlays = assignDistrictAreaOverlays(
+            districts: FetchAll(festivalId: districtQuery.wrappedValue.festivalId).wrappedValue
+        )
         
         let origin: Coordinate = districtQuery.wrappedValue.base ?? festivalQuery.wrappedValue.base
 

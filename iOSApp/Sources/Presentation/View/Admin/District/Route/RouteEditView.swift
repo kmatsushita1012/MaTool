@@ -282,14 +282,24 @@ extension RouteEditView {
     
     @ViewBuilder
     var map: some View {
-        MapView(
-            style: store.tab == .public ? .public : .edit,
-            points: store.pointEntries,
-            region: $store.region,
-            size: $store.size,
-            pointTapped: { store.send(.pointTapped($0)) },
-            onLongPress: { store.send(.mapLongPressed($0)) },
-        )
+        ZStack(alignment: .bottomTrailing) {
+            MapView(
+                style: store.tab == .public ? .public : .edit,
+                points: store.pointEntries,
+                districtAreaOverlays: store.districtAreaOverlays,
+                showsDistrictAreaOverlay: store.isDistrictAreaOverlayVisible,
+                region: $store.region,
+                size: $store.size,
+                pointTapped: { store.send(.pointTapped($0)) },
+                onLongPress: { store.send(.mapLongPressed($0)) }
+            )
+
+            if store.canShowDistrictAreaOverlay {
+                districtAreaOverlayButton
+                    .padding(.trailing, 16)
+                    .padding(.bottom, 16)
+            }
+        }
     }
     
     @ViewBuilder
@@ -352,6 +362,29 @@ extension RouteEditView {
             }
             .disabled(!store.isPartialEnable)
         }
+    }
+
+    @ViewBuilder
+    var districtAreaOverlayButton: some View {
+        let isActive = store.isDistrictAreaOverlayVisible
+        Button {
+            store.send(.districtAreaOverlayTapped)
+        } label: {
+            Image(systemName: "square.grid.3x3.fill")
+                .font(.system(size: 18, weight: .semibold))
+                .foregroundStyle(isActive ? Color.white : Color(uiColor: .darkGray))
+                .frame(width: 48, height: 48)
+                .background(
+                    Circle()
+                        .fill(isActive ? Color(uiColor: .darkGray) : .white)
+                )
+                .overlay(
+                    Circle()
+                        .stroke(Color(uiColor: isActive ? .darkGray : .systemGray4), lineWidth: 1)
+                )
+        }
+        .shadow(color: .black.opacity(0.18), radius: 8, y: 2)
+        .accessibilityLabel("町域オーバーレイ")
     }
     
     @ViewBuilder
