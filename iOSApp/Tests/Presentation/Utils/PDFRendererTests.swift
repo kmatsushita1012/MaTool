@@ -97,7 +97,7 @@ struct PDFRendererTests {
         #expect(placements[1].rect.origin.y == 1)
     }
 
-    @Test func ルート地図キャプションは全方向が塞がっても最後の候補で返す() {
+    @Test func ルート地図キャプションは全方向が塞がると最後の候補で返す() {
         let planner = RouteMapCaptionLayoutPlanner()
         let input = RouteMapCaptionLayoutPlanner.CaptionInput(
             text: "1",

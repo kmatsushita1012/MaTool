@@ -11,10 +11,7 @@ import Shared
 import SQLiteData
 
 struct RouteMapCaptionLayoutPlanner {
-    private struct PlacementResult {
-        let placements: [CaptionPlacement]
-        let isResolvedWithoutFallback: Bool
-    }
+    private struct LayoutSearchFailure: Error {}
 
     struct CaptionInput: Sendable {
         let text: String
@@ -41,7 +38,13 @@ struct RouteMapCaptionLayoutPlanner {
     ]
 
     func placeCaptions(inputs: [CaptionInput], occupiedRects: [CGRect]) -> [CaptionPlacement] {
-        placeCaptions(inputs: inputs, index: 0, occupiedRects: occupiedRects).placements
+        do {
+            return try resolveCaptions(inputs: inputs, index: 0, occupiedRects: occupiedRects)
+        } catch is LayoutSearchFailure {
+            return makeFallbackPlacements(inputs: inputs, index: 0)
+        } catch {
+            return makeFallbackPlacements(inputs: inputs, index: 0)
+        }
     }
 
     func placeTitle(
@@ -100,46 +103,47 @@ struct RouteMapCaptionLayoutPlanner {
         return TitlePlacement(backgroundRect: backgroundRect, textRect: textRect)
     }
 
-    private func placeCaptions(
+    private func resolveCaptions(
         inputs: [CaptionInput],
         index: Int,
         occupiedRects: [CGRect]
-    ) -> PlacementResult {
+    ) throws -> [CaptionPlacement] {
         guard index < inputs.count else {
-            return PlacementResult(placements: [], isResolvedWithoutFallback: true)
+            return []
         }
 
         let input = inputs[index]
         let candidates = makeCandidates(for: input)
-        var fallback: CaptionPlacement?
 
         for candidate in candidates {
-            fallback = candidate
             guard occupiedRects.allSatisfy({ !$0.intersects(candidate.rect) }) else { continue }
-            let tail = placeCaptions(
-                inputs: inputs,
-                index: index + 1,
-                occupiedRects: occupiedRects + [candidate.rect]
-            )
-            if tail.isResolvedWithoutFallback {
-                return PlacementResult(
-                    placements: [candidate] + tail.placements,
-                    isResolvedWithoutFallback: true
+            do {
+                let tail = try resolveCaptions(
+                    inputs: inputs,
+                    index: index + 1,
+                    occupiedRects: occupiedRects + [candidate.rect]
                 )
+                return [candidate] + tail
+            } catch is LayoutSearchFailure {
+                continue
             }
         }
 
-        guard let fallback else {
-            return PlacementResult(placements: [], isResolvedWithoutFallback: false)
+        throw LayoutSearchFailure()
+    }
+
+    private func makeFallbackPlacements(
+        inputs: [CaptionInput],
+        index: Int
+    ) -> [CaptionPlacement] {
+        guard index < inputs.count else {
+            return []
         }
-        let tail = placeCaptions(
+
+        let fallback = makeCandidates(for: inputs[index]).last!
+        return [fallback] + makeFallbackPlacements(
             inputs: inputs,
-            index: index + 1,
-            occupiedRects: occupiedRects + [fallback.rect]
-        )
-        return PlacementResult(
-            placements: [fallback] + tail.placements,
-            isResolvedWithoutFallback: false
+            index: index + 1
         )
     }
 
