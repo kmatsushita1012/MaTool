@@ -95,11 +95,11 @@ struct MapView: UIViewRepresentable {
     }
 
     func updateUIView(_ mapView: MKMapView, context: Context) {
-        if showsDistrictAreaOverlay {
-            mapView.updateDistrictAreaOverlays(districtAreaOverlays)
-        } else {
-            mapView.removeDistrictAreaOverlays()
-        }
+        context.coordinator.updateDistrictAreaOverlays(
+            districtAreaOverlays,
+            isVisible: showsDistrictAreaOverlay,
+            in: mapView
+        )
         mapView.updatePoints(from: points.filter(style: style))
         // ポリラインを isBoundary で分割し、色を交互に設定
         let segments: [[Coordinate]] = splitPoints()
@@ -163,6 +163,8 @@ struct MapView: UIViewRepresentable {
 
     class Coordinator: NSObject, MKMapViewDelegate {
         var parent: MapView
+        private var renderedDistrictAreaOverlays: Set<DistrictAreaOverlay> = []
+        private var isDistrictAreaOverlayVisible = false
         
         init(_ parent: MapView) {
             self.parent = parent
@@ -219,6 +221,38 @@ struct MapView: UIViewRepresentable {
             let coordinate = mapView.convert(location, toCoordinateFrom: mapView)
             parent.onLongPress(Coordinate.fromCL(coordinate))
         }
+
+        func updateDistrictAreaOverlays(
+            _ districtAreaOverlays: [DistrictAreaOverlay],
+            isVisible: Bool,
+            in mapView: MKMapView
+        ) {
+            let newOverlays = Set(districtAreaOverlays)
+
+            guard isVisible != isDistrictAreaOverlayVisible || newOverlays != renderedDistrictAreaOverlays else {
+                return
+            }
+
+            if !isVisible {
+                removeDistrictAreaOverlays(in: mapView)
+                renderedDistrictAreaOverlays = []
+                isDistrictAreaOverlayVisible = false
+                return
+            }
+
+            removeDistrictAreaOverlays(in: mapView)
+            mapView.addOverlays(districtAreaOverlays.map(DistrictPolygonOverlay.init))
+            mapView.addAnnotations(districtAreaOverlays.map(DistrictAreaLabelAnnotation.init))
+            renderedDistrictAreaOverlays = newOverlays
+            isDistrictAreaOverlayVisible = true
+        }
+
+        private func removeDistrictAreaOverlays(in mapView: MKMapView) {
+            let oldPolygons = mapView.overlays.compactMap { $0 as? DistrictPolygonOverlay }
+            let oldLabels = mapView.annotations.compactMap { $0 as? DistrictAreaLabelAnnotation }
+            mapView.removeOverlays(oldPolygons)
+            mapView.removeAnnotations(oldLabels)
+        }
     }
 }
 
@@ -268,19 +302,6 @@ fileprivate extension MKMapView {
         removeOverlays(oldPolylines)
     }
 
-    func updateDistrictAreaOverlays(_ districtAreaOverlays: [DistrictAreaOverlay]) {
-        removeDistrictAreaOverlays()
-        addOverlays(districtAreaOverlays.map(DistrictPolygonOverlay.init))
-        addAnnotations(districtAreaOverlays.map(DistrictAreaLabelAnnotation.init))
-    }
-
-    func removeDistrictAreaOverlays() {
-        let oldPolygons = overlays.compactMap { $0 as? DistrictPolygonOverlay }
-        let oldLabels = annotations.compactMap { $0 as? DistrictAreaLabelAnnotation }
-        removeOverlays(oldPolygons)
-        removeAnnotations(oldLabels)
-    }
-    
     func removeFloats() {
         let old = annotations.compactMap { $0 as? FloatAnnotation }
         removeAnnotations(old)
