@@ -52,15 +52,19 @@ struct HeadquarterDistrictDetailView: View {
                 .disabled(store.routeDrafts.isEmpty)
             }
             Section {
-                Button(action: {
+                loadingButton(
+                    "提出資料出力",
+                    showsProgress: store.isSubmissionExportLoading,
+                    isDisabled: store.isSubmissionExportLoading || store.isTableExportLoading
+                ) {
                     store.send(.batchExportTapped)
-                }) {
-                    Text("提出資料出力")
                 }
-                Button(action: {
+                loadingButton(
+                    "行動表出力",
+                    showsProgress: store.isTableExportLoading,
+                    isDisabled: store.isSubmissionExportLoading || store.isTableExportLoading
+                ) {
                     store.send(.tableExportTapped)
-                }) {
-                    Text("行動表出力")
                 }
             }
             Section {
@@ -103,6 +107,29 @@ struct HeadquarterDistrictDetailView: View {
             DistrictReissueView(store: store)
         }
         .alert($store.scope(state: \.alert, action: \.alert))
-        .loadingOverlay(store.isLoading)
+        .loadingOverlay(store.isLoading && !store.isExportLoading)
+    }
+}
+
+@available(iOS 17.0, *)
+private extension HeadquarterDistrictDetailView {
+    @ViewBuilder
+    func loadingButton(
+        _ title: String,
+        showsProgress: Bool,
+        isDisabled: Bool,
+        action: @escaping () -> Void
+    ) -> some View {
+        Button(action: action) {
+            Text(title)
+                .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .overlay(alignment: .trailing) {
+            if showsProgress {
+                ProgressView()
+                    .controlSize(.small)
+            }
+        }
+        .disabled(isDisabled)
     }
 }
