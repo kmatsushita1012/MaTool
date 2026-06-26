@@ -30,12 +30,16 @@ struct RouteEditView: View {
             }
         }
         .safeAreaInset(edge: .bottom){
-            if #available(iOS 26.0, *), isLiquidGlassEnabled {
-                districtAreaOverlayButton
-                    .glassEffect()
-            } else {
-                districtAreaOverlayButton
+            Group {
+                if #available(iOS 26.0, *), isLiquidGlassEnabled {
+                    districtAreaOverlayButton
+                        .glassEffect()
+                } else {
+                    districtAreaOverlayButton
+                }
             }
+            .padding(.horizontal)
+            .frame(maxWidth: .infinity, alignment: .trailing)
         }
         .toolbar {
             toolbar
@@ -372,7 +376,7 @@ extension RouteEditView {
         } label: {
             Image(systemName: "square.grid.3x3.fill")
                 .padding()
-                .foregroundStyle(isActive ? Color.white : Color(uiColor: .darkGray))
+                .foregroundStyle(isActive ? Color.accent : Color.primary)
         }
         .accessibilityLabel("町域オーバーレイ")
     }

@@ -322,7 +322,7 @@ final class DistrictAreaLabelAnnotationView: MKAnnotationView {
         return UIGraphicsImageRenderer(size: size).image { _ in
             let rect = CGRect(origin: .zero, size: size)
             let path = UIBezierPath(roundedRect: rect, cornerRadius: size.height / 2)
-            color.withAlphaComponent(0.92).setFill()
+            color.withAlphaComponent(0.80).setFill()
             path.fill()
 
             UIColor.white.setStroke()
