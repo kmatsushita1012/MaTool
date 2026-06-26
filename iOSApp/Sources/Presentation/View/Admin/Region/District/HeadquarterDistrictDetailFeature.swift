@@ -12,6 +12,10 @@ import Foundation
 
 @Reducer
 struct HeadquarterDistrictDetailFeature {
+    enum ExportKind: Equatable {
+        case submission
+        case table
+    }
     
     @Reducer
     enum Destination {
@@ -27,6 +31,7 @@ struct HeadquarterDistrictDetailFeature {
         
         var isEditable: Bool = false
         var isLoading: Bool = false
+        var activeExportKind: ExportKind? = nil
         
         @Presents var destination: Destination.State?
         @Presents var alert: AlertFeature.State?
@@ -86,10 +91,10 @@ struct HeadquarterDistrictDetailFeature {
                     return entry
                 }
             case .batchExportTapped:
-                state.isLoading = true
+                state.activeExportKind = .submission
                 return exportEffect(state: state, path: "\(state.district.name).pdf", includesRouteMap: true)
             case .tableExportTapped:
-                state.isLoading = true
+                state.activeExportKind = .table
                 return exportEffect(state: state, path: "\(state.district.name)_行動表.pdf", includesRouteMap: false)
             case .resetDraftsTapped:
                 guard !state.routeDrafts.isEmpty else { return .none }
@@ -117,13 +122,14 @@ struct HeadquarterDistrictDetailFeature {
                 }
                 return .none
             case .batchExportReceived(.success(let url)):
-                state.isLoading = false
+                state.activeExportKind = nil
                 state.url = url
                 return .none
             case .updateReceived(.failure(let error)),
                 .routeReceived(.failure(let error)),
                 .batchExportReceived(.failure(let error)):
                 state.isLoading = false
+                state.activeExportKind = nil
                 state.alert = AlertFeature.error(error.message)
                 return .none
             case .destination(_):
@@ -185,6 +191,20 @@ struct HeadquarterDistrictDetailFeature {
             let url = await renderer.finalize()
             return url
         }
+    }
+}
+
+extension HeadquarterDistrictDetailFeature.State {
+    var isExportLoading: Bool {
+        activeExportKind != nil
+    }
+    
+    var isSubmissionExportLoading: Bool {
+        activeExportKind == .submission
+    }
+    
+    var isTableExportLoading: Bool {
+        activeExportKind == .table
     }
 }
 

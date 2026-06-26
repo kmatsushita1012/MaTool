@@ -38,10 +38,8 @@ struct HeadquarterDistrictListView: View {
             #if DEBUG
             if !store.isReordering && store.searchText.isEmpty {
                 Section {
-                    Button(action: {
+                    loadingButton("提出資料出力", isLoading: store.isExportLoading) {
                         store.send(.batchExportTapped)
-                    }) {
-                        Text("提出資料出力")
                     }
                 }
             }
@@ -90,6 +88,28 @@ struct HeadquarterDistrictListView: View {
             }
         }
         .environment(\.editMode, .constant(store.isReordering ? .active : .inactive))
-        .loadingOverlay(store.isLoading)
+        .loadingOverlay(store.isLoading && !store.isExportLoading)
+    }
+}
+
+@available(iOS 17.0, *)
+private extension HeadquarterDistrictListView {
+    @ViewBuilder
+    func loadingButton(
+        _ title: String,
+        isLoading: Bool,
+        action: @escaping () -> Void
+    ) -> some View {
+        Button(action: action) {
+            Text(title)
+                .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .overlay(alignment: .trailing) {
+            if isLoading {
+                ProgressView()
+                    .controlSize(.small)
+            }
+        }
+        .disabled(isLoading)
     }
 }
