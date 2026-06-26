@@ -324,13 +324,22 @@ extension RouteEditView {
     
     @ViewBuilder
     var submitButton: some View {
-        Button("提出用") {
+        Button {
             if didTriggerSubmitLongPress {
                 didTriggerSubmitLongPress = false
                 return
             }
             store.send(.wholeTapped)
+        } label: {
+            Text("提出用")
         }
+        .overlay {
+            if store.isLoading {
+                ProgressView()
+                    .controlSize(.small)
+            }
+        }
+        .disabled(store.isLoading)
         .simultaneousGesture(
             LongPressGesture(minimumDuration: 0.6).onEnded { _ in
                 if store.isPartialEnable {

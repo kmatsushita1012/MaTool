@@ -97,7 +97,42 @@ struct PDFRendererTests {
         #expect(placements[1].rect.origin.y == 1)
     }
 
-    @Test func ルート地図キャプションは全方向が塞がると最後の候補で返す() {
+    @Test func ルート地図キャプションは完全解がない場合に最も長い無衝突プレフィックスを持つ組み合わせを返す() {
+        let planner = RouteMapCaptionLayoutPlanner()
+        let inputs = [
+            RouteMapCaptionLayoutPlanner.CaptionInput(
+                text: "A",
+                anchor: CGPoint(x: 20, y: 20),
+                textSize: CGSize(width: 10, height: 10),
+                padding: 2,
+                margin: 5
+            ),
+            RouteMapCaptionLayoutPlanner.CaptionInput(
+                text: "B",
+                anchor: CGPoint(x: 68, y: 20),
+                textSize: CGSize(width: 10, height: 10),
+                padding: 2,
+                margin: 5
+            )
+        ]
+        let occupiedRects = [
+            CGRect(x: 49, y: 1, width: 1, height: 1),
+            CGRect(x: 49, y: 25, width: 14, height: 14),
+            CGRect(x: 25, y: 25, width: 14, height: 14),
+            CGRect(x: 73, y: 1, width: 14, height: 14),
+            CGRect(x: 73, y: 25, width: 14, height: 14)
+        ]
+
+        let placements = planner.placeCaptions(inputs: inputs, occupiedRects: occupiedRects)
+
+        #expect(placements.count == 2)
+        #expect(placements[0].text == "A")
+        #expect(!placements[0].rect.intersects(occupiedRects[0]))
+        #expect(placements[1].text == "B")
+        #expect(placements[1].rect.origin == CGPoint(x: 49, y: 1))
+    }
+
+    @Test func ルート地図キャプションは全方向が塞がると面積が小さい候補で返す() {
         let planner = RouteMapCaptionLayoutPlanner()
         let input = RouteMapCaptionLayoutPlanner.CaptionInput(
             text: "1",
@@ -107,7 +142,7 @@ struct PDFRendererTests {
             margin: 5
         )
         let occupiedRects = [
-            CGRect(x: 25, y: 1, width: 14, height: 14),
+            CGRect(x: 26, y: 2, width: 1, height: 1),
             CGRect(x: 25, y: 25, width: 14, height: 14),
             CGRect(x: 1, y: 25, width: 14, height: 14),
             CGRect(x: 1, y: 1, width: 14, height: 14)
@@ -116,6 +151,6 @@ struct PDFRendererTests {
         let placements = planner.placeCaptions(inputs: [input], occupiedRects: occupiedRects)
 
         #expect(placements.count == 1)
-        #expect(placements[0].rect.origin == CGPoint(x: 1, y: 1))
+        #expect(placements[0].rect.origin == CGPoint(x: 25, y: 1))
     }
 }

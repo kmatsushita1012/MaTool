@@ -11,7 +11,12 @@ import Shared
 import SQLiteData
 
 struct RouteMapCaptionLayoutPlanner {
-    private struct LayoutSearchFailure: Error {}
+    private struct SearchResult {
+        let placements: [CaptionPlacement]
+        let safePrefixCount: Int
+        let overlapArea: CGFloat
+        let isComplete: Bool
+    }
 
     struct CaptionInput: Sendable {
         let text: String
@@ -38,13 +43,18 @@ struct RouteMapCaptionLayoutPlanner {
     ]
 
     func placeCaptions(inputs: [CaptionInput], occupiedRects: [CGRect]) -> [CaptionPlacement] {
-        do {
-            return try resolveCaptions(inputs: inputs, index: 0, occupiedRects: occupiedRects)
-        } catch is LayoutSearchFailure {
-            return makeFallbackPlacements(inputs: inputs, index: 0)
-        } catch {
-            return makeFallbackPlacements(inputs: inputs, index: 0)
+        let result = resolveBestCaptions(inputs: inputs, index: 0, occupiedRects: occupiedRects)
+        if !result.isComplete {
+            logFinalFallback(
+                mode: result.safePrefixCount == 0 ? "forced-last-candidate" : "best-safe-prefix",
+                inputs: inputs,
+                occupiedRects: occupiedRects,
+                placements: result.placements,
+                safeCount: result.safePrefixCount,
+                overlapArea: result.overlapArea
+            )
         }
+        return result.placements
     }
 
     func placeTitle(
@@ -103,33 +113,82 @@ struct RouteMapCaptionLayoutPlanner {
         return TitlePlacement(backgroundRect: backgroundRect, textRect: textRect)
     }
 
-    private func resolveCaptions(
+    private func resolveBestCaptions(
         inputs: [CaptionInput],
         index: Int,
         occupiedRects: [CGRect]
-    ) throws -> [CaptionPlacement] {
+    ) -> SearchResult {
         guard index < inputs.count else {
-            return []
+            return SearchResult(placements: [], safePrefixCount: 0, overlapArea: 0, isComplete: true)
         }
 
         let input = inputs[index]
         let candidates = makeCandidates(for: input)
+        var bestSafe: SearchResult?
+        var bestFallback: SearchResult?
+        var hasSafeCandidate = false
 
         for candidate in candidates {
-            guard occupiedRects.allSatisfy({ !$0.intersects(candidate.rect) }) else { continue }
-            do {
-                let tail = try resolveCaptions(
+            if isSafe(candidate.rect, occupiedRects: occupiedRects) {
+                hasSafeCandidate = true
+                let tail = resolveBestCaptions(
                     inputs: inputs,
                     index: index + 1,
                     occupiedRects: occupiedRects + [candidate.rect]
                 )
-                return [candidate] + tail
-            } catch is LayoutSearchFailure {
+                let result = SearchResult(
+                    placements: [candidate] + tail.placements,
+                    safePrefixCount: tail.safePrefixCount + 1,
+                    overlapArea: tail.overlapArea,
+                    isComplete: tail.isComplete
+                )
+
+                if result.isComplete {
+                    return result
+                }
+
+                if bestSafe == nil
+                    || result.safePrefixCount > bestSafe!.safePrefixCount
+                    || (result.safePrefixCount == bestSafe!.safePrefixCount
+                        && result.overlapArea < bestSafe!.overlapArea)
+                {
+                    bestSafe = result
+                }
                 continue
+            }
+
+            guard !hasSafeCandidate else {
+                continue
+            }
+
+            let overlapArea = intersectionArea(candidate.rect, with: occupiedRects)
+            let tail = resolveBestCaptions(
+                inputs: inputs,
+                index: index + 1,
+                occupiedRects: occupiedRects + [candidate.rect]
+            )
+            let result = SearchResult(
+                placements: [candidate] + tail.placements,
+                safePrefixCount: 0,
+                overlapArea: overlapArea + tail.overlapArea,
+                isComplete: false
+            )
+
+            if bestFallback == nil || result.overlapArea < bestFallback!.overlapArea {
+                bestFallback = result
             }
         }
 
-        throw LayoutSearchFailure()
+        if let bestSafe {
+            return bestSafe
+        }
+
+        return bestFallback ?? SearchResult(
+            placements: makeFallbackPlacements(inputs: inputs, index: index),
+            safePrefixCount: 0,
+            overlapArea: .greatestFiniteMagnitude,
+            isComplete: false
+        )
     }
 
     private func makeFallbackPlacements(
@@ -145,6 +204,41 @@ struct RouteMapCaptionLayoutPlanner {
             inputs: inputs,
             index: index + 1
         )
+    }
+
+    private func logFinalFallback(
+        mode: String,
+        inputs: [CaptionInput],
+        occupiedRects: [CGRect],
+        placements: [CaptionPlacement],
+        safeCount: Int,
+        overlapArea: CGFloat
+    ) {
+        let captionSummary = inputs.map { input in
+            "\(input.text)@(\(Int(input.anchor.x)),\(Int(input.anchor.y)))"
+        }.joined(separator: ", ")
+        let placementSummary = placements.map { placement in
+            "\(placement.text)@(\(Int(placement.rect.origin.x)),\(Int(placement.rect.origin.y)))"
+        }.joined(separator: ", ")
+        print(
+            "RouteMapCaptionLayoutPlanner: fallback=\(mode), " +
+            "safeCount=\(safeCount), overlapArea=\(Int(overlapArea)), captions=[\(captionSummary)], occupiedRects=\(occupiedRects.count), " +
+            "placements=[\(placementSummary)]"
+        )
+    }
+
+    private func isSafe(_ rect: CGRect, occupiedRects: [CGRect]) -> Bool {
+        occupiedRects.allSatisfy { !$0.intersects(rect) }
+    }
+
+    private func intersectionArea(_ rect: CGRect, with occupiedRects: [CGRect]) -> CGFloat {
+        occupiedRects.reduce(0) { total, occupiedRect in
+            let intersection = rect.intersection(occupiedRect)
+            guard !intersection.isNull, !intersection.isEmpty else {
+                return total
+            }
+            return total + intersection.width * intersection.height
+        }
     }
 
     private func makeCandidates(for input: CaptionInput) -> [CaptionPlacement] {

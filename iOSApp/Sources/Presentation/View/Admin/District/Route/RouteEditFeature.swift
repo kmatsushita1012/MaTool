@@ -188,6 +188,7 @@ struct RouteEditFeature{
                 state.alert = .delete(AlertFeature.delete())
                 return .none
             case .wholeTapped:
+                state.isLoading = true
                 return .task(Action.previewPrepared){ [state] in
                     let snapshotter = try await RouteSnapshotter(route: state.route, points: state.points)
                     let (image, url) = try await snapshotter.take()
@@ -198,6 +199,7 @@ struct RouteEditFeature{
                     state.alert = .notice(.error("描画範囲の取得に失敗しました。"))
                       return .none
                 }
+                state.isLoading = true
                 return .task(Action.previewPrepared){ [state] in
                     let snapshotter = try await RouteSnapshotter(route: state.route, points: state.points)
                     let (image, url) = try await snapshotter.take(of: state.region, size: size)
