@@ -254,17 +254,21 @@ let districtAreaPalette: [UIColor] = [
     UIColor(red: 0.15, green: 0.67, blue: 0.62, alpha: 1),
 ]
 
-final class DistrictPolygonOverlay: MKPolygon {
+final class DistrictPolygonOverlay: NSObject, MKOverlay {
     let districtAreaOverlay: DistrictAreaOverlay
+    let coordinate: CLLocationCoordinate2D
+    let boundingMapRect: MKMapRect
 
     init(_ districtAreaOverlay: DistrictAreaOverlay) {
         self.districtAreaOverlay = districtAreaOverlay
-        let coordinates = districtAreaOverlay.area.map { $0.toCL() }
-        super.init(coordinates: coordinates, count: coordinates.count)
+        self.coordinate = districtAreaOverlay.center.toCL()
+        self.boundingMapRect = MKMapRect.from(coordinates: districtAreaOverlay.area)
     }
 
     func renderer() -> MKOverlayRenderer {
-        let renderer = MKPolygonRenderer(overlay: self)
+        let coordinates = districtAreaOverlay.area.map { $0.toCL() }
+        let polygon = MKPolygon(coordinates: coordinates, count: coordinates.count)
+        let renderer = MKPolygonRenderer(polygon: polygon)
         let color = districtAreaPalette[districtAreaOverlay.colorIndex % districtAreaPalette.count]
         renderer.fillColor = color.withAlphaComponent(0.3)
         renderer.strokeColor = color.withAlphaComponent(0.9)
@@ -379,6 +383,20 @@ fileprivate extension UIImage {
             cgContext.scaleBy(x: scale, y: scale)
             self.draw(at: .zero)
         }
+    }
+}
+
+private extension MKMapRect {
+    static func from(coordinates: [Coordinate]) -> MKMapRect {
+        guard let first = coordinates.first?.toCL() else { return .null }
+
+        let firstPoint = MKMapPoint(first)
+        var rect = MKMapRect(x: firstPoint.x, y: firstPoint.y, width: 0, height: 0)
+        for coordinate in coordinates.dropFirst() {
+            let point = MKMapPoint(coordinate.toCL())
+            rect = rect.union(MKMapRect(x: point.x, y: point.y, width: 0, height: 0))
+        }
+        return rect
     }
 }
 

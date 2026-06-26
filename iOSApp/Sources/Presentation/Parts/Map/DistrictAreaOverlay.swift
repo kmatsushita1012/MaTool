@@ -270,7 +270,7 @@ private extension Array where Element == Coordinate {
             centroidLongitude += (current.longitude + following.longitude) * cross
         }
 
-        if abs(twiceArea) <= districtAreaGeometryEpsilon {
+        if Swift.abs(twiceArea) <= districtAreaGeometryEpsilon {
             return Coordinate(
                 latitude: map(\.latitude).reduce(0, +) / Double(count),
                 longitude: map(\.longitude).reduce(0, +) / Double(count)
