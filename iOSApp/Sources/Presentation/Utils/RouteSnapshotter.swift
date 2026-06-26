@@ -11,6 +11,11 @@ import Shared
 import SQLiteData
 
 struct RouteMapCaptionLayoutPlanner {
+    private struct PlacementResult {
+        let placements: [CaptionPlacement]
+        let isResolvedWithoutFallback: Bool
+    }
+
     struct CaptionInput: Sendable {
         let text: String
         let anchor: CGPoint
@@ -36,7 +41,7 @@ struct RouteMapCaptionLayoutPlanner {
     ]
 
     func placeCaptions(inputs: [CaptionInput], occupiedRects: [CGRect]) -> [CaptionPlacement] {
-        placeCaptions(inputs: inputs, index: 0, occupiedRects: occupiedRects)
+        placeCaptions(inputs: inputs, index: 0, occupiedRects: occupiedRects).placements
     }
 
     func placeTitle(
@@ -99,8 +104,10 @@ struct RouteMapCaptionLayoutPlanner {
         inputs: [CaptionInput],
         index: Int,
         occupiedRects: [CGRect]
-    ) -> [CaptionPlacement] {
-        guard index < inputs.count else { return [] }
+    ) -> PlacementResult {
+        guard index < inputs.count else {
+            return PlacementResult(placements: [], isResolvedWithoutFallback: true)
+        }
 
         let input = inputs[index]
         let candidates = makeCandidates(for: input)
@@ -114,18 +121,26 @@ struct RouteMapCaptionLayoutPlanner {
                 index: index + 1,
                 occupiedRects: occupiedRects + [candidate.rect]
             )
-            if tail.count == inputs.count - index - 1 {
-                return [candidate] + tail
+            if tail.isResolvedWithoutFallback {
+                return PlacementResult(
+                    placements: [candidate] + tail.placements,
+                    isResolvedWithoutFallback: true
+                )
             }
         }
 
-        guard let fallback else { return [] }
+        guard let fallback else {
+            return PlacementResult(placements: [], isResolvedWithoutFallback: false)
+        }
         let tail = placeCaptions(
             inputs: inputs,
             index: index + 1,
             occupiedRects: occupiedRects + [fallback.rect]
         )
-        return [fallback] + tail
+        return PlacementResult(
+            placements: [fallback] + tail.placements,
+            isResolvedWithoutFallback: false
+        )
     }
 
     private func makeCandidates(for input: CaptionInput) -> [CaptionPlacement] {
