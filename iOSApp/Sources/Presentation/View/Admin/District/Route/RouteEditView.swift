@@ -29,6 +29,18 @@ struct RouteEditView: View {
                 contentBeforeLiquidGlass
             }
         }
+        .safeAreaInset(edge: .bottom){
+            Group {
+                if #available(iOS 26.0, *), isLiquidGlassEnabled {
+                    districtAreaOverlayButton
+                        .glassEffect()
+                } else {
+                    districtAreaOverlayButton
+                }
+            }
+            .padding(.horizontal)
+            .frame(maxWidth: .infinity, alignment: .trailing)
+        }
         .toolbar {
             toolbar
         }
@@ -285,10 +297,12 @@ extension RouteEditView {
         MapView(
             style: store.tab == .public ? .public : .edit,
             points: store.pointEntries,
+            districtAreaOverlays: store.districtAreaOverlays,
+            showsDistrictAreaOverlay: store.isDistrictAreaOverlayVisible,
             region: $store.region,
             size: $store.size,
             pointTapped: { store.send(.pointTapped($0)) },
-            onLongPress: { store.send(.mapLongPressed($0)) },
+            onLongPress: { store.send(.mapLongPressed($0)) }
         )
     }
     
@@ -324,13 +338,22 @@ extension RouteEditView {
     
     @ViewBuilder
     var submitButton: some View {
-        Button("提出用") {
+        Button {
             if didTriggerSubmitLongPress {
                 didTriggerSubmitLongPress = false
                 return
             }
             store.send(.wholeTapped)
+        } label: {
+            Text("提出用")
         }
+        .overlay {
+            if store.isLoading {
+                ProgressView()
+                    .controlSize(.small)
+            }
+        }
+        .disabled(store.isLoading)
         .simultaneousGesture(
             LongPressGesture(minimumDuration: 0.6).onEnded { _ in
                 if store.isPartialEnable {
@@ -352,6 +375,19 @@ extension RouteEditView {
             }
             .disabled(!store.isPartialEnable)
         }
+    }
+
+    @ViewBuilder
+    var districtAreaOverlayButton: some View {
+        let isActive = store.isDistrictAreaOverlayVisible
+        Button {
+            store.send(.districtAreaOverlayTapped)
+        } label: {
+            Image(systemName: "square.grid.3x3.fill")
+                .padding()
+                .foregroundStyle(isActive ? Color.accent : Color.primary)
+        }
+        .accessibilityLabel("町域オーバーレイ")
     }
     
     @ViewBuilder
