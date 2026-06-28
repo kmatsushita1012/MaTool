@@ -30,16 +30,18 @@ struct RouteEditView: View {
             }
         }
         .safeAreaInset(edge: .bottom){
-            Group {
-                if #available(iOS 26.0, *), isLiquidGlassEnabled {
-                    districtAreaOverlayButton
-                        .glassEffect()
-                } else {
-                    districtAreaOverlayButton
+            if store.tab != .info {
+                Group {
+                    if #available(iOS 26.0, *), isLiquidGlassEnabled {
+                        districtAreaOverlayButton
+                            .glassEffect()
+                    } else {
+                        districtAreaOverlayButton
+                    }
                 }
+                .padding(.horizontal)
+                .frame(maxWidth: .infinity, alignment: .trailing)
             }
-            .padding(.horizontal)
-            .frame(maxWidth: .infinity, alignment: .trailing)
         }
         .toolbar {
             toolbar
