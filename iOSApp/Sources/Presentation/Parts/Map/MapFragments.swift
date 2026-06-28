@@ -250,8 +250,8 @@ final class PathPolyline: MKPolyline {
 let districtAreaPalette: [UIColor] = [
     .systemPurple,
     .systemPink,
-    .systemOrange,
     .systemMint,
+    .systemOrange,
 ]
 
 final class DistrictPolygonOverlay: NSObject, MKOverlay {
