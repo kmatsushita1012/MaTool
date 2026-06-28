@@ -270,7 +270,7 @@ final class DistrictPolygonOverlay: NSObject, MKOverlay {
         let polygon = MKPolygon(coordinates: coordinates, count: coordinates.count)
         let renderer = MKPolygonRenderer(polygon: polygon)
         let color = districtAreaPalette[districtAreaOverlay.colorIndex % districtAreaPalette.count]
-        renderer.fillColor = color.withAlphaComponent(0.3)
+        renderer.fillColor = color.withAlphaComponent(0.2)
         renderer.strokeColor = color.withAlphaComponent(0.9)
         renderer.lineWidth = 1.5
         return renderer
