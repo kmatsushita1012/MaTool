@@ -26,8 +26,9 @@ struct HeadquarterDistrictListFeature {
         var draftDistricts: [District]? = nil
         var isReordering: Bool = false
         var searchText: String = ""
-        
+
         var isLoading: Bool = false
+        var isExportLoading: Bool = false
         var folder: ExportedFolder? = nil
         @Presents var destination: Destination.State?
         @Presents var alert: AlertFeature.State?
@@ -39,10 +40,11 @@ struct HeadquarterDistrictListFeature {
         case createTapped
         case reorderTapped
         case districtMoved(from: IndexSet, to: Int)
-        case reorderReceived(VoidTaskResult)
+        case reorderReceived(VoidAppResult)
         case batchExportTapped
-        case selectedReceived(TaskResult<District>)
-        case batchExportReceived(TaskResult<[URL]>)
+        case tableExportTapped
+        case selectedReceived(AppResult<District>)
+        case batchExportReceived(AppResult<[URL]>)
         case destination(PresentationAction<Destination.Action>)
         case alert(PresentationAction<AlertFeature.Action>)
     }
@@ -107,19 +109,25 @@ struct HeadquarterDistrictListFeature {
                 state.draftDistricts = nil
                 return .none
             case .batchExportTapped:
-                return batchExportEffect(state)
+                state.isExportLoading = true
+                return batchExportEffect(state, includesRouteMap: true)
+            case .tableExportTapped:
+                state.isExportLoading = true
+                return batchExportEffect(state, includesRouteMap: false)
             case .selectedReceived(.success(let district)):
                 state.isLoading = false
                 state.destination = .detail(.init(district))
                 return .none
             case .batchExportReceived(.success(let urls)):
+                state.isExportLoading = false
                 state.folder = .init(urls)
                 return .none
             case .selectedReceived(.failure(let error)),
                 .reorderReceived(.failure(let error)),
                 .batchExportReceived(.failure(let error)):
                 state.isLoading = false
-                state.alert = AlertFeature.error(error.localizedDescription)
+                state.isExportLoading = false
+                state.alert = AlertFeature.error(error.message)
                 return .none
             case .destination:
                 return .none
@@ -131,20 +139,39 @@ struct HeadquarterDistrictListFeature {
         .ifLet(\.$alert, action: \.alert)
     }
     
-    func batchExportEffect(_ state: State) -> Effect<Action> {
+    func batchExportEffect(_ state: State, includesRouteMap: Bool) -> Effect<Action> {
         .task(Action.batchExportReceived) {
             var urls: [URL] = []
             //非同期並列にするとBEでアクセス過多
             for district in state.districts {
-                let renderer = await PDFRenderer(path: "\(district.name).pdf")
-                guard let _ =  try? await routeDataFetcher.fetchAll(districtID: district.id, query: .latest) else { continue }
-                let routes: [Route] = FetchAll(Route.where { $0.districtId.eq(district.id) }).wrappedValue
-                if routes.isEmpty { continue }
+                let suffix = includesRouteMap ? "" : "_行動表"
+                let renderer = await PDFRenderer(path: "\(district.name)\(suffix).pdf")
+                guard let _ =  try? await routeDataFetcher.fetchAll(districtID: district.id, query: .year(2025)) else { continue }
+                let slots: [RouteSlot] = FetchAll(districtId: district.id, latest: true).wrappedValue
+                let routes = slots.compactMap(\.route)
                 for route in routes {
-                    guard (try? await routeDataFetcher.fetch(routeID: route.id)) != nil,
-                          let snapshotter = try? await RouteSnapshotter(route),
-                          let image = try? await snapshotter.take() else { continue }
-                    await renderer.addPage(with: image)
+                    do {
+                        try await routeDataFetcher.fetch(routeID: route.id)
+                    } catch {
+                        continue
+                    }
+                }
+                let tableSnapshotter = await ActionTableSnapshotter(district: district, slots: slots)
+                let tablePages = await tableSnapshotter.takeAll()
+                for page in tablePages {
+                    await renderer.addPage(with: page)
+                }
+                guard includesRouteMap else {
+                    let url = await renderer.finalize()
+                    urls.append(url)
+                    continue
+                }
+                if !routes.isEmpty {
+                    for route in routes {
+                        guard let snapshotter = try? await RouteSnapshotter(route),
+                              let image = try? await snapshotter.take() else { continue }
+                        await renderer.addPage(with: image)
+                    }
                 }
                 let url = await renderer.finalize()
                 urls.append(url)

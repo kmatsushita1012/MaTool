@@ -7,6 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		292F30022F0000010053637A /* Config/Debug.xcconfig in Resources */ = {isa = PBXBuildFile; fileRef = 292F30002F0000010053637A /* Config/Debug.xcconfig */; };
+		292F30032F0000010053637A /* Config/Release.xcconfig in Resources */ = {isa = PBXBuildFile; fileRef = 292F30012F0000010053637A /* Config/Release.xcconfig */; };
 		2957A6C52F6BE2E8005B5EB4 /* ComposableArchitecture in Frameworks */ = {isa = PBXBuildFile; productRef = 2957A6C42F6BE2E8005B5EB4 /* ComposableArchitecture */; };
 		29C674182EB37948003DCA4C /* amplifyconfiguration.json in Resources */ = {isa = PBXBuildFile; fileRef = 29C674172EB37948003DCA4C /* amplifyconfiguration.json */; };
 		29CC9E422F1523B800C4CD50 /* SQLiteData in Frameworks */ = {isa = PBXBuildFile; productRef = 29CC9E412F1523B800C4CD50 /* SQLiteData */; };
@@ -38,6 +40,8 @@
 		291604FD2EB3665900E6C6E3 /* MaTool.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = MaTool.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		291604FE2EB3666400E6C6E3 /* iOSAppTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = iOSAppTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		291604FF2EB3666900E6C6E3 /* iOSAppUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = iOSAppUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		292F30002F0000010053637A /* Config/Debug.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Config/Debug.xcconfig; sourceTree = "<group>"; };
+		292F30012F0000010053637A /* Config/Release.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Config/Release.xcconfig; sourceTree = "<group>"; };
 		29C6740A2EB36ADC003DCA4C /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		29C674172EB37948003DCA4C /* amplifyconfiguration.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = amplifyconfiguration.json; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -98,6 +102,8 @@
 				298DACCA2EB361990053637A /* Sources */,
 				298DABD92EB361980053637A /* UITests */,
 				29C674152EB3742E003DCA4C /* Preview Content */,
+				292F30002F0000010053637A /* Config/Debug.xcconfig */,
+				292F30012F0000010053637A /* Config/Release.xcconfig */,
 				29C6740A2EB36ADC003DCA4C /* Info.plist */,
 				29C674172EB37948003DCA4C /* amplifyconfiguration.json */,
 				291605212EB3680E00E6C6E3 /* Frameworks */,
@@ -232,6 +238,8 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				292F30022F0000010053637A /* Config/Debug.xcconfig in Resources */,
+				292F30032F0000010053637A /* Config/Release.xcconfig in Resources */,
 				29C674182EB37948003DCA4C /* amplifyconfiguration.json in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -417,6 +425,7 @@
 		};
 		298BD7C12D71E46900CB63F1 /* Debug */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = 292F30002F0000010053637A /* Config/Debug.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
@@ -444,7 +453,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 3.0.2;
+				MARKETING_VERSION = 3.0.13;
 				OTHER_SWIFT_FLAGS = "\"$(inherited)\" -Xfrontend -debug-time-function-bodies";
 				PRODUCT_BUNDLE_IDENTIFIER = StudioMK.FesTracking;
 				PRODUCT_MODULE_NAME = iOSApp;
@@ -458,6 +467,7 @@
 		};
 		298BD7C22D71E46900CB63F1 /* Release */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = 292F30012F0000010053637A /* Config/Release.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
@@ -484,7 +494,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 3.0.2;
+				MARKETING_VERSION = 3.0.13;
 				PRODUCT_BUNDLE_IDENTIFIER = StudioMK.FesTracking;
 				PRODUCT_MODULE_NAME = iOSApp;
 				PRODUCT_NAME = MaTool;
@@ -625,7 +635,7 @@
 			repositoryURL = "https://github.com/pointfreeco/swift-composable-architecture";
 			requirement = {
 				kind = upToNextMajorVersion;
-				minimumVersion = 1.25.2;
+				minimumVersion = 1.26.0;
 			};
 			traits = (
 			);
@@ -635,7 +645,7 @@
 			repositoryURL = "https://github.com/pointfreeco/sqlite-data.git";
 			requirement = {
 				kind = upToNextMajorVersion;
-				minimumVersion = 1.4.3;
+				minimumVersion = 1.6.6;
 			};
 			traits = (
 			);

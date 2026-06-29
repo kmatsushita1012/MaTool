@@ -184,6 +184,74 @@ struct SceneUsecaseTest {
         #expect(result.points.count == 1)
         #expect(result.points[0].time == nil)
     }
+    
+    @Test
+    func fetchLaunchDistrictPack_正常_periodId指定時は一致Routeを優先する() async throws {
+        let now = makeDate(year: 2026, month: 2, day: 22, hour: 12)
+        let district = District.mock(id: "district-1", festivalId: "festival-1")
+        let nearestPeriod = Period.mock(id: "period-nearest", festivalId: district.festivalId, date: .init(year: 2026, month: 2, day: 22), start: .init(hour: 11, minute: 0), end: .init(hour: 13, minute: 0))
+        let requestedPeriod = Period.mock(id: "period-requested", festivalId: district.festivalId, date: .init(year: 2026, month: 2, day: 25), start: .init(hour: 11, minute: 0), end: .init(hour: 13, minute: 0))
+        let nearestRoute = Route.mock(id: "route-nearest", districtId: district.id, periodId: nearestPeriod.id, visibility: .all)
+        let requestedRoute = Route.mock(id: "route-requested", districtId: district.id, periodId: requestedPeriod.id, visibility: .all)
+        let requestedPoint = Point.mock(id: "point-requested", routeId: requestedRoute.id)
+        let requestedPassage = RoutePassage.mock(id: "passage-requested", routeId: requestedRoute.id, districtId: district.id)
+        
+        let subject = make(
+            districtRepository: .init(getHandler: { _ in district }),
+            periodRepository: .init(queryByYearHandler: { _, _ in [nearestPeriod, requestedPeriod] }),
+            performanceRepository: .init(queryHandler: { _ in [] }),
+            routeRepository: .init(queryByYearHandler: { _, _ in [nearestRoute, requestedRoute] }),
+            pointRepository: .init(queryHandler: { routeId in
+                routeId == requestedRoute.id ? [requestedPoint] : []
+            }),
+            passageRepository: .init(queryHandler: { routeId in
+                routeId == requestedRoute.id ? [requestedPassage] : []
+            })
+        )
+        
+        let result = try await subject.fetchLaunchDistrictPack(
+            districtId: district.id,
+            user: .guest,
+            now: now,
+            periodId: requestedPeriod.id
+        )
+        
+        #expect(result.currentRouteId == requestedRoute.id)
+        #expect(result.points == [requestedPoint])
+        #expect(result.passages == [requestedPassage])
+    }
+    
+    @Test
+    func fetchLaunchDistrictPack_正常_periodId未一致なら従来選定へフォールバック() async throws {
+        let now = makeDate(year: 2026, month: 2, day: 22, hour: 12)
+        let district = District.mock(id: "district-1", festivalId: "festival-1")
+        let nearestPeriod = Period.mock(id: "period-nearest", festivalId: district.festivalId, date: .init(year: 2026, month: 2, day: 22), start: .init(hour: 11, minute: 0), end: .init(hour: 13, minute: 0))
+        let otherPeriod = Period.mock(id: "period-other", festivalId: district.festivalId, date: .init(year: 2026, month: 2, day: 25), start: .init(hour: 11, minute: 0), end: .init(hour: 13, minute: 0))
+        let nearestRoute = Route.mock(id: "route-nearest", districtId: district.id, periodId: nearestPeriod.id, visibility: .all)
+        let otherRoute = Route.mock(id: "route-other", districtId: district.id, periodId: otherPeriod.id, visibility: .all)
+        let nearestPoint = Point.mock(id: "point-nearest", routeId: nearestRoute.id)
+        
+        let subject = make(
+            districtRepository: .init(getHandler: { _ in district }),
+            periodRepository: .init(queryByYearHandler: { _, _ in [nearestPeriod, otherPeriod] }),
+            performanceRepository: .init(queryHandler: { _ in [] }),
+            routeRepository: .init(queryByYearHandler: { _, _ in [nearestRoute, otherRoute] }),
+            pointRepository: .init(queryHandler: { routeId in
+                routeId == nearestRoute.id ? [nearestPoint] : []
+            }),
+            passageRepository: .init(queryHandler: { _ in [] })
+        )
+        
+        let result = try await subject.fetchLaunchDistrictPack(
+            districtId: district.id,
+            user: .guest,
+            now: now,
+            periodId: "period-not-found"
+        )
+        
+        #expect(result.currentRouteId == nearestRoute.id)
+        #expect(result.points == [nearestPoint])
+    }
 
     @Test
     func fetchLaunchDistrictPack_異常_依存エラーを透過() async {

@@ -41,12 +41,14 @@ final class DistrictControllerMock: DistrictControllerProtocol, @unchecked Senda
         getHandler: ((Request, Handler) throws -> Response)? = nil,
         queryHandler: ((Request, Handler) throws -> Response)? = nil,
         postHandler: ((Request, Handler) throws -> Response)? = nil,
+        postReissueHandler: ((Request, Handler) throws -> Response)? = nil,
         putHandler: ((Request, Handler) throws -> Response)? = nil,
         updateDistrictHandler: ((Request, Handler) throws -> Response)? = nil
     ) {
         self.getHandler = getHandler
         self.queryHandler = queryHandler
         self.postHandler = postHandler
+        self.postReissueHandler = postReissueHandler
         self.putHandler = putHandler
         self.updateDistrictHandler = updateDistrictHandler
     }
@@ -73,6 +75,14 @@ final class DistrictControllerMock: DistrictControllerProtocol, @unchecked Senda
         postCallCount += 1
         guard let postHandler else { throw TestError.unimplemented }
         return try postHandler(request, next)
+    }
+
+    private(set) var postReissueCallCount = 0
+    private let postReissueHandler: ((Request, Handler) throws -> Response)?
+    func postReissue(_ request: Request, next: Handler) async throws -> Response {
+        postReissueCallCount += 1
+        guard let postReissueHandler else { throw TestError.unimplemented }
+        return try postReissueHandler(request, next)
     }
 
     private(set) var putCallCount = 0

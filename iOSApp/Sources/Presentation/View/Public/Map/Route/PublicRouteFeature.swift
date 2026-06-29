@@ -64,8 +64,8 @@ struct PublicRouteFeature {
         case locationTapped(FloatEntry)
         case userFocusTapped
         case floatFocusTapped
-        case routeReceived(VoidTaskResult)
-        case locationReceived(VoidTaskResult)
+        case routeReceived(VoidAppResult)
+        case locationReceived(VoidAppResult)
         case userLocationReceived(Coordinate)
         case replayTapped
         case replayEnded
@@ -108,7 +108,7 @@ struct PublicRouteFeature {
                 state.$mapRegion.withLock { $0 = makeRegion(state.points.map(\.coordinate)) }
                 return .none
             case .routeReceived(.failure(let error)):
-                state.alert = AlertFeature.error(error.localizedDescription)
+                state.alert = .error(error)
                 return .none
             case .locationReceived(.success):
                 if let coordinate = state.float?.floatLocation.coordinate {
@@ -116,14 +116,12 @@ struct PublicRouteFeature {
                 }
                 return .none
             case .locationReceived(.failure(let error)):
-                if let error = error as? APIError,
-                    case .notFound = error {
+                if case .be(.notFound) = error {
                     state.alert = AlertFeature.notice("現在地の配信は停止中です。")
-                } else if let error = error as? APIError,
-                    case .forbidden = error {
+                } else if case .be(.forbidden) = error {
                     state.alert = AlertFeature.notice("現在地の配信は停止中です。")
                 } else {
-                    state.alert = AlertFeature.error(error.localizedDescription)
+                    state.alert = .error(error)
                 }
                 return .none
             case .replayTapped:
@@ -196,7 +194,7 @@ extension PublicRouteFeature.State {
             } else {
                 false
             }
-        }
+        }.sorted()
     }
 
     var isReplayEnable: Bool {

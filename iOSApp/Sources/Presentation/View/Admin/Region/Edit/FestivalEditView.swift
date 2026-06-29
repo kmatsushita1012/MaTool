@@ -64,7 +64,7 @@ struct FestivalEditView: View{
                     }
                 )
             }
-            Section(header: Text("説明")) {
+            Section(header: Text("紹介文")) {
                 TextEditor(text: $store.festival.description.nonOptional)
                     .frame(height:120)
             }

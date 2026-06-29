@@ -15,31 +15,26 @@ struct DistrictDashboardView: View{
     
     var body: some View {
         content
-        .navigationTitle(
-            store.district.name
-        )
-        .navigationBarTitleDisplayMode(.large)
-        .navigationDestination(item: $store.scope(state: \.destination?.edit, action: \.destination.edit)) { store in
-            DistrictEditView(store: store)
-        }
-        .navigationDestination(item: $store.scope(state: \.destination?.location, action: \.destination.location)) { store in
-            LocationTrackingView(store: store)
-        }
-        .navigationDestination(item: $store.scope(state: \.destination?.route, action: \.destination.route)) { store in
-            RouteEditView(store: store)
-        }
-        .navigationDestination(
-            item: $store.scope(state: \.destination?.changePassword, action: \.destination.changePassword)
-        ) { store in
-            ChangePasswordView(store: store)
-        }
-        .navigationDestination(
-            item: $store.scope(state: \.destination?.updateEmail, action: \.destination.updateEmail)
-        ) { store in
-            UpdateEmailView(store: store)
-        }
-        .alert($store.scope(state: \.alert, action: \.alert))
-        .loadingOverlay(store.isLoading)
+            .navigationDestination(item: $store.scope(state: \.destination, action: \.destination)){ destination in
+                switch destination.case {
+                case .edit(let store):
+                    DistrictEditView(store: store)
+                case .location(let store):
+                    LocationTrackingView(store: store)
+                case .route(let store):
+                    RouteEditView(store: store)
+                case .changePassword(let store):
+                    ChangePasswordView(store: store)
+                case .updateEmail(let store):
+                    UpdateEmailView(store: store)
+                }
+            }
+            .sheet(item: $store.url) { url in
+                ShareSheet(item: url)
+            }
+            .alert($store.scope(state: \.alert, action: \.alert))
+            .loadingOverlay(store.isRouteLoading || store.isAWSLoading)
+        
     }
     
     @ViewBuilder
@@ -68,6 +63,22 @@ struct DistrictDashboardView: View{
                     )
                 }
             }
+            Section(header: Text("ルート出力")) {
+                loadingButton(
+                    "提出資料出力",
+                    showsProgress: store.isSubmissionExportLoading,
+                    isDisabled: store.isSubmissionExportLoading || store.isTableExportLoading
+                ) {
+                    store.send(.submissionExportTapped)
+                }
+                loadingButton(
+                    "行動表出力",
+                    showsProgress: store.isTableExportLoading,
+                    isDisabled: store.isSubmissionExportLoading || store.isTableExportLoading
+                ) {
+                    store.send(.tableExportTapped)
+                }
+            }
             Section {
                 Button(action: {
                     store.send(.changePasswordTapped)
@@ -89,5 +100,29 @@ struct DistrictDashboardView: View{
                 }
             }
         }
+        .navigationTitle(
+            store.district.name
+        )
+        .navigationBarTitleDisplayMode(.large)
+    }
+
+    @ViewBuilder
+    private func loadingButton(
+        _ title: String,
+        showsProgress: Bool,
+        isDisabled: Bool,
+        action: @escaping () -> Void
+    ) -> some View {
+        Button(action: action) {
+            Text(title)
+                .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .overlay(alignment: .trailing) {
+            if showsProgress {
+                ProgressView()
+                    .controlSize(.small)
+            }
+        }
+        .disabled(isDisabled)
     }
 }

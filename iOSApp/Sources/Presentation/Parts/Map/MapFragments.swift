@@ -247,6 +247,114 @@ final class PathPolyline: MKPolyline {
     }
 }
 
+let districtAreaPalette: [UIColor] = [
+    .systemPurple,
+    .systemPink,
+    .systemMint,
+    .systemOrange,
+]
+
+final class DistrictPolygonOverlay: NSObject, MKOverlay {
+    let districtAreaOverlay: DistrictAreaOverlay
+    let coordinate: CLLocationCoordinate2D
+    let boundingMapRect: MKMapRect
+
+    init(_ districtAreaOverlay: DistrictAreaOverlay) {
+        self.districtAreaOverlay = districtAreaOverlay
+        self.coordinate = districtAreaOverlay.center.toCL()
+        self.boundingMapRect = MKMapRect.from(coordinates: districtAreaOverlay.area)
+    }
+
+    func renderer() -> MKOverlayRenderer {
+        let coordinates = districtAreaOverlay.area.map { $0.toCL() }
+        let polygon = MKPolygon(coordinates: coordinates, count: coordinates.count)
+        let renderer = MKPolygonRenderer(polygon: polygon)
+        let color = districtAreaPalette[districtAreaOverlay.colorIndex % districtAreaPalette.count]
+        renderer.fillColor = color.withAlphaComponent(0.2)
+        renderer.strokeColor = color.withAlphaComponent(0.9)
+        renderer.lineWidth = 1.5
+        return renderer
+    }
+}
+
+final class DistrictAreaLabelAnnotation: MKPointAnnotation {
+    let districtAreaOverlay: DistrictAreaOverlay
+
+    init(_ districtAreaOverlay: DistrictAreaOverlay) {
+        self.districtAreaOverlay = districtAreaOverlay
+        super.init()
+        coordinate = districtAreaOverlay.center.toCL()
+        title = districtAreaOverlay.districtName
+    }
+}
+
+final class DistrictAreaLabelAnnotationView: MKAnnotationView {
+    static let identifier = "DistrictAreaLabelAnnotationView"
+
+    override var annotation: MKAnnotation? {
+        didSet {
+            configure()
+        }
+    }
+
+    private func configure() {
+        guard let annotation = annotation as? DistrictAreaLabelAnnotation else { return }
+
+        let color = districtAreaPalette[annotation.districtAreaOverlay.colorIndex % districtAreaPalette.count]
+        image = renderedImage(title: annotation.districtAreaOverlay.districtName, color: color)
+        centerOffset = CGPoint(x: 0, y: -6)
+        displayPriority = .required
+        zPriority = .defaultSelected
+        canShowCallout = false
+    }
+
+    private func renderedImage(title: String, color: UIColor) -> UIImage? {
+        let font = UIFont.preferredFont(forTextStyle: .caption1).bold()
+        let attributes: [NSAttributedString.Key: Any] = [.font: font]
+        let textSize = (title as NSString).size(withAttributes: attributes)
+        let horizontalPadding: CGFloat = 14
+        let verticalPadding: CGFloat = 8
+        let size = CGSize(
+            width: textSize.width + horizontalPadding * 2,
+            height: textSize.height + verticalPadding * 2
+        )
+
+        return UIGraphicsImageRenderer(size: size).image { _ in
+            let rect = CGRect(origin: .zero, size: size)
+            let path = UIBezierPath(roundedRect: rect, cornerRadius: size.height / 2)
+            color.withAlphaComponent(0.80).setFill()
+            path.fill()
+
+            UIColor.white.setStroke()
+            path.lineWidth = 1
+            path.stroke()
+
+            let textRect = CGRect(
+                x: (size.width - textSize.width) / 2,
+                y: (size.height - textSize.height) / 2,
+                width: textSize.width,
+                height: textSize.height
+            )
+            (title as NSString).draw(
+                in: textRect,
+                withAttributes: [
+                    .font: font,
+                    .foregroundColor: UIColor.white,
+                ]
+            )
+        }
+    }
+}
+
+extension DistrictAreaLabelAnnotationView {
+    static func view(for mapView: MKMapView, annotation: DistrictAreaLabelAnnotation) -> MKAnnotationView {
+        let annotationView = mapView.dequeueReusableAnnotationView(withIdentifier: identifier) as? DistrictAreaLabelAnnotationView
+            ?? DistrictAreaLabelAnnotationView(annotation: annotation, reuseIdentifier: identifier)
+        annotationView.annotation = annotation
+        return annotationView
+    }
+}
+
 
 fileprivate extension UIImage {
     /// 元の画像に指定されたシャドウを描画して imageWithShadow を返す
@@ -275,6 +383,27 @@ fileprivate extension UIImage {
             cgContext.scaleBy(x: scale, y: scale)
             self.draw(at: .zero)
         }
+    }
+}
+
+private extension MKMapRect {
+    static func from(coordinates: [Coordinate]) -> MKMapRect {
+        guard let first = coordinates.first?.toCL() else { return .null }
+
+        let firstPoint = MKMapPoint(first)
+        var rect = MKMapRect(x: firstPoint.x, y: firstPoint.y, width: 0, height: 0)
+        for coordinate in coordinates.dropFirst() {
+            let point = MKMapPoint(coordinate.toCL())
+            rect = rect.union(MKMapRect(x: point.x, y: point.y, width: 0, height: 0))
+        }
+        return rect
+    }
+}
+
+private extension UIFont {
+    func bold() -> UIFont {
+        guard let descriptor = fontDescriptor.withSymbolicTraits(.traitBold) else { return self }
+        return UIFont(descriptor: descriptor, size: pointSize)
     }
 }
 
@@ -353,6 +482,9 @@ class MapCoordinator<Parent: MapViewRepresentable>: NSObject, MKMapViewDelegate 
         if annotation is MKUserLocation {
             return nil
         }
+        if let districtAnnotation = annotation as? DistrictAreaLabelAnnotation {
+            return DistrictAreaLabelAnnotationView.view(for: mapView, annotation: districtAnnotation)
+        }
         if let pointAnnotation = annotation as? PointAnnotation {
             return PointAnnotationView.view(for: mapView, annotation: pointAnnotation)
         }
@@ -370,6 +502,9 @@ class MapCoordinator<Parent: MapViewRepresentable>: NSObject, MKMapViewDelegate 
     }
     
     func mapView(_ mapView: MKMapView, rendererFor overlay: MKOverlay) -> MKOverlayRenderer {
+        if let polygon = overlay as? DistrictPolygonOverlay {
+            return polygon.renderer()
+        }
         if let polyline = overlay as? PathPolyline {
             return polyline.renderer()
         }

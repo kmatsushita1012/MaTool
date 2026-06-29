@@ -1,5 +1,5 @@
 //
-//  PublicDistrictMapView.swift
+//  InfoMapView.swift
 //  MaTool
 //
 //  Created by 松下和也 on 2025/07/29.
@@ -10,8 +10,9 @@ import MapKit
 import SwiftUI
 import Shared
 
-struct PublicDistrictMapView: UIViewRepresentable {
+struct InfoMapView: UIViewRepresentable {
     var base: Coordinate?
+    var baseTitle: String = "会所"
     var area: [Coordinate]
     @Binding var region: MKCoordinateRegion?
 
@@ -30,7 +31,7 @@ struct PublicDistrictMapView: UIViewRepresentable {
         
         if let base {
             let annotation = MKPointAnnotation()
-            annotation.title = "会所"
+            annotation.title = baseTitle
             annotation.coordinate = base.toCL()
             mapView.addAnnotation(annotation)
         }
@@ -45,9 +46,9 @@ struct PublicDistrictMapView: UIViewRepresentable {
     func updateUIView(_ mapView: MKMapView, context: Context) {}
     
     class Coordinator: NSObject, MKMapViewDelegate {
-        var parent: PublicDistrictMapView
+        var parent: InfoMapView
 
-        init(_ parent: PublicDistrictMapView) {
+        init(_ parent: InfoMapView) {
             self.parent = parent
         }
         
@@ -91,4 +92,3 @@ struct PublicDistrictMapView: UIViewRepresentable {
         }
     }
 }
-

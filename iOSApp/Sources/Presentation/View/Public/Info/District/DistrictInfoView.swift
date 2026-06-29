@@ -62,7 +62,7 @@ struct DistrictInfoView: View {
                             }
                         }
                         VStack{
-                            PublicDistrictMapView(
+                            InfoMapView(
                                 base: store.district.base,
                                 area: store.district.area,
                                 region: $store.region
@@ -79,14 +79,14 @@ struct DistrictInfoView: View {
                         }
                         .frame(height: 384)
                         .padding(.horizontal)
-                    }
-                    .padding(.bottom, 88)
                 }
-//                VStack{
-//                    Spacer()
-//                    mapButton()
-//                        .padding(32)
-//                }
+                .padding(.bottom, 88)
+                }
+                VStack{
+                    Spacer()
+                    mapButton()
+                        .padding(32)
+                }
             }
             .ignoresSafeArea()
             .loadingOverlay(store.isLoading)

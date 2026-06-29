@@ -29,6 +29,20 @@ struct RouteEditView: View {
                 contentBeforeLiquidGlass
             }
         }
+        .safeAreaInset(edge: .bottom){
+            if store.tab != .info {
+                Group {
+                    if #available(iOS 26.0, *), isLiquidGlassEnabled {
+                        districtAreaOverlayButton
+                            .glassEffect()
+                    } else {
+                        districtAreaOverlayButton
+                    }
+                }
+                .padding(.horizontal)
+                .frame(maxWidth: .infinity, alignment: .trailing)
+            }
+        }
         .toolbar {
             toolbar
         }
@@ -47,7 +61,7 @@ struct RouteEditView: View {
                 PreviewView(item: item)
             case .history:
                 NavigationStack {
-                    RouteHistoryView(.init(districtId: store.district.id) {
+                    RouteHistoryView(.init(districtId: store.district.id, excludingRouteId: store.route.id) {
                         store.send(.sourceSelected($0))
                     })
                 }
@@ -69,7 +83,7 @@ struct RouteEditView: View {
     
     @ToolbarContentBuilder
     var toolbar: some ToolbarContent {
-        ToolbarSaveButton(isDisabled: !store.isSaveable){
+        ToolbarSaveButton(title: store.saveButtonTitle, isDisabled: store.isConfirmDisabled){
             store.send(.saveTapped)
         }
         ToolbarCancelButton {
@@ -187,6 +201,9 @@ extension RouteEditView {
     var info: some View {
         List{
             Section {
+                if store.mode == .preview {
+                    LabeledContent("町名", value: store.district.name)
+                }
                 LabeledContent("日程", value: store.period.text(dateFormat: "y/m/d (w)"))
                 if let startTime = store.start?.time,
                    let endTime = store.end?.time {
@@ -195,7 +212,7 @@ extension RouteEditView {
             } footer: {
                 Text("出発・到着時刻は地図編集画面から先頭・末尾のピンで編集してください")
             }
-            Section(header: Text("説明")) {
+            Section(header: Text("備考（任意）")) {
                 TextEditor(text: $store.route.description.nonOptional)
                     .frame(height:64)
             }
@@ -282,10 +299,12 @@ extension RouteEditView {
         MapView(
             style: store.tab == .public ? .public : .edit,
             points: store.pointEntries,
+            districtAreaOverlays: store.districtAreaOverlays,
+            showsDistrictAreaOverlay: store.isDistrictAreaOverlayVisible,
             region: $store.region,
             size: $store.size,
             pointTapped: { store.send(.pointTapped($0)) },
-            onLongPress: { store.send(.mapLongPressed($0)) },
+            onLongPress: { store.send(.mapLongPressed($0)) }
         )
     }
     
@@ -321,13 +340,22 @@ extension RouteEditView {
     
     @ViewBuilder
     var submitButton: some View {
-        Button("提出用") {
+        Button {
             if didTriggerSubmitLongPress {
                 didTriggerSubmitLongPress = false
                 return
             }
             store.send(.wholeTapped)
+        } label: {
+            Text("提出用")
         }
+        .overlay {
+            if store.isLoading {
+                ProgressView()
+                    .controlSize(.small)
+            }
+        }
+        .disabled(store.isLoading)
         .simultaneousGesture(
             LongPressGesture(minimumDuration: 0.6).onEnded { _ in
                 if store.isPartialEnable {
@@ -349,6 +377,19 @@ extension RouteEditView {
             }
             .disabled(!store.isPartialEnable)
         }
+    }
+
+    @ViewBuilder
+    var districtAreaOverlayButton: some View {
+        let isActive = store.isDistrictAreaOverlayVisible
+        Button {
+            store.send(.districtAreaOverlayTapped)
+        } label: {
+            Image(systemName: "square.grid.3x3.fill")
+                .padding()
+                .foregroundStyle(isActive ? Color.accent : Color.primary)
+        }
+        .accessibilityLabel("町域オーバーレイ")
     }
     
     @ViewBuilder

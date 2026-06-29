@@ -7,6 +7,7 @@
 
 import Foundation
 import ComposableArchitecture
+import Shared
 
 @Reducer
 struct LoginFeature {
@@ -30,9 +31,10 @@ struct LoginFeature {
         case binding(BindingAction<State>)
         case dismissTapped
         case signInTapped
-        case received(TaskResult<SignInState>)
+        case received(AppResult<SignInState>)
         case resetPasswordTapped
         case destination(PresentationAction<Destination.Action>)
+        case confirmSignInCompleted(UserRole)
     }
     
     @Dependency(\.userDefaultsClient) var userDefaultsClient
@@ -62,16 +64,15 @@ struct LoginFeature {
                 return .none
             case .received(.failure(let error)):
                 state.isLoading = false
-                state.errorMessage = error.localizedDescription
+                state.errorMessage = error.message
                 return .none
-            case .destination(.presented(let childAction)):
-                switch childAction {
-                case .resetPassword(.confirmResetReceived(.success)):
-                    state.destination = nil
-                    return .none
-                case .confirmSignIn,
-                    .resetPassword:
-                    return .none
+            case .destination(.presented(.resetPassword(.confirmResetReceived(.success)))):
+                state.destination = nil
+                return .none
+            case .destination(.presented(.confirmSignIn(.received(.success(let userRole))))):
+                state.destination = nil
+                return .run{ send in
+                    await send(.confirmSignInCompleted(userRole))
                 }
             default:
                 return .none

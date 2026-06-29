@@ -141,10 +141,10 @@ actor LocationService: LocationServiceProtocol {
             do {
                 try await dataFetcher.update(location)
                 appendHistory(.update(location))
-            } catch let error as APIError {
+            } catch let error as AppError {
                 appendHistory(.apiError(Date(), error))
             } catch {
-                appendHistory(.apiError(Date(), .unknown(message: error.localizedDescription)))
+                appendHistory(.apiError(Date(), error.asAppError))
             }
         }
     }
@@ -153,10 +153,10 @@ actor LocationService: LocationServiceProtocol {
         do {
             try await dataFetcher.delete(districtId: id)
             appendHistory(.delete(Date()))
-        } catch let error as APIError {
+        } catch let error as AppError {
             appendHistory(.apiError(Date(), error))
         } catch {
-            appendHistory(.apiError(Date(), .unknown(message: error.localizedDescription)))
+            appendHistory(.apiError(Date(), error.asAppError))
         }
     }
     

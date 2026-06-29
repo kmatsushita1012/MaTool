@@ -14,6 +14,7 @@ import SQLiteData
 @Observable
 final class RouteHistoryPresenter {
     let districtId: District.ID
+    let excludingRouteId: Route.ID?
     
     @ObservationIgnored
     @FetchAll var entry: [RouteEntry]
@@ -24,12 +25,20 @@ final class RouteHistoryPresenter {
     
     var years: [Int] { groupedByYear.keys.sorted(by: >) }
     
-    init(districtId: District.ID, selected: @escaping (RouteEntry) -> Void) {
+    init(
+        districtId: District.ID,
+        excludingRouteId: Route.ID? = nil,
+        selected: @escaping (RouteEntry) -> Void
+    ) {
         self.districtId = districtId
+        self.excludingRouteId = excludingRouteId
         self.selected = selected
         let entryQuery: FetchAll<RouteEntry> = .init(districtId: districtId)
         self._entry = entryQuery
-        self.groupedByYear =  Dictionary(grouping: entryQuery.wrappedValue.sorted()) {
+        let filteredEntry = entryQuery.wrappedValue.filter { entry in
+            entry.id != excludingRouteId
+        }
+        self.groupedByYear =  Dictionary(grouping: filteredEntry.sorted()) {
             $0.period.date.year
         }
     }

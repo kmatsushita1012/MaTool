@@ -25,7 +25,7 @@ struct ChangePasswordFeature {
         case binding(BindingAction<State>)
         case okTapped
         case dismissTapped
-        case received(VoidTaskResult)
+        case received(VoidAppResult)
         case alert(PresentationAction<AlertFeature.Action>)
     }
     
@@ -57,7 +57,7 @@ struct ChangePasswordFeature {
                 return .none
             case .received(.failure(let error)):
                 state.isLoading = false
-                state.alert = AlertFeature.error("変更に失敗しました。\(error.localizedDescription)")
+                state.alert = AlertFeature.error("変更に失敗しました。\(error.message)")
                 return .none
             case .alert:
                 state.alert = nil

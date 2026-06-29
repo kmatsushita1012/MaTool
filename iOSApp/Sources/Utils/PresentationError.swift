@@ -7,4 +7,11 @@
 
 enum PresentationError: Error{
     case notFound
+
+    var appError: AppError {
+        switch self {
+        case .notFound:
+            return .export(.notFound("必要な情報の取得に失敗しました。"))
+        }
+    }
 }

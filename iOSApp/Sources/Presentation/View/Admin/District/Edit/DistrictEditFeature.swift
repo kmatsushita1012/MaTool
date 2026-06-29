@@ -40,7 +40,7 @@ struct DistrictEditFeature {
         case areaTapped
         case performanceAddTapped
         case performanceEditTapped(Performance)
-        case postReceived(VoidTaskResult)
+        case postReceived(VoidAppResult)
         case destination(PresentationAction<Destination.Action>)
         case alert(PresentationAction<AlertFeature.Action>)
     }
@@ -86,7 +86,7 @@ struct DistrictEditFeature {
                 return .none
             case .postReceived(.failure(let error)):
                 state.isLoading = false
-                    state.alert = AlertFeature.error("保存に失敗しました。\(error.localizedDescription)")
+                    state.alert = AlertFeature.error("保存に失敗しました。\(error.message)")
                 return .none
             case .destination(.presented(let childAction)):
                 switch childAction {

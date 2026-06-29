@@ -1,7 +1,7 @@
 # ============================
 # Stage 1: Build Swift Lambda binary (AL2023)
 # ============================
-FROM amazonlinux:2023 AS build
+FROM public.ecr.aws/amazonlinux/amazonlinux:2023 AS build
 
 # 必要なツールとライブラリをインストール
 RUN dnf update -y && \
@@ -49,14 +49,22 @@ RUN strip .build/release/Backend
 
 RUN ls -lh .build/release/Backend
 
+# Lambda zip 配布用にバイナリと依存共有ライブラリを同梱
+RUN mkdir -p /workspace/lambda/lib && \
+    cp .build/release/Backend /workspace/lambda/MaToolAPI && \
+    cp scripts/bootstrap /workspace/lambda/bootstrap && \
+    chmod +x /workspace/lambda/bootstrap /workspace/lambda/MaToolAPI && \
+    ldd .build/release/Backend | awk '/=> \// { print $3 } /^\// { print $1 }' | sort -u | \
+      xargs -I '{}' cp '{}' /workspace/lambda/lib/
+
 # ============================
 # Stage 2: Lambda Runtime (AL2023)
 # ============================
 FROM public.ecr.aws/lambda/provided:al2023
 
-# ビルド済みバイナリをコピー
-COPY --from=build /workspace/Backend/.build/release/Backend /var/runtime/bootstrap
+# Lambda 配布物一式をコピー
+COPY --from=build /workspace/lambda /var/task
 
-RUN chmod +x /var/runtime/bootstrap
+RUN chmod +x /var/task/bootstrap /var/task/MaToolAPI
 
-ENTRYPOINT ["/var/runtime/bootstrap"]
+ENTRYPOINT ["/var/task/bootstrap"]

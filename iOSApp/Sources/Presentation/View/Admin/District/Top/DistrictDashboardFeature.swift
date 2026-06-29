@@ -12,6 +12,10 @@ import SQLiteData
 
 @Reducer
 struct DistrictDashboardFeature {
+    enum ExportKind: Equatable {
+        case submission
+        case table
+    }
     
     @Reducer
     enum Destination {
@@ -31,6 +35,8 @@ struct DistrictDashboardFeature {
         
         var isRouteLoading: Bool = false
         var isAWSLoading: Bool = false
+        var activeExportKind: ExportKind? = nil
+        var url: URL? = nil
         
         // Navigation
         @Presents var destination: Destination.State?
@@ -38,7 +44,8 @@ struct DistrictDashboardFeature {
     }
     
     @CasePathable
-    enum Action: Equatable {
+    enum Action: Equatable, BindableAction {
+        case binding(BindingAction<State>)
         case onEdit
         case onRouteEdit(RouteSlot)
         case changePasswordTapped
@@ -46,10 +53,13 @@ struct DistrictDashboardFeature {
         case routeCreatePrepared
         case locationPrepared(isTracking: Bool, Interval: Interval?)
         case onLocation
+        case submissionExportTapped
+        case tableExportTapped
+        case exportReceived(AppResult<URL>)
         case destination(PresentationAction<Destination.Action>)
         case signOutTapped
-        case signOutReceived(TaskResult<UserRole>)
-        case routeEditReceived(TaskResult<RouteSlot>)
+        case signOutReceived(AppResult<UserRole>)
+        case routeEditReceived(AppResult<RouteSlot>)
         case dismissTapped
         case alert(PresentationAction<AlertFeature.Action>)
     }
@@ -60,8 +70,11 @@ struct DistrictDashboardFeature {
     @Dependency(\.dismiss) var dismiss
     
     var body: some ReducerOf<DistrictDashboardFeature> {
+        BindingReducer()
         Reduce{ state, action in
             switch action {
+            case .binding:
+                return .none
             case .onEdit:
                 state.destination = .edit(.init(state.district))
                 return .none
@@ -97,7 +110,7 @@ struct DistrictDashboardFeature {
                 return .none
             case .routeEditReceived(.failure(let error)):
                 state.isRouteLoading = false
-                state.alert = .error(error.localizedDescription)
+                state.alert = .error(error.message)
                 return .none
             case .locationPrepared(isTracking: let isTracking, Interval: let interval):
                 state.destination = .location(
@@ -114,6 +127,20 @@ struct DistrictDashboardFeature {
                     let interval = await locationService.getInterval()
                     await send(.locationPrepared(isTracking: isTracking, Interval: interval))
                 }
+            case .submissionExportTapped:
+                state.activeExportKind = .submission
+                return exportEffect(state: state, path: "\(state.district.name).pdf", includesRouteMap: true)
+            case .tableExportTapped:
+                state.activeExportKind = .table
+                return exportEffect(state: state, path: "\(state.district.name)_行動表.pdf", includesRouteMap: false)
+            case .exportReceived(.success(let url)):
+                state.activeExportKind = nil
+                state.url = url
+                return .none
+            case .exportReceived(.failure(let error)):
+                state.activeExportKind = nil
+                state.alert = .error(error.message)
+                return .none
             case .destination(.presented(let childAction)):
                 switch childAction {
                 case .edit(.postReceived(.success)):
@@ -133,7 +160,7 @@ struct DistrictDashboardFeature {
                 }
             case .signOutReceived(.failure(let error)):
                 state.isAWSLoading = false
-                state.alert = .error("ログアウトに失敗しました。 \(error.localizedDescription)")
+                state.alert = .error("ログアウトに失敗しました。 \(error.message)")
                 return .none
             case .dismissTapped:
                 return .dismiss
@@ -154,11 +181,51 @@ extension DistrictDashboardFeature.Destination.Action: Equatable {}
 
 extension DistrictDashboardFeature.State{
     var isLoading: Bool {
-        isAWSLoading || isRouteLoading
+        isAWSLoading || isRouteLoading || activeExportKind != nil
+    }
+    
+    var isSubmissionExportLoading: Bool {
+        activeExportKind == .submission
+    }
+    
+    var isTableExportLoading: Bool {
+        activeExportKind == .table
     }
     
     init(_ district: District){
         self._district = FetchOne(district)
         self._routes = .init(districtId: district.id, latest: true)
+    }
+}
+
+private extension DistrictDashboardFeature {
+    func exportEffect(state: State, path: String, includesRouteMap: Bool) -> Effect<Action> {
+        .task(Action.exportReceived) {
+            let renderer = await PDFRenderer(path: path)
+            let routes = state.routes.compactMap(\.route)
+            for route in routes {
+                do {
+                    try await routeDateFetcher.fetch(routeID: route.id)
+                } catch {
+                    continue
+                }
+            }
+            let tableSnapshotter = await ActionTableSnapshotter(district: state.district, slots: state.routes)
+            let tablePages = await tableSnapshotter.takeAll()
+            for page in tablePages {
+                await renderer.addPage(with: page)
+            }
+            guard includesRouteMap else {
+                let url = await renderer.finalize()
+                return url
+            }
+            for route in routes {
+                guard let snapshotter = try? await RouteSnapshotter(route),
+                      let image = try? await snapshotter.take() else { continue }
+                await renderer.addPage(with: image)
+            }
+            let url = await renderer.finalize()
+            return url
+        }
     }
 }

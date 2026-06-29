@@ -81,6 +81,14 @@
 - Response `200`: `DistrictPack`
 - Errors: `401`, `404`, `409`, `500`
 
+### POST `/districts/:districtId/reissue`
+- 概要: Districtアカウント再発行（Cognito再作成）
+- 認証: 必要（`headquarter(district.festivalId)`）
+- Path: `districtId: String`
+- Body: `DistrictReissueForm`（`email`）
+- Response `200`: `DistrictPack`
+- Errors: `401`, `404`, `500`
+
 ### GET `/districts/:districtId`
 - 概要: District詳細取得
 - 認証: 不要
@@ -251,4 +259,3 @@
   - `/Users/matsushitakazuya/private/MaTool/Backend/Sources/Core/Request+.swift`
   - `/Users/matsushitakazuya/private/MaTool/Backend/Sources/Core/Response+.swift`
   - `/Users/matsushitakazuya/private/MaTool/Backend/Sources/Core/Error+.swift`
-

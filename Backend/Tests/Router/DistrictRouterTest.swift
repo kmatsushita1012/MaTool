@@ -20,6 +20,22 @@ struct DistrictRouterTest {
     }
 
     @Test
+    func routesDistrictReissueToDistrictController_正常() async {
+        var lastCalledDistrictId: String?
+        let app = make(districtController: .init(
+            postReissueHandler: { request, _ in
+                lastCalledDistrictId = request.parameters["districtId"]
+                return try .success()
+            }
+        ))
+        let request = Application.Request.make(method: .post, path: "/districts/district-9/reissue")
+        let response = await app.handle(request)
+
+        #expect(response.statusCode == 200)
+        #expect(lastCalledDistrictId == "district-9")
+    }
+
+    @Test
     func routesRouteQueryToRouteController_正常() async {
         let app = make(routeController: .init(queryHandler: { _, _ in try .success() }))
         let request = Application.Request.make(method: .get, path: "/districts/district-1/routes")

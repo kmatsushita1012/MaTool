@@ -34,17 +34,47 @@ struct HeadquarterDistrictDetailView: View {
             .disabled(!store.isEditable)
             Section(header: Text("ルート")) {
                 ForEach(store.routes) { pair in
-                    RouteSlotView(pair){
+                    let statusText: String? = {
+                        guard let route = pair.route,
+                              store.routeDrafts[route.id] != nil else { return nil }
+                        return "修正済"
+                    }()
+                    RouteSlotView(
+                        pair,
+                        statusText: statusText
+                    ) {
                         store.send(.routeSelected(pair))
                     }
                 }
+                Button("修正をリセット") {
+                    store.send(.resetDraftsTapped)
+                }
+                .disabled(store.routeDrafts.isEmpty)
             }
             Section {
-                Button(action: {
+                loadingButton(
+                    "提出資料出力",
+                    showsProgress: store.isSubmissionExportLoading,
+                    isDisabled: store.isSubmissionExportLoading || store.isTableExportLoading
+                ) {
                     store.send(.batchExportTapped)
-                }) {
-                    Text("経路図一括出力")
                 }
+                loadingButton(
+                    "行動表出力",
+                    showsProgress: store.isTableExportLoading,
+                    isDisabled: store.isSubmissionExportLoading || store.isTableExportLoading
+                ) {
+                    store.send(.tableExportTapped)
+                }
+            }
+            Section {
+                Button(role: .destructive) {
+                    store.send(.reissueTapped)
+                } label: {
+                    Text("アカウント再発行")
+                }
+            } footer: {
+                Text("町データは保持されます。再発行後は入力したメールアドレスでアカウント再登録が必要です。")
             }
         }
         .navigationTitle(store.district.name)
@@ -71,7 +101,35 @@ struct HeadquarterDistrictDetailView: View {
         ) { store in
             RouteEditView(store: store)
         }
+        .navigationDestination(
+            item: $store.scope(state: \.destination?.reissue, action: \.destination.reissue)
+        ) { store in
+            DistrictReissueView(store: store)
+        }
         .alert($store.scope(state: \.alert, action: \.alert))
-        .loadingOverlay(store.isLoading)
+        .loadingOverlay(store.isLoading && !store.isExportLoading)
+    }
+}
+
+@available(iOS 17.0, *)
+private extension HeadquarterDistrictDetailView {
+    @ViewBuilder
+    func loadingButton(
+        _ title: String,
+        showsProgress: Bool,
+        isDisabled: Bool,
+        action: @escaping () -> Void
+    ) -> some View {
+        Button(action: action) {
+            Text(title)
+                .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .overlay(alignment: .trailing) {
+            if showsProgress {
+                ProgressView()
+                    .controlSize(.small)
+            }
+        }
+        .disabled(isDisabled)
     }
 }

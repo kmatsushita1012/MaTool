@@ -38,5 +38,6 @@ struct DistrictCreateView: View {
         .navigationBarTitleDisplayMode(.inline)
         .dismissible(backButton: false)
         .loadingOverlay(store.isLoading)
+        .alert($store.scope(state: \.alert, action: \.alert))
     }
 }

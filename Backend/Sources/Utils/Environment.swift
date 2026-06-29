@@ -21,7 +21,6 @@ extension Environment: DependencyKey{
 
         if let envPoolId = ProcessInfo.processInfo.environment["COGNITO_USER_POOL_ID"],
            let envEmail  = ProcessInfo.processInfo.environment["COGNITO_TEST_EMAIL"] {
-            print("Get env value from ProcessInfo")
             poolId = envPoolId
             email  = envEmail
         } else {
@@ -37,7 +36,6 @@ extension Environment: DependencyKey{
                   let fileEmail  = Dotenv["COGNITO_TEST_EMAIL"]?.stringValue else {
                 fatalError(".env ファイルから環境変数を取得できません")
             }
-            print("Get env value from Dotenv")
             poolId = filePoolId
             email  = fileEmail
         }
@@ -51,4 +49,3 @@ extension Environment: DependencyKey{
         liveValue
     }
 }
-

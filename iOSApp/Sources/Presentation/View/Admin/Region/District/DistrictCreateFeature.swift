@@ -24,7 +24,7 @@ struct DistrictCreateFeature {
         case binding(BindingAction<State>)
         case createTapped
         case cancelTapped
-        case createReceived(VoidTaskResult)
+        case createReceived(VoidAppResult)
         case alert(PresentationAction<AlertFeature.Action>)
     }
     
@@ -42,23 +42,32 @@ struct DistrictCreateFeature {
                     return .none
                 }
                 state.isLoading = true
-                return .task(Action.createReceived) { [state] in
-                    try await dataFetcher.create(name: state.name, email: state.email, festivalId: state.festivalId)
-                        await dismiss()
-                }
+                return createEffect(state)
             case .cancelTapped:
                 return .dismiss
+            case .createReceived(.success):
+                state.isLoading = false
+                return .none
             case .createReceived(.failure(let error)):
                 state.isLoading = false
-                state.alert = AlertFeature.error(error.localizedDescription)
+                state.alert = AlertFeature.error(error.message)
                 return .none
             case .alert:
                 state.alert = nil
                 return .none
-            default:
-                return .none
             }
         }
         .ifLet(\.$alert, action: \.alert)
+    }
+
+    private func createEffect(_ state: State) -> Effect<Action> {
+        .task(Action.createReceived) { [state] in
+            try await dataFetcher.create(
+                name: state.name,
+                email: state.email,
+                festivalId: state.festivalId
+            )
+            await dismiss()
+        }
     }
 }
