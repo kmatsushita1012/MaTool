@@ -36,6 +36,7 @@ actor BroadcastLocationProvider: NSObject, BroadcastLocationProviderProtocol {
     private(set) var isTracking = false
     private(set) var value: AsyncValue<CLLocation> = .loading
     private(set) var onUpdate: ((AsyncValue<CLLocation>) async -> Void)?
+    private var hasRequestedAlwaysAuthorizationUpgrade = false
 
     override init() {
         super.init()
@@ -64,8 +65,18 @@ actor BroadcastLocationProvider: NSObject, BroadcastLocationProviderProtocol {
 
     func requestPermission() async {
         await setupLocationManagerIfNeeded()
-        manager?.requestWhenInUseAuthorization()
-        manager?.requestAlwaysAuthorization()
+        switch manager?.authorizationStatus {
+        case .authorizedAlways:
+            return
+        case .authorizedWhenInUse:
+            requestAlwaysAuthorizationUpgradeIfNeeded()
+        case .notDetermined, nil:
+            manager?.requestWhenInUseAuthorization()
+        case .restricted, .denied:
+            return
+        @unknown default:
+            return
+        }
     }
 
     func startTracking(onUpdate: ((AsyncValue<CLLocation>) async -> Void)?) async {
@@ -105,9 +116,23 @@ actor BroadcastLocationProvider: NSObject, BroadcastLocationProviderProtocol {
     private func updateValue(_ newValue: AsyncValue<CLLocation>) {
         self.value = newValue
     }
+
+    private func requestAlwaysAuthorizationUpgradeIfNeeded() {
+        guard !hasRequestedAlwaysAuthorizationUpgrade else { return }
+        manager?.requestAlwaysAuthorization()
+        hasRequestedAlwaysAuthorizationUpgrade = true
+    }
 }
 
 extension BroadcastLocationProvider: CLLocationManagerDelegate {
+    nonisolated func locationManagerDidChangeAuthorization(_ manager: CLLocationManager) {
+        let status = manager.authorizationStatus
+        guard status == .authorizedWhenInUse else { return }
+        Task {
+            await requestAlwaysAuthorizationUpgradeIfNeeded()
+        }
+    }
+
     nonisolated func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
         guard let location = locations.last else { return }
         Task {
