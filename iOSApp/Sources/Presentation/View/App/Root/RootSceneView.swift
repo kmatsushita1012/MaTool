@@ -13,6 +13,7 @@ import SwiftUI
 public struct RootSceneView: View {
     @Shared var launchState: LaunchState
     @State var status: StatusCheckResult?
+    @State private var hasLaunchedScene = false
     @Dependency(SceneUsecaseKey.self) var sceneUsecase
     @Dependency(\.values.isLiquidGlassEnabled) var isLiquidGlassEnabled
     
@@ -83,6 +84,8 @@ public struct RootSceneView: View {
         }
         .environment(\.isLiquidGlassDisabled, !isLiquidGlassEnabled)
         .task {
+            guard !hasLaunchedScene else { return }
+            hasLaunchedScene = true
             let (launchState, status) = await sceneUsecase.launch()
             self.$launchState.withLock { $0 = launchState }
             self.status = status
