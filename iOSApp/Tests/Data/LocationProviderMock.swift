@@ -8,6 +8,10 @@ import Dependencies
 @testable import iOSApp
 
 
-extension LocationProviderKey {
-    static let testValue: LocationProviderProtocol = LocationProvider()
+extension MapLocationProviderKey {
+    static let testValue: MapLocationProviderProtocol = MapLocationProvider()
+}
+
+extension BroadcastLocationProviderKey {
+    static let testValue: BroadcastLocationProviderProtocol = BroadcastLocationProvider()
 }
