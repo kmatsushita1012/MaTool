@@ -48,6 +48,7 @@ struct PublicMapFeature {
         case dismissTapped
         case contentSelected(Content)
         case routePrepared(District, Route.ID?)
+        case districtContentEvaluated(District, Bool)
         case districtLaunchReceived(AppResult<DistrictLaunchResult>)
         case errorCaught(AppError)
         case destination(PresentationAction<Destination.Action>)
@@ -132,7 +133,19 @@ struct PublicMapFeature {
                         mapRegion: state.$mapRegion
                     )
                 )
-                return .none
+                let hasDisplayableContent = state.destination?.route?.hasDisplayableContent ?? false
+                return .send(.districtContentEvaluated(district, hasDisplayableContent))
+            case .districtContentEvaluated(let district, let hasDisplayableContent):
+                if !hasDisplayableContent {
+                    state.alert = AlertFeature.notice("配信停止中です。")
+                }
+                return .run { [userRole = state.userRole, districtId = district.id] _ in
+                    await publicMapAdUsecase.handleDistrictSelectionResult(
+                        userRole: userRole,
+                        districtId: districtId,
+                        hasDisplayableContent: hasDisplayableContent
+                    )
+                }
             case .errorCaught(let error):
                 state.alert = .error(error)
                 return .none
@@ -168,7 +181,6 @@ struct PublicMapFeature {
     ) -> Effect<Action> {
         .task(Action.districtLaunchReceived) {
             let routeId = try await publicMapAdUsecase.handleDistrictSelection(
-                userRole: userRole,
                 districtId: district.id,
                 periodId: periodId
             )

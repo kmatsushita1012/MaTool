@@ -21,7 +21,8 @@ extension DependencyValues {
 
 protocol PublicMapAdUsecaseProtocol: Sendable {
     func prepareSession() async
-    func handleDistrictSelection(userRole: UserRole, districtId: District.ID, periodId: Period.ID?) async throws -> Route.ID?
+    func handleDistrictSelection(districtId: District.ID, periodId: Period.ID?) async throws -> Route.ID?
+    func handleDistrictSelectionResult(userRole: UserRole, districtId: District.ID, hasDisplayableContent: Bool) async
     func handlePeriodSelection(userRole: UserRole, districtId: District.ID) async
 }
 
@@ -89,17 +90,26 @@ actor PublicMapAdUsecase: PublicMapAdUsecaseProtocol {
     }
 
     func handleDistrictSelection(
-        userRole: UserRole,
         districtId: District.ID,
         periodId: Period.ID?
     ) async throws -> Route.ID? {
-        let routeId = try await sceneDataFetcher.launchDistrict(
+        try await sceneDataFetcher.launchDistrict(
             districtId: districtId,
             periodId: periodId,
             clearsExistingData: false
         )
+    }
+
+    func handleDistrictSelectionResult(
+        userRole: UserRole,
+        districtId: District.ID,
+        hasDisplayableContent: Bool
+    ) async {
+        guard hasDisplayableContent else {
+            await adManager.preloadInterstitial(for: .publicMapInterstitial)
+            return
+        }
         await evaluateAndMaybePresent(userRole: userRole, districtId: districtId)
-        return routeId
     }
 
     func handlePeriodSelection(userRole: UserRole, districtId: District.ID) async {

@@ -159,6 +159,9 @@ struct PublicRouteFeature {
 }
 
 extension PublicRouteFeature.State {
+    var hasDisplayableContent: Bool {
+        !routes.isEmpty || float != nil
+    }
     
     init(
         _ district: District,
