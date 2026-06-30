@@ -77,10 +77,10 @@ struct HomeFeature {
                 if let districtId = userDefaults.defaultDistrictId,
                    let district = FetchOne(District.find(districtId)).wrappedValue
                 {
-                    state.destination = .map(.init(festival: festival, district: district, routeId: state.currentRouteId))
+                    state.destination = .map(.init(festival: festival, district: district, routeId: state.currentRouteId, userRole: state.userRole))
                     return .none
                 } else {
-                    state.destination = .map(.init(festival: festival))
+                    state.destination = .map(.init(festival: festival, userRole: state.userRole))
                     return .none
                 }
             case .infoTapped:
@@ -128,11 +128,11 @@ struct HomeFeature {
             case .destination(.presented(.info(.mapRequested(let request)))):
                 switch request {
                 case .locations(let festival):
-                    state.destination = .map(.init(festival: festival))
+                    state.destination = .map(.init(festival: festival, userRole: state.userRole))
                     return .none
                 case .route(let festival, let district, let routeId):
                     state.currentRouteId = routeId
-                    state.destination = .map(.init(festival: festival, district: district, routeId: routeId))
+                    state.destination = .map(.init(festival: festival, district: district, routeId: routeId, userRole: state.userRole))
                     return .none
                 }
             case .destination(.presented(.adminDistrict(.signOutReceived(.success(let userRole))))),
