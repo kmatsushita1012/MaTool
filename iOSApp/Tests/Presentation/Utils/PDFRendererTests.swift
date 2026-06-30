@@ -38,6 +38,19 @@ struct PDFRendererTests {
         #expect(longFontSize >= 9)
     }
 
+    @Test func 行動表文字は最小フォントでも収まらない場合に折り返す() {
+        let layout = ActionTableTextFitter.layout(
+            for: "とても長いRoutePassageの説明テキスト",
+            maxFontSize: 15,
+            minFontSize: 9,
+            width: 40,
+            height: 24
+        )
+
+        #expect(layout.fontSize == 9)
+        #expect(layout.shouldWrap)
+    }
+
     @Test @MainActor func 行動表は自町の通過町を自町と表示する() {
         let district = District(id: "district-1", name: "中央町", festivalId: "festival-1")
         let route = Route(id: "route-1", districtId: district.id, periodId: "period-1")
