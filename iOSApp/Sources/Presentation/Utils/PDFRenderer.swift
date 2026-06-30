@@ -81,6 +81,11 @@ struct ActionTableLineLayout {
 }
 
 enum ActionTableTextFitter {
+    struct Layout {
+        let fontSize: CGFloat
+        let shouldWrap: Bool
+    }
+
     static func fontSize(
         for text: String,
         maxFontSize: CGFloat,
@@ -99,6 +104,27 @@ enum ActionTableTextFitter {
         }
 
         return minFontSize
+    }
+
+    static func layout(
+        for text: String,
+        maxFontSize: CGFloat,
+        minFontSize: CGFloat,
+        width: CGFloat,
+        height: CGFloat,
+        weight: UIFont.Weight = .medium
+    ) -> Layout {
+        let fittedFontSize = fontSize(
+            for: text,
+            maxFontSize: maxFontSize,
+            minFontSize: minFontSize,
+            width: width,
+            weight: weight
+        )
+        let font = UIFont.systemFont(ofSize: fittedFontSize, weight: weight)
+        let measuredWidth = (text as NSString).size(withAttributes: [.font: font]).width
+        let shouldWrap = measuredWidth > width && height >= (font.lineHeight * 2)
+        return Layout(fontSize: fittedFontSize, shouldWrap: shouldWrap)
     }
 }
 
@@ -261,13 +287,19 @@ struct ActionTableSnapshotter: Sendable {
             let entryIndex = baseIndex + column
             guard entryIndex < entries.count else { continue }
             let cellRect = layout.textRects[column]
-            let fontSize = ActionTableTextFitter.fontSize(
+            let textLayout = ActionTableTextFitter.layout(
                 for: entries[entryIndex],
                 maxFontSize: rowFontSize,
                 minFontSize: minimumRowFontSize,
-                width: max(cellRect.width - 8, 0)
+                width: max(cellRect.width - 8, 0),
+                height: max(cellRect.height - 4, 0)
             )
-            drawCenteredText(entries[entryIndex], in: cellRect, fontSize: fontSize)
+            drawCenteredText(
+                entries[entryIndex],
+                in: cellRect,
+                fontSize: textLayout.fontSize,
+                wraps: textLayout.shouldWrap
+            )
         }
     }
 
@@ -286,19 +318,47 @@ struct ActionTableSnapshotter: Sendable {
         }
     }
 
-    private func drawCenteredText(_ text: String, in rect: CGRect, fontSize: CGFloat) {
+    private func drawCenteredText(_ text: String, in rect: CGRect, fontSize: CGFloat, wraps: Bool = false) {
         let paragraph = NSMutableParagraphStyle()
         paragraph.alignment = .center
-        paragraph.lineBreakMode = .byTruncatingTail
+        paragraph.lineBreakMode = wraps ? .byCharWrapping : .byTruncatingTail
         let attrs: [NSAttributedString.Key: Any] = [
             .font: UIFont.systemFont(ofSize: fontSize, weight: .medium),
             .foregroundColor: UIColor.black,
             .paragraphStyle: paragraph
         ]
-        let drawRect = CGRect(
+        let availableRect = CGRect(
             x: rect.minX + 4,
-            y: rect.midY - (fontSize + 8) / 2,
+            y: rect.minY + 2,
             width: rect.width - 8,
+            height: rect.height - 4
+        )
+        if wraps {
+            let boundingRect = (text as NSString).boundingRect(
+                with: availableRect.size,
+                options: [.usesLineFragmentOrigin, .usesFontLeading],
+                attributes: attrs,
+                context: nil
+            )
+            let drawRect = CGRect(
+                x: availableRect.minX,
+                y: availableRect.midY - min(boundingRect.height, availableRect.height) / 2,
+                width: availableRect.width,
+                height: availableRect.height
+            )
+            (text as NSString).draw(
+                with: drawRect,
+                options: [.usesLineFragmentOrigin, .usesFontLeading],
+                attributes: attrs,
+                context: nil
+            )
+            return
+        }
+
+        let drawRect = CGRect(
+            x: availableRect.minX,
+            y: rect.midY - (fontSize + 8) / 2,
+            width: availableRect.width,
             height: fontSize + 10
         )
         (text as NSString).draw(in: drawRect, withAttributes: attrs)
