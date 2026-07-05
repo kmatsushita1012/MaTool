@@ -85,7 +85,7 @@ private func makeUsecase(
         $0.authService = AuthServiceMock()
         $0.appStatusClient = AppStatusClientMock()
         $0.festivalDataFetcher = festivalDataFetcher
-        $0.sceneDataFetcher = sceneDataFetcher
+        $0[SceneDataFetcherKey.self] = sceneDataFetcher
     } operation: {
         SceneUsecase(userDefaults: userDefaults)
     }
