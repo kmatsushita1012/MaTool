@@ -212,24 +212,162 @@
 - `iOSApp/Sources/Data/Client/UserDefaultsClient.swift`
 - `iOSApp/Sources/Data/...` 配下の新規広告関連ファイル
 
-## テスト観点
+## テスト計画
 
-### ユースケース
+### 1. 目的
 
-1. 本部権限では常に広告が抑止される。
-2. お気に入り登録済み町では広告が出ない。
-3. お気に入り外の町では 3回に1回表示される。
-4. 各町権限ユーザーは自町で広告が出ない。
-5. お気に入りも権限もない guest は最初の5回をスキップし、その後 3回に1回表示される。
-6. `現在地一覧` はカウントにも表示にも含まれない。
-7. API失敗時は広告が表示されない。
+- 広告表示条件が要件どおりに動作することを確認する。
+- PublicMap の既存挙動を壊さずに広告導線が追加されていることを確認する。
+- 「配信停止中」のような表示不能ケースで広告カウントが進まないことを確認する。
+- バナー追加によって詳細シートのレイアウトや操作性が崩れないことを確認する。
 
-### Presentation
+### 2. テストレベル
 
-1. 町タブ切替時に既存のルート読込が維持される。
-2. period切替時に広告判定が呼ばれる。
-3. `PointView` / `LocationView` のシート本文直下にバナー領域が出る。
-4. バナー未ロード時もシートレイアウトが崩れない。
+- Unit Test
+  - 広告ポリシー
+  - PublicMap 向け広告ユースケース
+  - 起動時 / 町切替時の例外系判定
+- Integration Test
+  - `PublicMapFeature` と `PublicRouteFeature` のイベント接続
+  - `SceneDataFetcher` 成功 / 失敗時の広告制御
+- Manual Test
+  - Simulator / 実機でのインタースティシャル表示タイミング
+  - シート内バナーの見え方
+  - 広告表示後の画面復帰と状態維持
+
+### 3. 実施順
+
+1. Unit Test で広告表示条件とカウント条件を固定する。
+2. Feature レベルで町切替 / period切替 / 配信停止中ケースの導線を確認する。
+3. Manual Test で AdMob 実表示時の復帰、導線、レイアウトを確認する。
+4. リリース前確認で development 用広告 ID と production 用広告 ID の設定差分を確認する。
+
+### 4. 完了条件
+
+- 主要な広告判定ロジックが Unit Test で再現できる。
+- PublicMap の「町切替」「period切替」「現在地一覧」が想定どおり分岐する。
+- 配信停止中ケースでアラート表示と広告カウント抑止の両方が確認できる。
+- バナー表示有無で `PointView` / `LocationView` のコンテンツが崩れない。
+
+## テストケース
+
+### A. 広告ポリシー Unit Test
+
+1. 本部権限では広告を表示しない
+   - 条件: `UserRole.headquarter`
+   - 期待: `shouldShowInterstitial == false`
+   - 期待: カウントは増えない
+
+2. お気に入り町では広告を表示しない
+   - 条件: `targetDistrictId == defaultDistrictId`
+   - 期待: `shouldShowInterstitial == false`
+   - 期待: カウントは増えない
+
+3. 各町権限ユーザーの自町では広告を表示しない
+   - 条件: `UserRole.district(selfDistrictId)` かつ `targetDistrictId == selfDistrictId`
+   - 期待: `shouldShowInterstitial == false`
+   - 期待: カウントは増えない
+
+4. お気に入り外の町では 3回に1回表示する
+   - 条件: お気に入りあり、遷移先はお気に入り外
+   - 期待: 1回目・2回目は非表示、3回目で表示
+
+5. お気に入りも権限もない guest は最初の5回をスキップする
+   - 条件: `favoriteDistrictId == nil` かつ `UserRole.guest`
+   - 期待: 1回目から5回目まで非表示
+
+6. お気に入りも権限もない guest は 6回目以降 3回に1回表示する
+   - 条件: 上記継続
+   - 期待: 6回目で表示、7回目・8回目は非表示、9回目で表示
+
+### B. PublicMapAdUsecase Unit Test
+
+1. 町切替 API 成功時は routeId を返す
+   - 条件: `launchDistrict` 成功
+   - 期待: `routeId` が呼び出し元へ返る
+
+2. 町切替 API 失敗時は広告表示しない
+   - 条件: `launchDistrict` 失敗
+   - 期待: `presentInterstitial` が呼ばれない
+   - 期待: カウントは増えない
+
+3. 表示可能コンテンツがない町では広告カウントを進めない
+   - 条件: `routes.isEmpty && float == nil`
+   - 期待: `handleDistrictSelectionResult(..., hasDisplayableContent: false)` でカウント不変
+   - 期待: `presentInterstitial` が呼ばれない
+
+4. 表示可能コンテンツがある町では広告判定を進める
+   - 条件: `routes` または `float` が存在
+   - 期待: カウント更新と表示判定が走る
+
+5. period切替では API 成功 / 失敗に依存せず広告判定を行う
+   - 条件: `handlePeriodSelection(...)`
+   - 期待: カウントと表示判定のみ実行される
+
+### C. PublicMapFeature / Presentation Test
+
+1. 初回表示でルートも現在地もない場合にアラートが出る
+   - 条件: `destination.route.routes.isEmpty && destination.route.float == nil`
+   - 期待: `AlertFeature.notice("配信停止中です。")`
+
+2. 町タブ切替後にルートも現在地もない場合にアラートが出る
+   - 条件: 町切替後の `routePrepared` 時点で表示可能コンテンツなし
+   - 期待: アラートが表示される
+   - 期待: 広告カウントは増えない
+
+3. 町タブ切替後にルートまたは現在地がある場合は通常表示される
+   - 条件: `routes` または `float` が存在
+   - 期待: アラートなし
+   - 期待: 広告判定のみ実行される
+
+4. `現在地一覧` 切替では広告カウントを進めない
+   - 条件: `contentSelected(.locations)`
+   - 期待: 広告表示なし
+   - 期待: カウント不変
+
+5. 同じタブの再タップでは広告カウントを進めない
+   - 条件: 既に選択中のタブを再タップ
+   - 期待: イベント不発
+   - 期待: カウント不変
+
+6. period切替時に広告判定が呼ばれる
+   - 条件: `destination(.presented(.route(.selected(...))))`
+   - 期待: `handlePeriodSelection(...)` が呼ばれる
+
+### D. 詳細シート / バナー Manual Test
+
+1. `PointView` 表示時に本文直下へバナー領域が出る
+   - 条件: バナー広告ロード成功
+   - 期待: テキスト直下に広告が出る
+   - 期待: CTA や本文が隠れない
+
+2. `LocationView` 表示時に本文直下へバナー領域が出る
+   - 条件: バナー広告ロード成功
+   - 期待: レイアウト崩れなし
+
+3. バナー未ロード時に高さゼロ相当で崩れない
+   - 条件: 広告ロード失敗または unit ID 無効
+   - 期待: シート本文だけが表示される
+   - 期待: 不自然な余白が残らない
+
+4. シートの detent 切替でバナーが重ならない
+   - 条件: `.fraction(0.3)`, `.medium`, `.large`
+   - 期待: いずれも本文スクロールやタップを阻害しない
+
+### E. 運用確認 Manual Test
+
+1. インタースティシャル表示後に Onboarding へ戻らない
+   - 条件: 広告を閉じる
+   - 期待: 直前の PublicMap / Home 導線へ復帰
+   - 期待: `defaultFestivalId` / `defaultDistrictId` が維持される
+
+2. アプリ再起動後も保存済み festival / district が維持される
+   - 条件: 広告表示後にアプリ再起動
+   - 期待: onboarding へ戻らない
+
+3. 配信停止中の町を跨いでも広告の表示タイミングが前倒しされない
+   - 条件: カウント対象町と配信停止中町を交互に切替
+   - 期待: 配信停止中町の訪問でカウントは進まない
 
 ## 受け入れ条件
 
