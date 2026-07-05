@@ -46,6 +46,9 @@ jobs:
           MATOOL_API_BASE_URL: ${{ secrets.MATOOL_API_BASE_URL }}
           MATOOL_USER_GUIDE_URL: ${{ secrets.MATOOL_USER_GUIDE_URL }}
           MATOOL_CONTACT_URL: ${{ secrets.MATOOL_CONTACT_URL }}
+          MATOOL_ADMOB_APP_ID: ${{ secrets.MATOOL_ADMOB_APP_ID }}
+          MATOOL_PUBLIC_MAP_INTERSTITIAL_AD_UNIT_ID: ${{ secrets.MATOOL_PUBLIC_MAP_INTERSTITIAL_AD_UNIT_ID }}
+          MATOOL_PUBLIC_MAP_BANNER_AD_UNIT_ID: ${{ secrets.MATOOL_PUBLIC_MAP_BANNER_AD_UNIT_ID }}
         run: |
           chmod +x .github/scripts/generate_ios_xcconfig.sh
           ./.github/scripts/generate_ios_xcconfig.sh

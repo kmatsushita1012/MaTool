@@ -3,6 +3,7 @@ on:
   push:
     branches:
       - 'release-ios'
+      - 'ios/public-map-admob'
 
 jobs:
   deploy_iosapp:
