@@ -64,6 +64,7 @@ jobs:
             -destination 'generic/platform=iOS' \
             -derivedDataPath iOSApp/.derivedData \
             -skipMacroValidation \
+            -skipPackagePluginValidation \
             CODE_SIGNING_ALLOWED=NO \
             ENABLE_SWIFT_MACROS=YES
 
