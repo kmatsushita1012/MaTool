@@ -54,6 +54,7 @@ jobs:
           xcodebuild \
             -project iOSApp/MaTool.xcodeproj \
             -scheme iOSApp \
+            -skipPackagePluginValidation \
             -resolvePackageDependencies
 
       - name: Select latest plain iPhone simulator
