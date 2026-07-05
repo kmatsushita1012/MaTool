@@ -5,13 +5,14 @@
 //  Created by Codex on 2026/06/30.
 //
 
-import XCTest
 import Dependencies
 import Shared
+import Testing
 @testable import iOSApp
 
-final class SceneUsecaseLaunchTests: XCTestCase {
-    func test起動失敗が一時的なエラーなら保存済み選択を消さない() async {
+struct SceneUsecaseLaunchTests {
+    @Test("起動失敗が一時的なエラーなら保存済み選択を消さない")
+    func 起動失敗が一時的なエラーなら保存済み選択を消さない() async {
         let userDefaults = InMemoryUserDefaultsManager(
             defaultFestivalId: "festival-a",
             defaultDistrictId: "district-a"
@@ -23,28 +24,27 @@ final class SceneUsecaseLaunchTests: XCTestCase {
             }
         )
 
-        let usecase = withDependencies {
-            $0.authService = AuthServiceMock()
-            $0.appStatusClient = AppStatusClientMock()
-            $0.festivalDataFetcher = festivalDataFetcher
-            $0.sceneDataFetcher = sceneDataFetcher
-        } operation: {
-            SceneUsecase(userDefaults: userDefaults)
-        }
+        let usecase = makeUsecase(
+            userDefaults: userDefaults,
+            festivalDataFetcher: festivalDataFetcher,
+            sceneDataFetcher: sceneDataFetcher
+        )
 
         let (launchState, _) = await usecase.launch()
 
-        if case .error(let message) = launchState {
-            XCTAssertEqual(message, "network")
-        } else {
-            XCTFail("error になる想定でした")
+        switch launchState {
+        case .error(let message):
+            #expect(message == "network")
+        default:
+            Issue.record("error になる想定でした")
         }
-        XCTAssertEqual(userDefaults.defaultFestivalId, "festival-a")
-        XCTAssertEqual(userDefaults.defaultDistrictId, "district-a")
-        XCTAssertFalse(await festivalDataFetcher.didFetchAll())
+        #expect(userDefaults.defaultFestivalId == "festival-a")
+        #expect(userDefaults.defaultDistrictId == "district-a")
+        #expect(await festivalDataFetcher.didFetchAll() == false)
     }
 
-    func test起動失敗がnotFoundなら保存済み選択を消してonboardingに戻す() async {
+    @Test("起動失敗が notFound なら保存済み選択を消して onboarding に戻す")
+    func 起動失敗がnotFoundなら保存済み選択を消してonboardingに戻す() async {
         let userDefaults = InMemoryUserDefaultsManager(
             defaultFestivalId: "festival-a",
             defaultDistrictId: "district-a"
@@ -56,24 +56,38 @@ final class SceneUsecaseLaunchTests: XCTestCase {
             }
         )
 
-        let usecase = withDependencies {
-            $0.authService = AuthServiceMock()
-            $0.appStatusClient = AppStatusClientMock()
-            $0.festivalDataFetcher = festivalDataFetcher
-            $0.sceneDataFetcher = sceneDataFetcher
-        } operation: {
-            SceneUsecase(userDefaults: userDefaults)
-        }
+        let usecase = makeUsecase(
+            userDefaults: userDefaults,
+            festivalDataFetcher: festivalDataFetcher,
+            sceneDataFetcher: sceneDataFetcher
+        )
 
         let (launchState, _) = await usecase.launch()
 
-        if case .onboarding = launchState {
-        } else {
-            XCTFail("onboarding に戻る想定でした")
+        switch launchState {
+        case .onboarding:
+            break
+        default:
+            Issue.record("onboarding に戻る想定でした")
         }
-        XCTAssertNil(userDefaults.defaultFestivalId)
-        XCTAssertNil(userDefaults.defaultDistrictId)
-        XCTAssertTrue(await festivalDataFetcher.didFetchAll())
+        #expect(userDefaults.defaultFestivalId == nil)
+        #expect(userDefaults.defaultDistrictId == nil)
+        #expect(await festivalDataFetcher.didFetchAll())
+    }
+}
+
+private func makeUsecase(
+    userDefaults: InMemoryUserDefaultsManager,
+    festivalDataFetcher: FestivalDataFetcherMock,
+    sceneDataFetcher: SceneDataFetcherMock
+) -> SceneUsecase {
+    withDependencies {
+        $0.authService = AuthServiceMock()
+        $0.appStatusClient = AppStatusClientMock()
+        $0.festivalDataFetcher = festivalDataFetcher
+        $0.sceneDataFetcher = sceneDataFetcher
+    } operation: {
+        SceneUsecase(userDefaults: userDefaults)
     }
 }
 
@@ -103,10 +117,20 @@ private actor FestivalDataFetcherMock: FestivalDataFetcherProtocol {
     }
 }
 
-private struct SceneDataFetcherMock: SceneDataFetcherProtocol {
-    var launchFestivalHandler: @Sendable (Festival.ID) async throws -> Void = { _ in }
-    var launchFestivalFromDistrictHandler: @Sendable (District.ID) async throws -> Festival.ID = { _ in "festival-a" }
-    var launchDistrictHandler: @Sendable (District.ID, Period.ID?, Bool) async throws -> Route.ID? = { _, _, _ in nil }
+private struct SceneDataFetcherMock: SceneDataFetcherProtocol, Sendable {
+    let launchFestivalHandler: @Sendable (Festival.ID) async throws -> Void
+    let launchFestivalFromDistrictHandler: @Sendable (District.ID) async throws -> Festival.ID
+    let launchDistrictHandler: @Sendable (District.ID, Period.ID?, Bool) async throws -> Route.ID?
+
+    init(
+        launchFestivalHandler: @escaping @Sendable (Festival.ID) async throws -> Void = { _ in },
+        launchFestivalFromDistrictHandler: @escaping @Sendable (District.ID) async throws -> Festival.ID = { _ in "festival-a" },
+        launchDistrictHandler: @escaping @Sendable (District.ID, Period.ID?, Bool) async throws -> Route.ID? = { _, _, _ in nil }
+    ) {
+        self.launchFestivalHandler = launchFestivalHandler
+        self.launchFestivalFromDistrictHandler = launchFestivalFromDistrictHandler
+        self.launchDistrictHandler = launchDistrictHandler
+    }
 
     func launchFestival(festivalId: Festival.ID, clearsExistingData: Bool) async throws {
         try await launchFestivalHandler(festivalId)
@@ -121,7 +145,7 @@ private struct SceneDataFetcherMock: SceneDataFetcherProtocol {
     }
 }
 
-private struct AuthServiceMock: AuthServiceProtocol {
+private struct AuthServiceMock: AuthServiceProtocol, Sendable {
     func initialize() throws {}
     func signIn(_ username: String, password: String) async throws -> SignInState { .signedIn(.guest) }
     func confirmSignIn(password: String) async throws -> UserRole { .guest }
@@ -136,7 +160,7 @@ private struct AuthServiceMock: AuthServiceProtocol {
     func getUserRole() async throws -> UserRole { .guest }
 }
 
-private struct AppStatusClientMock: AppStatusClientProtocol {
+private struct AppStatusClientMock: AppStatusClientProtocol, Sendable {
     func checkStatus() async -> StatusCheckResult? { nil }
     func checkStatus(currentVersion: String) async -> StatusCheckResult? { nil }
     static func getCurrentVersion() -> String { "1.0.0" }

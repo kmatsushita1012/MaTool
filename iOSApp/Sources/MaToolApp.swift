@@ -10,7 +10,6 @@ import SwiftUI
 @main
 struct MaToolApp: App {
 
-
     var body: some Scene {
         WindowGroup {
             RootSceneView()
