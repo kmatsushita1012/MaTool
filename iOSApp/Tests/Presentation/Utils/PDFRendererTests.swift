@@ -9,14 +9,14 @@ struct PDFRendererTests {
     @Test func PDFファイル名はorderに1を足した値を先頭に付ける() {
         let district = District(id: "district-1", name: "中央町", festivalId: "festival-1", order: 0)
 
-        #expect(district.pdfFileName() == "(1) 中央町.pdf")
-        #expect(district.pdfFileName(suffix: "_行動表") == "(1) 中央町_行動表.pdf")
+        #expect(district.pdfFileName() == "1 中央町.pdf")
+        #expect(district.pdfFileName(suffix: "_行動表") == "1 中央町_行動表.pdf")
     }
 
     @Test func PDFファイル名はorderが0始まりでも1始まりで表示する() {
         let district = District(id: "district-1", name: "中央町", festivalId: "festival-1", order: 4)
 
-        #expect(district.pdfFileName() == "(5) 中央町.pdf")
+        #expect(district.pdfFileName() == "5 中央町.pdf")
     }
 
     @Test func 行動表レイアウトは矢印用の余白を確保する() {
