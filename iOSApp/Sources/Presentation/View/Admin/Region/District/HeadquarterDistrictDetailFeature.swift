@@ -206,6 +206,11 @@ extension HeadquarterDistrictDetailFeature.State {
     var isTableExportLoading: Bool {
         activeExportKind == .table
     }
+
+    var displayedOrder: Int {
+        get { district.order + 1 }
+        set { district.order = max(0, newValue - 1) }
+    }
 }
 
 extension HeadquarterDistrictDetailFeature.Destination.State: Equatable {}

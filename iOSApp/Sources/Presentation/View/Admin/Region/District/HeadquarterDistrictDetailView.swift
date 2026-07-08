@@ -17,7 +17,7 @@ struct HeadquarterDistrictDetailView: View {
         List {
             Section {
                 LabeledContent("順序") {
-                    TextField("（整数）" ,value: $store.district.order, format: .number)
+                    TextField("（1始まりの整数）" ,value: $store.displayedOrder, format: .number)
                         .keyboardType(.numberPad)
                         .multilineTextAlignment(.trailing)
                 }

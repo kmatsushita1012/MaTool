@@ -94,7 +94,7 @@ extension Period {
 
 extension District {
     func pdfFileName(suffix: String = "") -> String {
-        let baseName = group.map { "(\($0)) \(name)" } ?? name
+        let baseName = "(\(order + 1)) \(name)"
         return "\(baseName)\(suffix).pdf"
     }
 }
