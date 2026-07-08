@@ -92,10 +92,10 @@ struct HeadquarterDistrictDetailFeature {
                 }
             case .batchExportTapped:
                 state.activeExportKind = .submission
-                return exportEffect(state: state, path: "\(state.district.name).pdf", includesRouteMap: true)
+                return exportEffect(state: state, path: state.district.pdfFileName(), includesRouteMap: true)
             case .tableExportTapped:
                 state.activeExportKind = .table
-                return exportEffect(state: state, path: "\(state.district.name)_行動表.pdf", includesRouteMap: false)
+                return exportEffect(state: state, path: state.district.pdfFileName(suffix: "_行動表"), includesRouteMap: false)
             case .resetDraftsTapped:
                 guard !state.routeDrafts.isEmpty else { return .none }
                 state.routeDrafts = [:]

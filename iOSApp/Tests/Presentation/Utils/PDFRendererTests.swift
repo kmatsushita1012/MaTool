@@ -6,6 +6,19 @@ import Shared
 
 
 struct PDFRendererTests {
+    @Test func PDFファイル名はgroupがあると先頭に付く() {
+        let district = District(id: "district-1", name: "中央町", festivalId: "festival-1", group: "1組")
+
+        #expect(district.pdfFileName() == "(1組) 中央町.pdf")
+        #expect(district.pdfFileName(suffix: "_行動表") == "(1組) 中央町_行動表.pdf")
+    }
+
+    @Test func PDFファイル名はgroupがnilなら町名のみを使う() {
+        let district = District(id: "district-1", name: "中央町", festivalId: "festival-1", group: nil)
+
+        #expect(district.pdfFileName() == "中央町.pdf")
+    }
+
     @Test func 行動表レイアウトは矢印用の余白を確保する() {
         let rect = CGRect(x: 0, y: 0, width: 250, height: 24)
         let layout = ActionTableLineLayout(rect: rect, columns: 5, arrowWidth: 20)

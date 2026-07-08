@@ -91,3 +91,10 @@ extension Period {
         "\(date.year)-\(date.month)-\(date.day)-\(title)"
     }
 }
+
+extension District {
+    func pdfFileName(suffix: String = "") -> String {
+        let baseName = group.map { "(\($0)) \(name)" } ?? name
+        return "\(baseName)\(suffix).pdf"
+    }
+}

@@ -145,7 +145,7 @@ struct HeadquarterDistrictListFeature {
             //非同期並列にするとBEでアクセス過多
             for district in state.districts {
                 let suffix = includesRouteMap ? "" : "_行動表"
-                let renderer = await PDFRenderer(path: "\(district.name)\(suffix).pdf")
+                let renderer = await PDFRenderer(path: district.pdfFileName(suffix: suffix))
                 guard let _ =  try? await routeDataFetcher.fetchAll(districtID: district.id, query: .year(2025)) else { continue }
                 let slots: [RouteSlot] = FetchAll(districtId: district.id, latest: true).wrappedValue
                 let routes = slots.compactMap(\.route)
