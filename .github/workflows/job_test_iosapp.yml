@@ -107,6 +107,7 @@ jobs:
             -derivedDataPath iOSApp/.derivedData \
             -enableCodeCoverage YES \
             -skipMacroValidation \
+            -skipPackagePluginValidation \
             CODE_SIGNING_ALLOWED=NO \
             ENABLE_SWIFT_MACROS=YES \
             test \
