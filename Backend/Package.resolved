@@ -1,5 +1,5 @@
 {
-  "originHash" : "d7f710db5165358e623540378b4df93f6f5a70e9feeef4fe95170f1b2a6afe55",
+  "originHash" : "755094acb1935f25e06b4ebf2a6c6bd6859fd6bee746b1e8d6a47eb7e403b156",
   "pins" : [
     {
       "identity" : "aws-crt-swift",
@@ -213,8 +213,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/pointfreeco/swift-dependencies",
       "state" : {
-        "revision" : "8dc1fbf2f6255a73dec53b4648164884898db4c5",
-        "version" : "1.14.1"
+        "revision" : "a10f9feeb214bc72b5337b6ef6d5a029360db4cc",
+        "version" : "1.10.0"
       }
     },
     {
