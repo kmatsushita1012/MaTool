@@ -105,6 +105,10 @@ private struct AdMobBannerView: UIViewRepresentable {
     }
 }
 
+#if canImport(GoogleMobileAds)
+extension AdMobBannerView.Coordinator: BannerViewDelegate {}
+#endif
+
 private extension UIApplication {
     func topViewController(
         base: UIViewController? = UIApplication.shared.connectedScenes
