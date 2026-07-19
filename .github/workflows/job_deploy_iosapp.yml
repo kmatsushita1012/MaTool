@@ -82,6 +82,39 @@ jobs:
         run: |
           xcodebuild -exportArchive -archivePath iOSApp/MaTool.xcarchive -exportOptionsPlist ExportOptions.plist -exportPath build/export -allowProvisioningUpdates -authenticationKeyPath `pwd`/private_keys/AuthKey_${{ secrets.APPLE_API_ISSUE_ID }}.p8 -authenticationKeyID ${{ secrets.APPLE_API_KEY_ID }} -authenticationKeyIssuerID ${{ secrets.APPLE_API_ISSUE_ID }}
 
+      - name: Re-sign embedded frameworks
+        run: |
+          set -euo pipefail
+
+          rm -rf build/resigned-ipa
+          mkdir -p build/resigned-ipa
+          unzip -q build/export/MaTool.ipa -d build/resigned-ipa
+
+          app_path="build/resigned-ipa/Payload/MaTool.app"
+          signing_identity="$(codesign -dvvv "$app_path" 2>&1 | sed -n 's/^Authority=//p' | grep -E '^(Apple Distribution|iPhone Distribution):' | head -n 1)"
+
+          if [ -z "$signing_identity" ]; then
+            echo "Distribution signing identity was not found on the exported app."
+            exit 1
+          fi
+
+          echo "Re-signing embedded frameworks with: $signing_identity"
+          while IFS= read -r -d '' framework; do
+            codesign --force --sign "$signing_identity" --timestamp=none "$framework"
+          done < <(find "$app_path/Frameworks" -type d -name '*.framework' -print0)
+
+          entitlements_path="$RUNNER_TEMP/MaTool.entitlements.plist"
+          codesign -d --entitlements :- "$app_path" 2>/dev/null > "$entitlements_path"
+          codesign_args=(--force --sign "$signing_identity" --timestamp=none)
+          if [ -s "$entitlements_path" ]; then
+            codesign_args+=(--entitlements "$entitlements_path")
+          fi
+          codesign "${codesign_args[@]}" "$app_path"
+
+          codesign --verify --deep --strict --verbose=4 "$app_path"
+          rm -f build/export/MaTool.ipa
+          (cd build/resigned-ipa && zip -qry ../export/MaTool.ipa Payload)
+
       - name: Upload to App Store Connect
         run: |
           xcrun altool --upload-app -f build/export/MaTool.ipa -t ios -u ${{ secrets.APPLE_ID }} -p ${{ secrets.APP_SPECIFIC_PASSWORD }} --type ios
