@@ -33,6 +33,101 @@ final class PDFRenderer: Sendable {
     }
 }
 
+struct ActionTableLineLayout {
+    let textRects: [CGRect]
+    let arrowRects: [CGRect]
+
+    init(rect: CGRect, columns: Int, arrowWidth: CGFloat = 20) {
+        guard columns > 0 else {
+            self.textRects = []
+            self.arrowRects = []
+            return
+        }
+
+        let arrowCount = max(columns - 1, 0)
+        let totalArrowWidth = CGFloat(arrowCount) * arrowWidth
+        let textWidth = max((rect.width - totalArrowWidth) / CGFloat(columns), 0)
+
+        var textRects: [CGRect] = []
+        var arrowRects: [CGRect] = []
+        var currentX = rect.minX
+
+        for index in 0..<columns {
+            textRects.append(
+                CGRect(
+                    x: currentX,
+                    y: rect.minY,
+                    width: textWidth,
+                    height: rect.height
+                )
+            )
+            currentX += textWidth
+
+            guard index < arrowCount else { continue }
+            arrowRects.append(
+                CGRect(
+                    x: currentX,
+                    y: rect.minY,
+                    width: arrowWidth,
+                    height: rect.height
+                )
+            )
+            currentX += arrowWidth
+        }
+
+        self.textRects = textRects
+        self.arrowRects = arrowRects
+    }
+}
+
+enum ActionTableTextFitter {
+    struct Layout {
+        let fontSize: CGFloat
+        let shouldWrap: Bool
+    }
+
+    static func fontSize(
+        for text: String,
+        maxFontSize: CGFloat,
+        minFontSize: CGFloat,
+        width: CGFloat,
+        weight: UIFont.Weight = .medium
+    ) -> CGFloat {
+        guard !text.isEmpty, width > 0 else { return minFontSize }
+
+        for size in stride(from: maxFontSize, through: minFontSize, by: -1) {
+            let font = UIFont.systemFont(ofSize: size, weight: weight)
+            let measuredWidth = (text as NSString).size(withAttributes: [.font: font]).width
+            if measuredWidth <= width {
+                return size
+            }
+        }
+
+        return minFontSize
+    }
+
+    static func layout(
+        for text: String,
+        maxFontSize: CGFloat,
+        minFontSize: CGFloat,
+        width: CGFloat,
+        height: CGFloat,
+        weight: UIFont.Weight = .medium
+    ) -> Layout {
+        let fittedFontSize = fontSize(
+            for: text,
+            maxFontSize: maxFontSize,
+            minFontSize: minFontSize,
+            width: width,
+            weight: weight
+        )
+        let font = UIFont.systemFont(ofSize: fittedFontSize, weight: weight)
+        let measuredWidth = (text as NSString).size(withAttributes: [.font: font]).width
+        let shouldWrap = measuredWidth > width && height >= (font.lineHeight * 2)
+        return Layout(fontSize: fittedFontSize, shouldWrap: shouldWrap)
+    }
+}
+
 @MainActor
 struct ActionTableSnapshotter: Sendable {
     private struct Row: Sendable {
@@ -42,17 +137,21 @@ struct ActionTableSnapshotter: Sendable {
 
     private let district: District
     private let slots: [RouteSlot]
+    private let passagesByRouteID: [Route.ID: [RoutePassage]]
     private let linesPerPeriod = 5
     private let columnsPerLine = 5
     private let pageLift: CGFloat = -48
     private let titleFontSize: CGFloat = 31
     private let subtitleFontSize: CGFloat = 22
     private let rowFontSize: CGFloat = 15
+    private let minimumRowFontSize: CGFloat = 9
     private let arrowFontSize: CGFloat = 16
+    private let arrowWidth: CGFloat = 20
 
-    init(district: District, slots: [RouteSlot]) {
+    init(district: District, slots: [RouteSlot], passagesByRouteID: [Route.ID: [RoutePassage]] = [:]) {
         self.district = district
         self.slots = slots
+        self.passagesByRouteID = passagesByRouteID
     }
 
     func takeAll() -> [UIImage] {
@@ -179,47 +278,87 @@ struct ActionTableSnapshotter: Sendable {
     }
 
     private func drawEntryTexts(_ entries: [String], baseIndex: Int, in rect: CGRect) {
-        let columnWidth = rect.width / CGFloat(columnsPerLine)
+        let layout = ActionTableLineLayout(
+            rect: rect,
+            columns: columnsPerLine,
+            arrowWidth: arrowWidth
+        )
         for column in 0..<columnsPerLine {
             let entryIndex = baseIndex + column
             guard entryIndex < entries.count else { continue }
-            let cellRect = CGRect(
-                x: rect.minX + CGFloat(column) * columnWidth,
-                y: rect.minY,
-                width: columnWidth,
-                height: rect.height
+            let cellRect = layout.textRects[column]
+            let textLayout = ActionTableTextFitter.layout(
+                for: entries[entryIndex],
+                maxFontSize: rowFontSize,
+                minFontSize: minimumRowFontSize,
+                width: max(cellRect.width - 8, 0),
+                height: max(cellRect.height - 4, 0)
             )
-            drawCenteredText(entries[entryIndex], in: cellRect, fontSize: rowFontSize)
+            drawCenteredText(
+                entries[entryIndex],
+                in: cellRect,
+                fontSize: textLayout.fontSize,
+                wraps: textLayout.shouldWrap
+            )
         }
     }
 
     private func drawArrowGuides(in rect: CGRect) {
-        // 5列の入力欄を想定し、矢印は列間(4箇所)に整列表示
-        let gapCount = max(columnsPerLine - 1, 1)
-        let bodyWidth = rect.width - 24
-        for index in 0..<gapCount {
-            let x = rect.minX + 12 + bodyWidth * CGFloat(index + 1) / CGFloat(columnsPerLine)
+        let layout = ActionTableLineLayout(
+            rect: rect,
+            columns: columnsPerLine,
+            arrowWidth: arrowWidth
+        )
+        for arrowRect in layout.arrowRects {
             drawCenteredText(
                 "→",
-                in: CGRect(x: x - 10, y: rect.minY, width: 20, height: rect.height),
+                in: arrowRect,
                 fontSize: arrowFontSize
             )
         }
     }
 
-    private func drawCenteredText(_ text: String, in rect: CGRect, fontSize: CGFloat) {
+    private func drawCenteredText(_ text: String, in rect: CGRect, fontSize: CGFloat, wraps: Bool = false) {
         let paragraph = NSMutableParagraphStyle()
         paragraph.alignment = .center
-        paragraph.lineBreakMode = .byTruncatingTail
+        paragraph.lineBreakMode = wraps ? .byCharWrapping : .byTruncatingTail
         let attrs: [NSAttributedString.Key: Any] = [
             .font: UIFont.systemFont(ofSize: fontSize, weight: .medium),
             .foregroundColor: UIColor.black,
             .paragraphStyle: paragraph
         ]
-        let drawRect = CGRect(
+        let availableRect = CGRect(
             x: rect.minX + 4,
-            y: rect.midY - (fontSize + 8) / 2,
+            y: rect.minY + 2,
             width: rect.width - 8,
+            height: rect.height - 4
+        )
+        if wraps {
+            let boundingRect = (text as NSString).boundingRect(
+                with: availableRect.size,
+                options: [.usesLineFragmentOrigin, .usesFontLeading],
+                attributes: attrs,
+                context: nil
+            )
+            let drawRect = CGRect(
+                x: availableRect.minX,
+                y: availableRect.midY - min(boundingRect.height, availableRect.height) / 2,
+                width: availableRect.width,
+                height: availableRect.height
+            )
+            (text as NSString).draw(
+                with: drawRect,
+                options: [.usesLineFragmentOrigin, .usesFontLeading],
+                attributes: attrs,
+                context: nil
+            )
+            return
+        }
+
+        let drawRect = CGRect(
+            x: availableRect.minX,
+            y: rect.midY - (fontSize + 8) / 2,
+            width: availableRect.width,
             height: fontSize + 10
         )
         (text as NSString).draw(in: drawRect, withAttributes: attrs)
@@ -247,8 +386,8 @@ struct ActionTableSnapshotter: Sendable {
         daySlots.map { slot in
             let entries: [String] = {
                 guard let route = slot.route else { return [] }
-                let passages:[RoutePassage] = FetchAll(routeId: route.id).wrappedValue
-                return passages.prefix(linesPerPeriod * columnsPerLine).map(passageTitle)
+                let passages: [RoutePassage] = passagesByRouteID[route.id] ?? FetchAll(routeId: route.id).wrappedValue
+                return passages.prefix(linesPerPeriod * columnsPerLine).map { Self.passageTitle($0, routeDistrictId: route.districtId) }
             }()
             return Row(
                 period: slot.period,
@@ -257,7 +396,11 @@ struct ActionTableSnapshotter: Sendable {
         }
     }
 
-    private func passageTitle(_ passage: RoutePassage) -> String {
+    static func passageTitle(_ passage: RoutePassage, routeDistrictId: District.ID) -> String {
+        if passage.districtId == routeDistrictId {
+            return "自町"
+        }
+
         if let districtId = passage.districtId,
            let district = FetchOne(District.find(districtId)).wrappedValue {
             return district.name

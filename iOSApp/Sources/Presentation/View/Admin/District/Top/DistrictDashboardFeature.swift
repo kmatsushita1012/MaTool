@@ -12,6 +12,10 @@ import SQLiteData
 
 @Reducer
 struct DistrictDashboardFeature {
+    enum ExportKind: Equatable {
+        case submission
+        case table
+    }
     
     @Reducer
     enum Destination {
@@ -31,7 +35,7 @@ struct DistrictDashboardFeature {
         
         var isRouteLoading: Bool = false
         var isAWSLoading: Bool = false
-        var isExportLoading: Bool = false
+        var activeExportKind: ExportKind? = nil
         var url: URL? = nil
         
         // Navigation
@@ -124,17 +128,17 @@ struct DistrictDashboardFeature {
                     await send(.locationPrepared(isTracking: isTracking, Interval: interval))
                 }
             case .submissionExportTapped:
-                state.isExportLoading = true
-                return exportEffect(state: state, path: "\(state.district.name).pdf", includesRouteMap: true)
+                state.activeExportKind = .submission
+                return exportEffect(state: state, path: state.district.pdfFileName(), includesRouteMap: true)
             case .tableExportTapped:
-                state.isExportLoading = true
-                return exportEffect(state: state, path: "\(state.district.name)_行動表.pdf", includesRouteMap: false)
+                state.activeExportKind = .table
+                return exportEffect(state: state, path: state.district.pdfFileName(suffix: "_行動表"), includesRouteMap: false)
             case .exportReceived(.success(let url)):
-                state.isExportLoading = false
+                state.activeExportKind = nil
                 state.url = url
                 return .none
             case .exportReceived(.failure(let error)):
-                state.isExportLoading = false
+                state.activeExportKind = nil
                 state.alert = .error(error.message)
                 return .none
             case .destination(.presented(let childAction)):
@@ -177,7 +181,15 @@ extension DistrictDashboardFeature.Destination.Action: Equatable {}
 
 extension DistrictDashboardFeature.State{
     var isLoading: Bool {
-        isAWSLoading || isRouteLoading || isExportLoading
+        isAWSLoading || isRouteLoading || activeExportKind != nil
+    }
+    
+    var isSubmissionExportLoading: Bool {
+        activeExportKind == .submission
+    }
+    
+    var isTableExportLoading: Bool {
+        activeExportKind == .table
     }
     
     init(_ district: District){

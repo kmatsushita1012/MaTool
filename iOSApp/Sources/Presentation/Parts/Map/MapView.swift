@@ -20,20 +20,24 @@ struct MapView: UIViewRepresentable {
     let style: Style
     let points: [PointEntry]
     let polyline: [Coordinate]
+    let districtAreaOverlays: [DistrictAreaOverlay]
     let floats: [FloatEntry]
     let floatAnnotation: FloatAnnotation?
+    let showsDistrictAreaOverlay: Bool
     @Binding var region: MKCoordinateRegion
     @Binding var size: CGSize?
     let pointTapped: (PointEntry)->Void
     let floatTapped: (FloatEntry)->Void
     let onLongPress: (Coordinate) -> Void
     
-    private init(style: Style, points: [PointEntry], polyline: [Coordinate], floats: [FloatEntry] = [], floatAnnotation: FloatAnnotation? = nil, region: Binding<MKCoordinateRegion>, size: Binding<CGSize?>, pointTapped: @escaping (PointEntry) -> Void, floatTapped: @escaping (FloatEntry) -> Void, onLongPress: @escaping (Coordinate) -> Void) {
+    private init(style: Style, points: [PointEntry], polyline: [Coordinate], districtAreaOverlays: [DistrictAreaOverlay] = [], floats: [FloatEntry] = [], floatAnnotation: FloatAnnotation? = nil, showsDistrictAreaOverlay: Bool = false, region: Binding<MKCoordinateRegion>, size: Binding<CGSize?>, pointTapped: @escaping (PointEntry) -> Void, floatTapped: @escaping (FloatEntry) -> Void, onLongPress: @escaping (Coordinate) -> Void) {
         self.style = style
         self.points = points
         self.polyline = polyline
+        self.districtAreaOverlays = districtAreaOverlays
         self.floats = floats
         self.floatAnnotation = floatAnnotation
+        self.showsDistrictAreaOverlay = showsDistrictAreaOverlay
         self._size = size
         self._region = region
         self.pointTapped = pointTapped
@@ -44,6 +48,8 @@ struct MapView: UIViewRepresentable {
     init(
         style: Style,
         points: [PointEntry] = [],
+        districtAreaOverlays: [DistrictAreaOverlay] = [],
+        showsDistrictAreaOverlay: Bool = false,
         floatAnnotation: FloatAnnotation? = nil,
         region: Binding<MKCoordinateRegion>,
         size: Binding<CGSize?> = .constant(nil),
@@ -51,20 +57,22 @@ struct MapView: UIViewRepresentable {
         floatTapped: @escaping (FloatEntry) -> Void = { _ in },
         onLongPress: @escaping (Coordinate) -> Void = { _ in }
     ) {
-        self.init(style: style, points: points, polyline: points.map(\.coordinate), floatAnnotation: floatAnnotation, region: region, size: size, pointTapped: pointTapped, floatTapped: floatTapped, onLongPress: onLongPress)
+        self.init(style: style, points: points, polyline: points.map(\.coordinate), districtAreaOverlays: districtAreaOverlays, floatAnnotation: floatAnnotation, showsDistrictAreaOverlay: showsDistrictAreaOverlay, region: region, size: size, pointTapped: pointTapped, floatTapped: floatTapped, onLongPress: onLongPress)
     }
     
     init(
         style: Style,
         points: [PointEntry] = [],
         floats: [FloatEntry],
+        districtAreaOverlays: [DistrictAreaOverlay] = [],
+        showsDistrictAreaOverlay: Bool = false,
         region: Binding<MKCoordinateRegion>,
         size: Binding<CGSize?> = .constant(nil),
         pointTapped: @escaping (PointEntry) -> Void = { _ in },
         floatTapped: @escaping (FloatEntry) -> Void = { _ in },
         onLongPress: @escaping (Coordinate) -> Void = { _ in }
     ) {
-        self.init(style: style, points: points, polyline: points.map(\.coordinate), floats: floats, region: region, size: size, pointTapped: pointTapped, floatTapped: floatTapped, onLongPress: onLongPress)
+        self.init(style: style, points: points, polyline: points.map(\.coordinate), districtAreaOverlays: districtAreaOverlays, floats: floats, showsDistrictAreaOverlay: showsDistrictAreaOverlay, region: region, size: size, pointTapped: pointTapped, floatTapped: floatTapped, onLongPress: onLongPress)
     }
    
     
@@ -87,6 +95,11 @@ struct MapView: UIViewRepresentable {
     }
 
     func updateUIView(_ mapView: MKMapView, context: Context) {
+        context.coordinator.updateDistrictAreaOverlays(
+            districtAreaOverlays,
+            isVisible: showsDistrictAreaOverlay,
+            in: mapView
+        )
         mapView.updatePoints(from: points.filter(style: style))
         // ポリラインを isBoundary で分割し、色を交互に設定
         let segments: [[Coordinate]] = splitPoints()
@@ -150,6 +163,8 @@ struct MapView: UIViewRepresentable {
 
     class Coordinator: NSObject, MKMapViewDelegate {
         var parent: MapView
+        private var renderedDistrictAreaOverlays: Set<DistrictAreaOverlay> = []
+        private var isDistrictAreaOverlayVisible = false
         
         init(_ parent: MapView) {
             self.parent = parent
@@ -159,6 +174,9 @@ struct MapView: UIViewRepresentable {
         func mapView(_ mapView: MKMapView, viewFor annotation: MKAnnotation) -> MKAnnotationView? {
             if annotation is MKUserLocation {
                 return nil
+            }
+            if let districtAnnotation = annotation as? DistrictAreaLabelAnnotation {
+                return DistrictAreaLabelAnnotationView.view(for: mapView, annotation: districtAnnotation)
             }
             if let pointAnnotation = annotation as? PointAnnotation {
                 return PointAnnotationView.view(for: mapView, annotation: pointAnnotation)
@@ -183,6 +201,9 @@ struct MapView: UIViewRepresentable {
         }
         
         func mapView(_ mapView: MKMapView, rendererFor overlay: MKOverlay) -> MKOverlayRenderer {
+            if let polygon = overlay as? DistrictPolygonOverlay {
+                return polygon.renderer()
+            }
             if let polyline = overlay as? PathPolyline {
                 return polyline.renderer()
             }
@@ -199,6 +220,38 @@ struct MapView: UIViewRepresentable {
             let location = gesture.location(in: mapView)
             let coordinate = mapView.convert(location, toCoordinateFrom: mapView)
             parent.onLongPress(Coordinate.fromCL(coordinate))
+        }
+
+        func updateDistrictAreaOverlays(
+            _ districtAreaOverlays: [DistrictAreaOverlay],
+            isVisible: Bool,
+            in mapView: MKMapView
+        ) {
+            let newOverlays = Set(districtAreaOverlays)
+
+            guard isVisible != isDistrictAreaOverlayVisible || newOverlays != renderedDistrictAreaOverlays else {
+                return
+            }
+
+            if !isVisible {
+                removeDistrictAreaOverlays(in: mapView)
+                renderedDistrictAreaOverlays = []
+                isDistrictAreaOverlayVisible = false
+                return
+            }
+
+            removeDistrictAreaOverlays(in: mapView)
+            mapView.addOverlays(districtAreaOverlays.map(DistrictPolygonOverlay.init))
+            mapView.addAnnotations(districtAreaOverlays.map(DistrictAreaLabelAnnotation.init))
+            renderedDistrictAreaOverlays = newOverlays
+            isDistrictAreaOverlayVisible = true
+        }
+
+        private func removeDistrictAreaOverlays(in mapView: MKMapView) {
+            let oldPolygons = mapView.overlays.compactMap { $0 as? DistrictPolygonOverlay }
+            let oldLabels = mapView.annotations.compactMap { $0 as? DistrictAreaLabelAnnotation }
+            mapView.removeOverlays(oldPolygons)
+            mapView.removeAnnotations(oldLabels)
         }
     }
 }
@@ -248,7 +301,7 @@ fileprivate extension MKMapView {
         addOverlays(polylines)
         removeOverlays(oldPolylines)
     }
-    
+
     func removeFloats() {
         let old = annotations.compactMap { $0 as? FloatAnnotation }
         removeAnnotations(old)
@@ -291,8 +344,10 @@ extension MapView: Equatable {
         return lhs.style == rhs.style &&
         lhs.points == rhs.points &&
         lhs.polyline == rhs.polyline &&
+        lhs.districtAreaOverlays == rhs.districtAreaOverlays &&
         lhs.floats == rhs.floats &&
         lhs.floatAnnotation == rhs.floatAnnotation &&
+        lhs.showsDistrictAreaOverlay == rhs.showsDistrictAreaOverlay &&
         lhs.region == rhs.region
     }
 }

@@ -59,6 +59,8 @@ struct RouteEditFeature{
         var isLoading: Bool = false
         var isSubmitDialogPresented: Bool = false
         var tab: Tab
+        var districtAreaOverlays: [DistrictAreaOverlay]
+        var isDistrictAreaOverlayVisible: Bool = false
         var passageInsertIndex: Int? = nil
         var region: MKCoordinateRegion
         var size: CGSize?
@@ -75,10 +77,12 @@ struct RouteEditFeature{
         case onAppear
         case mapLongPressed(Coordinate)
         case pointTapped(PointEntry)
+        case districtAreaOverlayTapped
         case autoPassageTapped
         case undoTapped
         case redoTapped
         case saveTapped
+        case modified(VoidAppResult)
         case cancelTapped
         case deleteTapped
         case wholeTapped
@@ -107,7 +111,7 @@ struct RouteEditFeature{
         Reduce{ state, action in
             switch action {
             case .onAppear:
-                if !state.district.isEditable && state.isSaveable {
+                if !state.district.isEditable && state.mode != .preview {
                     state.alert = .notice(.notice("\(state.festival.subname)がルートの更新を停止しています。"))
                 }
                 return .none
@@ -133,6 +137,10 @@ struct RouteEditFeature{
                 state.point = PointEditFeature.State(entry.point, districtId: state.district.id)
                 state.operation = .add
                 return .none
+            case .districtAreaOverlayTapped:
+                guard state.canShowDistrictAreaOverlay else { return .none }
+                state.isDistrictAreaOverlayVisible.toggle()
+                return .none
             case .autoPassageTapped:
                 let districts: [District] = FetchAll(festivalId: state.district.festivalId).wrappedValue
                 let detector = RoutePassageAutoDetector(mode: .includeTouch)
@@ -147,19 +155,36 @@ struct RouteEditFeature{
                 state.operation = .add
                 return .none
             case .saveTapped:
-                state.isLoading = true
-                return .task(Action.saveReceived) {[state] in
+                do {
                     try state.points.validate()
-                    switch state.mode {
-                    case .create:
-                        try await dataFetcher.create(districtID: state.route.districtId, route: state.route, points: state.points, passages: state.passages)
-                    case .update:
-                        try await dataFetcher.update(state.route, points: state.points, passages: state.passages)
-                    case .preview:
-                        throw AppError.be(.forbidden("権限がありません"))
-                    }
-                    await dismiss()
+                } catch {
+                    state.alert = .notice(.error(error.localizedDescription))
+                    return .none
                 }
+                switch state.mode {
+                case .preview:
+                    return .task(Action.modified) {
+                        await dismiss()
+                    }
+                case .create, .update:
+                    state.isLoading = true
+                    return .task(Action.saveReceived) {[state] in
+                        switch state.mode {
+                        case .create:
+                            try await dataFetcher.create(districtID: state.route.districtId, route: state.route, points: state.points, passages: state.passages)
+                        case .update:
+                            try await dataFetcher.update(state.route, points: state.points, passages: state.passages)
+                        case .preview:
+                            throw AppError.be(.forbidden("権限がありません"))
+                        }
+                        await dismiss()
+                    }
+                }
+            case .modified(.success):
+                return .none
+            case .modified(.failure(let error)):
+                state.alert = .notice(.error(error.localizedDescription))
+                return .none
             case .cancelTapped:
                 return .dismiss
             case .deleteTapped:
@@ -170,6 +195,7 @@ struct RouteEditFeature{
                 state.alert = .delete(AlertFeature.delete())
                 return .none
             case .wholeTapped:
+                state.isLoading = true
                 return .task(Action.previewPrepared){ [state] in
                     let snapshotter = try await RouteSnapshotter(route: state.route, points: state.points)
                     let (image, url) = try await snapshotter.take()
@@ -180,6 +206,7 @@ struct RouteEditFeature{
                     state.alert = .notice(.error("描画範囲の取得に失敗しました。"))
                       return .none
                 }
+                state.isLoading = true
                 return .task(Action.previewPrepared){ [state] in
                     let snapshotter = try await RouteSnapshotter(route: state.route, points: state.points)
                     let (image, url) = try await snapshotter.take(of: state.region, size: size)
@@ -318,9 +345,19 @@ extension RouteEditFeature.State {
     var canUndo: Bool { manager.canUndo }
     var canRedo: Bool{ manager.canRedo }
     var isSaveable: Bool { mode != .preview }
+    var isConfirmDisabled: Bool { false }
     var isDeleteable: Bool { mode == .update}
     var isPartialEnable: Bool { tab != .info }
     var isAutoPassageDisabled: Bool { points.count < 2 }
+    var canShowDistrictAreaOverlay: Bool { mode == .preview && !districtAreaOverlays.isEmpty }
+    var saveButtonTitle: String {
+        switch mode {
+        case .preview:
+            return "修正"
+        case .create, .update:
+            return "保存"
+        }
+    }
     var title: String {
         switch mode {
         case .create:
@@ -354,24 +391,32 @@ extension RouteEditFeature.State {
     }
     
     init(mode: RouteEditFeature.EditMode, route: Route) throws {
-        self.mode = mode
         let points: [Point] = FetchAll(routeId: route.id).wrappedValue
-        self.manager = EditManager(points.sorted())
-        self.passages = FetchAll(routeId: route.id).wrappedValue
-        self.route = route
-        guard let districtQuery: FetchOne<District> = .init(id: route.districtId),
-            let periodQuery: FetchOne<Period> = .init(id: route.periodId),
+        let passages: [RoutePassage] = FetchAll(routeId: route.id).wrappedValue
+        try self.init(mode: mode, draft: RouteDraft(route: route, points: points, passages: passages))
+    }
+
+    init(mode: RouteEditFeature.EditMode, draft: RouteDraft) throws {
+        self.mode = mode
+        self.manager = EditManager(draft.points.sorted())
+        self.passages = draft.passages
+        self.route = draft.route
+        guard let districtQuery: FetchOne<District> = .init(id: draft.route.districtId),
+            let periodQuery: FetchOne<Period> = .init(id: draft.route.periodId),
             let festivalQuery: FetchOne<Festival> = .init(id: districtQuery.wrappedValue.festivalId) else {
             throw PresentationError.notFound
         }
         self._district = districtQuery
         self._period = periodQuery
         self._festival = festivalQuery
+        self.districtAreaOverlays = assignDistrictAreaOverlays(
+            districts: FetchAll(festivalId: districtQuery.wrappedValue.festivalId).wrappedValue
+        )
         
         let origin: Coordinate = districtQuery.wrappedValue.base ?? festivalQuery.wrappedValue.base
 
-        self.region = makeRegion(points: points, origin: origin, spanDelta: spanDelta)
-            self.tab = .info
+        self.region = makeRegion(points: draft.points, origin: origin, spanDelta: spanDelta)
+        self.tab = .info
     }
 }
 

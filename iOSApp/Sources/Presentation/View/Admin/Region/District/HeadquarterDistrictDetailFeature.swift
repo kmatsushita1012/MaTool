@@ -12,6 +12,10 @@ import Foundation
 
 @Reducer
 struct HeadquarterDistrictDetailFeature {
+    enum ExportKind: Equatable {
+        case submission
+        case table
+    }
     
     @Reducer
     enum Destination {
@@ -22,10 +26,12 @@ struct HeadquarterDistrictDetailFeature {
     @ObservableState
     struct State: Equatable {
         var district: District
-        @FetchAll var routes: [RouteSlot]
+        var routes: [RouteSlot]
+        var routeDrafts: [Route.ID: RouteDraft] = [:]
         
         var isEditable: Bool = false
         var isLoading: Bool = false
+        var activeExportKind: ExportKind? = nil
         
         @Presents var destination: Destination.State?
         @Presents var alert: AlertFeature.State?
@@ -38,6 +44,7 @@ struct HeadquarterDistrictDetailFeature {
         case editTapped
         case reissueTapped
         case routeSelected(RouteSlot)
+        case resetDraftsTapped
         case batchExportTapped
         case tableExportTapped
         case updateReceived(VoidAppResult)
@@ -73,6 +80,10 @@ struct HeadquarterDistrictDetailFeature {
                 return .none
             case .routeSelected(let slot):
                 guard let route = slot.route else { return .none }
+                if let draft = state.routeDrafts[route.id] {
+                    state.destination = try? { .route(try .init(mode: .preview, draft: draft)) }()
+                    return .none
+                }
                 state.isLoading = true
                 let entry: RouteEntry = .init(period: slot.period, route: route)
                 return .task(Action.routeReceived) {
@@ -80,11 +91,16 @@ struct HeadquarterDistrictDetailFeature {
                     return entry
                 }
             case .batchExportTapped:
-                state.isLoading = true
-                return exportEffect(state: state, path: "\(state.district.name).pdf", includesRouteMap: true)
+                state.activeExportKind = .submission
+                return exportEffect(state: state, path: state.district.pdfFileName(), includesRouteMap: true)
             case .tableExportTapped:
-                state.isLoading = true
-                return exportEffect(state: state, path: "\(state.district.name)_行動表.pdf", includesRouteMap: false)
+                state.activeExportKind = .table
+                return exportEffect(state: state, path: state.district.pdfFileName(suffix: "_行動表"), includesRouteMap: false)
+            case .resetDraftsTapped:
+                guard !state.routeDrafts.isEmpty else { return .none }
+                state.routeDrafts = [:]
+                state.routes = FetchAll(districtId: state.district.id, latest: true).wrappedValue
+                return .none
             case .updateReceived(.success):
                 state.isLoading = false
                 return .none
@@ -92,14 +108,28 @@ struct HeadquarterDistrictDetailFeature {
                 state.isLoading = false
                 state.destination = try? { .route(try .init(mode: .preview, route: entry.route)) }()
                 return .none
+            case .destination(.presented(.route(.modified(.success)))):
+                guard let routeState = state.destination?.route else { return .none }
+                let draft = RouteDraft(
+                    route: routeState.route,
+                    points: routeState.points,
+                    passages: routeState.passages
+                )
+                state.routeDrafts[draft.route.id] = draft
+                if let index = state.routes.firstIndex(where: { $0.route?.id == draft.route.id }) {
+                    let slot = state.routes[index]
+                    state.routes[index] = RouteSlot(period: slot.period, route: draft.route)
+                }
+                return .none
             case .batchExportReceived(.success(let url)):
-                state.isLoading = false
+                state.activeExportKind = nil
                 state.url = url
                 return .none
             case .updateReceived(.failure(let error)),
                 .routeReceived(.failure(let error)),
                 .batchExportReceived(.failure(let error)):
                 state.isLoading = false
+                state.activeExportKind = nil
                 state.alert = AlertFeature.error(error.message)
                 return .none
             case .destination(_):
@@ -117,14 +147,32 @@ struct HeadquarterDistrictDetailFeature {
             //非同期並列にするとBEでアクセス過多
             let renderer = await PDFRenderer(path: path)
             let routes = state.routes.compactMap(\.route)
+            var passagesByRouteID: [Route.ID: [RoutePassage]] = [:]
+            var pointsByRouteID: [Route.ID: [Point]] = [:]
+            var resolvedRoutesByRouteID: [Route.ID: Route] = [:]
             for route in routes {
+                if let draft = state.routeDrafts[route.id] {
+                    passagesByRouteID[route.id] = draft.passages
+                    pointsByRouteID[route.id] = draft.points
+                    resolvedRoutesByRouteID[route.id] = draft.route
+                    continue
+                }
                 do {
                     try await routeDataFetcher.fetch(routeID: route.id)
+                    let passages: [RoutePassage] = FetchAll(routeId: route.id).wrappedValue
+                    let points: [Point] = FetchAll(routeId: route.id).wrappedValue
+                    passagesByRouteID[route.id] = passages
+                    pointsByRouteID[route.id] = points
+                    resolvedRoutesByRouteID[route.id] = route
                 } catch {
                     continue
                 }
             }
-            let tableSnapshotter = await ActionTableSnapshotter(district: state.district, slots: state.routes)
+            let tableSnapshotter = await ActionTableSnapshotter(
+                district: state.district,
+                slots: state.routes,
+                passagesByRouteID: passagesByRouteID
+            )
             let tablePages = await tableSnapshotter.takeAll()
             for page in tablePages {
                 await renderer.addPage(with: page)
@@ -134,7 +182,9 @@ struct HeadquarterDistrictDetailFeature {
                 return url
             }
             for route in routes {
-                guard let snapshotter = try? await RouteSnapshotter(route),
+                let resolvedRoute = resolvedRoutesByRouteID[route.id] ?? route
+                guard let points = pointsByRouteID[route.id],
+                      let snapshotter = try? await RouteSnapshotter(route: resolvedRoute, points: points),
                       let image = try? await snapshotter.take() else { continue }
                 await renderer.addPage(with: image)
             }
@@ -144,13 +194,33 @@ struct HeadquarterDistrictDetailFeature {
     }
 }
 
+extension HeadquarterDistrictDetailFeature.State {
+    var isExportLoading: Bool {
+        activeExportKind != nil
+    }
+    
+    var isSubmissionExportLoading: Bool {
+        activeExportKind == .submission
+    }
+    
+    var isTableExportLoading: Bool {
+        activeExportKind == .table
+    }
+
+    var displayedOrder: Int {
+        get { district.order + 1 }
+        set { district.order = max(0, newValue - 1) }
+    }
+}
+
 extension HeadquarterDistrictDetailFeature.Destination.State: Equatable {}
 extension HeadquarterDistrictDetailFeature.Destination.Action: Equatable {}
 
 extension HeadquarterDistrictDetailFeature.State {
     init(_ district: District) {
+        let routes: [RouteSlot] = FetchAll(districtId: district.id, latest: true).wrappedValue
         self.district = district
-        self._routes = FetchAll(districtId: district.id, latest: true)
+        self.routes = routes
     }
     
 }

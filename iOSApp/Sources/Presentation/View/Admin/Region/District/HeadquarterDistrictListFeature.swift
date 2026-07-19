@@ -26,8 +26,9 @@ struct HeadquarterDistrictListFeature {
         var draftDistricts: [District]? = nil
         var isReordering: Bool = false
         var searchText: String = ""
-        
+
         var isLoading: Bool = false
+        var isExportLoading: Bool = false
         var folder: ExportedFolder? = nil
         @Presents var destination: Destination.State?
         @Presents var alert: AlertFeature.State?
@@ -108,20 +109,24 @@ struct HeadquarterDistrictListFeature {
                 state.draftDistricts = nil
                 return .none
             case .batchExportTapped:
+                state.isExportLoading = true
                 return batchExportEffect(state, includesRouteMap: true)
             case .tableExportTapped:
+                state.isExportLoading = true
                 return batchExportEffect(state, includesRouteMap: false)
             case .selectedReceived(.success(let district)):
                 state.isLoading = false
                 state.destination = .detail(.init(district))
                 return .none
             case .batchExportReceived(.success(let urls)):
+                state.isExportLoading = false
                 state.folder = .init(urls)
                 return .none
             case .selectedReceived(.failure(let error)),
                 .reorderReceived(.failure(let error)),
                 .batchExportReceived(.failure(let error)):
                 state.isLoading = false
+                state.isExportLoading = false
                 state.alert = AlertFeature.error(error.message)
                 return .none
             case .destination:
@@ -140,7 +145,7 @@ struct HeadquarterDistrictListFeature {
             //非同期並列にするとBEでアクセス過多
             for district in state.districts {
                 let suffix = includesRouteMap ? "" : "_行動表"
-                let renderer = await PDFRenderer(path: "\(district.name)\(suffix).pdf")
+                let renderer = await PDFRenderer(path: district.pdfFileName(suffix: suffix))
                 guard let _ =  try? await routeDataFetcher.fetchAll(districtID: district.id, query: .year(2025)) else { continue }
                 let slots: [RouteSlot] = FetchAll(districtId: district.id, latest: true).wrappedValue
                 let routes = slots.compactMap(\.route)
