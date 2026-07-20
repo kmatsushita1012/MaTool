@@ -70,13 +70,7 @@ jobs:
             -derivedDataPath iOSApp/.derivedData \
             -skipMacroValidation \
             -skipPackagePluginValidation \
-            -allowProvisioningUpdates \
-            -authenticationKeyPath `pwd`/private_keys/AuthKey_${{ secrets.APPLE_API_ISSUE_ID }}.p8 \
-            -authenticationKeyID ${{ secrets.APPLE_API_KEY_ID }} \
-            -authenticationKeyIssuerID ${{ secrets.APPLE_API_ISSUE_ID }} \
-            CODE_SIGNING_ALLOWED=YES \
-            CODE_SIGN_STYLE=Automatic \
-            DEVELOPMENT_TEAM=SN9A65C32S \
+            CODE_SIGNING_ALLOWED=NO \
             ENABLE_SWIFT_MACROS=YES
 
       - name: Create ExportOptions.plist
