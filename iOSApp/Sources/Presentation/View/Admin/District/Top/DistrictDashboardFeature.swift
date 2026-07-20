@@ -129,10 +129,10 @@ struct DistrictDashboardFeature {
                 }
             case .submissionExportTapped:
                 state.activeExportKind = .submission
-                return exportEffect(state: state, path: "\(state.district.name).pdf", includesRouteMap: true)
+                return exportEffect(state: state, path: state.district.pdfFileName(), includesRouteMap: true)
             case .tableExportTapped:
                 state.activeExportKind = .table
-                return exportEffect(state: state, path: "\(state.district.name)_行動表.pdf", includesRouteMap: false)
+                return exportEffect(state: state, path: state.district.pdfFileName(suffix: "_行動表"), includesRouteMap: false)
             case .exportReceived(.success(let url)):
                 state.activeExportKind = nil
                 state.url = url
