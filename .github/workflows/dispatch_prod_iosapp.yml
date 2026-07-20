@@ -1,7 +1,8 @@
 name: Prod iOS Dispatch
 on:
   push:
-    branches: []
+    branches:
+      - hoge # XcodeCloudに移行したので無効化
 
 jobs:
   deploy_iosapp:
