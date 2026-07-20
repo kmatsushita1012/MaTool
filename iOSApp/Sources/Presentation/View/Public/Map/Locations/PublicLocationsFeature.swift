@@ -35,7 +35,7 @@ struct PublicLocationsFeature {
         case alert(PresentationAction<AlertFeature.Action>)
     }
     
-    @Dependency(\.locationProvider) var locationProvider
+    @Dependency(\.mapLocationProvider) var mapLocationProvider
     @Dependency(LocationDataFetcherKey.self) var dataFetcher
     
     var body: some ReducerOf<PublicLocationsFeature> {
@@ -59,7 +59,7 @@ struct PublicLocationsFeature {
                 return .none
             case .userFocusTapped:
                 return .run{ send in
-                    let result = await locationProvider.getLocation()
+                    let result = await mapLocationProvider.getLocation()
                     guard let coordinate = result.value?.coordinate  else { return }
                     await send(.userLocationReceived(Coordinate.fromCL(coordinate)))
                 }

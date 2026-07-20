@@ -55,7 +55,8 @@ struct PublicMapFeature {
         case alert(PresentationAction<AlertFeature.Action>)
     }
     
-    @Dependency(\.locationProvider) var locationProvider
+    @Dependency(\.mapLocationProvider) var mapLocationProvider
+    @Dependency(SceneDataFetcherKey.self) var sceneDataFetcher
     @Dependency(\.publicMapAdUsecase) var publicMapAdUsecase
     @Dependency(\.dismiss) var dismiss
     
@@ -70,8 +71,8 @@ struct PublicMapFeature {
                     state.alert = AlertFeature.notice("配信停止中です。")
                 }
                 return .run{ send in
-                    await locationProvider.requestPermission()
-                    await locationProvider.startTracking(backgroundUpdatesAllowed: false)
+                    await mapLocationProvider.requestPermission()
+                    await mapLocationProvider.startTracking()
                     await publicMapAdUsecase.prepareSession()
                 }
             case .binding:
