@@ -1,0 +1,167 @@
+import Dependencies
+import Shared
+import Testing
+@testable import Backend
+
+struct PeriodControllerTest {
+    @Test
+    func get_正常() async throws {
+        let expected = Period.mock(id: "period-1", festivalId: "festival-1")
+        var lastCalledId: String?
+        let mock = PeriodUsecaseMock(getHandler: { id in
+            lastCalledId = id
+            return expected
+        })
+        let subject = make(usecase: mock)
+
+        let request = Application.Request.make(method: .get, path: "/periods/period-1", parameters: ["periodId": "period-1"])
+        let response = try await subject.get(request: request, next: next)
+        let actual = try Period.from(response.body)
+
+        #expect(response.statusCode == 200)
+        #expect(actual == expected)
+        #expect(lastCalledId == "period-1")
+    }
+
+    @Test
+    func query_正常_年指定あり() async throws {
+        let periods = [Period.mock(id: "period-1", festivalId: "festival-1")]
+        var lastCalledFestivalId: String?
+        var lastCalledYear: Int?
+
+        let mock = PeriodUsecaseMock(
+            queryByYearHandler: { festivalId, year in
+                lastCalledFestivalId = festivalId
+                lastCalledYear = year
+                return periods
+            },
+            queryHandler: { _ in [] }
+        )
+        let subject = make(usecase: mock)
+
+        let request = Application.Request.make(
+            method: .get,
+            path: "/festivals/festival-1/periods/2026",
+            parameters: ["festivalId": "festival-1", "year": "2026"]
+        )
+
+        let response = try await subject.query(request: request, next: next)
+        let actual = try [Period].from(response.body)
+
+        #expect(response.statusCode == 200)
+        #expect(actual == periods)
+        #expect(lastCalledFestivalId == "festival-1")
+        #expect(lastCalledYear == 2026)
+        #expect(mock.queryByYearCallCount == 1)
+        #expect(mock.queryCallCount == 0)
+    }
+
+    @Test
+    func query_正常_年指定なし() async throws {
+        let periods = [Period.mock(id: "period-1", festivalId: "festival-1")]
+        let mock = PeriodUsecaseMock(queryHandler: { _ in periods })
+        let subject = make(usecase: mock)
+
+        let request = Application.Request.make(
+            method: .get,
+            path: "/festivals/festival-1/periods",
+            parameters: ["festivalId": "festival-1"]
+        )
+
+        let response = try await subject.query(request: request, next: next)
+        let actual = try [Period].from(response.body)
+
+        #expect(response.statusCode == 200)
+        #expect(actual == periods)
+        #expect(mock.queryCallCount == 1)
+    }
+
+    @Test
+    func post_正常() async throws {
+        let period = Period.mock(id: "period-1", festivalId: "festival-1")
+        var lastCalledFestivalId: String?
+        let mock = PeriodUsecaseMock(postHandler: { festivalId, item, _ in
+            lastCalledFestivalId = festivalId
+            return item
+        })
+        let subject = make(usecase: mock)
+
+        let request = Application.Request.make(
+            method: .post,
+            path: "/festivals/festival-1/periods",
+            parameters: ["festivalId": "festival-1"],
+            body: try period.toString()
+        )
+
+        let response = try await subject.post(request: request, next: next)
+        let actual = try Period.from(response.body)
+
+        #expect(response.statusCode == 200)
+        #expect(actual == period)
+        #expect(lastCalledFestivalId == "festival-1")
+    }
+
+    @Test
+    func put_正常() async throws {
+        let period = Period.mock(id: "period-1", festivalId: "festival-1")
+        var lastCalledPeriod: Period?
+        let mock = PeriodUsecaseMock(putHandler: { item, _ in
+            lastCalledPeriod = item
+            return item
+        })
+        let subject = make(usecase: mock)
+
+        let request = Application.Request.make(
+            method: .put,
+            path: "/periods/period-1",
+            parameters: ["periodId": "period-1"],
+            body: try period.toString()
+        )
+        let response = try await subject.put(request: request, next: next)
+        let actual = try Period.from(response.body)
+
+        #expect(response.statusCode == 200)
+        #expect(actual == period)
+        #expect(lastCalledPeriod == period)
+        #expect(mock.putCallCount == 1)
+    }
+
+    @Test
+    func delete_正常() async throws {
+        var lastCalledId: String?
+        let mock = PeriodUsecaseMock(deleteHandler: { id, _ in lastCalledId = id })
+        let subject = make(usecase: mock)
+
+        let request = Application.Request.make(method: .delete, path: "/periods/period-1", parameters: ["periodId": "period-1"])
+        let response = try await subject.delete(request: request, next: next)
+
+        #expect(response.statusCode == 200)
+        #expect(lastCalledId == "period-1")
+        #expect(mock.deleteCallCount == 1)
+    }
+
+    @Test
+    func get_異常_ユースケースエラー透過() async {
+        let mock = PeriodUsecaseMock(getHandler: { _ in throw TestError.intentional })
+        let subject = make(usecase: mock)
+        let request = Application.Request.make(method: .get, path: "/periods/period-1", parameters: ["periodId": "period-1"])
+
+        await #expect(throws: TestError.intentional) {
+            _ = try await subject.get(request: request, next: next)
+        }
+    }
+}
+
+private extension PeriodControllerTest {
+    var next: Handler {
+        { _ in throw TestError.intentional }
+    }
+
+    func make(usecase: PeriodUsecaseMock = .init()) -> PeriodController {
+        withDependencies {
+            $0[PeriodUsecaseKey.self] = usecase
+        } operation: {
+            PeriodController()
+        }
+    }
+}

@@ -5,15 +5,12 @@
 //  Created by 松下和也 on 2025/11/14.
 //
 
-
 @main
 struct MaToolAPI: APIGateway {
     static let app = Application{
         AuthMiddleware(path: "/")
         FestivalRouter()
         DistrictRouter()
-        RouteRouter()
+        OtherRouter()
     }
 }
-
-//差分注入

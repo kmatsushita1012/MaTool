@@ -25,7 +25,7 @@ struct CognitoAuthManagerTest {
         }
     }
     
-    @Test func test_create_正常() async throws {
+    @Test(.disabled("統合テスト")) func test_create_正常() async throws {
         let username = "integration-test-\(UUID().uuidString.prefix(6))"
         let subject = try await factory()
         

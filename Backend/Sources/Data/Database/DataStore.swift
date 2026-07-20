@@ -25,14 +25,14 @@ typealias DataStoreFactory = @Sendable (String) -> DataStore
 
 // MARK: - DataStore
 protocol DataStore: Sendable {
-    func put<T: Codable>(_ item: T) async throws
-    func get<T: Codable, K: Codable>(key: K, keyName: String, as type: T.Type) async throws -> T?
-    func delete<K: Codable>(key: K, keyName: String) async throws
-    func scan<T: Codable>(_ type: T.Type) async throws -> [T]
-    func query<T: Codable>(
+    func put<T: RecordProtocol>(_ item: T) async throws
+    func get<T: RecordProtocol>(keys: [String: Codable], as type: T.Type) async throws -> T?
+    func delete(keys: [String: Codable]) async throws
+    func scan<T: RecordProtocol>(_ type: T.Type, ignoreDecodeError: Bool) async throws -> [T]
+    func query<T: RecordProtocol>(
         indexName: String?,
-        keyCondition: QueryCondition,
-        filter: FilterCondition?,
+        keyConditions: [QueryCondition],
+        filterConditions: [FilterCondition],
         limit: Int?,
         ascending: Bool,
         as type: T.Type
@@ -55,7 +55,7 @@ enum FilterCondition: Sendable {
 
 // MARK: - DataStore +
 extension DataStore {
-    func query<T: Codable>(
+    func query<T: RecordProtocol>(
         indexName: String? = nil,
         keyCondition: QueryCondition,
         filter: FilterCondition? = nil,
@@ -65,8 +65,50 @@ extension DataStore {
     ) async throws -> [T] {
         try await query(
             indexName: indexName,
-            keyCondition: keyCondition,
-            filter: filter,
+            keyConditions: [keyCondition],
+            filterConditions: filter != nil ? [filter!] : [],
+            limit: limit,
+            ascending: ascending,
+            as: type
+        )
+    }
+    
+    func get<T: RecordProtocol, K: Codable>(key: K, keyName: String, as type: T.Type) async throws -> T? {
+        try await get(keys: [keyName: key], as: type)
+    }
+    
+    func delete<K: Codable>(key: K, keyName: String) async throws {
+        try await delete(keys: [keyName: key])
+    }
+    
+    func scan<T: RecordProtocol>(_ type: T.Type) async throws -> [T] {
+        try await scan(type, ignoreDecodeError: false)
+    }
+}
+
+extension DataStore {
+    func get<T: RecordProtocol>(pk: String, sk: String, as type: T.Type) async throws -> T? {
+        let keys = [ "pk": pk, "sk": sk ]
+        return try await get(keys: keys, as: type)
+    }
+    
+    func delete(pk: String, sk: String) async throws {
+        let keys = [ "pk": pk, "sk": sk ]
+        try await delete(keys: keys)
+    }
+    
+    func query<T: RecordProtocol>(
+        indexName: String? = nil,
+        queryConditions: [QueryCondition],
+        filterConditions: [FilterCondition] = [],
+        limit: Int? = nil,
+        ascending: Bool = true,
+        as type: T.Type
+    ) async throws -> [T] {
+        try await query(
+            indexName: indexName,
+            keyConditions: queryConditions,
+            filterConditions: filterConditions,
             limit: limit,
             ascending: ascending,
             as: type

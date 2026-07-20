@@ -16,10 +16,10 @@ enum LocationUsecaseKey: DependencyKey {
 
 // MARK: - LocationUsecaseProtocol
 protocol LocationUsecaseProtocol: Sendable {
-    func query(by festivalId: String, user: UserRole, now: Date) async throws -> [FloatLocationGetDTO]
-    func get(_ districtId: String, user: UserRole) async throws -> FloatLocationGetDTO
+    func query(by festivalId: String, user: UserRole, now: Date) async throws -> [FloatLocation]
+    func get(districtId: String, user: UserRole, now: Date) async throws -> FloatLocation?
     func put(_ location: FloatLocation, user: UserRole) async throws -> FloatLocation
-    func delete(_ id: String, user: UserRole) async throws
+    func delete(districtId: District.ID, user: UserRole) async throws
 }
 
 // MARK: - LocationUsecase
@@ -27,119 +27,69 @@ struct LocationUsecase: LocationUsecaseProtocol {
     @Dependency(LocationRepositoryKey.self) var locationRepository
     @Dependency(DistrictRepositoryKey.self) var districtRepository
     @Dependency(FestivalRepositoryKey.self) var festivalRepository
+    @Dependency(PeriodRepositoryKey.self) var periodRepository
     
-    func query(by festivalId: String, user: UserRole, now: Date) async throws -> [FloatLocationGetDTO] {
-        let locations: [FloatLocation]
-        
-        if case let .headquarter(userId) = user, userId == festivalId {
-            locations = try await scanForAdmin(festivalId)
-        } else {
-            locations = try await scanForPublic(festivalId, now: now)
+    func query(by festivalId: String, user: UserRole, now: Date) async throws -> [FloatLocation] {
+        let periods = try await fetchPeriodsForLocationVisibility(festivalId: festivalId, now: now)
+
+        if LocationPublicAccess.isPublic(now: now, periods: periods) {
+            return try await locationRepository.query(by: festivalId)
         }
-        
-        let districts = try await districtRepository.query(by: festivalId)
-        if districts.isEmpty {
-            throw Error.notFound("指定された地区が見つかりません")
+
+        if case let .district(districtId) = user {
+            let location = try await locationRepository.get(festivalId: festivalId, districtId: districtId)
+            return location.map { [$0] } ?? []
         }
-        
-        let districtMap: [String: District] = Dictionary(uniqueKeysWithValues: districts.map { ($0.id, $0) })
-        // compactMapでqueryと同時に処理
-        let publicLocations = locations.compactMap { location -> FloatLocationGetDTO? in
-            guard let district = districtMap[location.districtId] else { return nil }
-            return FloatLocationGetDTO(districtId: location.districtId, districtName: district.name, coordinate: location.coordinate, timestamp: location.timestamp)
-        }
-        
-        return publicLocations
+
+        return []
     }
     
-    func get(_ districtId: String, user: UserRole) async throws -> FloatLocationGetDTO {
-        
-        
+    func get(districtId: String, user: UserRole, now: Date) async throws -> FloatLocation? {
         guard let district = try await districtRepository.get(id: districtId) else {
             throw Error.notFound("指定された地区が見つかりません")
         }
 
-        let location: FloatLocation?
+        let periods = try await fetchPeriodsForLocationVisibility(festivalId: district.festivalId, now: now)
+        let isPublic = LocationPublicAccess.isPublic(now: now, periods: periods)
+        let canViewOutside = LocationPublicAccess.canViewOutsidePublicHours(user: user, districtId: district.id)
 
-        // admin when headquarter matches festival id OR the user is district owner
-        if case let .headquarter(headId) = user, headId == district.festivalId {
-            location = try await getForAdmin(districtId)
-        } else if case let .district(dId) = user, dId == districtId {
-            location = try await getForAdmin(districtId)
-        } else {
-            location = try await getForPublic(district)
-        }
+        guard isPublic || canViewOutside else { return nil }
 
-        guard let loc = location else {
+        guard let location = try await locationRepository.get(festivalId: district.festivalId, districtId: district.id) else {
             throw Error.notFound("位置情報が見つかりません")
         }
-
-        return FloatLocationGetDTO(districtId: loc.districtId, districtName: district.name, coordinate: loc.coordinate, timestamp: loc.timestamp)
+        return location
     }
     
     func put(_ location: FloatLocation, user: UserRole) async throws -> FloatLocation {
         guard user.id == location.districtId else {
             throw Error.unauthorized("アクセス権限がありません")
         }
-        return try await locationRepository.put(location)
+        guard let district = try await districtRepository.get(id: location.districtId) else {
+            throw Error.notFound("地区が見つかりません")
+        }
+        return try await locationRepository.put(location, festivalId: district.festivalId)
     }
     
-    func delete(_ id: String, user: UserRole) async throws {
-        guard user.id == id else {
+    func delete(districtId: District.ID, user: UserRole) async throws {
+        guard user.id == districtId else {
             throw Error.unauthorized("アクセス権限がありません")
         }
-
-        try await locationRepository.delete(districtId: id)
+        guard let district = try await districtRepository.get(id: districtId) else {
+            throw Error.notFound("地区が見つかりません")
+        }
+        try await locationRepository.delete(festivalId: district.festivalId, districtId: district.id)
     }
     
 }
 
 extension LocationUsecase {
-    private func scanForPublic(_ id: String, now: Date) async throws -> [FloatLocation] {
-        guard let festival = try await festivalRepository.get(id: id) else {
-            throw Error.notFound("指定された地域が見つかりません")
-        }
-
-        var foundFlag = false
-        for span in festival.spans {
-            if span.start <= now && now <= span.end {
-                foundFlag = true
-                break
-            }
-        }
-        
-        guard foundFlag else { throw Error.forbidden("祭典期間外のため配信を停止しています。") }
-
-        return try await locationRepository.scan()
-    }
-
-    private func scanForAdmin(_ id: String) async throws -> [FloatLocation] {
-        return try await locationRepository.scan()
-    }
-
-    private func getForAdmin(_ districtId: String) async throws -> FloatLocation? {
-        return try await locationRepository.get(id: districtId)
-    }
-
-    private func getForPublic(_ district: District) async throws -> FloatLocation? {
-        guard let festival = try await festivalRepository.get(id: district.festivalId) else {
-            throw Error.notFound("指定された地域が見つかりません")
-        }
-
-        let now = Date()
-        var foundFlag = false
-        for span in festival.spans {
-            if span.start <= now && now <= span.end {
-                foundFlag = true
-                break
-            }
-        }
-
-        if !foundFlag {
-            throw Error.unauthorized("アクセス権限がありません")
-        }
-
-        return try await locationRepository.get(id: district.id)
+    private func fetchPeriodsForLocationVisibility(festivalId: Festival.ID, now: Date) async throws -> [Period] {
+        let nowYear = SimpleDate.from(now).year
+        async let currentYear = periodRepository.query(by: festivalId, year: nowYear)
+        async let nextYear = periodRepository.query(by: festivalId, year: nowYear + 1)
+        let (current, next) = try await (currentYear, nextYear)
+        return current + next
     }
 
 }

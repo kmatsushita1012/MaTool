@@ -1,0 +1,108 @@
+//
+//  RootSceneView.swift
+//  MaTool
+//
+//  Created by 松下和也 on 2025/10/30.
+//
+
+import Foundation
+import ComposableArchitecture
+import Dependencies
+import SwiftUI
+
+public struct RootSceneView: View {
+    @Shared var launchState: LaunchState
+    @State var status: StatusCheckResult?
+    @State private var hasLaunchedScene = false
+    @Dependency(SceneUsecaseKey.self) var sceneUsecase
+    @Dependency(\.values.isLiquidGlassEnabled) var isLiquidGlassEnabled
+    
+    // 追加：エラー時だけ拾うBinding
+    private var errorStatusBinding: Binding<StatusCheckResult?> {
+        Binding(
+            get: { if case .error = launchState { return status } else { return nil } },
+            set: { status = $0 }
+        )
+    }
+
+    // 追加：エラー以外だけ拾うBinding
+    private var normalStatusBinding: Binding<StatusCheckResult?> {
+        Binding(
+            get: { if case .error = launchState { return nil } else { return status } },
+            set: { status = $0 }
+        )
+    }
+
+    public init() {
+        if #available(iOS 17.0, *){
+            isPerceptionCheckingEnabled = false
+        }
+        self._launchState = Shared(value: .loading)
+        do {
+            try setupDefaultDatabase()
+        } catch {
+            fatalError("Failed to setup default database: \(error.localizedDescription)")
+        }
+    }
+
+    public var body: some View {
+        Group {
+            switch launchState {
+            case .district(let userRole, let routeId):
+                let store = Store(initialState: HomeFeature.State(userRole: userRole, currentRouteId: routeId)) { HomeFeature() }
+                NavigationStack{
+                    HomeView(store: store)
+                        .task {
+                            store.send(.initialize)
+                        }
+                }
+            case .festival(let userRole):
+                let store = Store(initialState: HomeFeature.State(userRole: userRole)) { HomeFeature() }
+                NavigationStack{
+                    HomeView(store: store)
+                        .task {
+                            store.send(.initialize)
+                        }
+                }
+            case .onboarding:
+                OnboardingView(store: .init(initialState: OnboardingFeature.State(launchState: $launchState)) {
+                    OnboardingFeature() }
+                )
+                .preferredColorScheme(.light)
+            case .loading:
+                LoadingView()
+                    .preferredColorScheme(.light)
+            case .error(let message):
+                errorView(message)
+            }
+        }
+        .sheet(item: normalStatusBinding) { status in
+            AppStatusModal(status)
+        }
+        .fullScreenCover(item: errorStatusBinding) { status in
+            AppStatusModal(status, canDismiss: false)
+        }
+        .environment(\.isLiquidGlassDisabled, !isLiquidGlassEnabled)
+        .task {
+            guard !hasLaunchedScene else { return }
+            hasLaunchedScene = true
+            let (launchState, status) = await sceneUsecase.launch()
+            self.$launchState.withLock { $0 = launchState }
+            self.status = status
+        }
+    }
+
+    @ViewBuilder
+    func errorView(_ message: String) -> some View {
+        VStack {
+            Spacer()
+            Text("申し訳ございません。システムエラーにより停止しています。\n\(message)")
+                .multilineTextAlignment(.center)
+                .padding(.horizontal, 24)
+            Spacer()
+        }
+    }
+}
+
+//定数
+let spanDelta: Double = 0.005

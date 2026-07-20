@@ -7,6 +7,18 @@
 
 import Foundation
 
+private let japanTimeZone: TimeZone = TimeZone(identifier: "Asia/Tokyo") ?? .current
+private let japanLocale = Locale(identifier: "ja_JP")
+
+public extension Calendar {
+    static var japanGregorian: Calendar {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = japanTimeZone
+        calendar.locale = japanLocale
+        return calendar
+    }
+}
+
 // MARK: - SimpleDate
 public struct SimpleDate: Entity {
     public let year: Int
@@ -17,6 +29,15 @@ public struct SimpleDate: Entity {
         self.year = year
         self.month = month
         self.day = day
+    }
+    
+    public var isValid: Bool {
+        let cal = Calendar.japanGregorian
+        var comps = DateComponents()
+        comps.year = year
+        comps.month = month
+        comps.day = day
+        return cal.date(from: comps) != nil
     }
 }
 
@@ -32,6 +53,12 @@ extension SimpleDate: Comparable {
     }
 }
 
+public extension SimpleDate {
+    static var now: Self {
+        .from(.now)
+    }
+}
+
 // MARK: - SimpleTime
 public struct SimpleTime: Entity {
     public let hour: Int
@@ -42,6 +69,9 @@ public struct SimpleTime: Entity {
         self.minute = minute
     }
     
+    public var isValid: Bool {
+        (0...23).contains(hour) && (0...59).contains(minute)
+    }
 }
 
 
@@ -55,31 +85,16 @@ extension SimpleTime: Comparable {
     }
 }
 
-// MARK: - Span
-public struct Span: Entity {
-    public let id: String
-    public let start: Date
-    public let end: Date
-    
-    public init(id: String, start: Date, end: Date) {
-        self.id = id
-        self.start = start
-        self.end = end
+public extension SimpleTime {
+    static var now: Self {
+        .from(.now)
     }
 }
-
-extension Span: Identifiable { }
-
-extension Span: Comparable {
-    public static func < (lhs: Span, rhs: Span) -> Bool {
-        return lhs.start < rhs.start
-    }
-}
-
 
 // MARK: - Extension
 public extension SimpleDate {
     var toDate: Date {
+        let calendar = Calendar.japanGregorian
         var components = DateComponents()
         components.year = year
         components.month = month
@@ -87,32 +102,29 @@ public extension SimpleDate {
         components.hour = 0
         components.minute = 0
         components.second = 0
-        
-        return Calendar.current.date(from: components) ?? Date()
+        return calendar.date(from: components) ?? Date()
     }
     
-    static func fromDate(_ date: Date) -> SimpleDate {
-        let calendar = Calendar.current
-        let year = calendar.component(.year, from: date)
-        let month = calendar.component(.month, from: date)
-        let day = calendar.component(.day, from: date)
-        return SimpleDate(year: year, month: month, day: day)
+    static func from(_ date: Date) -> SimpleDate {
+        let calendar = Calendar.japanGregorian
+        let comps = calendar.dateComponents([.year, .month, .day], from: date)
+        return SimpleDate(year: comps.year ?? 1970, month: comps.month ?? 1, day: comps.day ?? 1)
     }
     
     static var today: SimpleDate {
-        return fromDate(Date())
+        return from(Date())
     }
     
     /// 曜日 (1=日曜, 2=月曜 ... 7=土曜)
-    var weekday: Int? {
-        return Calendar.current.component(.weekday, from: toDate)
+    var weekday: Int {
+        let cal = Calendar.japanGregorian
+        return cal.component(.weekday, from: toDate)
     }
 }
 
 public extension SimpleTime {
     var toDate: Date {
-        var calendar = Calendar.current
-        calendar.timeZone = .current
+        let calendar = Calendar.japanGregorian
         let now = Date()
         var components = calendar.dateComponents([.year, .month, .day], from: now)
         components.hour = hour
@@ -121,8 +133,8 @@ public extension SimpleTime {
         return calendar.date(from: components) ?? now
     }
     
-    static func fromDate(_ date: Date) -> SimpleTime {
-        let calendar = Calendar.current
+    static func from(_ date: Date) -> SimpleTime {
+        let calendar = Calendar.japanGregorian
         let components = calendar.dateComponents([.hour, .minute], from: date)
         return SimpleTime(hour: components.hour ?? 0, minute: components.minute ?? 0)
     }
@@ -131,12 +143,14 @@ public extension SimpleTime {
 public extension Date {
     var stamp: String {
         let dateFormatter = DateFormatter()
+        dateFormatter.timeZone = japanTimeZone
+        dateFormatter.locale = Locale(identifier: "ja_JP_POSIX")
         dateFormatter.dateFormat = "yyyy-MM-dd_HH-mm-ss"
         return dateFormatter.string(from: Date())
     }
     
     static func theDayAt(date: Date, hour: Int, minute: Int, second: Int) -> Date {
-        let calendar = Calendar.current
+        let calendar = Calendar.japanGregorian
         let components = calendar.dateComponents([.year, .month, .day], from: date)
         
         // 日付部分を生成
@@ -155,7 +169,7 @@ public extension Date {
     }
     
     static func combine(date: Date, time: Date) -> Date {
-        let calendar = Calendar.current
+        let calendar = Calendar.japanGregorian
         let dateComponents = calendar.dateComponents([.year, .month, .day], from: date)
         let timeComponents = calendar.dateComponents([.hour, .minute, .second], from: time)
 
@@ -167,7 +181,20 @@ public extension Date {
         merged.minute = timeComponents.minute
         merged.second = timeComponents.second
 
-        return calendar.date(from: merged)!
+        return calendar.date(from: merged) ?? Date()
+    }
+    
+    static func combine(date: SimpleDate, time: SimpleTime) -> Date {
+        let calendar = Calendar.japanGregorian
+
+        var merged = DateComponents()
+        merged.year = date.year
+        merged.month = date.month
+        merged.day = date.day
+        merged.hour = time.hour
+        merged.minute = time.minute
+        merged.second = 0
+
+        return calendar.date(from: merged) ?? Date()
     }
 }
-

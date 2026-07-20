@@ -1,5 +1,5 @@
 //
-//  async.swift
+//  Async.swift
 //  MaTool
 //
 //  Created by 松下和也 on 2025/04/02.
@@ -85,7 +85,7 @@ extension AsyncValue: Equatable where T: Equatable {
         case (.loading, .loading):
             return true
         case (.failure(let lhsError), .failure(let rhsError)):
-            return lhsError.localizedDescription == rhsError.localizedDescription // エラーの比較
+            return lhsError.asAppError == rhsError.asAppError
         case (.success(let lhsValue), .success(let rhsValue)):
             return lhsValue == rhsValue
         default:
@@ -102,11 +102,37 @@ func withTimeout<T>(
         group.addTask {
             try await operation()
         }
+
         group.addTask {
-            try await Task.sleep(nanoseconds: UInt64(seconds) * 1_000_000_000)
-            throw AuthError.timeout("Operation timed out")
+            try await Task.sleep(
+                nanoseconds: UInt64(seconds) * 1_000_000_000
+            )
+            throw AppError.auth(.timeout("タイムアウトしました"))
         }
-        defer { group.cancelAll() } // 必ずキャンセルは投げておく
-        return try await group.next()!
+
+        guard let result = try await group.next() else {
+            throw CancellationError()
+        }
+
+        group.cancelAll()
+        return result
     }
+}
+
+func task<Value>(_ operation: () async throws -> Value, defaultError: AppError = .system(.unknown("予期しないエラーが発生しました。"))) async -> AppResult<Value> {
+    do {
+        let value = try await operation()
+        return .success(value)
+    } catch {
+        let appError = error.asAppError
+        if case .system(.unexpected) = appError {
+            return .failure(defaultError)
+        }
+        return .failure(appError)
+    }
+}
+
+func task(_ operation: () async throws -> Void) async -> VoidAppResult {
+    let result: AppResult<Void> = await task(operation, defaultError: .system(.unknown("予期しないエラーが発生しました。")))
+    return result.map{ VoidSuccess() }
 }

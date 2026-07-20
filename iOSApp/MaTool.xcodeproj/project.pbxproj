@@ -7,12 +7,16 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		292F30022F0000010053637A /* Config/Debug.xcconfig in Resources */ = {isa = PBXBuildFile; fileRef = 292F30002F0000010053637A /* Config/Debug.xcconfig */; };
+		292F30032F0000010053637A /* Config/Release.xcconfig in Resources */ = {isa = PBXBuildFile; fileRef = 292F30012F0000010053637A /* Config/Release.xcconfig */; };
+		2957A6C52F6BE2E8005B5EB4 /* ComposableArchitecture in Frameworks */ = {isa = PBXBuildFile; productRef = 2957A6C42F6BE2E8005B5EB4 /* ComposableArchitecture */; };
 		29C674182EB37948003DCA4C /* amplifyconfiguration.json in Resources */ = {isa = PBXBuildFile; fileRef = 29C674172EB37948003DCA4C /* amplifyconfiguration.json */; };
-		29F7B72C2EC871D30099607E /* ComposableArchitecture in Frameworks */ = {isa = PBXBuildFile; productRef = 29F7B72B2EC871D30099607E /* ComposableArchitecture */; };
+		29CC9E422F1523B800C4CD50 /* SQLiteData in Frameworks */ = {isa = PBXBuildFile; productRef = 29CC9E412F1523B800C4CD50 /* SQLiteData */; };
 		29F7B72F2EC871F10099607E /* AWSCognitoAuthPlugin in Frameworks */ = {isa = PBXBuildFile; productRef = 29F7B72E2EC871F10099607E /* AWSCognitoAuthPlugin */; };
 		29F7B7322EC872E80099607E /* NavigationSwipeControl in Frameworks */ = {isa = PBXBuildFile; productRef = 29F7B7312EC872E80099607E /* NavigationSwipeControl */; };
 		29F7B7352EC8730E0099607E /* Kingfisher in Frameworks */ = {isa = PBXBuildFile; productRef = 29F7B7342EC8730E0099607E /* Kingfisher */; };
 		29F7B7382EC8C06D0099607E /* Shared in Frameworks */ = {isa = PBXBuildFile; productRef = 29F7B7372EC8C06D0099607E /* Shared */; };
+		2A2B2C2D2E2F303132333435 /* GoogleMobileAds in Frameworks */ = {isa = PBXBuildFile; productRef = 2A2B2C2D2E2F303132333434 /* GoogleMobileAds */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -37,6 +41,8 @@
 		291604FD2EB3665900E6C6E3 /* MaTool.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = MaTool.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		291604FE2EB3666400E6C6E3 /* iOSAppTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = iOSAppTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		291604FF2EB3666900E6C6E3 /* iOSAppUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = iOSAppUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		292F30002F0000010053637A /* Config/Debug.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Config/Debug.xcconfig; sourceTree = "<group>"; };
+		292F30012F0000010053637A /* Config/Release.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Config/Release.xcconfig; sourceTree = "<group>"; };
 		29C6740A2EB36ADC003DCA4C /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		29C674172EB37948003DCA4C /* amplifyconfiguration.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = amplifyconfiguration.json; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -53,8 +59,10 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				29CC9E422F1523B800C4CD50 /* SQLiteData in Frameworks */,
 				29F7B7382EC8C06D0099607E /* Shared in Frameworks */,
-				29F7B72C2EC871D30099607E /* ComposableArchitecture in Frameworks */,
+				2957A6C52F6BE2E8005B5EB4 /* ComposableArchitecture in Frameworks */,
+				2A2B2C2D2E2F303132333435 /* GoogleMobileAds in Frameworks */,
 				29F7B7352EC8730E0099607E /* Kingfisher in Frameworks */,
 				29F7B7322EC872E80099607E /* NavigationSwipeControl in Frameworks */,
 				29F7B72F2EC871F10099607E /* AWSCognitoAuthPlugin in Frameworks */,
@@ -96,6 +104,8 @@
 				298DACCA2EB361990053637A /* Sources */,
 				298DABD92EB361980053637A /* UITests */,
 				29C674152EB3742E003DCA4C /* Preview Content */,
+				292F30002F0000010053637A /* Config/Debug.xcconfig */,
+				292F30012F0000010053637A /* Config/Release.xcconfig */,
 				29C6740A2EB36ADC003DCA4C /* Info.plist */,
 				29C674172EB37948003DCA4C /* amplifyconfiguration.json */,
 				291605212EB3680E00E6C6E3 /* Frameworks */,
@@ -123,11 +133,13 @@
 			);
 			name = iOSApp;
 			packageProductDependencies = (
-				29F7B72B2EC871D30099607E /* ComposableArchitecture */,
 				29F7B72E2EC871F10099607E /* AWSCognitoAuthPlugin */,
 				29F7B7312EC872E80099607E /* NavigationSwipeControl */,
 				29F7B7342EC8730E0099607E /* Kingfisher */,
 				29F7B7372EC8C06D0099607E /* Shared */,
+				29CC9E412F1523B800C4CD50 /* SQLiteData */,
+				2957A6C42F6BE2E8005B5EB4 /* ComposableArchitecture */,
+				2A2B2C2D2E2F303132333434 /* GoogleMobileAds */,
 			);
 			productName = MaTool;
 			productReference = 291604FD2EB3665900E6C6E3 /* MaTool.app */;
@@ -206,11 +218,13 @@
 			);
 			mainGroup = 298BD7912D71E46600CB63F1;
 			packageReferences = (
-				29F7B72A2EC871D30099607E /* XCRemoteSwiftPackageReference "swift-composable-architecture" */,
+				2A2B2C2D2E2F303132333433 /* XCRemoteSwiftPackageReference "swift-package-manager-google-mobile-ads" */,
 				29F7B72D2EC871F10099607E /* XCRemoteSwiftPackageReference "amplify-ios" */,
 				29F7B7302EC872E80099607E /* XCRemoteSwiftPackageReference "NavigationSwipeControl" */,
 				29F7B7332EC8730E0099607E /* XCRemoteSwiftPackageReference "Kingfisher" */,
 				29F7B7362EC8C06D0099607E /* XCLocalSwiftPackageReference "../Shared" */,
+				29CC9E402F1523B800C4CD50 /* XCRemoteSwiftPackageReference "sqlite-data" */,
+				2957A6C32F6BE2E8005B5EB4 /* XCRemoteSwiftPackageReference "swift-composable-architecture" */,
 			);
 			productRefGroup = 298BD7912D71E46600CB63F1;
 			projectDirPath = "";
@@ -228,6 +242,8 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				292F30022F0000010053637A /* Config/Debug.xcconfig in Resources */,
+				292F30032F0000010053637A /* Config/Release.xcconfig in Resources */,
 				29C674182EB37948003DCA4C /* amplifyconfiguration.json in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -413,6 +429,7 @@
 		};
 		298BD7C12D71E46900CB63F1 /* Debug */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = 292F30002F0000010053637A /* Config/Debug.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
@@ -434,14 +451,14 @@
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				INFOPLIST_KEY_UIUserInterfaceStyle = Light;
+				INFOPLIST_KEY_UIUserInterfaceStyle = Automatic;
 				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 2.2.12;
-				OTHER_SWIFT_FLAGS = "$(inherited)";
+				MARKETING_VERSION = 3.0.16;
+				OTHER_SWIFT_FLAGS = "\"$(inherited)\" -Xfrontend -debug-time-function-bodies";
 				PRODUCT_BUNDLE_IDENTIFIER = StudioMK.FesTracking;
 				PRODUCT_MODULE_NAME = iOSApp;
 				PRODUCT_NAME = MaTool;
@@ -454,6 +471,7 @@
 		};
 		298BD7C22D71E46900CB63F1 /* Release */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = 292F30012F0000010053637A /* Config/Release.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
@@ -474,13 +492,13 @@
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				INFOPLIST_KEY_UIUserInterfaceStyle = Light;
+				INFOPLIST_KEY_UIUserInterfaceStyle = Automatic;
 				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 2.2.12;
+				MARKETING_VERSION = 3.0.16;
 				PRODUCT_BUNDLE_IDENTIFIER = StudioMK.FesTracking;
 				PRODUCT_MODULE_NAME = iOSApp;
 				PRODUCT_NAME = MaTool;
@@ -616,13 +634,25 @@
 /* End XCLocalSwiftPackageReference section */
 
 /* Begin XCRemoteSwiftPackageReference section */
-		29F7B72A2EC871D30099607E /* XCRemoteSwiftPackageReference "swift-composable-architecture" */ = {
+		2957A6C32F6BE2E8005B5EB4 /* XCRemoteSwiftPackageReference "swift-composable-architecture" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/pointfreeco/swift-composable-architecture";
 			requirement = {
 				kind = upToNextMajorVersion;
-				minimumVersion = 1.23.1;
+				minimumVersion = 1.26.0;
 			};
+			traits = (
+			);
+		};
+		29CC9E402F1523B800C4CD50 /* XCRemoteSwiftPackageReference "sqlite-data" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/pointfreeco/sqlite-data.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 1.6.6;
+			};
+			traits = (
+			);
 		};
 		29F7B72D2EC871F10099607E /* XCRemoteSwiftPackageReference "amplify-ios" */ = {
 			isa = XCRemoteSwiftPackageReference;
@@ -648,13 +678,26 @@
 				minimumVersion = 8.6.1;
 			};
 		};
+		2A2B2C2D2E2F303132333433 /* XCRemoteSwiftPackageReference "swift-package-manager-google-mobile-ads" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/googleads/swift-package-manager-google-mobile-ads.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 12.12.0;
+			};
+		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
-		29F7B72B2EC871D30099607E /* ComposableArchitecture */ = {
+		2957A6C42F6BE2E8005B5EB4 /* ComposableArchitecture */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = 29F7B72A2EC871D30099607E /* XCRemoteSwiftPackageReference "swift-composable-architecture" */;
+			package = 2957A6C32F6BE2E8005B5EB4 /* XCRemoteSwiftPackageReference "swift-composable-architecture" */;
 			productName = ComposableArchitecture;
+		};
+		29CC9E412F1523B800C4CD50 /* SQLiteData */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 29CC9E402F1523B800C4CD50 /* XCRemoteSwiftPackageReference "sqlite-data" */;
+			productName = SQLiteData;
 		};
 		29F7B72E2EC871F10099607E /* AWSCognitoAuthPlugin */ = {
 			isa = XCSwiftPackageProductDependency;
@@ -674,6 +717,11 @@
 		29F7B7372EC8C06D0099607E /* Shared */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = Shared;
+		};
+		2A2B2C2D2E2F303132333434 /* GoogleMobileAds */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 2A2B2C2D2E2F303132333433 /* XCRemoteSwiftPackageReference "swift-package-manager-google-mobile-ads" */;
+			productName = GoogleMobileAds;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

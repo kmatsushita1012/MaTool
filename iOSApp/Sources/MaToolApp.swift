@@ -6,13 +6,17 @@
 //
 
 import SwiftUI
+import Dependencies
 
 @main
 struct MaToolApp: App {
-    private let appInitializer = AppInitializer()
+    @Dependency(\.adManager) private var adManager
 
     init() {
-        appInitializer.initializeEnvironment()
+        let adManager = self.adManager
+        Task { @MainActor in
+            adManager.configureIfNeeded()
+        }
     }
 
     var body: some Scene {
@@ -22,4 +26,4 @@ struct MaToolApp: App {
     }
 }
 
-//差分注入
+// 差分用

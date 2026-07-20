@@ -1,0 +1,493 @@
+//
+//  RouteEditView.swift
+//  MaTool
+//
+//  Created by 松下和也 on 2025/08/01.
+//
+
+import ComposableArchitecture
+import SwiftUI
+import NavigationSwipeControl
+import Shared
+
+@available(iOS 17.0, *)
+struct RouteEditView: View {
+    @Dependency(\.values.isLiquidGlassEnabled) var isLiquidGlassEnabled
+    
+    typealias Tab = RouteEditFeature.Tab
+    
+    @SwiftUI.Bindable var store: StoreOf<RouteEditFeature>
+    @State private var selectedDetent: PresentationDetent = .large
+    @State private var pickerHeight: CGFloat = 0
+    @State private var didTriggerSubmitLongPress = false
+    
+    var body: some View {
+        Group{
+            if #available(iOS 26.0, *), isLiquidGlassEnabled {
+                contentAfterLiquidGlass
+            } else {
+                contentBeforeLiquidGlass
+            }
+        }
+        .safeAreaInset(edge: .bottom){
+            if store.tab != .info {
+                Group {
+                    if #available(iOS 26.0, *), isLiquidGlassEnabled {
+                        districtAreaOverlayButton
+                            .glassEffect()
+                    } else {
+                        districtAreaOverlayButton
+                    }
+                }
+                .padding(.horizontal)
+                .frame(maxWidth: .infinity, alignment: .trailing)
+            }
+        }
+        .toolbar {
+            toolbar
+        }
+        .dismissible(backButton: false, edgeSwipe: false)
+        .sheet(item: $store.scope(state: \.point, action: \.point)){ store in
+            NavigationStack{
+                PointEditView(store: store)
+                    .dismissible(backButton: false, edgeSwipe: false)
+            }
+            .presentationDetents([.fraction(0.3), .fraction(0.5), .large], selection: $selectedDetent)
+            .interactiveDismissDisabled()
+        }
+        .sheet(item: $store.destination){ destination in
+            switch destination {
+            case .preview(let item):
+                PreviewView(item: item)
+            case .history:
+                NavigationStack {
+                    RouteHistoryView(.init(districtId: store.district.id, excludingRouteId: store.route.id) {
+                        store.send(.sourceSelected($0))
+                    })
+                }
+            case .passage:
+                NavigationStack{
+                    PassageOptionsView(festivalId: store.district.festivalId, myDistrictId: store.district.id) {
+                        store.send(.passageSelected(districtId: $0, memo: $1))
+                    }
+                }
+            }
+        }
+        .alert($store.scope(state: \.alert?.notice, action: \.alert.notice))
+        .alert($store.scope(state: \.alert?.delete, action: \.alert.delete))
+        .loadingOverlay(store.isLoading)
+        .onAppear{
+            store.send(.onAppear)
+        }
+    }
+    
+    @ToolbarContentBuilder
+    var toolbar: some ToolbarContent {
+        ToolbarSaveButton(title: store.saveButtonTitle, isDisabled: store.isConfirmDisabled){
+            store.send(.saveTapped)
+        }
+        ToolbarCancelButton {
+            store.send(.cancelTapped)
+        }
+        if #available(iOS 26.0, *), isLiquidGlassEnabled {
+            bottomBarAfterLiquidGlass
+        } else {
+            bottomBarBeforeLiquidGlass
+        }
+    }
+}
+
+// MARK: - LiquidGlass対応前
+@available(iOS 17.0, *)
+extension RouteEditView {
+    @ViewBuilder
+    var contentBeforeLiquidGlass: some View {
+        VStack {
+            tab
+                .padding(.horizontal)
+            if store.tab == .info {
+                info
+            } else {
+                map
+            }
+            Spacer()
+        }
+        .navigationTitle(store.title)
+        .navigationBarTitleDisplayMode(.inline)
+    }
+    
+    @ToolbarContentBuilder
+    var bottomBarBeforeLiquidGlass: some ToolbarContent {
+        ToolbarItemGroup(placement: .bottomBar) {
+            HStack(alignment: .center, spacing: 16) {
+                switch store.tab {
+                case .info:
+                    Button("コピー"){
+                        store.send(.copyTapped)
+                    }
+                case .edit, .public:
+                    undoButton
+                    redoButton
+                    Spacer()
+                    longPressModeView
+                }
+                Spacer()
+                submitButton
+            }
+            .frame(maxWidth: .infinity)
+            .padding(.horizontal)
+            .padding(.vertical, 4)
+        }
+    }
+}
+
+// MARK: - LiquidGlass対応後
+@available(iOS 17.0, *)
+extension RouteEditView {
+    @ViewBuilder
+    @available(iOS 26.0, *)
+    var contentAfterLiquidGlass: some View {
+        Group {
+            if store.tab == .info {
+                info
+            } else {
+                map
+                .ignoresSafeArea(.container, edges: [.bottom, .top])
+            }
+        }
+        .safeAreaInset(edge: .top) {
+            tab
+                .glassEffect(.regular)
+                .padding(.horizontal)
+                .padding(.vertical, 8)
+        }
+        .navigationTitle(store.title)
+        .navigationBarTitleDisplayMode(.inline)
+    }
+    
+    @ToolbarContentBuilder
+    @available(iOS 26.0, *)
+    var bottomBarAfterLiquidGlass: some ToolbarContent {
+        switch store.tab {
+        case .info:
+            ToolbarItem(placement: .bottomBar){
+                Button("コピー"){
+                    store.send(.copyTapped)
+                }
+            }
+        case .edit, .public:
+            ToolbarItemGroup(placement: .bottomBar) {
+                undoButton
+                redoButton
+            }
+            ToolbarSpacer(placement: .bottomBar)
+            ToolbarItemGroup(placement: .bottomBar){
+                longPressModeView
+            }
+            
+        }
+        ToolbarSpacer(placement: .bottomBar)
+        ToolbarItemGroup(placement: .bottomBar){
+            submitButton
+        }
+    }
+}
+
+// MARK: - Common
+@available(iOS 17.0, *)
+extension RouteEditView {
+    
+    @ViewBuilder
+    var info: some View {
+        List{
+            Section {
+                if store.mode == .preview {
+                    LabeledContent("町名", value: store.district.name)
+                }
+                LabeledContent("日程", value: store.period.text(dateFormat: "y/m/d (w)"))
+                if let startTime = store.start?.time,
+                   let endTime = store.end?.time {
+                    LabeledContent("時間", value: "\(startTime.text) ~ \(endTime.text)")
+                }
+            } footer: {
+                Text("出発・到着時刻は地図編集画面から先頭・末尾のピンで編集してください")
+            }
+            Section(header: Text("備考（任意）")) {
+                TextEditor(text: $store.route.description.nonOptional)
+                    .frame(height:64)
+            }
+            Section {
+                Picker(selection: $store.route.visibility) {
+                    ForEach(Visibility.allCases, id: \.self) { option in
+                        Text(option.label).tag(option)
+                    }
+                } label: {
+                    Text("公開範囲を選択")
+                }
+                .pickerStyle(.menu)
+            }
+            
+            Section {
+                Button("自動判定", systemImage: "sparkles"){
+                    store.send(.autoPassageTapped)
+                }
+                .disabled(store.isAutoPassageDisabled)
+                .labelStyle(.titleAndIcon)
+
+                ForEach(store.passages) { passage in
+                    if let index = store.passages.firstIndex(of: passage){
+                        PassageItemView(
+                            passage: passage,
+                            canMoveUp: index > 0,
+                            canMoveDown: index < store.passages.count - 1,
+                            onInsertAbove: {
+                                store.send(.passageInsertAboveTapped(index))
+                            },
+                            onInsertBelow: {
+                                store.send(.passageInsertBelowTapped(index))
+                            },
+                            onMoveUp: {
+                                withAnimation {
+                                    store.send(.passageMoved(from: IndexSet(integer: index), to: index - 1))
+                                    return
+                                }
+                            },
+                            onMoveDown: {
+                                withAnimation {
+                                    store.send(.passageMoved(from: IndexSet(integer: index), to: index + 2))
+                                    return
+                                }
+                            },
+                            onDelete: {
+                                withAnimation {
+                                    store.send(.passageDeleteTapped(index))
+                                    return
+                                }
+                            }
+                        )
+                    }
+                }
+                .onMove{
+                    store.send(.passageMoved(from: $0, to: $1))
+                }
+                Button("追加", systemImage: "plus.circle"){
+                    store.send(.passageAddTapped)
+                }
+                .labelStyle(.titleAndIcon)
+            } header: {
+                HStack{
+                    Text("通過する町")
+                }
+            } footer: {
+                Text("自動判定を実行すると既存の入力は削除されます。結果には誤差が生じる可能性があるので、必ず確認してください。")
+            }
+            .formStyle(.columns)
+            
+            if store.isDeleteable {
+                Section {
+                    Button("ルートを削除", systemImage: "trash", role: .destructive){
+                        store.send(.deleteTapped)
+                    }
+                    .labelStyle(.titleAndIcon)
+                }
+            }
+        }
+    }
+    
+    @ViewBuilder
+    var map: some View {
+        MapView(
+            style: store.tab == .public ? .public : .edit,
+            points: store.pointEntries,
+            districtAreaOverlays: store.districtAreaOverlays,
+            showsDistrictAreaOverlay: store.isDistrictAreaOverlayVisible,
+            region: $store.region,
+            size: $store.size,
+            pointTapped: { store.send(.pointTapped($0)) },
+            onLongPress: { store.send(.mapLongPressed($0)) }
+        )
+    }
+    
+    @ViewBuilder
+    var tab: some View {
+        Picker("モード", selection: $store.tab) {
+            Text("基本情報")
+                .tag(Tab.info)
+            Text("地図編集")
+                .tag(Tab.edit)
+            Text("一般公開")
+                .tag(Tab.`public`)
+        }
+        .routeSegmentPickerStyle()
+        .frame(maxWidth: .infinity)
+    }
+    
+    @ViewBuilder
+    var undoButton: some View {
+        Button(systemImage: "arrow.uturn.backward") {
+            store.send(.undoTapped)
+        }
+        .disabled(!store.canUndo)
+    }
+    
+    @ViewBuilder
+    var redoButton: some View {
+        Button(systemImage: "arrow.uturn.forward") {
+            store.send(.redoTapped)
+        }
+        .disabled(!store.canRedo)
+    }
+    
+    @ViewBuilder
+    var submitButton: some View {
+        Button {
+            if didTriggerSubmitLongPress {
+                didTriggerSubmitLongPress = false
+                return
+            }
+            store.send(.wholeTapped)
+        } label: {
+            Text("提出用")
+        }
+        .overlay {
+            if store.isLoading {
+                ProgressView()
+                    .controlSize(.small)
+            }
+        }
+        .disabled(store.isLoading)
+        .simultaneousGesture(
+            LongPressGesture(minimumDuration: 0.6).onEnded { _ in
+                if store.isPartialEnable {
+                    didTriggerSubmitLongPress = true
+                    store.isSubmitDialogPresented = true
+                }
+            }
+        )
+        .confirmationDialog(
+            "提出用PDFの出力方法を選択",
+            isPresented: $store.isSubmitDialogPresented,
+            titleVisibility: .visible
+        ) {
+            Button("全体を出力") {
+                store.send(.wholeTapped)
+            }
+            Button("表示範囲を出力") {
+                store.send(.partialTapped)
+            }
+            .disabled(!store.isPartialEnable)
+        }
+    }
+
+    @ViewBuilder
+    var districtAreaOverlayButton: some View {
+        let isActive = store.isDistrictAreaOverlayVisible
+        Button {
+            store.send(.districtAreaOverlayTapped)
+        } label: {
+            Image(systemName: "square.grid.3x3.fill")
+                .padding()
+                .foregroundStyle(isActive ? Color.accent : Color.primary)
+        }
+        .accessibilityLabel("町域オーバーレイ")
+    }
+    
+    @ViewBuilder
+    var longPressModeView: some View {
+        VStack(alignment: .center, spacing: 0) {
+            Text("地図を長押しで")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+            Text("地点を\(operationLabel)")
+                .foregroundStyle(.primary)
+        }
+        .frame(width: 100)
+    }
+    
+    var operationLabel: String {
+        switch store.operation {
+        case .add:
+            return "追加"
+        case .insert:
+            return "挿入"
+        case .move:
+            return "移動"
+        }
+    }
+}
+
+private struct RouteSegmentPickerStyleModifier: ViewModifier {
+    init() {
+        UISegmentedControl.appearance().setTitleTextAttributes(
+            [.font: UIFont.preferredFont(forTextStyle: .body)],
+            for: .normal
+        )
+        UISegmentedControl.appearance().setTitleTextAttributes(
+            [.font: UIFont.preferredFont(forTextStyle: .headline)],
+            for: .selected
+        )
+    }
+    
+    func body(content: Content) -> some View {
+        content
+            .pickerStyle(.segmented)
+            .controlSize(.large)
+    }
+}
+
+private extension View {
+    func routeSegmentPickerStyle() -> some View {
+        modifier(RouteSegmentPickerStyleModifier())
+    }
+}
+
+struct PreviewView: View {
+    let item: ExportedItem
+    @State var isZooming: Bool = false
+    
+    @Dependency(\.values.isLiquidGlassEnabled) var isLiquidGlassEnabled: Bool
+    @Environment(\.dismiss) private var dismiss
+    
+    var body: some View {
+        NavigationStack{
+            ZoomableImage(image: item.image, isZooming: $isZooming)
+                .ignoresSafeArea(isZooming ? .all : [])
+                .navigationTitle("プレビュー")
+                .navigationBarTitleDisplayMode(.inline)
+                .toolbar {
+                    if isLiquidGlassEnabled {
+                        toolbarAfterLiquidGlass
+                    } else {
+                        toolbarBeforeLiquidGlass
+                    }
+                }
+        }
+    }
+    
+    @ToolbarContentBuilder
+    var toolbarBeforeLiquidGlass: some ToolbarContent {
+        ToolbarCancelButton {
+            dismiss()
+        }
+        ToolbarItem(placement: .primaryAction) {
+            ShareLink(item: item.url) {
+                Image(systemName: "square.and.arrow.up")
+                    .imageScale(.large)
+            }
+        }
+    }
+    
+    @ToolbarContentBuilder
+    var toolbarAfterLiquidGlass: some ToolbarContent {
+        ToolbarCancelButton {
+            dismiss()
+        }
+        ToolbarItem(placement: .primaryAction) {
+            ShareLink(item: item.url) {
+                Image(systemName: "square.and.arrow.up")
+                    .imageScale(.large)
+                    .tint(.accentColor)
+            }
+        }
+    }
+}

@@ -12,10 +12,16 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup Xcode
+      - name: Setup Xcode 26.3
         uses: maxim-lobanov/setup-xcode@v1
         with:
-          xcode-version: "26.0"
+          xcode-version: "26.3"
+
+      - name: Create amplifyconfiguration.json
+        env:
+          AMPLIFYCONFIGURATION_JSON_B64: ${{ secrets.AMPLIFYCONFIGURATION_JSON_B64 }}
+        run: |
+          echo "$AMPLIFYCONFIGURATION_JSON_B64" | base64 --decode > iOSApp/amplifyconfiguration.json
 
       - name: Ensure SPM Cache Dir Exists
         run: mkdir -p iOSApp/Caches/org.swift.swiftpm
@@ -25,7 +31,7 @@ jobs:
         with:
           path: |
             ~/Library/Caches/org.swift.swiftpm/
-          key: ${{ runner.os }}-spm-iOSApp-26.0
+          key: ${{ runner.os }}-spm-iOSApp-26.3
           restore-keys: |
             ${{ runner.os }}-spm-iOSApp-
 
@@ -33,9 +39,62 @@ jobs:
         uses: actions/cache@v3
         with:
           path: iOSApp/.derivedData
-          key: ${{ runner.os }}-derived-26.0
+          key: ${{ runner.os }}-derived-26.3
           restore-keys: |
             ${{ runner.os }}-derived-
+
+      - name: Resolve packages
+        env:
+          MATOOL_API_BASE_URL: ${{ secrets.MATOOL_API_BASE_URL }}
+          MATOOL_USER_GUIDE_URL: ${{ secrets.MATOOL_USER_GUIDE_URL }}
+          MATOOL_CONTACT_URL: ${{ secrets.MATOOL_CONTACT_URL }}
+        run: |
+          chmod +x .github/scripts/generate_ios_xcconfig.sh
+          ./.github/scripts/generate_ios_xcconfig.sh
+          xcodebuild \
+            -project iOSApp/MaTool.xcodeproj \
+            -scheme iOSApp \
+            -skipPackagePluginValidation \
+            -resolvePackageDependencies
+
+      - name: Select latest plain iPhone simulator
+        id: sim
+        shell: bash
+        run: |
+          set -euxo pipefail
+
+          DESTS="$(
+            xcodebuild \
+              -project iOSApp/MaTool.xcodeproj \
+              -scheme iOSApp \
+              -showdestinations \
+              -skipMacroValidation \
+              -skipPackagePluginValidation
+          )"
+
+          DEST_LINE="$(
+            printf '%s\n' "$DESTS" | awk '
+              /platform:iOS Simulator/ && /name:iPhone / &&
+              $0 !~ /Pro/ && $0 !~ /Max/ && $0 !~ /Air/ && $0 !~ /16e/ {
+                match($0, /OS:[0-9.]+/)
+                os = substr($0, RSTART + 3, RLENGTH - 3)
+                print os " " $0
+              }
+            ' | sort -V | tail -1 | cut -d' ' -f2-
+          )"
+
+          [ -n "$DEST_LINE" ]
+
+          DESTINATION_ID="$(printf '%s\n' "$DEST_LINE" | sed -E 's/.*id:([^,}]*).*/\1/')"
+          DEVICE_NAME="$(printf '%s\n' "$DEST_LINE" | sed -E 's/.*name:([^}]*)[[:space:]]*}/\1/' | xargs)"
+          OS_VERSION="$(printf '%s\n' "$DEST_LINE" | sed -E 's/.*OS:([^,}]+).*/\1/' | xargs)"
+
+          echo "Selected simulator:"
+          echo "  Device: $DEVICE_NAME"
+          echo "  OS:     iOS $OS_VERSION"
+          echo "  UDID:   $DESTINATION_ID"
+
+          echo "DESTINATION_ID=$DESTINATION_ID" >> "$GITHUB_OUTPUT"
 
       - name: Build&Test
         run: |
@@ -44,11 +103,12 @@ jobs:
           xcodebuild \
             -project iOSApp/MaTool.xcodeproj \
             -scheme iOSApp \
-            -destination 'platform=iOS Simulator,name=iPhone 17,OS=26.0.1' \
+            -destination "id=${{ steps.sim.outputs.DESTINATION_ID }}" \
             -configuration Debug \
             -derivedDataPath iOSApp/.derivedData \
             -enableCodeCoverage YES \
             -skipMacroValidation \
+            -skipPackagePluginValidation \
             CODE_SIGNING_ALLOWED=NO \
             ENABLE_SWIFT_MACROS=YES \
             test \

@@ -17,8 +17,6 @@ enum RouteControllerKey: DependencyKey {
 protocol RouteControllerProtocol: Sendable {
 	func get(_ request: Request, next: Handler) async throws -> Response
 	func query(_ request: Request, next: Handler) async throws -> Response
-	func getCurrent(_ request: Request, next: Handler) async throws -> Response
-	func getIds(_ request: Request, next: Handler) async throws -> Response
 	func post(_ request: Request, next: Handler) async throws -> Response
 	func put(_ request: Request, next: Handler) async throws -> Response
 	func delete(_ request: Request, next: Handler) async throws -> Response
@@ -40,37 +38,30 @@ struct RouteController: RouteControllerProtocol {
 
 	func query(_ request: Request, next: Handler) async throws -> Response {
 		let districtId = try request.parameter("districtId", as: String.self)
+        var type: RouteQueryType = .all
+        if let year = try? request.parameter("year", as: String.self), year == "latest" {
+            type = .latest
+        } else if let year = try? request.parameter("year", as: Int.self) {
+            type = .year(year)
+        }
 		let user = request.user ?? .guest
-		let result = try await usecase.query(by: districtId, user: user)
-		return try .success(result)
-	}
-
-	func getCurrent(_ request: Request, next: Handler) async throws -> Response {
-		let districtId = try request.parameter("districtId", as: String.self)
-		let user = request.user ?? .guest
-        let result = try await usecase.getCurrent(districtId: districtId, user: user, now: .now)
-		return try .success(result)
-	}
-
-	func getIds(_ request: Request, next: Handler) async throws -> Response {
-		let user = request.user ?? .guest
-		let result = try await usecase.getAllRouteIds(user: user)
+        let result = try await usecase.query(by: districtId, type: type, user: user)
 		return try .success(result)
 	}
 
 	func post(_ request: Request, next: Handler) async throws -> Response {
 		let districtId = try request.parameter("districtId", as: String.self)
-		let body = try request.body(as: Route.self)
+		let body = try request.body(as: RoutePack.self)
 		let user = request.user ?? .guest
-		let result = try await usecase.post(districtId: districtId, route: body, user: user)
+        let result = try await usecase.post(districtId: districtId, pack: body, user: user)
 		return try .success(result)
 	}
 
 	func put(_ request: Request, next: Handler) async throws -> Response {
 		let id = try request.parameter("routeId", as: String.self)
-		let body = try request.body(as: Route.self)
+		let body = try request.body(as: RoutePack.self)
 		let user = request.user ?? .guest
-		let result = try await usecase.put(id: id, route: body, user: user)
+        let result = try await usecase.put(id: id, pack: body, user: user)
 		return try .success(result)
 	}
 
