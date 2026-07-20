@@ -12,6 +12,10 @@ import SQLiteData
 
 @Reducer
 struct PublicMapFeature {
+    struct DistrictLaunchResult: Equatable {
+        let district: District
+        let routeId: Route.ID?
+    }
     
     enum Content: Equatable{
         case locations(Festival)
@@ -26,6 +30,7 @@ struct PublicMapFeature {
     
     @ObservableState
     struct State: Equatable{
+        let userRole: UserRole
         let contents: [Content]
         var selectedContent: Content
         var currentPeriodId: Period.ID? = nil
@@ -43,6 +48,8 @@ struct PublicMapFeature {
         case dismissTapped
         case contentSelected(Content)
         case routePrepared(District, Route.ID?)
+        case districtContentEvaluated(District, Bool)
+        case districtLaunchReceived(AppResult<DistrictLaunchResult>)
         case errorCaught(AppError)
         case destination(PresentationAction<Destination.Action>)
         case alert(PresentationAction<AlertFeature.Action>)
@@ -50,6 +57,7 @@ struct PublicMapFeature {
     
     @Dependency(\.mapLocationProvider) var mapLocationProvider
     @Dependency(SceneDataFetcherKey.self) var sceneDataFetcher
+    @Dependency(\.publicMapAdUsecase) var publicMapAdUsecase
     @Dependency(\.dismiss) var dismiss
     
     var body: some ReducerOf<PublicMapFeature> {
@@ -65,6 +73,7 @@ struct PublicMapFeature {
                 return .run{ send in
                     await mapLocationProvider.requestPermission()
                     await mapLocationProvider.startTracking()
+                    await publicMapAdUsecase.prepareSession()
                 }
             case .binding:
                 return .none
@@ -98,8 +107,18 @@ struct PublicMapFeature {
                         state.currentPeriodId = nil
                     }
                     state.isLoading = true
-                    return routeEffect(district, periodId: state.currentPeriodId)
+                    return districtLaunchEffect(
+                        userRole: state.userRole,
+                        district: district,
+                        periodId: state.currentPeriodId
+                    )
                 }
+            case .districtLaunchReceived(.success(let result)):
+                return .send(.routePrepared(result.district, result.routeId))
+            case .districtLaunchReceived(.failure(let error)):
+                state.isLoading = false
+                state.alert = .error(error)
+                return .none
             case .routePrepared(let district, let routeId):
                 state.isLoading = false
                 if let routeId,
@@ -115,7 +134,19 @@ struct PublicMapFeature {
                         mapRegion: state.$mapRegion
                     )
                 )
-                return .none
+                let hasDisplayableContent = state.destination?.route?.hasDisplayableContent ?? false
+                return .send(.districtContentEvaluated(district, hasDisplayableContent))
+            case .districtContentEvaluated(let district, let hasDisplayableContent):
+                if !hasDisplayableContent {
+                    state.alert = AlertFeature.notice("配信停止中です。")
+                }
+                return .run { [userRole = state.userRole, districtId = district.id] _ in
+                    await publicMapAdUsecase.handleDistrictSelectionResult(
+                        userRole: userRole,
+                        districtId: districtId,
+                        hasDisplayableContent: hasDisplayableContent
+                    )
+                }
             case .errorCaught(let error):
                 state.alert = .error(error)
                 return .none
@@ -133,21 +164,28 @@ struct PublicMapFeature {
         switch action {
         case .destination(.presented(.route(.selected(let entry)))):
             state.currentPeriodId = entry.period.id
-            return .none
+            return .run { [userRole = state.userRole, districtId = entry.route.districtId] _ in
+                await publicMapAdUsecase.handlePeriodSelection(
+                    userRole: userRole,
+                    districtId: districtId
+                )
+            }
         default:
             return .none
         }
     }
     
-    func routeEffect(_ district: District, periodId: Period.ID?) -> Effect<Action> {
-        .run { send in
-            let result = await task({ try await sceneDataFetcher.launchDistrict(districtId: district.id, periodId: periodId, clearsExistingData: false) }, defaultError: .system(.unknown("予期しないエラーが発生しました。")))
-            switch result {
-            case .success(let routeId):
-                await send(.routePrepared(district, routeId))
-            case .failure(let error):
-                await send(.errorCaught(error))
-            }
+    func districtLaunchEffect(
+        userRole: UserRole,
+        district: District,
+        periodId: Period.ID?
+    ) -> Effect<Action> {
+        .task(Action.districtLaunchReceived) {
+            let routeId = try await publicMapAdUsecase.handleDistrictSelection(
+                districtId: district.id,
+                periodId: periodId
+            )
+            return DistrictLaunchResult(district: district, routeId: routeId)
         }
     }
 }
@@ -194,7 +232,8 @@ extension PublicMapFeature.Content: Identifiable, Hashable  {
 }
 
 extension PublicMapFeature.State {
-    init(festival: Festival, district: District, routeId: Route.ID?) {
+    init(festival: Festival, district: District, routeId: Route.ID?, userRole: UserRole) {
+        self.userRole = userRole
         let districts: [District] = FetchAll(District.where{ $0.festivalId.eq(festival.id) }).wrappedValue
         let locations: PublicMapFeature.Content = .locations(festival)
         let contents = [locations]
@@ -222,8 +261,10 @@ extension PublicMapFeature.State {
     }
     
     init(
-        festival: Festival
+        festival: Festival,
+        userRole: UserRole
     ){
+        self.userRole = userRole
         let districts = FetchAll(District.where{ $0.festivalId.eq(festival.id) }).wrappedValue
         let selected: PublicMapFeature.Content = .locations(festival)
         let contents = [selected] + districts.sorted().map{ PublicMapFeature.Content.route($0) }

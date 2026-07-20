@@ -8,6 +8,16 @@
 import Foundation
 
 private let japanTimeZone: TimeZone = TimeZone(identifier: "Asia/Tokyo") ?? .current
+private let japanLocale = Locale(identifier: "ja_JP")
+
+public extension Calendar {
+    static var japanGregorian: Calendar {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = japanTimeZone
+        calendar.locale = japanLocale
+        return calendar
+    }
+}
 
 // MARK: - SimpleDate
 public struct SimpleDate: Entity {
@@ -22,8 +32,7 @@ public struct SimpleDate: Entity {
     }
     
     public var isValid: Bool {
-        var cal = Calendar.current
-        cal.timeZone = japanTimeZone
+        let cal = Calendar.japanGregorian
         var comps = DateComponents()
         comps.year = year
         comps.month = month
@@ -85,8 +94,7 @@ public extension SimpleTime {
 // MARK: - Extension
 public extension SimpleDate {
     var toDate: Date {
-        var calendar = Calendar.current
-        calendar.timeZone = japanTimeZone
+        let calendar = Calendar.japanGregorian
         var components = DateComponents()
         components.year = year
         components.month = month
@@ -98,8 +106,7 @@ public extension SimpleDate {
     }
     
     static func from(_ date: Date) -> SimpleDate {
-        var calendar = Calendar.current
-        calendar.timeZone = japanTimeZone
+        let calendar = Calendar.japanGregorian
         let comps = calendar.dateComponents([.year, .month, .day], from: date)
         return SimpleDate(year: comps.year ?? 1970, month: comps.month ?? 1, day: comps.day ?? 1)
     }
@@ -110,16 +117,14 @@ public extension SimpleDate {
     
     /// 曜日 (1=日曜, 2=月曜 ... 7=土曜)
     var weekday: Int {
-        var cal = Calendar.current
-        cal.timeZone = japanTimeZone
+        let cal = Calendar.japanGregorian
         return cal.component(.weekday, from: toDate)
     }
 }
 
 public extension SimpleTime {
     var toDate: Date {
-        var calendar = Calendar.current
-        calendar.timeZone = japanTimeZone
+        let calendar = Calendar.japanGregorian
         let now = Date()
         var components = calendar.dateComponents([.year, .month, .day], from: now)
         components.hour = hour
@@ -129,8 +134,7 @@ public extension SimpleTime {
     }
     
     static func from(_ date: Date) -> SimpleTime {
-        var calendar = Calendar.current
-        calendar.timeZone = japanTimeZone
+        let calendar = Calendar.japanGregorian
         let components = calendar.dateComponents([.hour, .minute], from: date)
         return SimpleTime(hour: components.hour ?? 0, minute: components.minute ?? 0)
     }
@@ -146,8 +150,7 @@ public extension Date {
     }
     
     static func theDayAt(date: Date, hour: Int, minute: Int, second: Int) -> Date {
-        var calendar = Calendar.current
-        calendar.timeZone = japanTimeZone
+        let calendar = Calendar.japanGregorian
         let components = calendar.dateComponents([.year, .month, .day], from: date)
         
         // 日付部分を生成
@@ -166,8 +169,7 @@ public extension Date {
     }
     
     static func combine(date: Date, time: Date) -> Date {
-        var calendar = Calendar.current
-        calendar.timeZone = japanTimeZone
+        let calendar = Calendar.japanGregorian
         let dateComponents = calendar.dateComponents([.year, .month, .day], from: date)
         let timeComponents = calendar.dateComponents([.hour, .minute, .second], from: time)
 
@@ -183,8 +185,7 @@ public extension Date {
     }
     
     static func combine(date: SimpleDate, time: SimpleTime) -> Date {
-        var calendar = Calendar.current
-        calendar.timeZone = japanTimeZone
+        let calendar = Calendar.japanGregorian
 
         var merged = DateComponents()
         merged.year = date.year
@@ -197,4 +198,3 @@ public extension Date {
         return calendar.date(from: merged) ?? Date()
     }
 }
-

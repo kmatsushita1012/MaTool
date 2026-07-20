@@ -113,6 +113,10 @@ struct PublicRouteFeature {
             case .locationReceived(.success):
                 if let coordinate = state.float?.floatLocation.coordinate {
                     state.$mapRegion.withLock{ $0 = makeRegion(origin: coordinate, spanDelta: spanDelta) }
+                } else {
+                    #if DEBUG
+                        state.alert = .error("屋台位置フォーカスに失敗しました。\n地区ID: \(state.district.id)\n位置情報がローカルに反映されていません。")
+                    #endif
                 }
                 return .none
             case .locationReceived(.failure(let error)):
@@ -123,6 +127,9 @@ struct PublicRouteFeature {
                 } else {
                     state.alert = .error(error)
                 }
+                #if DEBUG
+                    state.alert = .error("屋台位置フォーカスに失敗しました。\n地区ID: \(state.district.id)\n\(error.message)")
+                #endif
                 return .none
             case .replayTapped:
                 if state.replay.isRunning {
@@ -159,6 +166,9 @@ struct PublicRouteFeature {
 }
 
 extension PublicRouteFeature.State {
+    var hasDisplayableContent: Bool {
+        !routes.isEmpty || float != nil
+    }
     
     init(
         _ district: District,

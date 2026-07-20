@@ -227,33 +227,35 @@ struct RoutePassageAutoDetectorTests {
             Point(routeId: routeId, coordinate: .init(latitude: 0.0, longitude: 0.0), index: 0),
             Point(routeId: routeId, coordinate: .init(latitude: 0.0, longitude: 10.0), index: 1)
         ]
-        let district1 = District(
-            id: "district-1",
-            name: "1",
-            festivalId: "festival",
-            area: [
-                .init(latitude: -1, longitude: 1),
-                .init(latitude: 1, longitude: 1),
-                .init(latitude: 1, longitude: 3),
-                .init(latitude: -1, longitude: 3)
-            ]
-        )
-        let district2 = District(
-            id: "district-2",
-            name: "2",
-            festivalId: "festival",
-            area: [
-                .init(latitude: -1, longitude: 5),
-                .init(latitude: 1, longitude: 5),
-                .init(latitude: 1, longitude: 7),
-                .init(latitude: -1, longitude: 7)
-            ]
-        )
+        let districts = [
+            District(
+                id: "district-a",
+                name: "A",
+                festivalId: "festival",
+                area: [
+                    .init(latitude: -1, longitude: 1),
+                    .init(latitude: 1, longitude: 1),
+                    .init(latitude: 1, longitude: 4),
+                    .init(latitude: -1, longitude: 4)
+                ]
+            ),
+            District(
+                id: "district-b",
+                name: "B",
+                festivalId: "festival",
+                area: [
+                    .init(latitude: -1, longitude: 6),
+                    .init(latitude: 1, longitude: 6),
+                    .init(latitude: 1, longitude: 9),
+                    .init(latitude: -1, longitude: 9)
+                ]
+            )
+        ]
 
-        // districts 配列順を逆にしても、通過順は route 進行順を期待
         let detector = RoutePassageAutoDetector(mode: .includeTouch)
-        let passages = detector.makePassages(routeId: routeId, points: points, districts: [district2, district1])
+        let passages = detector.makePassages(routeId: routeId, points: points, districts: districts)
 
-        #expect(passages.map(\.districtId) == ["district-1", "district-2"])
+        #expect(passages.map(\.districtId) == ["district-a", "district-b"])
+        #expect(passages.map(\.order) == [0, 1])
     }
 }

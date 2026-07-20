@@ -54,6 +54,7 @@ jobs:
           xcodebuild \
             -project iOSApp/MaTool.xcodeproj \
             -scheme iOSApp \
+            -skipPackagePluginValidation \
             -resolvePackageDependencies
 
       - name: Select latest plain iPhone simulator
@@ -107,6 +108,7 @@ jobs:
             -derivedDataPath iOSApp/.derivedData \
             -enableCodeCoverage YES \
             -skipMacroValidation \
+            -skipPackagePluginValidation \
             CODE_SIGNING_ALLOWED=NO \
             ENABLE_SWIFT_MACROS=YES \
             test \

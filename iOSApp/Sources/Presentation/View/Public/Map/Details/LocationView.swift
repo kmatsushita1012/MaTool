@@ -20,7 +20,8 @@ struct LocationView: View {
         VStack(alignment: .leading, spacing: 16){
             BulletItem(text: "\(entry.district.name)")
             BulletItem(text: entry.floatLocation.timestamp.text())
-            Spacer()
+            PublicMapBannerAdSection()
+            Spacer(minLength: 0)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding()

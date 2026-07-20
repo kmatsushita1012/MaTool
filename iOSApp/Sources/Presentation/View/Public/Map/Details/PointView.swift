@@ -26,7 +26,8 @@ struct PointView: View {
             if let time = entry.time {
                 BulletItem(text: time.text)
             }
-            Spacer()
+            PublicMapBannerAdSection()
+            Spacer(minLength: 0)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding()

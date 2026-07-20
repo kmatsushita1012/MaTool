@@ -6,6 +6,19 @@ import Shared
 
 
 struct PDFRendererTests {
+    @Test func PDFファイル名はorderに1を足した値を先頭に付ける() {
+        let district = District(id: "district-1", name: "中央町", festivalId: "festival-1", order: 0)
+
+        #expect(district.pdfFileName() == "1 中央町.pdf")
+        #expect(district.pdfFileName(suffix: "_行動表") == "1 中央町_行動表.pdf")
+    }
+
+    @Test func PDFファイル名はorderが0始まりでも1始まりで表示する() {
+        let district = District(id: "district-1", name: "中央町", festivalId: "festival-1", order: 4)
+
+        #expect(district.pdfFileName() == "5 中央町.pdf")
+    }
+
     @Test func 行動表レイアウトは矢印用の余白を確保する() {
         let rect = CGRect(x: 0, y: 0, width: 250, height: 24)
         let layout = ActionTableLineLayout(rect: rect, columns: 5, arrowWidth: 20)
@@ -36,6 +49,19 @@ struct PDFRendererTests {
         #expect(shortFontSize == 15)
         #expect(longFontSize < shortFontSize)
         #expect(longFontSize >= 9)
+    }
+
+    @Test func 行動表文字は最小フォントでも収まらない場合に折り返す() {
+        let layout = ActionTableTextFitter.layout(
+            for: "とても長いRoutePassageの説明テキスト",
+            maxFontSize: 15,
+            minFontSize: 9,
+            width: 40,
+            height: 24
+        )
+
+        #expect(layout.fontSize == 9)
+        #expect(layout.shouldWrap)
     }
 
     @Test @MainActor func 行動表は自町の通過町を自町と表示する() {

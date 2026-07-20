@@ -120,11 +120,8 @@ struct MapView: UIViewRepresentable {
         }
         
         
-        let epsilon: CLLocationDegrees = 0.00001
-        let latDiff = abs(region.center.latitude - mapView.region.center.latitude)
-        let lonDiff = abs(region.center.longitude - mapView.region.center.longitude)
-        if latDiff > epsilon || lonDiff > epsilon {
-            mapView.setRegion(region, animated: true)
+        if !context.coordinator.isSameRegion(lhs: region, rhs: mapView.region) {
+            context.coordinator.applyExternalRegion(region, to: mapView)
         }
         
         if size != mapView.frame.size{
@@ -165,6 +162,7 @@ struct MapView: UIViewRepresentable {
         var parent: MapView
         private var renderedDistrictAreaOverlays: Set<DistrictAreaOverlay> = []
         private var isDistrictAreaOverlayVisible = false
+        private var isApplyingExternalRegion = false
         
         init(_ parent: MapView) {
             self.parent = parent
@@ -211,6 +209,10 @@ struct MapView: UIViewRepresentable {
         }
         
         func mapView(_ mapView: MKMapView, regionDidChangeAnimated animated: Bool) {
+            if isApplyingExternalRegion {
+                isApplyingExternalRegion = false
+                return
+            }
             parent.region = mapView.region
         }
         
@@ -252,6 +254,27 @@ struct MapView: UIViewRepresentable {
             let oldLabels = mapView.annotations.compactMap { $0 as? DistrictAreaLabelAnnotation }
             mapView.removeOverlays(oldPolygons)
             mapView.removeAnnotations(oldLabels)
+        }
+
+        func applyExternalRegion(_ region: MKCoordinateRegion, to mapView: MKMapView) {
+            guard !isApplyingExternalRegion else { return }
+            isApplyingExternalRegion = true
+            mapView.setRegion(region, animated: true)
+        }
+
+        func isSameRegion(lhs: MKCoordinateRegion, rhs: MKCoordinateRegion) -> Bool {
+            let centerEpsilon: CLLocationDegrees = 0.00001
+            let spanEpsilon: CLLocationDegrees = 0.00001
+
+            let latDiff = abs(lhs.center.latitude - rhs.center.latitude)
+            let lonDiff = abs(lhs.center.longitude - rhs.center.longitude)
+            let latSpanDiff = abs(lhs.span.latitudeDelta - rhs.span.latitudeDelta)
+            let lonSpanDiff = abs(lhs.span.longitudeDelta - rhs.span.longitudeDelta)
+
+            return latDiff <= centerEpsilon
+                && lonDiff <= centerEpsilon
+                && latSpanDiff <= spanEpsilon
+                && lonSpanDiff <= spanEpsilon
         }
     }
 }

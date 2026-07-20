@@ -16,6 +16,7 @@
 		29F7B7322EC872E80099607E /* NavigationSwipeControl in Frameworks */ = {isa = PBXBuildFile; productRef = 29F7B7312EC872E80099607E /* NavigationSwipeControl */; };
 		29F7B7352EC8730E0099607E /* Kingfisher in Frameworks */ = {isa = PBXBuildFile; productRef = 29F7B7342EC8730E0099607E /* Kingfisher */; };
 		29F7B7382EC8C06D0099607E /* Shared in Frameworks */ = {isa = PBXBuildFile; productRef = 29F7B7372EC8C06D0099607E /* Shared */; };
+		2A2B2C2D2E2F303132333435 /* GoogleMobileAds in Frameworks */ = {isa = PBXBuildFile; productRef = 2A2B2C2D2E2F303132333434 /* GoogleMobileAds */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -61,6 +62,7 @@
 				29CC9E422F1523B800C4CD50 /* SQLiteData in Frameworks */,
 				29F7B7382EC8C06D0099607E /* Shared in Frameworks */,
 				2957A6C52F6BE2E8005B5EB4 /* ComposableArchitecture in Frameworks */,
+				2A2B2C2D2E2F303132333435 /* GoogleMobileAds in Frameworks */,
 				29F7B7352EC8730E0099607E /* Kingfisher in Frameworks */,
 				29F7B7322EC872E80099607E /* NavigationSwipeControl in Frameworks */,
 				29F7B72F2EC871F10099607E /* AWSCognitoAuthPlugin in Frameworks */,
@@ -137,6 +139,7 @@
 				29F7B7372EC8C06D0099607E /* Shared */,
 				29CC9E412F1523B800C4CD50 /* SQLiteData */,
 				2957A6C42F6BE2E8005B5EB4 /* ComposableArchitecture */,
+				2A2B2C2D2E2F303132333434 /* GoogleMobileAds */,
 			);
 			productName = MaTool;
 			productReference = 291604FD2EB3665900E6C6E3 /* MaTool.app */;
@@ -215,6 +218,7 @@
 			);
 			mainGroup = 298BD7912D71E46600CB63F1;
 			packageReferences = (
+				2A2B2C2D2E2F303132333433 /* XCRemoteSwiftPackageReference "swift-package-manager-google-mobile-ads" */,
 				29F7B72D2EC871F10099607E /* XCRemoteSwiftPackageReference "amplify-ios" */,
 				29F7B7302EC872E80099607E /* XCRemoteSwiftPackageReference "NavigationSwipeControl" */,
 				29F7B7332EC8730E0099607E /* XCRemoteSwiftPackageReference "Kingfisher" */,
@@ -453,7 +457,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 3.0.13;
+				MARKETING_VERSION = 3.0.16;
 				OTHER_SWIFT_FLAGS = "\"$(inherited)\" -Xfrontend -debug-time-function-bodies";
 				PRODUCT_BUNDLE_IDENTIFIER = StudioMK.FesTracking;
 				PRODUCT_MODULE_NAME = iOSApp;
@@ -494,7 +498,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 3.0.13;
+				MARKETING_VERSION = 3.0.16;
 				PRODUCT_BUNDLE_IDENTIFIER = StudioMK.FesTracking;
 				PRODUCT_MODULE_NAME = iOSApp;
 				PRODUCT_NAME = MaTool;
@@ -674,6 +678,14 @@
 				minimumVersion = 8.6.1;
 			};
 		};
+		2A2B2C2D2E2F303132333433 /* XCRemoteSwiftPackageReference "swift-package-manager-google-mobile-ads" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/googleads/swift-package-manager-google-mobile-ads.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 12.12.0;
+			};
+		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
@@ -705,6 +717,11 @@
 		29F7B7372EC8C06D0099607E /* Shared */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = Shared;
+		};
+		2A2B2C2D2E2F303132333434 /* GoogleMobileAds */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 2A2B2C2D2E2F303132333433 /* XCRemoteSwiftPackageReference "swift-package-manager-google-mobile-ads" */;
+			productName = GoogleMobileAds;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};
