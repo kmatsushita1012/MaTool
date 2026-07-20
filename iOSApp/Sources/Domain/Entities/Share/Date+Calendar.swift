@@ -1,7 +1,8 @@
 import Foundation
+import Shared
 
 extension Date {
-    func sameWeekday(in year: Int, calendar: Calendar = .current) -> Date? {
+    func sameWeekday(in year: Int, calendar: Calendar = .japanGregorian) -> Date? {
         let weekday = calendar.component(.weekday, from: self)
         let weekOfMonth = calendar.component(.weekOfMonth, from: self)
         let month = calendar.component(.month, from: self)
