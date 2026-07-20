@@ -1,8 +1,7 @@
 name: Prod iOS Dispatch
 on:
   push:
-    branches:
-      - 'release-ios'
+    branches: []
 
 jobs:
   deploy_iosapp:
