@@ -29,7 +29,6 @@ protocol SceneUsecaseProtocol: Sendable {
 
 actor SceneUsecase: SceneUsecaseProtocol {
     var userDefaults: UserDefalutsManagerProtocol
-    private var launchErrorCount: Int = 0
     
     @Dependency(SceneDataFetcherKey.self) var dataFetcher
     @Dependency(FestivalDataFetcherKey.self) var festivalDataFetcher
@@ -46,7 +45,6 @@ actor SceneUsecase: SceneUsecaseProtocol {
             try authService.initialize()
             guard let festivalId = userDefaults.defaultFestivalId else {
                 try await festivalDataFetcher.fetchAll()
-                launchErrorCount = 0
                 return (.onboarding, await appStatusTask)
             }
             let userRole = await {
@@ -61,16 +59,14 @@ actor SceneUsecase: SceneUsecaseProtocol {
             if let districtId = userDefaults.defaultDistrictId {
                 async let districtTask = dataFetcher.launchDistrict(districtId: districtId)
                 let (_, routeId) = try await(festivalTask, districtTask)
-                launchErrorCount = 0
                 return (.district(userRole, routeId), await appStatusTask)
             } else {
                 try await festivalTask
-                launchErrorCount = 0
                 return (.festival(userRole), await appStatusTask)
             }
         } catch {
-            launchErrorCount += 1
-            if launchErrorCount == 1 {
+            let appError = error.asAppError
+            if shouldResetSelections(after: appError) {
                 do {
                     userDefaults.defaultFestivalId = nil
                     userDefaults.defaultDistrictId = nil
@@ -80,8 +76,15 @@ actor SceneUsecase: SceneUsecaseProtocol {
                     return (.error(error.asAppError.message), await appStatusTask)
                 }
             }
-            return (.error(error.asAppError.message), await appStatusTask)
+            return (.error(appError.message), await appStatusTask)
         }
+    }
+
+    private func shouldResetSelections(after error: AppError) -> Bool {
+        if case .be(.notFound) = error {
+            return true
+        }
+        return false
     }
     
     func signIn(username: String, password: String) async throws -> SignInState {
