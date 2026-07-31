@@ -107,6 +107,44 @@ struct DistrictUsecaseTest {
     }
 
     @Test
+    func post_正常_create失敗でも既存districtユーザーなら継続() async throws {
+        let festival = Festival.mock(id: "festival_2026")
+        let expectedDistrictId = "festival_new"
+        enum DummyError: Swift.Error { case failed }
+
+        let manager = AuthManagerMock(
+            createHandler: { _, _ in throw DummyError.failed },
+            getUserNameHandler: { username in
+                #expect(username == expectedDistrictId)
+                return .district(username)
+            }
+        )
+
+        let subject = make(
+            districtRepository: .init(
+                getHandler: { id in
+                    if id == expectedDistrictId { return nil }
+                    return nil
+                },
+                postHandler: { $0 }
+            ),
+            festivalRepository: .init(getHandler: { _ in festival }),
+            authManagerFactory: { manager }
+        )
+
+        let result = try await subject.post(
+            user: .headquarter(festival.id),
+            headquarterId: festival.id,
+            newDistrictName: "new",
+            email: "district@example.com"
+        )
+
+        #expect(manager.createCallCount == 1)
+        #expect(manager.getUserNameCallCount == 1)
+        #expect(result.district.id == expectedDistrictId)
+    }
+
+    @Test
     func postReissue_正常() async throws {
         let festival = Festival.mock(id: "festival_2026")
         let districtId = "festival_new"
