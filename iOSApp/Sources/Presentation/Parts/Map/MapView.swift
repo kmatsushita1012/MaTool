@@ -162,7 +162,7 @@ struct MapView: UIViewRepresentable {
         var parent: MapView
         private var renderedDistrictAreaOverlays: Set<DistrictAreaOverlay> = []
         private var isDistrictAreaOverlayVisible = false
-        private var isApplyingExternalRegion = false
+        private var pendingExternalRegion: MKCoordinateRegion?
         
         init(_ parent: MapView) {
             self.parent = parent
@@ -209,9 +209,13 @@ struct MapView: UIViewRepresentable {
         }
         
         func mapView(_ mapView: MKMapView, regionDidChangeAnimated animated: Bool) {
-            if isApplyingExternalRegion {
-                isApplyingExternalRegion = false
-                return
+            if let pendingExternalRegion {
+                if isSameRegion(lhs: pendingExternalRegion, rhs: mapView.region) {
+                    self.pendingExternalRegion = nil
+                    return
+                }
+
+                self.pendingExternalRegion = nil
             }
             parent.region = mapView.region
         }
@@ -257,8 +261,8 @@ struct MapView: UIViewRepresentable {
         }
 
         func applyExternalRegion(_ region: MKCoordinateRegion, to mapView: MKMapView) {
-            guard !isApplyingExternalRegion else { return }
-            isApplyingExternalRegion = true
+            guard !isSameRegion(lhs: region, rhs: mapView.region) else { return }
+            pendingExternalRegion = region
             mapView.setRegion(region, animated: true)
         }
 
