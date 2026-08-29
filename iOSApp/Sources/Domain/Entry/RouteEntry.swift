@@ -78,7 +78,9 @@ extension RouteEntry: Identifiable, Comparable {
     }
     
     var text: String {
-        period.shortText
+        let dateText = period.date.text(format: "m/d")
+        let weekdayText = period.date.weekdaySymbol ?? ""
+        return "\(dateText)（\(weekdayText)）\(period.title)"
     }
     
     static func < (lhs: RouteEntry, rhs: RouteEntry) -> Bool {
