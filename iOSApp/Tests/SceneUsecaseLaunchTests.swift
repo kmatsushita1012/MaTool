@@ -11,6 +11,25 @@ import Testing
 @testable import iOSApp
 
 struct SceneUsecaseLaunchTests {
+    @Test("祭典一覧を更新するとFestivalDataFetcherへ委譲する")
+    func 祭典一覧を更新するとFestivalDataFetcherへ委譲する() async throws {
+        let userDefaults = InMemoryUserDefaultsManager(
+            defaultFestivalId: "festival-a",
+            defaultDistrictId: nil
+        )
+        let festivalDataFetcher = FestivalDataFetcherMock()
+        let sceneDataFetcher = SceneDataFetcherMock()
+        let usecase = makeUsecase(
+            userDefaults: userDefaults,
+            festivalDataFetcher: festivalDataFetcher,
+            sceneDataFetcher: sceneDataFetcher
+        )
+
+        try await usecase.refreshFestivals()
+
+        #expect(await festivalDataFetcher.didFetchAll())
+    }
+
     @Test("起動失敗が一時的なエラーなら保存済み選択を消さない")
     func 起動失敗が一時的なエラーなら保存済み選択を消さない() async {
         let userDefaults = InMemoryUserDefaultsManager(

@@ -1,108 +1,123 @@
-//
-//  RootSceneView.swift
-//  MaTool
-//
-//  Created by 松下和也 on 2025/10/30.
-//
-
-import Foundation
 import ComposableArchitecture
-import Dependencies
+import Shared
 import SwiftUI
 
 public struct RootSceneView: View {
     @Shared var launchState: LaunchState
-    @State var status: StatusCheckResult?
-    @State private var hasLaunchedScene = false
-    @Dependency(SceneUsecaseKey.self) var sceneUsecase
+    @Perception.Bindable var store: StoreOf<RootSceneFeature>
     @Dependency(\.values.isLiquidGlassEnabled) var isLiquidGlassEnabled
-    
-    // 追加：エラー時だけ拾うBinding
-    private var errorStatusBinding: Binding<StatusCheckResult?> {
-        Binding(
-            get: { if case .error = launchState { return status } else { return nil } },
-            set: { status = $0 }
-        )
-    }
-
-    // 追加：エラー以外だけ拾うBinding
-    private var normalStatusBinding: Binding<StatusCheckResult?> {
-        Binding(
-            get: { if case .error = launchState { return nil } else { return status } },
-            set: { status = $0 }
-        )
-    }
 
     public init() {
-        if #available(iOS 17.0, *){
-            isPerceptionCheckingEnabled = false
-        }
-        self._launchState = Shared(value: .loading)
-        do {
-            try setupDefaultDatabase()
-        } catch {
-            fatalError("Failed to setup default database: \(error.localizedDescription)")
+        let launchState = Shared(value: LaunchState.loading)
+        self._launchState = launchState
+        self.store = Store(
+            initialState: RootSceneFeature.State(launchState: launchState)
+        ) {
+            RootSceneFeature()
         }
     }
 
     public var body: some View {
-        Group {
-            switch launchState {
-            case .district(let userRole, let routeId):
-                let store = Store(initialState: HomeFeature.State(userRole: userRole, currentRouteId: routeId)) { HomeFeature() }
-                NavigationStack{
-                    HomeView(store: store)
-                        .task {
-                            store.send(.initialize)
-                        }
+        WithPerceptionTracking {
+            let currentLaunchState = store.launchState
+            let status = store.status
+            let isError: Bool = {
+                if case .error = currentLaunchState {
+                    return true
                 }
-            case .festival(let userRole):
-                let store = Store(initialState: HomeFeature.State(userRole: userRole)) { HomeFeature() }
-                NavigationStack{
-                    HomeView(store: store)
-                        .task {
-                            store.send(.initialize)
+                return false
+            }()
+
+            RootSceneContentView(
+                launchState: currentLaunchState,
+                mainView: {
+                    if #available(iOS 17.0, *),
+                       let homeStore = store.scope(state: \.home, action: \.home) {
+                        HomeScreen(store: homeStore)
+                    } else {
+                        LoadingView()
+                    }
+                },
+                onboardingView: {
+                    OnboardingView(
+                        store: Store(
+                            initialState: OnboardingFeature.State(
+                                launchState: $launchState
+                            )
+                        ) {
+                            OnboardingFeature()
                         }
-                }
-            case .onboarding:
-                OnboardingView(store: .init(initialState: OnboardingFeature.State(launchState: $launchState)) {
-                    OnboardingFeature() }
-                )
-                .preferredColorScheme(.light)
-            case .loading:
-                LoadingView()
+                    )
                     .preferredColorScheme(.light)
-            case .error(let message):
-                errorView(message)
+                },
+                loadingView: {
+                    LoadingView()
+                        .preferredColorScheme(.light)
+                }
+            )
+            .sheet(
+                item: Binding(
+                    get: { isError ? nil : status },
+                    set: { _ in store.send(.statusDismissed) }
+                )
+            ) { status in
+                AppStatusModal(status)
+            }
+            .fullScreenCover(
+                item: Binding(
+                    get: { isError ? status : nil },
+                    set: { _ in store.send(.statusDismissed) }
+                )
+            ) { status in
+                AppStatusModal(status, canDismiss: false)
+            }
+            .environment(\.isLiquidGlassDisabled, !isLiquidGlassEnabled)
+            .task {
+                store.send(.start)
+            }
+            .onChange(of: store.launchState) { _ in
+                store.send(.launchStateChanged)
             }
         }
-        .sheet(item: normalStatusBinding) { status in
-            AppStatusModal(status)
-        }
-        .fullScreenCover(item: errorStatusBinding) { status in
-            AppStatusModal(status, canDismiss: false)
-        }
-        .environment(\.isLiquidGlassDisabled, !isLiquidGlassEnabled)
-        .task {
-            guard !hasLaunchedScene else { return }
-            hasLaunchedScene = true
-            let (launchState, status) = await sceneUsecase.launch()
-            self.$launchState.withLock { $0 = launchState }
-            self.status = status
-        }
+    }
+
+}
+
+struct RootSceneContentView<MainView: View, OnboardingView: View, LoadingView: View>: View {
+    let launchState: LaunchState
+    let mainView: MainView
+    let onboardingView: OnboardingView
+    let loadingView: LoadingView
+
+    init(
+        launchState: LaunchState,
+        @ViewBuilder mainView: () -> MainView,
+        @ViewBuilder onboardingView: () -> OnboardingView,
+        @ViewBuilder loadingView: () -> LoadingView
+    ) {
+        self.launchState = launchState
+        self.mainView = mainView()
+        self.onboardingView = onboardingView()
+        self.loadingView = loadingView()
     }
 
     @ViewBuilder
-    func errorView(_ message: String) -> some View {
-        VStack {
-            Spacer()
-            Text("申し訳ございません。システムエラーにより停止しています。\n\(message)")
-                .multilineTextAlignment(.center)
-                .padding(.horizontal, 24)
-            Spacer()
+    var body: some View {
+        switch launchState {
+        case .district, .festival:
+            mainView
+        case .onboarding:
+            onboardingView
+        case .loading:
+            loadingView
+        case .error(let message):
+            VStack {
+                Spacer()
+                Text("申し訳ございません。システムエラーにより停止しています。\n\(message)")
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 24)
+                Spacer()
+            }
         }
     }
 }
-
-//定数
-let spanDelta: Double = 0.005

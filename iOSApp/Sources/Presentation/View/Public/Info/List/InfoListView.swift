@@ -7,106 +7,86 @@
 
 import SwiftUI
 import ComposableArchitecture
-import NavigationSwipeControl
+import Shared
 
-struct InfoListView: View {
+struct InfoListScreen: View {
     @Perception.Bindable var store: StoreOf<InfoListFeature>
     
     var body: some View {
         WithPerceptionTracking{
-            VStack {
-                // タイトル
-                TitleView(
-                    text: "町を見てみよう",
-                    image: "InfoBackground"
-                ) {
-                    store.send(.dismissTapped)
-                }
-                .ignoresSafeArea(edges: .top)
-                VStack{
-                    mainItem(store.festival.name)
-                        .onTapGesture{
-                            store.send(.festivalTapped)
-                        }
-                }
-                .padding(.horizontal, 96)
-                // スクロールする町名リスト
-                ScrollView {
-                    VStack(spacing: 8) {
-                        ForEach(store.districts) { district in
-                            listItem(district.name)
-                                .onTapGesture{
-                                    store.send(.districtTapped(district))
-                                }
-                        }
+            NavigationStack {
+                InfoListContentView(
+                    festivals: store.festivals,
+                    selectedFestivalID: store.selectedFestival?.id,
+                    isLinked: store.publicSelection.isLinked,
+                    isFestivalListLoading: store.isFestivalListLoading,
+                    onFestivalSelected: { store.send(.festivalSelected($0)) }
+                )
+                .navigationDestination(item: $store.scope(state: \.destination, action: \.destination)) { destination in
+                    switch destination.case {
+                    case .festival(let store):
+                        FestivalInfoScreen(store: store, isDistrictLoading: self.store.isLoading)
                     }
-                    .padding(.horizontal, 64)
-                    .padding(.vertical, 24)
-                    .frame(maxWidth: .infinity)
                 }
-                .frame(maxHeight: .infinity)
-                .mask(mask())
-                VStack{
-                    mainItem("　")
-                }
-                .padding(.horizontal, 96)
+                .alert($store.scope(state: \.alert, action: \.alert))
             }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .background(Color.white)
-            .preferredColorScheme(.light)
-            .dismissible(backButton: false)
-            .navigationDestination(item: $store.scope(state: \.destination?.district, action: \.destination.district)) { store in
-                WithPerceptionTracking{
-                    DistrictInfoView(store: store)
-                }
-            }
-            .navigationDestination(item: $store.scope(state: \.destination?.festival, action: \.destination.festival)) { store in
-                WithPerceptionTracking {
-                    FestivalInfoView(store: store)
-                }
-            }
-            .alert($store.scope(state: \.alert, action: \.alert))
-            .dismissOnChange(of: store.isDismissed)
-            .loadingOverlay(store.isLoading)
         }
     }
-    
-    @ViewBuilder
-    func mainItem(_ text: String) -> some View{
-        Text(text)
-            .font(.title)
-            .foregroundColor(.primary)
-            .stroke(color: .white, width: 2)
-            .frame(maxWidth: .infinity)
-            .padding(.vertical, 8)
-            .background(Color.info)
-            .cornerRadius(8)
+}
+
+typealias InfoListView = InfoListScreen
+
+struct InfoListContentView: View {
+    let festivals: [Festival]
+    let selectedFestivalID: Festival.ID?
+    let isLinked: Bool
+    let isFestivalListLoading: Bool
+    let onFestivalSelected: (Festival) -> Void
+
+    var body: some View {
+        List {
+            festivalSection {
+                if festivals.isEmpty && isFestivalListLoading {
+                    ForEach(0..<3, id: \.self) { _ in
+                        HStack {
+                            Text("祭典名")
+                            Spacer()
+                        }
+                        .redacted(reason: .placeholder)
+                    }
+                } else {
+                    ForEach(festivals) { festival in
+                        Button {
+                            onFestivalSelected(festival)
+                        } label: {
+                            HStack {
+                                Text(festival.name)
+                                Spacer()
+                                if selectedFestivalID == festival.id {
+                                    Image(systemName: "checkmark")
+                                        .foregroundStyle(.tint)
+                                }
+                            }
+                        }
+                        .disabled(isFestivalListLoading)
+                    }
+                }
+
+                if isFestivalListLoading {
+                    ProgressView()
+                        .frame(maxWidth: .infinity)
+                }
+            }
+        }
+        .navigationTitle(isLinked ? "祭を選択" : "紹介")
     }
-    
+
     @ViewBuilder
-    func listItem(_ text: String) -> some View {
-        Text(text)
-            .font(.title2)
-            .foregroundColor(.primary)
-            .stroke(color: .white, width: 1)
-            .frame(maxWidth: .infinity)
-            .padding(.vertical, 8)
-            .padding(.horizontal, 16)
-            .background(Color.info.opacity(0.6))
-            .cornerRadius(8)
-    }
-        
-    @ViewBuilder
-    func mask() -> some View {
-        LinearGradient(
-            gradient: Gradient(stops: [
-                .init(color: .clear, location: 0),
-                .init(color: .primary, location: 0.05),
-                .init(color: .primary, location: 0.95),
-                .init(color: .clear, location: 1)
-            ]),
-            startPoint: .top,
-            endPoint: .bottom
-        )
+    private func festivalSection<Content: View>(@ViewBuilder content: () -> Content) -> some View {
+        if isLinked {
+            content()
+        } else {
+            Section("祭を選択", content: content)
+        }
     }
 }

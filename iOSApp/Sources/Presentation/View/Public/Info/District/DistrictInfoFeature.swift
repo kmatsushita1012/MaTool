@@ -19,18 +19,14 @@ struct DistrictInfoFeature {
         @FetchAll var performances: [Performance]
         var region: MKCoordinateRegion?
         var isLoading: Bool = false
-        var isDismissed:Bool = false
     }
     
     @CasePathable
     enum Action: Equatable, BindableAction {
         case binding(BindingAction<State>)
-        case dismissTapped
         case mapTapped
         case routeIdReceived(AppResult<Route.ID?>)
     }
-    
-    @Dependency(\.dismiss) var dismiss
     @Dependency(SceneDataFetcherKey.self) var sceneDataFetcher
     
     var body: some ReducerOf<DistrictInfoFeature> {
@@ -39,13 +35,6 @@ struct DistrictInfoFeature {
             switch action {
             case .binding:
                 return .none
-            case .dismissTapped:
-                if #available(iOS 17.0, *) {
-                    return .dismiss
-                } else {
-                    state.isDismissed = true
-                    return .none
-                }
             //　MARK: Homeに移譲
             case .mapTapped:
                 state.isLoading = true

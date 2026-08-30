@@ -19,6 +19,7 @@ extension DependencyValues {
 // MARK: - UserDefaultsClient(Protocol)
 struct UserDefaultsClient {
     public var string: @Sendable (String) -> String?
+    public var contains: @Sendable (String) -> Bool
     public var bool: @Sendable (String) -> Bool
     public var data: @Sendable (String) -> Data?
     public var double: @Sendable (String) -> Double
@@ -37,6 +38,7 @@ extension UserDefaultsClient: DependencyKey {
     let defaults = { UserDefaults(suiteName: "matool")! }
     return Self(
         string: { defaults().string(forKey: $0) },
+        contains: { defaults().object(forKey: $0) != nil },
         bool: { defaults().bool(forKey: $0) },
         data: { defaults().data(forKey: $0) },
         double: { defaults().double(forKey: $0) },

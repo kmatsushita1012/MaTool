@@ -8,7 +8,6 @@
 import SwiftUI
 import PhotosUI
 import ComposableArchitecture
-import NavigationSwipeControl
 import Shared
 
 @available(iOS 17.0, *)
@@ -74,22 +73,21 @@ struct DistrictEditView: View {
             ToolbarCancelButton {
                 store.send(.cancelTapped)
             }
-            ToolbarSaveButton {
+            ToolbarSaveButton(isLoading: store.isLoading) {
                 store.send(.saveTapped)
             }
         }
-        .dismissible(backButton: false, edgeSwipe: false)
-        .navigationDestination(item: $store.scope(state: \.destination?.base, action: \.destination.base)) { store in
-            DistrictBaseEditView(store: store)
-        }
-        .navigationDestination(item: $store.scope(state: \.destination?.area, action: \.destination.area)) { store in
-            DistrictAreaEditView(store: store)
-        }
-        .navigationDestination(item: $store.scope(state: \.destination?.performance, action: \.destination.performance)) { store in
-            PerformanceEditView(store: store)
+        .fullScreenCover(item: $store.scope(state: \.destination, action: \.destination)) { destination in
+            switch destination.case {
+            case .base(let store):
+                DistrictBaseEditView(store: store)
+            case .area(let store):
+                DistrictAreaEditView(store: store)
+            case .performance(let store):
+                PerformanceEditView(store: store)
+            }
         }
         .alert($store.scope(state: \.alert, action: \.alert))
-        .loadingOverlay(store.isLoading)
     }
 }
 

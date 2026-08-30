@@ -12,6 +12,7 @@ extension UserDefaultsClient {
 
   public static let testValue = Self(
     string: unimplemented("\(Self.self).string", placeholder: nil),
+    contains: unimplemented("\(Self.self).contains", placeholder: false),
     bool: unimplemented("\(Self.self).bool", placeholder: false),
     data: unimplemented("\(Self.self).data", placeholder: nil),
     double: unimplemented("\(Self.self).double", placeholder: 0),
@@ -27,7 +28,8 @@ extension UserDefaultsClient {
 
 extension UserDefaultsClient{
     static let noop = Self(
-        string: { _ in return "" },
+    string: { _ in return "" },
+        contains: { _ in return true },
         bool: { _ in return true },
         data: { _ in return nil},
         double: { _ in return 0.0},

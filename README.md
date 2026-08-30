@@ -13,7 +13,6 @@
 ### 主要な依存パッケージ
 - AWS Amplify: バックエンド連携
 - Kingfisher: 画像のキャッシュと読み込み
-- NavigationSwipeControl: ナビゲーション制御
 - TCA (The Composable Architecture): アプリケーションアーキテクチャ
 
 ## プロジェクト構成

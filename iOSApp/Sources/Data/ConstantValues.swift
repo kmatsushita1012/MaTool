@@ -19,6 +19,7 @@ struct ConstantValues:Sendable {
     let appStatusUrl: String
     let defaultFestivalKey: String
     let defaultDistrictKey: String
+    let publicTabLinkingKey: String
     let loginIdKey: String
     let hasLaunchedBeforeKey: String
     let userGuideUrl: String
@@ -100,6 +101,7 @@ extension ConstantValues: DependencyKey {
         appStatusUrl: "https://studiomk-app-assets.s3.ap-northeast-1.amazonaws.com/MaTool/app-config.json",
         defaultFestivalKey: "region",
         defaultDistrictKey: "district",
+        publicTabLinkingKey: "publicTabLinking",
         loginIdKey: "login",
         hasLaunchedBeforeKey: "hasLaunchedBefore",
         userGuideUrl: value(fromXCConfig: userGuideUrlKey),

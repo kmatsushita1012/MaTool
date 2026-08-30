@@ -7,7 +7,6 @@
 
 import SwiftUI
 import ComposableArchitecture
-import NavigationSwipeControl
 import Shared
 
 @available(iOS 17.0, *)
@@ -52,14 +51,20 @@ struct HeadquarterDistrictListView: View {
             ShareSheet(items: folder.files)
         }
         .navigationDestination(
-            item: $store.scope(state: \.destination?.detail, action: \.destination.detail)
-        ) { store in
-            HeadquarterDistrictDetailView(store: store)
+            item: $store.scope(state: \.destination, action: \.destination)
+        ) { destination in
+            switch destination.case {
+            case .detail(let store):
+                HeadquarterDistrictDetailView(store: store)
+            }
         }
-        .navigationDestination(
-            item: $store.scope(state: \.destination?.create, action: \.destination.create)
-        ) { store in
-            DistrictCreateView(store: store)
+        .fullScreenCover(
+            item: $store.scope(state: \.editDestination, action: \.editDestination)
+        ) { destination in
+            switch destination.case {
+            case .create(let store):
+                DistrictCreateView(store: store)
+            }
         }
         .alert($store.scope(state: \.alert, action: \.alert))
         .toolbar {
@@ -69,11 +74,18 @@ struct HeadquarterDistrictListView: View {
                         store.send(.reorderTapped)
                     }
                     .buttonStyle(.borderedProminent)
+                    .overlay {
+                        if store.isLoading {
+                            ProgressView()
+                                .controlSize(.small)
+                        }
+                    }
+                    .disabled(store.isLoading)
                 } else {
                     Button("並替") {
                         store.send(.reorderTapped)
                     }
-                    .disabled(store.isReorderDisabled)
+                    .disabled(store.isReorderDisabled || store.isLoading)
                 }
             }
             if #available(iOS 26.0, *) {
@@ -88,7 +100,6 @@ struct HeadquarterDistrictListView: View {
             }
         }
         .environment(\.editMode, .constant(store.isReordering ? .active : .inactive))
-        .loadingOverlay(store.isLoading && !store.isExportLoading)
     }
 }
 

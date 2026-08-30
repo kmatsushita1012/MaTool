@@ -7,132 +7,118 @@
 
 import SwiftUI
 import ComposableArchitecture
-import NavigationSwipeControl
+import MapKit
 import Shared
 
-struct DistrictInfoView: View {
+struct DistrictInfoScreen: View {
     @Perception.Bindable var store: StoreOf<DistrictInfoFeature>
     
     var body: some View {
         WithPerceptionTracking{
-            ZStack{
-                ScrollView {
-                    VStack(spacing: 16) {
-                        TitleView(
-                            text: store.district.name,
-                            image: "InfoBackground"
-                        ) {
-                            store.send(.dismissTapped)
+            DistrictInfoContentView(
+                district: store.district,
+                performances: store.performances,
+                region: $store.region
+            )
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button {
+                        store.send(.mapTapped)
+                    } label: {
+                        Label("現在地とルート", systemImage: "paperplane.fill")
+                    }
+                    .overlay {
+                        if store.isLoading {
+                            ProgressView()
                         }
-                        
-                        if let imagePath = store.district.image.light {
-                            VStack{
-                                WebImageView(imagePath: imagePath, contentMode: .fit)
-                            }
-                            .cornerRadius(8)
-                            .padding(.horizontal)
-                        }
-                        
-                        if let description = store.district.description {
-                            VStack{
-                                ScrollableTextView(description, maxHeight: 192)
-                                    .padding()
-                            }
-                            .background(Color.info.opacity(0.3))
-                            .cornerRadius(8)
-                            .padding(.horizontal)
-                        }
-                        // 横スクロール（上で修正したもの）
-                        if !store.performances.isEmpty{
-                            VStack(alignment: .leading){
-                                Text("余興")
-                                    .font(.headline)
-                                    .foregroundColor(.primary)
-                                    .padding(.horizontal)
-                                ScrollView(.horizontal, showsIndicators: false) {
-                                    HStack(spacing: 16) {
-                                        ForEach(store.performances) { item in
-                                            WithPerceptionTracking {
-                                                performance(item)
-                                            }
+                    }
+                    .disabled(store.isLoading)
+                }
+            }
+        }
+    }
+}
+
+typealias DistrictInfoView = DistrictInfoScreen
+
+struct DistrictInfoContentView: View {
+    let district: District
+    let performances: [Performance]
+    @Binding var region: MKCoordinateRegion?
+
+    var body: some View {
+        ScrollView {
+            VStack(spacing: 16) {
+                Color.clear
+                    .frame(height: 220)
+
+                if let description = district.description {
+                    InfoMaterialContainer {
+                        ExpandableTextView(text: description)
+                    }
+                }
+
+                if !performances.isEmpty {
+                    InfoMaterialContainer {
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text("余興")
+                                .font(.headline)
+
+                            LazyVGrid(
+                                columns: [
+                                    GridItem(.flexible(), spacing: 8),
+                                    GridItem(.flexible(), spacing: 8)
+                                ],
+                                spacing: 8
+                            ) {
+                                ForEach(performances) { item in
+                                    VStack(alignment: .leading, spacing: 8) {
+                                        Text(item.name)
+                                            .font(.headline)
+                                            .lineLimit(2)
+                                        Text(item.performer)
+                                            .font(.subheadline)
+                                            .lineLimit(2)
+                                        if let description = item.description {
+                                            Text(description)
+                                                .font(.footnote)
+                                                .lineLimit(5)
                                         }
+                                        Spacer(minLength: 0)
                                     }
-                                    .padding(.horizontal)
+                                    .frame(maxWidth: .infinity, minHeight: 160, alignment: .topLeading)
+                                    .padding(12)
+                                    .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
                                 }
                             }
                         }
-                        VStack{
-                            InfoMapView(
-                                base: store.district.base,
-                                area: store.district.area,
-                                region: $store.region
-                            )
-                            .clipShape(RoundedRectangle(cornerRadius: 12))
-                            .background(
-                                RoundedRectangle(cornerRadius: 12)
-                                    .fill(Color(UIColor.secondarySystemGroupedBackground))
-                            )
-                            .overlay(
-                                RoundedRectangle(cornerRadius: 12)
-                                    .stroke(Color(UIColor.separator), lineWidth: 0.5)
-                            )
-                        }
-                        .frame(height: 384)
-                        .padding(.horizontal)
+                    }
                 }
-                .padding(.bottom, 88)
-                }
-                VStack{
-                    Spacer()
-                    mapButton()
-                        .padding(32)
-                }
-            }
-            .ignoresSafeArea()
-            .loadingOverlay(store.isLoading)
-            .dismissible(backButton: false)
-            .dismissOnChange(of: store.isDismissed)
-        }
-    }
-    
-    @ViewBuilder
-    func performance(_ item: Performance) -> some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text(item.name)
-                .font(.headline)
-                .lineLimit(1)
-                .truncationMode(.tail)
-                
-            Text(item.performer)
-                .font(.subheadline)
-                .lineLimit(1)
 
-            if let description = item.description {
-                ScrollableTextView(description, maxHeight: 128)
-            }
-            Spacer()
+                InfoMaterialContainer {
+                    InfoMapView(
+                        base: district.base,
+                        area: district.area,
+                        region: $region
+                    )
+                    .clipShape(RoundedRectangle(cornerRadius: 12))
+                    .frame(height: 384)
+                }
         }
-        .padding()
-        .frame(width: 256, height: 192, alignment: .topLeading)
-        .background(Color.info.opacity(0.3))
-        .cornerRadius(8)
-    }
-    
-    @ViewBuilder
-    func mapButton() -> some View {
-        Button(action: {
-            store.send(.mapTapped)
-        }) {
-            HStack(spacing: 16) {
-                Text("現在地とルート")
-                    .font(.title3)
-                Image(systemName: "paperplane.fill")
-            }
-            .padding(.horizontal, 32)
-            .padding(.vertical, 8)
+        .padding(.horizontal, 16)
+        .padding(.bottom, 24)
         }
-        .clipShape(.capsule)
-        .buttonStyle(.borderedProminent)
-        .tint(Color.info)
+        .scrollIndicators(.hidden)
+        .modifier(SoftTopScrollEdgeEffectModifier())
+        .background {
+            InfoImageBackgroundView(
+                lightPath: district.image.light,
+                darkPath: district.image.dark,
+                blurRadius: 8
+            )
+            .ignoresSafeArea()
+        }
+        .navigationTitle(district.name)
+        .navigationBarTitleDisplayMode(.large)
     }
 }

@@ -9,6 +9,8 @@ import Foundation
 import MapKit
 import Shared
 
+let spanDelta: Double = 0.005
+
 func makeRegion(_ coordinates: [Coordinate], ratio: Double = 1.1) -> MKCoordinateRegion {
     let minLat = coordinates.map { $0.latitude }.min() ?? 0
     let maxLat = coordinates.map { $0.latitude }.max() ?? 0

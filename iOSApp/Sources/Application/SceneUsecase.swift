@@ -23,8 +23,11 @@ protocol SceneUsecaseProtocol: Sendable {
     func signIn(username: String, password: String) async throws -> SignInState
     func isValidPassword(_ password: String) -> Bool
     func confirmSignIn(password: String) async throws -> UserRole
+    func refreshFestivals() async throws
     func select(festivalId: Festival.ID) async throws -> FestivalSelectionResult
     func select(districtId: District.ID) async throws -> Route.ID?
+    func publicTabLinkingEnabled() async -> Bool
+    func setPublicTabLinking(_ enabled: Bool) async
 }
 
 actor SceneUsecase: SceneUsecaseProtocol {
@@ -34,6 +37,8 @@ actor SceneUsecase: SceneUsecaseProtocol {
     @Dependency(FestivalDataFetcherKey.self) var festivalDataFetcher
     @Dependency(AuthServiceKey.self) var authService
     @Dependency(AppStatusClientKey.self) var appStatusClient
+    @Dependency(\.userDefaultsClient) var userDefaultsClient
+    @Dependency(\.values.publicTabLinkingKey) var publicTabLinkingKey
     
     init(userDefaults: UserDefalutsManagerProtocol = UserDefaltsManager()){
         self.userDefaults = userDefaults
@@ -123,6 +128,10 @@ actor SceneUsecase: SceneUsecaseProtocol {
         }
         return result
     }
+
+    func refreshFestivals() async throws {
+        try await festivalDataFetcher.fetchAll()
+    }
     
     func select(festivalId: Shared.Festival.ID) async throws -> FestivalSelectionResult {
         let previousFestivalId = userDefaults.defaultFestivalId
@@ -145,5 +154,15 @@ actor SceneUsecase: SceneUsecaseProtocol {
         let currentRouteId = try await dataFetcher.launchDistrict(districtId: districtId, clearsExistingData: false)
         userDefaults.defaultDistrictId = district.id
         return currentRouteId
+    }
+
+    func publicTabLinkingEnabled() async -> Bool {
+        userDefaultsClient.contains(publicTabLinkingKey)
+            ? userDefaultsClient.bool(publicTabLinkingKey)
+            : true
+    }
+
+    func setPublicTabLinking(_ enabled: Bool) async {
+        userDefaultsClient.setBool(enabled, publicTabLinkingKey)
     }
 }

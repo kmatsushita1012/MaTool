@@ -16,6 +16,10 @@ struct HeadquarterDistrictListFeature {
     @Reducer
     enum Destination {
         case detail(HeadquarterDistrictDetailFeature)
+    }
+
+    @Reducer
+    enum EditDestination {
         case create(DistrictCreateFeature)
     }
     
@@ -31,6 +35,7 @@ struct HeadquarterDistrictListFeature {
         var isExportLoading: Bool = false
         var folder: ExportedFolder? = nil
         @Presents var destination: Destination.State?
+        @Presents var editDestination: EditDestination.State?
         @Presents var alert: AlertFeature.State?
     }
     
@@ -45,6 +50,7 @@ struct HeadquarterDistrictListFeature {
         case tableExportTapped
         case selectedReceived(AppResult<District>)
         case batchExportReceived(AppResult<[URL]>)
+        case editDestination(PresentationAction<EditDestination.Action>)
         case destination(PresentationAction<Destination.Action>)
         case alert(PresentationAction<AlertFeature.Action>)
     }
@@ -72,7 +78,7 @@ struct HeadquarterDistrictListFeature {
                     return district
                 }
             case .createTapped:
-                state.destination = .create(.init(festivalId: state.festival.id))
+                state.editDestination = .create(.init(festivalId: state.festival.id))
                 return .none
             case .reorderTapped:
                 if state.isReordering {
@@ -122,6 +128,8 @@ struct HeadquarterDistrictListFeature {
                 state.isExportLoading = false
                 state.folder = .init(urls)
                 return .none
+            case .editDestination:
+                return .none
             case .selectedReceived(.failure(let error)),
                 .reorderReceived(.failure(let error)),
                 .batchExportReceived(.failure(let error)):
@@ -135,6 +143,7 @@ struct HeadquarterDistrictListFeature {
                 return .none
             }
         }
+        .ifLet(\.$editDestination, action: \.editDestination)
         .ifLet(\.$destination, action: \.destination)
         .ifLet(\.$alert, action: \.alert)
     }
@@ -183,6 +192,8 @@ struct HeadquarterDistrictListFeature {
 
 extension HeadquarterDistrictListFeature.Destination.State: Equatable {}
 extension HeadquarterDistrictListFeature.Destination.Action: Equatable {}
+extension HeadquarterDistrictListFeature.EditDestination.State: Equatable {}
+extension HeadquarterDistrictListFeature.EditDestination.Action: Equatable {}
 
 extension HeadquarterDistrictListFeature.State{
     init(_ festival: Festival){

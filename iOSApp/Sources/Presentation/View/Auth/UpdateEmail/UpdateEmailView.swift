@@ -7,7 +7,6 @@
 
 import ComposableArchitecture
 import SwiftUI
-import NavigationSwipeControl
 
 @available(iOS 17.0, *)
 struct UpdateEmailView: View {
@@ -47,8 +46,6 @@ struct UpdateEmailView: View {
             Spacer()
         }
         .preferredColorScheme(.light)
-        .dismissible(backButton: false, edgeSwipe: false)
-        .loadingOverlay(store.isLoading)
         .alert($store.scope(state: \.errorAlert, action: \.errorAlert))
         .alert($store.scope(state: \.completeAlert, action: \.completeAlert))
     }
@@ -67,6 +64,12 @@ struct UpdateEmailView: View {
             }
             .buttonStyle(PrimaryButtonStyle())
             .padding()
+            .overlay {
+                if store.isLoading {
+                    ProgressView()
+                }
+            }
+            .disabled(store.isLoading)
         }
         
     }
@@ -88,6 +91,12 @@ struct UpdateEmailView: View {
             }
             .buttonStyle(PrimaryButtonStyle())
             .padding()
+            .overlay {
+                if store.isLoading {
+                    ProgressView()
+                }
+            }
+            .disabled(store.isLoading)
         }
         .padding()
     }

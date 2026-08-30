@@ -15,8 +15,12 @@ struct PeriodListFeature {
     
     @Reducer
     enum Destination {
-        case edit(PeriodEditFeature)
         case archives(PeriodArchivesFeature)
+    }
+
+    @Reducer
+    enum EditDestination {
+        case period(PeriodEditFeature)
     }
     
     @ObservableState
@@ -35,6 +39,7 @@ struct PeriodListFeature {
         
         var isLoading = false
         @Presents var destination: Destination.State?
+        @Presents var editDestination: EditDestination.State?
         @Presents var alert: AlertFeature.State?
     }
     
@@ -45,6 +50,7 @@ struct PeriodListFeature {
         case periodCreateTapped
         case batchCreateTapped(Int)
         case batchCreateReceived(VoidAppResult)
+        case editDestination(PresentationAction<EditDestination.Action>)
         case destination(PresentationAction<Destination.Action>)
         case alert(PresentationAction<AlertFeature.Action>)
     }
@@ -55,22 +61,23 @@ struct PeriodListFeature {
         Reduce { state, action in
             switch action {
             case .periodTapped(let period):
-                state.destination = .edit(.update(period))
+                state.editDestination = .period(.update(period))
                 return .none
             case .archiveTapped(let archive):
                 state.destination = .archives(.init(festivalId: state.festivalId, year: archive.year))
                 return .none
             case .periodCreateTapped:
-                state.destination = .edit(.create(state.festivalId))
+                state.editDestination = .period(.create(state.festivalId))
                 return .none
             case .batchCreateTapped(let year):
                 state.isLoading = true
                 return batchEffect(state, sourceYear: year)
-            case .destination(.presented(.edit(.saveReceived(.success(_))))),
+            case .editDestination(.presented(.period(.saveReceived(.success(_))))),
                     .destination(.presented(.archives(.destination(.presented(.edit(.saveReceived(.success(_)))))))),
-                    .destination(.presented(.edit(.deleteReceived(.success(_))))),
+                    .editDestination(.presented(.period(.deleteReceived(.success(_))))),
                     .destination(.presented(.archives(.destination(.presented(.edit(.deleteReceived(.success(_)))))))):
                 state.destination = nil
+                state.editDestination = nil
                 let items = state.makePeriodsStates()
                 state.latests = items.first
                 state.archives = .init(items.dropFirst())
@@ -93,6 +100,7 @@ struct PeriodListFeature {
                 return .none
             }
         }
+        .ifLet(\.$editDestination, action: \.editDestination)
         .ifLet(\.$destination, action: \.destination)
         .ifLet(\.$alert, action: \.alert)
     }
@@ -119,6 +127,8 @@ struct PeriodListFeature {
 
 extension PeriodListFeature.Destination.State: Equatable {}
 extension PeriodListFeature.Destination.Action: Equatable {}
+extension PeriodListFeature.EditDestination.State: Equatable {}
+extension PeriodListFeature.EditDestination.Action: Equatable {}
 
 extension PeriodListFeature.State {
     init(festivalId: String) {

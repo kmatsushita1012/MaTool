@@ -7,90 +7,101 @@
 
 import ComposableArchitecture
 import SwiftUI
-import NavigationSwipeControl
+import Shared
 
-
-struct SettingsView: View {
+struct SettingsScreen: View {
     @Perception.Bindable var store: StoreOf<SettingsFeature>
     
     var body: some View {
         WithPerceptionTracking{
-            VStack(spacing: 8){
-                TitleView(
-                    text: "設定",
-                    image: "SettingsBackground",
-                    isDismissEnabled: store.isDismissEnabled
-                ) {
-                    store.send(.dismissTapped)
-                }
-                .ignoresSafeArea(edges: .top)
-                VStack(spacing: 8){
-                    VStack{
-                        MenuSelector(
-                            title: "祭典を変更",
-                            items: store.festivals,
-                            selection: $store.selectedFestival,
-                            label: { festival in
-                                festival?.name ?? "未設定"
-                            },
-                            isNullable: false
-                        )
-                        MenuSelector(
-                            title: "参加町を変更",
-                            items: store.districts,
-                            selection: $store.selectedDistrict,
-                            label: { district in
-                                district?.name ?? "未設定"
-                            }
-                        )
-                    }
-                    .padding(.vertical, 8)
-                    VStack(alignment: .leading){
-                        Link(destination: store.userGuide) {
-                            HStack {
-                                Image("LeftDoubleArrow")
-                                    .resizable()
-                                    .frame(width: 20, height: 20)
-                                Text("MaToolの使い方")
-                                    .font(.headline)
-                                Spacer()
-                            }
-                            .font(.headline)
-                        }
-                        Link(destination: store.contact) {
-                            HStack {
-                                Image("LeftDoubleArrow")
-                                    .resizable()
-                                    .frame(width: 20, height: 20)
-                                Text("お問い合わせ")
-                                    .font(.headline)
-                                Spacer()
-                            }
-                            .font(.headline)
-                        }
-                    }
-                    Text("バージョン \(AppStatusClient.getCurrentVersion())")
-                    VStack{
-                        Button(action: {
-                            store.send(.signOutTapped)
-                        }) {
-                            Text("強制ログアウト")
-                        }
-                        .buttonStyle(.borderedProminent)
-                        .tint(.red)
-                        Text("※この操作は管理者のみ有効です")
-                            .font(.footnote)
-                            .foregroundColor(.gray)
-                    }
-                    Spacer()
-                }
-                .padding(.horizontal)
-            }
-            .preferredColorScheme(.light)
-            .dismissible(backButton: false)
+            SettingsContentView(
+                festivals: store.festivals,
+                selectedFestival: $store.selectedFestival,
+                districts: store.districts,
+                selectedDistrict: $store.selectedDistrict,
+                isMapInfoLinked: $store.isMapInfoLinked,
+                isLoading: store.isLoading,
+                userGuide: store.userGuide,
+                contact: store.contact,
+                version: AppStatusClient.getCurrentVersion(),
+                onLogin: { store.send(.loginTapped) }
+            )
             .alert($store.scope(state: \.alert, action: \.alert))
-            .loadingOverlay(store.isLoading)
-            .ignoresSafeArea(edges: .top)
+            .navigationDestination(item: $store.scope(state: \.destination, action: \.destination)) { destination in
+                switch destination.case {
+                case .login(let store):
+                    if #available(iOS 17.0, *) {
+                        LoginView(store: store)
+                    } else {
+                        EmptyView()
+                    }
+                }
+            }
         }
     }
+}
+
+typealias SettingsView = SettingsScreen
+
+struct SettingsContentView: View {
+    let festivals: [Festival]
+    @Binding var selectedFestival: Festival?
+    let districts: [District]
+    @Binding var selectedDistrict: District?
+    @Binding var isMapInfoLinked: Bool
+    let isLoading: Bool
+    let userGuide: URL
+    let contact: URL
+    let version: String
+    let onLogin: () -> Void
+
+    var body: some View {
+        Form {
+            Section("参加設定") {
+                Picker("祭典", selection: $selectedFestival) {
+                    Text("未設定").tag(Optional<Festival>.none)
+                    ForEach(festivals) { festival in
+                        Text(festival.name).tag(Optional(festival))
+                    }
+                }
+                .pickerStyle(.menu)
+                .disabled(isLoading)
+                .overlay(alignment: .trailing) {
+                    if isLoading {
+                        ProgressView()
+                            .controlSize(.small)
+                    }
+                }
+
+                Picker("町", selection: $selectedDistrict) {
+                    Text("未設定").tag(Optional<District>.none)
+                    ForEach(districts) { district in
+                        Text(district.name).tag(Optional(district))
+                    }
+                }
+                .pickerStyle(.menu)
+                .disabled(selectedFestival == nil || isLoading)
+                .overlay(alignment: .trailing) {
+                    if isLoading {
+                        ProgressView()
+                            .controlSize(.small)
+                    }
+                }
+
+                Toggle("地図と紹介を連動", isOn: $isMapInfoLinked)
+            }
+
+            Section("アカウント") {
+                Button("ログイン", systemImage: "person.crop.circle", action: onLogin)
+            }
+
+            Section("サポート") {
+                Link("MaToolの使い方", destination: userGuide)
+                Link("お問い合わせ", destination: contact)
+                LabeledContent("バージョン", value: version)
+            }
+        }
+        .navigationTitle("設定")
+    }
+
 }

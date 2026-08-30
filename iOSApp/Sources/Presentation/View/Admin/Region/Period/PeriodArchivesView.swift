@@ -17,8 +17,11 @@ struct PeriodArchivesView: View {
         content
             .navigationTitle("過去の日程")
             .navigationBarTitleDisplayMode(.inline)
-            .navigationDestination(item: $store.scope(state: \.destination?.edit, action: \.destination.edit)) {
-                PeriodEditView(store: $0)
+            .fullScreenCover(item: $store.scope(state: \.destination, action: \.destination)) { destination in
+                switch destination.case {
+                case .edit(let store):
+                    PeriodEditView(store: store)
+                }
             }
     }
     

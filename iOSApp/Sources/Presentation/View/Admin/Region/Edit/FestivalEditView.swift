@@ -7,7 +7,6 @@
 
 import SwiftUI
 import ComposableArchitecture
-import NavigationSwipeControl
 
 @available(iOS 17.0, *)
 struct FestivalEditView: View{
@@ -21,28 +20,21 @@ struct FestivalEditView: View{
             ToolbarCancelButton {
                 store.send(.cancelTapped)
             }
-            ToolbarSaveButton {
+            ToolbarSaveButton(isLoading: store.isLoading) {
                 store.send(.saveTapped)
             }
         }
         .navigationBarTitleDisplayMode(.inline)
-        .loadingOverlay(store.isLoading)
-        .dismissible(backButton: false, edgeSwipe: false)
         .alert($store.scope(state: \.alert, action: \.alert))
-        .navigationDestination(
-            item: $store.scope(state: \.destination?.base, action:  \.destination.base)
-        ) { store in
-            DistrictBaseEditView(store: store)
-        }
-        .navigationDestination(
-            item: $store.scope(state: \.destination?.checkpoint, action:  \.destination.checkpoint)
-        ) { store in
-            CheckpointEditView(store: store)
-        }
-        .navigationDestination(
-            item: $store.scope(state: \.destination?.hazard, action:  \.destination.hazard)
-        ) { store in
-            HazardSectionView(store: store)
+        .fullScreenCover(item: $store.scope(state: \.destination, action: \.destination)) { destination in
+            switch destination.case {
+            case .base(let store):
+                DistrictBaseEditView(store: store)
+            case .checkpoint(let store):
+                CheckpointEditView(store: store)
+            case .hazard(let store):
+                HazardSectionView(store: store)
+            }
         }
     }
     

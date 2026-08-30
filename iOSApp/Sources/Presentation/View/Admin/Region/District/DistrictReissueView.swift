@@ -7,7 +7,6 @@
 
 import SwiftUI
 import ComposableArchitecture
-import NavigationSwipeControl
 
 @available(iOS 17.0, *)
 struct DistrictReissueView: View {
@@ -31,14 +30,11 @@ struct DistrictReissueView: View {
             ToolbarCancelButton {
                 store.send(.cancelTapped)
             }
-            ToolbarSaveButton(title: "再発行") {
+            ToolbarSaveButton(title: "再発行", isLoading: store.isLoading) {
                 store.send(.reissueTapped)
             }
         }
         .navigationBarTitleDisplayMode(.inline)
-        .dismissible(backButton: false)
-        .loadingOverlay(store.isLoading)
         .alert($store.scope(state: \.alert, action: \.alert))
     }
 }
-

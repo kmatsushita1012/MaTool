@@ -7,26 +7,15 @@
 
 import SwiftUI
 import ComposableArchitecture
+import MapKit
 
 struct PublicLocationsMapView: View {
     @Perception.Bindable var store: StoreOf<PublicLocationsFeature>
-    @Environment(\.isLiquidGlassDisabled) var isLiquidGlassDisabled
-    
+
     var body: some View {
         WithPerceptionTracking{
             @Binding(store.$mapRegion) var mapRegion
-            MapView(style: .public, floats: store.floats, region: $mapRegion, floatTapped: { store.send(.floatTapped($0)) })
-            .ignoresSafeArea(edges: .bottom)
-            .safeAreaInset(edge: .bottom){
-                if isLiquidGlassDisabled {
-                    toolbarLayer
-                }
-            }
-            .toolbar{
-                if !isLiquidGlassDisabled, #available(iOS 26.0, *) {
-                    toolbar
-                }
-            }
+            mapView(region: $mapRegion)
             .alert($store.scope(state: \.alert, action: \.alert))
             .sheet(item: $store.detail){ location in
                 LocationView(location)
@@ -34,67 +23,32 @@ struct PublicLocationsMapView: View {
             }
         }
     }
-    
+
     @ViewBuilder
-    var toolbarLayer: some View {
-        VStack{
-            Spacer()
-            HStack{
-                Spacer()
-                buttons
-                    .padding()
-            }
-        }
-    }
-    
-    @ViewBuilder
-    var buttons: some View {
-        HStack {
-            FloatingIconButton(icon: "location.fill"){
-                store.send(.userFocusTapped)
-            }
-            Divider()
-            FloatingIconMenu(
-                icon: "mappin.and.ellipse",
-                items: store.floats,
-                itemLabel: { Text( $0.district.name ) }
-            ){
-                store.send(.floatFocusSelected($0))
-            }
-            Divider()
-            FloatingIconButton(icon: "arrow.clockwise"){
-                store.send(.reloadTapped)
-            }
-        }
-        .padding(8)
-        .fixedSize()
-        .background(
-            RoundedRectangle(cornerRadius: 16)
-                .fill(Color(uiColor: .systemBackground))
-                .shadow(radius: 8)
+    private func mapView(region: Binding<MKCoordinateRegion>) -> some View {
+        let map = MapView(
+            style: .public,
+            floats: store.floats,
+            region: region,
+            floatTapped: { store.send(.floatTapped($0)) }
         )
-    }
-    
-    @available(iOS 26.0, *)
-    @ToolbarContentBuilder
-    var toolbar: some ToolbarContent {
-        ToolbarSpacer(.flexible, placement: .bottomBar)
-        ToolbarItemGroup(placement: .bottomBar) {
-            Button(systemImage: "location.fill"){
-                store.send(.userFocusTapped)
-            }
-            Menu {
-                ForEach(store.floats, id: \.self) { item in
-                    Button(item.district.name){
-                        store.send(.floatFocusSelected(item))
-                    }
+        .ignoresSafeArea()
+
+        if #available(iOS 26.0, *) {
+            map
+                .scrollEdgeEffectStyle(.soft, for: .top)
+                .safeAreaInset(edge: .bottom, spacing: 0) {
+                    MapLocationsBottomControlsView(store: store)
+                    .frame(maxWidth: .infinity, alignment: .trailing)
+                    .padding(.horizontal, MapGlassControlVariant.toolbar.edgeSpacing)
+                    .padding(.bottom, 8)
                 }
-            } label: {
-                Image(systemName: "mappin.and.ellipse")
-            }
-            Button(systemImage: "arrow.clockwise"){
-                store.send(.reloadTapped)
+        } else {
+            map.safeAreaInset(edge: .bottom, spacing: 0) {
+                MapLocationsBottomControlsView(store: store)
+                    .padding(.bottom, 72)
             }
         }
     }
+
 }

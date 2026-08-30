@@ -7,7 +7,6 @@
 
 import SwiftUI
 import ComposableArchitecture
-import NavigationSwipeControl
 
 @available(iOS 17.0, *)
 struct PerformanceEditView:View {
@@ -47,7 +46,6 @@ struct PerformanceEditView:View {
                 store.send(.doneTapped)
             }
         }
-        .dismissible(backButton: false, edgeSwipe: false)
         .alert($store.scope(state: \.alert, action: \.alert))
     }
 }

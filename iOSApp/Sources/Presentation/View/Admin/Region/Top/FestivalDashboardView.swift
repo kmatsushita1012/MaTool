@@ -6,91 +6,147 @@
 //
 
 import ComposableArchitecture
-import NavigationSwipeControl
 import SwiftUI
 
 @available(iOS 17.0, *)
-struct FestivalDashboardView: View {
+struct FestivalDashboardScreen: View {
     @SwiftUI.Bindable var store: StoreOf<FestivalDashboardFeature>
+    @Dependency(\.values.userGuideUrl) private var userGuideURLString
+    @Dependency(\.values.contactURL) private var contactURLString
+
+    private var userGuide: URL { URL(string: userGuideURLString)! }
+    private var contact: URL { URL(string: contactURLString)! }
 
     var body: some View {
-        content
-            .navigationDestination(
-                item: $store.scope(state: \.destination?.edit, action: \.destination.edit)
-            ) { store in
-                FestivalEditView(store: store)
-            }
-            .navigationDestination(
-                item: $store.scope(
-                    state: \.destination?.districts, action: \.destination.districts)
-            ) { store in
-                HeadquarterDistrictListView(store: store)
-            }
-            .navigationDestination(
-                item: $store.scope(state: \.destination?.periods, action: \.destination.periods)
-            ) { store in
-                PeriodListView(store: store)
-            }
-            .navigationDestination(
-                item: $store.scope(
-                    state: \.destination?.changePassword, action: \.destination.changePassword)
-            ) { store in
-                ChangePasswordView(store: store)
-            }
-            .navigationDestination(
-                item: $store.scope(
-                    state: \.destination?.updateEmail, action: \.destination.updateEmail)
-            ) { store in
-                UpdateEmailView(store: store)
-            }
-            .alert($store.scope(state: \.alert, action: \.alert))
-            .loadingOverlay(store.isLoading)
+        let contentState = FestivalDashboardContentState(
+            title: "\(store.festival.name) \(store.festival.subname)",
+            isAuthLoading: store.isAuthLoading,
+            userGuide: userGuide,
+            contact: contact,
+            version: AppStatusClient.getCurrentVersion()
+        )
+        let actions = FestivalDashboardActions(
+            onEdit: { store.send(.onEdit) },
+            onPeriods: { store.send(.periodTapped) },
+            onDistricts: { store.send(.districtsTapped) },
+            onChangePassword: { store.send(.changePasswordTapped) },
+            onUpdateEmail: { store.send(.updateEmailTapped) },
+            onSignOut: { store.send(.signOutTapped) }
+        )
+
+        let contentView: FestivalDashboardContentView = FestivalDashboardContentView(
+            state: contentState,
+            actions: actions
+        )
+        destinationView(contentView)
     }
 
-    @ViewBuilder
-    var content: some View {
+    private func destinationView(_ content: FestivalDashboardContentView) -> some View {
+        content
+            .fullScreenCover(
+                item: $store.scope(state: \.editDestination, action: \.editDestination)
+            ) { destination in
+                switch destination.case {
+                case .festival(let store):
+                    FestivalEditView(store: store)
+                }
+            }
+            .navigationDestination(item: $store.scope(state: \.destination, action: \.destination)) { destination in
+                switch destination.case {
+                case .districts(let store):
+                    HeadquarterDistrictListView(store: store)
+                case .periods(let store):
+                    PeriodListView(store: store)
+                case .changePassword(let store):
+                    ChangePasswordView(store: store)
+                case .updateEmail(let store):
+                    UpdateEmailView(store: store)
+                }
+            }
+            .alert($store.scope(state: \.alert, action: \.alert))
+    }
+
+}
+
+@available(iOS 17.0, *)
+typealias FestivalDashboardView = FestivalDashboardScreen
+
+struct FestivalDashboardActions {
+    let onEdit: () -> Void
+    let onPeriods: () -> Void
+    let onDistricts: () -> Void
+    let onChangePassword: () -> Void
+    let onUpdateEmail: () -> Void
+    let onSignOut: () -> Void
+}
+
+struct FestivalDashboardContentState {
+    let title: String
+    let isAuthLoading: Bool
+    let userGuide: URL
+    let contact: URL
+    let version: String
+}
+
+struct FestivalDashboardContentView: View {
+    let state: FestivalDashboardContentState
+    let actions: FestivalDashboardActions
+
+    var body: some View {
         List {
             Section {
                 NavigationItemView(
                     title: "祭典情報",
                     iconName: "info.circle",
-                    onTap: { store.send(.onEdit) })
+                    onTap: actions.onEdit)
                 NavigationItemView(
                     title: "日程",
                     iconName: "calendar",
-                    onTap: { store.send(.periodTapped) })
+                    onTap: actions.onPeriods)
             }
             
             Section {
                 NavigationItemView(
                     title: "参加町一覧",
                     iconName: "list.bullet",
-                    onTap: { store.send(.districtsTapped) })
+                    onTap: actions.onDistricts)
             }
             
             Section {
                 Button(action: {
-                    store.send(.changePasswordTapped)
+                    actions.onChangePassword()
                 }) {
                     Text("パスワード変更")
                 }
                 Button(action: {
-                    store.send(.updateEmailTapped)
+                    actions.onUpdateEmail()
                 }) {
                     Text("メールアドレス変更")
                 }
             }
             Section {
                 Button(action: {
-                    store.send(.signOutTapped)
+                    actions.onSignOut()
                 }) {
                     Text("ログアウト")
                         .foregroundColor(.red)
                 }
+                .overlay {
+                    if state.isAuthLoading {
+                        ProgressView()
+                            .controlSize(.small)
+                    }
+                }
+                .disabled(state.isAuthLoading)
+            }
+            Section {
+                Link("MaToolの使い方", destination: state.userGuide)
+                Link("お問い合わせ", destination: state.contact)
+                LabeledContent("バージョン", value: state.version)
             }
         }
         .navigationTitle(
-            "\(store.festival.name) \(store.festival.subname)"
+            state.title
         )
         .navigationBarTitleDisplayMode(.large)
     }

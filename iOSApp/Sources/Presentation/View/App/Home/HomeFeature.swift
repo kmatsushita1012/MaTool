@@ -1,189 +1,279 @@
-//
-//  HomeFeature.swift
-//  MaTool
-//
-//  Created by 松下和也 on 2025/04/20.
-//
-
 import ComposableArchitecture
-import Foundation
 import Shared
 import SQLiteData
 
 @Reducer
 struct HomeFeature {
-    
-    @Reducer
-    enum Destination {
-        case map(PublicMapFeature)
-        case info(InfoListFeature)
-        case login(LoginFeature)
-        case adminDistrict(DistrictDashboardFeature)
-        case adminFestival(FestivalDashboardFeature)
-        case settings(SettingsFeature)
+    enum Tab: Equatable, Identifiable, CaseIterable {
+        case map
+        case info
+        case account
+
+        var id: Self { self }
+
+        static var allCases: [Self] { [.map, .info, .account] }
     }
-    
+
     @ObservableState
     struct State: Equatable {
         var userRole: UserRole
-        var currentRouteId: Route.ID?
-        var isDestinationLoading: Bool = false
-        var isLoading: Bool {
-            isDestinationLoading
-        }
-        @Presents var destination: Destination.State?
+        var currentRouteID: Route.ID?
+        var selectedTab: Tab = .map
+        @Shared var publicSelection: PublicTabSelection
+
+        var map: MapTabFeature.State
+        var info: InfoListFeature.State
+        var settings: SettingsFeature.State
+        var adminDistrict: DistrictDashboardFeature.State?
+        var adminFestival: FestivalDashboardFeature.State?
+
         @Presents var alert: AlertFeature.State?
-        
-        init(userRole: UserRole, currentRouteId: Route.ID? = nil){
+
+        init(
+            userRole: UserRole,
+            festival: Festival,
+            district: District? = nil,
+            routeID: Route.ID? = nil,
+            isPublicSelectionLinked: Bool = true
+        ) {
             self.userRole = userRole
-            self.currentRouteId = currentRouteId
+            self.currentRouteID = routeID
+            let context = PublicSelectionContext(
+                festivalID: festival.id,
+                districtID: district?.id,
+                routeID: routeID
+            )
+            let publicSelection: Shared<PublicTabSelection> = Shared(
+                value: .initial(linked: isPublicSelectionLinked, context: context)
+            )
+            self._publicSelection = publicSelection
+            self.map = .init(
+                userRole: userRole,
+                festival: festival,
+                district: district,
+                routeID: routeID,
+                publicSelection: publicSelection
+            )
+            self.info = .init(
+                festival: festival,
+                district: district,
+                routeID: routeID,
+                publicSelection: publicSelection
+            )
+            self.settings = .init(publicSelection: publicSelection)
+            self.adminDistrict = nil
+            self.adminFestival = nil
         }
     }
-    
 
     @CasePathable
-    enum Action: Equatable,BindableAction {
-        case binding(BindingAction<HomeFeature.State>)
+    enum Action: Equatable, BindableAction {
+        case binding(BindingAction<State>)
         case initialize
-        case mapTapped
-        case infoTapped
-        case adminTapped
-        case settingsTapped
-        case settingsPrepared(VoidAppResult)
-        case loginSucceeded(UserRole)
-        case loginSucceededAfterDismiss(UserRole)
-        case destination(PresentationAction<Destination.Action>)
+        case festivalListRefreshReceived(VoidAppResult)
+        case tabSelected(Tab)
+        case map(MapTabFeature.Action)
+        case info(InfoListFeature.Action)
+        case settings(SettingsFeature.Action)
+        case adminDistrict(DistrictDashboardFeature.Action)
+        case adminFestival(FestivalDashboardFeature.Action)
         case alert(PresentationAction<AlertFeature.Action>)
     }
-    
-    @Dependency(\.authService) var authService
-    @Dependency(UserDefaltsManagerKey.self) var userDefaults
-    @Dependency(FestivalDataFetcherKey.self) var festivalDataFetcher
-    
-    var body: some ReducerOf<HomeFeature> {
+
+    @Dependency(SceneUsecaseKey.self) private var sceneUsecase
+
+    var body: some ReducerOf<Self> {
         BindingReducer()
+        Scope(state: \.map, action: \.map) {
+            MapTabFeature()
+        }
+        Scope(state: \.info, action: \.info) {
+            InfoListFeature()
+        }
+        Scope(state: \.settings, action: \.settings) {
+            SettingsFeature()
+        }
         Reduce { state, action in
             switch action {
             case .binding:
                 return .none
+
             case .initialize:
+                let context = PublicSelectionContext(
+                    festivalID: state.map.selectedFestival?.id,
+                    districtID: state.map.selectedDistrict?.id,
+                    routeID: state.currentRouteID
+                )
+                state.map.isFestivalListLoading = true
+                state.info.isFestivalListLoading = true
+                return .merge(
+                    .send(.info(.selectionRequested(context))),
+                    .task(Action.festivalListRefreshReceived) {
+                        try await sceneUsecase.refreshFestivals()
+                    }
+                )
+
+            case .festivalListRefreshReceived(.success):
+                state.map.isFestivalListLoading = false
+                state.info.isFestivalListLoading = false
                 return .none
-            case .mapTapped:
-                guard let festivalId = userDefaults.defaultFestivalId,
-                      let festival = FetchOne(Festival.find(festivalId)).wrappedValue else{
-                      state.alert = AlertFeature.error("設定画面で参加する祭典を選択してください")
-                        return .none
+
+            case .festivalListRefreshReceived(.failure(let error)):
+                state.map.isFestivalListLoading = false
+                state.info.isFestivalListLoading = false
+                state.alert = .error("祭典一覧の取得に失敗しました。\n\(error.message)")
+                return .none
+
+            case .tabSelected(let tab):
+                state.selectedTab = tab
+                return .none
+
+            case .map(.delegate(.selectionChanged(let context))):
+                state.currentRouteID = context.routeID
+                state.$publicSelection.withLock {
+                    $0 = $0.updating(context, from: .map)
                 }
-                if let districtId = userDefaults.defaultDistrictId,
-                   let district = FetchOne(District.find(districtId)).wrappedValue
-                {
-                    state.destination = .map(.init(festival: festival, district: district, routeId: state.currentRouteId, userRole: state.userRole))
-                    return .none
-                } else {
-                    state.destination = .map(.init(festival: festival, userRole: state.userRole))
+                guard state.publicSelection.isLinked else { return .none }
+                return .send(.info(.selectionRequested(context)))
+
+            case .map(.delegate(.navigationPopped)):
+                guard state.publicSelection.isLinked else { return .none }
+                return .send(.info(.navigationPopRequested))
+
+            case .map(.delegate(.userRoleChanged(let userRole))):
+                updateRole(userRole, state: &state)
+                return .none
+
+            case .map:
+                return .none
+
+            case .info(.delegate(.mapRequested(let context))):
+                state.selectedTab = .map
+                return .send(.map(.selectionRequested(context)))
+
+            case .info(.delegate(.selectionChanged(let context))):
+                state.$publicSelection.withLock {
+                    $0 = $0.updating(context, from: .info)
+                }
+                guard state.publicSelection.isLinked else { return .none }
+                return .send(.map(.selectionRequested(context)))
+
+            case .info(.delegate(.navigationPopped)):
+                guard state.publicSelection.isLinked else { return .none }
+                return .send(.map(.navigationPopRequested))
+
+            case .info:
+                return .none
+
+            case .settings(.delegate(.userRoleChanged(let userRole))):
+                updateRole(userRole, state: &state)
+                return .none
+
+            case .settings(.festivalSelectReceived(.success(.changed(let userRole)))):
+                guard let festival = state.settings.selectedFestival else { return .none }
+                updateRole(userRole, state: &state)
+                state.currentRouteID = nil
+                let context = PublicSelectionContext(festivalID: festival.id)
+                return .merge(
+                    .send(.map(.selectionRequested(context))),
+                    .send(.info(.selectionRequested(context)))
+                )
+
+            case .settings(.binding(\.isMapInfoLinked)):
+                let mapContext = state.publicSelection.context(for: .map)
+                    ?? .init(
+                        festivalID: state.map.selectedFestival?.id,
+                        districtID: state.map.selectedDistrict?.id,
+                        routeID: state.currentRouteID
+                    )
+                let infoContext = state.publicSelection.context(for: .info)
+                    ?? .init(
+                        festivalID: state.info.selectedFestival?.id,
+                        districtID: state.info.selectedDistrictID,
+                        routeID: state.info.selectedRouteID
+                    )
+                let enabled = state.settings.isMapInfoLinked
+                state.$publicSelection.withLock {
+                    $0 = $0.settingLinking(
+                        enabled,
+                        mapContext: mapContext,
+                        infoContext: infoContext
+                    )
+                }
+                guard enabled,
+                      let context = state.publicSelection.context(for: .map)
+                        ?? state.publicSelection.context(for: .info) else {
                     return .none
                 }
-            case .infoTapped:
-                guard let festivalId = userDefaults.defaultFestivalId,
-                      let festival = FetchOne(Festival.find(festivalId)).wrappedValue else {
-                    state.alert = AlertFeature.error("設定画面から祭典を選択してください。")
-                    return .none
-                }
-                state.destination = .info(.init(festival: festival))
+                return .send(.info(.selectionRequested(context)))
+
+            case .settings(.delegate(.publicSelectionLinkChanged)):
                 return .none
-            case .adminTapped:
-                return adminTapped(state: &state, action: action)
-            case .settingsTapped:
-                state.isDestinationLoading = true
-                return .task(Action.settingsPrepared) {
-                    try await festivalDataFetcher.fetchAll()
-                }
-            case .settingsPrepared(.success):
-                state.isDestinationLoading = false
-                state.destination = .settings(.init())
+
+            case .settings(.districtSelectReceived(.success(let routeID))):
+                guard let festival = state.settings.selectedFestival,
+                      let district = state.settings.selectedDistrict else { return .none }
+                state.currentRouteID = routeID
+                let context = PublicSelectionContext(
+                    festivalID: festival.id,
+                    districtID: district.id,
+                    routeID: routeID
+                )
+                return .merge(
+                    .send(.map(.selectionRequested(context))),
+                    .send(.info(.selectionRequested(context)))
+                )
+
+            case .settings:
                 return .none
-            case .settingsPrepared(.failure(let error)):
-                state.alert = AlertFeature.error("設定画面の準備に失敗しました。\n\(error)")
+
+            case .adminDistrict(.signOutReceived(.success(let userRole))),
+                    .adminFestival(.signOutReceived(.success(let userRole))):
+                updateRole(userRole, state: &state)
                 return .none
-            case .destination(.presented(.settings(.districtSelectReceived(.success(let routeId))))):
-                state.currentRouteId = routeId
+
+            case .adminDistrict, .adminFestival:
                 return .none
-            case .destination(.presented(.settings(.festivalSelectReceived(.success(.changed(let userRole)))))):
-                // 祭変更時のみユーザーロールが返る
-                state.userRole = userRole
-                state.currentRouteId = nil
-                return .none
-            case .destination(.presented(.login(.received(.success(.signedIn(let userRole)))))),
-                    .destination(.presented(.login(.confirmSignInCompleted(let userRole)))):
-                state.userRole = userRole
-                state.destination = nil
-                switch userRole {
-                case .headquarter(let id):
-                    return adminFestivalPrepared(state: &state, action: action, festivalId: id)
-                case .district(let id):
-                    return adminDistrictPrepared(state: &state, action: action, districtId: id)
-                case .guest:
-                    return .none
-                }
-            case .destination(.presented(.info(.mapRequested(let request)))):
-                switch request {
-                case .locations(let festival):
-                    state.destination = .map(.init(festival: festival, userRole: state.userRole))
-                    return .none
-                case .route(let festival, let district, let routeId):
-                    state.currentRouteId = routeId
-                    state.destination = .map(.init(festival: festival, district: district, routeId: routeId, userRole: state.userRole))
-                    return .none
-                }
-            case .destination(.presented(.adminDistrict(.signOutReceived(.success(let userRole))))),
-                .destination(.presented(.adminFestival(.signOutReceived(.success(let userRole))))):
-                state.userRole = userRole
-                state.destination = nil
-                return .none
-            case .destination(.presented(.settings(.signOutReceived(.success(let userRole))))):
-                state.userRole = userRole
-                return .none
+
             case .alert:
                 state.alert = nil
                 return .none
-            default:
-                return .none
             }
         }
-        .ifLet(\.$destination, action: \.destination)
+        .ifLet(\.adminDistrict, action: \.adminDistrict) {
+            DistrictDashboardFeature()
+        }
+        .ifLet(\.adminFestival, action: \.adminFestival) {
+            FestivalDashboardFeature()
+        }
         .ifLet(\.$alert, action: \.alert)
     }
-    
-    func adminTapped(state: inout State, action: Action) -> Effect<Action> {
-        switch state.userRole {
-        case .headquarter(let id):
-            return adminFestivalPrepared(state: &state, action: action, festivalId: id)
-        case .district(let id):
-            return adminDistrictPrepared(state: &state, action: action, districtId: id)
+
+    private func updateRole(_ userRole: UserRole, state: inout State) {
+        state.userRole = userRole
+        state.map.userRole = userRole
+
+        switch userRole {
         case .guest:
-            state.destination = .login(LoginFeature.State(id: ""))// FIXME
-            return .none
+            state.adminDistrict = nil
+            state.adminFestival = nil
+        case .district(let id):
+            state.adminFestival = nil
+            if let district = FetchOne(District.find(id)).wrappedValue {
+                state.adminDistrict = .init(district)
+            }
+        case .headquarter(let id):
+            state.adminDistrict = nil
+            if let festival = FetchOne(Festival.find(id)).wrappedValue {
+                state.adminFestival = .init(festival)
+            }
         }
-    }
-    
-    func adminFestivalPrepared(state: inout State, action: Action, festivalId: Festival.ID) -> Effect<Action> {
-        guard  let festival = FetchOne(Festival.find(festivalId)).wrappedValue else {
-            state.alert = AlertFeature.error("情報の取得に失敗しました")
-            return .none
-        }
-        state.destination = .adminFestival(.init(festival))
-        return .none
-    }
-    
-    func adminDistrictPrepared(state: inout State, action: Action, districtId: District.ID) -> Effect<Action> {
-        guard  let district = FetchOne(District.find(districtId)).wrappedValue else {
-            state.alert = AlertFeature.error("情報の取得に失敗しました")
-            return .none
-        }
-        state.destination = .adminDistrict(.init(district))
-        return .none
     }
 }
 
-extension HomeFeature.Destination.State: Equatable {}
-extension HomeFeature.Destination.Action: Equatable {}
+extension HomeFeature.State {
+    var isGuest: Bool {
+        if case .guest = userRole { return true }
+        return false
+    }
+}

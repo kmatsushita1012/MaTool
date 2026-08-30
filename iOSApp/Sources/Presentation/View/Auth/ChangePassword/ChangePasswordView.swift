@@ -7,7 +7,6 @@
 
 import SwiftUI
 import ComposableArchitecture
-import NavigationSwipeControl
 
 @available(iOS 17.0, *)
 struct ChangePasswordView: View {
@@ -53,13 +52,17 @@ struct ChangePasswordView: View {
                 }
                 .buttonStyle(PrimaryButtonStyle())
                 .padding()
+                .overlay {
+                    if store.isLoading {
+                        ProgressView()
+                    }
+                }
+                .disabled(store.isLoading)
             }
             .padding()
             Spacer()
         }
         .preferredColorScheme(.light)
-        .dismissible(backButton: false, edgeSwipe: false)
-        .loadingOverlay(store.isLoading)
         .alert($store.scope(state: \.alert, action: \.alert))
     }
 }

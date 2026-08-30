@@ -7,7 +7,6 @@
 
 import SwiftUI
 import ComposableArchitecture
-import NavigationSwipeControl
 
 @available(iOS 17.0, *)
 struct LoginView: View {
@@ -48,6 +47,12 @@ struct LoginView: View {
             }
             .buttonStyle(PrimaryButtonStyle())
             .padding()
+            .overlay {
+                if store.isLoading {
+                    ProgressView()
+                }
+            }
+            .disabled(store.isLoading)
             Button("パスワードを忘れた場合") {
                 store.send(.resetPasswordTapped)
                 focusedField = nil
@@ -56,12 +61,13 @@ struct LoginView: View {
             .padding()
         }
         .padding()
-        .navigationDestination(item: $store.scope(state: \.destination?.confirmSignIn, action: \.destination.confirmSignIn)){ store in
-            ConfirmSignInView(store:store)
+        .navigationDestination(item: $store.scope(state: \.destination, action: \.destination)) { destination in
+            switch destination.case {
+            case .confirmSignIn(let store):
+                ConfirmSignInView(store: store)
+            case .resetPassword(let store):
+                ResetPasswordView(store: store)
+            }
         }
-        .navigationDestination(item: $store.scope(state: \.destination?.resetPassword, action: \.destination.resetPassword)){ store in
-            ResetPasswordView(store:store)
-        }
-        .loadingOverlay(store.isLoading)
     }
 }

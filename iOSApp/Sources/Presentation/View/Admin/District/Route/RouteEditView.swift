@@ -7,7 +7,6 @@
 
 import ComposableArchitecture
 import SwiftUI
-import NavigationSwipeControl
 import Shared
 
 @available(iOS 17.0, *)
@@ -15,7 +14,7 @@ struct RouteEditView: View {
     @Dependency(\.values.isLiquidGlassEnabled) var isLiquidGlassEnabled
     
     typealias Tab = RouteEditFeature.Tab
-    
+
     @SwiftUI.Bindable var store: StoreOf<RouteEditFeature>
     @State private var selectedDetent: PresentationDetent = .large
     @State private var pickerHeight: CGFloat = 0
@@ -46,11 +45,9 @@ struct RouteEditView: View {
         .toolbar {
             toolbar
         }
-        .dismissible(backButton: false, edgeSwipe: false)
         .sheet(item: $store.scope(state: \.point, action: \.point)){ store in
             NavigationStack{
                 PointEditView(store: store)
-                    .dismissible(backButton: false, edgeSwipe: false)
             }
             .presentationDetents([.fraction(0.3), .fraction(0.5), .large], selection: $selectedDetent)
             .interactiveDismissDisabled()
@@ -75,7 +72,6 @@ struct RouteEditView: View {
         }
         .alert($store.scope(state: \.alert?.notice, action: \.alert.notice))
         .alert($store.scope(state: \.alert?.delete, action: \.alert.delete))
-        .loadingOverlay(store.isLoading)
         .onAppear{
             store.send(.onAppear)
         }
@@ -83,7 +79,11 @@ struct RouteEditView: View {
     
     @ToolbarContentBuilder
     var toolbar: some ToolbarContent {
-        ToolbarSaveButton(title: store.saveButtonTitle, isDisabled: store.isConfirmDisabled){
+        ToolbarSaveButton(
+            title: store.saveButtonTitle,
+            isDisabled: store.isConfirmDisabled,
+            isLoading: store.isLoading
+        ){
             store.send(.saveTapped)
         }
         ToolbarCancelButton {

@@ -19,11 +19,15 @@ struct DistrictDashboardFeature {
     
     @Reducer
     enum Destination {
-        case edit(DistrictEditFeature)
-        case route(RouteEditFeature)
         case location(LocationTrackingFeature)
         case changePassword(ChangePasswordFeature)
         case updateEmail(UpdateEmailFeature)
+    }
+
+    @Reducer
+    enum EditDestination {
+        case district(DistrictEditFeature)
+        case route(RouteEditFeature)
     }
     
     @ObservableState
@@ -34,12 +38,14 @@ struct DistrictDashboardFeature {
         @FetchAll var periods: [Period]
         
         var isRouteLoading: Bool = false
+        var isLocationLoading: Bool = false
         var isAWSLoading: Bool = false
         var activeExportKind: ExportKind? = nil
         var url: URL? = nil
         
         // Navigation
         @Presents var destination: Destination.State?
+        @Presents var editDestination: EditDestination.State?
         @Presents var alert: AlertFeature.State?
     }
     
@@ -60,6 +66,7 @@ struct DistrictDashboardFeature {
         case signOutTapped
         case signOutReceived(AppResult<UserRole>)
         case routeEditReceived(AppResult<RouteSlot>)
+        case editDestination(PresentationAction<EditDestination.Action>)
         case dismissTapped
         case alert(PresentationAction<AlertFeature.Action>)
     }
@@ -76,7 +83,7 @@ struct DistrictDashboardFeature {
             case .binding:
                 return .none
             case .onEdit:
-                state.destination = .edit(.init(state.district))
+                state.editDestination = .district(.init(state.district))
                 return .none
             case .onRouteEdit(let item):
                 state.isRouteLoading = true
@@ -102,10 +109,10 @@ struct DistrictDashboardFeature {
             case .routeEditReceived(.success(let item)):
                 state.isRouteLoading = false
                 if let route = item.route{
-                    state.destination = try? { .route(try .init(mode: .update, route: route)) }()
+                    state.editDestination = try? { .route(try .init(mode: .update, route: route)) }()
                 } else {
                     let route = Route(id: UUID().uuidString, districtId: state.district.id, periodId: item.period.id, visibility: state.district.visibility)
-                    state.destination = try? { .route(try .init(mode: .create, route: route)) }()
+                    state.editDestination = try? { .route(try .init(mode: .create, route: route)) }()
                 }
                 return .none
             case .routeEditReceived(.failure(let error)):
@@ -113,6 +120,7 @@ struct DistrictDashboardFeature {
                 state.alert = .error(error.message)
                 return .none
             case .locationPrepared(isTracking: let isTracking, Interval: let interval):
+                state.isLocationLoading = false
                 state.destination = .location(
                     LocationTrackingFeature.State(
                         id: state.district.id,
@@ -122,6 +130,7 @@ struct DistrictDashboardFeature {
                 )
                 return .none
             case .onLocation:
+                state.isLocationLoading = true
                 return .run { send in
                     let isTracking = await locationService.getIsTracking()
                     let interval = await locationService.getInterval()
@@ -143,9 +152,6 @@ struct DistrictDashboardFeature {
                 return .none
             case .destination(.presented(let childAction)):
                 switch childAction {
-                case .edit(.postReceived(.success)):
-                    state.destination = nil
-                    return .none
                 case .changePassword(.received(.success)):
                     state.destination = nil
                     state.alert = AlertFeature.success("パスワードが変更されました")
@@ -153,6 +159,9 @@ struct DistrictDashboardFeature {
                 default:
                     return .none
                 }
+            case .editDestination(.presented(.district(.postReceived(.success)))):
+                state.editDestination = nil
+                return .none
             case .signOutTapped:
                 state.isAWSLoading = true
                 return .task(Action.signOutReceived) {
@@ -172,12 +181,15 @@ struct DistrictDashboardFeature {
             }
         }
         .ifLet(\.$destination, action: \.destination)
+        .ifLet(\.$editDestination, action: \.editDestination)
         .ifLet(\.$alert, action: \.alert)
     }
 }
 
 extension DistrictDashboardFeature.Destination.State: Equatable {}
 extension DistrictDashboardFeature.Destination.Action: Equatable {}
+extension DistrictDashboardFeature.EditDestination.State: Equatable {}
+extension DistrictDashboardFeature.EditDestination.Action: Equatable {}
 
 extension DistrictDashboardFeature.State{
     var isLoading: Bool {

@@ -19,8 +19,12 @@ struct HeadquarterDistrictDetailFeature {
     
     @Reducer
     enum Destination {
-        case route(RouteEditFeature)
         case reissue(DistrictReissueFeature)
+    }
+
+    @Reducer
+    enum EditDestination {
+        case route(RouteEditFeature)
     }
     
     @ObservableState
@@ -34,6 +38,7 @@ struct HeadquarterDistrictDetailFeature {
         var activeExportKind: ExportKind? = nil
         
         @Presents var destination: Destination.State?
+        @Presents var editDestination: EditDestination.State?
         @Presents var alert: AlertFeature.State?
         var url: URL? = nil
     }
@@ -50,6 +55,7 @@ struct HeadquarterDistrictDetailFeature {
         case updateReceived(VoidAppResult)
         case routeReceived(AppResult<RouteEntry>)
         case batchExportReceived(AppResult<URL>)
+        case editDestination(PresentationAction<EditDestination.Action>)
         case destination(PresentationAction<Destination.Action>)
         case alert(PresentationAction<AlertFeature.Action>)
     }
@@ -81,7 +87,7 @@ struct HeadquarterDistrictDetailFeature {
             case .routeSelected(let slot):
                 guard let route = slot.route else { return .none }
                 if let draft = state.routeDrafts[route.id] {
-                    state.destination = try? { .route(try .init(mode: .preview, draft: draft)) }()
+                    state.editDestination = try? { .route(try .init(mode: .preview, draft: draft)) }()
                     return .none
                 }
                 state.isLoading = true
@@ -106,10 +112,10 @@ struct HeadquarterDistrictDetailFeature {
                 return .none
             case .routeReceived(.success(let entry)):
                 state.isLoading = false
-                state.destination = try? { .route(try .init(mode: .preview, route: entry.route)) }()
+                state.editDestination = try? { .route(try .init(mode: .preview, route: entry.route)) }()
                 return .none
-            case .destination(.presented(.route(.modified(.success)))):
-                guard let routeState = state.destination?.route else { return .none }
+            case .editDestination(.presented(.route(.modified(.success)))):
+                guard let routeState = state.editDestination?.route else { return .none }
                 let draft = RouteDraft(
                     route: routeState.route,
                     points: routeState.points,
@@ -120,6 +126,8 @@ struct HeadquarterDistrictDetailFeature {
                     let slot = state.routes[index]
                     state.routes[index] = RouteSlot(period: slot.period, route: draft.route)
                 }
+                return .none
+            case .editDestination:
                 return .none
             case .batchExportReceived(.success(let url)):
                 state.activeExportKind = nil
@@ -138,6 +146,7 @@ struct HeadquarterDistrictDetailFeature {
                 return .none
             }
         }
+        .ifLet(\.$editDestination, action: \.editDestination)
         .ifLet(\.$destination, action: \.destination)
         .ifLet(\.$alert, action: \.alert)
     }
@@ -215,6 +224,8 @@ extension HeadquarterDistrictDetailFeature.State {
 
 extension HeadquarterDistrictDetailFeature.Destination.State: Equatable {}
 extension HeadquarterDistrictDetailFeature.Destination.Action: Equatable {}
+extension HeadquarterDistrictDetailFeature.EditDestination.State: Equatable {}
+extension HeadquarterDistrictDetailFeature.EditDestination.Action: Equatable {}
 
 extension HeadquarterDistrictDetailFeature.State {
     init(_ district: District) {

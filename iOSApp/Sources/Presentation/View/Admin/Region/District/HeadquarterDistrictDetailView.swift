@@ -7,7 +7,6 @@
 
 import SwiftUI
 import ComposableArchitecture
-import NavigationSwipeControl
 
 @available(iOS 17.0, *)
 struct HeadquarterDistrictDetailView: View {
@@ -81,7 +80,11 @@ struct HeadquarterDistrictDetailView: View {
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             if store.isEditable {
-                ToolbarSaveButton {
+                ToolbarSaveButton(
+                    isLoading: store.isLoading
+                        && !store.isSubmissionExportLoading
+                        && !store.isTableExportLoading
+                ) {
                     store.send(.editTapped)
                 }
             } else {
@@ -96,18 +99,23 @@ struct HeadquarterDistrictDetailView: View {
         .sheet(item: $store.url){ url in
             ShareSheet(item: url)
         }
-        .navigationDestination(
-            item: $store.scope(state: \.destination?.route, action: \.destination.route)
-        ) { store in
-            RouteEditView(store: store)
+        .fullScreenCover(
+            item: $store.scope(state: \.editDestination, action: \.editDestination)
+        ) { destination in
+            switch destination.case {
+            case .route(let store):
+                RouteEditView(store: store)
+            }
         }
         .navigationDestination(
-            item: $store.scope(state: \.destination?.reissue, action: \.destination.reissue)
-        ) { store in
-            DistrictReissueView(store: store)
+            item: $store.scope(state: \.destination, action: \.destination)
+        ) { destination in
+            switch destination.case {
+            case .reissue(let store):
+                DistrictReissueView(store: store)
+            }
         }
         .alert($store.scope(state: \.alert, action: \.alert))
-        .loadingOverlay(store.isLoading && !store.isExportLoading)
     }
 }
 

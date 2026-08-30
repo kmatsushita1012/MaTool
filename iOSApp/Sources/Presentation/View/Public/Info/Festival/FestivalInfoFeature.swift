@@ -8,26 +8,33 @@
 import ComposableArchitecture
 import MapKit
 import Shared
+import SQLiteData
 
 @Reducer
 struct FestivalInfoFeature {
 
+    @Reducer
+    enum Destination {
+        case district(DistrictInfoFeature)
+    }
+
     @ObservableState
     struct State: Equatable {
         let festival: Festival
+        @FetchAll var districts: [District]
+        var selectedDistrictID: District.ID?
         var region: MKCoordinateRegion?
-        var isDismissed: Bool = false
         var isLoading: Bool = false
+        @Presents var destination: Destination.State? = nil
     }
     
     @CasePathable
     enum Action: Equatable, BindableAction {
         case binding(BindingAction<State>)
-        case dismissTapped
+        case districtSelected(District?)
         case mapTapped
+        case destination(PresentationAction<Destination.Action>)
     }
-    
-    @Dependency(\.dismiss) var dismiss
     
     var body: some ReducerOf<FestivalInfoFeature> {
         BindingReducer()
@@ -35,24 +42,29 @@ struct FestivalInfoFeature {
             switch action {
             case .binding:
                 return .none
-            case .dismissTapped:
-                if #available(iOS 17.0, *) {
-                    return .dismiss
-                } else {
-                    state.isDismissed = true
-                    return .none
-                }
+            case .districtSelected(let district):
+                state.selectedDistrictID = district?.id
+                state.destination = district.map { .district(DistrictInfoFeature.State($0)) }
+                return .none
             case .mapTapped:
-                state.isLoading = true
+                return .none
+            case .destination:
                 return .none
             }
         }
+        .ifLet(\.$destination, action: \.destination)
     }
 }
 
 extension FestivalInfoFeature.State {
-    init(item: Festival) {
+    init(item: Festival, district: District? = nil) {
         self.festival = item
+        self._districts = FetchAll(festivalId: item.id)
+        self.selectedDistrictID = district?.id
         self.region = makeRegion(origin: item.base, spanDelta: spanDelta)
+        self.destination = district.map { .district(DistrictInfoFeature.State($0)) }
     }
 }
+
+extension FestivalInfoFeature.Destination.State: Equatable {}
+extension FestivalInfoFeature.Destination.Action: Equatable {}

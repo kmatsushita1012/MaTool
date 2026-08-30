@@ -7,7 +7,6 @@
 
 import SwiftUI
 import ComposableArchitecture
-import NavigationSwipeControl
 
 @available(iOS 17.0, *)
 struct ConfirmSignInView: View {
@@ -35,6 +34,12 @@ struct ConfirmSignInView: View {
                     .cornerRadius(10)
             }
             .padding()
+            .overlay {
+                if store.isLoading {
+                    ProgressView()
+                }
+            }
+            .disabled(store.isLoading)
         }
         .padding()
         .toolbar {
@@ -42,8 +47,6 @@ struct ConfirmSignInView: View {
                 store.send(.dismissTapped)
             }
         }
-        .dismissible(backButton: false)
         .alert($store.scope(state: \.alert, action: \.alert))
-        .loadingOverlay(store.isLoading)
     }
 }

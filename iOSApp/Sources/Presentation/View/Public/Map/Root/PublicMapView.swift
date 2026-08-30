@@ -7,7 +7,6 @@
 
 import ComposableArchitecture
 import SwiftUI
-import NavigationSwipeControl
 
 struct PublicMapView: View {
     @Perception.Bindable var store: StoreOf<PublicMapFeature>
@@ -15,7 +14,6 @@ struct PublicMapView: View {
     var body: some View {
         WithPerceptionTracking{
             VStack(spacing: 0){
-                picker()
                 if let routeStore = store.scope(state: \.destination?.route, action: \.destination.route) {
                     PublicRouteMapView(store: routeStore)
                         .id(routeStore.district.id)
@@ -25,83 +23,73 @@ struct PublicMapView: View {
                     Spacer()
                 }
             }
-            .loadingOverlay(store.isLoading)
-            .background(Color.map)
             .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button(systemImage: "house"){
-                        store.send(.dismissTapped)
-                    }
-                    .tint(.black)
+                ToolbarItem(placement: .topBarLeading) {
+                    contentMenu
                 }
-                .hideSharedBackgroundVisibility()
-                
-                ToolbarItem(placement: .title){
-                    Text("地図")
-                        .foregroundStyle(.black)
+                if #available(iOS 26.0, *) {
+                    ToolbarSpacer(.fixed, placement: .topBarLeading)
+                }
+                if let routeStore = store.scope(state: \.destination?.route, action: \.destination.route) {
+                    ToolbarItem(placement: .topBarLeading) {
+                        periodMenu(routeStore: routeStore)
+                    }
                 }
             }
             .alert($store.scope(state: \.alert, action: \.alert))
-            .dismissible(backButton: false)
             .onAppear{
                 store.send(.onAppear)
             }
-            .dismissOnChange(of: store.isDismissed)
         }
     }
-    
+
     @ViewBuilder
-    private func picker() -> some View {
-        ScrollViewReader { proxy in
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 8) {
-                    ForEach(store.contents, id: \.self) { item in
-                        WithPerceptionTracking{
-                            menuButton(for: item)
-                                .id(item)
-                        }
+    private var contentMenu: some View {
+        Menu {
+            ForEach(store.contents, id: \.self) { item in
+                Button {
+                    guard item != store.selectedContent else { return }
+                    store.send(.contentSelected(item))
+                } label: {
+                    if item == store.selectedContent {
+                        Label(item.text, systemImage: "checkmark")
+                    } else {
+                        Text(item.text)
                     }
                 }
             }
-            .background(Color.map)
-            .onAppear{
-                withAnimation {
-                    proxy.scrollTo(store.selectedContent, anchor: .center)
-                }
-            }
-            .onChange(of: store.selectedContent) { newValue in
-                withAnimation {
-                    proxy.scrollTo(store.selectedContent, anchor: .center)
-                }
+        } label: {
+            Text(store.selectedContent.text)
+        }
+        .overlay(alignment: .trailing) {
+            if store.isLoading {
+                ProgressView()
+                    .controlSize(.small)
             }
         }
+        .disabled(store.isLoading)
     }
-    
+
     @ViewBuilder
-    private func menuButton(for item: PublicMapFeature.Content) -> some View {
-        let isSelected = item == store.selectedContent
-        
-        Button(action: {
-            if !isSelected {
-                store.send(.contentSelected(item))
+    private func periodMenu(routeStore: StoreOf<PublicRouteFeature>) -> some View {
+        Menu {
+            ForEach(routeStore.routes) { entry in
+                Button {
+                    routeStore.send(.selected(entry))
+                } label: {
+                    Text(entry.period.shortText)
+                }
             }
-        }) {
-            Text(item.text)
-                .foregroundColor(.black)
-                .padding(.vertical, 8)
-                .padding(.horizontal, 16)
-                .frame(minWidth: 48)
-                .background(isSelected ? Color.white : .clear)
-                .clipShape(
-                    isSelected
-                    ? .rect(
-                        topLeadingRadius: 16,
-                        bottomLeadingRadius: 0,
-                        bottomTrailingRadius: 0,
-                        topTrailingRadius: 16
-                    )
-                    : .rect()
-                )
+        } label: {
+            Text(routeStore.selected?.period.shortText ?? "日程を選択")
         }
+        .overlay(alignment: .trailing) {
+            if routeStore.isLoading {
+                ProgressView()
+                    .controlSize(.small)
+            }
+        }
+        .disabled(store.isLoading || routeStore.isLoading || routeStore.routes.isEmpty)
     }
+
 }

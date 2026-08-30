@@ -46,7 +46,7 @@ struct PublicRouteFeature {
         @FetchAll var points: [PointEntry]
 
         @FetchOne var float: FloatEntry?
-        var isMenuExpanded: Bool = false
+        var isLoading: Bool = false
         @Shared var mapRegion: MKCoordinateRegion
         var replay: Replay
 
@@ -58,7 +58,6 @@ struct PublicRouteFeature {
     @CasePathable
     enum Action: Equatable, BindableAction {
         case binding(BindingAction<State>)
-        case menuTapped
         case selected(RouteEntry)
         case pointTapped(PointEntry)
         case locationTapped(FloatEntry)
@@ -83,11 +82,8 @@ struct PublicRouteFeature {
             switch action {
             case .binding:
                 return .none
-            case .menuTapped:
-                state.isMenuExpanded = true
-                return .none
             case .selected(let entry):
-                state.isMenuExpanded = false
+                state.isLoading = true
                 state.selected = entry
                 return .task(Action.routeReceived) {
                     try await dataFetcher.fetch(routeID: entry.route.id)
@@ -104,10 +100,12 @@ struct PublicRouteFeature {
                     try await locationDataFetcher.fetch(districtId: state.district.id)
                 }
             case .routeReceived(.success):
+                state.isLoading = false
                 state.replay = .initial(state.selected?.id)
                 state.$mapRegion.withLock { $0 = makeRegion(state.points.map(\.coordinate)) }
                 return .none
             case .routeReceived(.failure(let error)):
+                state.isLoading = false
                 state.alert = .error(error)
                 return .none
             case .locationReceived(.success):

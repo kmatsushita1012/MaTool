@@ -21,12 +21,17 @@ struct PeriodListView: View {
             }
             .navigationTitle("日程")
             .navigationBarTitleDisplayMode(.inline)
-            .loadingOverlay(store.isLoading)
-            .navigationDestination(item: $store.scope(state: \.destination?.edit, action: \.destination.edit)) {
-                PeriodEditView(store: $0)
+            .fullScreenCover(item: $store.scope(state: \.editDestination, action: \.editDestination)) { destination in
+                switch destination.case {
+                case .period(let store):
+                    PeriodEditView(store: store)
+                }
             }
-            .navigationDestination(item: $store.scope(state: \.destination?.archives, action: \.destination.archives)) {
-                PeriodArchivesView(store: $0)
+            .navigationDestination(item: $store.scope(state: \.destination, action: \.destination)) { destination in
+                switch destination.case {
+                case .archives(let store):
+                    PeriodArchivesView(store: store)
+                }
             }
             .alert($store.scope(state: \.alert, action: \.alert))
     }
@@ -67,7 +72,7 @@ struct PeriodListView: View {
     
     @ToolbarContentBuilder
     var toolbar: some ToolbarContent {
-        ToolbarAddButton {
+        ToolbarAddButton(isDisabled: store.isLoading) {
             store.send(.periodCreateTapped)
         }
         batchCreateMenu
@@ -83,6 +88,13 @@ struct PeriodListView: View {
                 Button("一括作成") {
                     showBatchCreateDialog = true
                 }
+                .overlay {
+                    if store.isLoading {
+                        ProgressView()
+                            .controlSize(.small)
+                    }
+                }
+                .disabled(store.isLoading)
                 .confirmationDialog(
                     "\(String(store.createYear))年を一括作成",
                     isPresented: $showBatchCreateDialog,

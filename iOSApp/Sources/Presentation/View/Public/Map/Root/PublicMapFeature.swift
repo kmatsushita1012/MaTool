@@ -30,12 +30,11 @@ struct PublicMapFeature {
     
     @ObservableState
     struct State: Equatable{
-        let userRole: UserRole
+        var userRole: UserRole
         let contents: [Content]
         var selectedContent: Content
         var currentPeriodId: Period.ID? = nil
         var isLoading: Bool = false
-        var isDismissed: Bool = false
         @Presents var destination: Destination.State?
         @Shared var mapRegion: MKCoordinateRegion
         @Presents var alert: AlertFeature.State?
@@ -45,7 +44,6 @@ struct PublicMapFeature {
     enum Action: BindableAction, Equatable {
         case onAppear
         case binding(BindingAction<State>)
-        case dismissTapped
         case contentSelected(Content)
         case routePrepared(District, Route.ID?)
         case districtContentEvaluated(District, Bool)
@@ -57,7 +55,6 @@ struct PublicMapFeature {
     
     @Dependency(\.locationProvider) var locationProvider
     @Dependency(\.publicMapAdUsecase) var publicMapAdUsecase
-    @Dependency(\.dismiss) var dismiss
     
     var body: some ReducerOf<PublicMapFeature> {
         Reduce{ state, action in
@@ -76,13 +73,6 @@ struct PublicMapFeature {
                 }
             case .binding:
                 return .none
-            case .dismissTapped:
-                if #available(iOS 17.0, *) {
-                    return .dismiss
-                } else {
-                    state.isDismissed = true
-                    return .none
-                }
             case .contentSelected(let value):
                 let wasLocations: Bool = {
                     if case .locations = state.selectedContent {

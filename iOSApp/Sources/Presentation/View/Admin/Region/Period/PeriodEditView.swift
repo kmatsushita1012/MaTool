@@ -7,7 +7,6 @@
 
 import SwiftUI
 import ComposableArchitecture
-import NavigationSwipeControl
 
 @available(iOS 17.0, *)
 struct PeriodEditView: View {
@@ -21,13 +20,11 @@ struct PeriodEditView: View {
                 ToolbarCancelButton {
                     store.send(.cancelTapped)
                 }
-                ToolbarSaveButton {
+                ToolbarSaveButton(isLoading: store.isLoading) {
                     store.send(.saveTapped)
                 }
             }
-            .loadingOverlay(store.isLoading)
             .alert($store.scope(state: \.alert, action: \.alert))
-            .dismissible(backButton: false)
     }
     
     @ViewBuilder

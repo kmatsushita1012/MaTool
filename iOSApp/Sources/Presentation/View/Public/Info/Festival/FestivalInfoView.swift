@@ -7,102 +7,115 @@
 
 import SwiftUI
 import ComposableArchitecture
-import NavigationSwipeControl
+import MapKit
+import Shared
 
-struct FestivalInfoView: View {
+struct FestivalInfoScreen: View {
     @Perception.Bindable var store: StoreOf<FestivalInfoFeature>
+    let isDistrictLoading: Bool
+
+    init(
+        store: StoreOf<FestivalInfoFeature>,
+        isDistrictLoading: Bool = false
+    ) {
+        self.store = store
+        self.isDistrictLoading = isDistrictLoading
+    }
     
     var body: some View {
         WithPerceptionTracking {
-            ZStack {
-                ScrollView {
-                    VStack(spacing: 16) {
-                        TitleView(
-                            text: store.festival.name,
-                            image: "InfoBackground"
-                        ) {
-                            store.send(.dismissTapped)
-                        }
-                        
-                        if let imagePath = store.festival.image.light {
-                            VStack {
-                                WebImageView(imagePath: imagePath, contentMode: .fit)
-                            }
-                            .cornerRadius(8)
-                            .padding(.horizontal)
-                        }
-                        
-                        if !store.festival.prefecture.isEmpty || !store.festival.city.isEmpty {
-                            HStack {
-                                Text("\(store.festival.prefecture)\(store.festival.city)")
-                                    .font(.title3.weight(.semibold))
-                                    .foregroundColor(.primary)
-                                    .padding(.horizontal)
-                                Spacer()
-                            }
-                        }
-                        
-                        if let description = store.festival.description {
-                            VStack {
-                                ScrollableTextView(description, maxHeight: 192)
-                                    .padding()
-                            }
-                            .background(Color.info.opacity(0.3))
-                            .cornerRadius(8)
-                            .padding(.horizontal)
-                        }
-                        
-                        VStack {
-                            InfoMapView(
-                                base: store.festival.base,
-                                baseTitle: store.festival.subname,
-                                area: [],
-                                region: $store.region
-                            )
-                            .clipShape(RoundedRectangle(cornerRadius: 12))
-                            .background(
-                                RoundedRectangle(cornerRadius: 12)
-                                    .fill(Color(UIColor.secondarySystemGroupedBackground))
-                            )
-                            .overlay(
-                                RoundedRectangle(cornerRadius: 12)
-                                    .stroke(Color(UIColor.separator), lineWidth: 0.5)
-                            )
-                        }
-                        .frame(height: 384)
-                        .padding(.horizontal)
-                    }
-                    .padding(.bottom, 88)
-                }
-                
-                VStack {
-                    Spacer()
-                    mapButton()
-                        .padding(32)
+            FestivalInfoContentView(
+                festival: store.festival,
+                districts: store.districts,
+                isDistrictLoading: isDistrictLoading,
+                region: $store.region,
+                onDistrictSelected: { store.send(.districtSelected($0)) }
+            )
+            .navigationDestination(
+                item: $store.scope(state: \.destination, action: \.destination)
+            ) { destination in
+                switch destination.case {
+                case .district(let store):
+                    DistrictInfoScreen(store: store)
                 }
             }
-            .ignoresSafeArea()
-            .dismissible(backButton: false)
-            .dismissOnChange(of: store.isDismissed)
-            .loadingOverlay(store.isLoading)
         }
     }
-    
-    @ViewBuilder
-    func mapButton() -> some View {
-        Button(action: {
-            store.send(.mapTapped)
-        }) {
-            HStack(spacing: 16) {
-                Text("現在地一覧")
-                    .font(.title3)
-                Image(systemName: "location.fill")
-            }
-            .padding(.horizontal, 32)
-            .padding(.vertical, 8)
+}
+
+typealias FestivalInfoView = FestivalInfoScreen
+
+struct FestivalInfoContentView: View {
+    let festival: Festival
+    let districts: [District]
+    let isDistrictLoading: Bool
+    @Binding var region: MKCoordinateRegion?
+    let onDistrictSelected: (District) -> Void
+
+    var body: some View {
+        ScrollView {
+            VStack(spacing: 16) {
+                Color.clear
+                    .frame(height: 220)
+
+                if !festival.prefecture.isEmpty || !festival.city.isEmpty {
+                    InfoMaterialContainer {
+                        Text("\(festival.prefecture)\(festival.city)")
+                            .font(.title3.weight(.semibold))
+                    }
+                }
+
+                if let description = festival.description {
+                    InfoMaterialContainer {
+                        ExpandableTextView(text: description)
+                    }
+                }
+
+                InfoMaterialContainer {
+                    InfoMapView(
+                        base: festival.base,
+                        baseTitle: festival.subname,
+                        area: [],
+                        region: $region
+                    )
+                    .clipShape(RoundedRectangle(cornerRadius: 12))
+                    .frame(height: 384)
+                }
         }
-        .clipShape(.capsule)
-        .buttonStyle(.borderedProminent)
-        .tint(Color.info)
+        .padding(.horizontal, 16)
+        .padding(.bottom, 24)
+        }
+        .scrollIndicators(.hidden)
+        .modifier(SoftTopScrollEdgeEffectModifier())
+        .background {
+            InfoImageBackgroundView(
+                lightPath: festival.image.light,
+                darkPath: festival.image.dark
+            )
+            .ignoresSafeArea()
+        }
+        .navigationTitle(festival.name)
+        .navigationBarTitleDisplayMode(.large)
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                Menu {
+                    ForEach(districts) { district in
+                        Button {
+                            onDistrictSelected(district)
+                        } label: {
+                            Text(district.name)
+                        }
+                    }
+                } label: {
+                    Text("町を選択")
+                }
+                .overlay(alignment: .trailing) {
+                    if isDistrictLoading {
+                        ProgressView()
+                    }
+                }
+                .disabled(isDistrictLoading || districts.isEmpty)
+            }
+        }
     }
 }

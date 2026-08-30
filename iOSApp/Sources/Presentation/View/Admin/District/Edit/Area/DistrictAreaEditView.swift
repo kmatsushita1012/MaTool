@@ -7,7 +7,6 @@
 
 import SwiftUI
 import ComposableArchitecture
-import NavigationSwipeControl
 
 @available(iOS 17.0, *)
 struct DistrictAreaEditView:View {
@@ -50,7 +49,6 @@ struct DistrictAreaEditView:View {
             }
         }
         .toolbarBackground(.visible, for: .navigationBar)
-        .dismissible(backButton: false, edgeSwipe: false)
     }
     
 }

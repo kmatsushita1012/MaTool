@@ -15,11 +15,15 @@ struct FestivalDashboardFeature {
 
     @Reducer
     enum Destination {
-        case edit(FestivalEditFeature)
         case districts(HeadquarterDistrictListFeature)
         case periods(PeriodListFeature)
         case changePassword(ChangePasswordFeature)
         case updateEmail(UpdateEmailFeature)
+    }
+
+    @Reducer
+    enum EditDestination {
+        case festival(FestivalEditFeature)
     }
 
     @ObservableState
@@ -31,6 +35,7 @@ struct FestivalDashboardFeature {
         var isExportLoading: Bool = false
 
         @Presents var destination: Destination.State? = nil
+        @Presents var editDestination: EditDestination.State? = nil
         @Presents var alert: AlertFeature.State? = nil
         var isLoading: Bool {
             isApiLoading || isAuthLoading || isExportLoading
@@ -48,6 +53,7 @@ struct FestivalDashboardFeature {
         case updateEmailTapped
         case signOutTapped
         case signOutReceived(AppResult<UserRole>)
+        case editDestination(PresentationAction<EditDestination.Action>)
         case destination(PresentationAction<Destination.Action>)
         case alert(PresentationAction<AlertFeature.Action>)
     }
@@ -61,7 +67,7 @@ struct FestivalDashboardFeature {
         Reduce { state, action in
             switch action {
             case .onEdit:
-                state.destination = .edit(FestivalEditFeature.State(state.festival))
+                state.editDestination = .festival(FestivalEditFeature.State(state.festival))
                 return .none
             case .periodTapped:
                 state.destination = .periods(PeriodListFeature.State(festivalId: state.festival.id))
@@ -86,8 +92,8 @@ struct FestivalDashboardFeature {
                 state.isAuthLoading = false
                 state.alert = AlertFeature.error("ログアウトに失敗しました　\(error.message)")
                 return .none
-            case .destination(.presented(.edit(.putReceived(.success)))):
-                state.destination = nil
+            case .editDestination(.presented(.festival(.putReceived(.success)))):
+                state.editDestination = nil
                 return .none
             case .destination(.presented(.changePassword(.received(.success)))):
                 state.destination = nil
@@ -101,12 +107,15 @@ struct FestivalDashboardFeature {
             }
         }
         .ifLet(\.$destination, action: \.destination)
+        .ifLet(\.$editDestination, action: \.editDestination)
         .ifLet(\.$alert, action: \.alert)
     }
 }
 
 extension FestivalDashboardFeature.Destination.State: Equatable {}
 extension FestivalDashboardFeature.Destination.Action: Equatable {}
+extension FestivalDashboardFeature.EditDestination.State: Equatable {}
+extension FestivalDashboardFeature.EditDestination.Action: Equatable {}
 
 extension FestivalDashboardFeature.State {
     init(_ festival: Festival) {
