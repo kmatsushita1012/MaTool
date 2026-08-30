@@ -38,7 +38,7 @@ protocol LocationServiceProtocol: Sendable {
 actor LocationService: LocationServiceProtocol {
     
     @Dependency(LocationDataFetcherKey.self) var dataFetcher
-    @Dependency(\.locationProvider) var locationProvider
+    @Dependency(\.broadcastLocationProvider) var broadcastLocationProvider
 
     private var trackingTask: Task<Void, Never>?
     private var locationHistory: [Status] = []
@@ -77,7 +77,7 @@ actor LocationService: LocationServiceProtocol {
     }
 
     func requestPermission() async -> Void {
-        await locationProvider.requestPermission()
+        await broadcastLocationProvider.requestPermission()
     }
 
     func start(id: String, interval: Interval) async -> Void {
@@ -87,14 +87,14 @@ actor LocationService: LocationServiceProtocol {
         lastSentAt = nil
         isTracking = true
         
-        await locationProvider.startTracking(backgroundUpdatesAllowed: true){ result in
+        await broadcastLocationProvider.startTracking { result in
             await self.sendIfNeeded(id: id, result: result)
         }
 
         trackingTask = Task { [weak self] in
             guard let self else { return }
             while !Task.isCancelled {
-                let locationResult = await locationProvider.getLocation()
+                let locationResult = await broadcastLocationProvider.getLocation()
                 await self.sendIfNeeded(id: id, result: locationResult)
                 try? await Task.sleep(nanoseconds: UInt64(interval.value * 1_000_000_000))
             }
@@ -107,12 +107,12 @@ actor LocationService: LocationServiceProtocol {
         isTracking = false
         lastSentAt = nil
         
-        await locationProvider.stopTracking()
+        await broadcastLocationProvider.stopTracking()
         await delete(id)
     }
 
     func getLocation() async -> AsyncValue<CLLocation> {
-        await locationProvider.getLocation()
+        await broadcastLocationProvider.getLocation()
     }
     
     private func sendIfNeeded(id: String, result: AsyncValue<CLLocation>) async {

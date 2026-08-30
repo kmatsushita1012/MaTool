@@ -6,6 +6,7 @@
 //
 
 import Dependencies
+import SQLiteData
 import Shared
 import Testing
 @testable import iOSApp
@@ -30,7 +31,7 @@ struct SceneUsecaseLaunchTests {
             sceneDataFetcher: sceneDataFetcher
         )
 
-        let (launchState, _) = await usecase.launch()
+        let (launchState, _) = await launch(usecase)
 
         switch launchState {
         case .error(let message):
@@ -62,7 +63,7 @@ struct SceneUsecaseLaunchTests {
             sceneDataFetcher: sceneDataFetcher
         )
 
-        let (launchState, _) = await usecase.launch()
+        let (launchState, _) = await launch(usecase)
 
         switch launchState {
         case .onboarding:
@@ -88,6 +89,14 @@ private func makeUsecase(
         $0[SceneDataFetcherKey.self] = sceneDataFetcher
     } operation: {
         SceneUsecase(userDefaults: userDefaults)
+    }
+}
+
+private func launch(_ usecase: SceneUsecase) async -> (LaunchState, StatusCheckResult?) {
+    await withDependencies {
+        $0.defaultDatabase = try! DatabaseQueue(path: ":memory:")
+    } operation: {
+        await usecase.launch()
     }
 }
 

@@ -73,7 +73,7 @@ struct PublicRouteFeature {
         case alert(PresentationAction<AlertFeature.Action>)
     }
 
-    @Dependency(\.locationProvider) var locationProvider
+    @Dependency(\.mapLocationProvider) var mapLocationProvider
     @Dependency(RouteDataFetcherKey.self) var dataFetcher
     @Dependency(LocationDataFetcherKey.self) var locationDataFetcher
 
@@ -113,6 +113,10 @@ struct PublicRouteFeature {
             case .locationReceived(.success):
                 if let coordinate = state.float?.floatLocation.coordinate {
                     state.$mapRegion.withLock{ $0 = makeRegion(origin: coordinate, spanDelta: spanDelta) }
+                } else {
+                    #if DEBUG
+                        state.alert = .error("屋台位置フォーカスに失敗しました。\n地区ID: \(state.district.id)\n位置情報がローカルに反映されていません。")
+                    #endif
                 }
                 return .none
             case .locationReceived(.failure(let error)):
@@ -123,6 +127,9 @@ struct PublicRouteFeature {
                 } else {
                     state.alert = .error(error)
                 }
+                #if DEBUG
+                    state.alert = .error("屋台位置フォーカスに失敗しました。\n地区ID: \(state.district.id)\n\(error.message)")
+                #endif
                 return .none
             case .replayTapped:
                 if state.replay.isRunning {
@@ -136,7 +143,7 @@ struct PublicRouteFeature {
                 return .none
             case .userFocusTapped:
                 return .run { send in
-                    let result = await locationProvider.getLocation()
+                    let result = await mapLocationProvider.getLocation()
                     guard let coordinate = result.value?.coordinate else { return }
                     await send(.userLocationReceived(Coordinate.fromCL(coordinate)))
                 }
