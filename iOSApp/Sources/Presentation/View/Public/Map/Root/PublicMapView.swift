@@ -89,7 +89,7 @@ private struct MapTopControlsScreen: View {
                     contentMenu: contentMenu,
                     periodMenu: MapPeriodMenuContentView(
                         routes: routeStore.routes,
-                        selectedTitle: routeStore.selected?.period.shortText ?? "日程を選択",
+                        selectedTitle: routeStore.selected?.period.mapMenuText ?? "日程を選択",
                         isLoading: routeStore.isLoading,
                         isDisabled: store.isLoading,
                         onSelected: { routeStore.send(.selected($0)) }
@@ -126,6 +126,7 @@ private struct MapContentMenuContentView: View {
     let selectedContent: PublicMapFeature.Content
     let isLoading: Bool
     let onSelected: (PublicMapFeature.Content) -> Void
+    @ScaledMetric(relativeTo: .body) private var districtIconSize = 20
 
     var body: some View {
         Menu {
@@ -142,7 +143,18 @@ private struct MapContentMenuContentView: View {
                 }
             }
         } label: {
-            Text(selectedContent.text)
+            Label {
+                Text(selectedContent.text)
+            } icon: {
+                if case .route = selectedContent {
+                    Image("DistrictMenuIcon")
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: districtIconSize, height: districtIconSize)
+                } else {
+                    Image(systemName: "mappin.and.ellipse")
+                }
+            }
         }
         .overlay(alignment: .trailing) {
             if isLoading {
@@ -168,11 +180,11 @@ private struct MapPeriodMenuContentView: View {
                 Button {
                     onSelected(entry)
                 } label: {
-                    Text(entry.period.shortText)
+                    Text(entry.period.mapMenuText)
                 }
             }
         } label: {
-            Text(selectedTitle)
+            Label(selectedTitle, systemImage: "calendar")
         }
         .overlay(alignment: .trailing) {
             if isLoading {
@@ -182,6 +194,12 @@ private struct MapPeriodMenuContentView: View {
         }
         .disabled(isDisabled || isLoading || routes.isEmpty)
         .modifier(MapTopMenuButtonStyleModifier())
+    }
+}
+
+private extension Period {
+    var mapMenuText: String {
+        "\(date.text(format: "m/d（w）"))\(title)"
     }
 }
 
