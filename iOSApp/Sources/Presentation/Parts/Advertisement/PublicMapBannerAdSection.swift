@@ -19,7 +19,9 @@ struct PublicMapBannerAdSection: View {
     @Dependency(\.adManager) var adManager
 
     var body: some View {
-        if let unitID = values.publicMapBannerAdUnitId, !unitID.isEmpty {
+        if adManager.isEnabled,
+           let unitID = values.publicMapBannerAdUnitId,
+           !unitID.isEmpty {
             #if canImport(GoogleMobileAds)
             let adSize = AdMobBannerView.currentAdSize
             AdMobBannerView(unitID: unitID, adSize: adSize, adManager: adManager)
