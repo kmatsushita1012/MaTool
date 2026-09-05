@@ -164,12 +164,7 @@ struct PublicMapFeature {
         switch action {
         case .destination(.presented(.route(.selected(let entry)))):
             state.currentPeriodId = entry.period.id
-            return .run { [userRole = state.userRole, districtId = entry.route.districtId] _ in
-                await publicMapAdUsecase.handlePeriodSelection(
-                    userRole: userRole,
-                    districtId: districtId
-                )
-            }
+            return .none
         default:
             return .none
         }

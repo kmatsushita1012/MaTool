@@ -37,6 +37,8 @@ enum AdPlacement: Hashable, Sendable {
 }
 
 protocol AdManagerProtocol: Sendable {
+    var isEnabled: Bool { get }
+
     @MainActor
     func configureIfNeeded()
     @MainActor
@@ -46,6 +48,13 @@ protocol AdManagerProtocol: Sendable {
 }
 
 final class AdManager: NSObject, AdManagerProtocol, @unchecked Sendable {
+    // 一時的な広告停止用。再掲出時は true に変更する。
+    static let isAdvertisementEnabled = false
+
+    var isEnabled: Bool {
+        Self.isAdvertisementEnabled
+    }
+
     struct Configuration: Sendable {
         let appID: String?
         let publicMapInterstitialUnitID: String?
@@ -65,6 +74,7 @@ final class AdManager: NSObject, AdManagerProtocol, @unchecked Sendable {
 
     @MainActor
     func configureIfNeeded() {
+        guard isEnabled else { return }
         guard !isConfigured else { return }
         isConfigured = true
 
@@ -76,6 +86,7 @@ final class AdManager: NSObject, AdManagerProtocol, @unchecked Sendable {
 
     @MainActor
     func preloadInterstitial(for placement: AdPlacement) {
+        guard isEnabled else { return }
         configureIfNeeded()
 
         #if canImport(GoogleMobileAds)
@@ -93,6 +104,7 @@ final class AdManager: NSObject, AdManagerProtocol, @unchecked Sendable {
 
     @MainActor
     func presentInterstitial(for placement: AdPlacement) {
+        guard isEnabled else { return }
         configureIfNeeded()
 
         #if canImport(GoogleMobileAds)
