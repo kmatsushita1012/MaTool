@@ -56,7 +56,7 @@ jobs:
       - name: Create Private Key
         run: |
           mkdir -p private_keys
-          echo -n '${{ secrets.APPLE_API_KEY_BASE64 }}' | base64 --decode > ./private_keys/AuthKey_${{ secrets.APPLE_API_KEY_ID }}.p8
+          echo -n '${{ secrets.APPLE_API_KEY_BASE64 }}' | base64 --decode > ./private_keys/AuthKey_${{ secrets.APPLE_API_ISSUE_ID }}.p8
 
       - name: Build
         run: |
@@ -80,8 +80,8 @@ jobs:
 
       - name: Export IPA
         run: |
-          xcodebuild -exportArchive -archivePath iOSApp/MaTool.xcarchive -exportOptionsPlist ExportOptions.plist -exportPath build/export -allowProvisioningUpdates -authenticationKeyPath `pwd`/private_keys/AuthKey_${{ secrets.APPLE_API_KEY_ID }}.p8 -authenticationKeyID ${{ secrets.APPLE_API_KEY_ID }} -authenticationKeyIssuerID ${{ secrets.APPLE_API_ISSUE_ID }}
+          xcodebuild -exportArchive -archivePath iOSApp/MaTool.xcarchive -exportOptionsPlist ExportOptions.plist -exportPath build/export -allowProvisioningUpdates -authenticationKeyPath `pwd`/private_keys/AuthKey_${{ secrets.APPLE_API_ISSUE_ID }}.p8 -authenticationKeyID ${{ secrets.APPLE_API_KEY_ID }} -authenticationKeyIssuerID ${{ secrets.APPLE_API_ISSUE_ID }}
 
       - name: Upload to App Store Connect
         run: |
-          xcrun altool --upload-app -f build/export/MaTool.ipa -t ios --type ios --api-key ${{ secrets.APPLE_API_KEY_ID }} --api-issuer ${{ secrets.APPLE_API_ISSUE_ID }}
+          xcrun altool --upload-app -f build/export/MaTool.ipa -t ios -u ${{ secrets.APPLE_ID }} -p ${{ secrets.APP_SPECIFIC_PASSWORD }} --type ios
