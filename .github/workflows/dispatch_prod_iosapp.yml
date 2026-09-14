@@ -3,6 +3,7 @@ on:
   push:
     branches:
       - release-ios
+      - codex/fix-release-deploy
 
 jobs:
   deploy_iosapp:
