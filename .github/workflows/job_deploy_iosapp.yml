@@ -58,6 +58,73 @@ jobs:
           mkdir -p private_keys
           echo -n '${{ secrets.APPLE_API_KEY_BASE64 }}' | base64 --decode > ./private_keys/AuthKey_${{ secrets.APPLE_API_ISSUE_ID }}.p8
 
+      - name: Install Distribution signing assets
+        env:
+          APPLE_DISTRIBUTION_CERTIFICATE_BASE64: ${{ secrets.APPLE_DISTRIBUTION_CERTIFICATE_BASE64 }}
+          APPLE_DISTRIBUTION_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_DISTRIBUTION_CERTIFICATE_PASSWORD }}
+          APPLE_DISTRIBUTION_PROVISIONING_PROFILE_BASE64: ${{ secrets.APPLE_DISTRIBUTION_PROVISIONING_PROFILE_BASE64 }}
+        run: |
+          set -euo pipefail
+
+          missing=()
+          [ -n "$APPLE_DISTRIBUTION_CERTIFICATE_BASE64" ] || missing+=(APPLE_DISTRIBUTION_CERTIFICATE_BASE64)
+          [ -n "$APPLE_DISTRIBUTION_CERTIFICATE_PASSWORD" ] || missing+=(APPLE_DISTRIBUTION_CERTIFICATE_PASSWORD)
+          [ -n "$APPLE_DISTRIBUTION_PROVISIONING_PROFILE_BASE64" ] || missing+=(APPLE_DISTRIBUTION_PROVISIONING_PROFILE_BASE64)
+          if [ "${#missing[@]}" -gt 0 ]; then
+            echo "::error::Missing fixed signing secrets: ${missing[*]}"
+            echo "Certificate auto-generation is intentionally disabled."
+            exit 1
+          fi
+
+          certificate_path="$RUNNER_TEMP/MaTool_Distribution.p12"
+          profile_path="$RUNNER_TEMP/MaTool_Distribution.mobileprovision"
+          profile_plist_path="$RUNNER_TEMP/MaTool_Distribution.plist"
+          keychain_path="$RUNNER_TEMP/MaTool-signing.keychain-db"
+          keychain_password="$(uuidgen)"
+
+          printf '%s' "$APPLE_DISTRIBUTION_CERTIFICATE_BASE64" | base64 --decode > "$certificate_path"
+          printf '%s' "$APPLE_DISTRIBUTION_PROVISIONING_PROFILE_BASE64" | base64 --decode > "$profile_path"
+          security cms -D -i "$profile_path" > "$profile_plist_path"
+
+          profile_name="$(/usr/libexec/PlistBuddy -c 'Print :Name' "$profile_plist_path")"
+          team_id="$(/usr/libexec/PlistBuddy -c 'Print :TeamIdentifier:0' "$profile_plist_path")"
+          profile_app_id="$(/usr/libexec/PlistBuddy -c 'Print :Entitlements:application-identifier' "$profile_plist_path")"
+          bundle_id="${profile_app_id#*.}"
+          get_task_allow="$(/usr/libexec/PlistBuddy -c 'Print :Entitlements:get-task-allow' "$profile_plist_path" 2>/dev/null || true)"
+
+          if [ "$get_task_allow" != "false" ]; then
+            echo "::error::The provisioning profile is not an App Store distribution profile."
+            exit 1
+          fi
+          if [ "$bundle_id" != "StudioMK.FesTracking" ]; then
+            echo "::error::The provisioning profile bundle ID is '$bundle_id', expected 'StudioMK.FesTracking'."
+            exit 1
+          fi
+
+          security create-keychain -p "$keychain_password" "$keychain_path"
+          security set-keychain-settings -lut 21600 "$keychain_path"
+          security unlock-keychain -p "$keychain_password" "$keychain_path"
+          security import "$certificate_path" -P "$APPLE_DISTRIBUTION_CERTIFICATE_PASSWORD" -A -t cert -f pkcs12 -k "$keychain_path"
+          security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$keychain_password" "$keychain_path"
+          security list-keychains -d user -s "$keychain_path"
+          security default-keychain -s "$keychain_path"
+
+          signing_identity="$(security find-identity -v -p codesigning "$keychain_path" | awk -F '"' '/Apple Distribution|iPhone Distribution/ { print $2; exit }')"
+          if [ -z "$signing_identity" ]; then
+            echo "::error::No Apple Distribution identity was found in the fixed certificate."
+            exit 1
+          fi
+
+          profile_directory="$HOME/Library/MobileDevice/Provisioning Profiles"
+          mkdir -p "$profile_directory"
+          profile_uuid="$(/usr/libexec/PlistBuddy -c 'Print :UUID' "$profile_plist_path")"
+          cp "$profile_path" "$profile_directory/$profile_uuid.mobileprovision"
+
+          printf 'MATOOL_SIGNING_IDENTITY=%s\n' "$signing_identity" >> "$GITHUB_ENV"
+          printf 'MATOOL_PROVISIONING_PROFILE_NAME=%s\n' "$profile_name" >> "$GITHUB_ENV"
+          printf 'MATOOL_PROVISIONING_PROFILE_BUNDLE_ID=%s\n' "$bundle_id" >> "$GITHUB_ENV"
+          printf 'MATOOL_TEAM_ID=%s\n' "$team_id" >> "$GITHUB_ENV"
+
       - name: Build
         run: |
           xcodebuild archive \
@@ -70,12 +137,31 @@ jobs:
             -derivedDataPath iOSApp/.derivedData \
             -skipMacroValidation \
             -skipPackagePluginValidation \
-            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_ALLOWED=YES \
+            CODE_SIGN_STYLE=Manual \
+            CODE_SIGN_IDENTITY="$MATOOL_SIGNING_IDENTITY" \
+            DEVELOPMENT_TEAM="$MATOOL_TEAM_ID" \
+            PROVISIONING_PROFILE_SPECIFIER="$MATOOL_PROVISIONING_PROFILE_NAME" \
             ENABLE_SWIFT_MACROS=YES
 
       - name: Create ExportOptions.plist
         run: |
           echo '${{ secrets.EXPORT_OPTIONS }}' > ExportOptions.plist
+          if /usr/libexec/PlistBuddy -c "Set :signingStyle manual" ExportOptions.plist; then
+            true
+          else
+            /usr/libexec/PlistBuddy -c "Add :signingStyle string manual" ExportOptions.plist
+          fi
+          if /usr/libexec/PlistBuddy -c "Add :provisioningProfiles dict" ExportOptions.plist; then
+            true
+          else
+            true
+          fi
+          if /usr/libexec/PlistBuddy -c "Set :provisioningProfiles:$MATOOL_PROVISIONING_PROFILE_BUNDLE_ID $MATOOL_PROVISIONING_PROFILE_NAME" ExportOptions.plist; then
+            true
+          else
+            /usr/libexec/PlistBuddy -c "Add :provisioningProfiles:$MATOOL_PROVISIONING_PROFILE_BUNDLE_ID string $MATOOL_PROVISIONING_PROFILE_NAME" ExportOptions.plist
+          fi
           cat ExportOptions.plist
 
       - name: Export IPA
@@ -112,6 +198,14 @@ jobs:
           codesign "${codesign_args[@]}" "$app_path"
 
           codesign --verify --deep --strict --verbose=4 "$app_path"
+          for framework_name in GoogleMobileAds UserMessagingPlatform; do
+            framework_path="$app_path/Frameworks/$framework_name.framework"
+            if [ ! -d "$framework_path" ]; then
+              echo "Missing expected embedded framework: $framework_name"
+              exit 1
+            fi
+            codesign --verify --strict --verbose=4 "$framework_path"
+          done
           rm -f build/export/MaTool.ipa
           (cd build/resigned-ipa && zip -qry ../export/MaTool.ipa Payload)
 
