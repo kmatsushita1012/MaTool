@@ -76,6 +76,7 @@ public struct RootSceneView: View {
                 errorView(message)
             }
         }
+        .modifier(AppScrollEdgeEffectModifier(isEnabled: isLiquidGlassEnabled))
         .sheet(item: normalStatusBinding) { status in
             AppStatusModal(status)
         }
@@ -100,6 +101,19 @@ public struct RootSceneView: View {
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, 24)
             Spacer()
+        }
+    }
+}
+
+private struct AppScrollEdgeEffectModifier: ViewModifier {
+    let isEnabled: Bool
+
+    @ViewBuilder
+    func body(content: Content) -> some View {
+        if isEnabled, #available(iOS 26.0, *) {
+            content.scrollEdgeEffectStyle(.soft, for: .top)
+        } else {
+            content
         }
     }
 }
