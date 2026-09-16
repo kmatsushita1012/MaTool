@@ -115,7 +115,7 @@ struct PublicRouteFeature {
                     state.$mapRegion.withLock{ $0 = makeRegion(origin: coordinate, spanDelta: spanDelta) }
                 } else {
                     #if DEBUG
-                        state.alert = .error("屋台位置フォーカスに失敗しました。\n地区ID: \(state.district.id)\n位置情報がローカルに反映されていません。")
+                        state.alert = .error("DEBUG 屋台位置フォーカスに失敗しました。\n地区ID: \(state.district.id)\n位置情報がローカルに反映されていません。")
                     #endif
                 }
                 return .none
@@ -128,7 +128,7 @@ struct PublicRouteFeature {
                     state.alert = .error(error)
                 }
                 #if DEBUG
-                    state.alert = .error("屋台位置フォーカスに失敗しました。\n地区ID: \(state.district.id)\n\(error.message)")
+                    state.alert = .error("DEBUG 屋台位置フォーカスに失敗しました。\n地区ID: \(state.district.id)\n\(error.message)")
                 #endif
                 return .none
             case .replayTapped:

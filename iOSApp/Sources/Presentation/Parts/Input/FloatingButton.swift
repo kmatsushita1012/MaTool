@@ -9,16 +9,43 @@ import SwiftUI
 
 struct FloatingIconButton: View {
     let icon: String
-    let action: () -> Void
+    let action: @MainActor () -> Void
+    @Environment(\.isLiquidGlassDisabled) private var isLiquidGlassDisabled
 
+    init(
+        icon: String,
+        action: @escaping @MainActor () -> Void
+    ) {
+        self.icon = icon
+        self.action = action
+    }
+
+    @ViewBuilder
     var body: some View {
-        Button(action: {
-            action()
-        }) {
-            Image(systemName: icon)
-                .font(.title3)
-                .padding(4)
+        if #available(iOS 26.0, *), !isLiquidGlassDisabled {
+            glassButton
+        } else {
+            Button(action: {
+                action()
+            }) {
+                Image(systemName: icon)
+                    .font(.title3)
+                    .padding(4)
+            }
         }
+    }
+
+    @available(iOS 26.0, *)
+    @ViewBuilder
+    private var glassButton: some View {
+        Button {
+            action()
+        } label: {
+            Image(systemName: icon)
+                .font(.title2)
+                .contentShape(.rect)
+        }
+        .buttonStyle(.glass)
     }
 }
 
