@@ -13,7 +13,7 @@ let package = Package(
     ],
     dependencies: [
         .package(url: "https://github.com/pointfreeco/swift-case-paths.git", from: "1.7.2"),
-        .package(url: "https://github.com/pointfreeco/sqlite-data.git", from: "1.5.0"),
+        .package(url: "https://github.com/pointfreeco/sqlite-data.git", exact: "1.11.1"),
         .package( url: "https://github.com/groue/GRDB.swift.git", from: "7.6.0")
     ],
     targets: [

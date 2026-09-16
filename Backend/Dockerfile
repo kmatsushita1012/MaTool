@@ -4,12 +4,13 @@
 FROM public.ecr.aws/amazonlinux/amazonlinux:2023 AS build
 
 # 必要なツールとライブラリをインストール
-ARG SWIFTLANG_VERSION=6.2.1-3.amzn2023.0.2
+ARG SWIFTLANG_VERSION=6.3-1.amzn2023.0.2
+ARG SWIFTLANG_LIB_VERSION=6.3-1.amzn2023.0.1
 
 RUN dnf update -y && \
     dnf install -y \
         swiftlang-${SWIFTLANG_VERSION} \
-        swiftlang-lib-${SWIFTLANG_VERSION} \
+        swiftlang-lib-${SWIFTLANG_LIB_VERSION} \
         gcc \
         make \
         tar \
