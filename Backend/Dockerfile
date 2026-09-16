@@ -9,6 +9,7 @@ ARG SWIFTLANG_VERSION=6.2.1-3.amzn2023.0.2
 RUN dnf update -y && \
     dnf install -y \
         swiftlang-${SWIFTLANG_VERSION} \
+        swiftlang-lib-${SWIFTLANG_VERSION} \
         gcc \
         make \
         tar \
