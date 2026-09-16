@@ -14,9 +14,8 @@ extension AppError {
             return appError
         }
 
-        if let amplifyAuthError = error as? AuthError,
-           let localizedError = localizedAuthError(amplifyAuthError, operation: operation) {
-            return localizedError
+        if let amplifyAuthError = error as? AuthError {
+            return localizedAuthError(amplifyAuthError, operation: operation)
         }
 
         if let amplifyError = error as? any AmplifyError {
@@ -65,14 +64,52 @@ extension AppError {
     private static func localizedAuthError(
         _ error: AuthError,
         operation: String
-    ) -> AppError? {
+    ) -> AppError {
         switch error {
-        case .notAuthorized(_, _, _) where operation == "signIn":
-            return .auth(.unauthorized("ユーザー名またはパスワードが正しくありません。"))
-        case .notAuthorized(_, _, _):
-            return .auth(.unauthorized("認証操作を実行する権限がありません。"))
-        default:
-            return nil
+        case .configuration(let description, let recovery, _):
+            return .auth(.configuration(localizedAmplifyMessage(
+                description: description,
+                recovery: recovery
+            )))
+        case .service(let description, let recovery, let underlyingError):
+            if let localizedError = localizedCognitoServiceError(underlyingError) {
+                return localizedError
+            }
+
+            let message = localizedAmplifyMessage(
+                description: description,
+                recovery: recovery
+            )
+            if isNetworkRelated(description: description) {
+                return .auth(.network(message))
+            }
+            if isAuthRelated(description: description) {
+                return .auth(.unauthorized(message))
+            }
+            return .auth(.unknown(message))
+        case .unknown(let description, _):
+            return .auth(.unknown(localizedAmplifyDescription(description)))
+        case .validation(_, let description, let recovery, _):
+            return .auth(.badRequest(localizedAmplifyMessage(
+                description: description,
+                recovery: recovery
+            )))
+        case .notAuthorized(let description, let recovery, _):
+            let message = operation == "signIn"
+                ? "ユーザー名またはパスワードが正しくありません。"
+                : localizedAmplifyMessage(description: description, recovery: recovery)
+            return .auth(.unauthorized(message))
+        case .invalidState(let description, let recovery, _):
+            return .auth(.unknown(localizedAmplifyMessage(
+                description: description,
+                recovery: recovery
+            )))
+        case .signedOut(let description, let recovery, _),
+             .sessionExpired(let description, let recovery, _):
+            return .auth(.unauthorized(localizedAmplifyMessage(
+                description: description,
+                recovery: recovery
+            )))
         }
     }
 
@@ -97,6 +134,35 @@ extension AppError {
             return "サインインに必要なパスワードが入力されていません。"
         case "Invalid email address format":
             return "有効なメールアドレスを入力してください。"
+        case "UserPool configuration is missing":
+            return "認証設定にUser Poolの情報がありません。"
+        case "IdentityPool configuration is missing":
+            return "認証設定にIdentity Poolの情報がありません。"
+        case "Auth session does not include AWS credentials information":
+            return "認証セッションにAWS認証情報が含まれていません。"
+        case "Unable to fetch auth session":
+            return "認証セッションを取得できませんでした。"
+        case "Sign in reached an error state":
+            return "サインイン処理でエラーが発生しました。"
+        case "Sign up reached an error state":
+            return "サインアップ処理でエラーが発生しました。"
+        case "Confirm sign up reached an error state":
+            return "サインアップ確認処理でエラーが発生しました。"
+        case "Unable to get Auth code delivery details":
+            return "確認コードの送信先情報を取得できませんでした。"
+        case "Unable to get devices list from response":
+            return "認証デバイス一覧を取得できませんでした。"
+        case "Unable to get device metadata":
+            return "認証デバイス情報を取得できませんでした。"
+        case "Unable to get username for the signedIn user":
+            return "サインイン中のユーザー名を取得できませんでした。"
+        case "Unable to execute auth task":
+            return "認証処理を実行できませんでした。"
+        case "Could not signin to webUI",
+            "Not able to signIn to the webUI":
+            return "Web UIへのサインインに失敗しました。"
+        case "Unable to parse credentials to expected output":
+            return "認証情報の解析に失敗しました。"
         case "Invalid verification code provided, please try again":
             return "認証コードが正しくありません。もう一度お試しください。"
         case "Attempt limit exceeded, please try after some time":
