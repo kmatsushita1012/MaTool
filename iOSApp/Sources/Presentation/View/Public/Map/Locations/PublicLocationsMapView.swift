@@ -98,6 +98,8 @@ struct PublicLocationsMapView: View {
                             .contentShape(.rect)
                     }
                     .buttonStyle(.glass)
+                    .glassEffectUnion(id: "bottombar", namespace: namespace)
+                    .disabled(store.floats.isEmpty)
 
                     FloatingIconButton(icon: "arrow.clockwise") {
                         store.send(.reloadTapped)
