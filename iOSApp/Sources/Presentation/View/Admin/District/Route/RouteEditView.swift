@@ -30,7 +30,7 @@ struct RouteEditView: View {
             }
         }
         .safeAreaInset(edge: .bottom){
-            if store.tab != .info {
+            if store.mode == .preview && store.tab != .info {
                 Group {
                     if #available(iOS 26.0, *), isLiquidGlassEnabled {
                         districtAreaOverlayButton

@@ -11,6 +11,7 @@ import ComposableArchitecture
 struct PublicRouteMapView: View {
     @Perception.Bindable var store: StoreOf<PublicRouteFeature>
     @StateObject var replayController: ReplayController
+    @Namespace private var namespace
     
     init(store: StoreOf<PublicRouteFeature>) {
         self.store = store
@@ -55,11 +56,8 @@ struct PublicRouteMapView: View {
             .safeAreaInset(edge: .bottom) {
                 if isLiquidGlassDisabled {
                     toolbarLayerBeforeLiquidGlass
-                }
-            }
-            .toolbar{
-                if !isLiquidGlassDisabled, #available(iOS 26.0, *) {
-                    toolbarAfterLiquidGlass
+                } else if #available(iOS 26.0, *) {
+                    toolbarLayerAfterLiquidGlass
                 }
             }
             .alert($store.scope(state: \.alert, action: \.alert))
@@ -192,36 +190,65 @@ extension PublicRouteMapView {
 
 extension PublicRouteMapView {
     @available(iOS 26.0, *)
-    @ToolbarContentBuilder
-    var toolbarAfterLiquidGlass: some ToolbarContent {
-        if store.replay.isRunning {
-            ToolbarItem(placement: .bottomBar) {
-                slider
-            }
-        }
+    @ViewBuilder
+    var toolbarLayerAfterLiquidGlass: some View {
         
-        ToolbarSpacer(.flexible, placement: .bottomBar)
-        ToolbarItemGroup(placement: .bottomBar){
-            Button(systemImage: "location.fill"){
-                store.send(.userFocusTapped)
+        HStack(spacing: 8) {
+            Group {
+                if store.replay.isRunning {
+                    slider
+                        .glassEffect(in: .capsule)
+                } else {
+                    Color.clear
+                        .fixedSize(horizontal: false, vertical: true)
+                }
             }
-            Button(systemImage: "mappin.and.ellipse"){
-                store.send(.floatFocusTapped)
-            }
-            Button(
-                systemImage: {
-                    if store.replay.isRunning {
-                        return "stop.circle"
-                    } else {
-                        return "point.bottomleft.forward.to.arrow.triangle.scurvepath.fill"
+            .frame(maxWidth: .infinity)
+            
+            GlassEffectContainer(spacing:8) {
+                HStack(spacing: 8) {
+                    
+                    button(systemImage: "location.fill") {
+                        store.send(.userFocusTapped)
                     }
-                }()
-            ){
-                store.send(.replayTapped)
+                    
+                    button(systemImage: "mappin.and.ellipse") {
+                        store.send(.floatFocusTapped)
+                    }
+                    
+                    button(
+                        systemImage: {
+                            if store.replay.isRunning {
+                                return "stop.circle"
+                            } else {
+                                return "point.bottomleft.forward.to.arrow.triangle.scurvepath.fill"
+//                                return "stop.circle"
+                            }
+                        }()
+                    ) {
+                        store.send(.replayTapped)
+                    }
+                    .disabled(!store.isReplayEnable)
+                }
             }
-            .disabled(!store.isReplayEnable)
         }
+        .padding(.horizontal)
     }
+    
+    @available(iOS 26.0, *)
+    @ViewBuilder
+    private func button(systemImage: String, action: @escaping @MainActor () -> Void) -> some View{
+        Button {
+            action()
+        } label: {
+            Image(systemName: systemImage)
+                .font(.title2)
+                .contentShape(.rect)
+        }
+        .buttonStyle(.glass)
+        .glassEffectUnion(id: "bottombar", namespace: namespace)
+    }
+    
 }
 
 extension PublicRouteMapView {

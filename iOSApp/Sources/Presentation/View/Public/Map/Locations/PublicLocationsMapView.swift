@@ -20,11 +20,8 @@ struct PublicLocationsMapView: View {
             .safeAreaInset(edge: .bottom){
                 if isLiquidGlassDisabled {
                     toolbarLayer
-                }
-            }
-            .toolbar{
-                if !isLiquidGlassDisabled, #available(iOS 26.0, *) {
-                    toolbar
+                } else if #available(iOS 26.0, *) {
+                    toolbarLayerAfterLiquidGlass
                 }
             }
             .alert($store.scope(state: \.alert, action: \.alert))
@@ -74,27 +71,38 @@ struct PublicLocationsMapView: View {
                 .shadow(radius: 8)
         )
     }
-    
+
     @available(iOS 26.0, *)
-    @ToolbarContentBuilder
-    var toolbar: some ToolbarContent {
-        ToolbarSpacer(.flexible, placement: .bottomBar)
-        ToolbarItemGroup(placement: .bottomBar) {
-            Button(systemImage: "location.fill"){
-                store.send(.userFocusTapped)
-            }
-            Menu {
-                ForEach(store.floats, id: \.self) { item in
-                    Button(item.district.name){
-                        store.send(.floatFocusSelected(item))
-                    }
+    @ViewBuilder
+    var toolbarLayerAfterLiquidGlass: some View {
+        GlassEffectContainer(spacing: 8) {
+            HStack(spacing: 8) {
+                Spacer()
+                Button(systemImage: "location.fill") {
+                    store.send(.userFocusTapped)
                 }
-            } label: {
-                Image(systemName: "mappin.and.ellipse")
-            }
-            Button(systemImage: "arrow.clockwise"){
-                store.send(.reloadTapped)
+                .padding(8)
+                .glassEffect(.regular.interactive(), in: .circle)
+
+                Menu {
+                    ForEach(store.floats, id: \.self) { item in
+                        Button(item.district.name) {
+                            store.send(.floatFocusSelected(item))
+                        }
+                    }
+                } label: {
+                    Image(systemName: "mappin.and.ellipse")
+                        .padding(8)
+                }
+                .glassEffect(.regular.interactive(), in: .circle)
+
+                Button(systemImage: "arrow.clockwise") {
+                    store.send(.reloadTapped)
+                }
+                .padding(8)
+                .glassEffect(.regular.interactive(), in: .circle)
             }
         }
+        .padding(.horizontal)
     }
 }
