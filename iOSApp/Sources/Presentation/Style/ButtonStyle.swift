@@ -26,9 +26,8 @@ struct PrimaryButtonStyle: ButtonStyle {
             .fontWeight(.semibold)
             .frame(maxWidth: .infinity)
             .padding()
-            .background(backgroundColor)
+            .background(backgroundColor, in: .capsule)
             .foregroundColor(foregroundColor)
-            .cornerRadius(8)
             .opacity(configuration.isPressed ? 0.6 : 1.0)
     }
 }
@@ -54,8 +53,8 @@ struct SecondaryButtonStyle: ButtonStyle {
             .padding()
             .frame(maxWidth: .infinity)
             .background(
-                RoundedRectangle(cornerRadius: 8)
-                    .stroke(borderColor, lineWidth: 1.5)
+                Capsule()
+                    .stroke(borderColor, lineWidth: 2)
             )
             .opacity(configuration.isPressed ? 0.6 : 1.0)
     }
