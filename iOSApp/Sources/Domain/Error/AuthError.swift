@@ -14,6 +14,11 @@ extension AppError {
             return appError
         }
 
+        if let amplifyAuthError = error as? AuthError,
+           let localizedError = localizedAuthError(amplifyAuthError, operation: operation) {
+            return localizedError
+        }
+
         if let amplifyError = error as? any AmplifyError {
             let description = amplifyError.errorDescription
             let recovery = amplifyError.recoverySuggestion
@@ -55,6 +60,20 @@ extension AppError {
         }
 
         return nil
+    }
+
+    private static func localizedAuthError(
+        _ error: AuthError,
+        operation: String
+    ) -> AppError? {
+        switch error {
+        case .notAuthorized(_, _, _) where operation == "signIn":
+            return .auth(.unauthorized("ユーザー名またはパスワードが正しくありません。"))
+        case .notAuthorized(_, _, _):
+            return .auth(.unauthorized("認証操作を実行する権限がありません。"))
+        default:
+            return nil
+        }
     }
 
     private static func localizedAmplifyMessage(description: String, recovery: String) -> String {
@@ -190,7 +209,7 @@ extension AppError {
             "A network error occurred while trying to fetch AWS Cognito Tokens":
             return "通信エラーのため、認証情報を取得できませんでした。"
         default:
-            return description
+            return "認証処理でエラーが発生しました。"
         }
     }
 
@@ -218,6 +237,10 @@ extension AppError {
     }
 
     private static func normalize(_ text: String) -> String {
-        text.trimmingCharacters(in: .whitespacesAndNewlines)
+        var value = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        if value.hasSuffix(".") {
+            value.removeLast()
+        }
+        return value
     }
 }
