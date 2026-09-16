@@ -11,6 +11,7 @@ import ComposableArchitecture
 struct PublicLocationsMapView: View {
     @Perception.Bindable var store: StoreOf<PublicLocationsFeature>
     @Environment(\.isLiquidGlassDisabled) var isLiquidGlassDisabled
+    @Namespace private var namespace
     
     var body: some View {
         WithPerceptionTracking{
@@ -75,33 +76,36 @@ struct PublicLocationsMapView: View {
     @available(iOS 26.0, *)
     @ViewBuilder
     var toolbarLayerAfterLiquidGlass: some View {
-        GlassEffectContainer(spacing: 8) {
-            HStack(spacing: 8) {
-                Spacer()
-                Button(systemImage: "location.fill") {
-                    store.send(.userFocusTapped)
-                }
-                .padding(8)
-                .glassEffect(.regular.interactive(), in: .circle)
+        HStack {
+            Spacer()
+            GlassEffectContainer(spacing: 8) {
+                HStack(spacing: 8) {
 
-                Menu {
-                    ForEach(store.floats, id: \.self) { item in
-                        Button(item.district.name) {
-                            store.send(.floatFocusSelected(item))
-                        }
+                    FloatingIconButton(icon: "location.fill") {
+                        store.send(.userFocusTapped)
                     }
-                } label: {
-                    Image(systemName: "mappin.and.ellipse")
-                        .padding(8)
-                }
-                .glassEffect(.regular.interactive(), in: .circle)
+                    .glassEffectUnion(id: "bottombar", namespace: namespace)
 
-                Button(systemImage: "arrow.clockwise") {
-                    store.send(.reloadTapped)
+                    Menu {
+                        ForEach(store.floats, id: \.self) { item in
+                            Button(item.district.name) {
+                                store.send(.floatFocusSelected(item))
+                            }
+                        }
+                    } label: {
+                        Image(systemName: "mappin.and.ellipse")
+                            .font(.title2)
+                            .contentShape(.rect)
+                    }
+                    .buttonStyle(.glass)
+
+                    FloatingIconButton(icon: "arrow.clockwise") {
+                        store.send(.reloadTapped)
+                    }
+                    .glassEffectUnion(id: "bottombar", namespace: namespace)
                 }
-                .padding(8)
-                .glassEffect(.regular.interactive(), in: .circle)
             }
+
         }
         .padding(.horizontal)
     }

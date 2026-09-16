@@ -208,47 +208,30 @@ extension PublicRouteMapView {
             GlassEffectContainer(spacing:8) {
                 HStack(spacing: 8) {
                     
-                    button(systemImage: "location.fill") {
+                    FloatingIconButton(icon: "location.fill") {
                         store.send(.userFocusTapped)
                     }
+                    .glassEffectUnion(id: "bottombar", namespace: namespace)
                     
-                    button(systemImage: "mappin.and.ellipse") {
+                    FloatingIconButton(icon: "mappin.and.ellipse") {
                         store.send(.floatFocusTapped)
                     }
+                    .glassEffectUnion(id: "bottombar", namespace: namespace)
                     
-                    button(
-                        systemImage: {
-                            if store.replay.isRunning {
-                                return "stop.circle"
-                            } else {
-                                return "point.bottomleft.forward.to.arrow.triangle.scurvepath.fill"
-//                                return "stop.circle"
-                            }
-                        }()
+                    FloatingIconButton(
+                        icon: store.replay.isRunning
+                            ? "stop.circle"
+                            : "point.bottomleft.forward.to.arrow.triangle.scurvepath.fill"
                     ) {
                         store.send(.replayTapped)
                     }
+                    .glassEffectUnion(id: "bottombar", namespace: namespace)
                     .disabled(!store.isReplayEnable)
                 }
             }
         }
         .padding(.horizontal)
     }
-    
-    @available(iOS 26.0, *)
-    @ViewBuilder
-    private func button(systemImage: String, action: @escaping @MainActor () -> Void) -> some View{
-        Button {
-            action()
-        } label: {
-            Image(systemName: systemImage)
-                .font(.title2)
-                .contentShape(.rect)
-        }
-        .buttonStyle(.glass)
-        .glassEffectUnion(id: "bottombar", namespace: namespace)
-    }
-    
 }
 
 extension PublicRouteMapView {
