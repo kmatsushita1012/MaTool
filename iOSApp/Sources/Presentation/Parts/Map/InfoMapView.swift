@@ -14,6 +14,7 @@ struct InfoMapView: UIViewRepresentable {
     var base: Coordinate?
     var baseTitle: String = "会所"
     var area: [Coordinate]
+    var isMapMovementEnabled = true
     @Binding var region: MKCoordinateRegion?
 
     func makeCoordinator() -> Coordinator {
@@ -23,6 +24,7 @@ struct InfoMapView: UIViewRepresentable {
     func makeUIView(context: Context) -> MKMapView {
         let mapView = MKMapView()
         mapView.delegate = context.coordinator
+        mapView.isScrollEnabled = isMapMovementEnabled
         
         
         if let region = region {
@@ -43,7 +45,9 @@ struct InfoMapView: UIViewRepresentable {
         return mapView
     }
     
-    func updateUIView(_ mapView: MKMapView, context: Context) {}
+    func updateUIView(_ mapView: MKMapView, context: Context) {
+        mapView.isScrollEnabled = isMapMovementEnabled
+    }
     
     class Coordinator: NSObject, MKMapViewDelegate {
         var parent: InfoMapView

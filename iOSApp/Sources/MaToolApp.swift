@@ -27,7 +27,7 @@ struct MaToolApp: App {
 
     var body: some Scene {
         WindowGroup {
-            RootSceneView()
+            RootSceneScreen()
         }
     }
 }

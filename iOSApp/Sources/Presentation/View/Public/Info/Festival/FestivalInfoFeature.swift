@@ -13,6 +13,11 @@ import SQLiteData
 @Reducer
 struct FestivalInfoFeature {
 
+    enum DisplayMode: String, CaseIterable, Equatable {
+        case festival = "祭紹介"
+        case districts = "町一覧"
+    }
+
     @Reducer
     enum Destination {
         case district(DistrictInfoFeature)
@@ -23,6 +28,7 @@ struct FestivalInfoFeature {
         let festival: Festival
         @FetchAll var districts: [District]
         var selectedDistrictID: District.ID?
+        var displayMode: DisplayMode = .festival
         var region: MKCoordinateRegion?
         var isLoading: Bool = false
         @Presents var destination: Destination.State? = nil
