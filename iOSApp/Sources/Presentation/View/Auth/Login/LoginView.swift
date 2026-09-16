@@ -12,6 +12,7 @@ import NavigationSwipeControl
 @available(iOS 17.0, *)
 struct LoginView: View {
     @SwiftUI.Bindable var store: StoreOf<LoginFeature>
+    @Dependency(\.values.contactURL) private var contactURLString
     
     @FocusState private var focusedField: Field?
     
@@ -58,9 +59,10 @@ struct LoginView: View {
             }
             .buttonStyle(SecondaryButtonStyle())
             
-            Button("ログインできない場合: お問い合わせフォーム") {
-                // 設定画面と同じお問い合わせフォームに遷移させる
-            }
+            Link(
+                "ログインできない場合: お問い合わせフォーム",
+                destination: URL(string: contactURLString)!
+            )
 
             Text(store.errorMessage ?? " ")
                 .foregroundStyle(.red)
