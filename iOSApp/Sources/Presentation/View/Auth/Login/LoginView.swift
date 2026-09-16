@@ -12,6 +12,7 @@ import NavigationSwipeControl
 @available(iOS 17.0, *)
 struct LoginView: View {
     @SwiftUI.Bindable var store: StoreOf<LoginFeature>
+    @Dependency(\.values.contactURL) private var contactURLString
     
     @FocusState private var focusedField: Field?
     
@@ -21,39 +22,51 @@ struct LoginView: View {
     }
     
     var body: some View {
-        VStack {
+        VStack(spacing: 16) {
             Text("ログイン")
                 .font(.largeTitle)
-                .padding()
             TextField("ID", text: $store.id)
-                .textContentType(.none)
-                .textFieldStyle(RoundedBorderTextFieldStyle())
-                .focused($focusedField, equals: .identifier)
                 .padding()
+                .textContentType(.username)
+                .textFieldStyle(.plain)
+                .background(.regularMaterial, in: .capsule)
+                .overlay {
+                        Capsule()
+                            .stroke(.secondary, lineWidth: 1)
+                    }
+                .focused($focusedField, equals: .identifier)
                 
             TextField("パスワード", text: $store.password)
-                .textContentType(.password)
-                .textFieldStyle(RoundedBorderTextFieldStyle())
-                .focused($focusedField, equals: .password)
                 .padding()
+                .textContentType(.password)
+                .textFieldStyle(.plain)
+                .background(.regularMaterial, in: .capsule)
+                .overlay {
+                        Capsule()
+                            .stroke(.secondary, lineWidth: 1)
+                    }
+                .focused($focusedField, equals: .password)
             
-            if let errorMessage = store.errorMessage {
-                Text(errorMessage)
-                    .foregroundColor(.red)
-                    .padding()
-            }
             Button("ログイン") {
                 store.send(.signInTapped)
                 focusedField = nil
             }
             .buttonStyle(PrimaryButtonStyle())
-            .padding()
+            
             Button("パスワードを忘れた場合") {
                 store.send(.resetPasswordTapped)
                 focusedField = nil
             }
             .buttonStyle(SecondaryButtonStyle())
-            .padding()
+            
+            Link(
+                "ログインできない場合: お問い合わせフォーム",
+                destination: URL(string: contactURLString)!
+            )
+
+            Text(store.errorMessage ?? " ")
+                .foregroundStyle(.red)
+                .opacity(store.errorMessage == nil ? 0 : 1)
         }
         .padding()
         .navigationDestination(item: $store.scope(state: \.destination?.confirmSignIn, action: \.destination.confirmSignIn)){ store in
