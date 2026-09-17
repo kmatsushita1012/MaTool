@@ -13,56 +13,56 @@ struct HomeView: View {
     
     var body: some View {
         WithPerceptionTracking{
-            AnyView(
-                content
-                .navigationTitle("トップ")
-                .navigationBarTitleDisplayMode(.inline)
-                .toolbar {
-                    ToolbarItem(placement: .title) {
-                        Text("MaTool")
-                            .foregroundStyle(.black)
-                            .font(.custom("Kanit", size: 34))
-                            .padding()
-                    }
-                }
-                .navigationDestination(item: $store.scope(state: \.destination?.map, action: \.destination.map)) { store in
-                    PublicMapView(store: store)
-                }
-                .navigationDestination(item: $store.scope(state: \.destination?.info, action: \.destination.info)) { store in
-                    InfoListView(store: store)
-                }
-                .navigationDestination(item: $store.scope(state: \.destination?.login, action: \.destination.login)) { store in
-                    if #available(iOS 17.0, *){
-                        LoginView(store: store)
-                    } else {
-                        EmptyView()
-                    }
-                }
-                .navigationDestination(item: $store.scope(state: \.destination?.adminDistrict, action: \.destination.adminDistrict)) { store in
-                    if #available(iOS 17.0, *){
-                        DistrictDashboardView(store: store)
-                    } else {
-                        EmptyView()
-                    }
-                }
-                .navigationDestination(item: $store.scope(state: \.destination?.adminFestival, action: \.destination.adminFestival)) { store in
-                    if #available(iOS 17.0, *){
-                        FestivalDashboardView(store: store)
-                    } else {
-                        EmptyView()
-                    }
-                }
-                .navigationDestination(item: $store.scope(state: \.destination?.settings, action: \.destination.settings)) { store in
-                    SettingsView(store: store)
-                }
+            HomeContentView(store: store)
+                .modifier(HomeDestinations(store: store))
                 .alert($store.scope(state: \.alert, action: \.alert))
                 .loadingOverlay(store.isLoading)
-            )
         }
     }
+}
+
+private struct HomeDestinations: ViewModifier {
+    @Perception.Bindable var store: StoreOf<HomeFeature>
+
+    func body(content: Content) -> some View {
+        content
+            .navigationDestination(item: $store.scope(state: \.destination?.map, action: \.destination.map)) { store in
+                PublicMapView(store: store)
+            }
+            .navigationDestination(item: $store.scope(state: \.destination?.info, action: \.destination.info)) { store in
+                InfoListView(store: store)
+            }
+            .navigationDestination(item: $store.scope(state: \.destination?.login, action: \.destination.login)) { store in
+                if #available(iOS 17.0, *) {
+                    LoginView(store: store)
+                } else {
+                    EmptyView()
+                }
+            }
+            .navigationDestination(item: $store.scope(state: \.destination?.adminDistrict, action: \.destination.adminDistrict)) { store in
+                if #available(iOS 17.0, *) {
+                    DistrictDashboardView(store: store)
+                } else {
+                    EmptyView()
+                }
+            }
+            .navigationDestination(item: $store.scope(state: \.destination?.adminFestival, action: \.destination.adminFestival)) { store in
+                if #available(iOS 17.0, *) {
+                    FestivalDashboardView(store: store)
+                } else {
+                    EmptyView()
+                }
+            }
+            .navigationDestination(item: $store.scope(state: \.destination?.settings, action: \.destination.settings)) { store in
+                SettingsView(store: store)
+            }
+    }
+}
+
+private struct HomeContentView: View {
+    let store: StoreOf<HomeFeature>
     
-    @ViewBuilder
-    var content: some View {
+    var body: some View {
         VStack(spacing: 16) {
             card("MapCard")
                 .onTapGesture {
@@ -111,6 +111,16 @@ struct HomeView: View {
                 .scaledToFill()
                 .ignoresSafeArea(edges: [.top])
         )
+        .navigationTitle("トップ")
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .title) {
+                Text("MaTool")
+                    .foregroundStyle(.black)
+                    .font(.custom("Kanit", size: 34))
+                    .padding()
+            }
+        }
     }
     
     @ViewBuilder
