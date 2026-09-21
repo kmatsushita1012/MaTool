@@ -12,16 +12,21 @@ import Shared
 
 struct AdminLocationMap: UIViewRepresentable {
     var location: FloatLocation?
+    var showsUserLocation: Bool = false
     
     func makeUIView(context: Context) -> MKMapView {
         let mapView = MKMapView()
-        mapView.showsUserLocation = true
-        mapView.userTrackingMode = .follow // 現在地を追跡
+        mapView.showsUserLocation = showsUserLocation
+        mapView.userTrackingMode = showsUserLocation ? .follow : .none // 現在地を追跡
         mapView.delegate = context.coordinator
         return mapView
     }
 
     func updateUIView(_ mapView: MKMapView, context: Context) {
+        mapView.showsUserLocation = showsUserLocation
+        if showsUserLocation {
+            mapView.userTrackingMode = .follow
+        }
         // 現在地が取得できていれば、その周囲を表示範囲として設定
         if let userLocation = mapView.userLocation.location {
             let region = MKCoordinateRegion(
