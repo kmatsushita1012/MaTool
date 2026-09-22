@@ -22,21 +22,14 @@ struct DistrictEditScreen: View {
                 description: $store.district.description.nonOptional,
                 visibility: $store.district.visibility,
                 performances: store.performances,
+                isLoading: store.isLoading,
                 onBaseTapped: { store.send(.baseTapped) },
                 onAreaTapped: { store.send(.areaTapped) },
                 onPerformanceTapped: { store.send(.performanceEditTapped($0)) },
-                onAddPerformanceTapped: { store.send(.performanceAddTapped) }
+                onAddPerformanceTapped: { store.send(.performanceAddTapped) },
+                onCancel: { store.send(.cancelTapped) },
+                onSave: { store.send(.saveTapped) }
             )
-            .navigationTitle("地区情報")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarCancelButton {
-                    store.send(.cancelTapped)
-                }
-                ToolbarSaveButton(isLoading: store.isLoading) {
-                    store.send(.saveTapped)
-                }
-            }
             .fullScreenCover(item: $store.scope(state: \.destination, action: \.destination)) { destination in
                 switch destination.case {
                 case .base(let store):

@@ -27,19 +27,11 @@ struct PointEditScreen: View {
                 onMove: { store.send(.moveTapped) },
                 onInsertBefore: { store.send(.insertBeforeTapped) },
                 onInsertAfter: { store.send(.insertAfterTapped) },
-                onDelete: { store.send(.deleteTapped) }
+                onDelete: { store.send(.deleteTapped) },
+                onCancel: { store.send(.cancelTapped) },
+                onDone: { store.send(.doneTapped) }
             )
-            .navigationTitle("地点編集")
-            .navigationBarTitleDisplayMode(.inline)
             .alert($store.scope(state: \.alert, action: \.alert))
-            .toolbar {
-                ToolbarCancelButton {
-                    store.send(.cancelTapped)
-                }
-                ToolbarDoneButton {
-                    store.send(.doneTapped)
-                }
-            }
         }
     }
 }

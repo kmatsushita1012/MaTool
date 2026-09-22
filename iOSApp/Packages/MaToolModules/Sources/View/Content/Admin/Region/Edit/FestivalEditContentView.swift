@@ -18,6 +18,9 @@ public struct FestivalEditContentView: View {
     let onCheckpointAdd: () -> Void
     let onHazardTapped: (HazardSection) -> Void
     let onHazardAdd: () -> Void
+    let isLoading: Bool
+    let onCancel: () -> Void
+    let onSave: () -> Void
 
     public init(
         festival: Binding<Festival>,
@@ -28,7 +31,10 @@ public struct FestivalEditContentView: View {
         onCheckpointEdit: @escaping (Checkpoint) -> Void,
         onCheckpointAdd: @escaping () -> Void,
         onHazardTapped: @escaping (HazardSection) -> Void,
-        onHazardAdd: @escaping () -> Void
+        onHazardAdd: @escaping () -> Void,
+        isLoading: Bool,
+        onCancel: @escaping () -> Void,
+        onSave: @escaping () -> Void
     ) {
         self._festival = festival
         self.checkpoints = checkpoints
@@ -39,6 +45,9 @@ public struct FestivalEditContentView: View {
         self.onCheckpointAdd = onCheckpointAdd
         self.onHazardTapped = onHazardTapped
         self.onHazardAdd = onHazardAdd
+        self.isLoading = isLoading
+        self.onCancel = onCancel
+        self.onSave = onSave
     }
 
     public var body: some View {
@@ -84,6 +93,12 @@ public struct FestivalEditContentView: View {
                 }
                 Button("追加", systemImage: "plus.circle", action: onHazardAdd)
             }
+        }
+        .navigationTitle("祭典情報")
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarCancelButton(action: onCancel)
+            ToolbarSaveButton(isLoading: isLoading, action: onSave)
         }
     }
 }

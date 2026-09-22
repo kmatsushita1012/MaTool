@@ -29,5 +29,7 @@ public struct PeriodArchivesContentView: View {
                 }
             }
         }
+        .navigationTitle("過去の日程")
+        .navigationBarTitleDisplayMode(.inline)
     }
 }

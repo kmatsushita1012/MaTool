@@ -24,31 +24,14 @@ struct HeadquarterDistrictDetailScreen: View {
                 isEditable: store.isEditable,
                 isSubmissionExportLoading: store.isSubmissionExportLoading,
                 isTableExportLoading: store.isTableExportLoading,
+                isLoading: store.isLoading,
+                onEdit: { store.send(.editTapped) },
                 onRouteSelected: { store.send(.routeSelected($0)) },
                 onResetDrafts: { store.send(.resetDraftsTapped) },
                 onSubmissionExport: { store.send(.batchExportTapped) },
                 onTableExport: { store.send(.tableExportTapped) },
                 onReissue: { store.send(.reissueTapped) }
             )
-            .navigationTitle(store.district.name)
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                if store.isEditable {
-                    ToolbarSaveButton(
-                        isLoading: store.isLoading
-                            && !store.isSubmissionExportLoading
-                            && !store.isTableExportLoading
-                    ) {
-                        store.send(.editTapped)
-                    }
-                } else {
-                    ToolbarItem(placement: .primaryAction) {
-                        Button("編集") {
-                            store.send(.editTapped)
-                        }
-                    }
-                }
-            }
             .sheet(item: $store.url) { url in
                 ShareSheet(item: url)
             }

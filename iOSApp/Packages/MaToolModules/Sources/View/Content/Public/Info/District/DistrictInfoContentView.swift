@@ -7,17 +7,23 @@ public struct DistrictInfoContentView: View {
     let district: District
     let performances: [Performance]
     @Binding var region: MKCoordinateRegion?
+    let isLoading: Bool
+    let onMapTapped: () -> Void
     @State private var imageBottomY: CGFloat?
     @State private var isMapMovementLocked = true
 
     public init(
         district: District,
         performances: [Performance],
-        region: Binding<MKCoordinateRegion?>
+        region: Binding<MKCoordinateRegion?>,
+        isLoading: Bool,
+        onMapTapped: @escaping () -> Void
     ) {
         self.district = district
         self.performances = performances
         self._region = region
+        self.isLoading = isLoading
+        self.onMapTapped = onMapTapped
     }
 
     public var body: some View {
@@ -101,6 +107,19 @@ public struct DistrictInfoContentView: View {
         }
         .onPreferenceChange(InfoBackgroundImageBottomPreferenceKey.self) {
             imageBottomY = $0
+        }
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                Button(action: onMapTapped) {
+                    Label("現在地とルート", systemImage: "paperplane.fill")
+                }
+                .overlay {
+                    if isLoading {
+                        ProgressView()
+                    }
+                }
+                .disabled(isLoading)
+            }
         }
     }
 }

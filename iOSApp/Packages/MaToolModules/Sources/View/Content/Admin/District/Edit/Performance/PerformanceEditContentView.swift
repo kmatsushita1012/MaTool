@@ -12,11 +12,21 @@ public struct PerformanceEditContentView: View {
     @Binding var item: Performance
     let isEditable: Bool
     let onDelete: () -> Void
+    let onCancel: () -> Void
+    let onDone: () -> Void
 
-    public init(item: Binding<Performance>, isEditable: Bool, onDelete: @escaping () -> Void) {
+    public init(
+        item: Binding<Performance>,
+        isEditable: Bool,
+        onDelete: @escaping () -> Void,
+        onCancel: @escaping () -> Void,
+        onDone: @escaping () -> Void
+    ) {
         self._item = item
         self.isEditable = isEditable
         self.onDelete = onDelete
+        self.onCancel = onCancel
+        self.onDone = onDone
     }
 
     public var body: some View {
@@ -37,6 +47,12 @@ public struct PerformanceEditContentView: View {
                         .foregroundColor(.red)
                 }
             }
+        }
+        .navigationTitle("余興")
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarCancelButton(action: onCancel)
+            ToolbarDoneButton(action: onDone)
         }
     }
 }

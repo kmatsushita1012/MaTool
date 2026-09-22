@@ -18,18 +18,11 @@ struct DistrictCreateScreen: View {
         WithPerceptionTracking {
             DistrictCreateContentView(
                 name: $store.name,
-                email: $store.email
+                email: $store.email,
+                isLoading: store.isLoading,
+                onCancel: { store.send(.cancelTapped) },
+                onCreate: { store.send(.createTapped) }
             )
-            .navigationTitle("新規作成")
-            .toolbar {
-                ToolbarCancelButton {
-                    store.send(.cancelTapped)
-                }
-                ToolbarSaveButton(title: "作成", isLoading: store.isLoading) {
-                    store.send(.createTapped)
-                }
-            }
-            .navigationBarTitleDisplayMode(.inline)
             .alert($store.scope(state: \.alert, action: \.alert))
         }
     }

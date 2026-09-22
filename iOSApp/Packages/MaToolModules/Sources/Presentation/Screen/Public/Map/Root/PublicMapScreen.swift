@@ -16,7 +16,7 @@ struct PublicMapScreen: View {
 
     var body: some View {
         WithPerceptionTracking {
-            PublicMapContentView {
+            PublicMapContentView(festivalTitle: store.contents.first?.name ?? "") {
                 if let routeStore = store.scope(state: \.destination?.route, action: \.destination.route) {
                     PublicRouteMapScreen(store: routeStore)
                         .id(routeStore.district.id)
@@ -50,18 +50,6 @@ struct PublicMapScreen: View {
                         }
                 } else {
                     Spacer()
-                }
-            }
-            .toolbar {
-                if #available(iOS 26.0, *) {
-                    ToolbarItem(placement: .topBarLeading) {
-                        MapFestivalToolbarTitleContentView(title: store.contents.first?.name ?? "")
-                    }
-                    .sharedBackgroundVisibility(.hidden)
-                } else {
-                    ToolbarItem(placement: .topBarLeading) {
-                        MapFestivalToolbarTitleContentView(title: store.contents.first?.name ?? "")
-                    }
                 }
             }
             .alert($store.scope(state: \.alert, action: \.alert))

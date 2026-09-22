@@ -21,23 +21,10 @@ struct DistrictInfoScreen: View {
             DistrictInfoContentView(
                 district: store.district,
                 performances: store.performances,
-                region: $store.region
+                region: $store.region,
+                isLoading: store.isLoading,
+                onMapTapped: { store.send(.mapTapped) }
             )
-            .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button {
-                        store.send(.mapTapped)
-                    } label: {
-                        Label("現在地とルート", systemImage: "paperplane.fill")
-                    }
-                    .overlay {
-                        if store.isLoading {
-                            ProgressView()
-                        }
-                    }
-                    .disabled(store.isLoading)
-                }
-            }
         }
     }
 }

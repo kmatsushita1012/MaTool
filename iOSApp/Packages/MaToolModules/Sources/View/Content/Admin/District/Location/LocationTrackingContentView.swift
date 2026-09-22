@@ -70,5 +70,7 @@ public struct LocationTrackingContentView<MapContent: View>: View {
                 }
             }
         }
+        .navigationTitle("位置情報配信")
+        .navigationBarTitleDisplayMode(.inline)
     }
 }

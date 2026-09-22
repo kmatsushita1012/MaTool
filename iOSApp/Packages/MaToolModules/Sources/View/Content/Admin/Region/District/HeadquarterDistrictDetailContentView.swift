@@ -16,6 +16,8 @@ public struct HeadquarterDistrictDetailContentView: View {
     let isEditable: Bool
     let isSubmissionExportLoading: Bool
     let isTableExportLoading: Bool
+    let isLoading: Bool
+    let onEdit: () -> Void
     let onRouteSelected: (RouteSlot) -> Void
     let onResetDrafts: () -> Void
     let onSubmissionExport: () -> Void
@@ -30,6 +32,8 @@ public struct HeadquarterDistrictDetailContentView: View {
         isEditable: Bool,
         isSubmissionExportLoading: Bool,
         isTableExportLoading: Bool,
+        isLoading: Bool,
+        onEdit: @escaping () -> Void,
         onRouteSelected: @escaping (RouteSlot) -> Void,
         onResetDrafts: @escaping () -> Void,
         onSubmissionExport: @escaping () -> Void,
@@ -43,6 +47,8 @@ public struct HeadquarterDistrictDetailContentView: View {
         self.isEditable = isEditable
         self.isSubmissionExportLoading = isSubmissionExportLoading
         self.isTableExportLoading = isTableExportLoading
+        self.isLoading = isLoading
+        self.onEdit = onEdit
         self.onRouteSelected = onRouteSelected
         self.onResetDrafts = onResetDrafts
         self.onSubmissionExport = onSubmissionExport
@@ -102,6 +108,20 @@ public struct HeadquarterDistrictDetailContentView: View {
                 }
             } footer: {
                 Text("町データは保持されます。再発行後は入力したメールアドレスでアカウント再登録が必要です。")
+            }
+        }
+        .navigationTitle(district.name)
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            if isEditable {
+                ToolbarSaveButton(
+                    isLoading: isLoading && !isSubmissionExportLoading && !isTableExportLoading,
+                    action: onEdit
+                )
+            } else {
+                ToolbarItem(placement: .primaryAction) {
+                    Button("編集", action: onEdit)
+                }
             }
         }
     }

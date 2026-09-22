@@ -8,15 +8,32 @@ import Shared
 import SwiftUI
 
 public struct PublicMapContentView<Content: View>: View {
+    private let festivalTitle: String
     private let content: () -> Content
 
-    public init(@ViewBuilder content: @escaping () -> Content) {
+    public init(
+        festivalTitle: String,
+        @ViewBuilder content: @escaping () -> Content
+    ) {
+        self.festivalTitle = festivalTitle
         self.content = content
     }
 
     public var body: some View {
         ZStack {
             content()
+        }
+        .toolbar {
+            if #available(iOS 26.0, *) {
+                ToolbarItem(placement: .topBarLeading) {
+                    MapFestivalToolbarTitleContentView(title: festivalTitle)
+                }
+                .sharedBackgroundVisibility(.hidden)
+            } else {
+                ToolbarItem(placement: .topBarLeading) {
+                    MapFestivalToolbarTitleContentView(title: festivalTitle)
+                }
+            }
         }
     }
 }

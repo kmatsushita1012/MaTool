@@ -83,6 +83,8 @@ public struct HeadquarterDistrictListContentView: View {
             }
             #endif
         }
+        .navigationTitle("参加町")
+        .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 HStack {

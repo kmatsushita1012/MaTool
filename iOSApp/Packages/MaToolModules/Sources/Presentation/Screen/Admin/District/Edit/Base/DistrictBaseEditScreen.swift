@@ -25,19 +25,10 @@ struct DistrictBaseEditScreen: View {
                         onMapLongPress: { store.send(.mapTapped($0)) }
                     )
                 },
-                onClear: { store.send(.clearTapped) }
+                onClear: { store.send(.clearTapped) },
+                onCancel: { store.send(.dismissTapped) },
+                onDone: { store.send(.doneTapped) }
             )
-            .navigationTitle("会所位置")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarCancelButton {
-                    store.send(.dismissTapped)
-                }
-                ToolbarDoneButton {
-                    store.send(.doneTapped)
-                }
-            }
-            .toolbarBackground(.visible, for: .navigationBar)
         }
     }
 }

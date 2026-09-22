@@ -19,18 +19,10 @@ struct PerformanceEditScreen: View {
             PerformanceEditContentView(
                 item: $store.item,
                 isEditable: store.mode == .edit,
-                onDelete: { store.send(.deleteTapped) }
+                onDelete: { store.send(.deleteTapped) },
+                onCancel: { store.send(.cancelTapped) },
+                onDone: { store.send(.doneTapped) }
             )
-            .navigationTitle("余興")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarCancelButton {
-                    store.send(.cancelTapped)
-                }
-                ToolbarDoneButton {
-                    store.send(.doneTapped)
-                }
-            }
             .alert($store.scope(state: \.alert, action: \.alert))
         }
     }

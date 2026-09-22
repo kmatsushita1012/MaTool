@@ -25,18 +25,11 @@ struct FestivalEditScreen: View {
                 onCheckpointEdit: { store.send(.onCheckpointEdit($0)) },
                 onCheckpointAdd: { store.send(.onCheckpointAdd) },
                 onHazardTapped: { store.send(.hazardTapped($0)) },
-                onHazardAdd: { store.send(.hazardCreateTapped) }
+                onHazardAdd: { store.send(.hazardCreateTapped) },
+                isLoading: store.isLoading,
+                onCancel: { store.send(.cancelTapped) },
+                onSave: { store.send(.saveTapped) }
             )
-            .navigationTitle("祭典情報")
-            .toolbar {
-                ToolbarCancelButton {
-                    store.send(.cancelTapped)
-                }
-                ToolbarSaveButton(isLoading: store.isLoading) {
-                    store.send(.saveTapped)
-                }
-            }
-            .navigationBarTitleDisplayMode(.inline)
             .alert($store.scope(state: \.alert, action: \.alert))
             .fullScreenCover(item: $store.scope(state: \.destination, action: \.destination)) { destination in
                 switch destination.case {

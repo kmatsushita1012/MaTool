@@ -11,6 +11,23 @@ public struct RouteEditContentView<InfoContent: View, MapContent: View>: View {
     @Binding var tab: RouteEditTab
     let title: String
     let isLiquidGlassEnabled: Bool
+    let saveButtonTitle: String
+    let isConfirmDisabled: Bool
+    let isLoading: Bool
+    let canUndo: Bool
+    let canRedo: Bool
+    let operation: RouteEditOperation
+    let isPartialEnabled: Bool
+    @Binding var isDialogPresented: Bool
+    let isDistrictAreaOverlayVisible: Bool
+    let onSave: () -> Void
+    let onCancel: () -> Void
+    let onCopy: () -> Void
+    let onUndo: () -> Void
+    let onRedo: () -> Void
+    let onWhole: () -> Void
+    let onPartial: () -> Void
+    let onDistrictAreaOverlayTapped: () -> Void
     private let info: () -> InfoContent
     private let map: () -> MapContent
 
@@ -18,12 +35,46 @@ public struct RouteEditContentView<InfoContent: View, MapContent: View>: View {
         tab: Binding<RouteEditTab>,
         title: String,
         isLiquidGlassEnabled: Bool,
+        saveButtonTitle: String,
+        isConfirmDisabled: Bool,
+        isLoading: Bool,
+        canUndo: Bool,
+        canRedo: Bool,
+        operation: RouteEditOperation,
+        isPartialEnabled: Bool,
+        isDialogPresented: Binding<Bool>,
+        isDistrictAreaOverlayVisible: Bool,
+        onSave: @escaping () -> Void,
+        onCancel: @escaping () -> Void,
+        onCopy: @escaping () -> Void,
+        onUndo: @escaping () -> Void,
+        onRedo: @escaping () -> Void,
+        onWhole: @escaping () -> Void,
+        onPartial: @escaping () -> Void,
+        onDistrictAreaOverlayTapped: @escaping () -> Void,
         @ViewBuilder info: @escaping () -> InfoContent,
         @ViewBuilder map: @escaping () -> MapContent
     ) {
         self._tab = tab
         self.title = title
         self.isLiquidGlassEnabled = isLiquidGlassEnabled
+        self.saveButtonTitle = saveButtonTitle
+        self.isConfirmDisabled = isConfirmDisabled
+        self.isLoading = isLoading
+        self.canUndo = canUndo
+        self.canRedo = canRedo
+        self.operation = operation
+        self.isPartialEnabled = isPartialEnabled
+        self._isDialogPresented = isDialogPresented
+        self.isDistrictAreaOverlayVisible = isDistrictAreaOverlayVisible
+        self.onSave = onSave
+        self.onCancel = onCancel
+        self.onCopy = onCopy
+        self.onUndo = onUndo
+        self.onRedo = onRedo
+        self.onWhole = onWhole
+        self.onPartial = onPartial
+        self.onDistrictAreaOverlayTapped = onDistrictAreaOverlayTapped
         self.info = info
         self.map = map
     }
@@ -60,6 +111,58 @@ public struct RouteEditContentView<InfoContent: View, MapContent: View>: View {
         }
         .navigationTitle(title)
         .navigationBarTitleDisplayMode(.inline)
+        .safeAreaInset(edge: .bottom) {
+            if tab != .info {
+                Button(action: onDistrictAreaOverlayTapped) {
+                    Image(systemName: "square.grid.3x3.fill")
+                        .padding()
+                        .foregroundStyle(isDistrictAreaOverlayVisible ? Color.accentColor : Color.primary)
+                }
+                .accessibilityLabel("町域オーバーレイ")
+                .modifier(RouteOverlayGlassModifier(isLiquidGlassEnabled: isLiquidGlassEnabled))
+                .padding(.horizontal)
+                .frame(maxWidth: .infinity, alignment: .trailing)
+            }
+        }
+        .toolbar {
+            ToolbarSaveButton(
+                title: saveButtonTitle,
+                isDisabled: isConfirmDisabled,
+                isLoading: isLoading,
+                action: onSave
+            )
+            ToolbarCancelButton(action: onCancel)
+            ToolbarItem(placement: .bottomBar) {
+                RouteEditBottomToolbarContentView(
+                    isInfo: tab == .info,
+                    canUndo: canUndo,
+                    canRedo: canRedo,
+                    operation: operation,
+                    isLoading: isLoading,
+                    isPartialEnabled: isPartialEnabled,
+                    isDialogPresented: $isDialogPresented,
+                    onCopy: onCopy,
+                    onUndo: onUndo,
+                    onRedo: onRedo,
+                    onWhole: onWhole,
+                    onPartial: onPartial
+                )
+            }
+        }
+    }
+}
+
+@available(iOS 17.0, *)
+private struct RouteOverlayGlassModifier: ViewModifier {
+    let isLiquidGlassEnabled: Bool
+
+    @ViewBuilder
+    func body(content: Content) -> some View {
+        if #available(iOS 26.0, *), isLiquidGlassEnabled {
+            content.glassEffect()
+        } else {
+            content
+        }
     }
 }
 

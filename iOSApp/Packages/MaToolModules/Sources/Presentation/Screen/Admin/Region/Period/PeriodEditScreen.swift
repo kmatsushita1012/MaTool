@@ -20,17 +20,12 @@ struct PeriodEditScreen: View {
                 period: $store.period,
                 isCreateMode: store.isCreateMode,
                 onDateChanged: { store.send(.dateChanged($0)) },
-                onDelete: { store.send(.deleteTapped) }
+                onDelete: { store.send(.deleteTapped) },
+                title: store.mode.title,
+                isLoading: store.isLoading,
+                onCancel: { store.send(.cancelTapped) },
+                onSave: { store.send(.saveTapped) }
             )
-            .navigationTitle(store.mode.title)
-            .toolbar {
-                ToolbarCancelButton {
-                    store.send(.cancelTapped)
-                }
-                ToolbarSaveButton(isLoading: store.isLoading) {
-                    store.send(.saveTapped)
-                }
-            }
             .alert($store.scope(state: \.alert, action: \.alert))
         }
     }

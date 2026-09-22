@@ -31,10 +31,7 @@ struct HeadquarterDistrictListScreen: View {
                 onReorder: { store.send(.reorderTapped) },
                 onCreate: { store.send(.createTapped) }
             )
-            let titledContent = listContent
-            .navigationTitle("参加町")
-            .navigationBarTitleDisplayMode(.inline)
-            let searchableContent = titledContent
+            let searchableContent = listContent
             .searchable(text: $store.searchText, prompt: "町名で検索")
             let presentedContent = searchableContent
                 .sheet(item: $store.folder, content: shareSheet)

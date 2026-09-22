@@ -26,8 +26,6 @@ struct LocationTrackingScreen: View {
                     AdminLocationMap(location: store.location)
                 }
             )
-            .navigationTitle("位置情報配信")
-            .navigationBarTitleDisplayMode(.inline)
             .onAppear {
                 store.send(.onAppear)
             }

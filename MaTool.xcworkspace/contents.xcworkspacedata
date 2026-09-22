@@ -16,4 +16,7 @@
    <FileRef
       location = "group:iOSApp/MaTool.xcodeproj">
    </FileRef>
+   <FileRef
+      location = "group:iOSApp/Packages/MaToolModules">
+   </FileRef>
 </Workspace>

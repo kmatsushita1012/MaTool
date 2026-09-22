@@ -21,8 +21,6 @@ struct PeriodArchivesScreen: View {
                 periods: store.periods,
                 onPeriodTapped: { store.send(.periodTapped($0)) }
             )
-            .navigationTitle("過去の日程")
-            .navigationBarTitleDisplayMode(.inline)
             .fullScreenCover(item: $store.scope(state: \.destination, action: \.destination)) { destination in
                 switch destination.case {
                 case .edit(let store):

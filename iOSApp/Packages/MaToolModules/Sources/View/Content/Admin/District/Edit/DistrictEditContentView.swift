@@ -13,29 +13,38 @@ public struct DistrictEditContentView: View {
     @Binding var description: String
     @Binding var visibility: Shared.Visibility
     let performances: [Performance]
+    let isLoading: Bool
     let onBaseTapped: () -> Void
     let onAreaTapped: () -> Void
     let onPerformanceTapped: (Performance) -> Void
     let onAddPerformanceTapped: () -> Void
+    let onCancel: () -> Void
+    let onSave: () -> Void
 
     public init(
         name: Binding<String>,
         description: Binding<String>,
         visibility: Binding<Shared.Visibility>,
         performances: [Performance],
+        isLoading: Bool,
         onBaseTapped: @escaping () -> Void,
         onAreaTapped: @escaping () -> Void,
         onPerformanceTapped: @escaping (Performance) -> Void,
-        onAddPerformanceTapped: @escaping () -> Void
+        onAddPerformanceTapped: @escaping () -> Void,
+        onCancel: @escaping () -> Void,
+        onSave: @escaping () -> Void
     ) {
         self._name = name
         self._description = description
         self._visibility = visibility
         self.performances = performances
+        self.isLoading = isLoading
         self.onBaseTapped = onBaseTapped
         self.onAreaTapped = onAreaTapped
         self.onPerformanceTapped = onPerformanceTapped
         self.onAddPerformanceTapped = onAddPerformanceTapped
+        self.onCancel = onCancel
+        self.onSave = onSave
     }
 
     public var body: some View {
@@ -82,6 +91,12 @@ public struct DistrictEditContentView: View {
                         .frame(maxWidth: .infinity, alignment: .center)
                 }
             }
+        }
+        .navigationTitle("地区情報")
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarCancelButton(action: onCancel)
+            ToolbarSaveButton(isLoading: isLoading, action: onSave)
         }
     }
 }

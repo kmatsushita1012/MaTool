@@ -13,17 +13,29 @@ public struct PeriodEditContentView: View {
     let isCreateMode: Bool
     let onDateChanged: (SimpleDate) -> Void
     let onDelete: () -> Void
+    let title: String
+    let isLoading: Bool
+    let onCancel: () -> Void
+    let onSave: () -> Void
 
     public init(
         period: Binding<Period>,
         isCreateMode: Bool,
         onDateChanged: @escaping (SimpleDate) -> Void,
-        onDelete: @escaping () -> Void
+        onDelete: @escaping () -> Void,
+        title: String,
+        isLoading: Bool,
+        onCancel: @escaping () -> Void,
+        onSave: @escaping () -> Void
     ) {
         self._period = period
         self.isCreateMode = isCreateMode
         self.onDateChanged = onDateChanged
         self.onDelete = onDelete
+        self.title = title
+        self.isLoading = isLoading
+        self.onCancel = onCancel
+        self.onSave = onSave
     }
 
     public var body: some View {
@@ -49,6 +61,12 @@ public struct PeriodEditContentView: View {
                 Button("削除", systemImage: "trash", role: .destructive, action: onDelete)
                     .foregroundStyle(.red)
             }
+        }
+        .navigationTitle(title)
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarCancelButton(action: onCancel)
+            ToolbarSaveButton(isLoading: isLoading, action: onSave)
         }
     }
 }

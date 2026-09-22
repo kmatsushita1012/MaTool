@@ -22,37 +22,26 @@ struct RouteEditScreen: View {
                 tab: $store.tab,
                 title: store.title,
                 isLiquidGlassEnabled: isLiquidGlassEnabled,
+                saveButtonTitle: store.saveButtonTitle,
+                isConfirmDisabled: store.isConfirmDisabled,
+                isLoading: store.isLoading,
+                canUndo: store.canUndo,
+                canRedo: store.canRedo,
+                operation: store.operation,
+                isPartialEnabled: store.isPartialEnable,
+                isDialogPresented: $store.isSubmitDialogPresented,
+                isDistrictAreaOverlayVisible: store.isDistrictAreaOverlayVisible,
+                onSave: { store.send(.saveTapped) },
+                onCancel: { store.send(.cancelTapped) },
+                onCopy: { store.send(.copyTapped) },
+                onUndo: { store.send(.undoTapped) },
+                onRedo: { store.send(.redoTapped) },
+                onWhole: { store.send(.wholeTapped) },
+                onPartial: { store.send(.partialTapped) },
+                onDistrictAreaOverlayTapped: { store.send(.districtAreaOverlayTapped) },
                 info: { routeInfoContent },
                 map: { routeMapContent }
             )
-            .safeAreaInset(edge: .bottom) { districtAreaOverlayContent }
-            .toolbar {
-                ToolbarSaveButton(
-                    title: store.saveButtonTitle,
-                    isDisabled: store.isConfirmDisabled,
-                    isLoading: store.isLoading,
-                    action: { store.send(.saveTapped) }
-                )
-                ToolbarCancelButton {
-                    store.send(.cancelTapped)
-                }
-                ToolbarItem(placement: .bottomBar) {
-                    RouteEditBottomToolbarContentView(
-                        isInfo: store.tab == .info,
-                        canUndo: store.canUndo,
-                        canRedo: store.canRedo,
-                        operation: store.operation,
-                        isLoading: store.isLoading,
-                        isPartialEnabled: store.isPartialEnable,
-                        isDialogPresented: $store.isSubmitDialogPresented,
-                        onCopy: { store.send(.copyTapped) },
-                        onUndo: { store.send(.undoTapped) },
-                        onRedo: { store.send(.redoTapped) },
-                        onWhole: { store.send(.wholeTapped) },
-                        onPartial: { store.send(.partialTapped) }
-                    )
-                }
-            }
             .sheet(item: $store.scope(state: \.point, action: \.point), content: pointEditSheet)
             .sheet(item: $store.destination) { destination in
                 switch destination {
@@ -126,35 +115,5 @@ struct RouteEditScreen: View {
         }
         .presentationDetents([.fraction(0.3), .fraction(0.5), .large], selection: $selectedDetent)
         .interactiveDismissDisabled()
-    }
-
-    @ViewBuilder
-    private var districtAreaOverlayContent: some View {
-        if store.tab != .info {
-            Button {
-                store.send(.districtAreaOverlayTapped)
-            } label: {
-                Image(systemName: "square.grid.3x3.fill")
-                    .padding()
-                    .foregroundStyle(store.isDistrictAreaOverlayVisible ? Color.accentColor : Color.primary)
-            }
-            .accessibilityLabel("町域オーバーレイ")
-            .modifier(RouteOverlayGlassModifier(isLiquidGlassEnabled: isLiquidGlassEnabled))
-            .padding(.horizontal)
-            .frame(maxWidth: .infinity, alignment: .trailing)
-        }
-    }
-}
-
-private struct RouteOverlayGlassModifier: ViewModifier {
-    let isLiquidGlassEnabled: Bool
-
-    @ViewBuilder
-    func body(content: Content) -> some View {
-        if #available(iOS 26.0, *), isLiquidGlassEnabled {
-            content.glassEffect()
-        } else {
-            content
-        }
     }
 }

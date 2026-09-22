@@ -16,17 +16,12 @@ struct DistrictReissueScreen: View {
 
     var body: some View {
         WithPerceptionTracking {
-            DistrictReissueContentView(email: $store.email)
-                .navigationTitle("アカウント再発行")
-                .toolbar {
-                    ToolbarCancelButton {
-                        store.send(.cancelTapped)
-                    }
-                    ToolbarSaveButton(title: "再発行", isLoading: store.isLoading) {
-                        store.send(.reissueTapped)
-                    }
-                }
-                .navigationBarTitleDisplayMode(.inline)
+            DistrictReissueContentView(
+                email: $store.email,
+                isLoading: store.isLoading,
+                onCancel: { store.send(.cancelTapped) },
+                onReissue: { store.send(.reissueTapped) }
+            )
                 .alert($store.scope(state: \.alert, action: \.alert))
         }
     }

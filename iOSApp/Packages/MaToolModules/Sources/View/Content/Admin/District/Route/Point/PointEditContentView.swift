@@ -20,6 +20,8 @@ public struct PointEditContentView: View {
     let onInsertBefore: () -> Void
     let onInsertAfter: () -> Void
     let onDelete: () -> Void
+    let onCancel: () -> Void
+    let onDone: () -> Void
 
     public init(
         point: Binding<Point>,
@@ -32,7 +34,9 @@ public struct PointEditContentView: View {
         onMove: @escaping () -> Void,
         onInsertBefore: @escaping () -> Void,
         onInsertAfter: @escaping () -> Void,
-        onDelete: @escaping () -> Void
+        onDelete: @escaping () -> Void,
+        onCancel: @escaping () -> Void,
+        onDone: @escaping () -> Void
     ) {
         self._point = point
         self._pointType = pointType
@@ -45,6 +49,8 @@ public struct PointEditContentView: View {
         self.onInsertBefore = onInsertBefore
         self.onInsertAfter = onInsertAfter
         self.onDelete = onDelete
+        self.onCancel = onCancel
+        self.onDone = onDone
     }
 
     public var body: some View {
@@ -126,6 +132,12 @@ public struct PointEditContentView: View {
                 Button("この地点を削除", systemImage: "trash", action: onDelete)
                     .foregroundStyle(.red)
             }
+        }
+        .navigationTitle("地点編集")
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarCancelButton(action: onCancel)
+            ToolbarDoneButton(action: onDone)
         }
     }
 }

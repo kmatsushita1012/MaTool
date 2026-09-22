@@ -10,10 +10,22 @@ import SwiftUI
 public struct DistrictCreateContentView: View {
     @Binding var name: String
     @Binding var email: String
+    let isLoading: Bool
+    let onCancel: () -> Void
+    let onCreate: () -> Void
 
-    public init(name: Binding<String>, email: Binding<String>) {
+    public init(
+        name: Binding<String>,
+        email: Binding<String>,
+        isLoading: Bool,
+        onCancel: @escaping () -> Void,
+        onCreate: @escaping () -> Void
+    ) {
         self._name = name
         self._email = email
+        self.isLoading = isLoading
+        self.onCancel = onCancel
+        self.onCreate = onCreate
     }
 
     public var body: some View {
@@ -27,6 +39,12 @@ public struct DistrictCreateContentView: View {
                     .autocapitalization(.none)
                     .disableAutocorrection(true)
             }
+        }
+        .navigationTitle("新規作成")
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarCancelButton(action: onCancel)
+            ToolbarSaveButton(title: "作成", isLoading: isLoading, action: onCreate)
         }
     }
 }

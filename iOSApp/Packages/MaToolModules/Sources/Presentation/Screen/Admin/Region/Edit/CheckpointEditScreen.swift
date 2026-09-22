@@ -16,19 +16,13 @@ struct CheckpointEditScreen: View {
 
     var body: some View {
         WithPerceptionTracking {
-            CheckpointEditContentView(item: $store.item) {
-                store.send(.deleteTapped)
-            }
-            .navigationTitle(store.title)
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarCancelButton {
-                    store.send(.cancelTapped)
-                }
-                ToolbarDoneButton {
-                    store.send(.doneTapped)
-                }
-            }
+            CheckpointEditContentView(
+                item: $store.item,
+                title: store.title,
+                onDelete: { store.send(.deleteTapped) },
+                onCancel: { store.send(.cancelTapped) },
+                onDone: { store.send(.doneTapped) }
+            )
         }
     }
 }

@@ -25,19 +25,10 @@ struct DistrictAreaEditScreen: View {
                         onMapLongPress: { store.send(.mapTapped($0)) }
                     )
                 },
-                onUndo: { store.send(.undoTapped) }
+                onUndo: { store.send(.undoTapped) },
+                onCancel: { store.send(.dismissTapped) },
+                onDone: { store.send(.doneTapped) }
             )
-            .navigationTitle("町域")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarCancelButton {
-                    store.send(.dismissTapped)
-                }
-                ToolbarDoneButton {
-                    store.send(.doneTapped)
-                }
-            }
-            .toolbarBackground(.visible, for: .navigationBar)
         }
     }
 }
