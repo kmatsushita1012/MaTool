@@ -47,8 +47,9 @@ struct RouteUsecase: RouteUsecaseProtocol {
         if !isVisible {
             throw Error.forbidden("アクセス権限がありせん。このルートは非公開です。")
         }
-        let points = try await pointRepository.query(by: route.id)
-        let passages = try await passageRepository.query(by: route.id)
+        async let pointsTask = pointRepository.query(by: route.id)
+        async let passagesTask = passageRepository.query(by: route.id)
+        let (points, passages) = try await (pointsTask, passagesTask)
         let sanitizedPoints = removeTimeIfNeeded(routeVisibility: route.visibility, district: district, points: points, user: user)
         
         return .init(route: route, points: sanitizedPoints, passages: passages)
@@ -89,11 +90,13 @@ struct RouteUsecase: RouteUsecaseProtocol {
         let reindexedPoints = pack.points.reindexed()
         let reindexedPassages = pack.passages.reindexed()
         try validatePoints(reindexedPoints)
-        let oldPoints = try await pointRepository.query(by: pack.route.id)
-        let oldPassages = try await passageRepository.query(by: pack.route.id)
+        async let oldPointsTask = pointRepository.query(by: pack.route.id)
+        async let oldPassagesTask = passageRepository.query(by: pack.route.id)
+        let (oldPoints, oldPassages) = try await (oldPointsTask, oldPassagesTask)
         let route = try await routeRepository.post(pack.route)
-        let points = try await oldPoints.update(with: reindexedPoints, separateDeleteAndUpdate: true, repository: pointRepository)
-        let passages = try await oldPassages.update(with: reindexedPassages, separateDeleteAndUpdate: true, repository: passageRepository)
+        async let pointsTask = oldPoints.update(with: reindexedPoints, separateDeleteAndUpdate: true, repository: pointRepository)
+        async let passagesTask = oldPassages.update(with: reindexedPassages, separateDeleteAndUpdate: true, repository: passageRepository)
+        let (points, passages) = try await (pointsTask, passagesTask)
         return .init(route: route, points: points, passages: passages)
     }
     
@@ -110,11 +113,13 @@ struct RouteUsecase: RouteUsecaseProtocol {
         let reindexedPoints = pack.points.reindexed()
         let reindexedPassages = pack.passages.reindexed()
         try validatePoints(reindexedPoints)
-        let oldPoints = try await pointRepository.query(by: pack.route.id)
-        let oldPassages = try await passageRepository.query(by: pack.route.id)
+        async let oldPointsTask = pointRepository.query(by: pack.route.id)
+        async let oldPassagesTask = passageRepository.query(by: pack.route.id)
+        let (oldPoints, oldPassages) = try await (oldPointsTask, oldPassagesTask)
         let route = try await routeRepository.post(pack.route)
-        let points = try await oldPoints.update(with: reindexedPoints, separateDeleteAndUpdate: true, repository: pointRepository)
-        let passages = try await oldPassages.update(with: reindexedPassages, separateDeleteAndUpdate: true, repository: passageRepository)
+        async let pointsTask = oldPoints.update(with: reindexedPoints, separateDeleteAndUpdate: true, repository: pointRepository)
+        async let passagesTask = oldPassages.update(with: reindexedPassages, separateDeleteAndUpdate: true, repository: passageRepository)
+        let (points, passages) = try await (pointsTask, passagesTask)
         return .init(route: route, points: points, passages: passages)
     }
     
@@ -128,8 +133,9 @@ struct RouteUsecase: RouteUsecaseProtocol {
         let district = try await getDistrict(old.districtId)
         try await ensureRouteEditable(district: district)
         try await routeRepository.delete(id: id)
-        _ = try await pointRepository.delete(by: id)
-        _ = try await passageRepository.delete(by: id)
+        async let pointDeletion = pointRepository.delete(by: id)
+        async let passageDeletion = passageRepository.delete(by: id)
+        try await (pointDeletion, passageDeletion)
         return
     }
 }
