@@ -27,11 +27,6 @@ extension APIGateway {
     }
     
     static func handler(request: APIGatewayV2Request, context: LambdaContext) async throws -> APIGatewayV2Response {
-        if let jsonData = try? JSONEncoder().encode(request),
-            let jsonString = String(data: jsonData, encoding: .utf8) {
-            print(jsonString)
-        }
-        
         let res = await app.handle(
             .init(
                 method: Application.Method(rawValue: request.context.http.method.rawValue),

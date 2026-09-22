@@ -7,6 +7,7 @@ FROM public.ecr.aws/amazonlinux/amazonlinux:2023 AS build
 RUN dnf update -y && \
     dnf install -y \
         swiftlang \
+        curl \
         gcc \
         make \
         tar \
@@ -31,14 +32,24 @@ RUN curl -L -O https://www.sqlite.org/2026/sqlite-autoconf-3510200.tar.gz && \
 ENV PATH="/usr/local/bin:${PATH}"
 ENV LD_LIBRARY_PATH="/usr/local/lib:${LD_LIBRARY_PATH}"
 
-# Backend と Shared をコピー
-COPY Shared ./Shared
-COPY Backend ./Backend
+# 依存定義だけを先にコピーし、ソース変更で依存解決レイヤーを無効化しない。
+COPY Shared/Package.swift Shared/Package.resolved ./Shared/
+COPY Backend/Package.swift Backend/Package.resolved ./Backend/
 
 WORKDIR /workspace/Backend
 
 # Swift Package の依存解決
 RUN swift package resolve
+
+WORKDIR /workspace
+
+# 依存解決後にソースをコピーする。
+COPY Shared/Sources ./Shared/Sources
+COPY Backend/Sources ./Backend/Sources
+COPY Backend/scripts/bootstrap ./Backend/scripts/bootstrap
+RUN touch Backend/.env
+
+WORKDIR /workspace/Backend
 
 # Swift build（静的ライブラリ込み）
 RUN swift build -c release --static-swift-stdlib

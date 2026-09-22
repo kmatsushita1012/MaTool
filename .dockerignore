@@ -1,0 +1,15 @@
+.git
+.github
+.build
+**/.build
+**/.derivedData
+DerivedData
+**/xcuserdata
+**/.env
+iOSApp
+MaTool.xcworkspace
+*.xcodeproj
+*.profraw
+build
+lambda-dist
+lambda.zip
