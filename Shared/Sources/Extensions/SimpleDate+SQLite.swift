@@ -1,4 +1,4 @@
-#if canImport(SQLiteData)
+#if canImport(SQLiteData) || canImport(StructuredQueries)
 //
 //  SimpleDate+SQLite.swift
 //  matool-shared
@@ -6,7 +6,11 @@
 //  Created by 松下和也 on 2026/01/15.
 //
 
+#if canImport(SQLiteData)
 import SQLiteData
+#else
+import StructuredQueries
+#endif
 public extension SimpleDate {
     struct ISODateRepresentation: QueryRepresentable {
         public var queryOutput: SimpleDate
@@ -38,6 +42,7 @@ extension SimpleDate.ISODateRepresentation: QueryDecodable {
     }
 }
 
+#if canImport(SQLiteData)
 extension SimpleDate.ISODateRepresentation: SQLiteType {
     public static var typeAffinity: SQLiteTypeAffinity {
         .text
@@ -94,6 +99,7 @@ public extension TableColumn where QueryValue == SimpleDate.ISODateRepresentatio
         return between(range.start, and: range.end)
     }
 }
+#endif
 
 extension SimpleDate {
     var key: String {

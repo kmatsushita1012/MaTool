@@ -1,4 +1,3 @@
-#if canImport(SQLiteData)
 //
 //  Period.swift
 //  matool-shared
@@ -7,10 +6,17 @@
 //
 
 import Foundation
+#if canImport(SQLiteData)
 import SQLiteData
+#else
+import StructuredQueries
+#endif
 
 // MARK: - Period
-@Table public struct Period: Entity, Identifiable {
+#if canImport(SQLiteData)
+@Table
+#endif
+public struct Period: Entity, Identifiable {
     public let id: String
     public let festivalId: Festival.ID
     @Column(as: SimpleDate.ISODateRepresentation.self)
@@ -70,4 +76,3 @@ public extension Period {
         return (2, now.timeIntervalSince(endDateTime)) // 過去は近い順
     }
 }
-#endif

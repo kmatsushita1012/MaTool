@@ -1,4 +1,3 @@
-#if canImport(SQLiteData)
 //
 //  FloatLocation.swift
 //  MaTool
@@ -7,9 +6,16 @@
 //
 
 import Foundation
+#if canImport(SQLiteData)
 import SQLiteData
+#else
+import StructuredQueries
+#endif
 
-@Table public struct FloatLocation: Entity, Identifiable {
+#if canImport(SQLiteData)
+@Table
+#endif
+public struct FloatLocation: Entity, Identifiable {
     public let id: String
     public let districtId: String
     @Column(as: Coordinate.JSONRepresentation.self)
@@ -23,4 +29,3 @@ import SQLiteData
         self.timestamp = timestamp
     }
 }
-#endif

@@ -1,4 +1,3 @@
-#if canImport(SQLiteData)
 //
 //  Festival.swift
 //  MaTool
@@ -7,13 +6,21 @@
 //
 
 import Foundation
+#if canImport(SQLiteData)
 import SQLiteData
+#else
+import StructuredQueries
+#endif
 
-@Table public struct Festival: Entity, Identifiable {
+#if canImport(SQLiteData)
+@Table
+#endif
+public struct Festival: Entity, Identifiable {
     public let id: String
     public var name: String
     public var subname: String
-    @NullEncodable public var description: String?
+    @NullEncodable
+    public var description: String?
     public var prefecture: String
     public var city: String
     @Column(as: Coordinate.JSONRepresentation.self)
@@ -44,11 +51,15 @@ import SQLiteData
 
 
 // MARK: - Checkpoint
-@Table public struct Checkpoint: Entity, Identifiable {
+#if canImport(SQLiteData)
+@Table
+#endif
+public struct Checkpoint: Entity, Identifiable {
     public let id: String
     public let festivalId: Festival.ID
     public var name: String
-    @NullEncodable public var description: String? = nil
+    @NullEncodable
+    public var description: String? = nil
     
     public init(id: String, name: String = "", festivalId:Festival.ID, description: String? = nil) {
         self.id = id
@@ -59,7 +70,10 @@ import SQLiteData
 }
 
 // MARK: - HazardSection
-@Table public struct HazardSection: Entity, Identifiable {
+#if canImport(SQLiteData)
+@Table
+#endif
+public struct HazardSection: Entity, Identifiable {
     public let id: String
     public var title: String
     public let festivalId: Festival.ID
@@ -73,4 +87,3 @@ import SQLiteData
         self.coordinates = coordinates
     }
 }
-#endif
