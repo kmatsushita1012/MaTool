@@ -118,11 +118,14 @@ struct PointRepositoryTest {
         let point1 = Point.mock(id: "point-1", routeId: "route-1")
         let point2 = Point.mock(id: "point-2", routeId: "route-1")
         var lastCalledDeleteKeys: [String] = []
+        let deleteKeysLock = NSLock()
 
         let dataStore = DataStoreMock(
             deleteHandler: { keys in
                 let pk = keys["pk"] as? String ?? ""
                 let sk = keys["sk"] as? String ?? ""
+                deleteKeysLock.lock()
+                defer { deleteKeysLock.unlock() }
                 lastCalledDeleteKeys.append("\(pk)|\(sk)")
             },
             queryHandler: { _, _, _, _, _, _ in

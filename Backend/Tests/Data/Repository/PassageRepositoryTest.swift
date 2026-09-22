@@ -123,11 +123,14 @@ extension RepositoryTest.Passage {
         let passage1 = RoutePassage.mock(id: "passage-1", routeId: "route-1", districtId: "district-1")
         let passage2 = RoutePassage.mock(id: "passage-2", routeId: "route-1", districtId: "district-2")
         var lastCalledDeleteKeys: [String] = []
+        let deleteKeysLock = NSLock()
 
         let dataStore = DataStoreMock(
             deleteHandler: { keys in
                 let pk = keys["pk"] as? String ?? ""
                 let sk = keys["sk"] as? String ?? ""
+                deleteKeysLock.lock()
+                defer { deleteKeysLock.unlock() }
                 lastCalledDeleteKeys.append("\(pk)|\(sk)")
             },
             queryHandler: { _, _, _, _, _, _ in
