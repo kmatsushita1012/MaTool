@@ -28,7 +28,7 @@ RUN curl -L -O https://www.sqlite.org/2026/sqlite-autoconf-3510200.tar.gz && \
 
 # パスにインストールディレクトリを追加
 ENV PATH="/usr/local/bin:${PATH}"
-ENV LD_LIBRARY_PATH="/usr/local/lib:${LD_LIBRARY_PATH}"
+ENV LD_LIBRARY_PATH="/usr/local/lib"
 
 # 依存定義だけを先にコピーし、ソース変更で依存解決レイヤーを無効化しない。
 COPY Shared/Package.swift Shared/Package.resolved ./Shared/
@@ -45,7 +45,7 @@ WORKDIR /workspace
 COPY Shared/Sources ./Shared/Sources
 COPY Backend/Sources ./Backend/Sources
 COPY Backend/scripts/bootstrap ./Backend/scripts/bootstrap
-RUN touch Backend/.env
+RUN mkdir -p Backend/Tests Backend/Bootstrap && touch Backend/.env
 
 WORKDIR /workspace/Backend
 
