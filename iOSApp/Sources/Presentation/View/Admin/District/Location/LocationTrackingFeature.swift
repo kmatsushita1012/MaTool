@@ -21,6 +21,10 @@ struct LocationTrackingFeature{
         var history: [Status] = []
         var selectedInterval: Interval = Interval.sample
         let intervals = Interval.options
+        var isLocationPermissionSheetPresented = false
+        var shouldRequestLocationPermission = false
+        var hasCheckedLocationPermission = false
+        var showsUserLocation = false
         
         var isPickerEnabled: Bool {
             !isTracking
@@ -31,6 +35,10 @@ struct LocationTrackingFeature{
     enum Action:BindableAction, Equatable{
         case onAppear
         case binding(BindingAction<State>)
+        case locationPermissionStatusReceived(requiresExplanation: Bool, isAlwaysAuthorized: Bool)
+        case locationPermissionProceedTapped
+        case locationPermissionSheetDismissed
+        case locationPermissionAlwaysAuthorized
         case historyUpdated([Status])
         case dismissTapped
     }
@@ -43,8 +51,16 @@ struct LocationTrackingFeature{
         Reduce{state, action in
             switch action{
             case .onAppear:
+                guard !state.hasCheckedLocationPermission else { return .none }
+                state.hasCheckedLocationPermission = true
                 return .run { send in
-                    await locationService.requestPermission()
+                    let status = await locationService.authorizationStatus()
+                    await send(
+                        .locationPermissionStatusReceived(
+                            requiresExplanation: status == .notDetermined || status == .authorizedWhenInUse,
+                            isAlwaysAuthorized: status == .authorizedAlways
+                        )
+                    )
                     let initial = await locationService.getLocationHistory()
                     await send(.historyUpdated(initial))
                     // 以降の更新を購読
@@ -53,6 +69,34 @@ struct LocationTrackingFeature{
                     }
                 }
                 .cancellable(id: "HistoryStream", cancelInFlight: true)
+            case .locationPermissionStatusReceived(let requiresExplanation, let isAlwaysAuthorized):
+                state.isLocationPermissionSheetPresented = requiresExplanation
+                state.showsUserLocation = isAlwaysAuthorized
+                return .none
+            case .locationPermissionProceedTapped:
+                state.shouldRequestLocationPermission = true
+                state.isLocationPermissionSheetPresented = false
+                return .none
+            case .locationPermissionSheetDismissed:
+                guard state.shouldRequestLocationPermission else { return .none }
+                state.shouldRequestLocationPermission = false
+                return .run { send in
+                    await locationService.requestPermission()
+                    for _ in 0..<60 {
+                        try? await Task.sleep(for: .milliseconds(250))
+                        let status = await locationService.authorizationStatus()
+                        if status == .authorizedAlways {
+                            await send(.locationPermissionAlwaysAuthorized)
+                            return
+                        }
+                        if status == .denied || status == .restricted {
+                            return
+                        }
+                    }
+                }
+            case .locationPermissionAlwaysAuthorized:
+                state.showsUserLocation = true
+                return .none
             case .binding(\.isTracking):
                 
                 return .run{ [

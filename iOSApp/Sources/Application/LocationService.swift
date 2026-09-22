@@ -29,6 +29,7 @@ protocol LocationServiceProtocol: Sendable {
     func getIsTracking() async -> Bool
     func historyStream() async -> AsyncStream<[Status]>
     func requestPermission() async -> Void
+    func authorizationStatus() async -> CLAuthorizationStatus
     func start(id: String, interval: Interval) async -> Void
     func stop(id: String) async -> Void
     func getLocation() async -> AsyncValue<CLLocation>
@@ -78,6 +79,10 @@ actor LocationService: LocationServiceProtocol {
 
     func requestPermission() async -> Void {
         await broadcastLocationProvider.requestPermission()
+    }
+
+    func authorizationStatus() async -> CLAuthorizationStatus {
+        await broadcastLocationProvider.authorizationStatus()
     }
 
     func start(id: String, interval: Interval) async -> Void {

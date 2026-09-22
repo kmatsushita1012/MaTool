@@ -23,6 +23,7 @@ extension DependencyValues {
 // MARK: - BroadcastLocationProviderProtocol
 protocol BroadcastLocationProviderProtocol: Sendable {
     func requestPermission() async
+    func authorizationStatus() async -> CLAuthorizationStatus
     func startTracking(onUpdate: ((AsyncValue<CLLocation>) async -> Void)?) async
     func stopTracking() async
     func getLocation() async -> AsyncValue<CLLocation>
@@ -77,6 +78,11 @@ actor BroadcastLocationProvider: NSObject, BroadcastLocationProviderProtocol {
         @unknown default:
             return
         }
+    }
+
+    func authorizationStatus() async -> CLAuthorizationStatus {
+        await setupLocationManagerIfNeeded()
+        return manager?.authorizationStatus ?? .notDetermined
     }
 
     func startTracking(onUpdate: ((AsyncValue<CLLocation>) async -> Void)?) async {
