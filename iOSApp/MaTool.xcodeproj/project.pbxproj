@@ -444,7 +444,7 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "MaTool -祭-";
-				INFOPLIST_KEY_NSLocationAlwaysAndWhenInUseUsageDescription = "現在地を表示するために、位置情報の「使用中のみ許可」が必要です。また管理者が位置情報を配信する場合には「常に許可」が必要です。";
+				INFOPLIST_KEY_NSLocationAlwaysAndWhenInUseUsageDescription = "管理者が位置情報を配信する場合には「常に許可」が必要です。";
 				INFOPLIST_KEY_NSLocationAlwaysUsageDescription = "管理者が位置情報を配信する場合には「常に許可」が必要です。";
 				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "現在地を表示するために、位置情報の「使用中のみ許可」が必要です。また管理者が位置情報を配信する場合にも「使用中のみ許可」が必要です。";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
@@ -485,7 +485,7 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "MaTool -祭-";
-				INFOPLIST_KEY_NSLocationAlwaysAndWhenInUseUsageDescription = "現在地を表示するために、位置情報の「使用中のみ許可」が必要です。また管理者が位置情報を配信する場合には「常に許可」が必要です。";
+				INFOPLIST_KEY_NSLocationAlwaysAndWhenInUseUsageDescription = "管理者が位置情報を配信する場合には「常に許可」が必要です。";
 				INFOPLIST_KEY_NSLocationAlwaysUsageDescription = "管理者が位置情報を配信する場合には「常に許可」が必要です。";
 				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "現在地を表示するために、位置情報の「使用中のみ許可」が必要です。また管理者が位置情報を配信する場合にも「使用中のみ許可」が必要です。";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
