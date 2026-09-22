@@ -1,3 +1,4 @@
+#if canImport(SQLiteData)
 //
 //  Festival.swift
 //  MaTool
@@ -72,3 +73,4 @@ import SQLiteData
         self.coordinates = coordinates
     }
 }
+#endif

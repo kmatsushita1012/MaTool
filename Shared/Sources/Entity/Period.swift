@@ -1,3 +1,4 @@
+#if canImport(SQLiteData)
 //
 //  Period.swift
 //  matool-shared
@@ -69,3 +70,4 @@ public extension Period {
         return (2, now.timeIntervalSince(endDateTime)) // 過去は近い順
     }
 }
+#endif

@@ -1,3 +1,4 @@
+#if canImport(SQLiteData)
 //
 //  SimpleDate+SQLite.swift
 //  matool-shared
@@ -99,3 +100,4 @@ extension SimpleDate {
         String(format: "%04d-%02d-%02d", year, month, day)
     }
 }
+#endif

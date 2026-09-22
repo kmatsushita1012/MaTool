@@ -13,16 +13,18 @@ let package = Package(
     ],
     dependencies: [
         .package(url: "https://github.com/pointfreeco/swift-case-paths.git", from: "1.7.2"),
-        .package(url: "https://github.com/pointfreeco/sqlite-data.git", from: "1.5.0"),
-        .package( url: "https://github.com/groue/GRDB.swift.git", from: "7.6.0")
+        .package(url: "https://github.com/pointfreeco/sqlite-data.git", from: "1.5.0")
     ],
     targets: [
         .target(
             name: "Shared",
             dependencies: [
                 .product(name: "CasePaths", package: "swift-case-paths"),
-                .product(name: "SQLiteData", package: "sqlite-data"),
-                .product(name: "GRDB", package: "GRDB.swift")
+                .product(
+                    name: "SQLiteData",
+                    package: "sqlite-data",
+                    condition: .when(platforms: [.iOS, .macOS])
+                )
             ],
             path: "Sources"
         ),

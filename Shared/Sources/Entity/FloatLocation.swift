@@ -1,3 +1,4 @@
+#if canImport(SQLiteData)
 //
 //  FloatLocation.swift
 //  MaTool
@@ -22,3 +23,4 @@ import SQLiteData
         self.timestamp = timestamp
     }
 }
+#endif

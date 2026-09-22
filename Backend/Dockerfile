@@ -20,17 +20,6 @@ RUN dnf update -y && \
 
 WORKDIR /workspace
 
-# SQLite ソースを取得して snapshot 有効でビルド
-RUN curl -L -O https://www.sqlite.org/2026/sqlite-autoconf-3510200.tar.gz && \
-    tar xzf sqlite-autoconf-3510200.tar.gz && \
-    cd sqlite-autoconf-3510200 && \
-    CFLAGS="-DSQLITE_ENABLE_SNAPSHOT" ./configure --prefix=/usr/local --disable-shared && \
-    make && make install
-
-# パスにインストールディレクトリを追加
-ENV PATH="/usr/local/bin:${PATH}"
-ENV LD_LIBRARY_PATH="/usr/local/lib:${LD_LIBRARY_PATH}"
-
 # Backend と Shared をコピー
 COPY Shared ./Shared
 COPY Backend ./Backend

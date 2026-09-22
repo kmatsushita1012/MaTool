@@ -1,3 +1,4 @@
+#if canImport(SQLiteData)
 //
 //  District.swift
 //  MaTool
@@ -75,3 +76,4 @@ import SQLiteData
 }
 
 extension Performance: Identifiable {}
+#endif

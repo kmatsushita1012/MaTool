@@ -1,3 +1,4 @@
+#if canImport(SQLiteData)
 import SQLiteData
 import CasePaths
 
@@ -88,3 +89,4 @@ where QueryValue: QueryRepresentable & QueryExpression,
         return self.in(valuesForIn)
     }
 }
+#endif

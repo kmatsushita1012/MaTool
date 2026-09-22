@@ -1,3 +1,4 @@
+#if canImport(SQLiteData)
 //
 //  Route.swift
 //  MaTool
@@ -112,3 +113,4 @@ extension Visibility: CaseIterable {}
 extension Visibility: Identifiable{
     public var id: Self { self }
 }
+#endif
