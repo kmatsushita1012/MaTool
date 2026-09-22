@@ -125,9 +125,9 @@ struct PointRepositoryTest {
             deleteHandler: { keys in
                 let pk = keys["pk"] as? String ?? ""
                 let sk = keys["sk"] as? String ?? ""
-                deleteKeysLock.lock()
-                defer { deleteKeysLock.unlock() }
-                lastCalledDeleteKeys.append("\(pk)|\(sk)")
+                deleteKeysLock.withLock {
+                    lastCalledDeleteKeys.append("\(pk)|\(sk)")
+                }
             },
             queryHandler: { _, _, _, _, _, _ in
                 try encodeForDataStore([Record(point1), Record(point2)])
