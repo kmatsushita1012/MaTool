@@ -1,0 +1,40 @@
+import iOSShared
+//
+//  PointView.swift
+//  MaTool
+//
+//  Created by 松下和也 on 2025/08/05.
+//
+
+import SwiftUI
+import Shared
+import SQLiteData
+
+public struct PointView: View {
+    let entry: PointEntry
+    
+    var title: String {
+        entry.anchor?.text ?? entry.performance?.name ?? "情報なし"
+    }
+    
+    public init(_ entry: PointEntry) {
+        self.entry = entry
+    }
+    
+    public var body: some View {
+        VStack(alignment: .leading, spacing: 16){
+            BulletItem(text: title)
+            if let time = entry.time {
+                BulletItem(text: time.text)
+            }
+            PublicMapBannerAdSection()
+            Spacer(minLength: 0)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding()
+        .safeAreaInset(edge: .top) {
+            Color.clear.frame(height: 0)
+        }
+        
+    }
+}

@@ -7,6 +7,9 @@
 
 import SwiftUI
 import Dependencies
+import iOSShared
+import Infrastructure
+import Presentation
 
 @main
 struct MaToolApp: App {
@@ -14,7 +17,7 @@ struct MaToolApp: App {
 
     init() {
         do {
-            try setupDefaultDatabase()
+            try InfrastructureResolver.configure()
         } catch {
             fatalError("Failed to setup default database: \(error.localizedDescription)")
         }

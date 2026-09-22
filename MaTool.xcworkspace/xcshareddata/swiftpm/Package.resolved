@@ -1,5 +1,5 @@
 {
-  "originHash" : "e40b204cb9cc0243dc680133656b2076a89f70a5235bf48f2eecaf729f3c62cc",
+  "originHash" : "de7bf43081c6d4143f18e5f9a7af6902303aa1461593748e50889bb648c8eade",
   "pins" : [
     {
       "identity" : "amplify-ios",
@@ -71,15 +71,6 @@
       "state" : {
         "revision" : "c152c1915f60c51e4afa0752656993ee5b3c63db",
         "version" : "8.8.1"
-      }
-    },
-    {
-      "identity" : "navigationswipecontrol",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/kmatsushita1012/NavigationSwipeControl.git",
-      "state" : {
-        "revision" : "3f0348c7fc4923dc3daf433d61562338e3703c23",
-        "version" : "0.2.1"
       }
     },
     {
