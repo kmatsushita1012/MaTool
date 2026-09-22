@@ -1,13 +1,11 @@
 # ============================
 # Stage 1: Build Swift Lambda binary (AL2023)
 # ============================
-FROM public.ecr.aws/amazonlinux/amazonlinux:2023 AS build
+FROM swift:6.4.0-amazonlinux2023 AS build
 
 # 必要なツールとライブラリをインストール
 RUN dnf update -y && \
     dnf install -y \
-        swiftlang \
-        curl \
         gcc \
         make \
         tar \
