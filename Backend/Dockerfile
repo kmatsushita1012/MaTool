@@ -1,11 +1,12 @@
 # ============================
 # Stage 1: Build Swift Lambda binary (AL2023)
 # ============================
-FROM swift:6.3.3-amazonlinux2023 AS build
+FROM public.ecr.aws/amazonlinux/amazonlinux:2023 AS build
 
 # 必要なツールとライブラリをインストール
 RUN dnf update -y && \
     dnf install -y \
+        swiftlang \
         gcc \
         make \
         tar \
@@ -50,8 +51,7 @@ RUN mkdir -p Backend/Tests Backend/Bootstrap && touch Backend/.env
 WORKDIR /workspace/Backend
 
 # Swift build（静的ライブラリ込み）
-RUN swift build -c release --static-swift-stdlib \
-    -Xswiftc -swift-version -Xswiftc 5
+RUN swift build -c release --static-swift-stdlib
 
 RUN ls -lh .build/release/Backend
 # デバッグシンボルを削除してサイズ圧縮
