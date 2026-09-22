@@ -85,16 +85,9 @@ struct PublicMapFeature {
                     return .none
                 }
             case .contentSelected(let value):
-                let wasLocations: Bool = {
-                    if case .locations = state.selectedContent {
-                        return true
-                    }
-                    return false
-                }()
                 state.selectedContent = value
                 switch value {
                 case .locations(let festival):
-                    state.currentPeriodId = nil
                     state.destination = .locations(
                         PublicLocationsFeature.State(
                             festival,
@@ -103,9 +96,6 @@ struct PublicMapFeature {
                     )
                     return .none
                 case .route(let district):
-                    if wasLocations {
-                        state.currentPeriodId = nil
-                    }
                     state.isLoading = true
                     return districtLaunchEffect(
                         userRole: state.userRole,
@@ -124,8 +114,6 @@ struct PublicMapFeature {
                 if let routeId,
                    let route = FetchOne(Route.find(routeId)).wrappedValue {
                     state.currentPeriodId = route.periodId
-                } else {
-                    state.currentPeriodId = nil
                 }
                 state.destination = .route(
                     PublicRouteFeature.State(
