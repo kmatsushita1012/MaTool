@@ -50,7 +50,8 @@ RUN mkdir -p Backend/Tests Backend/Bootstrap && touch Backend/.env
 WORKDIR /workspace/Backend
 
 # Swift build（静的ライブラリ込み）
-RUN swift build -c release --static-swift-stdlib
+RUN swift build -c release --static-swift-stdlib \
+    -Xswiftc -swift-version -Xswiftc 5
 
 RUN ls -lh .build/release/Backend
 # デバッグシンボルを削除してサイズ圧縮
