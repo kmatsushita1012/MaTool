@@ -16,7 +16,16 @@ struct PublicLocationsMapView: View {
     var body: some View {
         WithPerceptionTracking{
             @Binding(store.$mapRegion) var mapRegion
-            MapView(style: .public, floats: store.floats, region: $mapRegion, floatTapped: { store.send(.floatTapped($0)) })
+            ZStack(alignment: .top) {
+                MapView(style: .public, floats: store.floats, region: $mapRegion, floatTapped: { store.send(.floatTapped($0)) })
+
+                if let toast = store.toast {
+                    MapToastView(toast: toast) {
+                        store.send(.toastDismissed)
+                    }
+                    .padding(.top, 16)
+                }
+            }
             .ignoresSafeArea(edges: .bottom)
             .safeAreaInset(edge: .bottom){
                 if isLiquidGlassDisabled {
@@ -25,7 +34,6 @@ struct PublicLocationsMapView: View {
                     toolbarLayerAfterLiquidGlass
                 }
             }
-            .alert($store.scope(state: \.alert, action: \.alert))
             .sheet(item: $store.detail){ location in
                 LocationView(location)
                     .presentationDetents([.fraction(0.3)])

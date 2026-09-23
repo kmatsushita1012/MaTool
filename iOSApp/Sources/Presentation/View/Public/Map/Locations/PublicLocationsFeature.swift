@@ -20,7 +20,7 @@ struct PublicLocationsFeature {
         
         @Shared var mapRegion: MKCoordinateRegion
         var detail: FloatEntry?
-        @Presents var alert: AlertFeature.State?
+        var toast: MapToast?
     }
     
     @CasePathable
@@ -30,9 +30,10 @@ struct PublicLocationsFeature {
         case floatFocusSelected(FloatEntry)
         case userFocusTapped
         case userLocationReceived(Coordinate)
+        case userLocationFailed(String)
         case reloadTapped
         case reloadReceived(VoidAppResult)
-        case alert(PresentationAction<AlertFeature.Action>)
+        case toastDismissed
     }
     
     @Dependency(\.mapLocationProvider) var mapLocationProvider
@@ -60,17 +61,28 @@ struct PublicLocationsFeature {
             case .userFocusTapped:
                 return .run{ send in
                     let result = await mapLocationProvider.getLocation()
-                    guard let coordinate = result.value?.coordinate  else { return }
-                    await send(.userLocationReceived(Coordinate.fromCL(coordinate)))
+                    switch result {
+                    case .success(let location):
+                        await send(.userLocationReceived(Coordinate.fromCL(location.coordinate)))
+                    case .failure(let error):
+                        await send(.userLocationFailed(error.asAppError.message))
+                    case .loading:
+                        await send(.userLocationFailed("現在地を取得できませんでした。"))
+                    }
                 }
             case .reloadReceived(.failure(let error)):
-                state.alert = AlertFeature.error(error.message)
+                state.toast = .error(error, title: "現在地一覧を更新できませんでした")
+                return .none
+            case .userLocationFailed(let message):
+                state.toast = .error(message, title: "現在地を取得できませんでした")
+                return .none
+            case .toastDismissed:
+                state.toast = nil
                 return .none
             default:
                 return .none
             }
         }
-        .ifLet(\.$alert, action: \.alert)
     }
 }
 

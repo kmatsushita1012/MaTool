@@ -16,6 +16,12 @@ struct PublicMapView: View {
         WithPerceptionTracking{
             VStack(spacing: 0){
                 picker()
+                if let toast = store.toast {
+                    MapToastView(toast: toast) {
+                        store.send(.toastDismissed)
+                    }
+                    .padding(.top, 16)
+                }
                 if let routeStore = store.scope(state: \.destination?.route, action: \.destination.route) {
                     PublicRouteMapView(store: routeStore)
                         .id(routeStore.district.id)
@@ -41,7 +47,6 @@ struct PublicMapView: View {
                         .foregroundStyle(.black)
                 }
             }
-            .alert($store.scope(state: \.alert, action: \.alert))
             .dismissible(backButton: false)
             .onAppear{
                 store.send(.onAppear)

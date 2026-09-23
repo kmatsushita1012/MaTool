@@ -38,7 +38,7 @@ struct PublicMapFeature {
         var isDismissed: Bool = false
         @Presents var destination: Destination.State?
         @Shared var mapRegion: MKCoordinateRegion
-        @Presents var alert: AlertFeature.State?
+        var toast: MapToast?
     }
     
     @CasePathable
@@ -51,8 +51,8 @@ struct PublicMapFeature {
         case districtContentEvaluated(District, Bool)
         case districtLaunchReceived(AppResult<DistrictLaunchResult>)
         case errorCaught(AppError)
+        case toastDismissed
         case destination(PresentationAction<Destination.Action>)
-        case alert(PresentationAction<AlertFeature.Action>)
     }
     
     @Dependency(\.mapLocationProvider) var mapLocationProvider
@@ -66,9 +66,9 @@ struct PublicMapFeature {
             case .onAppear:
                 if state.destination?.route?.routes.isEmpty ?? false,
                     state.destination?.route?.float == nil {
-                    state.alert = AlertFeature.notice("配信停止中です。")
+                    state.toast = .notice("現在、配信中の情報はありません。")
                 } else if state.destination?.locations?.floats.isEmpty ?? false {
-                    state.alert = AlertFeature.notice("配信停止中です。")
+                    state.toast = .notice("現在、配信中の情報はありません。")
                 }
                 return .run{ send in
                     await mapLocationProvider.requestPermission()
@@ -107,7 +107,7 @@ struct PublicMapFeature {
                 return .send(.routePrepared(result.district, result.routeId))
             case .districtLaunchReceived(.failure(let error)):
                 state.isLoading = false
-                state.alert = .error(error)
+                state.toast = .error(error, title: "地区情報を取得できませんでした")
                 return .none
             case .routePrepared(let district, let routeId):
                 state.isLoading = false
@@ -126,7 +126,7 @@ struct PublicMapFeature {
                 return .send(.districtContentEvaluated(district, hasDisplayableContent))
             case .districtContentEvaluated(let district, let hasDisplayableContent):
                 if !hasDisplayableContent {
-                    state.alert = AlertFeature.notice("配信停止中です。")
+                    state.toast = .notice("現在、配信中の情報はありません。")
                 }
                 return .run { [userRole = state.userRole, districtId = district.id] _ in
                     await publicMapAdUsecase.handleDistrictSelectionResult(
@@ -136,13 +136,13 @@ struct PublicMapFeature {
                     )
                 }
             case .errorCaught(let error):
-                state.alert = .error(error)
+                state.toast = .error(error, title: "地図を表示できませんでした")
+                return .none
+            case .toastDismissed:
+                state.toast = nil
                 return .none
             case .destination:
                 return destinationAction(state: &state, action: action)
-            case .alert:
-                state.alert = nil
-                return .none
             }
         }
         .ifLet(\.$destination, action: \.destination)

@@ -46,19 +46,17 @@ struct PublicRouteFeature {
         @FetchAll var points: [PointEntry]
 
         @FetchOne var float: FloatEntry?
-        var isMenuExpanded: Bool = false
         @Shared var mapRegion: MKCoordinateRegion
         var replay: Replay
 
         // Navigation
         var detail: Detail?
-        @Presents var alert: AlertFeature.State?
+        var toast: MapToast?
     }
 
     @CasePathable
     enum Action: Equatable, BindableAction {
         case binding(BindingAction<State>)
-        case menuTapped
         case selected(RouteEntry)
         case pointTapped(PointEntry)
         case locationTapped(FloatEntry)
@@ -67,10 +65,11 @@ struct PublicRouteFeature {
         case routeReceived(VoidAppResult)
         case locationReceived(VoidAppResult)
         case userLocationReceived(Coordinate)
+        case userLocationFailed(String)
         case replayTapped
         case replayEnded
         case didSeek(Double)
-        case alert(PresentationAction<AlertFeature.Action>)
+        case toastDismissed
     }
 
     @Dependency(\.mapLocationProvider) var mapLocationProvider
@@ -83,11 +82,7 @@ struct PublicRouteFeature {
             switch action {
             case .binding:
                 return .none
-            case .menuTapped:
-                state.isMenuExpanded = true
-                return .none
             case .selected(let entry):
-                state.isMenuExpanded = false
                 state.selected = entry
                 return .task(Action.routeReceived) {
                     try await dataFetcher.fetch(routeID: entry.route.id)
@@ -108,28 +103,23 @@ struct PublicRouteFeature {
                 state.$mapRegion.withLock { $0 = makeRegion(state.points.map(\.coordinate)) }
                 return .none
             case .routeReceived(.failure(let error)):
-                state.alert = .error(error)
+                state.toast = .error(error, title: "ルートを取得できませんでした")
                 return .none
             case .locationReceived(.success):
                 if let coordinate = state.float?.floatLocation.coordinate {
                     state.$mapRegion.withLock{ $0 = makeRegion(origin: coordinate, spanDelta: spanDelta) }
                 } else {
-                    #if DEBUG
-                        state.alert = .error("DEBUG 屋台位置フォーカスに失敗しました。\n地区ID: \(state.district.id)\n位置情報がローカルに反映されていません。")
-                    #endif
+                    state.toast = .error("屋台位置を表示できませんでした。", title: "屋台位置の表示に失敗しました")
                 }
                 return .none
             case .locationReceived(.failure(let error)):
                 if case .be(.notFound) = error {
-                    state.alert = AlertFeature.notice("現在地の配信は停止中です。")
+                    state.toast = .notice("現在、屋台位置は配信されていません。")
                 } else if case .be(.forbidden) = error {
-                    state.alert = AlertFeature.notice("現在地の配信は停止中です。")
+                    state.toast = .notice("現在、屋台位置は配信されていません。")
                 } else {
-                    state.alert = .error(error)
+                    state.toast = .error(error, title: "屋台位置を取得できませんでした")
                 }
-                #if DEBUG
-                    state.alert = .error("DEBUG 屋台位置フォーカスに失敗しました。\n地区ID: \(state.district.id)\n\(error.message)")
-                #endif
                 return .none
             case .replayTapped:
                 if state.replay.isRunning {
@@ -144,9 +134,18 @@ struct PublicRouteFeature {
             case .userFocusTapped:
                 return .run { send in
                     let result = await mapLocationProvider.getLocation()
-                    guard let coordinate = result.value?.coordinate else { return }
-                    await send(.userLocationReceived(Coordinate.fromCL(coordinate)))
+                    switch result {
+                    case .success(let location):
+                        await send(.userLocationReceived(Coordinate.fromCL(location.coordinate)))
+                    case .failure(let error):
+                        await send(.userLocationFailed(error.asAppError.message))
+                    case .loading:
+                        await send(.userLocationFailed("現在地を取得できませんでした。"))
+                    }
                 }
+            case .userLocationFailed(let message):
+                state.toast = .error(message, title: "現在地を取得できませんでした")
+                return .none
             case .didSeek(let value):
                 if state.replay.isRunning {
                     state.replay = .seek(value)
@@ -155,10 +154,8 @@ struct PublicRouteFeature {
             case .replayEnded:
                 state.replay = .stop
                 return .none
-            case .alert:
-                state.alert = nil
-                return .none
-            default:
+            case .toastDismissed:
+                state.toast = nil
                 return .none
             }
         }
