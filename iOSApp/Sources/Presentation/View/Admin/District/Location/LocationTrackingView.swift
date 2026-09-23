@@ -108,6 +108,10 @@ private struct LocationPermissionExplanationView: View {
                 LocationPermissionStep(
                     id: 3,
                     text: "続いて表示されるダイアログで「常に許可」を選択します。"
+                ),
+                LocationPermissionStep(
+                    id: 4,
+                    text: "配信スイッチをオンにします。"
                 )
             ]
         case .requestAlways:
@@ -119,6 +123,10 @@ private struct LocationPermissionExplanationView: View {
                 LocationPermissionStep(
                     id: 2,
                     text: "表示されるダイアログで「常に許可」を選択します。"
+                ),
+                LocationPermissionStep(
+                    id: 3,
+                    text: "配信スイッチをオンにします。"
                 )
             ]
         case .settings:
@@ -134,6 +142,10 @@ private struct LocationPermissionExplanationView: View {
                 LocationPermissionStep(
                     id: 3,
                     text: "「常に」を選択します。"
+                ),
+                LocationPermissionStep(
+                    id: 4,
+                    text: "「閉じる」を押して配信スイッチをオンにします。"
                 )
             ]
         }
@@ -177,7 +189,7 @@ private struct LocationPermissionExplanationView: View {
                 .padding(.top, 12)
                 .padding(.bottom, 8)
             }
-            .navigationTitle("位置情報の許可")
+            .navigationTitle("位置情報配信の使い方")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
