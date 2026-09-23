@@ -55,6 +55,7 @@ struct UserDefaltsManager: Sendable {
     enum Key: String {
         case defaultFestivalId = "region"
         case defaultDistrictId = "district"
+        case hasRequestedAlwaysLocationPermission = "hasRequestedAlwaysLocationPermission"
     }
     let defaults = UserDefaults(suiteName: "matool")!
 }
@@ -62,6 +63,8 @@ struct UserDefaltsManager: Sendable {
 protocol UserDefalutsManagerProtocol: Sendable {
     var defaultFestivalId: String? { get set }
     var defaultDistrictId: String? { get set }
+    var hasRequestedAlwaysLocationPermission: Bool { get }
+    func setHasRequestedAlwaysLocationPermission(_ value: Bool)
 }
 
 extension UserDefaltsManager: UserDefalutsManagerProtocol {
@@ -81,6 +84,14 @@ extension UserDefaltsManager: UserDefalutsManagerProtocol {
         set {
             defaults.set(newValue, forKey: Key.defaultDistrictId.rawValue)
         }
+    }
+
+    var hasRequestedAlwaysLocationPermission: Bool {
+        defaults.bool(forKey: Key.hasRequestedAlwaysLocationPermission.rawValue)
+    }
+
+    func setHasRequestedAlwaysLocationPermission(_ value: Bool) {
+        defaults.set(value, forKey: Key.hasRequestedAlwaysLocationPermission.rawValue)
     }
 }
 

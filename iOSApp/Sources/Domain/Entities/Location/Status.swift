@@ -12,7 +12,7 @@ enum Status:Sendable, Equatable, Hashable {
     case update(FloatLocation)
     case delete(Date)
     case loading(Date)
-    case locationError(Date)
+    case locationError(Date, String)
     case apiError(Date, AppError)
 }
 
@@ -23,8 +23,8 @@ extension Status: Identifiable {
             return location.timestamp.text()
         case .loading(let date):
             return date.text()
-        case .locationError(let date):
-            return date.text()
+        case .locationError(let date, let detail):
+            return "\(date.text())-\(detail)"
         case .apiError(let date, _):
             return date.text()
         case .delete(let date):

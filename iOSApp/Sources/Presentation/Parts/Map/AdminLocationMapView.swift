@@ -8,39 +8,26 @@
 import UIKit
 import MapKit
 import SwiftUI
-import Shared
 
 struct AdminLocationMap: UIViewRepresentable {
-    var location: FloatLocation?
     var showsUserLocation: Bool = false
+    var isTracking: Bool = false
     
     func makeUIView(context: Context) -> MKMapView {
         let mapView = MKMapView()
         mapView.showsUserLocation = showsUserLocation
-        mapView.userTrackingMode = showsUserLocation ? .follow : .none // 現在地を追跡
+        mapView.userTrackingMode = showsUserLocation ? .follow : .none
         mapView.delegate = context.coordinator
         return mapView
     }
 
     func updateUIView(_ mapView: MKMapView, context: Context) {
-        mapView.showsUserLocation = showsUserLocation
-        if showsUserLocation {
-            mapView.userTrackingMode = .follow
-        }
-        // 現在地が取得できていれば、その周囲を表示範囲として設定
-        if let userLocation = mapView.userLocation.location {
-            let region = MKCoordinateRegion(
-                center: userLocation.coordinate,
-                span: MKCoordinateSpan(latitudeDelta: spanDelta, longitudeDelta: spanDelta) // ズームレベルを調整
-            )
-            mapView.setRegion(region, animated: true)
-        }
-        
-        if let location = location {
-            let annotation = MKPointAnnotation()
-            annotation.coordinate = location.coordinate.toCL()
-            mapView.addAnnotation(annotation)
-        }
+        context.coordinator.parent = self
+        context.coordinator.updateUserLocation(
+            on: mapView,
+            isEnabled: showsUserLocation,
+            isTracking: isTracking
+        )
     }
     
     func makeCoordinator() -> Coordinator {
@@ -49,9 +36,59 @@ struct AdminLocationMap: UIViewRepresentable {
     
     class Coordinator: NSObject, MKMapViewDelegate {
         var parent: AdminLocationMap
-        
+        private var hasConfiguredUserLocation = false
+        private var lastIsEnabled = false
+        private var lastIsTracking = false
+        private var didFocusMap = false
+
         init(_ parent: AdminLocationMap) {
             self.parent = parent
+        }
+
+        func mapView(_ mapView: MKMapView, didUpdate userLocation: MKUserLocation) {
+            guard parent.showsUserLocation, userLocation.location != nil, !didFocusMap else { return }
+            focusUserLocationIfNeeded(on: mapView)
+        }
+
+        func updateUserLocation(on mapView: MKMapView, isEnabled: Bool, isTracking: Bool) {
+            let shouldRestartUserLocation =
+                !hasConfiguredUserLocation ||
+                isEnabled != lastIsEnabled ||
+                isTracking != lastIsTracking
+
+            if !isEnabled {
+                didFocusMap = false
+                mapView.showsUserLocation = false
+                mapView.setUserTrackingMode(.none, animated: false)
+            } else if shouldRestartUserLocation {
+                // MapKitの標準ユーザーロケーションを、権限・配信開始時に再開する。
+                mapView.showsUserLocation = false
+                mapView.setUserTrackingMode(.none, animated: false)
+                mapView.showsUserLocation = true
+                mapView.setUserTrackingMode(.follow, animated: false)
+                didFocusMap = false
+            } else {
+                mapView.showsUserLocation = true
+                mapView.setUserTrackingMode(.follow, animated: false)
+            }
+
+            hasConfiguredUserLocation = true
+            lastIsEnabled = isEnabled
+            lastIsTracking = isTracking
+        }
+
+        private func focusUserLocationIfNeeded(on mapView: MKMapView) {
+            guard parent.showsUserLocation, let userLocation = mapView.userLocation.location else { return }
+            setRegion(on: mapView, center: userLocation.coordinate)
+            didFocusMap = true
+        }
+
+        private func setRegion(on mapView: MKMapView, center: CLLocationCoordinate2D) {
+            let region = MKCoordinateRegion(
+                center: center,
+                span: MKCoordinateSpan(latitudeDelta: spanDelta, longitudeDelta: spanDelta)
+            )
+            mapView.setRegion(region, animated: false)
         }
     }
 }

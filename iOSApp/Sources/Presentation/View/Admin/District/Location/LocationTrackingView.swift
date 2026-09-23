@@ -7,6 +7,7 @@
 
 import SwiftUI
 import ComposableArchitecture
+import UIKit
 
 @available(iOS 17.0, *)
 struct LocationTrackingView: View {
@@ -31,8 +32,8 @@ struct LocationTrackingView: View {
                 .disabled(!store.isPickerEnabled)
             }
             AdminLocationMap(
-                location: store.location,
-                showsUserLocation: store.showsUserLocation
+                showsUserLocation: store.showsUserLocation,
+                isTracking: store.isTracking
             )
                 .frame(height: UIScreen.main.bounds.height * 0.3)
                 .clipShape(RoundedRectangle(cornerRadius: 12))
@@ -50,9 +51,11 @@ struct LocationTrackingView: View {
                     header: Text("履歴（最新10件）"),
                     footer: Text("送信失敗が続く場合は、アプリの再起動や再ログインをお試しください。")
                 ) {
-                    ForEach(store.history.suffix(10).reversed(), id: \.self) { history in
+                    ForEach(Array(store.history.suffix(10).reversed().enumerated()), id: \.offset) { _, history in
                         Text(history.text)
                             .font(.body)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .fixedSize(horizontal: false, vertical: true)
                             .padding(.vertical, 2)
                     }
                 }
@@ -64,9 +67,10 @@ struct LocationTrackingView: View {
             isPresented: $store.isLocationPermissionSheetPresented,
             onDismiss: { store.send(.locationPermissionSheetDismissed) }
         ) {
-            LocationPermissionExplanationView {
-                store.send(.locationPermissionProceedTapped)
-            }
+            LocationPermissionExplanationView(
+                mode: store.locationPermissionSheetMode ?? .requestWhenInUseAndAlways,
+                onProceed: { store.send(.locationPermissionProceedTapped) }
+            )
         }
         .onAppear(){
             store.send(.onAppear)
@@ -78,18 +82,63 @@ private struct LocationPermissionExplanationView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.isLiquidGlassDisabled) private var isLiquidGlassDisabled
 
+    let mode: LocationPermissionSheetMode
     let onProceed: () -> Void
 
-    private let steps = [
-        LocationPermissionStep(
-            id: 1,
-            text: "最初に表示されるダイアログで「使用中のみ許可」を選択します。"
-        ),
-        LocationPermissionStep(
-            id: 2,
-            text: "続いて表示されるダイアログで「常に許可」を選択します。"
-        )
-    ]
+    private var steps: [LocationPermissionStep] {
+        switch mode {
+        case .requestWhenInUseAndAlways:
+            [
+                LocationPermissionStep(
+                    id: 1,
+                    text: "「許可に進む」を押します。"
+                ),
+                LocationPermissionStep(
+                    id: 2,
+                    text: "最初に表示されるダイアログで「使用中のみ許可」を選択します。"
+                ),
+                LocationPermissionStep(
+                    id: 3,
+                    text: "続いて表示されるダイアログで「常に許可」を選択します。"
+                )
+            ]
+        case .requestAlways:
+            [
+                LocationPermissionStep(
+                    id: 1,
+                    text: "「許可に進む」を押します。"
+                ),
+                LocationPermissionStep(
+                    id: 2,
+                    text: "表示されるダイアログで「常に許可」を選択します。"
+                )
+            ]
+        case .settings:
+            [
+                LocationPermissionStep(
+                    id: 1,
+                    text: "「設定を開く」を押します。"
+                ),
+                LocationPermissionStep(
+                    id: 2,
+                    text: "「位置情報」を選択します。"
+                ),
+                LocationPermissionStep(
+                    id: 3,
+                    text: "「常に」を選択します。"
+                )
+            ]
+        }
+    }
+
+    private var actionTitle: String {
+        switch mode {
+        case .requestWhenInUseAndAlways, .requestAlways:
+            "許可に進む"
+        case .settings:
+            "設定を開く"
+        }
+    }
 
     var body: some View {
         NavigationStack {
@@ -112,10 +161,13 @@ private struct LocationPermissionExplanationView: View {
                 .padding(24)
             }
             .safeAreaInset(edge: .bottom) {
-                proceedButton
-                    .padding(.horizontal, 24)
-                    .padding(.top, 12)
-                    .padding(.bottom, 8)
+                VStack(spacing: 0) {
+                    proceedButton
+                    closeButton
+                }
+                .padding(.horizontal, 24)
+                .padding(.top, 12)
+                .padding(.bottom, 8)
             }
             .navigationTitle("位置情報の許可")
             .navigationBarTitleDisplayMode(.inline)
@@ -135,8 +187,8 @@ private struct LocationPermissionExplanationView: View {
     @ViewBuilder
     private var proceedButton: some View {
         if #available(iOS 26.0, *), !isLiquidGlassDisabled {
-            Button(action: onProceed) {
-                Text("許可に進む")
+            Button(action: primaryAction) {
+                Text(actionTitle)
                     .frame(maxWidth: .infinity)
             }
                 .frame(maxWidth: .infinity)
@@ -145,14 +197,52 @@ private struct LocationPermissionExplanationView: View {
                 .buttonStyle(.glassProminent)
                 .padding()
         } else {
-            Button(action: onProceed) {
-                Text("許可に進む")
+            Button(action: primaryAction) {
+                Text(actionTitle)
                     .frame(maxWidth: .infinity)
             }
                 .frame(maxWidth: .infinity)
                 .buttonBorderShape(.capsule)
                 .buttonStyle(.borderedProminent)
                 .padding()
+        }
+    }
+
+    @ViewBuilder
+    private var closeButton: some View {
+        if #available(iOS 26.0, *), !isLiquidGlassDisabled {
+            Button {
+                dismiss()
+            } label: {
+                Text("閉じる")
+                    .frame(maxWidth: .infinity)
+            }
+                .frame(maxWidth: .infinity)
+                .buttonBorderShape(.capsule)
+                .controlSize(.extraLarge)
+                .buttonStyle(.glass)
+                .padding()
+        } else {
+            Button {
+                dismiss()
+            } label: {
+                Text("閉じる")
+                    .frame(maxWidth: .infinity)
+            }
+                .frame(maxWidth: .infinity)
+                .buttonBorderShape(.capsule)
+                .buttonStyle(.bordered)
+                .padding()
+        }
+    }
+
+    private func primaryAction() {
+        switch mode {
+        case .requestWhenInUseAndAlways, .requestAlways:
+            onProceed()
+        case .settings:
+            guard let url = URL(string: UIApplication.openSettingsURLString) else { return }
+            UIApplication.shared.open(url)
         }
     }
 }

@@ -64,7 +64,7 @@ struct DistrictDashboardFeature {
         case alert(PresentationAction<AlertFeature.Action>)
     }
     
-    @Dependency(\.locationService) var locationService
+    @Dependency(\.locationUsecase) var locationUsecase
     @Dependency(\.authService) var authService
     @Dependency(RouteDataFetcherKey.self) var routeDateFetcher
     @Dependency(\.dismiss) var dismiss
@@ -123,8 +123,8 @@ struct DistrictDashboardFeature {
                 return .none
             case .onLocation:
                 return .run { send in
-                    let isTracking = await locationService.getIsTracking()
-                    let interval = await locationService.getInterval()
+                    let isTracking = await locationUsecase.getIsTracking()
+                    let interval = await locationUsecase.getInterval()
                     await send(.locationPrepared(isTracking: isTracking, Interval: interval))
                 }
             case .submissionExportTapped:
