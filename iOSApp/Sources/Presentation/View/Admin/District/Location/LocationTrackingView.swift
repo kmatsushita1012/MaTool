@@ -32,8 +32,7 @@ struct LocationTrackingView: View {
                 .disabled(!store.isPickerEnabled)
             }
             AdminLocationMap(
-                showsUserLocation: store.showsUserLocation,
-                isTracking: store.isTracking
+                showsUserLocation: store.showsUserLocation
             )
                 .frame(height: UIScreen.main.bounds.height * 0.3)
                 .clipShape(RoundedRectangle(cornerRadius: 12))

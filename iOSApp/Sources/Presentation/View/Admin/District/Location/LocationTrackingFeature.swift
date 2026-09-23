@@ -47,7 +47,6 @@ struct LocationTrackingFeature{
         var isLocationPermissionSheetPresented = false
         var locationPermissionSheetMode: LocationPermissionSheetMode?
         var shouldRequestLocationPermission = false
-        var hasCheckedLocationPermission = false
         var showsUserLocation = false
         
         var isPickerEnabled: Bool {
@@ -59,10 +58,7 @@ struct LocationTrackingFeature{
     enum Action:BindableAction, Equatable{
         case onAppear
         case binding(BindingAction<State>)
-        case locationPermissionStatusReceived(
-            sheetMode: LocationPermissionSheetMode?,
-            showsUserLocation: Bool
-        )
+        case locationPermissionStateRefreshed(LocationPermissionState)
         case trackingStartResultReceived(LocationTrackingStartResult)
         case locationPermissionProceedTapped
         case locationPermissionSheetDismissed
@@ -78,19 +74,7 @@ struct LocationTrackingFeature{
         Reduce{state, action in
             switch action{
             case .onAppear:
-                guard !state.hasCheckedLocationPermission else { return .none }
-                state.hasCheckedLocationPermission = true
                 return .run { send in
-                    let permissionState = await locationUsecase.locationPermissionState()
-                    await send(
-                        .locationPermissionStatusReceived(
-                            sheetMode: LocationPermissionSheetMode(
-                                authorizationStatus: permissionState.authorizationStatus,
-                                hasRequestedAlwaysLocationPermission: permissionState.hasRequestedAlwaysLocationPermission
-                            ),
-                            showsUserLocation: permissionState.isLocationAuthorized
-                        )
-                    )
                     let initial = await locationUsecase.getLocationHistory()
                     await send(.historyUpdated(initial))
                     // 以降の更新を購読
@@ -99,10 +83,8 @@ struct LocationTrackingFeature{
                     }
                 }
                 .cancellable(id: "HistoryStream", cancelInFlight: true)
-            case .locationPermissionStatusReceived(let sheetMode, let showsUserLocation):
-                state.locationPermissionSheetMode = sheetMode
-                state.isLocationPermissionSheetPresented = sheetMode != nil
-                state.showsUserLocation = showsUserLocation
+            case .locationPermissionStateRefreshed(let permissionState):
+                state.showsUserLocation = permissionState.isLocationAuthorized
                 return .none
             case .trackingStartResultReceived(.started(let permissionState)):
                 state.showsUserLocation = permissionState.isLocationAuthorized
@@ -132,22 +114,29 @@ struct LocationTrackingFeature{
                 state.isLocationPermissionSheetPresented = false
                 return .none
             case .locationPermissionSheetDismissed:
-                guard state.shouldRequestLocationPermission else { return .none }
+                let shouldRequest = state.shouldRequestLocationPermission
+                let shouldRefresh = state.locationPermissionSheetMode == .settings
                 state.shouldRequestLocationPermission = false
-                return .run { _ in
-                    await locationUsecase.requestPermission()
+                return .run { send in
+                    if shouldRequest {
+                        await locationUsecase.requestPermission()
+                    }
+                    guard shouldRefresh else { return }
+                    await send(.locationPermissionStateRefreshed(await locationUsecase.locationPermissionState()))
                 }
             case .binding(\.isTracking):
                 let id = state.id
-                guard state.isTracking else {
-                    return .run { _ in
-                        await locationUsecase.stop(id: id)
-                    }
-                }
+                let isTracking = state.isTracking
                 return .run { [
                     id,
+                    isTracking,
                     interval = state.selectedInterval
                 ] send in
+                    await send(.locationPermissionStateRefreshed(await locationUsecase.locationPermissionState()))
+                    if !isTracking {
+                        await locationUsecase.stop(id: id)
+                        return
+                    }
                     let result = await locationUsecase.start(id: id, interval: interval)
                     await send(.trackingStartResultReceived(result))
                 }
@@ -161,6 +150,26 @@ struct LocationTrackingFeature{
                 return .dismiss
             }
         }
+    }
+}
+
+extension LocationTrackingFeature.State {
+    init(
+        id: String,
+        isTracking: Bool,
+        selectedInterval: Interval,
+        permissionState: LocationPermissionState
+    ) {
+        self.id = id
+        self.isTracking = isTracking
+        self.selectedInterval = selectedInterval
+        let sheetMode = LocationPermissionSheetMode(
+            authorizationStatus: permissionState.authorizationStatus,
+            hasRequestedAlwaysLocationPermission: permissionState.hasRequestedAlwaysLocationPermission
+        )
+        self.locationPermissionSheetMode = sheetMode
+        self.isLocationPermissionSheetPresented = sheetMode != nil
+        self.showsUserLocation = permissionState.isLocationAuthorized
     }
 }
 
