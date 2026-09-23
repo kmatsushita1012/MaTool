@@ -75,10 +75,15 @@ struct SettingsFeature {
                     try await sceneUsecase.select(festivalId: festival.id)
                 }
             case .binding(\.selectedDistrict):
-                guard let district = state.selectedDistrict else { return .none }
+                let districtId = state.selectedDistrict?.id
+                guard let districtId else {
+                    userDefaultsClient.setString(nil, defaultDistrictKey)
+                    state.isLoading = false
+                    return .none
+                }
                 state.isLoading = true
                 return .task(Action.districtSelectReceived) {
-                    try await sceneUsecase.select(districtId: district.id)
+                    try await sceneUsecase.select(districtId: districtId)
                 }
             case .binding:
                 return .none

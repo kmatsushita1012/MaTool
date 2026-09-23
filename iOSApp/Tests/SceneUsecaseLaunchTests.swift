@@ -12,6 +12,24 @@ import Testing
 @testable import iOSApp
 
 struct SceneUsecaseLaunchTests {
+    @Test("参加町を未設定にすると保存済みの町を消す")
+    func 参加町を未設定にすると保存済みの町を消す() async throws {
+        let userDefaults = InMemoryUserDefaultsManager(
+            defaultFestivalId: "festival-a",
+            defaultDistrictId: "district-a"
+        )
+        let usecase = makeUsecase(
+            userDefaults: userDefaults,
+            festivalDataFetcher: FestivalDataFetcherMock(),
+            sceneDataFetcher: SceneDataFetcherMock()
+        )
+
+        let routeId = try await usecase.select(districtId: nil)
+
+        #expect(routeId == nil)
+        #expect(userDefaults.defaultDistrictId == nil)
+    }
+
     @Test("起動失敗が一時的なエラーなら保存済み選択を消さない")
     func 起動失敗が一時的なエラーなら保存済み選択を消さない() async {
         let userDefaults = InMemoryUserDefaultsManager(

@@ -24,7 +24,7 @@ protocol SceneUsecaseProtocol: Sendable {
     func isValidPassword(_ password: String) -> Bool
     func confirmSignIn(password: String) async throws -> UserRole
     func select(festivalId: Festival.ID) async throws -> FestivalSelectionResult
-    func select(districtId: District.ID) async throws -> Route.ID?
+    func select(districtId: District.ID?) async throws -> Route.ID?
 }
 
 actor SceneUsecase: SceneUsecaseProtocol {
@@ -138,7 +138,11 @@ actor SceneUsecase: SceneUsecaseProtocol {
         return .changed(.guest)
     }
     
-    func select(districtId: Shared.District.ID) async throws -> Route.ID? {
+    func select(districtId: Shared.District.ID?) async throws -> Route.ID? {
+        guard let districtId else {
+            userDefaults.defaultDistrictId = nil
+            return nil
+        }
         guard let district = FetchOne(District.find(districtId)).wrappedValue else {
             throw AppError.be(.notFound("指定された町が存在しません。"))
         }
