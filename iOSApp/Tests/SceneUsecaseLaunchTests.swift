@@ -103,10 +103,20 @@ private func launch(_ usecase: SceneUsecase) async -> (LaunchState, StatusCheckR
 private final class InMemoryUserDefaultsManager: UserDefalutsManagerProtocol, @unchecked Sendable {
     var defaultFestivalId: String?
     var defaultDistrictId: String?
+    var hasRequestedAlwaysLocationPermission: Bool
 
-    init(defaultFestivalId: String?, defaultDistrictId: String?) {
+    init(
+        defaultFestivalId: String?,
+        defaultDistrictId: String?,
+        hasRequestedAlwaysLocationPermission: Bool = false
+    ) {
         self.defaultFestivalId = defaultFestivalId
         self.defaultDistrictId = defaultDistrictId
+        self.hasRequestedAlwaysLocationPermission = hasRequestedAlwaysLocationPermission
+    }
+
+    func setHasRequestedAlwaysLocationPermission(_ value: Bool) {
+        hasRequestedAlwaysLocationPermission = value
     }
 }
 

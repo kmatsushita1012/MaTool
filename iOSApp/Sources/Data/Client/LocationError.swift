@@ -7,8 +7,16 @@
 
 import Foundation
 
-enum LocationError: Error {
+enum LocationError: LocalizedError, Sendable {
     case authorizationDenied
     case servicesDisabled
-}
 
+    var errorDescription: String? {
+        switch self {
+        case .authorizationDenied:
+            "位置情報の常に許可がありません。"
+        case .servicesDisabled:
+            "位置情報サービスが無効です。"
+        }
+    }
+}

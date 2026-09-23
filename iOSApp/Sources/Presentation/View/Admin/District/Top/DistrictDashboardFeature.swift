@@ -51,7 +51,11 @@ struct DistrictDashboardFeature {
         case changePasswordTapped
         case updateEmailTapped
         case routeCreatePrepared
-        case locationPrepared(isTracking: Bool, Interval: Interval?)
+        case locationPrepared(
+            isTracking: Bool,
+            interval: Interval?,
+            permissionState: LocationPermissionState
+        )
         case onLocation
         case submissionExportTapped
         case tableExportTapped
@@ -64,7 +68,7 @@ struct DistrictDashboardFeature {
         case alert(PresentationAction<AlertFeature.Action>)
     }
     
-    @Dependency(\.locationService) var locationService
+    @Dependency(\.locationUsecase) var locationUsecase
     @Dependency(\.authService) var authService
     @Dependency(RouteDataFetcherKey.self) var routeDateFetcher
     @Dependency(\.dismiss) var dismiss
@@ -112,20 +116,32 @@ struct DistrictDashboardFeature {
                 state.isRouteLoading = false
                 state.alert = .error(error.message)
                 return .none
-            case .locationPrepared(isTracking: let isTracking, Interval: let interval):
+            case .locationPrepared(
+                isTracking: let isTracking,
+                interval: let interval,
+                permissionState: let permissionState
+            ):
                 state.destination = .location(
                     LocationTrackingFeature.State(
                         id: state.district.id,
                         isTracking: isTracking,
-                        selectedInterval: interval ?? Interval.sample
+                        selectedInterval: interval ?? Interval.sample,
+                        permissionState: permissionState
                     )
                 )
                 return .none
             case .onLocation:
                 return .run { send in
-                    let isTracking = await locationService.getIsTracking()
-                    let interval = await locationService.getInterval()
-                    await send(.locationPrepared(isTracking: isTracking, Interval: interval))
+                    let isTracking = await locationUsecase.getIsTracking()
+                    let interval = await locationUsecase.getInterval()
+                    let permissionState = await locationUsecase.locationPermissionState()
+                    await send(
+                        .locationPrepared(
+                            isTracking: isTracking,
+                            interval: interval,
+                            permissionState: permissionState
+                        )
+                    )
                 }
             case .submissionExportTapped:
                 state.activeExportKind = .submission
