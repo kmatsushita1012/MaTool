@@ -62,6 +62,15 @@ struct LocationTrackingView: View {
         }
         .navigationTitle("位置情報配信")
         .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                if !store.isAlwaysLocationAuthorized {
+                    Button("権限許可") {
+                        store.send(.locationPermissionButtonTapped)
+                    }
+                }
+            }
+        }
         .sheet(
             isPresented: $store.isLocationPermissionSheetPresented,
             onDismiss: { store.send(.locationPermissionSheetDismissed) }
