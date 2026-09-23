@@ -1,3 +1,4 @@
+import Foundation
 import Dependencies
 import Shared
 import Testing
@@ -118,12 +119,15 @@ struct PointRepositoryTest {
         let point1 = Point.mock(id: "point-1", routeId: "route-1")
         let point2 = Point.mock(id: "point-2", routeId: "route-1")
         var lastCalledDeleteKeys: [String] = []
+        let deleteKeysLock = NSLock()
 
         let dataStore = DataStoreMock(
             deleteHandler: { keys in
                 let pk = keys["pk"] as? String ?? ""
                 let sk = keys["sk"] as? String ?? ""
-                lastCalledDeleteKeys.append("\(pk)|\(sk)")
+                deleteKeysLock.withLock {
+                    lastCalledDeleteKeys.append("\(pk)|\(sk)")
+                }
             },
             queryHandler: { _, _, _, _, _, _ in
                 try encodeForDataStore([Record(point1), Record(point2)])

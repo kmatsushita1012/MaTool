@@ -36,10 +36,13 @@ final class DataStoreMock: DataStore, @unchecked Sendable {
     }
 
     nonisolated(unsafe) private(set) var deleteCallCount = 0
+    private let deleteCallCountLock = NSLock()
     private let deleteHandler: (([String: Codable]) async throws -> Void)?
 
     func delete(keys: [String: Codable]) async throws {
-        deleteCallCount += 1
+        deleteCallCountLock.withLock {
+            deleteCallCount += 1
+        }
         guard let deleteHandler else { throw TestError.unimplemented }
         try await deleteHandler(keys)
     }

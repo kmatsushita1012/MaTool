@@ -27,22 +27,24 @@ jobs:
 
     # --- SPM キャッシュ ---
     - name: Cache SPM
-      uses: actions/cache@v3
+      uses: actions/cache@v4
       with:
         path: |
           ~/Library/Caches/org.swift.swiftpm/
-        key: ${{ runner.os }}-spm-Backend-26.3
+        key: ${{ runner.os }}-spm-Backend-xcode-26.3-${{ github.ref_name }}-${{ hashFiles('Backend/Package.swift', 'Backend/Package.resolved', 'Shared/Package.swift', 'Shared/Package.resolved', 'MaTool.xcworkspace/xcshareddata/swiftpm/Package.resolved') }}
         restore-keys: |
-          ${{ runner.os }}-spm-Backend-
+          ${{ runner.os }}-spm-Backend-xcode-26.3-${{ github.ref_name }}-
+          ${{ runner.os }}-spm-Backend-xcode-26.3-
 
     # --- DerivedData キャッシュ ---
     - name: Cache DerivedData
-      uses: actions/cache@v3
+      uses: actions/cache@v4
       with:
         path: Backend/.derivedData
-        key: ${{ runner.os }}-derived-26.3
+        key: ${{ runner.os }}-derived-Backend-xcode-26.3-${{ github.ref_name }}-${{ hashFiles('Backend/Package.swift', 'Backend/Package.resolved', 'Shared/Package.swift', 'Shared/Package.resolved', 'MaTool.xcworkspace/xcshareddata/swiftpm/Package.resolved') }}-debug-macos
         restore-keys: |
-          ${{ runner.os }}-derived-
+          ${{ runner.os }}-derived-Backend-xcode-26.3-${{ github.ref_name }}-
+          ${{ runner.os }}-derived-Backend-xcode-26.3-
 
     - name: Build & Test
       run: |

@@ -11,13 +11,24 @@ fileprivate typealias AttributeValue = DynamoDBClientTypes.AttributeValue
 
 // MARK: - DynamoDBStore
 struct DynamoDBStore: DataStore {
+    private static let defaultRegion = "ap-northeast-1"
+    private static let sharedClient: DynamoDBClient = {
+        do {
+            return try DynamoDBClient(region: defaultRegion)
+        } catch {
+            fatalError("DynamoDBClient could not be initialized: \(error)")
+        }
+    }()
+
     private let client: DynamoDBClient
     private let tableName: String
     private let encoder = DynamoDBEncoder()
     private let decoder = DynamoDBDecoder()
     
-    init(region: String = "ap-northeast-1", tableName: String) throws {
-        self.client = try DynamoDBClient(region: region)
+    init(region: String = Self.defaultRegion, tableName: String) throws {
+        self.client = region == Self.defaultRegion
+            ? Self.sharedClient
+            : try DynamoDBClient(region: region)
         self.tableName = tableName
     }
     
@@ -50,14 +61,27 @@ struct DynamoDBStore: DataStore {
     
     // MARK: scan
     func scan<T: RecordProtocol>(_ type: T.Type, ignoreDecodeError: Bool) async throws -> [T] {
-        let input = ScanInput(tableName: tableName)
-        let output = try await client.scan(input: input)
-        guard let items = output.items else { return [] }
-        if ignoreDecodeError {
-            return items.compactMap { try? decoder.decode($0, as: T.self) }
-        } else {
-            return try items.map { try decoder.decode($0, as: T.self) }
-        }
+        var records: [T] = []
+        var exclusiveStartKey: [String: AttributeValue]?
+
+        repeat {
+            let input = ScanInput(
+                exclusiveStartKey: exclusiveStartKey,
+                tableName: tableName
+            )
+            let output = try await client.scan(input: input)
+            let items = output.items ?? []
+
+            if ignoreDecodeError {
+                records.append(contentsOf: items.compactMap { try? decoder.decode($0, as: T.self) })
+            } else {
+                records.append(contentsOf: try items.map { try decoder.decode($0, as: T.self) })
+            }
+
+            exclusiveStartKey = output.lastEvaluatedKey
+        } while !(exclusiveStartKey?.isEmpty ?? true)
+
+        return records
     }
     
     // MARK: query
@@ -71,6 +95,7 @@ struct DynamoDBStore: DataStore {
     ) async throws -> [T] {
         
         precondition(!keyConditions.isEmpty, "KeyCondition must not be empty")
+        guard limit != 0 else { return [] }
         
         var keyExprs: [String] = []
         var filterExprs: [String] = []
@@ -97,24 +122,37 @@ struct DynamoDBStore: DataStore {
                 expressionValues.merge(values) { $1 }
             }
         }
-        let filterExspression = filterExprs.isEmpty ? nil : filterExprs.joined(separator: " AND ")
-        
-        var input = QueryInput(
-            expressionAttributeNames: expressionNames,
-            expressionAttributeValues: expressionValues,
-            filterExpression: filterExspression,
-            indexName: indexName,
-            keyConditionExpression: keyConditionExpression,
-            tableName: tableName
-        )
-        
-        input.scanIndexForward = ascending
-        input.limit = limit
-        
-        let output = try await client.query(input: input)
-        guard let items = output.items else { return [] }
-        
-        return try items.map { try decoder.decode($0, as: T.self) }
+        let filterExpression = filterExprs.isEmpty ? nil : filterExprs.joined(separator: " AND ")
+        var records: [T] = []
+        var exclusiveStartKey: [String: AttributeValue]?
+
+        repeat {
+            var input = QueryInput(
+                exclusiveStartKey: exclusiveStartKey,
+                expressionAttributeNames: expressionNames,
+                expressionAttributeValues: expressionValues,
+                filterExpression: filterExpression,
+                indexName: indexName,
+                keyConditionExpression: keyConditionExpression,
+                tableName: tableName
+            )
+
+            input.scanIndexForward = ascending
+            if let limit {
+                input.limit = limit - records.count
+            }
+
+            let output = try await client.query(input: input)
+            records.append(contentsOf: try (output.items ?? []).map { try decoder.decode($0, as: T.self) })
+
+            if let limit, records.count >= limit {
+                return Array(records.prefix(limit))
+            }
+
+            exclusiveStartKey = output.lastEvaluatedKey
+        } while !(exclusiveStartKey?.isEmpty ?? true)
+
+        return records
     }
 
     static func make(tableName: String) -> DynamoDBStore {
