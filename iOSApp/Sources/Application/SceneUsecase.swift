@@ -18,11 +18,17 @@ enum FestivalSelectionResult: Equatable, Sendable {
     case changed(UserRole)
 }
 
+struct SceneSelection: Equatable, Sendable {
+    let festivalId: Festival.ID?
+    let districtId: District.ID?
+}
+
 protocol SceneUsecaseProtocol: Sendable {
     func launch() async -> (LaunchState, StatusCheckResult?)
     func signIn(username: String, password: String) async throws -> SignInState
     func isValidPassword(_ password: String) -> Bool
     func confirmSignIn(password: String) async throws -> UserRole
+    func currentSelection() async -> SceneSelection
     func select(festivalId: Festival.ID) async throws -> FestivalSelectionResult
     func select(districtId: District.ID?) async throws -> Route.ID?
 }
@@ -106,6 +112,13 @@ actor SceneUsecase: SceneUsecaseProtocol {
     nonisolated func isValidPassword(_ password: String) -> Bool {
         @Dependency(AuthServiceKey.self) var authService
         return authService.isValidPassword(password)
+    }
+
+    func currentSelection() -> SceneSelection {
+        SceneSelection(
+            festivalId: userDefaults.defaultFestivalId,
+            districtId: userDefaults.defaultDistrictId
+        )
     }
     
     func confirmSignIn(password: String) async throws -> UserRole {

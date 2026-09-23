@@ -32,15 +32,12 @@ struct SettingsFeature {
         }()
         @Presents var alert: AlertFeature.State? = nil
         var isDismissEnabled: Bool {
-            selectedFestival != nil || isOfflineMode
+            !isLoading && (selectedFestival != nil || isOfflineMode)
         }
         
-        init() {
-            @Dependency(\.userDefaultsClient) var userDefaultsClient
-            @Dependency(\.values.defaultFestivalKey) var defaultFestivalKey
-            @Dependency(\.values.defaultDistrictKey) var defaultDistrictKey
-            self.selectedFestival = FetchOne(Festival.where{ $0.id.eq(userDefaultsClient.string(defaultFestivalKey))}).wrappedValue
-            self.selectedDistrict = FetchOne(District.where{ $0.id.eq(userDefaultsClient.string(defaultDistrictKey))}).wrappedValue
+        init(selection: SceneSelection) {
+            self.selectedFestival = selection.festivalId.flatMap { FetchOne(Festival.find($0)).wrappedValue }
+            self.selectedDistrict = selection.districtId.flatMap { FetchOne(District.find($0)).wrappedValue }
             self._festivals = FetchAll()
             self._districts = FetchAll(District.where{ $0.festivalId.eq(selectedFestival?.id) }.order(by: \.order))
         }
@@ -60,9 +57,6 @@ struct SettingsFeature {
     @Dependency(\.dismiss) var dismiss
     @Dependency(\.authService) var authService
     @Dependency(SceneUsecaseKey.self) var sceneUsecase
-    @Dependency(\.userDefaultsClient) var userDefaultsClient
-    @Dependency(\.values.defaultFestivalKey) var defaultFestivalKey
-    @Dependency(\.values.defaultDistrictKey) var defaultDistrictKey
     
     var body: some ReducerOf<SettingsFeature> {
         BindingReducer()
@@ -76,11 +70,6 @@ struct SettingsFeature {
                 }
             case .binding(\.selectedDistrict):
                 let districtId = state.selectedDistrict?.id
-                guard let districtId else {
-                    userDefaultsClient.setString(nil, defaultDistrictKey)
-                    state.isLoading = false
-                    return .none
-                }
                 state.isLoading = true
                 return .task(Action.districtSelectReceived) {
                     try await sceneUsecase.select(districtId: districtId)

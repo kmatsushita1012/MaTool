@@ -12,6 +12,22 @@ import Testing
 @testable import iOSApp
 
 struct SceneUsecaseLaunchTests {
+    @Test("保存済みの祭典と参加町を取得する")
+    func 保存済みの祭典と参加町を取得する() async {
+        let usecase = makeUsecase(
+            userDefaults: InMemoryUserDefaultsManager(
+                defaultFestivalId: "festival-a",
+                defaultDistrictId: "district-a"
+            ),
+            festivalDataFetcher: FestivalDataFetcherMock(),
+            sceneDataFetcher: SceneDataFetcherMock()
+        )
+
+        let selection = await usecase.currentSelection()
+
+        #expect(selection == SceneSelection(festivalId: "festival-a", districtId: "district-a"))
+    }
+
     @Test("参加町を未設定にすると保存済みの町を消す")
     func 参加町を未設定にすると保存済みの町を消す() async throws {
         let userDefaults = InMemoryUserDefaultsManager(
