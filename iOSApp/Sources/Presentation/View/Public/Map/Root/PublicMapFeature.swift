@@ -55,7 +55,8 @@ struct PublicMapFeature {
         case alert(PresentationAction<AlertFeature.Action>)
     }
     
-    @Dependency(\.locationProvider) var locationProvider
+    @Dependency(\.mapLocationProvider) var mapLocationProvider
+    @Dependency(SceneDataFetcherKey.self) var sceneDataFetcher
     @Dependency(\.publicMapAdUsecase) var publicMapAdUsecase
     @Dependency(\.dismiss) var dismiss
     
@@ -70,8 +71,8 @@ struct PublicMapFeature {
                     state.alert = AlertFeature.notice("配信停止中です。")
                 }
                 return .run{ send in
-                    await locationProvider.requestPermission()
-                    await locationProvider.startTracking(backgroundUpdatesAllowed: false)
+                    await mapLocationProvider.requestPermission()
+                    await mapLocationProvider.startTracking()
                     await publicMapAdUsecase.prepareSession()
                 }
             case .binding:
@@ -84,16 +85,9 @@ struct PublicMapFeature {
                     return .none
                 }
             case .contentSelected(let value):
-                let wasLocations: Bool = {
-                    if case .locations = state.selectedContent {
-                        return true
-                    }
-                    return false
-                }()
                 state.selectedContent = value
                 switch value {
                 case .locations(let festival):
-                    state.currentPeriodId = nil
                     state.destination = .locations(
                         PublicLocationsFeature.State(
                             festival,
@@ -102,9 +96,6 @@ struct PublicMapFeature {
                     )
                     return .none
                 case .route(let district):
-                    if wasLocations {
-                        state.currentPeriodId = nil
-                    }
                     state.isLoading = true
                     return districtLaunchEffect(
                         userRole: state.userRole,
@@ -123,8 +114,6 @@ struct PublicMapFeature {
                 if let routeId,
                    let route = FetchOne(Route.find(routeId)).wrappedValue {
                     state.currentPeriodId = route.periodId
-                } else {
-                    state.currentPeriodId = nil
                 }
                 state.destination = .route(
                     PublicRouteFeature.State(
@@ -163,12 +152,7 @@ struct PublicMapFeature {
         switch action {
         case .destination(.presented(.route(.selected(let entry)))):
             state.currentPeriodId = entry.period.id
-            return .run { [userRole = state.userRole, districtId = entry.route.districtId] _ in
-                await publicMapAdUsecase.handlePeriodSelection(
-                    userRole: userRole,
-                    districtId: districtId
-                )
-            }
+            return .none
         default:
             return .none
         }

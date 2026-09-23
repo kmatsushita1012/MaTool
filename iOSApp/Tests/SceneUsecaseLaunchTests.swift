@@ -6,6 +6,7 @@
 //
 
 import Dependencies
+import SQLiteData
 import Shared
 import Testing
 @testable import iOSApp
@@ -30,7 +31,7 @@ struct SceneUsecaseLaunchTests {
             sceneDataFetcher: sceneDataFetcher
         )
 
-        let (launchState, _) = await usecase.launch()
+        let (launchState, _) = await launch(usecase)
 
         switch launchState {
         case .error(let message):
@@ -62,7 +63,7 @@ struct SceneUsecaseLaunchTests {
             sceneDataFetcher: sceneDataFetcher
         )
 
-        let (launchState, _) = await usecase.launch()
+        let (launchState, _) = await launch(usecase)
 
         switch launchState {
         case .onboarding:
@@ -91,13 +92,31 @@ private func makeUsecase(
     }
 }
 
+private func launch(_ usecase: SceneUsecase) async -> (LaunchState, StatusCheckResult?) {
+    await withDependencies {
+        $0.defaultDatabase = try! DatabaseQueue(path: ":memory:")
+    } operation: {
+        await usecase.launch()
+    }
+}
+
 private final class InMemoryUserDefaultsManager: UserDefalutsManagerProtocol, @unchecked Sendable {
     var defaultFestivalId: String?
     var defaultDistrictId: String?
+    var hasRequestedAlwaysLocationPermission: Bool
 
-    init(defaultFestivalId: String?, defaultDistrictId: String?) {
+    init(
+        defaultFestivalId: String?,
+        defaultDistrictId: String?,
+        hasRequestedAlwaysLocationPermission: Bool = false
+    ) {
         self.defaultFestivalId = defaultFestivalId
         self.defaultDistrictId = defaultDistrictId
+        self.hasRequestedAlwaysLocationPermission = hasRequestedAlwaysLocationPermission
+    }
+
+    func setHasRequestedAlwaysLocationPermission(_ value: Bool) {
+        hasRequestedAlwaysLocationPermission = value
     }
 }
 

@@ -158,8 +158,16 @@ struct SceneUsecase: SceneUsecaseProtocol {
             }
             return sorted.first?.route
         }()
-        let points = currentRoute != nil ? try await pointRepository.query(by: currentRoute!.id) : []
-        let passages = currentRoute != nil ? try await passageRepository.query(by: currentRoute!.id) : []
+        let points: [Point]
+        let passages: [RoutePassage]
+        if let currentRoute {
+            async let pointsTask = pointRepository.query(by: currentRoute.id)
+            async let passagesTask = passageRepository.query(by: currentRoute.id)
+            (points, passages) = try await (pointsTask, passagesTask)
+        } else {
+            points = []
+            passages = []
+        }
         let sanitizedPoints = currentRoute != nil
         ? removeTimeIfNeeded(routeVisibility: currentRoute!.visibility, district: district, points: points, user: user)
         : points

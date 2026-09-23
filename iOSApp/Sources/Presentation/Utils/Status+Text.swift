@@ -7,7 +7,12 @@ extension Status {
             return "\(location.timestamp.text(of: "HH:mm:ss")) 送信成功"
         case .loading(let date):
             return "\(date.text(of: "HH:mm:ss")) 読み込み中"
-        case .locationError(let date):
+        case .locationError(let date, let detail):
+#if DEBUG
+            if detail.isEmpty == false {
+                return "\(date.text(of: "HH:mm:ss")) 取得失敗\n\(detail)"
+            }
+#endif
             return "\(date.text(of: "HH:mm:ss")) 取得失敗"
         case .apiError(let date, let error):
             return "\(date.text(of: "HH:mm:ss")) 送信失敗 \(error.message)"

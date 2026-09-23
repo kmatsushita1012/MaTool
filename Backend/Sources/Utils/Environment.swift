@@ -5,7 +5,6 @@
 //  Created by 松下和也 on 2025/11/22.
 //
 
-import SwiftDotenv
 import Dependencies
 import Foundation
 
@@ -29,11 +28,9 @@ extension Environment: DependencyKey{
                 fatalError(".env ファイルを取得できません")
             }
             
-            guard let _ = try? Dotenv.configure(atPath: url.path()) else {
-                fatalError("Dotenv.configure に失敗しました")
-            }
-            guard let filePoolId = Dotenv["COGNITO_USER_POOL_ID"]?.stringValue,
-                  let fileEmail  = Dotenv["COGNITO_TEST_EMAIL"]?.stringValue else {
+            guard let contents = try? String(contentsOf: url, encoding: .utf8),
+                  let filePoolId = Self.value(for: "COGNITO_USER_POOL_ID", in: contents),
+                  let fileEmail = Self.value(for: "COGNITO_TEST_EMAIL", in: contents) else {
                 fatalError(".env ファイルから環境変数を取得できません")
             }
             poolId = filePoolId
@@ -43,6 +40,30 @@ extension Environment: DependencyKey{
             cognitoPoolId: poolId,
             cognitoTestEmail: email
         )
+    }
+
+    private static func value(for key: String, in contents: String) -> String? {
+        for line in contents.split(whereSeparator: \.isNewline) {
+            let line = line.trimmingCharacters(in: .whitespaces)
+            guard !line.isEmpty, !line.hasPrefix("#"),
+                  let separator = line.firstIndex(of: "=") else {
+                continue
+            }
+
+            let candidateKey = line[..<separator].trimmingCharacters(in: .whitespaces)
+            guard candidateKey == key else { continue }
+
+            var value = line[line.index(after: separator)...]
+                .trimmingCharacters(in: .whitespaces)
+            if value.count >= 2,
+               (value.first == "\"" && value.last == "\"") ||
+               (value.first == "'" && value.last == "'") {
+                value.removeFirst()
+                value.removeLast()
+            }
+            return value
+        }
+        return nil
     }
     
     static var testValue: Environment {

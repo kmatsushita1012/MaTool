@@ -129,7 +129,13 @@ actor HTTPClient: HTTPClientProtocol {
         }
 
         // Build request and execute
-        let urlRequest = makeRequest(url: url, method: method, bodyData: bodyData ?? nil, accessToken: accessToken)
+        let urlRequest = makeRequest(
+            url: url,
+            method: method,
+            bodyData: bodyData ?? nil,
+            accessToken: accessToken,
+            isCache: isCache
+        )
         let (data, http): (Data, HTTPURLResponse?)
         do {
             (data, http) = try await execute(request: urlRequest)
@@ -214,9 +220,16 @@ actor HTTPClient: HTTPClientProtocol {
         return url
     }
 
-    private func makeRequest(url: URL, method: String, bodyData: Data? = nil, accessToken: String?) -> URLRequest {
+    private func makeRequest(url: URL, method: String, bodyData: Data? = nil, accessToken: String?, isCache: Bool) -> URLRequest {
         var request = URLRequest(url: url)
         request.httpMethod = method
+        if isCache {
+            request.cachePolicy = .useProtocolCachePolicy
+        } else {
+            request.cachePolicy = .reloadIgnoringLocalCacheData
+            request.setValue("no-cache", forHTTPHeaderField: "Cache-Control")
+            request.setValue("no-cache", forHTTPHeaderField: "Pragma")
+        }
         if let token = accessToken {
             request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
         }

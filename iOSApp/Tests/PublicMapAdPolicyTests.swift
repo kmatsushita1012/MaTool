@@ -10,11 +10,11 @@ import XCTest
 
 final class PublicMapAdPolicyTests: XCTestCase {
     func test本部権限では広告表示しない() {
-        let counter = PublicMapAdCounter(eligibleEventCount: 2)
+        let counter = PublicMapAdCounter(districtSelectionCount: 2)
         let decision = PublicMapAdPolicy.evaluate(
             userRole: .headquarter("festival"),
             targetDistrictId: "district-b",
-            favoriteDistrictId: "district-a",
+            defaultDistrictId: "district-a",
             counter: counter
         )
 
@@ -22,12 +22,12 @@ final class PublicMapAdPolicyTests: XCTestCase {
         XCTAssertFalse(decision.shouldShowInterstitial)
     }
 
-    func testお気に入り町ではカウントしない() {
-        let counter = PublicMapAdCounter(eligibleEventCount: 2)
+    func test自町defaultDistrictではカウントしない() {
+        let counter = PublicMapAdCounter(districtSelectionCount: 2)
         let decision = PublicMapAdPolicy.evaluate(
             userRole: .guest,
             targetDistrictId: "district-a",
-            favoriteDistrictId: "district-a",
+            defaultDistrictId: "district-a",
             counter: counter
         )
 
@@ -39,11 +39,11 @@ final class PublicMapAdPolicyTests: XCTestCase {
         let decision = PublicMapAdPolicy.evaluate(
             userRole: .guest,
             targetDistrictId: "district-b",
-            favoriteDistrictId: "district-a",
-            counter: .init(eligibleEventCount: 2)
+            defaultDistrictId: "district-a",
+            counter: .init(districtSelectionCount: 2)
         )
 
-        XCTAssertEqual(decision.counter.eligibleEventCount, 3)
+        XCTAssertEqual(decision.counter.districtSelectionCount, 3)
         XCTAssertTrue(decision.shouldShowInterstitial)
     }
 
@@ -51,11 +51,11 @@ final class PublicMapAdPolicyTests: XCTestCase {
         let decision = PublicMapAdPolicy.evaluate(
             userRole: .guest,
             targetDistrictId: "district-a",
-            favoriteDistrictId: nil,
-            counter: .init(eligibleEventCount: 4)
+            defaultDistrictId: nil,
+            counter: .init(districtSelectionCount: 4)
         )
 
-        XCTAssertEqual(decision.counter.eligibleEventCount, 5)
+        XCTAssertEqual(decision.counter.districtSelectionCount, 5)
         XCTAssertFalse(decision.shouldShowInterstitial)
     }
 
@@ -63,20 +63,20 @@ final class PublicMapAdPolicyTests: XCTestCase {
         let decision = PublicMapAdPolicy.evaluate(
             userRole: .guest,
             targetDistrictId: "district-a",
-            favoriteDistrictId: nil,
-            counter: .init(eligibleEventCount: 5)
+            defaultDistrictId: nil,
+            counter: .init(districtSelectionCount: 5)
         )
 
-        XCTAssertEqual(decision.counter.eligibleEventCount, 6)
+        XCTAssertEqual(decision.counter.districtSelectionCount, 6)
         XCTAssertTrue(decision.shouldShowInterstitial)
     }
 
     func test各町権限の自町は除外する() {
-        let counter = PublicMapAdCounter(eligibleEventCount: 1)
+        let counter = PublicMapAdCounter(districtSelectionCount: 1)
         let decision = PublicMapAdPolicy.evaluate(
             userRole: .district("district-a"),
             targetDistrictId: "district-a",
-            favoriteDistrictId: nil,
+            defaultDistrictId: nil,
             counter: counter
         )
 

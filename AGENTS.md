@@ -6,6 +6,7 @@
 - Do not use `git -C ...` in this repository because it may fail in this environment.
 - Before any branch/commit/PR operation, read and follow [$matool-git](/Users/matsushitakazuya/private/MaTool/.codex/skills/matool-git/SKILL.md).
 - Before any build/test/run operation, read and follow [$matool-build-test](/Users/matsushitakazuya/private/MaTool/.codex/skills/matool-build-test/SKILL.md).
+- Backend / iOSApp の build・test・run は必ず XcodeBuildMCP を使用する。シェルから `xcodebuild` や build/test スクリプトを直接実行しない。
 
 ## Runtime policy (summary)
 
