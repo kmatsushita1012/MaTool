@@ -16,19 +16,29 @@ struct PublicMapView: View {
         WithPerceptionTracking{
             VStack(spacing: 0){
                 picker()
-                if let toast = store.toast {
-                    MapToastView(toast: toast) {
-                        store.send(.toastDismissed)
-                    }
-                    .padding(.top, 16)
-                }
                 if let routeStore = store.scope(state: \.destination?.route, action: \.destination.route) {
-                    PublicRouteMapView(store: routeStore)
+                    PublicRouteMapView(
+                        store: routeStore,
+                        toast: store.toast,
+                        onDismissToast: { store.send(.toastDismissed) }
+                    )
                         .id(routeStore.district.id)
-                } else if let store = store.scope(state: \.destination?.locations, action: \.destination.locations) {
-                    PublicLocationsMapView(store: store)
+                } else if let locationsStore = store.scope(state: \.destination?.locations, action: \.destination.locations) {
+                    PublicLocationsMapView(
+                        store: locationsStore,
+                        toast: store.toast,
+                        onDismissToast: { store.send(.toastDismissed) }
+                    )
                 } else {
-                    Spacer()
+                    ZStack(alignment: .top) {
+                        Spacer()
+                        if let toast = store.toast {
+                            MapToastView(toast: toast) {
+                                store.send(.toastDismissed)
+                            }
+                            .padding(.top, 16)
+                        }
+                    }
                 }
             }
             .loadingOverlay(store.isLoading)

@@ -64,6 +64,7 @@ struct PublicMapFeature {
         Reduce{ state, action in
             switch action {
             case .onAppear:
+                state.toast = nil
                 if state.destination?.route?.routes.isEmpty ?? false,
                     state.destination?.route?.float == nil {
                     state.toast = .notice("現在、配信中の情報はありません。")
@@ -85,6 +86,7 @@ struct PublicMapFeature {
                     return .none
                 }
             case .contentSelected(let value):
+                state.toast = nil
                 state.selectedContent = value
                 switch value {
                 case .locations(let festival):
@@ -111,6 +113,7 @@ struct PublicMapFeature {
                 return .none
             case .routePrepared(let district, let routeId):
                 state.isLoading = false
+                state.toast = nil
                 if let routeId,
                    let route = FetchOne(Route.find(routeId)).wrappedValue {
                     state.currentPeriodId = route.periodId
@@ -152,6 +155,13 @@ struct PublicMapFeature {
         switch action {
         case .destination(.presented(.route(.selected(let entry)))):
             state.currentPeriodId = entry.period.id
+            state.toast = nil
+            return .none
+        case .destination(.presented(.route(.toastRequested(let toast)))):
+            state.toast = toast
+            return .none
+        case .destination(.presented(.locations(.toastRequested(let toast)))):
+            state.toast = toast
             return .none
         default:
             return .none

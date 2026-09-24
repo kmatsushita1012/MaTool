@@ -51,7 +51,6 @@ struct PublicRouteFeature {
 
         // Navigation
         var detail: Detail?
-        var toast: MapToast?
     }
 
     @CasePathable
@@ -66,10 +65,10 @@ struct PublicRouteFeature {
         case locationReceived(VoidAppResult)
         case userLocationReceived(Coordinate)
         case userLocationFailed(String)
+        case toastRequested(MapToast)
         case replayTapped
         case replayEnded
         case didSeek(Double)
-        case toastDismissed
     }
 
     @Dependency(\.mapLocationProvider) var mapLocationProvider
@@ -103,24 +102,22 @@ struct PublicRouteFeature {
                 state.$mapRegion.withLock { $0 = makeRegion(state.points.map(\.coordinate)) }
                 return .none
             case .routeReceived(.failure(let error)):
-                state.toast = .error(error, title: "ルートを取得できませんでした")
-                return .none
+                return .send(.toastRequested(.error(error, title: "ルートを取得できませんでした")))
             case .locationReceived(.success):
                 if let coordinate = state.float?.floatLocation.coordinate {
                     state.$mapRegion.withLock{ $0 = makeRegion(origin: coordinate, spanDelta: spanDelta) }
+                    return .none
                 } else {
-                    state.toast = .error("屋台位置を表示できませんでした。", title: "屋台位置の表示に失敗しました")
+                    return .send(.toastRequested(.error("屋台位置を表示できませんでした。", title: "屋台位置の表示に失敗しました")))
                 }
-                return .none
             case .locationReceived(.failure(let error)):
                 if case .be(.notFound) = error {
-                    state.toast = .notice("現在、屋台位置は配信されていません。")
+                    return .send(.toastRequested(.notice("現在、屋台位置は配信されていません。")))
                 } else if case .be(.forbidden) = error {
-                    state.toast = .notice("現在、屋台位置は配信されていません。")
+                    return .send(.toastRequested(.notice("現在、屋台位置は配信されていません。")))
                 } else {
-                    state.toast = .error(error, title: "屋台位置を取得できませんでした")
+                    return .send(.toastRequested(.error(error, title: "屋台位置を取得できませんでした")))
                 }
-                return .none
             case .replayTapped:
                 if state.replay.isRunning {
                     state.replay = .stop
@@ -144,7 +141,8 @@ struct PublicRouteFeature {
                     }
                 }
             case .userLocationFailed(let message):
-                state.toast = .error(message, title: "現在地を取得できませんでした")
+                return .send(.toastRequested(.error(message, title: "現在地を取得できませんでした")))
+            case .toastRequested:
                 return .none
             case .didSeek(let value):
                 if state.replay.isRunning {
@@ -153,9 +151,6 @@ struct PublicRouteFeature {
                 return .none
             case .replayEnded:
                 state.replay = .stop
-                return .none
-            case .toastDismissed:
-                state.toast = nil
                 return .none
             }
         }

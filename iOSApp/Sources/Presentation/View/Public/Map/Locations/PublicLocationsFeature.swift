@@ -20,7 +20,6 @@ struct PublicLocationsFeature {
         
         @Shared var mapRegion: MKCoordinateRegion
         var detail: FloatEntry?
-        var toast: MapToast?
     }
     
     @CasePathable
@@ -31,9 +30,9 @@ struct PublicLocationsFeature {
         case userFocusTapped
         case userLocationReceived(Coordinate)
         case userLocationFailed(String)
+        case toastRequested(MapToast)
         case reloadTapped
         case reloadReceived(VoidAppResult)
-        case toastDismissed
     }
     
     @Dependency(\.mapLocationProvider) var mapLocationProvider
@@ -71,13 +70,10 @@ struct PublicLocationsFeature {
                     }
                 }
             case .reloadReceived(.failure(let error)):
-                state.toast = .error(error, title: "現在地一覧を更新できませんでした")
-                return .none
+                return .send(.toastRequested(.error(error, title: "現在地一覧を更新できませんでした")))
             case .userLocationFailed(let message):
-                state.toast = .error(message, title: "現在地を取得できませんでした")
-                return .none
-            case .toastDismissed:
-                state.toast = nil
+                return .send(.toastRequested(.error(message, title: "現在地を取得できませんでした")))
+            case .toastRequested:
                 return .none
             default:
                 return .none

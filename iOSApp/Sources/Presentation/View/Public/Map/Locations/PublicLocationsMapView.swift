@@ -10,6 +10,8 @@ import ComposableArchitecture
 
 struct PublicLocationsMapView: View {
     @Perception.Bindable var store: StoreOf<PublicLocationsFeature>
+    let toast: MapToast?
+    let onDismissToast: () -> Void
     @Environment(\.isLiquidGlassDisabled) var isLiquidGlassDisabled
     @Namespace private var namespace
     
@@ -19,9 +21,9 @@ struct PublicLocationsMapView: View {
             ZStack(alignment: .top) {
                 MapView(style: .public, floats: store.floats, region: $mapRegion, floatTapped: { store.send(.floatTapped($0)) })
 
-                if let toast = store.toast {
+                if let toast {
                     MapToastView(toast: toast) {
-                        store.send(.toastDismissed)
+                        onDismissToast()
                     }
                     .padding(.top, 16)
                 }

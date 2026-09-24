@@ -35,7 +35,7 @@ struct MapToastView: View {
             VStack(alignment: .leading, spacing: 4) {
                 Text(toast.title)
                     .font(.headline.weight(.bold))
-                    .frame(maxWidth: .infinity, alignment: .trailing)
+                    .frame(maxWidth: .infinity, alignment: .leading)
 
                 Text(toast.message)
                     .font(.body)
@@ -80,12 +80,10 @@ private struct MapToastSurface: ViewModifier {
     func body(content: Content) -> some View {
         if #available(iOS 26.0, *), !isLiquidGlassDisabled {
             content
-                .glassEffect(.regular)
-                .clipShape(.rect(cornerRadius: 16))
+                .glassEffect(.regular, in: .rect(cornerRadius: 16))
         } else {
             content
                 .background(.ultraThinMaterial, in: .rect(cornerRadius: 16))
-                .clipShape(.rect(cornerRadius: 16))
         }
     }
 }
