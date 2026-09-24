@@ -108,16 +108,10 @@ struct PublicRouteFeature {
                     state.$mapRegion.withLock{ $0 = makeRegion(origin: coordinate, spanDelta: spanDelta) }
                     return .none
                 } else {
-                    return .send(.toastRequested(.error("屋台位置を表示できませんでした。", title: "屋台位置の表示に失敗しました")))
-                }
-            case .locationReceived(.failure(let error)):
-                if case .be(.notFound) = error {
                     return .send(.toastRequested(.notice("現在、屋台位置は配信されていません。")))
-                } else if case .be(.forbidden) = error {
-                    return .send(.toastRequested(.notice("現在、屋台位置は配信されていません。")))
-                } else {
-                    return .send(.toastRequested(.error(error, title: "屋台位置を取得できませんでした")))
                 }
+            case .locationReceived(.failure):
+                return .send(.toastRequested(.notice("現在、屋台位置は配信されていません。")))
             case .replayTapped:
                 if state.replay.isRunning {
                     state.replay = .stop
