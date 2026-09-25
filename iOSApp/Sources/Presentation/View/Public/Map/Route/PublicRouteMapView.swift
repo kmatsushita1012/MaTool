@@ -119,10 +119,7 @@ private struct RoutePeriodMenu: View {
             menu
                 .background(.ultraThinMaterial, in: .rect(cornerRadius: cornerRadius))
                 .buttonStyle(.plain)
-                .overlay {
-                    RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-                        .strokeBorder(.secondary, lineWidth: 1)
-                }
+                .shadow(radius: 8)
         }
     }
 
