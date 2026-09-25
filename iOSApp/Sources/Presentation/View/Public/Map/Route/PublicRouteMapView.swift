@@ -107,6 +107,7 @@ private struct RoutePeriodMenu: View {
     let selected: RouteEntry?
     let routes: [RouteEntry]
     let onSelected: (RouteEntry) -> Void
+    private let cornerRadius: CGFloat = 8
 
     @Environment(\.isLiquidGlassDisabled) private var isLiquidGlassDisabled
 
@@ -116,7 +117,12 @@ private struct RoutePeriodMenu: View {
                 .buttonStyle(.glass)
         } else {
             menu
-                .background(.ultraThinMaterial, in: .rect(cornerRadius: 8))
+                .background(.ultraThinMaterial, in: .rect(cornerRadius: cornerRadius))
+                .buttonStyle(.plain)
+                .overlay {
+                    RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                        .strokeBorder(.secondary, lineWidth: 1)
+                }
         }
     }
 
