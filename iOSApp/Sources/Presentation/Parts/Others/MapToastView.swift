@@ -41,7 +41,7 @@ struct MapToastView: View {
                     .font(.body)
                     .fixedSize(horizontal: false, vertical: true)
             }
-
+            
             dismissButton
         }
         .padding(16)
@@ -52,22 +52,19 @@ struct MapToastView: View {
 
     @ViewBuilder
     private var dismissButton: some View {
-        if #available(iOS 17.0, *) {
+        if #available(iOS 26, *) {
             Button(action: onDismiss) {
                 Image(systemName: "xmark")
-                    .font(.body.weight(.semibold))
-                    .frame(width: 28, height: 28)
             }
-            .buttonStyle(.plain)
+            .buttonStyle(.glass)
             .buttonBorderShape(.circle)
             .accessibilityLabel("閉じる")
         } else {
             Button(action: onDismiss) {
                 Image(systemName: "xmark")
-                    .font(.body.weight(.semibold))
-                    .frame(width: 28, height: 28)
             }
-            .buttonStyle(.plain)
+            .buttonStyle(.bordered)
+            .tint(.secondary)
             .clipShape(Circle())
             .accessibilityLabel("閉じる")
         }
@@ -83,8 +80,12 @@ private struct MapToastSurface: ViewModifier {
                 .glassEffect(.regular, in: .rect(cornerRadius: 16))
         } else {
             content
-                .background(.ultraThinMaterial, in: .rect(cornerRadius: 16))
-                .shadow(radius: 8)
+                .background {
+                        RoundedRectangle(cornerRadius: 16)
+                            .fill(.ultraThinMaterial)
+                            .shadow(radius: 2)
+
+                    }
         }
     }
 }

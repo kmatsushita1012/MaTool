@@ -107,7 +107,6 @@ private struct RoutePeriodMenu: View {
     let selected: RouteEntry?
     let routes: [RouteEntry]
     let onSelected: (RouteEntry) -> Void
-    private let cornerRadius: CGFloat = 8
 
     @Environment(\.isLiquidGlassDisabled) private var isLiquidGlassDisabled
 
@@ -117,34 +116,48 @@ private struct RoutePeriodMenu: View {
                 .buttonStyle(.glass)
         } else {
             menu
-                .background(.ultraThinMaterial, in: .rect(cornerRadius: cornerRadius))
+                .background {
+                    RoundedRectangle(cornerRadius: 16)
+                        .fill(.ultraThinMaterial)
+                        .shadow(radius: 2)
+                }
                 .buttonStyle(.plain)
-                .shadow(radius: 8)
         }
     }
 
     private var menu: some View {
         Menu {
-            ForEach(routes) { entry in
+            ForEach(routes.sorted()) { entry in
                 Button(entry.text) {
                     onSelected(entry)
                 }
             }
         } label: {
-            HStack(spacing: 12) {
-                Text(selected?.text ?? "期間")
-                    .font(.title3)
-                    .lineLimit(1)
-                Spacer()
-                Image(systemName: "chevron.down")
-                    .foregroundStyle(.secondary)
+            if #available(iOS 26.0, *), !isLiquidGlassDisabled {
+                menuLabel
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 4)
+                    .contentShape(.rect)
+            } else {
+                menuLabel
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 8)
+                    .contentShape(.rect)
             }
-            .foregroundStyle(.primary)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(.horizontal, 16)
-            .padding(.vertical, 8)
-            .contentShape(.rect)
         }
+    }
+    
+    private var menuLabel: some View {
+        HStack {
+            Text(selected?.text ?? "期間")
+                .font(.title3)
+                .lineLimit(1)
+            Spacer()
+            Image(systemName: "chevron.down")
+                .foregroundStyle(.secondary)
+        }
+        .foregroundStyle(.primary)
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 }
     
