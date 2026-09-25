@@ -69,7 +69,7 @@ struct PublicRouteFeature {
         case userFocusTapped
         case floatFocusTapped
         case routeReceived(VoidAppResult)
-        case locationReceived(VoidAppResult)
+        case floatLocationReceived(VoidAppResult)
         case userLocationReceived(Coordinate)
         case userLocationFailed(String)
         case toastDismissed
@@ -113,7 +113,7 @@ struct PublicRouteFeature {
                 state.detail = .location(float)
                 return .none
             case .floatFocusTapped:
-                return .task(Action.locationReceived) { [state] in
+                return .task(Action.floatLocationReceived) { [state] in
                     try await locationDataFetcher.fetch(districtId: state.district.id)
                 }
             case .routeReceived(.success):
@@ -123,17 +123,15 @@ struct PublicRouteFeature {
             case .routeReceived(.failure(let error)):
                 state.$toast.withLock { $0 = .error(error, title: "ルートを取得できませんでした") }
                 return toastDismissEffect()
-            case .locationReceived(.success):
+            case .floatLocationReceived(.success):
                 if let coordinate = state.float?.floatLocation.coordinate {
                     state.$mapRegion.withLock{ $0 = makeRegion(origin: coordinate, spanDelta: spanDelta) }
                     return .none
                 }
-                guard let toast = state.currentLocationToast(now: now) else { return .none }
-                state.$toast.withLock { $0 = toast }
+                state.$toast.withLock { $0 = state.locationUnavailableToast }
                 return toastDismissEffect()
-            case .locationReceived(.failure):
-                guard let toast = state.currentLocationToast(now: now) else { return .none }
-                state.$toast.withLock { $0 = toast }
+            case .floatLocationReceived(.failure):
+                state.$toast.withLock { $0 = state.locationUnavailableToast }
                 return toastDismissEffect()
             case .replayTapped:
                 if state.replay.isRunning {
@@ -252,7 +250,11 @@ extension PublicRouteFeature.State {
         guard float == nil, periods.contains(where: { $0.contains(now) }) else {
             return nil
         }
-        return .notice("\(district.name)は位置配信を停止しています")
+        return locationUnavailableToast
+    }
+
+    fileprivate var locationUnavailableToast: MapToast {
+        .notice("\(district.name)は位置配信を停止しています")
     }
 }
 
