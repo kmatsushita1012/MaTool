@@ -12,6 +12,10 @@ import SQLiteData
 
 @Reducer
 struct PublicLocationsFeature {
+    private enum CancelID {
+        case toastDismissal
+    }
+
     @ObservableState
     struct State:Equatable {
 
@@ -25,6 +29,7 @@ struct PublicLocationsFeature {
     
     @CasePathable
     enum Action: Equatable, BindableAction {
+        case onAppear
         case binding(BindingAction<State>)
         case floatTapped(FloatEntry)
         case floatFocusSelected(FloatEntry)
@@ -37,12 +42,16 @@ struct PublicLocationsFeature {
     }
     
     @Dependency(\.mapLocationProvider) var mapLocationProvider
+    @Dependency(\.continuousClock) var clock
     @Dependency(LocationDataFetcherKey.self) var dataFetcher
     
     var body: some ReducerOf<PublicLocationsFeature> {
         BindingReducer()
         Reduce{ state, action in
             switch action {
+            case .onAppear:
+                guard state.toast != nil else { return .none }
+                return toastDismissEffect()
             case .binding(_):
                 return .none
             case .floatTapped(let entry):
@@ -72,17 +81,25 @@ struct PublicLocationsFeature {
                 }
             case .reloadReceived(.failure(let error)):
                 state.$toast.withLock { $0 = .error(error, title: "現在地一覧を更新できませんでした") }
-                return .none
+                return toastDismissEffect()
             case .userLocationFailed(let message):
                 state.$toast.withLock { $0 = .error(message, title: "現在地を取得できませんでした") }
-                return .none
+                return toastDismissEffect()
             case .toastDismissed:
                 state.$toast.withLock { $0 = nil }
-                return .none
+                return .cancel(id: CancelID.toastDismissal)
             default:
                 return .none
             }
         }
+    }
+
+    private func toastDismissEffect() -> Effect<Action> {
+        .run { [clock] send in
+            try await clock.sleep(for: .seconds(3))
+            await send(.toastDismissed)
+        }
+        .cancellable(id: CancelID.toastDismissal, cancelInFlight: true)
     }
 }
 

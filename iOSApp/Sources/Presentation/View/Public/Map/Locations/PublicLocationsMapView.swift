@@ -24,15 +24,20 @@ struct PublicLocationsMapView: View {
                         store.send(.toastDismissed)
                     }
                     .padding(.top, 16)
+                    .transition(.opacity)
                 }
             }
             .ignoresSafeArea(edges: .bottom)
+            .animation(.easeInOut(duration: 0.2), value: store.toast)
             .safeAreaInset(edge: .bottom){
                 if isLiquidGlassDisabled {
                     toolbarLayer
                 } else if #available(iOS 26.0, *) {
                     toolbarLayerAfterLiquidGlass
                 }
+            }
+            .onAppear {
+                store.send(.onAppear)
             }
             .sheet(item: $store.detail){ location in
                 LocationView(location)

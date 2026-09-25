@@ -14,6 +14,10 @@ import Shared
 @Reducer
 struct PublicRouteFeature {
 
+    private enum CancelID {
+        case toastDismissal
+    }
+
     @CasePathable
     enum Detail: Equatable {
         case point(PointEntry)
@@ -37,6 +41,7 @@ struct PublicRouteFeature {
         
         @FetchOne var district: District
         @FetchAll var routes: [RouteEntry]
+        @FetchAll var periods: [Period]
 
         var selected: RouteEntry? {
             didSet {
@@ -56,6 +61,7 @@ struct PublicRouteFeature {
 
     @CasePathable
     enum Action: Equatable, BindableAction {
+        case onAppear
         case binding(BindingAction<State>)
         case selected(RouteEntry)
         case pointTapped(PointEntry)
@@ -73,6 +79,8 @@ struct PublicRouteFeature {
     }
 
     @Dependency(\.mapLocationProvider) var mapLocationProvider
+    @Dependency(\.continuousClock) var clock
+    @Dependency(\.date.now) var now
     @Dependency(RouteDataFetcherKey.self) var dataFetcher
     @Dependency(LocationDataFetcherKey.self) var locationDataFetcher
 
@@ -80,14 +88,23 @@ struct PublicRouteFeature {
         BindingReducer()
         Reduce { state, action in
             switch action {
+            case .onAppear:
+                if state.toast == nil, let toast = state.initialToast(now: now) {
+                    state.$toast.withLock { $0 = toast }
+                }
+                guard state.toast != nil else { return .none }
+                return toastDismissEffect()
             case .binding:
                 return .none
             case .selected(let entry):
                 state.$toast.withLock { $0 = nil }
                 state.selected = entry
-                return .task(Action.routeReceived) {
-                    try await dataFetcher.fetch(routeID: entry.route.id)
-                }
+                return .merge(
+                    .cancel(id: CancelID.toastDismissal),
+                    .task(Action.routeReceived) {
+                        try await dataFetcher.fetch(routeID: entry.route.id)
+                    }
+                )
             case .pointTapped(let value):
                 state.detail = .point(value)
                 return .none
@@ -105,18 +122,19 @@ struct PublicRouteFeature {
                 return .none
             case .routeReceived(.failure(let error)):
                 state.$toast.withLock { $0 = .error(error, title: "ルートを取得できませんでした") }
-                return .none
+                return toastDismissEffect()
             case .locationReceived(.success):
                 if let coordinate = state.float?.floatLocation.coordinate {
                     state.$mapRegion.withLock{ $0 = makeRegion(origin: coordinate, spanDelta: spanDelta) }
                     return .none
-                } else {
-                    state.$toast.withLock { $0 = .notice("現在、屋台位置は配信されていません。") }
-                    return .none
                 }
+                guard let toast = state.currentLocationToast(now: now) else { return .none }
+                state.$toast.withLock { $0 = toast }
+                return toastDismissEffect()
             case .locationReceived(.failure):
-                state.$toast.withLock { $0 = .notice("現在、屋台位置は配信されていません。") }
-                return .none
+                guard let toast = state.currentLocationToast(now: now) else { return .none }
+                state.$toast.withLock { $0 = toast }
+                return toastDismissEffect()
             case .replayTapped:
                 if state.replay.isRunning {
                     state.replay = .stop
@@ -141,10 +159,10 @@ struct PublicRouteFeature {
                 }
             case .userLocationFailed(let message):
                 state.$toast.withLock { $0 = .error(message, title: "現在地を取得できませんでした") }
-                return .none
+                return toastDismissEffect()
             case .toastDismissed:
                 state.$toast.withLock { $0 = nil }
-                return .none
+                return .cancel(id: CancelID.toastDismissal)
             case .didSeek(let value):
                 if state.replay.isRunning {
                     state.replay = .seek(value)
@@ -155,6 +173,14 @@ struct PublicRouteFeature {
                 return .none
             }
         }
+    }
+
+    private func toastDismissEffect() -> Effect<Action> {
+        .run { [clock] send in
+            try await clock.sleep(for: .seconds(3))
+            await send(.toastDismissed)
+        }
+        .cancellable(id: CancelID.toastDismissal, cancelInFlight: true)
     }
 }
 
@@ -174,15 +200,21 @@ extension PublicRouteFeature.State {
         self._district = FetchOne(district)
         let routeQuery: FetchAll<RouteEntry> = .init(districtId: district.id, latest: true)
         self._routes = routeQuery
+        let allPeriods = FetchAll<Period>(
+            Period.where { $0.festivalId.eq(district.festivalId) }
+        ).wrappedValue
+        let latestYear = allPeriods.map(\.date.year).max() ?? SimpleDate.now.year
+        self._periods = FetchAll(
+            Period.where {
+                $0.festivalId.eq(district.festivalId) && $0.date.inYear(latestYear)
+            }
+        )
         // 存在しなければ先頭要素で代替
         let selected = routeQuery.wrappedValue.first { $0.route.id == routeId } ?? routeQuery.wrappedValue.first
         self.selected = selected
         self.replay = .initial(selected?.id)
         self._points = FetchAll(routeId: selected?.id)
         self._float = FetchOne(districtId: district.id)
-        if routeQuery.wrappedValue.isEmpty && self.float == nil {
-            self.$toast.withLock { $0 = .notice("現在、配信中の情報はありません。") }
-        }
         let points: [Point] = {
             if let routeId {
                 FetchAll(routeId: routeId).wrappedValue
@@ -207,6 +239,20 @@ extension PublicRouteFeature.State {
 
     var isReplayEnable: Bool {
         selected != nil
+    }
+
+    fileprivate func initialToast(now: Date) -> MapToast? {
+        if routes.isEmpty {
+            return .notice("\(district.name)は経路配信を停止しています")
+        }
+        return currentLocationToast(now: now)
+    }
+
+    fileprivate func currentLocationToast(now: Date) -> MapToast? {
+        guard float == nil, periods.contains(where: { $0.contains(now) }) else {
+            return nil
+        }
+        return .notice("\(district.name)は位置配信を停止しています")
     }
 }
 

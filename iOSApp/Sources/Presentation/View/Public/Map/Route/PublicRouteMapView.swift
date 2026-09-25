@@ -70,7 +70,10 @@ struct PublicRouteMapView: View {
                         .presentationDetents([.fraction(0.3), .medium, .large])
                 }
             }
-            .onAppear{ updateReplay() }
+            .onAppear {
+                store.send(.onAppear)
+                updateReplay()
+            }
             .onChange(of: store.selected) { _ in updateReplay() }
             .onChange(of: store.replay) { _ in updateReplay() }
         }
@@ -91,10 +94,12 @@ struct PublicRouteMapView: View {
                 MapToastView(toast: toast) {
                     store.send(.toastDismissed)
                 }
+                .transition(.opacity)
             }
             Spacer()
         }
         .padding(.top, 16)
+        .animation(.easeInOut(duration: 0.2), value: store.toast)
     }
 }
 
