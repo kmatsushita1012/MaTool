@@ -47,6 +47,7 @@ struct PublicRouteFeature {
 
         @FetchOne var float: FloatEntry?
         @Shared var mapRegion: MKCoordinateRegion
+        @Shared var toast: MapToast?
         var replay: Replay
 
         // Navigation
@@ -65,7 +66,7 @@ struct PublicRouteFeature {
         case locationReceived(VoidAppResult)
         case userLocationReceived(Coordinate)
         case userLocationFailed(String)
-        case toastRequested(MapToast)
+        case toastDismissed
         case replayTapped
         case replayEnded
         case didSeek(Double)
@@ -82,6 +83,7 @@ struct PublicRouteFeature {
             case .binding:
                 return .none
             case .selected(let entry):
+                state.$toast.withLock { $0 = nil }
                 state.selected = entry
                 return .task(Action.routeReceived) {
                     try await dataFetcher.fetch(routeID: entry.route.id)
@@ -102,16 +104,19 @@ struct PublicRouteFeature {
                 state.$mapRegion.withLock { $0 = makeRegion(state.points.map(\.coordinate)) }
                 return .none
             case .routeReceived(.failure(let error)):
-                return .send(.toastRequested(.error(error, title: "ルートを取得できませんでした")))
+                state.$toast.withLock { $0 = .error(error, title: "ルートを取得できませんでした") }
+                return .none
             case .locationReceived(.success):
                 if let coordinate = state.float?.floatLocation.coordinate {
                     state.$mapRegion.withLock{ $0 = makeRegion(origin: coordinate, spanDelta: spanDelta) }
                     return .none
                 } else {
-                    return .send(.toastRequested(.notice("現在、屋台位置は配信されていません。")))
+                    state.$toast.withLock { $0 = .notice("現在、屋台位置は配信されていません。") }
+                    return .none
                 }
             case .locationReceived(.failure):
-                return .send(.toastRequested(.notice("現在、屋台位置は配信されていません。")))
+                state.$toast.withLock { $0 = .notice("現在、屋台位置は配信されていません。") }
+                return .none
             case .replayTapped:
                 if state.replay.isRunning {
                     state.replay = .stop
@@ -135,8 +140,10 @@ struct PublicRouteFeature {
                     }
                 }
             case .userLocationFailed(let message):
-                return .send(.toastRequested(.error(message, title: "現在地を取得できませんでした")))
-            case .toastRequested:
+                state.$toast.withLock { $0 = .error(message, title: "現在地を取得できませんでした") }
+                return .none
+            case .toastDismissed:
+                state.$toast.withLock { $0 = nil }
                 return .none
             case .didSeek(let value):
                 if state.replay.isRunning {
@@ -159,9 +166,11 @@ extension PublicRouteFeature.State {
     init(
         _ district: District,
         routeId: Route.ID?,
-        mapRegion: Shared<MKCoordinateRegion>
+        mapRegion: Shared<MKCoordinateRegion>,
+        toast: Shared<MapToast?>
     ) {
         self._mapRegion = mapRegion
+        self._toast = toast
         self._district = FetchOne(district)
         let routeQuery: FetchAll<RouteEntry> = .init(districtId: district.id, latest: true)
         self._routes = routeQuery
@@ -171,6 +180,9 @@ extension PublicRouteFeature.State {
         self.replay = .initial(selected?.id)
         self._points = FetchAll(routeId: selected?.id)
         self._float = FetchOne(districtId: district.id)
+        if routeQuery.wrappedValue.isEmpty && self.float == nil {
+            self.$toast.withLock { $0 = .notice("現在、配信中の情報はありません。") }
+        }
         let points: [Point] = {
             if let routeId {
                 FetchAll(routeId: routeId).wrappedValue

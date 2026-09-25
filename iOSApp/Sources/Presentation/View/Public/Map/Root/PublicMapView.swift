@@ -17,28 +17,12 @@ struct PublicMapView: View {
             VStack(spacing: 0){
                 picker()
                 if let routeStore = store.scope(state: \.destination?.route, action: \.destination.route) {
-                    PublicRouteMapView(
-                        store: routeStore,
-                        toast: store.toast,
-                        onDismissToast: { store.send(.toastDismissed) }
-                    )
+                    PublicRouteMapView(store: routeStore)
                         .id(routeStore.district.id)
                 } else if let locationsStore = store.scope(state: \.destination?.locations, action: \.destination.locations) {
-                    PublicLocationsMapView(
-                        store: locationsStore,
-                        toast: store.toast,
-                        onDismissToast: { store.send(.toastDismissed) }
-                    )
+                    PublicLocationsMapView(store: locationsStore)
                 } else {
-                    ZStack(alignment: .top) {
-                        Spacer()
-                        if let toast = store.toast {
-                            MapToastView(toast: toast) {
-                                store.send(.toastDismissed)
-                            }
-                            .padding(.top, 16)
-                        }
-                    }
+                    Spacer()
                 }
             }
             .loadingOverlay(store.isLoading)

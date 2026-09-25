@@ -19,6 +19,7 @@ struct PublicLocationsFeature {
         @FetchAll var floats: [FloatEntry]
         
         @Shared var mapRegion: MKCoordinateRegion
+        @Shared var toast: MapToast?
         var detail: FloatEntry?
     }
     
@@ -30,7 +31,7 @@ struct PublicLocationsFeature {
         case userFocusTapped
         case userLocationReceived(Coordinate)
         case userLocationFailed(String)
-        case toastRequested(MapToast)
+        case toastDismissed
         case reloadTapped
         case reloadReceived(VoidAppResult)
     }
@@ -70,10 +71,13 @@ struct PublicLocationsFeature {
                     }
                 }
             case .reloadReceived(.failure(let error)):
-                return .send(.toastRequested(.error(error, title: "現在地一覧を更新できませんでした")))
+                state.$toast.withLock { $0 = .error(error, title: "現在地一覧を更新できませんでした") }
+                return .none
             case .userLocationFailed(let message):
-                return .send(.toastRequested(.error(message, title: "現在地を取得できませんでした")))
-            case .toastRequested:
+                state.$toast.withLock { $0 = .error(message, title: "現在地を取得できませんでした") }
+                return .none
+            case .toastDismissed:
+                state.$toast.withLock { $0 = nil }
                 return .none
             default:
                 return .none
@@ -83,12 +87,19 @@ struct PublicLocationsFeature {
 }
 
 extension PublicLocationsFeature.State {
-    init(_ festival: Festival, mapRegion: Shared<MKCoordinateRegion>){
+    init(
+        _ festival: Festival,
+        mapRegion: Shared<MKCoordinateRegion>,
+        toast: Shared<MapToast?>
+    ){
         self.festival = festival
         self._floats = FetchAll(festivalId: festival.id)
         self._mapRegion = mapRegion
+        self._toast = toast
         if !self.floats.isEmpty {
             self.$mapRegion.withLock{ $0 = makeRegion(locations: floats.map(keyPath: \.floatLocation), origin: festival.base) }
+        } else {
+            self.$toast.withLock { $0 = .notice("現在、配信中の情報はありません。") }
         }
     }
 }

@@ -10,19 +10,11 @@ import ComposableArchitecture
 
 struct PublicRouteMapView: View {
     @Perception.Bindable var store: StoreOf<PublicRouteFeature>
-    let toast: MapToast?
-    let onDismissToast: () -> Void
     @StateObject var replayController: ReplayController
     @Namespace private var namespace
     
-    init(
-        store: StoreOf<PublicRouteFeature>,
-        toast: MapToast?,
-        onDismissToast: @escaping () -> Void
-    ) {
+    init(store: StoreOf<PublicRouteFeature>) {
         self.store = store
-        self.toast = toast
-        self.onDismissToast = onDismissToast
         _replayController = StateObject(
             wrappedValue: ReplayController(
                 name: store.district.name,
@@ -95,9 +87,9 @@ struct PublicRouteMapView: View {
                 )
                 .padding(.horizontal, 16)
             }
-            if let toast {
+            if let toast = store.toast {
                 MapToastView(toast: toast) {
-                    onDismissToast()
+                    store.send(.toastDismissed)
                 }
             }
             Spacer()

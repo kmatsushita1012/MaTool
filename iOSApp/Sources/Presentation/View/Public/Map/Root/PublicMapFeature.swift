@@ -38,7 +38,7 @@ struct PublicMapFeature {
         var isDismissed: Bool = false
         @Presents var destination: Destination.State?
         @Shared var mapRegion: MKCoordinateRegion
-        var toast: MapToast?
+        @Shared var toast: MapToast?
     }
     
     @CasePathable
@@ -51,7 +51,6 @@ struct PublicMapFeature {
         case districtContentEvaluated(District, Bool)
         case districtLaunchReceived(AppResult<DistrictLaunchResult>)
         case errorCaught(AppError)
-        case toastDismissed
         case destination(PresentationAction<Destination.Action>)
     }
     
@@ -64,13 +63,6 @@ struct PublicMapFeature {
         Reduce{ state, action in
             switch action {
             case .onAppear:
-                state.toast = nil
-                if state.destination?.route?.routes.isEmpty ?? false,
-                    state.destination?.route?.float == nil {
-                    state.toast = .notice("現在、配信中の情報はありません。")
-                } else if state.destination?.locations?.floats.isEmpty ?? false {
-                    state.toast = .notice("現在、配信中の情報はありません。")
-                }
                 return .run{ send in
                     await mapLocationProvider.requestPermission()
                     await mapLocationProvider.startTracking()
@@ -86,14 +78,15 @@ struct PublicMapFeature {
                     return .none
                 }
             case .contentSelected(let value):
-                state.toast = nil
+                state.$toast.withLock { $0 = nil }
                 state.selectedContent = value
                 switch value {
                 case .locations(let festival):
                     state.destination = .locations(
                         PublicLocationsFeature.State(
                             festival,
-                            mapRegion: state.$mapRegion
+                            mapRegion: state.$mapRegion,
+                            toast: state.$toast
                         )
                     )
                     return .none
@@ -109,11 +102,10 @@ struct PublicMapFeature {
                 return .send(.routePrepared(result.district, result.routeId))
             case .districtLaunchReceived(.failure(let error)):
                 state.isLoading = false
-                state.toast = .error(error, title: "地区情報を取得できませんでした")
+                state.$toast.withLock { $0 = .error(error, title: "地区情報を取得できませんでした") }
                 return .none
             case .routePrepared(let district, let routeId):
                 state.isLoading = false
-                state.toast = nil
                 if let routeId,
                    let route = FetchOne(Route.find(routeId)).wrappedValue {
                     state.currentPeriodId = route.periodId
@@ -122,15 +114,13 @@ struct PublicMapFeature {
                     PublicRouteFeature.State(
                         district,
                         routeId: routeId,
-                        mapRegion: state.$mapRegion
+                        mapRegion: state.$mapRegion,
+                        toast: state.$toast
                     )
                 )
                 let hasDisplayableContent = state.destination?.route?.hasDisplayableContent ?? false
                 return .send(.districtContentEvaluated(district, hasDisplayableContent))
             case .districtContentEvaluated(let district, let hasDisplayableContent):
-                if !hasDisplayableContent {
-                    state.toast = .notice("現在、配信中の情報はありません。")
-                }
                 return .run { [userRole = state.userRole, districtId = district.id] _ in
                     await publicMapAdUsecase.handleDistrictSelectionResult(
                         userRole: userRole,
@@ -139,10 +129,7 @@ struct PublicMapFeature {
                     )
                 }
             case .errorCaught(let error):
-                state.toast = .error(error, title: "地図を表示できませんでした")
-                return .none
-            case .toastDismissed:
-                state.toast = nil
+                state.$toast.withLock { $0 = .error(error, title: "地図を表示できませんでした") }
                 return .none
             case .destination:
                 return destinationAction(state: &state, action: action)
@@ -155,13 +142,6 @@ struct PublicMapFeature {
         switch action {
         case .destination(.presented(.route(.selected(let entry)))):
             state.currentPeriodId = entry.period.id
-            state.toast = nil
-            return .none
-        case .destination(.presented(.route(.toastRequested(let toast)))):
-            state.toast = toast
-            return .none
-        case .destination(.presented(.locations(.toastRequested(let toast)))):
-            state.toast = toast
             return .none
         default:
             return .none
@@ -236,6 +216,7 @@ extension PublicMapFeature.State {
         let selected = contents[1]
         self.contents = contents
         self.selectedContent = selected
+        self._toast = Shared(value: nil)
         if let routeId,
            let route = FetchOne(Route.find(routeId)).wrappedValue {
             self.currentPeriodId = route.periodId
@@ -248,7 +229,8 @@ extension PublicMapFeature.State {
             PublicRouteFeature.State(
                 district,
                 routeId: routeId,
-                mapRegion: $mapRegion
+                mapRegion: $mapRegion,
+                toast: $toast
             )
         )
     }
@@ -265,12 +247,14 @@ extension PublicMapFeature.State {
         self.contents = contents
         self.selectedContent = selected
         self.currentPeriodId = nil
+        self._toast = Shared(value: nil)
         
         self._mapRegion = Shared(value: makeRegion(origin: festival.base, spanDelta: spanDelta))
         self.destination = .locations(
             PublicLocationsFeature.State(
                 festival,
-                mapRegion: $mapRegion
+                mapRegion: $mapRegion,
+                toast: $toast
             )
         )
     }
