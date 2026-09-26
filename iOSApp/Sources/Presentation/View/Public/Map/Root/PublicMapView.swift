@@ -19,8 +19,8 @@ struct PublicMapView: View {
                 if let routeStore = store.scope(state: \.destination?.route, action: \.destination.route) {
                     PublicRouteMapView(store: routeStore)
                         .id(routeStore.district.id)
-                } else if let store = store.scope(state: \.destination?.locations, action: \.destination.locations) {
-                    PublicLocationsMapView(store: store)
+                } else if let locationsStore = store.scope(state: \.destination?.locations, action: \.destination.locations) {
+                    PublicLocationsMapView(store: locationsStore)
                 } else {
                     Spacer()
                 }
@@ -41,7 +41,6 @@ struct PublicMapView: View {
                         .foregroundStyle(.black)
                 }
             }
-            .alert($store.scope(state: \.alert, action: \.alert))
             .dismissible(backButton: false)
             .onAppear{
                 store.send(.onAppear)
