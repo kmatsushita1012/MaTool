@@ -12,6 +12,40 @@ import Testing
 @testable import iOSApp
 
 struct SceneUsecaseLaunchTests {
+    @Test("保存済みの祭典と参加町を取得する")
+    func 保存済みの祭典と参加町を取得する() async {
+        let usecase = makeUsecase(
+            userDefaults: InMemoryUserDefaultsManager(
+                defaultFestivalId: "festival-a",
+                defaultDistrictId: "district-a"
+            ),
+            festivalDataFetcher: FestivalDataFetcherMock(),
+            sceneDataFetcher: SceneDataFetcherMock()
+        )
+
+        let selection = await usecase.currentSelection()
+
+        #expect(selection == SceneSelection(festivalId: "festival-a", districtId: "district-a"))
+    }
+
+    @Test("参加町を未設定にすると保存済みの町を消す")
+    func 参加町を未設定にすると保存済みの町を消す() async throws {
+        let userDefaults = InMemoryUserDefaultsManager(
+            defaultFestivalId: "festival-a",
+            defaultDistrictId: "district-a"
+        )
+        let usecase = makeUsecase(
+            userDefaults: userDefaults,
+            festivalDataFetcher: FestivalDataFetcherMock(),
+            sceneDataFetcher: SceneDataFetcherMock()
+        )
+
+        let routeId = try await usecase.select(districtId: nil)
+
+        #expect(routeId == nil)
+        #expect(userDefaults.defaultDistrictId == nil)
+    }
+
     @Test("起動失敗が一時的なエラーなら保存済み選択を消さない")
     func 起動失敗が一時的なエラーなら保存済み選択を消さない() async {
         let userDefaults = InMemoryUserDefaultsManager(
@@ -103,10 +137,20 @@ private func launch(_ usecase: SceneUsecase) async -> (LaunchState, StatusCheckR
 private final class InMemoryUserDefaultsManager: UserDefalutsManagerProtocol, @unchecked Sendable {
     var defaultFestivalId: String?
     var defaultDistrictId: String?
+    var hasRequestedAlwaysLocationPermission: Bool
 
-    init(defaultFestivalId: String?, defaultDistrictId: String?) {
+    init(
+        defaultFestivalId: String?,
+        defaultDistrictId: String?,
+        hasRequestedAlwaysLocationPermission: Bool = false
+    ) {
         self.defaultFestivalId = defaultFestivalId
         self.defaultDistrictId = defaultDistrictId
+        self.hasRequestedAlwaysLocationPermission = hasRequestedAlwaysLocationPermission
+    }
+
+    func setHasRequestedAlwaysLocationPermission(_ value: Bool) {
+        hasRequestedAlwaysLocationPermission = value
     }
 }
 

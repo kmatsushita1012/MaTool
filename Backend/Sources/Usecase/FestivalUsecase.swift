@@ -54,11 +54,13 @@ struct FestivalUsecase: FestivalUsecaseProtocol {
         
         let festival = try await repository.put(pack.festival)
         
-        let oldCheckpoints = try await checkpointRepository.query(by: pack.festival.id)
-        let checkpoints = try await oldCheckpoints.update(with: pack.checkpoints, repository: checkpointRepository)
-        
-        let oldHazardSection = try await hazardSectionRepository.query(by: pack.festival.id)
-        let hazardSections = try await oldHazardSection.update(with: pack.hazardSections, repository: hazardSectionRepository)
+        async let oldCheckpointsTask = checkpointRepository.query(by: pack.festival.id)
+        async let oldHazardSectionsTask = hazardSectionRepository.query(by: pack.festival.id)
+        let (oldCheckpoints, oldHazardSections) = try await (oldCheckpointsTask, oldHazardSectionsTask)
+
+        async let checkpointsTask = oldCheckpoints.update(with: pack.checkpoints, repository: checkpointRepository)
+        async let hazardSectionsTask = oldHazardSections.update(with: pack.hazardSections, repository: hazardSectionRepository)
+        let (checkpoints, hazardSections) = try await (checkpointsTask, hazardSectionsTask)
         
         return .init(festival: festival, checkpoints: checkpoints, hazardSections: hazardSections)
     }

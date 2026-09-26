@@ -38,7 +38,7 @@ struct PublicMapFeature {
         var isDismissed: Bool = false
         @Presents var destination: Destination.State?
         @Shared var mapRegion: MKCoordinateRegion
-        @Presents var alert: AlertFeature.State?
+        @Shared var toast: MapToast?
     }
     
     @CasePathable
@@ -52,7 +52,6 @@ struct PublicMapFeature {
         case districtLaunchReceived(AppResult<DistrictLaunchResult>)
         case errorCaught(AppError)
         case destination(PresentationAction<Destination.Action>)
-        case alert(PresentationAction<AlertFeature.Action>)
     }
     
     @Dependency(\.mapLocationProvider) var mapLocationProvider
@@ -64,12 +63,6 @@ struct PublicMapFeature {
         Reduce{ state, action in
             switch action {
             case .onAppear:
-                if state.destination?.route?.routes.isEmpty ?? false,
-                    state.destination?.route?.float == nil {
-                    state.alert = AlertFeature.notice("配信停止中です。")
-                } else if state.destination?.locations?.floats.isEmpty ?? false {
-                    state.alert = AlertFeature.notice("配信停止中です。")
-                }
                 return .run{ send in
                     await mapLocationProvider.requestPermission()
                     await mapLocationProvider.startTracking()
@@ -85,27 +78,19 @@ struct PublicMapFeature {
                     return .none
                 }
             case .contentSelected(let value):
-                let wasLocations: Bool = {
-                    if case .locations = state.selectedContent {
-                        return true
-                    }
-                    return false
-                }()
+                state.$toast.withLock { $0 = nil }
                 state.selectedContent = value
                 switch value {
                 case .locations(let festival):
-                    state.currentPeriodId = nil
                     state.destination = .locations(
                         PublicLocationsFeature.State(
                             festival,
-                            mapRegion: state.$mapRegion
+                            mapRegion: state.$mapRegion,
+                            toast: state.$toast
                         )
                     )
                     return .none
                 case .route(let district):
-                    if wasLocations {
-                        state.currentPeriodId = nil
-                    }
                     state.isLoading = true
                     return districtLaunchEffect(
                         userRole: state.userRole,
@@ -117,29 +102,25 @@ struct PublicMapFeature {
                 return .send(.routePrepared(result.district, result.routeId))
             case .districtLaunchReceived(.failure(let error)):
                 state.isLoading = false
-                state.alert = .error(error)
+                state.$toast.withLock { $0 = .error(error, title: "地区情報を取得できませんでした") }
                 return .none
             case .routePrepared(let district, let routeId):
                 state.isLoading = false
                 if let routeId,
                    let route = FetchOne(Route.find(routeId)).wrappedValue {
                     state.currentPeriodId = route.periodId
-                } else {
-                    state.currentPeriodId = nil
                 }
                 state.destination = .route(
                     PublicRouteFeature.State(
                         district,
                         routeId: routeId,
-                        mapRegion: state.$mapRegion
+                        mapRegion: state.$mapRegion,
+                        toast: state.$toast
                     )
                 )
                 let hasDisplayableContent = state.destination?.route?.hasDisplayableContent ?? false
                 return .send(.districtContentEvaluated(district, hasDisplayableContent))
             case .districtContentEvaluated(let district, let hasDisplayableContent):
-                if !hasDisplayableContent {
-                    state.alert = AlertFeature.notice("配信停止中です。")
-                }
                 return .run { [userRole = state.userRole, districtId = district.id] _ in
                     await publicMapAdUsecase.handleDistrictSelectionResult(
                         userRole: userRole,
@@ -148,13 +129,10 @@ struct PublicMapFeature {
                     )
                 }
             case .errorCaught(let error):
-                state.alert = .error(error)
+                state.$toast.withLock { $0 = .error(error, title: "地図を表示できませんでした") }
                 return .none
             case .destination:
                 return destinationAction(state: &state, action: action)
-            case .alert:
-                state.alert = nil
-                return .none
             }
         }
         .ifLet(\.$destination, action: \.destination)
@@ -238,6 +216,7 @@ extension PublicMapFeature.State {
         let selected = contents[1]
         self.contents = contents
         self.selectedContent = selected
+        self._toast = Shared(value: nil)
         if let routeId,
            let route = FetchOne(Route.find(routeId)).wrappedValue {
             self.currentPeriodId = route.periodId
@@ -250,7 +229,8 @@ extension PublicMapFeature.State {
             PublicRouteFeature.State(
                 district,
                 routeId: routeId,
-                mapRegion: $mapRegion
+                mapRegion: $mapRegion,
+                toast: $toast
             )
         )
     }
@@ -267,12 +247,14 @@ extension PublicMapFeature.State {
         self.contents = contents
         self.selectedContent = selected
         self.currentPeriodId = nil
+        self._toast = Shared(value: nil)
         
         self._mapRegion = Shared(value: makeRegion(origin: festival.base, spanDelta: spanDelta))
         self.destination = .locations(
             PublicLocationsFeature.State(
                 festival,
-                mapRegion: $mapRegion
+                mapRegion: $mapRegion,
+                toast: $toast
             )
         )
     }

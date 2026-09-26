@@ -60,7 +60,6 @@ struct PublicRouteMapView: View {
                     toolbarLayerAfterLiquidGlass
                 }
             }
-            .alert($store.scope(state: \.alert, action: \.alert))
             .sheet(item: $store.detail) { detail in
                 switch detail{
                 case .point(let item):
@@ -71,7 +70,10 @@ struct PublicRouteMapView: View {
                         .presentationDetents([.fraction(0.3), .medium, .large])
                 }
             }
-            .onAppear{ updateReplay() }
+            .onAppear {
+                store.send(.onAppear)
+                updateReplay()
+            }
             .onChange(of: store.selected) { _ in updateReplay() }
             .onChange(of: store.replay) { _ in updateReplay() }
         }
@@ -79,39 +81,83 @@ struct PublicRouteMapView: View {
     
     @ViewBuilder
     var menuLayer: some View {
-        VStack{
-            menu
-                .padding()
+        VStack(spacing: 16) {
+            if !store.routes.isEmpty {
+                RoutePeriodMenu(
+                    selected: store.selected,
+                    routes: store.routes,
+                    onSelected: { store.send(.selected($0)) }
+                )
+                .padding(.horizontal, 16)
+            }
+            if let toast = store.toast {
+                MapToastView(toast: toast) {
+                    store.send(.toastDismissed)
+                }
+                .transition(.opacity)
+            }
             Spacer()
         }
-        .tapOutside(isShown: $store.isMenuExpanded)
+        .padding(.top, 16)
+        .animation(.easeInOut(duration: 0.2), value: store.toast)
     }
-    
-    @ViewBuilder
-    var menu: some View {
-        VStack(spacing: 8)  {
-            if let selected = store.selected {
-                ToggleSelectedItem(title: selected.text, isExpanded: $store.isMenuExpanded) // FIXME
-                    .padding(8)
-                    .background(Color(uiColor: .systemBackground))
-                    .cornerRadius(8)
-                    .shadow(radius: 3)
-            }
-            if store.isMenuExpanded  {
-                ForEach(store.others) { entry in
-                    WithPerceptionTracking{
-                        ToggleOptionItem(
-                            title: entry.text,
-                            onTap: { store.send(.selected(entry)) }
-                        )
-                        .padding(8)
-                        .background(Color(UIColor.systemGray5))
-                        .cornerRadius(8)
-                        .shadow(radius: 3)
-                    }
+}
+
+private struct RoutePeriodMenu: View {
+    let selected: RouteEntry?
+    let routes: [RouteEntry]
+    let onSelected: (RouteEntry) -> Void
+
+    @Environment(\.isLiquidGlassDisabled) private var isLiquidGlassDisabled
+
+    var body: some View {
+        if #available(iOS 26.0, *), !isLiquidGlassDisabled {
+            menu
+                .buttonStyle(.glass)
+        } else {
+            menu
+                .background {
+                    RoundedRectangle(cornerRadius: 16)
+                        .fill(.ultraThinMaterial)
+                        .shadow(radius: 2)
+                }
+                .buttonStyle(.plain)
+        }
+    }
+
+    private var menu: some View {
+        Menu {
+            ForEach(routes.sorted()) { entry in
+                Button(entry.text) {
+                    onSelected(entry)
                 }
             }
+        } label: {
+            if #available(iOS 26.0, *), !isLiquidGlassDisabled {
+                menuLabel
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 4)
+                    .contentShape(.rect)
+            } else {
+                menuLabel
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 8)
+                    .contentShape(.rect)
+            }
         }
+    }
+    
+    private var menuLabel: some View {
+        HStack {
+            Text(selected?.text ?? "期間")
+                .font(.title3)
+                .lineLimit(1)
+            Spacer()
+            Image(systemName: "chevron.down")
+                .foregroundStyle(.secondary)
+        }
+        .foregroundStyle(.primary)
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 }
     
