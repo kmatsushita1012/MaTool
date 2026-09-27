@@ -6,6 +6,7 @@
 //
 
 import Dependencies
+import GRDB
 import Shared
 
 enum LocationDataFetcherKey: DependencyKey {

@@ -12,10 +12,10 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v4
 
-    - name: Setup Xcode 26.3
+    - name: Setup Xcode 26.6
       uses: maxim-lobanov/setup-xcode@v1
       with:
-        xcode-version: "26.3"
+        xcode-version: "26.6"
 
     - name: Ensure SPM Cache Dir Exists
       run: mkdir -p Backend/Caches/org.swift.swiftpm
@@ -31,20 +31,20 @@ jobs:
       with:
         path: |
           ~/Library/Caches/org.swift.swiftpm/
-        key: ${{ runner.os }}-spm-Backend-xcode-26.3-${{ github.ref_name }}-${{ hashFiles('Backend/Package.swift', 'Backend/Package.resolved', 'Shared/Package.swift', 'Shared/Package.resolved', 'MaTool.xcworkspace/xcshareddata/swiftpm/Package.resolved') }}
+        key: ${{ runner.os }}-spm-Backend-xcode-26.6-${{ github.ref_name }}-${{ hashFiles('Backend/Package.swift', 'Backend/Package.resolved', 'Shared/Package.swift', 'Shared/Package.resolved', 'MaTool.xcworkspace/xcshareddata/swiftpm/Package.resolved') }}
         restore-keys: |
-          ${{ runner.os }}-spm-Backend-xcode-26.3-${{ github.ref_name }}-
-          ${{ runner.os }}-spm-Backend-xcode-26.3-
+          ${{ runner.os }}-spm-Backend-xcode-26.6-${{ github.ref_name }}-
+          ${{ runner.os }}-spm-Backend-xcode-26.6-
 
     # --- DerivedData キャッシュ ---
     - name: Cache DerivedData
       uses: actions/cache@v4
       with:
         path: Backend/.derivedData
-        key: ${{ runner.os }}-derived-Backend-xcode-26.3-${{ github.ref_name }}-${{ hashFiles('Backend/Package.swift', 'Backend/Package.resolved', 'Shared/Package.swift', 'Shared/Package.resolved', 'MaTool.xcworkspace/xcshareddata/swiftpm/Package.resolved') }}-debug-macos
+        key: ${{ runner.os }}-derived-Backend-xcode-26.6-${{ github.ref_name }}-${{ hashFiles('Backend/Package.swift', 'Backend/Package.resolved', 'Shared/Package.swift', 'Shared/Package.resolved', 'MaTool.xcworkspace/xcshareddata/swiftpm/Package.resolved') }}-debug-macos
         restore-keys: |
-          ${{ runner.os }}-derived-Backend-xcode-26.3-${{ github.ref_name }}-
-          ${{ runner.os }}-derived-Backend-xcode-26.3-
+          ${{ runner.os }}-derived-Backend-xcode-26.6-${{ github.ref_name }}-
+          ${{ runner.os }}-derived-Backend-xcode-26.6-
 
     - name: Build & Test
       run: |

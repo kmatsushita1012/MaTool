@@ -12,13 +12,12 @@ let package = Package(
     ],
     dependencies: [
         .package(path: "../Shared"),
-        .package(url: "https://github.com/pointfreeco/swift-dependencies", from: "1.14.1"),
-        .package(url: "https://github.com/awslabs/aws-sdk-swift.git", from: "1.5.18"),
-        .package(url: "https://github.com/awslabs/swift-aws-lambda-runtime.git", from: "2.0.0"),
-        .package(url: "https://github.com/swift-server/swift-aws-lambda-events.git", from: "1.2.3"),
-        .package(url: "https://github.com/swift-server/swift-service-lifecycle.git", from: "2.9.0"),
-        .package(url: "https://github.com/pointfreeco/swift-case-paths.git", from: "1.7.2"),
-        .package( url: "https://github.com/groue/GRDB.swift.git", from: "7.6.0")
+        .package(url: "https://github.com/pointfreeco/swift-dependencies", from: "1.17.1"),
+        .package(url: "https://github.com/awslabs/aws-sdk-swift.git", from: "1.7.60"),
+        .package(url: "https://github.com/awslabs/swift-aws-lambda-runtime.git", from: "3.0.2"),
+        .package(url: "https://github.com/swift-server/swift-aws-lambda-events.git", from: "1.5.0"),
+        .package(url: "https://github.com/swift-server/swift-service-lifecycle.git", from: "2.12.0"),
+        .package(url: "https://github.com/pointfreeco/swift-case-paths.git", from: "1.10.0"),
     ],
     targets: [
         .executableTarget(
@@ -31,8 +30,6 @@ let package = Package(
                 .product(name: "AWSLambdaRuntime", package: "swift-aws-lambda-runtime"),
                 .product(name: "AWSLambdaEvents", package: "swift-aws-lambda-events"),
                 .product(name: "ServiceLifecycle", package: "swift-service-lifecycle"),
-                .product(name: "CasePaths", package: "swift-case-paths"),
-                .product(name: "GRDB", package: "GRDB.swift")
             ],
             path: "Sources",
             resources: [
@@ -43,6 +40,7 @@ let package = Package(
             name: "BackendTests",
             dependencies: [
                 "Backend",
+                .product(name: "CasePaths", package: "swift-case-paths"),
                 .product(name: "DependenciesTestSupport", package: "swift-dependencies"),
             ],
             path: "Tests"
