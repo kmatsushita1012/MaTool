@@ -14,7 +14,7 @@ let package = Package(
         .package(path: "../Shared"),
         .package(url: "https://github.com/pointfreeco/swift-dependencies", from: "1.17.1"),
         .package(url: "https://github.com/awslabs/aws-sdk-swift.git", from: "1.7.60"),
-        .package(url: "https://github.com/awslabs/swift-aws-lambda-runtime.git", from: "3.0.2"),
+        .package(url: "https://github.com/awslabs/swift-aws-lambda-runtime.git", from: "2.11.0"),
         .package(url: "https://github.com/swift-server/swift-aws-lambda-events.git", from: "1.5.0"),
         .package(url: "https://github.com/swift-server/swift-service-lifecycle.git", from: "2.12.0"),
         .package(url: "https://github.com/pointfreeco/swift-case-paths.git", from: "1.10.0"),
