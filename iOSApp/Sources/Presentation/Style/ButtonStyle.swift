@@ -24,8 +24,8 @@ struct PrimaryButtonStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
             .fontWeight(.semibold)
-            .frame(maxWidth: .infinity)
             .padding()
+            .frame(maxWidth: .infinity)
             .background(backgroundColor, in: .capsule)
             .foregroundColor(foregroundColor)
             .opacity(configuration.isPressed ? 0.6 : 1.0)

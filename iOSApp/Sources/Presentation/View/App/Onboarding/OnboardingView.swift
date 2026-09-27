@@ -67,13 +67,8 @@ struct OnboardingView: View {
                             }
                         } label: {
                             Text("参加町")
-                                .fontWeight(.semibold)
-                                .frame(maxWidth: .infinity)
-                                .padding(.vertical, 16)
-                                .foregroundColor(.white)
-                                .background(Color.onboarding)
-                                .cornerRadius(8)
                         }
+                        .buttonStyle(PrimaryButtonStyle(.onboarding))
                         .id(store.districts)
                         .padding(.horizontal)
                         
