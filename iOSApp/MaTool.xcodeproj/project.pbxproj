@@ -17,7 +17,6 @@
 		29F7B7352EC8730E0099607E /* Kingfisher in Frameworks */ = {isa = PBXBuildFile; productRef = 29F7B7342EC8730E0099607E /* Kingfisher */; };
 		29F7B7382EC8C06D0099607E /* Shared in Frameworks */ = {isa = PBXBuildFile; productRef = 29F7B7372EC8C06D0099607E /* Shared */; };
 		2A2B2C2D2E2F303132333435 /* GoogleMobileAds in Frameworks */ = {isa = PBXBuildFile; productRef = 2A2B2C2D2E2F303132333434 /* GoogleMobileAds */; };
-		2A2B2C2D2E2F303132333438 /* GRDB in Frameworks */ = {isa = PBXBuildFile; productRef = 2A2B2C2D2E2F303132333437 /* GRDB */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -61,7 +60,6 @@
 			buildActionMask = 2147483647;
 			files = (
 				29CC9E422F1523B800C4CD50 /* SQLiteData in Frameworks */,
-				2A2B2C2D2E2F303132333438 /* GRDB in Frameworks */,
 				29F7B7382EC8C06D0099607E /* Shared in Frameworks */,
 				2957A6C52F6BE2E8005B5EB4 /* ComposableArchitecture in Frameworks */,
 				2A2B2C2D2E2F303132333435 /* GoogleMobileAds in Frameworks */,
@@ -142,7 +140,6 @@
 				29CC9E412F1523B800C4CD50 /* SQLiteData */,
 				2957A6C42F6BE2E8005B5EB4 /* ComposableArchitecture */,
 				2A2B2C2D2E2F303132333434 /* GoogleMobileAds */,
-				2A2B2C2D2E2F303132333437 /* GRDB */,
 			);
 			productName = MaTool;
 			productReference = 291604FD2EB3665900E6C6E3 /* MaTool.app */;
@@ -222,7 +219,6 @@
 			mainGroup = 298BD7912D71E46600CB63F1;
 			packageReferences = (
 				2A2B2C2D2E2F303132333433 /* XCRemoteSwiftPackageReference "swift-package-manager-google-mobile-ads" */,
-				2A2B2C2D2E2F303132333436 /* XCRemoteSwiftPackageReference "GRDB.swift" */,
 				29F7B72D2EC871F10099607E /* XCRemoteSwiftPackageReference "amplify-ios" */,
 				29F7B7302EC872E80099607E /* XCRemoteSwiftPackageReference "NavigationSwipeControl" */,
 				29F7B7332EC8730E0099607E /* XCRemoteSwiftPackageReference "Kingfisher" */,
@@ -690,14 +686,6 @@
 				minimumVersion = 13.10.0;
 			};
 		};
-		2A2B2C2D2E2F303132333436 /* XCRemoteSwiftPackageReference "GRDB.swift" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/groue/GRDB.swift.git";
-			requirement = {
-				kind = upToNextMajorVersion;
-				minimumVersion = 7.11.1;
-			};
-		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
@@ -734,11 +722,6 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 2A2B2C2D2E2F303132333433 /* XCRemoteSwiftPackageReference "swift-package-manager-google-mobile-ads" */;
 			productName = GoogleMobileAds;
-		};
-		2A2B2C2D2E2F303132333437 /* GRDB */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 2A2B2C2D2E2F303132333436 /* XCRemoteSwiftPackageReference "GRDB.swift" */;
-			productName = GRDB;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};
