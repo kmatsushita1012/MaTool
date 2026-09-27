@@ -47,6 +47,7 @@ struct PublicMapView: View {
             }
             .dismissOnChange(of: store.isDismissed)
         }
+        .modifier(PublicMapScrollEdgeEffectModifier())
     }
     
     @ViewBuilder
@@ -101,6 +102,17 @@ struct PublicMapView: View {
                     )
                     : .rect()
                 )
+        }
+    }
+}
+
+private struct PublicMapScrollEdgeEffectModifier: ViewModifier {
+    @ViewBuilder
+    func body(content: Content) -> some View {
+        if #available(iOS 26.0, *) {
+            content.scrollEdgeEffectStyle(.none, for: .top)
+        } else {
+            content
         }
     }
 }
