@@ -48,6 +48,7 @@ struct AppStatusModal: View {
                         Text("ご迷惑をおかけしますが、最新の機能を提供できるようになります。")
                     }
                     .padding()
+                    .frame(maxWidth: .infinity)
                     .background(.ultraThinMaterial)
                     .clipShape(
                         RoundedRectangle(cornerRadius: 16)
@@ -61,7 +62,6 @@ struct AppStatusModal: View {
                     Button("閉じる") {
                         dismiss()
                     }
-                    .padding(.horizontal)
                     .buttonStyle(SecondaryButtonStyle(foregroundColor: .launch, borderColor: .launch))
                 }
                 

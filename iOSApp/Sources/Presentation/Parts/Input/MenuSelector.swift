@@ -45,13 +45,13 @@ struct MenuSelector<T: Hashable>: View {
                     Image(systemName: "chevron.down")
                         .foregroundColor(.gray)
                 }
-                .padding(.horizontal)
-                .padding(.vertical, 16)
-                .background(
-                    RoundedRectangle(cornerRadius: 8)
-                        .stroke(errorMessage != nil ? Color.red : borderColor, lineWidth: 1.5)
-                )
             }
+            .buttonStyle(
+                SecondaryButtonStyle(
+                    foregroundColor: .primary,
+                    borderColor: errorMessage != nil ? .red : borderColor
+                )
+            )
             if let errorMessage = errorMessage {
                 Text(errorMessage)
                     .font(.caption)
