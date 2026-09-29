@@ -9,15 +9,26 @@ import SwiftUI
 import ComposableArchitecture
 
 struct PublicLocationsMapView: View {
-    @Perception.Bindable var store: StoreOf<PublicLocationsFeature>
+    @SwiftUI.Bindable var store: StoreOf<PublicLocationsFeature>
     @Environment(\.isLiquidGlassDisabled) var isLiquidGlassDisabled
     @Namespace private var namespace
     
     var body: some View {
         WithPerceptionTracking{
             @Binding(store.$mapRegion) var mapRegion
-            MapView(style: .public, floats: store.floats, region: $mapRegion, floatTapped: { store.send(.floatTapped($0)) })
+            ZStack(alignment: .top) {
+                MapView(style: .public, floats: store.floats, region: $mapRegion, floatTapped: { store.send(.floatTapped($0)) })
+
+                if let toast = store.toast {
+                    MapToastView(toast: toast) {
+                        store.send(.toastDismissed)
+                    }
+                    .padding(.top, 16)
+                    .transition(.opacity)
+                }
+            }
             .ignoresSafeArea(edges: .bottom)
+            .animation(.easeInOut(duration: 0.2), value: store.toast)
             .safeAreaInset(edge: .bottom){
                 if isLiquidGlassDisabled {
                     toolbarLayer
@@ -25,7 +36,9 @@ struct PublicLocationsMapView: View {
                     toolbarLayerAfterLiquidGlass
                 }
             }
-            .alert($store.scope(state: \.alert, action: \.alert))
+            .onAppear {
+                store.send(.onAppear)
+            }
             .sheet(item: $store.detail){ location in
                 LocationView(location)
                     .presentationDetents([.fraction(0.3)])

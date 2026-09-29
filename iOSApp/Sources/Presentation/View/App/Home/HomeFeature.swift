@@ -49,7 +49,7 @@ struct HomeFeature {
         case infoTapped
         case adminTapped
         case settingsTapped
-        case settingsPrepared(VoidAppResult)
+        case settingsPrepared(AppResult<SceneSelection>)
         case loginSucceeded(UserRole)
         case loginSucceededAfterDismiss(UserRole)
         case destination(PresentationAction<Destination.Action>)
@@ -59,6 +59,7 @@ struct HomeFeature {
     @Dependency(\.authService) var authService
     @Dependency(UserDefaltsManagerKey.self) var userDefaults
     @Dependency(FestivalDataFetcherKey.self) var festivalDataFetcher
+    @Dependency(SceneUsecaseKey.self) var sceneUsecase
     
     var body: some ReducerOf<HomeFeature> {
         BindingReducer()
@@ -97,10 +98,11 @@ struct HomeFeature {
                 state.isDestinationLoading = true
                 return .task(Action.settingsPrepared) {
                     try await festivalDataFetcher.fetchAll()
+                    return await sceneUsecase.currentSelection()
                 }
-            case .settingsPrepared(.success):
+            case .settingsPrepared(.success(let selection)):
                 state.isDestinationLoading = false
-                state.destination = .settings(.init())
+                state.destination = .settings(.init(selection: selection))
                 return .none
             case .settingsPrepared(.failure(let error)):
                 state.alert = AlertFeature.error("設定画面の準備に失敗しました。\n\(error)")

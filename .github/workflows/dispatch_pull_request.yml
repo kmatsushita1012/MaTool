@@ -28,12 +28,18 @@ jobs:
             backend:
               - 'Backend/Sources/**'
               - 'Backend/Tests/**'
+              - 'Backend/Package.swift'
+              - 'Backend/Package.resolved'
             iosapp:
               - 'iOSApp/Sources/**'
               - 'iOSApp/Tests/**'
+              - 'iOSApp/MaTool.xcodeproj/project.pbxproj'
+              - 'MaTool.xcworkspace/xcshareddata/swiftpm/Package.resolved'
             shared:
               - 'Shared/Sources/**'
               - 'Shared/Tests/**'
+              - 'Shared/Package.swift'
+              - 'Shared/Package.resolved'
 
   # ==== Backend テスト (Backend 変更 or Shared 変更時) ====
   backend-tests:

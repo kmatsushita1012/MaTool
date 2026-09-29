@@ -14,6 +14,10 @@ import Shared
 @Reducer
 struct PublicRouteFeature {
 
+    private enum CancelID {
+        case toastDismissal
+    }
+
     @CasePathable
     enum Detail: Equatable {
         case point(PointEntry)
@@ -37,6 +41,7 @@ struct PublicRouteFeature {
         
         @FetchOne var district: District
         @FetchAll var routes: [RouteEntry]
+        @FetchAll var periods: [Period]
 
         var selected: RouteEntry? {
             didSet {
@@ -46,34 +51,36 @@ struct PublicRouteFeature {
         @FetchAll var points: [PointEntry]
 
         @FetchOne var float: FloatEntry?
-        var isMenuExpanded: Bool = false
         @Shared var mapRegion: MKCoordinateRegion
+        @Shared var toast: MapToast?
         var replay: Replay
 
         // Navigation
         var detail: Detail?
-        @Presents var alert: AlertFeature.State?
     }
 
     @CasePathable
     enum Action: Equatable, BindableAction {
+        case onAppear
         case binding(BindingAction<State>)
-        case menuTapped
         case selected(RouteEntry)
         case pointTapped(PointEntry)
         case locationTapped(FloatEntry)
         case userFocusTapped
         case floatFocusTapped
         case routeReceived(VoidAppResult)
-        case locationReceived(VoidAppResult)
+        case floatLocationReceived(VoidAppResult)
         case userLocationReceived(Coordinate)
+        case userLocationFailed(String)
+        case toastDismissed
         case replayTapped
         case replayEnded
         case didSeek(Double)
-        case alert(PresentationAction<AlertFeature.Action>)
     }
 
     @Dependency(\.mapLocationProvider) var mapLocationProvider
+    @Dependency(\.continuousClock) var clock
+    @Dependency(\.date.now) var now
     @Dependency(RouteDataFetcherKey.self) var dataFetcher
     @Dependency(LocationDataFetcherKey.self) var locationDataFetcher
 
@@ -81,17 +88,23 @@ struct PublicRouteFeature {
         BindingReducer()
         Reduce { state, action in
             switch action {
+            case .onAppear:
+                if state.toast == nil, let toast = state.initialToast(now: now) {
+                    state.$toast.withLock { $0 = toast }
+                }
+                guard state.toast != nil else { return .none }
+                return toastDismissEffect()
             case .binding:
                 return .none
-            case .menuTapped:
-                state.isMenuExpanded = true
-                return .none
             case .selected(let entry):
-                state.isMenuExpanded = false
+                state.$toast.withLock { $0 = nil }
                 state.selected = entry
-                return .task(Action.routeReceived) {
-                    try await dataFetcher.fetch(routeID: entry.route.id)
-                }
+                return .merge(
+                    .cancel(id: CancelID.toastDismissal),
+                    .task(Action.routeReceived) {
+                        try await dataFetcher.fetch(routeID: entry.route.id)
+                    }
+                )
             case .pointTapped(let value):
                 state.detail = .point(value)
                 return .none
@@ -100,7 +113,7 @@ struct PublicRouteFeature {
                 state.detail = .location(float)
                 return .none
             case .floatFocusTapped:
-                return .task(Action.locationReceived) { [state] in
+                return .task(Action.floatLocationReceived) { [state] in
                     try await locationDataFetcher.fetch(districtId: state.district.id)
                 }
             case .routeReceived(.success):
@@ -108,29 +121,18 @@ struct PublicRouteFeature {
                 state.$mapRegion.withLock { $0 = makeRegion(state.points.map(\.coordinate)) }
                 return .none
             case .routeReceived(.failure(let error)):
-                state.alert = .error(error)
-                return .none
-            case .locationReceived(.success):
+                state.$toast.withLock { $0 = .error(error, title: "ルートを取得できませんでした") }
+                return toastDismissEffect()
+            case .floatLocationReceived(.success):
                 if let coordinate = state.float?.floatLocation.coordinate {
                     state.$mapRegion.withLock{ $0 = makeRegion(origin: coordinate, spanDelta: spanDelta) }
-                } else {
-                    #if DEBUG
-                        state.alert = .error("DEBUG 屋台位置フォーカスに失敗しました。\n地区ID: \(state.district.id)\n位置情報がローカルに反映されていません。")
-                    #endif
+                    return .none
                 }
-                return .none
-            case .locationReceived(.failure(let error)):
-                if case .be(.notFound) = error {
-                    state.alert = AlertFeature.notice("現在地の配信は停止中です。")
-                } else if case .be(.forbidden) = error {
-                    state.alert = AlertFeature.notice("現在地の配信は停止中です。")
-                } else {
-                    state.alert = .error(error)
-                }
-                #if DEBUG
-                    state.alert = .error("DEBUG 屋台位置フォーカスに失敗しました。\n地区ID: \(state.district.id)\n\(error.message)")
-                #endif
-                return .none
+                state.$toast.withLock { $0 = state.locationUnavailableToast }
+                return toastDismissEffect()
+            case .floatLocationReceived(.failure):
+                state.$toast.withLock { $0 = state.locationUnavailableToast }
+                return toastDismissEffect()
             case .replayTapped:
                 if state.replay.isRunning {
                     state.replay = .stop
@@ -144,9 +146,21 @@ struct PublicRouteFeature {
             case .userFocusTapped:
                 return .run { send in
                     let result = await mapLocationProvider.getLocation()
-                    guard let coordinate = result.value?.coordinate else { return }
-                    await send(.userLocationReceived(Coordinate.fromCL(coordinate)))
+                    switch result {
+                    case .success(let location):
+                        await send(.userLocationReceived(Coordinate.fromCL(location.coordinate)))
+                    case .failure(let error):
+                        await send(.userLocationFailed(error.asAppError.message))
+                    case .loading:
+                        await send(.userLocationFailed("現在地を取得できませんでした。"))
+                    }
                 }
+            case .userLocationFailed(let message):
+                state.$toast.withLock { $0 = .error(message, title: "現在地を取得できませんでした") }
+                return toastDismissEffect()
+            case .toastDismissed:
+                state.$toast.withLock { $0 = nil }
+                return .cancel(id: CancelID.toastDismissal)
             case .didSeek(let value):
                 if state.replay.isRunning {
                     state.replay = .seek(value)
@@ -155,13 +169,16 @@ struct PublicRouteFeature {
             case .replayEnded:
                 state.replay = .stop
                 return .none
-            case .alert:
-                state.alert = nil
-                return .none
-            default:
-                return .none
             }
         }
+    }
+
+    private func toastDismissEffect() -> Effect<Action> {
+        .run { [clock] send in
+            try await clock.sleep(for: .seconds(3))
+            await send(.toastDismissed)
+        }
+        .cancellable(id: CancelID.toastDismissal, cancelInFlight: true)
     }
 }
 
@@ -173,12 +190,23 @@ extension PublicRouteFeature.State {
     init(
         _ district: District,
         routeId: Route.ID?,
-        mapRegion: Shared<MKCoordinateRegion>
+        mapRegion: Shared<MKCoordinateRegion>,
+        toast: Shared<MapToast?>
     ) {
         self._mapRegion = mapRegion
+        self._toast = toast
         self._district = FetchOne(district)
         let routeQuery: FetchAll<RouteEntry> = .init(districtId: district.id, latest: true)
         self._routes = routeQuery
+        let allPeriods = FetchAll<Period>(
+            Period.where { $0.festivalId.eq(district.festivalId) }
+        ).wrappedValue
+        let latestYear = allPeriods.map(\.date.year).max() ?? SimpleDate.now.year
+        self._periods = FetchAll(
+            Period.where {
+                $0.festivalId.eq(district.festivalId) && $0.date.inYear(latestYear)
+            }
+        )
         // 存在しなければ先頭要素で代替
         let selected = routeQuery.wrappedValue.first { $0.route.id == routeId } ?? routeQuery.wrappedValue.first
         self.selected = selected
@@ -209,6 +237,24 @@ extension PublicRouteFeature.State {
 
     var isReplayEnable: Bool {
         selected != nil
+    }
+
+    fileprivate func initialToast(now: Date) -> MapToast? {
+        if routes.isEmpty {
+            return .notice("\(district.name)は経路配信を停止しています")
+        }
+        return currentLocationToast(now: now)
+    }
+
+    fileprivate func currentLocationToast(now: Date) -> MapToast? {
+        guard float == nil, periods.contains(where: { $0.contains(now) }) else {
+            return nil
+        }
+        return locationUnavailableToast
+    }
+
+    fileprivate var locationUnavailableToast: MapToast {
+        .notice("\(district.name)は位置配信を停止しています")
     }
 }
 
