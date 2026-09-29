@@ -13,6 +13,7 @@ enum SceneDataFetcherKey: DependencyKey {
 }
 
 protocol SceneDataFetcherProtocol: DataFetcher {
+    func clearCache() async throws
     func launchFestival(festivalId: Festival.ID, clearsExistingData: Bool) async throws
     func launchFestival(districtId: District.ID, clearsExistingData: Bool) async throws -> Festival.ID
     func launchDistrict(districtId: District.ID, periodId: Period.ID?, clearsExistingData: Bool) async throws -> Route.ID?
@@ -54,6 +55,21 @@ struct SceneDataFetcher: SceneDataFetcherProtocol {
     @Dependency(PointStoreKey.self) var pointStore
     @Dependency(PassageStoreKey.self) var passageStore
     @Dependency(FloatLocationStoreKey.self) var locationStore
+
+    func clearCache() async throws {
+        try await database.write { db in
+            try pointStore.deleteAll(from: db)
+            try passageStore.deleteAll(from: db)
+            try routeStore.deleteAll(from: db)
+            try performanceStore.deleteAll(from: db)
+            try locationStore.deleteAll(from: db)
+            try checkpointStore.deleteAll(from: db)
+            try hazardSectionStore.deleteAll(from: db)
+            try periodStore.deleteAll(from: db)
+            try districtStore.deleteAll(from: db)
+            try festivalStore.deleteAll(from: db)
+        }
+    }
     
     func launchFestival(
         festivalId: Shared.Festival.ID,

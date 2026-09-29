@@ -185,6 +185,8 @@ private struct SceneDataFetcherMock: SceneDataFetcherProtocol, Sendable {
         self.launchDistrictHandler = launchDistrictHandler
     }
 
+    func clearCache() async throws {}
+
     func launchFestival(festivalId: Festival.ID, clearsExistingData: Bool) async throws {
         try await launchFestivalHandler(festivalId)
     }
