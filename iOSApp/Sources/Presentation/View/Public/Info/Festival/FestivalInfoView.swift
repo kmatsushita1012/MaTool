@@ -10,7 +10,7 @@ import ComposableArchitecture
 import NavigationSwipeControl
 
 struct FestivalInfoView: View {
-    @Perception.Bindable var store: StoreOf<FestivalInfoFeature>
+    @SwiftUI.Bindable var store: StoreOf<FestivalInfoFeature>
     
     var body: some View {
         WithPerceptionTracking {

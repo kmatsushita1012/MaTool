@@ -9,7 +9,7 @@ import SwiftUI
 import ComposableArchitecture
 
 struct PublicRouteMapView: View {
-    @Perception.Bindable var store: StoreOf<PublicRouteFeature>
+    @SwiftUI.Bindable var store: StoreOf<PublicRouteFeature>
     @StateObject var replayController: ReplayController
     @Namespace private var namespace
     

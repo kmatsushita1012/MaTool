@@ -10,7 +10,7 @@ import ComposableArchitecture
 
 struct OnboardingView: View {
     
-    @Perception.Bindable var store: StoreOf<OnboardingFeature>
+    @SwiftUI.Bindable var store: StoreOf<OnboardingFeature>
     
     var body: some View {
         WithPerceptionTracking {
