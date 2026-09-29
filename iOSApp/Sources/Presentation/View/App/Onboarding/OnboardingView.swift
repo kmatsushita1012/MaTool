@@ -10,7 +10,7 @@ import ComposableArchitecture
 
 struct OnboardingView: View {
     
-    @Perception.Bindable var store: StoreOf<OnboardingFeature>
+    @SwiftUI.Bindable var store: StoreOf<OnboardingFeature>
     
     var body: some View {
         WithPerceptionTracking {
@@ -67,13 +67,8 @@ struct OnboardingView: View {
                             }
                         } label: {
                             Text("参加町")
-                                .fontWeight(.semibold)
-                                .frame(maxWidth: .infinity)
-                                .padding(.vertical, 16)
-                                .foregroundColor(.white)
-                                .background(Color.onboarding)
-                                .cornerRadius(8)
                         }
+                        .buttonStyle(PrimaryButtonStyle(.onboarding))
                         .id(store.districts)
                         .padding(.horizontal)
                         

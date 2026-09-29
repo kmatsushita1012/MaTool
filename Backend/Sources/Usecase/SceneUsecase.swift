@@ -53,14 +53,10 @@ struct SceneUsecase: SceneUsecaseProtocol {
     func fetchLaunchFestivalPack(festivalId: Festival.ID, user: UserRole, now: Date) async throws -> LaunchFestivalPack {
         let isAdmin = (user != .guest)
 
-        guard let festival = try await festivalRepository.get(id: festivalId) else {
-            throw Error.notFound("Festival \(festivalId) が見つかりません")
-        }
-
         if isAdmin {
-            return try await fetchAdminLaunchPack(festival: festival, user: user, now: now)
+            return try await fetchAdminLaunchPack(festivalId: festivalId, user: user, now: now)
         } else {
-            return try await fetchUserLaunchPack(festival: festival, now: now)
+            return try await fetchUserLaunchPack(festivalId: festivalId, now: now)
         }
     }
     
@@ -72,11 +68,17 @@ struct SceneUsecase: SceneUsecaseProtocol {
     }
 
     // MARK: Admin
-    private func fetchAdminLaunchPack(festival: Festival, user: UserRole, now: Date) async throws -> LaunchFestivalPack {
-        async let districts = districtRepository.query(by: festival.id)
-        async let checkpoints = checkpointRepository.query(by: festival.id)
-        async let hazardSections = hazardRepository.query(by: festival.id)
-        let periods = try await periodRepository.query(by: festival.id) // 過去全て
+    private func fetchAdminLaunchPack(festivalId: Festival.ID, user: UserRole, now: Date) async throws -> LaunchFestivalPack {
+        async let festivalTask = festivalRepository.get(id: festivalId)
+        async let districtsTask = districtRepository.query(by: festivalId)
+        async let checkpointsTask = checkpointRepository.query(by: festivalId)
+        async let hazardSectionsTask = hazardRepository.query(by: festivalId)
+        async let periodsTask = periodRepository.query(by: festivalId) // 過去全て
+
+        guard let festival = try await festivalTask else {
+            throw Error.notFound("Festival \(festivalId) が見つかりません")
+        }
+        let periods = try await periodsTask
 
         let locations: [FloatLocation]
         if LocationPublicAccess.isPublic(now: now, periods: periods) {
@@ -90,22 +92,29 @@ struct SceneUsecase: SceneUsecaseProtocol {
 
         return LaunchFestivalPack(
             festival: festival,
-            districts: try await districts,
+            districts: try await districtsTask,
             periods: periods,
             locations: locations,
-            checkpoints: try await checkpoints,
-            hazardSections: try await hazardSections
+            checkpoints: try await checkpointsTask,
+            hazardSections: try await hazardSectionsTask
         )
     }
 
     // MARK: Public
-    private func fetchUserLaunchPack(festival: Festival, now: Date) async throws -> LaunchFestivalPack {
-        async let districts = districtRepository.query(by: festival.id)
-        let periods = try await LatestPeriodRouteResolver.fetchLatestPeriods(
-            festivalId: festival.id,
+    private func fetchUserLaunchPack(festivalId: Festival.ID, now: Date) async throws -> LaunchFestivalPack {
+        async let festivalTask = festivalRepository.get(id: festivalId)
+        async let districtsTask = districtRepository.query(by: festivalId)
+        async let periodsTask = LatestPeriodRouteResolver.fetchLatestPeriods(
+            festivalId: festivalId,
             nowYear: SimpleDate.from(now).year,
             periodRepository: periodRepository
         )
+
+        guard let festival = try await festivalTask else {
+            throw Error.notFound("Festival \(festivalId) が見つかりません")
+        }
+        let periods = try await periodsTask
+
         let locations: [FloatLocation]
         if LocationPublicAccess.isPublic(now: now, periods: periods) {
             locations = try await floatLocationRepository.query(by: festival.id)
@@ -115,7 +124,7 @@ struct SceneUsecase: SceneUsecaseProtocol {
 
         return LaunchFestivalPack(
             festival: festival,
-            districts: try await districts,
+            districts: try await districtsTask,
             periods: periods,
             locations: locations,
             checkpoints: [],

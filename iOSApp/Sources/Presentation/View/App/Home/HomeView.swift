@@ -9,7 +9,7 @@ import SwiftUI
 import ComposableArchitecture
 
 struct HomeView: View {
-    @Perception.Bindable var store: StoreOf<HomeFeature>
+    @SwiftUI.Bindable var store: StoreOf<HomeFeature>
     
     var body: some View {
         WithPerceptionTracking{
@@ -22,7 +22,7 @@ struct HomeView: View {
 }
 
 private struct HomeDestinations: ViewModifier {
-    @Perception.Bindable var store: StoreOf<HomeFeature>
+    @SwiftUI.Bindable var store: StoreOf<HomeFeature>
 
     func body(content: Content) -> some View {
         content

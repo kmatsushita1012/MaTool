@@ -11,7 +11,7 @@ import NavigationSwipeControl
 
 
 struct SettingsView: View {
-    @Perception.Bindable var store: StoreOf<SettingsFeature>
+    @SwiftUI.Bindable var store: StoreOf<SettingsFeature>
     
     var body: some View {
         WithPerceptionTracking{

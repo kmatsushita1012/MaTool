@@ -11,7 +11,7 @@ import NavigationSwipeControl
 import Shared
 
 struct DistrictInfoView: View {
-    @Perception.Bindable var store: StoreOf<DistrictInfoFeature>
+    @SwiftUI.Bindable var store: StoreOf<DistrictInfoFeature>
     
     var body: some View {
         WithPerceptionTracking{
