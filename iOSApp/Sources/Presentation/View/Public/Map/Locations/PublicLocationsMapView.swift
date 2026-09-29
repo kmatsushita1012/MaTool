@@ -9,7 +9,7 @@ import SwiftUI
 import ComposableArchitecture
 
 struct PublicLocationsMapView: View {
-    @Perception.Bindable var store: StoreOf<PublicLocationsFeature>
+    @SwiftUI.Bindable var store: StoreOf<PublicLocationsFeature>
     @Environment(\.isLiquidGlassDisabled) var isLiquidGlassDisabled
     @Namespace private var namespace
     

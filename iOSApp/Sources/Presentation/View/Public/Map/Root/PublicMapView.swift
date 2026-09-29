@@ -10,7 +10,7 @@ import SwiftUI
 import NavigationSwipeControl
 
 struct PublicMapView: View {
-    @Perception.Bindable var store: StoreOf<PublicMapFeature>
+    @SwiftUI.Bindable var store: StoreOf<PublicMapFeature>
     
     var body: some View {
         WithPerceptionTracking{

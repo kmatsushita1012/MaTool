@@ -10,7 +10,7 @@ import ComposableArchitecture
 import NavigationSwipeControl
 
 struct InfoListView: View {
-    @Perception.Bindable var store: StoreOf<InfoListFeature>
+    @SwiftUI.Bindable var store: StoreOf<InfoListFeature>
     
     var body: some View {
         WithPerceptionTracking{

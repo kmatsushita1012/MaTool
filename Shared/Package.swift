@@ -12,9 +12,8 @@ let package = Package(
         .library(name: "Shared", targets: ["Shared"]),
     ],
     dependencies: [
-        .package(url: "https://github.com/pointfreeco/swift-case-paths.git", from: "1.7.2"),
-        .package(url: "https://github.com/pointfreeco/sqlite-data.git", from: "1.5.0"),
-        .package( url: "https://github.com/groue/GRDB.swift.git", from: "7.6.0")
+        .package(url: "https://github.com/pointfreeco/swift-case-paths.git", from: "1.10.0"),
+        .package(url: "https://github.com/pointfreeco/sqlite-data.git", from: "1.12.0"),
     ],
     targets: [
         .target(
@@ -22,7 +21,6 @@ let package = Package(
             dependencies: [
                 .product(name: "CasePaths", package: "swift-case-paths"),
                 .product(name: "SQLiteData", package: "sqlite-data"),
-                .product(name: "GRDB", package: "GRDB.swift")
             ],
             path: "Sources"
         ),
