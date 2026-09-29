@@ -639,7 +639,7 @@
 			repositoryURL = "https://github.com/pointfreeco/swift-composable-architecture";
 			requirement = {
 				kind = upToNextMajorVersion;
-				minimumVersion = 1.26.0;
+				minimumVersion = 1.26.2;
 			};
 			traits = (
 			);
@@ -649,7 +649,7 @@
 			repositoryURL = "https://github.com/pointfreeco/sqlite-data.git";
 			requirement = {
 				kind = upToNextMajorVersion;
-				minimumVersion = 1.6.6;
+				minimumVersion = 1.12.0;
 			};
 			traits = (
 			);
@@ -659,7 +659,7 @@
 			repositoryURL = "https://github.com/aws-amplify/amplify-ios.git";
 			requirement = {
 				kind = upToNextMajorVersion;
-				minimumVersion = 2.51.5;
+				minimumVersion = 2.62.0;
 			};
 		};
 		29F7B7302EC872E80099607E /* XCRemoteSwiftPackageReference "NavigationSwipeControl" */ = {
@@ -675,7 +675,7 @@
 			repositoryURL = "https://github.com/onevcat/Kingfisher.git";
 			requirement = {
 				kind = upToNextMajorVersion;
-				minimumVersion = 8.6.1;
+				minimumVersion = 8.13.0;
 			};
 		};
 		2A2B2C2D2E2F303132333433 /* XCRemoteSwiftPackageReference "swift-package-manager-google-mobile-ads" */ = {
@@ -683,7 +683,7 @@
 			repositoryURL = "https://github.com/googleads/swift-package-manager-google-mobile-ads.git";
 			requirement = {
 				kind = upToNextMajorVersion;
-				minimumVersion = 12.12.0;
+				minimumVersion = 13.10.0;
 			};
 		};
 /* End XCRemoteSwiftPackageReference section */
