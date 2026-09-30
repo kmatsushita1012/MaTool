@@ -6,6 +6,8 @@ on:
 jobs:
   release-archive:
     runs-on: macos-26
+    env:
+      IOS_BUILD_NUMBER: ${{ github.run_number }}.${{ github.run_attempt }}
 
     steps:
       - name: Checkout
@@ -70,17 +72,33 @@ jobs:
             -derivedDataPath iOSApp/.derivedData \
             -skipMacroValidation \
             -skipPackagePluginValidation \
+            CURRENT_PROJECT_VERSION="$IOS_BUILD_NUMBER" \
             CODE_SIGNING_ALLOWED=NO \
             ENABLE_SWIFT_MACROS=YES
 
       - name: Create ExportOptions.plist
         run: |
           echo '${{ secrets.EXPORT_OPTIONS }}' > ExportOptions.plist
+          if /usr/libexec/PlistBuddy -c 'Print :manageAppVersionAndBuildNumber' ExportOptions.plist >/dev/null 2>&1; then
+            /usr/libexec/PlistBuddy -c 'Set :manageAppVersionAndBuildNumber false' ExportOptions.plist
+          else
+            /usr/libexec/PlistBuddy -c 'Add :manageAppVersionAndBuildNumber bool false' ExportOptions.plist
+          fi
           cat ExportOptions.plist
 
       - name: Export IPA
         run: |
           xcodebuild -exportArchive -archivePath iOSApp/MaTool.xcarchive -exportOptionsPlist ExportOptions.plist -exportPath build/export -allowProvisioningUpdates -authenticationKeyPath `pwd`/private_keys/AuthKey_${{ secrets.APPLE_API_ISSUE_ID }}.p8 -authenticationKeyID ${{ secrets.APPLE_API_KEY_ID }} -authenticationKeyIssuerID ${{ secrets.APPLE_API_ISSUE_ID }}
+
+      - name: Verify Exported Build Number
+        run: |
+          /usr/bin/unzip -p build/export/MaTool.ipa Payload/MaTool.app/Info.plist > "$RUNNER_TEMP/ExportedInfo.plist"
+          ACTUAL_BUILD_NUMBER=$(/usr/libexec/PlistBuddy -c 'Print :CFBundleVersion' "$RUNNER_TEMP/ExportedInfo.plist")
+          if [ "$ACTUAL_BUILD_NUMBER" != "$IOS_BUILD_NUMBER" ]; then
+            echo "::error::Exported CFBundleVersion ($ACTUAL_BUILD_NUMBER) does not match GitHub Actions build number ($IOS_BUILD_NUMBER)."
+            exit 1
+          fi
+          echo "Verified exported CFBundleVersion: $ACTUAL_BUILD_NUMBER"
 
       - name: Upload to App Store Connect
         run: |
