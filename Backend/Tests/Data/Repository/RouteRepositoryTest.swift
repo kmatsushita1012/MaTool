@@ -164,6 +164,23 @@ struct RouteRepositoryTest {
     }
 
     @Test
+    func delete_正常_Route指定ではGSIを引かず主キーで削除する() async throws {
+        let route = Route.mock(id: "route-1", districtId: "district-1")
+        var lastCalledDeleteKeys: [String: Codable] = [:]
+        let dataStore = DataStoreMock(
+            deleteHandler: { keys in lastCalledDeleteKeys = keys }
+        )
+        let subject = make(dataStore: dataStore)
+
+        try await subject.delete(route)
+
+        #expect(dataStore.queryCallCount == 0)
+        #expect(dataStore.deleteCallCount == 1)
+        #expect((lastCalledDeleteKeys["pk"] as? String) == "DISTRICT#\(route.districtId)")
+        #expect((lastCalledDeleteKeys["sk"] as? String) == "ROUTE#\(route.id)")
+    }
+
+    @Test
     func delete_正常_対象なしでは削除しない() async throws {
         let dataStore = DataStoreMock(
             queryHandler: { _, _, _, _, _, _ in
