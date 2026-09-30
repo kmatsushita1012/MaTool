@@ -48,6 +48,7 @@ actor SceneUsecase: SceneUsecaseProtocol {
     func launch() async -> (LaunchState, StatusCheckResult?) {
         async let appStatusTask = appStatusClient.checkStatus()
         do {
+            try await dataFetcher.clearCache()
             try authService.initialize()
             guard let festivalId = userDefaults.defaultFestivalId else {
                 try await festivalDataFetcher.fetchAll()
