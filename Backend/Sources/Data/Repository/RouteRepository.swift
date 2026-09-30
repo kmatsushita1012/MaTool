@@ -36,6 +36,7 @@ protocol RouteRepositoryProtocol: Sendable {
 struct RouteRepository: RouteRepositoryProtocol {
     private let store: DataStore
     
+    @Dependency(DistrictRepositoryKey.self) var districtRepository
     @Dependency(PeriodRepositoryKey.self) var periodRepository
 
     init() {
@@ -88,6 +89,12 @@ struct RouteRepository: RouteRepositoryProtocol {
     private func getDate(_ content: Route) async throws -> SimpleDate {
         guard let period = try await periodRepository.get(id: content.periodId) else {
             throw Error.notFound("指定されたルートに合致する日程が取得できませんでした。")
+        }
+        let districts = try await districtRepository.query(by: period.festivalId)
+        guard districts.contains(where: {
+            $0.id == content.districtId && $0.festivalId == period.festivalId
+        }) else {
+            throw Error.notFound("指定されたルートに合致する地区が取得できませんでした。")
         }
         return period.date
     }

@@ -210,7 +210,7 @@ struct RouteRepositoryTest {
     @Test
     func put_異常_依存エラーを透過() async {
         let periodRepository = PeriodRepositoryMock(
-            getHandler: { _ in .mock(id: "period-1", date: .init(year: 2026, month: 2, day: 22)) }
+            getHandler: { _ in .mock(id: "period-1", festivalId: "festival-1", date: .init(year: 2026, month: 2, day: 22)) }
         )
         let dataStore = DataStoreMock(
             putHandler: { _ in throw TestError.intentional }
@@ -227,11 +227,93 @@ struct RouteRepositoryTest {
         let periodRepository = PeriodRepositoryMock(
             getHandler: { _ in nil }
         )
-        let subject = make(periodRepository: periodRepository)
+        let dataStore = DataStoreMock()
+        let subject = make(dataStore: dataStore, periodRepository: periodRepository)
 
         await #expect(throws: Error.notFound("指定されたルートに合致する日程が取得できませんでした。")) {
             _ = try await subject.post(.mock(id: "route-1", districtId: "district-1", periodId: "period-1"))
         }
+        #expect(dataStore.putCallCount == 0)
+    }
+
+    @Test
+    func post_異常_地区未登録で保存しない() async {
+        let route = Route.mock(id: "route-1", districtId: "district-missing", periodId: "period-1")
+        let districtRepository = DistrictRepositoryMock(queryHandler: { _ in [] })
+        let periodRepository = PeriodRepositoryMock(
+            getHandler: { _ in .mock(id: route.periodId, festivalId: "festival-1") }
+        )
+        let dataStore = DataStoreMock()
+        let subject = make(
+            dataStore: dataStore,
+            districtRepository: districtRepository,
+            periodRepository: periodRepository
+        )
+
+        await #expect(throws: Error.notFound("指定されたルートに合致する地区が取得できませんでした。")) {
+            _ = try await subject.post(route)
+        }
+        #expect(periodRepository.getCallCount == 1)
+        #expect(districtRepository.queryCallCount == 1)
+        #expect(dataStore.putCallCount == 0)
+    }
+
+    @Test
+    func put_異常_地区未登録で保存しない() async {
+        let route = Route.mock(id: "route-1", districtId: "district-missing", periodId: "period-1")
+        let districtRepository = DistrictRepositoryMock(queryHandler: { _ in [] })
+        let periodRepository = PeriodRepositoryMock(
+            getHandler: { _ in .mock(id: route.periodId, festivalId: "festival-1") }
+        )
+        let dataStore = DataStoreMock()
+        let subject = make(
+            dataStore: dataStore,
+            districtRepository: districtRepository,
+            periodRepository: periodRepository
+        )
+
+        await #expect(throws: Error.notFound("指定されたルートに合致する地区が取得できませんでした。")) {
+            _ = try await subject.put(route)
+        }
+        #expect(periodRepository.getCallCount == 1)
+        #expect(districtRepository.queryCallCount == 1)
+        #expect(dataStore.putCallCount == 0)
+    }
+
+    @Test
+    func put_異常_日程未登録で保存しない() async {
+        let route = Route.mock(id: "route-1", districtId: "district-1", periodId: "period-missing")
+        let periodRepository = PeriodRepositoryMock(getHandler: { _ in nil })
+        let dataStore = DataStoreMock()
+        let subject = make(dataStore: dataStore, periodRepository: periodRepository)
+
+        await #expect(throws: Error.notFound("指定されたルートに合致する日程が取得できませんでした。")) {
+            _ = try await subject.put(route)
+        }
+        #expect(periodRepository.getCallCount == 1)
+        #expect(dataStore.putCallCount == 0)
+    }
+
+    @Test
+    func post_異常_地区と日程の祭典が異なる場合は保存しない() async {
+        let route = Route.mock(id: "route-1", districtId: "district-1", periodId: "period-1")
+        let districtRepository = DistrictRepositoryMock(
+            queryHandler: { _ in [.mock(id: route.districtId, festivalId: "festival-1")] }
+        )
+        let periodRepository = PeriodRepositoryMock(
+            getHandler: { _ in .mock(id: route.periodId, festivalId: "festival-2") }
+        )
+        let dataStore = DataStoreMock()
+        let subject = make(
+            dataStore: dataStore,
+            districtRepository: districtRepository,
+            periodRepository: periodRepository
+        )
+
+        await #expect(throws: Error.notFound("指定されたルートに合致する地区が取得できませんでした。")) {
+            _ = try await subject.post(route)
+        }
+        #expect(dataStore.putCallCount == 0)
     }
 
     @Test
@@ -250,10 +332,17 @@ struct RouteRepositoryTest {
 private extension RouteRepositoryTest {
     func make(
         dataStore: DataStoreMock = .init(),
+        districtRepository: DistrictRepositoryMock = .init(
+            queryHandler: { festivalId in [
+                .mock(id: "district-1", festivalId: festivalId),
+                .mock(id: "district-id", festivalId: festivalId)
+            ] }
+        ),
         periodRepository: PeriodRepositoryMock = .init()
     ) -> RouteRepository {
         withDependencies {
             $0[DataStoreFactoryKey.self] = { _ in dataStore }
+            $0[DistrictRepositoryKey.self] = districtRepository
             $0[PeriodRepositoryKey.self] = periodRepository
         } operation: {
             RouteRepository()
