@@ -3,7 +3,6 @@ on:
   push:
     branches:
       - release-ios
-      - ios/manual-release-signing
 
 jobs:
   deploy_iosapp:
@@ -14,7 +13,6 @@ jobs:
   create_release_tag:
     name: Upsert Release Tag
     needs: deploy_iosapp
-    if: github.ref == 'refs/heads/release-ios'
     runs-on: ubuntu-latest
     permissions:
       contents: write
