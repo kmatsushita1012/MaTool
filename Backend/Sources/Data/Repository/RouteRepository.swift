@@ -29,12 +29,14 @@ protocol RouteRepositoryProtocol: Sendable {
     func post(_ route: Route) async throws -> Route
     func put(_ route: Route) async throws -> Route
     func delete(id: String) async throws
+    func delete(_ route: Route) async throws
 }
 
 // MARK: - RouteRepository
 struct RouteRepository: RouteRepositoryProtocol {
     private let store: DataStore
     
+    @Dependency(DistrictRepositoryKey.self) var districtRepository
     @Dependency(PeriodRepositoryKey.self) var periodRepository
 
     init() {
@@ -76,14 +78,23 @@ struct RouteRepository: RouteRepositoryProtocol {
 
     func delete(id: String) async throws {
         guard let target = try await get(id: id) else { return }
-        let keys = RouteRecord.makeKeys(target.id, districtId: target.districtId)
+        try await delete(target)
+    }
+
+    func delete(_ route: Route) async throws {
+        let keys = RouteRecord.makeKeys(route.id, districtId: route.districtId)
         try await store.delete(pk: keys.pk, sk: keys.sk)
-        return
     }
     
     private func getDate(_ content: Route) async throws -> SimpleDate {
         guard let period = try await periodRepository.get(id: content.periodId) else {
             throw Error.notFound("指定されたルートに合致する日程が取得できませんでした。")
+        }
+        let districts = try await districtRepository.query(by: period.festivalId)
+        guard districts.contains(where: {
+            $0.id == content.districtId && $0.festivalId == period.festivalId
+        }) else {
+            throw Error.notFound("指定されたルートに合致する地区が取得できませんでした。")
         }
         return period.date
     }
