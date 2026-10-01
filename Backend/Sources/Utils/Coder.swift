@@ -15,7 +15,9 @@ extension Data {
 
 extension Encodable {
     func toString() throws -> String {
-        let data: Data = try JSONEncoder().encode(self)
+        let encoder = JSONEncoder()
+        encoder.dateEncodingStrategy = .secondsSince1970
+        let data: Data = try encoder.encode(self)
         return String(data: data, encoding: .utf8)!
     }
 }
@@ -23,7 +25,9 @@ extension Encodable {
 extension Decodable {
     static func from(_ string: String) throws -> Self {
         let data = Data(string)
-        return try JSONDecoder().decode(Self.self, from: data)
+        let decoder = JSONDecoder()
+        decoder.dateDecodingStrategy = .secondsSince1970
+        return try decoder.decode(Self.self, from: data)
     }
 }
 
