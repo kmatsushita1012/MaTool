@@ -19,7 +19,7 @@ struct LocationView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 16){
             BulletItem(text: "\(entry.district.name)")
-            BulletItem(text: "配信時刻: \(entry.floatLocation.timestamp.text(of: "MM/dd HH/mm/ss"))")
+            BulletItem(text: "配信時刻: \(entry.floatLocation.timestamp.text(of: "MM/dd HH:mm:ss"))")
             PublicMapBannerAdSection()
             Spacer(minLength: 0)
         }
