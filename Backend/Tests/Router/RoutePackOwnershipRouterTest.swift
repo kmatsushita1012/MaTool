@@ -125,6 +125,7 @@ private extension RoutePackOwnershipRouterTest {
             $0[FestivalRepositoryKey.self] = FestivalRepositoryMock()
             $0[PointRepositoryKey.self] = pointRepository
             $0[PassageRepositoryKey.self] = passageRepository
+            $0[LocationControllerKey.self] = LocationControllerMock()
             $0[SceneControllerKey.self] = SceneControllerMock()
             $0[RouteUsecaseKey.self] = RouteUsecase()
             $0[RouteControllerKey.self] = RouteController()
