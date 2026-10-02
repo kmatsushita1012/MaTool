@@ -202,11 +202,36 @@ jobs:
           fi
 
           echo "Smoke test target: $URL"
-          STATUS_CODE=$(curl -sS -o /tmp/health_response.txt -w "%{http_code}" --max-time 20 "$URL")
-          echo "Response status: $STATUS_CODE"
+          EXPECTED_STATUS_CODE=200
+          MAX_ATTEMPTS=7
+          RETRY_DELAY_SECONDS=10
+          RESPONSE_FILE=$(mktemp)
+          trap 'rm -f "$RESPONSE_FILE"' EXIT
 
-          if [ "$STATUS_CODE" -ge 500 ]; then
-            echo "Smoke test failed. Response body:"
-            cat /tmp/health_response.txt
-            exit 1
-          fi
+          for ATTEMPT in $(seq 1 "$MAX_ATTEMPTS"); do
+            : > "$RESPONSE_FILE"
+            if STATUS_CODE=$(curl -sS -o "$RESPONSE_FILE" -w "%{http_code}" --max-time 20 "$URL"); then
+              CURL_EXIT_CODE=0
+            else
+              CURL_EXIT_CODE=$?
+            fi
+
+            echo "Attempt ${ATTEMPT}/${MAX_ATTEMPTS}: curl exit=${CURL_EXIT_CODE}, HTTP status=${STATUS_CODE:-000}"
+            if [ "$CURL_EXIT_CODE" -eq 0 ] \
+              && [ "$STATUS_CODE" = "$EXPECTED_STATUS_CODE" ] \
+              && jq -e 'type == "object" and length == 0' "$RESPONSE_FILE" >/dev/null; then
+              echo "Health endpoint returned the expected status and body."
+              exit 0
+            fi
+
+            echo "Health smoke attempt did not match the expected response. Body:"
+            cat "$RESPONSE_FILE"
+
+            if [ "$ATTEMPT" -lt "$MAX_ATTEMPTS" ]; then
+              echo "Retrying in ${RETRY_DELAY_SECONDS}s to allow stage propagation..."
+              sleep "$RETRY_DELAY_SECONDS"
+            fi
+          done
+
+          echo "Health smoke test failed after ${MAX_ATTEMPTS} attempts; expected HTTP ${EXPECTED_STATUS_CODE} with an empty JSON object body."
+          exit 1
