@@ -10,6 +10,24 @@ import ComposableArchitecture
 import Shared
 import SQLiteData
 
+struct PublicMapDistrictLaunchRequestGate: Equatable {
+    private(set) var activeID: UUID?
+
+    mutating func begin() -> UUID {
+        let id = UUID()
+        activeID = id
+        return id
+    }
+
+    mutating func invalidate() {
+        activeID = nil
+    }
+
+    func accepts(_ id: UUID) -> Bool {
+        activeID == id
+    }
+}
+
 @Reducer
 struct PublicMapFeature {
     struct DistrictLaunchResult: Equatable {
@@ -35,6 +53,7 @@ struct PublicMapFeature {
         var selectedContent: Content
         var currentPeriodId: Period.ID? = nil
         var isLoading: Bool = false
+        var districtLaunchRequestGate = PublicMapDistrictLaunchRequestGate()
         var isDismissed: Bool = false
         @Presents var destination: Destination.State?
         @Shared var mapRegion: MKCoordinateRegion
@@ -47,9 +66,9 @@ struct PublicMapFeature {
         case binding(BindingAction<State>)
         case dismissTapped
         case contentSelected(Content)
-        case routePrepared(District, Route.ID?)
+        case routePrepared(UUID, District, Route.ID?)
         case districtContentEvaluated(District, Bool)
-        case districtLaunchReceived(AppResult<DistrictLaunchResult>)
+        case districtLaunchReceived(UUID, AppResult<DistrictLaunchResult>)
         case errorCaught(AppError)
         case destination(PresentationAction<Destination.Action>)
     }
@@ -80,6 +99,8 @@ struct PublicMapFeature {
             case .contentSelected(let value):
                 state.$toast.withLock { $0 = nil }
                 state.selectedContent = value
+                state.districtLaunchRequestGate.invalidate()
+                state.isLoading = false
                 switch value {
                 case .locations(let festival):
                     state.destination = .locations(
@@ -91,20 +112,27 @@ struct PublicMapFeature {
                     )
                     return .none
                 case .route(let district):
+                    let requestID = state.districtLaunchRequestGate.begin()
                     state.isLoading = true
                     return districtLaunchEffect(
+                        requestID: requestID,
                         userRole: state.userRole,
                         district: district,
                         periodId: state.currentPeriodId
                     )
                 }
-            case .districtLaunchReceived(.success(let result)):
-                return .send(.routePrepared(result.district, result.routeId))
-            case .districtLaunchReceived(.failure(let error)):
+            case .districtLaunchReceived(let requestID, .success(let result)):
+                guard state.districtLaunchRequestGate.accepts(requestID) else { return .none }
+                return .send(.routePrepared(requestID, result.district, result.routeId))
+            case .districtLaunchReceived(let requestID, .failure(let error)):
+                guard state.districtLaunchRequestGate.accepts(requestID) else { return .none }
+                state.districtLaunchRequestGate.invalidate()
                 state.isLoading = false
                 state.$toast.withLock { $0 = .error(error, title: "地区情報を取得できませんでした") }
                 return .none
-            case .routePrepared(let district, let routeId):
+            case .routePrepared(let requestID, let district, let routeId):
+                guard state.districtLaunchRequestGate.accepts(requestID) else { return .none }
+                state.districtLaunchRequestGate.invalidate()
                 state.isLoading = false
                 if let routeId,
                    let route = FetchOne(Route.find(routeId)).wrappedValue {
@@ -149,11 +177,12 @@ struct PublicMapFeature {
     }
     
     func districtLaunchEffect(
+        requestID: UUID,
         userRole: UserRole,
         district: District,
         periodId: Period.ID?
     ) -> Effect<Action> {
-        .task(Action.districtLaunchReceived) {
+        .task({ result in Action.districtLaunchReceived(requestID, result) }) {
             let routeId = try await publicMapAdUsecase.handleDistrictSelection(
                 districtId: district.id,
                 periodId: periodId
