@@ -126,6 +126,9 @@ struct RouteRepository: RouteRepositoryProtocol {
         key: (Element) -> DataStoreItemKey,
         record: (Element) -> Record<Element>
     ) throws -> [DataStoreMutation] where Element.ID == String {
+        guard Set(newItems.map(\.id)).count == newItems.count else {
+            throw Error.badRequest("RoutePackの子要素IDが重複しています。")
+        }
         let existingByID = Dictionary(uniqueKeysWithValues: existing.map { ($0.id, $0) })
         let newByID = Dictionary(uniqueKeysWithValues: newItems.map { ($0.id, $0) })
         var mutations: [DataStoreMutation] = []

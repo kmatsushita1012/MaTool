@@ -74,6 +74,29 @@ struct RoutePackTransactionTest {
     }
 
     @Test
+    func putPack_異常_Repository境界でも重複IDを拒否する() async {
+        let route = Route.mock(id: "route-pack", districtId: "district-1", periodId: "period-1")
+        let point = Point.mock(id: "point-duplicate", routeId: route.id)
+        let periodRepository = PeriodRepositoryMock(
+            getHandler: { _ in .mock(id: route.periodId, festivalId: "festival-1", date: .init(year: 2026, month: 3, day: 1)) }
+        )
+        let dataStore = DataStoreMock()
+        let subject = make(dataStore: dataStore, periodRepository: periodRepository)
+
+        await #expect(throws: Error.badRequest("RoutePackの子要素IDが重複しています。")) {
+            _ = try await subject.put(
+                .init(route: route, points: [point, point], passages: []),
+                oldPoints: [],
+                oldPassages: []
+            )
+        }
+
+        #expect(dataStore.transactionWriteCallCount == 0)
+        #expect(dataStore.putCallCount == 0)
+        #expect(dataStore.deleteCallCount == 0)
+    }
+
+    @Test
     func transactionMutation_異常_101件は書き込み前に拒否する() throws {
         let mutations = try (0..<101).map { index in
             try DataStoreMutation.put(Record(
