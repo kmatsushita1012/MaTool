@@ -16,7 +16,6 @@ final class DataStoreMock: DataStore, @unchecked Sendable {
         self.deleteHandler = deleteHandler
         self.scanHandler = scanHandler
         self.queryHandler = queryHandler
-        self.transactionWriteHandler = transactionWriteHandler
     }
 
     nonisolated(unsafe) private(set) var putCallCount = 0
