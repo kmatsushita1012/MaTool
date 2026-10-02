@@ -14,7 +14,7 @@ struct FestivalPackScopeRouterTest {
             checkpoints: [.mock(id: "checkpoint-2", festivalId: "festival-2")]
         )
 
-        let response = await harness.app.handle(try request(pack, pathFestivalId: "festival-1", user: .headquarter("festival-1")))
+        let response = await harness.handle(try request(pack, pathFestivalId: "festival-1", user: .headquarter("festival-1")))
 
         #expect(response.statusCode == 400)
         #expect(response.body.contains("祭典と子要素の祭典IDが一致しません。"))
@@ -39,7 +39,7 @@ struct FestivalPackScopeRouterTest {
             hazardSections: [.mock(id: "hazard-2", festivalId: "festival-2")]
         )
 
-        let response = await harness.app.handle(try request(pack, pathFestivalId: "festival-1", user: .headquarter("festival-1")))
+        let response = await harness.handle(try request(pack, pathFestivalId: "festival-1", user: .headquarter("festival-1")))
 
         #expect(response.statusCode == 400)
         #expect(response.body.contains("祭典と子要素の祭典IDが一致しません。"))
@@ -57,7 +57,7 @@ struct FestivalPackScopeRouterTest {
         let original = harness.store.snapshot()
         let pack = FestivalPack.mock(festival: .mock(id: "festival-2", name: "updated"))
 
-        let response = await harness.app.handle(try request(pack, pathFestivalId: "festival-1", user: .headquarter("festival-2")))
+        let response = await harness.handle(try request(pack, pathFestivalId: "festival-1", user: .headquarter("festival-2")))
 
         #expect(response.statusCode == 400)
         #expect(response.body.contains("URLの祭典IDと送信データの祭典IDが一致しません。"))
@@ -78,7 +78,7 @@ struct FestivalPackScopeRouterTest {
             checkpoints: [.mock(id: "checkpoint-1", festivalId: "festival-1", name: "updated")]
         )
 
-        let response = await harness.app.handle(try request(pack, pathFestivalId: "festival-1", user: .headquarter("festival-2")))
+        let response = await harness.handle(try request(pack, pathFestivalId: "festival-1", user: .headquarter("festival-2")))
 
         #expect(response.statusCode == 401)
         #expect(response.body.contains("アクセス権限がありません。"))
@@ -99,7 +99,7 @@ struct FestivalPackScopeRouterTest {
             hazardSections: [.mock(id: "hazard-1", festivalId: "festival-1", title: "hazard-updated")]
         )
 
-        let response = await harness.app.handle(try request(pack, pathFestivalId: "festival-1", user: .headquarter("festival-1")))
+        let response = await harness.handle(try request(pack, pathFestivalId: "festival-1", user: .headquarter("festival-1")))
         let responsePack = try FestivalPack.from(response.body)
         let saved = harness.store.snapshot()
 
@@ -123,6 +123,18 @@ private extension FestivalPackScopeRouterTest {
         let festivalRepository: FestivalRepositoryMock
         let checkpointRepository: CheckpointRepositoryMock
         let hazardSectionRepository: HazardSectionRepositoryMock
+
+        func handle(_ request: Application.Request) async -> Application.Response {
+            await withDependencies {
+                $0[FestivalUsecaseKey.self] = FestivalUsecase()
+                $0[FestivalControllerKey.self] = FestivalController()
+                $0[FestivalRepositoryKey.self] = festivalRepository
+                $0[CheckpointRepositoryKey.self] = checkpointRepository
+                $0[HazardSectionRepositoryKey.self] = hazardSectionRepository
+            } operation: {
+                await app.handle(request)
+            }
+        }
     }
 
     func makeHarness() -> Harness {
