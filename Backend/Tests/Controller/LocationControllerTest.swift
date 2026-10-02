@@ -44,6 +44,68 @@ struct LocationControllerTest {
     }
 
     @Test
+    func query_日付をまたぐ公開期間は開始日から終了翌日まで一覧を返す() async throws {
+        let period = Period(
+            festivalId: "festival-1",
+            date: .init(year: 2026, month: 10, day: 2),
+            start: .init(hour: 22, minute: 0),
+            end: .init(hour: 2, minute: 0)
+        )
+        let location = FloatLocation.mock(id: "loc-1", districtId: "district-1")
+
+        let beforeStart = await queryLocationEndpoint(
+            at: Date.combine(date: .init(year: 2026, month: 10, day: 2), time: .init(hour: 21, minute: 29)),
+            period: period,
+            location: location
+        )
+        let startBuffer = await queryLocationEndpoint(
+            at: Date.combine(date: .init(year: 2026, month: 10, day: 2), time: .init(hour: 21, minute: 30)),
+            period: period,
+            location: location
+        )
+        let beforeMidnight = await queryLocationEndpoint(
+            at: Date.combine(date: .init(year: 2026, month: 10, day: 2), time: .init(hour: 23, minute: 30)),
+            period: period,
+            location: location
+        )
+        let afterMidnight = await queryLocationEndpoint(
+            at: Date.combine(date: .init(year: 2026, month: 10, day: 3), time: .init(hour: 1, minute: 30)),
+            period: period,
+            location: location
+        )
+        let afterEnd = await queryLocationEndpoint(
+            at: Date.combine(date: .init(year: 2026, month: 10, day: 3), time: .init(hour: 2, minute: 1)),
+            period: period,
+            location: location
+        )
+
+        #expect(try [FloatLocation].from(beforeStart.body).isEmpty)
+        #expect(try [FloatLocation].from(startBuffer.body) == [location])
+        #expect(try [FloatLocation].from(beforeMidnight.body) == [location])
+        #expect(try [FloatLocation].from(afterMidnight.body) == [location])
+        #expect(try [FloatLocation].from(afterEnd.body).isEmpty)
+        #expect(beforeStart.statusCode == 200)
+        #expect(startBuffer.statusCode == 200)
+        #expect(beforeMidnight.statusCode == 200)
+        #expect(afterMidnight.statusCode == 200)
+        #expect(afterEnd.statusCode == 200)
+
+        let previousYearPeriod = Period(
+            festivalId: "festival-1",
+            date: .init(year: 2025, month: 12, day: 31),
+            start: .init(hour: 22, minute: 0),
+            end: .init(hour: 2, minute: 0)
+        )
+        let newYearAfterMidnight = await queryLocationEndpoint(
+            at: Date.combine(date: .init(year: 2026, month: 1, day: 1), time: .init(hour: 1, minute: 30)),
+            period: previousYearPeriod,
+            location: location
+        )
+        #expect(try [FloatLocation].from(newYearAfterMidnight.body) == [location])
+        #expect(newYearAfterMidnight.statusCode == 200)
+    }
+
+    @Test
     func put_正常() async throws {
         let location = FloatLocation.mock(id: "loc-1", districtId: "district-1")
         let mock = LocationUsecaseMock(putHandler: { item, _ in item })
@@ -140,6 +202,24 @@ private extension LocationControllerTest {
             $0[LocationUsecaseKey.self] = usecase
         } operation: {
             LocationController()
+        }
+    }
+
+    func queryLocationEndpoint(at now: Date, period: Period, location: FloatLocation) async -> Application.Response {
+        await withDependencies {
+            $0[LocationRepositoryKey.self] = LocationRepositoryMock(queryHandler: { _ in [location] })
+            $0[PeriodRepositoryKey.self] = PeriodRepositoryMock(queryByYearHandler: { _, year in
+                year == period.date.year ? [period] : []
+            })
+        } operation: {
+            let app = Application()
+            let controller = LocationController(now: { now })
+            app.get(path: "/festivals/:festivalId/locations", controller.query)
+            let request = Application.Request.make(
+                method: .get,
+                path: "/festivals/festival-1/locations"
+            )
+            return await app.handle(request)
         }
     }
 }
