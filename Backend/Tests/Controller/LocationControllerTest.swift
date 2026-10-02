@@ -211,6 +211,7 @@ private extension LocationControllerTest {
             $0[PeriodRepositoryKey.self] = PeriodRepositoryMock(queryByYearHandler: { _, year in
                 year == period.date.year ? [period] : []
             })
+            $0[LocationUsecaseKey.self] = LocationUsecase()
         } operation: {
             let app = Application()
             let controller = LocationController(now: { now })
