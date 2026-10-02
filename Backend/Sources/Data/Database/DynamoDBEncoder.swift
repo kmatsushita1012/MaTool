@@ -19,7 +19,11 @@ struct DynamoDBEncoder {
         encoder.keyEncodingStrategy = .convertToSnakeCase
         let data = try encoder.encode(object)
 
-        // ② Data → Any (JSONオブジェクト)
+        return try encode(data: data)
+    }
+
+    func encode(data: Data) throws -> [String: DynamoDBClientTypes.AttributeValue] {
+        // JSON Data → Any (JSONオブジェクト)
         let jsonObject = try JSONSerialization.jsonObject(with: data)
 
         guard let dictionary = jsonObject as? [String: Any] else {

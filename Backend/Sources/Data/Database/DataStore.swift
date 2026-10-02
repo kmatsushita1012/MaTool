@@ -6,6 +6,7 @@
 //
 
 import Dependencies
+import Foundation
 
 // MARK: - Dependencies
 enum DataStoreFactoryKey: DependencyKey {
@@ -26,6 +27,7 @@ typealias DataStoreFactory = @Sendable (String) -> DataStore
 // MARK: - DataStore
 protocol DataStore: Sendable {
     func put<T: RecordProtocol>(_ item: T) async throws
+    func transactWrite(_ mutations: [DataStoreMutation]) async throws
     func get<T: RecordProtocol>(keys: [String: Codable], as type: T.Type) async throws -> T?
     func delete(keys: [String: Codable]) async throws
     func scan<T: RecordProtocol>(_ type: T.Type, ignoreDecodeError: Bool) async throws -> [T]
@@ -37,6 +39,44 @@ protocol DataStore: Sendable {
         ascending: Bool,
         as type: T.Type
     ) async throws -> [T]
+}
+
+struct DataStoreItemKey: Hashable, Sendable {
+    let pk: String
+    let sk: String
+}
+
+struct DataStoreMutation: Sendable {
+    enum Operation: Sendable {
+        case put(Data)
+        case delete
+    }
+
+    let key: DataStoreItemKey
+    let operation: Operation
+
+    static func put<Record: RecordProtocol>(_ record: Record) throws -> Self {
+        let encoder = JSONEncoder()
+        encoder.keyEncodingStrategy = .convertToSnakeCase
+        return .init(
+            key: .init(pk: record.pk, sk: record.sk),
+            operation: .put(try encoder.encode(record))
+        )
+    }
+
+    static func delete(pk: String, sk: String) -> Self {
+        .init(key: .init(pk: pk, sk: sk), operation: .delete)
+    }
+
+    static func validate(_ mutations: [Self]) throws {
+        guard mutations.count <= 100 else {
+            throw Error.badRequest("一度に更新できるデータ数の上限を超えています。")
+        }
+
+        guard Set(mutations.map(\.key)).count == mutations.count else {
+            throw Error.badRequest("一度に同じデータを複数回更新できません。")
+        }
+    }
 }
 
 // MARK: - QueryCondition
