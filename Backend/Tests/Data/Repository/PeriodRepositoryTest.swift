@@ -137,9 +137,16 @@ struct PeriodRepositoryTest {
             date: oldPeriod.date,
             start: .init(hour: 12, minute: 30)
         )
+        let unrelatedPeriod = Period.mock(
+            id: "period-unrelated",
+            festivalId: "festival-2",
+            date: oldPeriod.date,
+            start: .init(hour: 8, minute: 0)
+        )
         var operations: [String] = []
         var deletedKeys: (pk: String?, sk: String?) = (nil, nil)
         var savedRecord: PeriodRecord?
+        var queriedTargetId = false
 
         let dataStore = DataStoreMock(
             putHandler: { item in
@@ -150,9 +157,14 @@ struct PeriodRepositoryTest {
                 operations.append("delete")
                 deletedKeys = (keys["pk"] as? String, keys["sk"] as? String)
             },
-            queryHandler: { _, _, _, _, _, _ in
+            queryHandler: { indexName, keyConditions, _, _, _, _ in
                 operations.append("query")
-                return try JSONEncoder().encode([PeriodRecord(oldPeriod)])
+                queriedTargetId = indexName == "index-type-id"
+                    && keyConditions.contains(where: { isEquals($0, field: "id", value: updatedPeriod.id) })
+                return try JSONEncoder().encode([
+                    PeriodRecord(unrelatedPeriod),
+                    PeriodRecord(oldPeriod)
+                ])
             }
         )
         let subject = make(dataStore: dataStore)
@@ -162,6 +174,8 @@ struct PeriodRepositoryTest {
         #expect(result == updatedPeriod)
         #expect(deletedKeys.pk == "FESTIVAL#\(oldPeriod.festivalId)")
         #expect(deletedKeys.sk == "PERIOD#\(oldPeriod.date.sortableKey)#\(oldPeriod.start.sortableKey)")
+        #expect(queriedTargetId)
+        #expect(dataStore.deleteCallCount == 1)
         #expect(savedRecord?.content == updatedPeriod)
         #expect(operations == ["query", "delete", "put"])
     }

@@ -70,7 +70,9 @@ struct PeriodRepository: PeriodRepositoryProtocol {
             queryConditions: [idKeys.pk, idKeys.sk],
             as: PeriodRecord.self
         )
-        for existingRecord in existingRecords where existingRecord.pk != record.pk || existingRecord.sk != record.sk {
+        for existingRecord in existingRecords
+        where existingRecord.content.id == item.id
+            && (existingRecord.pk != record.pk || existingRecord.sk != record.sk) {
             try await dataStore.delete(pk: existingRecord.pk, sk: existingRecord.sk)
         }
 
