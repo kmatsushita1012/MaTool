@@ -149,14 +149,26 @@ private extension FestivalPackScopeRouterTest {
         })
         let checkpointRepository = CheckpointRepositoryMock(
             queryHandler: { store.checkpoints(for: $0) },
-            postHandler: { store.save($0) },
-            putHandler: { store.save($0) },
+            postHandler: { item in
+                store.save(item)
+                return item
+            },
+            putHandler: { item in
+                store.save(item)
+                return item
+            },
             deleteHandler: { store.delete($0) }
         )
         let hazardSectionRepository = HazardSectionRepositoryMock(
             queryHandler: { store.hazardSections(for: $0) },
-            postHandler: { store.save($0) },
-            putHandler: { store.save($0) },
+            postHandler: { item in
+                store.save(item)
+                return item
+            },
+            putHandler: { item in
+                store.save(item)
+                return item
+            },
             deleteHandler: { store.delete($0) }
         )
 
