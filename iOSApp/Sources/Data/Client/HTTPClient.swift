@@ -92,8 +92,8 @@ actor HTTPClient: HTTPClientProtocol {
     init(base: String, session: URLSession = .shared) {
         self.base = base
         self.session = session
-        self.jsonEncoder = JSONEncoder()
-        self.jsonDecoder = JSONDecoder()
+        self.jsonEncoder = Self.makeJSONEncoder()
+        self.jsonDecoder = Self.makeJSONDecoder()
     }
 
     init(base: String, timeoutIntervalForRequest: TimeInterval = 10, timeoutIntervalForResource: TimeInterval = 30) {
@@ -102,8 +102,8 @@ actor HTTPClient: HTTPClientProtocol {
         config.timeoutIntervalForRequest = timeoutIntervalForRequest
         config.timeoutIntervalForResource = timeoutIntervalForResource
         self.session = URLSession(configuration: config)
-        self.jsonEncoder = JSONEncoder()
-        self.jsonDecoder = JSONDecoder()
+        self.jsonEncoder = Self.makeJSONEncoder()
+        self.jsonDecoder = Self.makeJSONDecoder()
     }
 
     func request<Response: Decodable, Body: Encodable>(
@@ -261,6 +261,18 @@ actor HTTPClient: HTTPClientProtocol {
         config.timeoutIntervalForResource = 30
         config.urlCache = URLCache(memoryCapacity: 10 * 1024 * 1024, diskCapacity: 0)
         return HTTPClient(base: base, session: URLSession(configuration: config))
+    }
+
+    private static func makeJSONEncoder() -> JSONEncoder {
+        let encoder = JSONEncoder()
+        encoder.dateEncodingStrategy = .secondsSince1970
+        return encoder
+    }
+
+    private static func makeJSONDecoder() -> JSONDecoder {
+        let decoder = JSONDecoder()
+        decoder.dateDecodingStrategy = .secondsSince1970
+        return decoder
     }
 }
 
