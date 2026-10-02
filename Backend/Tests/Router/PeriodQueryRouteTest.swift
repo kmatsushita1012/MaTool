@@ -11,9 +11,9 @@ struct PeriodQueryRouteTest {
             queryByYearHandler: { _, _ in [] },
             queryHandler: { _ in [Period.mock(id: "all-period", festivalId: "festival-1")] }
         )
-        let app = make(usecase: usecase)
+        let handle = makeHandler(usecase: usecase)
 
-        let response = await app.handle(.make(
+        let response = await handle(.make(
             method: .get,
             path: "/festivals/festival-1/periods",
             parameters: ["year": "abc"]
@@ -38,9 +38,9 @@ struct PeriodQueryRouteTest {
             },
             queryHandler: { _ in [] }
         )
-        let app = make(usecase: usecase)
+        let handle = makeHandler(usecase: usecase)
 
-        let response = await app.handle(.make(
+        let response = await handle(.make(
             method: .get,
             path: "/festivals/festival-1/periods",
             parameters: ["year": "2026"]
@@ -60,9 +60,9 @@ struct PeriodQueryRouteTest {
             queryByYearHandler: { _, _ in [] },
             queryHandler: { _ in periods }
         )
-        let app = make(usecase: usecase)
+        let handle = makeHandler(usecase: usecase)
 
-        let response = await app.handle(.make(
+        let response = await handle(.make(
             method: .get,
             path: "/festivals/festival-1/periods"
         ))
@@ -76,8 +76,10 @@ struct PeriodQueryRouteTest {
 }
 
 private extension PeriodQueryRouteTest {
-    func make(usecase: PeriodUsecaseMock) -> Application {
-        withDependencies {
+    func makeHandler(
+        usecase: PeriodUsecaseMock
+    ) -> (Application.Request) async -> Application.Response {
+        let app = withDependencies {
             $0[FestivalControllerKey.self] = .init()
             $0[DistrictControllerKey.self] = .init()
             $0[LocationControllerKey.self] = .init()
@@ -85,6 +87,18 @@ private extension PeriodQueryRouteTest {
             $0[PeriodUsecaseKey.self] = usecase
         } operation: {
             Application { FestivalRouter() }
+        }
+
+        return { request in
+            await withDependencies {
+                $0[FestivalControllerKey.self] = .init()
+                $0[DistrictControllerKey.self] = .init()
+                $0[LocationControllerKey.self] = .init()
+                $0[SceneControllerKey.self] = .init()
+                $0[PeriodUsecaseKey.self] = usecase
+            } operation: {
+                await app.handle(request)
+            }
         }
     }
 }
