@@ -12,13 +12,18 @@ struct AuthMiddlewareTest {
             throw NotAuthorizedException(message: "Invalid access token")
         })
         let routeController = RouteControllerMock()
-        let app = make(authManager: authManager, routeController: routeController)
+        let app = make(routeController: routeController)
 
-        let response = await app.handle(.make(
+        let request = Application.Request.make(
             method: .get,
             path: "/routes/route-1",
             headers: ["authorization": "Bearer invalid-token"]
-        ))
+        )
+        let response = await withDependencies {
+            $0[AuthManagerFactoryKey.self] = { authManager }
+        } operation: {
+            await app.handle(request)
+        }
 
         #expect(response.statusCode == 401)
         #expect(response.headers["Content-Type"] == "application/json")
@@ -35,13 +40,18 @@ struct AuthMiddlewareTest {
             throw TestError.intentional
         })
         let routeController = RouteControllerMock()
-        let app = make(authManager: authManager, routeController: routeController)
+        let app = make(routeController: routeController)
 
-        let response = await app.handle(.make(
+        let request = Application.Request.make(
             method: .get,
             path: "/routes/route-1",
             headers: ["authorization": "Bearer token"]
-        ))
+        )
+        let response = await withDependencies {
+            $0[AuthManagerFactoryKey.self] = { authManager }
+        } operation: {
+            await app.handle(request)
+        }
 
         #expect(response.statusCode == 500)
         #expect(response.headers["Content-Type"] == "application/json")
@@ -54,11 +64,9 @@ struct AuthMiddlewareTest {
 
 private extension AuthMiddlewareTest {
     func make(
-        authManager: AuthManagerMock,
         routeController: RouteControllerMock
     ) -> Application {
         withDependencies {
-            $0[AuthManagerFactoryKey.self] = { authManager }
             $0[RouteControllerKey.self] = routeController
             $0[PeriodControllerKey.self] = PeriodControllerMock()
         } operation: {
