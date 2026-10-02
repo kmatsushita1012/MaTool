@@ -35,16 +35,17 @@ struct DistrictRouterTest {
 
     @Test
     func middlewarePathは配下のルートに適用される_正常() async {
-        var middlewareCallCount = 0
+        let middlewareCallCounter = MiddlewareCallCounter()
         let app = Application()
         app.use(path: "/api") { request, next in
-            middlewareCallCount += 1
+            await middlewareCallCounter.increment()
             return try await next(request)
         }
         app.get(path: "/api/items/:itemId") { _, _ in try .success() }
 
         let request = Application.Request.make(method: .get, path: "/api/items/item-1")
         let response = await app.handle(request)
+        let middlewareCallCount = await middlewareCallCounter.value
 
         #expect(response.statusCode == 200)
         #expect(middlewareCallCount == 1)
@@ -91,6 +92,14 @@ struct DistrictRouterTest {
         let response = await app.handle(request)
 
         #expect(response.statusCode == 500)
+    }
+}
+
+private actor MiddlewareCallCounter {
+    private(set) var value = 0
+
+    func increment() {
+        value += 1
     }
 }
 
