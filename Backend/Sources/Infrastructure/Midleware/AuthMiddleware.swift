@@ -7,6 +7,7 @@
 
 import AWSCognitoIdentityProvider
 import Dependencies
+import Shared
 
 // MARK: - AuthMiddleware
 struct AuthMiddleware: MiddlewareComponent {
@@ -22,8 +23,12 @@ struct AuthMiddleware: MiddlewareComponent {
         }
 
         let token = String(authHeader.dropFirst("Bearer ".count))
-        guard let result = try? await authManagerFactory().get(accessToken: token) else {
-            return Response(statusCode: 500, headers: [:], body: "Internal Server Error")
+        let authManager = try await authManagerFactory()
+        let result: UserRole
+        do {
+            result = try await authManager.get(accessToken: token)
+        } catch is CognitoIdentityProviderClientTypes.NotAuthorizedException {
+            throw Application.Error.unauthorized("Unauthorized")
         }
         print("Auth User: \(result) ID: \(String(describing: result.id))")
         request.user = result
