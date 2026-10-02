@@ -42,10 +42,6 @@ struct DistrictPackScopeHTTPTest {
                 persistedPerformances[item.id] = nil
             }
         )
-        let app = makeApplication(
-            districtRepository: districtRepository,
-            performanceRepository: performanceRepository
-        )
         let incoming = DistrictPack(
             district: .mock(id: ownerDistrictID, festivalId: "festival-1", name: "changed"),
             performances: [foreignPerformance]
@@ -57,7 +53,11 @@ struct DistrictPackScopeHTTPTest {
         )
         request.user = .district(ownerDistrictID)
 
-        let response = await app.handle(request)
+        let response = await handle(
+            request,
+            districtRepository: districtRepository,
+            performanceRepository: performanceRepository
+        )
         let error = try JSONDecoder().decode(ErrorResponse.self, from: Data(response.body.utf8))
 
         #expect(response.statusCode == 400)
@@ -102,10 +102,6 @@ struct DistrictPackScopeHTTPTest {
                 return item
             }
         )
-        let app = makeApplication(
-            districtRepository: districtRepository,
-            performanceRepository: performanceRepository
-        )
         let incoming = DistrictPack(
             district: .mock(id: districtID, festivalId: "festival-1", name: "updated district"),
             performances: [updatedPerformance]
@@ -117,7 +113,11 @@ struct DistrictPackScopeHTTPTest {
         )
         request.user = .district(districtID)
 
-        let response = await app.handle(request)
+        let response = await handle(
+            request,
+            districtRepository: districtRepository,
+            performanceRepository: performanceRepository
+        )
         let pack = try DistrictPack.from(response.body)
 
         #expect(response.statusCode == 200)
@@ -132,11 +132,12 @@ struct DistrictPackScopeHTTPTest {
 }
 
 private extension DistrictPackScopeHTTPTest {
-    func makeApplication(
+    func handle(
+        _ request: Application.Request,
         districtRepository: DistrictRepositoryMock,
         performanceRepository: PerformanceRepositoryMock
-    ) -> Application {
-        withDependencies {
+    ) async -> Application.Response {
+        await withDependencies {
             $0[DistrictRepositoryKey.self] = districtRepository
             $0[PerformanceRepositoryKey.self] = performanceRepository
             $0[RouteRepositoryKey.self] = RouteRepositoryMock()
@@ -148,7 +149,7 @@ private extension DistrictPackScopeHTTPTest {
             $0[LocationControllerKey.self] = LocationControllerMock()
             $0[SceneControllerKey.self] = SceneControllerMock()
         } operation: {
-            Application { DistrictRouter() }
+            await Application { DistrictRouter() }.handle(request)
         }
     }
 }
