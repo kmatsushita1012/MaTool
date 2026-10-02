@@ -43,6 +43,14 @@ struct FestivalRouterTest {
         let authManager = AuthManagerMock(getAccessTokenHandler: { _ in .headquarter("festival-user") })
         let festivalRepository = FestivalRepositoryMock()
         let districtRepository = DistrictRepositoryMock()
+        let periodRepository = PeriodRepositoryMock()
+        let locationRepository = LocationRepositoryMock()
+        let checkpointRepository = CheckpointRepositoryMock()
+        let hazardRepository = HazardSectionRepositoryMock()
+        let performanceRepository = PerformanceRepositoryMock()
+        let routeRepository = RouteRepositoryMock()
+        let pointRepository = PointRepositoryMock()
+        let passageRepository = PassageRepositoryMock()
         let request = Application.Request.make(
             method: .get,
             path: "/festivals/festival-target/launch",
@@ -53,6 +61,20 @@ struct FestivalRouterTest {
             $0[AuthManagerFactoryKey.self] = { authManager }
             $0[FestivalRepositoryKey.self] = festivalRepository
             $0[DistrictRepositoryKey.self] = districtRepository
+            $0[PeriodRepositoryKey.self] = periodRepository
+            $0[LocationRepositoryKey.self] = locationRepository
+            $0[CheckpointRepositoryKey.self] = checkpointRepository
+            $0[HazardSectionRepositoryKey.self] = hazardRepository
+            $0[PerformanceRepositoryKey.self] = performanceRepository
+            $0[RouteRepositoryKey.self] = routeRepository
+            $0[PointRepositoryKey.self] = pointRepository
+            $0[PassageRepositoryKey.self] = passageRepository
+            $0[SceneUsecaseKey.self] = SceneUsecase()
+            $0[FestivalControllerKey.self] = FestivalControllerMock()
+            $0[DistrictControllerKey.self] = DistrictControllerMock()
+            $0[LocationControllerKey.self] = LocationControllerMock()
+            $0[PeriodControllerKey.self] = PeriodControllerMock()
+            $0[SceneControllerKey.self] = SceneController()
         } operation: {
             let app = Application {
                 AuthMiddleware(path: "/")
