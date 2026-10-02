@@ -121,6 +121,8 @@ private func makeUsecase(
         $0.appStatusClient = AppStatusClientMock()
         $0.festivalDataFetcher = festivalDataFetcher
         $0[SceneDataFetcherKey.self] = sceneDataFetcher
+        $0[FestivalStoreKey.self] = SQLiteStore<Festival>()
+        $0[DistrictStoreKey.self] = SQLiteStore<District>()
     } operation: {
         SceneUsecase(userDefaults: userDefaults)
     }
@@ -184,8 +186,6 @@ private struct SceneDataFetcherMock: SceneDataFetcherProtocol, Sendable {
         self.launchFestivalFromDistrictHandler = launchFestivalFromDistrictHandler
         self.launchDistrictHandler = launchDistrictHandler
     }
-
-    func clearCache() async throws {}
 
     func launchFestival(festivalId: Festival.ID, clearsExistingData: Bool) async throws {
         try await launchFestivalHandler(festivalId)

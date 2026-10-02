@@ -13,7 +13,6 @@ enum SceneDataFetcherKey: DependencyKey {
 }
 
 protocol SceneDataFetcherProtocol: DataFetcher {
-    func clearCache() async throws
     func launchFestival(festivalId: Festival.ID, clearsExistingData: Bool) async throws
     func launchFestival(districtId: District.ID, clearsExistingData: Bool) async throws -> Festival.ID
     func launchDistrict(districtId: District.ID, periodId: Period.ID?, clearsExistingData: Bool) async throws -> Route.ID?
@@ -56,21 +55,6 @@ struct SceneDataFetcher: SceneDataFetcherProtocol {
     @Dependency(PassageStoreKey.self) var passageStore
     @Dependency(FloatLocationStoreKey.self) var locationStore
 
-    func clearCache() async throws {
-        try await database.write { db in
-            try pointStore.deleteAll(from: db)
-            try passageStore.deleteAll(from: db)
-            try routeStore.deleteAll(from: db)
-            try performanceStore.deleteAll(from: db)
-            try locationStore.deleteAll(from: db)
-            try checkpointStore.deleteAll(from: db)
-            try hazardSectionStore.deleteAll(from: db)
-            try periodStore.deleteAll(from: db)
-            try districtStore.deleteAll(from: db)
-            try festivalStore.deleteAll(from: db)
-        }
-    }
-    
     func launchFestival(
         festivalId: Shared.Festival.ID,
         clearsExistingData: Bool
@@ -97,9 +81,9 @@ struct SceneDataFetcher: SceneDataFetcherProtocol {
         clearsExistingData: Bool
     ) async throws -> LaunchFestivalPack {
         let token = try await getToken()
-        let pack: LaunchFestivalPack
-        if clearsExistingData {
-            async let deleteTask: () = database.write{ db in
+        let pack: LaunchFestivalPack = try await client.get(path: path, accessToken: token, isCache: false)
+        try await database.write{ db in
+            if clearsExistingData {
                 try festivalStore.deleteAll(from: db)
                 try checkpointStore.deleteAll(from: db)
                 try hazardSectionStore.deleteAll(from: db)
@@ -107,13 +91,6 @@ struct SceneDataFetcher: SceneDataFetcherProtocol {
                 try districtStore.deleteAll(from: db)
                 try locationStore.deleteAll(from: db)
             }
-            async let fetchTask: LaunchFestivalPack = client.get(path: path, accessToken: token, isCache: false)
-            let result = try await (fetchTask, deleteTask)
-            pack = result.0
-        } else {
-            pack = try await client.get(path: path, accessToken: token)
-        }
-        try await database.write{ db in
             try festivalStore.upsert(pack.festival, at: db)
             try checkpointStore.upsert(pack.checkpoints, at: db)
             try hazardSectionStore.upsert(pack.hazardSections, at: db)
@@ -130,7 +107,6 @@ struct SceneDataFetcher: SceneDataFetcherProtocol {
         clearsExistingData: Bool
     ) async throws -> Route.ID? {
         let token = try await getToken()
-        let pack: LaunchDistrictPack
         let query: [String: Any] = {
             if let periodId {
                 return ["periodId": periodId]
@@ -138,20 +114,14 @@ struct SceneDataFetcher: SceneDataFetcherProtocol {
                 return [:]
             }
         }()
-        if clearsExistingData {
-            async let deleteTask: () = database.write{ db in
+        let pack: LaunchDistrictPack = try await client.get(path: "/districts/\(districtId)/launch", query: query, accessToken: token, isCache: false)
+        try await database.write{ db in
+            if clearsExistingData {
                 try performanceStore.deleteAll(from: db)
                 try routeStore.deleteAll(from: db)
                 try pointStore.deleteAll(from: db)
                 try passageStore.deleteAll(from: db)
             }
-            async let fetchTask: LaunchDistrictPack = client.get(path: "/districts/\(districtId)/launch", query: query, accessToken: token, isCache: false)
-            let result = try await (fetchTask, deleteTask)
-            pack = result.0
-        } else {
-            pack = try await client.get(path: "/districts/\(districtId)/launch", query: query, accessToken: token, isCache: false)
-        }
-        try await database.write{ db in
             try performanceStore.upsert(pack.performances, at: db)
             try routeStore.upsert(pack.routes, at: db)
             try pointStore.upsert(pack.points, at: db)
