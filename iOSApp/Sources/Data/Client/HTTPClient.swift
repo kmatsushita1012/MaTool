@@ -83,7 +83,6 @@ protocol HTTPClientProtocol: Sendable {
 actor HTTPClient: HTTPClientProtocol {
     private let base: String
     private let session: URLSession
-    private let cache = NSCache<NSString, NSData>()
     private let jsonEncoder: JSONEncoder
     private let jsonDecoder: JSONDecoder
 
@@ -93,8 +92,8 @@ actor HTTPClient: HTTPClientProtocol {
     init(base: String, session: URLSession = .shared) {
         self.base = base
         self.session = session
-        self.jsonEncoder = JSONEncoder()
-        self.jsonDecoder = JSONDecoder()
+        self.jsonEncoder = Self.makeJSONEncoder()
+        self.jsonDecoder = Self.makeJSONDecoder()
     }
 
     init(base: String, timeoutIntervalForRequest: TimeInterval = 10, timeoutIntervalForResource: TimeInterval = 30) {
@@ -103,8 +102,8 @@ actor HTTPClient: HTTPClientProtocol {
         config.timeoutIntervalForRequest = timeoutIntervalForRequest
         config.timeoutIntervalForResource = timeoutIntervalForResource
         self.session = URLSession(configuration: config)
-        self.jsonEncoder = JSONEncoder()
-        self.jsonDecoder = JSONDecoder()
+        self.jsonEncoder = Self.makeJSONEncoder()
+        self.jsonDecoder = Self.makeJSONDecoder()
     }
 
     func request<Response: Decodable, Body: Encodable>(
@@ -118,15 +117,6 @@ actor HTTPClient: HTTPClientProtocol {
         let url = try makeURL(path: path, query: query)
 
         let bodyData = try await encodeBody(body)
-
-        let key = cacheKey(url: url, method: method, bodyData: bodyData ?? nil)
-
-        // Cache hit
-        if isCache,
-            let cached = cache.object(forKey: key),
-           let decodecCache: Response = try? await decodeResponse(from: cached as Data){
-            return decodecCache
-        }
 
         // Build request and execute
         let urlRequest = makeRequest(
@@ -149,8 +139,10 @@ actor HTTPClient: HTTPClientProtocol {
             throw AppError(statusCode: http.statusCode, message: response.localizedDescription)
         }
 
-        // Success path: cache and decode
-        if isCache { cache.setObject(data as NSData, forKey: key) }
+        if let http, (200...399).contains(http.statusCode), method != "GET", method != "HEAD" {
+            invalidateCache()
+        }
+
         let response: Response = try await decodeResponse(from: data)
         return response
     }
@@ -170,21 +162,15 @@ actor HTTPClient: HTTPClientProtocol {
     }
 
     func post<Response: Decodable, Body: Encodable>(path: String, body: Body, query: [String: Any] = [:], accessToken: String? = nil) async throws -> Response {
-        let response: Response = try await request(path: path, method: "POST", query: query, body: body, accessToken: accessToken, isCache: false)
-        cache.removeAllObjects()
-        return response
+        try await request(path: path, method: "POST", query: query, body: body, accessToken: accessToken, isCache: false)
     }
 
     func put<Response: Decodable, Body: Encodable>(path: String, body: Body, query: [String: Any] = [:], accessToken: String? = nil) async throws -> Response {
-        let response: Response = try await request(path: path, method: "PUT", query: query, body: body, accessToken: accessToken, isCache: false)
-        cache.removeAllObjects()
-        return response
+        try await request(path: path, method: "PUT", query: query, body: body, accessToken: accessToken, isCache: false)
     }
 
     func delete<Response: Decodable>(path: String, query: [String: Any] = [:], accessToken: String? = nil) async throws -> Response {
-        let response: Response = try await request(path: path, method: "DELETE", query: query, body: Optional<EmptyBody>.none, accessToken: accessToken, isCache: false)
-        cache.removeAllObjects()
-        return response
+        try await request(path: path, method: "DELETE", query: query, body: Optional<EmptyBody>.none, accessToken: accessToken, isCache: false)
     }
 
     func delete(path: String, query: [String: Any] = [:], accessToken: String? = nil) async throws {
@@ -196,7 +182,6 @@ actor HTTPClient: HTTPClientProtocol {
             accessToken: accessToken,
             isCache: false
         )
-        cache.removeAllObjects()
     }
 
     private func makeURL(path: String, query: [String: Any]) throws -> URL {
@@ -223,12 +208,12 @@ actor HTTPClient: HTTPClientProtocol {
     private func makeRequest(url: URL, method: String, bodyData: Data? = nil, accessToken: String?, isCache: Bool) -> URLRequest {
         var request = URLRequest(url: url)
         request.httpMethod = method
-        if isCache {
+        // Public GETs use HTTP response directives. Authenticated requests must revalidate and stay out of caches.
+        if isCache && accessToken == nil && method == "GET" {
             request.cachePolicy = .useProtocolCachePolicy
         } else {
             request.cachePolicy = .reloadIgnoringLocalCacheData
-            request.setValue("no-cache", forHTTPHeaderField: "Cache-Control")
-            request.setValue("no-cache", forHTTPHeaderField: "Pragma")
+            request.setValue("no-cache, no-store", forHTTPHeaderField: "Cache-Control")
         }
         if let token = accessToken {
             request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
@@ -266,20 +251,28 @@ actor HTTPClient: HTTPClientProtocol {
         return (data, response as? HTTPURLResponse)
     }
 
-    private func cacheKey(url: URL, method: String, bodyData: Data?) -> NSString {
-        if let bodyData = bodyData, !bodyData.isEmpty {
-            let hash = String(bodyData.hashValue)
-            return "\(method)::\(url.absoluteString)::\(hash)" as NSString
-        } else {
-            return "\(method)::\(url.absoluteString)" as NSString
-        }
+    private func invalidateCache() {
+        session.configuration.urlCache?.removeAllCachedResponses()
     }
 
     static func withDefaultTimeout(base: String) -> HTTPClient {
         let config = URLSessionConfiguration.default
         config.timeoutIntervalForRequest = 10
         config.timeoutIntervalForResource = 30
+        config.urlCache = URLCache(memoryCapacity: 10 * 1024 * 1024, diskCapacity: 0)
         return HTTPClient(base: base, session: URLSession(configuration: config))
+    }
+
+    private static func makeJSONEncoder() -> JSONEncoder {
+        let encoder = JSONEncoder()
+        encoder.dateEncodingStrategy = .secondsSince1970
+        return encoder
+    }
+
+    private static func makeJSONDecoder() -> JSONDecoder {
+        let decoder = JSONDecoder()
+        decoder.dateDecodingStrategy = .secondsSince1970
+        return decoder
     }
 }
 
