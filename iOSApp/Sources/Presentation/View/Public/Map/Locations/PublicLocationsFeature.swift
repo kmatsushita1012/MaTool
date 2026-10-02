@@ -59,7 +59,7 @@ struct PublicLocationsFeature {
             case .didBecomeActive:
                 guard !state.isReloadRequestInProgress else { return .none }
                 let latestLocationDate = state.floats.map(\.floatLocation.timestamp).max()
-                guard latestLocationDate.map({ now.timeIntervalSince($0) >= 5 * 60 }) ?? true else {
+                guard latestLocationDate.map({ now.timeIntervalSince($0) >= PublicMapLocationRefreshPolicy.staleInterval }) ?? true else {
                     return .none
                 }
                 state.isReloadRequestInProgress = true

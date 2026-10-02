@@ -7,8 +7,19 @@
 
 import MapKit
 import ComposableArchitecture
+import Foundation
 import Shared
 import SQLiteData
+
+enum PublicMapLocationRefreshPolicy {
+    static let staleInterval: TimeInterval = {
+        #if DEBUG
+        60
+        #else
+        5 * 60
+        #endif
+    }()
+}
 
 @Reducer
 struct PublicMapFeature {

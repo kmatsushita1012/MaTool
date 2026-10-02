@@ -101,7 +101,7 @@ struct PublicRouteFeature {
             case .didBecomeActive:
                 guard !state.isFloatLocationRequestInProgress else { return .none }
                 let lastUpdatedAt = state.float?.floatLocation.timestamp
-                guard lastUpdatedAt.map({ now.timeIntervalSince($0) >= 5 * 60 }) ?? true else {
+                guard lastUpdatedAt.map({ now.timeIntervalSince($0) >= PublicMapLocationRefreshPolicy.staleInterval }) ?? true else {
                     return .none
                 }
                 state.isFloatLocationRequestInProgress = true
