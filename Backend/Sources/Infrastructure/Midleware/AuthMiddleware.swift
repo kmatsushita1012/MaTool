@@ -27,7 +27,7 @@ struct AuthMiddleware: MiddlewareComponent {
         let result: UserRole
         do {
             result = try await authManager.get(accessToken: token)
-        } catch is CognitoIdentityProviderClientTypes.NotAuthorizedException {
+        } catch is NotAuthorizedException {
             throw Application.Error.unauthorized("Unauthorized")
         }
         print("Auth User: \(result) ID: \(String(describing: result.id))")

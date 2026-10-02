@@ -9,7 +9,7 @@ struct AuthMiddlewareTest {
     @Test
     func invalidAccessToken_認証失敗として401を返して後続処理を実行しない() async throws {
         let authManager = AuthManagerMock(getAccessTokenHandler: { _ in
-            throw CognitoIdentityProviderClientTypes.NotAuthorizedException(message: "Invalid access token")
+            throw NotAuthorizedException(message: "Invalid access token")
         })
         let routeController = RouteControllerMock()
         let app = make(authManager: authManager, routeController: routeController)
