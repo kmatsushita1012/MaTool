@@ -85,6 +85,7 @@ struct RouteUsecase: RouteUsecaseProtocol {
               pack.route.districtId == user.id else {
             throw Error.unauthorized("アクセス権限がありません")
         }
+        try validateChildRouteIDs(in: pack)
         let district = try await getDistrict(districtId)
         try await ensureRouteEditable(district: district)
         let reindexedPoints = pack.points.reindexed()
@@ -108,6 +109,7 @@ struct RouteUsecase: RouteUsecaseProtocol {
               old.districtId == user.id else {
             throw Error.unauthorized("アクセス権限がありません")
         }
+        try validateChildRouteIDs(in: pack)
         let district = try await getDistrict(old.districtId)
         try await ensureRouteEditable(district: district)
         let reindexedPoints = pack.points.reindexed()
@@ -176,6 +178,14 @@ extension RouteUsecase {
             try points.validate()
         } catch let error as Point.Error {
             throw Error.badRequest(error.errorDescription ?? "地点データが不正です。")
+        }
+    }
+
+    private func validateChildRouteIDs(in pack: RoutePack) throws {
+        let routeID = pack.route.id
+        guard pack.points.allSatisfy({ $0.routeId == routeID }),
+              pack.passages.allSatisfy({ $0.routeId == routeID }) else {
+            throw Error.badRequest("ルートと子要素のrouteIdが一致しません。")
         }
     }
     
