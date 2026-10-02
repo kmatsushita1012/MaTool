@@ -28,6 +28,7 @@ protocol RouteRepositoryProtocol: Sendable {
     func query(by districtId: String, year: Int) async throws -> [Route]
     func post(_ route: Route) async throws -> Route
     func put(_ route: Route) async throws -> Route
+    func put(_ pack: RoutePack, oldPoints: [Point], oldPassages: [RoutePassage]) async throws -> RoutePack
     func delete(id: String) async throws
     func delete(_ route: Route) async throws
 }
@@ -76,6 +77,26 @@ struct RouteRepository: RouteRepositoryProtocol {
         return item
     }
 
+    func put(_ pack: RoutePack, oldPoints: [Point], oldPassages: [RoutePassage]) async throws -> RoutePack {
+        let date = try await getDate(pack.route)
+        var mutations = [try DataStoreMutation.put(RouteRecord(pack.route, date: date))]
+        mutations.append(contentsOf: try childMutations(
+            existing: oldPoints,
+            replacing: pack.points,
+            key: { DataStoreItemKey(pk: "ROUTE#\($0.routeId)", sk: "POINT#\($0.id)") },
+            record: { Record(pk: "ROUTE#\($0.routeId)", sk: "POINT#\($0.id)", content: $0) }
+        ))
+        mutations.append(contentsOf: try childMutations(
+            existing: oldPassages,
+            replacing: pack.passages,
+            key: { DataStoreItemKey(pk: "ROUTE#\($0.routeId)", sk: "PASSAGE#\($0.id)") },
+            record: { Record(pk: "ROUTE#\($0.routeId)", sk: "PASSAGE#\($0.id)", content: $0) }
+        ))
+
+        try await store.transactWrite(mutations)
+        return pack
+    }
+
     func delete(id: String) async throws {
         guard let target = try await get(id: id) else { return }
         try await delete(target)
@@ -97,6 +118,35 @@ struct RouteRepository: RouteRepositoryProtocol {
             throw Error.notFound("指定されたルートに合致する地区が取得できませんでした。")
         }
         return period.date
+    }
+
+    private func childMutations<Element: Entity & Identifiable>(
+        existing: [Element],
+        replacing newItems: [Element],
+        key: (Element) -> DataStoreItemKey,
+        record: (Element) -> Record<Element>
+    ) throws -> [DataStoreMutation] where Element.ID == String {
+        guard Set(newItems.map(\.id)).count == newItems.count else {
+            throw Error.badRequest("RoutePackの子要素IDが重複しています。")
+        }
+        let existingByID = Dictionary(uniqueKeysWithValues: existing.map { ($0.id, $0) })
+        let newByID = Dictionary(uniqueKeysWithValues: newItems.map { ($0.id, $0) })
+        var mutations: [DataStoreMutation] = []
+        for item in existing {
+            guard let replacement = newByID[item.id], key(item) == key(replacement) else {
+                let itemKey = key(item)
+                mutations.append(.delete(pk: itemKey.pk, sk: itemKey.sk))
+                continue
+            }
+        }
+
+        for item in newItems {
+            guard let oldItem = existingByID[item.id], oldItem == item, key(oldItem) == key(item) else {
+                mutations.append(try DataStoreMutation.put(record(item)))
+                continue
+            }
+        }
+        return mutations
     }
 }
 

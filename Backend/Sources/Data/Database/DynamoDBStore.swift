@@ -38,6 +38,24 @@ struct DynamoDBStore: DataStore {
         let input = PutItemInput(item: attrs, tableName: tableName)
         let _ = try await client.putItem(input: input)
     }
+
+    func transactWrite(_ mutations: [DataStoreMutation]) async throws {
+        try DataStoreMutation.validate(mutations)
+        guard !mutations.isEmpty else { return }
+
+        let transactItems = try mutations.map { mutation -> DynamoDBClientTypes.TransactWriteItem in
+            switch mutation.operation {
+            case .put(let data):
+                return .init(put: .init(item: try encoder.encode(data: data), tableName: tableName))
+            case .delete:
+                return .init(delete: .init(
+                    key: ["pk": .s(mutation.key.pk), "sk": .s(mutation.key.sk)],
+                    tableName: tableName
+                ))
+            }
+        }
+        _ = try await client.transactWriteItems(input: .init(transactItems: transactItems))
+    }
     
     // MARK: get
     func get<T: RecordProtocol>(keys: [String: Codable], as type: T.Type) async throws -> T? {

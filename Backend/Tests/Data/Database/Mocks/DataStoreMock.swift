@@ -11,6 +11,7 @@ final class DataStoreMock: DataStore, @unchecked Sendable {
         queryHandler: ((String?, [QueryCondition], [FilterCondition], Int?, Bool, Any.Type) async throws -> Data)? = nil
     ) {
         self.putHandler = putHandler
+        self.transactionWriteHandler = transactionWriteHandler
         self.getHandler = getHandler
         self.deleteHandler = deleteHandler
         self.scanHandler = scanHandler

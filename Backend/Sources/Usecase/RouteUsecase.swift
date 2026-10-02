@@ -89,15 +89,14 @@ struct RouteUsecase: RouteUsecaseProtocol {
         try await ensureRouteEditable(district: district)
         let reindexedPoints = pack.points.reindexed()
         let reindexedPassages = pack.passages.reindexed()
+        try validateUniqueIDs(reindexedPoints)
+        try validateUniqueIDs(reindexedPassages)
         try validatePoints(reindexedPoints)
         async let oldPointsTask = pointRepository.query(by: pack.route.id)
         async let oldPassagesTask = passageRepository.query(by: pack.route.id)
         let (oldPoints, oldPassages) = try await (oldPointsTask, oldPassagesTask)
-        let route = try await routeRepository.post(pack.route)
-        async let pointsTask = oldPoints.update(with: reindexedPoints, separateDeleteAndUpdate: true, repository: pointRepository)
-        async let passagesTask = oldPassages.update(with: reindexedPassages, separateDeleteAndUpdate: true, repository: passageRepository)
-        let (points, passages) = try await (pointsTask, passagesTask)
-        return .init(route: route, points: points, passages: passages)
+        let reindexedPack = RoutePack(route: pack.route, points: reindexedPoints, passages: reindexedPassages)
+        return try await routeRepository.put(reindexedPack, oldPoints: oldPoints, oldPassages: oldPassages)
     }
     
     func put(id: String, pack: RoutePack, user: UserRole) async throws -> RoutePack {
@@ -112,15 +111,14 @@ struct RouteUsecase: RouteUsecaseProtocol {
         try await ensureRouteEditable(district: district)
         let reindexedPoints = pack.points.reindexed()
         let reindexedPassages = pack.passages.reindexed()
+        try validateUniqueIDs(reindexedPoints)
+        try validateUniqueIDs(reindexedPassages)
         try validatePoints(reindexedPoints)
         async let oldPointsTask = pointRepository.query(by: pack.route.id)
         async let oldPassagesTask = passageRepository.query(by: pack.route.id)
         let (oldPoints, oldPassages) = try await (oldPointsTask, oldPassagesTask)
-        let route = try await routeRepository.post(pack.route)
-        async let pointsTask = oldPoints.update(with: reindexedPoints, separateDeleteAndUpdate: true, repository: pointRepository)
-        async let passagesTask = oldPassages.update(with: reindexedPassages, separateDeleteAndUpdate: true, repository: passageRepository)
-        let (points, passages) = try await (pointsTask, passagesTask)
-        return .init(route: route, points: points, passages: passages)
+        let reindexedPack = RoutePack(route: pack.route, points: reindexedPoints, passages: reindexedPassages)
+        return try await routeRepository.put(reindexedPack, oldPoints: oldPoints, oldPassages: oldPassages)
     }
     
     func delete(id: String, user: UserRole) async throws {
@@ -176,6 +174,12 @@ extension RouteUsecase {
             try points.validate()
         } catch let error as Point.Error {
             throw Error.badRequest(error.errorDescription ?? "地点データが不正です。")
+        }
+    }
+
+    private func validateUniqueIDs<Element: Identifiable>(_ items: [Element]) throws where Element.ID: Hashable {
+        guard Set(items.map(\.id)).count == items.count else {
+            throw Error.badRequest("RoutePackの子要素IDが重複しています。")
         }
     }
     

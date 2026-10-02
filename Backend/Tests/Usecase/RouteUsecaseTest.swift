@@ -258,7 +258,7 @@ struct RouteUsecaseTest {
         let passages = [RoutePassage.mock(id: "pa-1", routeId: route.id, districtId: route.districtId, order: 0)]
         let pack = RoutePack.mock(route: route, points: points, passages: passages)
 
-        let routeRepository = RouteRepositoryMock(postHandler: { $0 })
+        let routeRepository = RouteRepositoryMock(putPackHandler: { pack, _, _ in pack })
         let pointRepository = PointRepositoryMock(queryHandler: { _ in [] }, postHandler: { $0 })
         let passageRepository = PassageRepositoryMock(queryHandler: { _ in [] }, postHandler: { $0 })
         let subject = make(
@@ -273,9 +273,10 @@ struct RouteUsecaseTest {
         #expect(result.route == route)
         #expect(result.points.count == 2)
         #expect(result.passages.count == 1)
-        #expect(routeRepository.postCallCount == 1)
-        #expect(pointRepository.postCallCount == 2)
-        #expect(passageRepository.postCallCount == 1)
+        #expect(routeRepository.putPackCallCount == 1)
+        #expect(routeRepository.postCallCount == 0)
+        #expect(pointRepository.postCallCount == 0)
+        #expect(passageRepository.postCallCount == 0)
     }
 
     @Test
@@ -300,7 +301,10 @@ struct RouteUsecaseTest {
             Point.mock(id: "p-2", routeId: route.id, index: 1, time: .init(hour: 10, minute: 0), anchor: .end)
         ]
         let pack = RoutePack.mock(route: route, points: points, passages: [])
-        let routeRepository = RouteRepositoryMock(getHandler: { _ in route }, postHandler: { $0 })
+        let routeRepository = RouteRepositoryMock(
+            getHandler: { _ in route },
+            putPackHandler: { pack, _, _ in pack }
+        )
         let pointRepository = PointRepositoryMock(queryHandler: { _ in [] }, postHandler: { $0 })
         let subject = make(
             routeRepository: routeRepository,
@@ -314,8 +318,9 @@ struct RouteUsecaseTest {
         #expect(result.route == route)
         #expect(result.points.count == 2)
         #expect(routeRepository.getCallCount == 1)
-        #expect(routeRepository.postCallCount == 1)
-        #expect(pointRepository.postCallCount == 2)
+        #expect(routeRepository.putPackCallCount == 1)
+        #expect(routeRepository.postCallCount == 0)
+        #expect(pointRepository.postCallCount == 0)
     }
 
     @Test
