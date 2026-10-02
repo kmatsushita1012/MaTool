@@ -75,23 +75,25 @@ struct FestivalUsecaseTest {
         let checkpoint = Checkpoint.mock(id: "cp-1", festivalId: festival.id)
         let hazard = HazardSection.mock(id: "hz-1", festivalId: festival.id)
         let pack = FestivalPack.mock(festival: festival, checkpoints: [checkpoint], hazardSections: [hazard])
-
-        var lastCalledFestivalId: String?
-        let subject = make(
-            festivalRepository: .init(putHandler: { item in
-                lastCalledFestivalId = item.id
-                return item
-            }),
-            checkpointRepository: .init(queryHandler: { _ in [] }, postHandler: { $0 }),
-            hazardSectionRepository: .init(queryHandler: { _ in [] }, postHandler: { $0 })
-        )
+        let packRepository = FestivalPackRepositoryMock(putHandler: { $0 })
+        let subject = make(packRepository: packRepository)
 
         let result = try await subject.put(pack, user: .headquarter(festival.id))
 
-        #expect(lastCalledFestivalId == festival.id)
-        #expect(result.festival == festival)
-        #expect(result.checkpoints == [checkpoint])
-        #expect(result.hazardSections == [hazard])
+        #expect(result == pack)
+        #expect(packRepository.putCallCount == 1)
+        #expect(packRepository.lastPack == pack)
+    }
+
+    @Test
+    func put_異常_保存エラーを透過() async {
+        let festival = Festival.mock(id: "festival-1")
+        let packRepository = FestivalPackRepositoryMock(putHandler: { _ in throw TestError.intentional })
+        let subject = make(packRepository: packRepository)
+
+        await #expect(throws: TestError.intentional) {
+            _ = try await subject.put(.mock(festival: festival), user: .headquarter(festival.id))
+        }
     }
 
     @Test
@@ -108,14 +110,33 @@ private extension FestivalUsecaseTest {
     func make(
         festivalRepository: FestivalRepositoryMock = .init(),
         checkpointRepository: CheckpointRepositoryMock = .init(),
-        hazardSectionRepository: HazardSectionRepositoryMock = .init()
+        hazardSectionRepository: HazardSectionRepositoryMock = .init(),
+        packRepository: FestivalPackRepositoryMock = .init()
     ) -> FestivalUsecase {
         withDependencies {
             $0[FestivalRepositoryKey.self] = festivalRepository
             $0[CheckpointRepositoryKey.self] = checkpointRepository
             $0[HazardSectionRepositoryKey.self] = hazardSectionRepository
+            $0[FestivalPackRepositoryKey.self] = packRepository
         } operation: {
             FestivalUsecase()
         }
+    }
+}
+
+private final class FestivalPackRepositoryMock: FestivalPackRepositoryProtocol, @unchecked Sendable {
+    private let putHandler: ((FestivalPack) throws -> FestivalPack)?
+    private(set) var putCallCount = 0
+    private(set) var lastPack: FestivalPack?
+
+    init(putHandler: ((FestivalPack) throws -> FestivalPack)? = nil) {
+        self.putHandler = putHandler
+    }
+
+    func put(_ pack: FestivalPack) async throws -> FestivalPack {
+        putCallCount += 1
+        lastPack = pack
+        guard let putHandler else { throw TestError.unimplemented }
+        return try putHandler(pack)
     }
 }

@@ -4,6 +4,7 @@ import Foundation
 final class DataStoreMock: DataStore, @unchecked Sendable {
     init(
         putHandler: ((any Encodable) async throws -> Void)? = nil,
+        transactionWriteHandler: (([DataStoreMutation]) async throws -> Void)? = nil,
         getHandler: (([String: Codable], Any.Type) async throws -> Data?)? = nil,
         deleteHandler: (([String: Codable]) async throws -> Void)? = nil,
         scanHandler: ((Bool, Any.Type) async throws -> Data)? = nil,
@@ -14,6 +15,7 @@ final class DataStoreMock: DataStore, @unchecked Sendable {
         self.deleteHandler = deleteHandler
         self.scanHandler = scanHandler
         self.queryHandler = queryHandler
+        self.transactionWriteHandler = transactionWriteHandler
     }
 
     nonisolated(unsafe) private(set) var putCallCount = 0
@@ -23,6 +25,15 @@ final class DataStoreMock: DataStore, @unchecked Sendable {
         putCallCount += 1
         guard let putHandler else { throw TestError.unimplemented }
         try await putHandler(item)
+    }
+
+    nonisolated(unsafe) private(set) var transactionWriteCallCount = 0
+    private let transactionWriteHandler: (([DataStoreMutation]) async throws -> Void)?
+
+    func transactWrite(_ mutations: [DataStoreMutation]) async throws {
+        transactionWriteCallCount += 1
+        guard let transactionWriteHandler else { throw TestError.unimplemented }
+        try await transactionWriteHandler(mutations)
     }
 
     nonisolated(unsafe) private(set) var getCallCount = 0

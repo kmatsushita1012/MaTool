@@ -25,6 +25,7 @@ struct FestivalUsecase: FestivalUsecaseProtocol {
     @Dependency(FestivalRepositoryKey.self) var repository
     @Dependency(CheckpointRepositoryKey.self) var checkpointRepository
     @Dependency(HazardSectionRepositoryKey.self) var hazardSectionRepository
+    @Dependency(FestivalPackRepositoryKey.self) var packRepository
     
     func scan() async throws -> [Festival] {
         try await repository.scan()
@@ -51,17 +52,7 @@ struct FestivalUsecase: FestivalUsecaseProtocol {
               headquarterId == pack.festival.id else {
             throw Error.unauthorized("アクセス権限がありません。")
         }
-        
-        let festival = try await repository.put(pack.festival)
-        
-        async let oldCheckpointsTask = checkpointRepository.query(by: pack.festival.id)
-        async let oldHazardSectionsTask = hazardSectionRepository.query(by: pack.festival.id)
-        let (oldCheckpoints, oldHazardSections) = try await (oldCheckpointsTask, oldHazardSectionsTask)
 
-        async let checkpointsTask = oldCheckpoints.update(with: pack.checkpoints, repository: checkpointRepository)
-        async let hazardSectionsTask = oldHazardSections.update(with: pack.hazardSections, repository: hazardSectionRepository)
-        let (checkpoints, hazardSections) = try await (checkpointsTask, hazardSectionsTask)
-        
-        return .init(festival: festival, checkpoints: checkpoints, hazardSections: hazardSections)
+        return try await packRepository.put(pack)
     }
 }
