@@ -32,20 +32,20 @@ struct LatestDistrictRouteRouterTest {
             $0[RouteControllerKey.self] = RouteControllerMock()
             $0[LocationControllerKey.self] = LocationControllerMock()
             $0[PeriodControllerKey.self] = PeriodControllerMock()
-            $0[DistrictRepositoryKey.self] = .init(getHandler: { _ in district })
-            $0[PeriodRepositoryKey.self] = .init(queryByYearHandler: { _, year in
+            $0[DistrictRepositoryKey.self] = DistrictRepositoryMock(getHandler: { _ in district })
+            $0[PeriodRepositoryKey.self] = PeriodRepositoryMock(queryByYearHandler: { _, year in
                 switch year {
                 case nowYear: [currentPeriod]
                 case nowYear - 1: [previousPeriod]
                 default: []
                 }
             })
-            $0[RouteRepositoryKey.self] = .init(queryByYearHandler: { _, year in
+            $0[RouteRepositoryKey.self] = RouteRepositoryMock(queryByYearHandler: { _, year in
                 year == nowYear - 1 ? [previousRoute] : []
             })
-            $0[PerformanceRepositoryKey.self] = .init(queryHandler: { _ in [] })
-            $0[PointRepositoryKey.self] = .init(queryHandler: { _ in [] })
-            $0[PassageRepositoryKey.self] = .init(queryHandler: { _ in [] })
+            $0[PerformanceRepositoryKey.self] = PerformanceRepositoryMock(queryHandler: { _ in [] })
+            $0[PointRepositoryKey.self] = PointRepositoryMock(queryHandler: { _ in [] })
+            $0[PassageRepositoryKey.self] = PassageRepositoryMock(queryHandler: { _ in [] })
             $0[SceneControllerKey.self] = SceneController()
             $0[SceneUsecaseKey.self] = SceneUsecase()
         } operation: {
@@ -58,7 +58,7 @@ struct LatestDistrictRouteRouterTest {
             return await app.handle(request)
         }
 
-        #expect(response.statusCode == 200, "response body: \(response.body)")
+        #expect(response.statusCode == 200)
         guard response.statusCode == 200 else { return }
 
         #expect(response.headers["Content-Type"] == "application/json")
