@@ -93,11 +93,8 @@ struct RouteUsecase: RouteUsecaseProtocol {
         async let oldPointsTask = pointRepository.query(by: pack.route.id)
         async let oldPassagesTask = passageRepository.query(by: pack.route.id)
         let (oldPoints, oldPassages) = try await (oldPointsTask, oldPassagesTask)
-        let route = try await routeRepository.post(pack.route)
-        async let pointsTask = oldPoints.update(with: reindexedPoints, separateDeleteAndUpdate: true, repository: pointRepository)
-        async let passagesTask = oldPassages.update(with: reindexedPassages, separateDeleteAndUpdate: true, repository: passageRepository)
-        let (points, passages) = try await (pointsTask, passagesTask)
-        return .init(route: route, points: points, passages: passages)
+        let reindexedPack = RoutePack(route: pack.route, points: reindexedPoints, passages: reindexedPassages)
+        return try await routeRepository.put(reindexedPack, oldPoints: oldPoints, oldPassages: oldPassages)
     }
     
     func put(id: String, pack: RoutePack, user: UserRole) async throws -> RoutePack {
@@ -116,11 +113,8 @@ struct RouteUsecase: RouteUsecaseProtocol {
         async let oldPointsTask = pointRepository.query(by: pack.route.id)
         async let oldPassagesTask = passageRepository.query(by: pack.route.id)
         let (oldPoints, oldPassages) = try await (oldPointsTask, oldPassagesTask)
-        let route = try await routeRepository.post(pack.route)
-        async let pointsTask = oldPoints.update(with: reindexedPoints, separateDeleteAndUpdate: true, repository: pointRepository)
-        async let passagesTask = oldPassages.update(with: reindexedPassages, separateDeleteAndUpdate: true, repository: passageRepository)
-        let (points, passages) = try await (pointsTask, passagesTask)
-        return .init(route: route, points: points, passages: passages)
+        let reindexedPack = RoutePack(route: pack.route, points: reindexedPoints, passages: reindexedPassages)
+        return try await routeRepository.put(reindexedPack, oldPoints: oldPoints, oldPassages: oldPassages)
     }
     
     func delete(id: String, user: UserRole) async throws {
