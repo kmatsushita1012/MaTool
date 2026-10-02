@@ -7,7 +7,8 @@ struct RoutePointInsertionTests {
     func 最後のPointの後は末尾indexへの挿入操作に切り替える() {
         var insertion = RoutePointInsertion(points: makePoints())
 
-        #expect(insertion.begin(afterPointAt: 1))
+        let didBegin = insertion.begin(afterPointAt: 1)
+        #expect(didBegin)
         #expect(insertion.operation == .insert(2))
     }
 
@@ -15,11 +16,14 @@ struct RoutePointInsertionTests {
     func 存在しないPointの挿入位置は返さない() {
         var insertion = RoutePointInsertion(points: makePoints())
 
-        #expect(!insertion.begin(afterPointAt: -1))
-        #expect(!insertion.begin(afterPointAt: insertion.points.count))
+        let didBeginAtNegativeIndex = insertion.begin(afterPointAt: -1)
+        let didBeginAfterLastIndex = insertion.begin(afterPointAt: insertion.points.count)
+        #expect(!didBeginAtNegativeIndex)
+        #expect(!didBeginAfterLastIndex)
         #expect(insertion.operation == .add)
         var emptyInsertion = RoutePointInsertion(points: [])
-        #expect(!emptyInsertion.begin(afterPointAt: 0))
+        let didBeginWithNoPoints = emptyInsertion.begin(afterPointAt: 0)
+        #expect(!didBeginWithNoPoints)
     }
 
     @Test("最後のPointの後へ挿入すると配列末尾に追加して追加モードへ戻る")
@@ -27,7 +31,8 @@ struct RoutePointInsertionTests {
         var insertion = RoutePointInsertion(points: makePoints())
         let inserted = Point(id: "inserted", routeId: "route", coordinate: Coordinate(latitude: 2, longitude: 2))
 
-        #expect(insertion.begin(afterPointAt: 1))
+        let didBegin = insertion.begin(afterPointAt: 1)
+        #expect(didBegin)
         let didInsert = insertion.insert(inserted)
 
         #expect(didInsert)
@@ -40,7 +45,8 @@ struct RoutePointInsertionTests {
         var insertion = RoutePointInsertion(points: makePoints(), operation: .insert(3))
         let inserted = Point(id: "inserted", routeId: "route", coordinate: Coordinate(latitude: 1, longitude: 1))
 
-        #expect(!insertion.insert(inserted))
+        let didInsert = insertion.insert(inserted)
+        #expect(!didInsert)
         #expect(insertion.points.map(\.id) == ["first", "last"])
         #expect(insertion.operation == .insert(3))
     }
