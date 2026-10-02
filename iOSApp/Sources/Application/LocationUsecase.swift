@@ -66,6 +66,11 @@ actor LocationUsecase: LocationUsecaseProtocol {
     private var interval: Interval?
     private var isTracking = false
     private var lastSentAt: Date?
+    private var trackingSessionID: UUID?
+    private var pendingLocationWrites = 0
+    private var pendingLocationWriteWaiters: [CheckedContinuation<Void, Never>] = []
+    private var lifecycleLockIsHeld = false
+    private var lifecycleLockWaiters: [CheckedContinuation<Void, Never>] = []
     private let threshold: Double = 0.95
 
     private var continuation: AsyncStream<[Status]>.Continuation?
@@ -112,6 +117,9 @@ actor LocationUsecase: LocationUsecaseProtocol {
     }
 
     func start(id: String, interval: Interval) async -> LocationTrackingStartResult {
+        await acquireLifecycleLock()
+        defer { releaseLifecycleLock() }
+
         let permissionState = await locationPermissionState()
         guard permissionState.isAlwaysAuthorized else {
             return .permissionRequired(permissionState)
@@ -127,16 +135,18 @@ actor LocationUsecase: LocationUsecaseProtocol {
         self.interval = interval
         lastSentAt = nil
         isTracking = true
+        let sessionID = UUID()
+        trackingSessionID = sessionID
         
         await broadcastLocationProvider.startTracking { result in
-            await self.sendIfNeeded(id: id, result: result)
+            await self.sendIfNeeded(id: id, sessionID: sessionID, result: result)
         }
 
         trackingTask = Task { [weak self] in
             guard let self else { return }
             while !Task.isCancelled {
                 let locationResult = await broadcastLocationProvider.getLocation()
-                await self.sendIfNeeded(id: id, result: locationResult)
+                await self.sendIfNeeded(id: id, sessionID: sessionID, result: locationResult)
                 try? await Task.sleep(nanoseconds: UInt64(interval.value * 1_000_000_000))
             }
         }
@@ -144,12 +154,18 @@ actor LocationUsecase: LocationUsecaseProtocol {
     }
 
     func stop(id: String) async -> Void {
+        await acquireLifecycleLock()
+        defer { releaseLifecycleLock() }
+
         trackingTask?.cancel()
         trackingTask = nil
         isTracking = false
+        trackingSessionID = nil
+        interval = nil
         lastSentAt = nil
         
         await broadcastLocationProvider.stopTracking()
+        await waitForPendingLocationWrites()
         await delete(id)
     }
 
@@ -157,8 +173,8 @@ actor LocationUsecase: LocationUsecaseProtocol {
         await broadcastLocationProvider.getLocation()
     }
     
-    private func sendIfNeeded(id: String, result: AsyncValue<CLLocation>) async {
-        guard let interval else { return }
+    private func sendIfNeeded(id: String, sessionID: UUID, result: AsyncValue<CLLocation>) async {
+        guard isTracking, trackingSessionID == sessionID, let interval else { return }
         let now = Date()
         let elapsed = lastSentAt.map { now.timeIntervalSince($0) } ?? .infinity
         switch result {
@@ -167,7 +183,9 @@ actor LocationUsecase: LocationUsecaseProtocol {
 
             // 最低更新間隔の基準は、実際に位置情報を取得できた時だけ進める。
             lastSentAt = now
+            pendingLocationWrites += 1
             await send(id: id, result: result)
+            finishPendingLocationWrite()
         case .loading, .failure:
             // 読み込み中・取得失敗は履歴へ記録するだけで、位置情報の更新間隔には影響させない。
             await send(id: id, result: result)
@@ -211,6 +229,39 @@ actor LocationUsecase: LocationUsecaseProtocol {
     
     private func clearContinuation() {
         continuation = nil
+    }
+
+    private func acquireLifecycleLock() async {
+        guard lifecycleLockIsHeld else {
+            lifecycleLockIsHeld = true
+            return
+        }
+        await withCheckedContinuation { continuation in
+            lifecycleLockWaiters.append(continuation)
+        }
+    }
+
+    private func releaseLifecycleLock() {
+        guard !lifecycleLockWaiters.isEmpty else {
+            lifecycleLockIsHeld = false
+            return
+        }
+        lifecycleLockWaiters.removeFirst().resume()
+    }
+
+    private func waitForPendingLocationWrites() async {
+        guard pendingLocationWrites > 0 else { return }
+        await withCheckedContinuation { continuation in
+            pendingLocationWriteWaiters.append(continuation)
+        }
+    }
+
+    private func finishPendingLocationWrite() {
+        pendingLocationWrites -= 1
+        guard pendingLocationWrites == 0 else { return }
+        let waiters = pendingLocationWriteWaiters
+        pendingLocationWriteWaiters.removeAll()
+        waiters.forEach { $0.resume() }
     }
 
     private func markAlwaysLocationPermissionRequested() {
