@@ -94,7 +94,8 @@ final class RouteRepositoryMock: RouteRepositoryProtocol, @unchecked Sendable {
         queryByYearHandler: ((String, Int) async throws -> [Route])? = nil,
         postHandler: ((Route) async throws -> Route)? = nil,
         putHandler: ((Route) async throws -> Route)? = nil,
-        deleteHandler: ((String) async throws -> Void)? = nil
+        deleteHandler: ((String) async throws -> Void)? = nil,
+        deleteRouteHandler: ((Route) async throws -> Void)? = nil
     ) {
         self.getHandler = getHandler
         self.queryHandler = queryHandler
@@ -102,6 +103,7 @@ final class RouteRepositoryMock: RouteRepositoryProtocol, @unchecked Sendable {
         self.postHandler = postHandler
         self.putHandler = putHandler
         self.deleteHandler = deleteHandler
+        self.deleteRouteHandler = deleteRouteHandler
     }
 
     private(set) var getCallCount = 0
@@ -150,6 +152,14 @@ final class RouteRepositoryMock: RouteRepositoryProtocol, @unchecked Sendable {
         deleteCallCount += 1
         guard let deleteHandler else { throw TestError.unimplemented }
         try await deleteHandler(id)
+    }
+
+    private(set) var deleteRouteCallCount = 0
+    private let deleteRouteHandler: ((Route) async throws -> Void)?
+    func delete(_ route: Route) async throws {
+        deleteRouteCallCount += 1
+        guard let deleteRouteHandler else { throw TestError.unimplemented }
+        try await deleteRouteHandler(route)
     }
 }
 

@@ -1,3 +1,4 @@
+import Foundation
 import Dependencies
 import Shared
 import Testing
@@ -55,6 +56,33 @@ struct LocationControllerTest {
         #expect(response.statusCode == 200)
         #expect(actual == location)
         #expect(mock.putCallCount == 1)
+    }
+
+    @Test
+    func put_DateをUnix秒で受け取り応答する() async throws {
+        let expected = Date(timeIntervalSince1970: 1_700_000_000)
+        var receivedTimestamp: Date?
+        let mock = LocationUsecaseMock(putHandler: { location, _ in
+            receivedTimestamp = location.timestamp
+            return location
+        })
+        let subject = make(usecase: mock)
+        let app = Application()
+        app.put(path: "/districts/:districtId/locations", subject.put)
+        let request = Application.Request.make(
+            method: .put,
+            path: "/districts/district-1/locations",
+            body: """
+            {"id":"loc-1","districtId":"district-1","coordinate":{"latitude":35,"longitude":139},"timestamp":1700000000}
+            """
+        )
+
+        let response = await app.handle(request)
+        let body = try #require(JSONSerialization.jsonObject(with: Data(response.body.utf8)) as? [String: Any])
+
+        #expect(response.statusCode == 200)
+        #expect(receivedTimestamp == expected)
+        #expect(body["timestamp"] as? Double == expected.timeIntervalSince1970)
     }
 
     @Test
