@@ -51,12 +51,30 @@ struct SceneUsecase: SceneUsecaseProtocol {
     
     // MARK: - LaunchFestival
     func fetchLaunchFestivalPack(festivalId: Festival.ID, user: UserRole, now: Date) async throws -> LaunchFestivalPack {
-        let isAdmin = (user != .guest)
+        let isAdmin = try await hasAdminAccess(to: festivalId, user: user)
 
         if isAdmin {
             return try await fetchAdminLaunchPack(festivalId: festivalId, user: user, now: now)
         } else {
             return try await fetchUserLaunchPack(festivalId: festivalId, now: now)
+        }
+    }
+
+    private func hasAdminAccess(to festivalId: Festival.ID, user: UserRole) async throws -> Bool {
+        switch user {
+        case .guest:
+            return false
+        case let .headquarter(userFestivalId):
+            guard userFestivalId == festivalId else {
+                throw Error.forbidden("この祭典の管理用データにアクセスする権限がありません")
+            }
+            return true
+        case let .district(userDistrictId):
+            guard let district = try await districtRepository.get(id: userDistrictId),
+                  district.festivalId == festivalId else {
+                throw Error.forbidden("この祭典の管理用データにアクセスする権限がありません")
+            }
+            return true
         }
     }
     

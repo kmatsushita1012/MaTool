@@ -62,6 +62,80 @@ struct SceneUsecaseTest {
     }
 
     @Test
+    func fetchLaunchFestivalPack_異常_他祭典の本部権限を拒否() async {
+        let festivalRepository = FestivalRepositoryMock()
+        let districtRepository = DistrictRepositoryMock()
+        let subject = make(
+            festivalRepository: festivalRepository,
+            districtRepository: districtRepository
+        )
+
+        await #expect(throws: Error.forbidden("この祭典の管理用データにアクセスする権限がありません")) {
+            _ = try await subject.fetchLaunchFestivalPack(
+                festivalId: "festival-target",
+                user: .headquarter("festival-user"),
+                now: .now
+            )
+        }
+
+        #expect(festivalRepository.getCallCount == 0)
+        #expect(districtRepository.queryCallCount == 0)
+    }
+
+    @Test
+    func fetchLaunchFestivalPack_異常_他祭典の地区権限を拒否() async {
+        let festivalRepository = FestivalRepositoryMock()
+        let districtRepository = DistrictRepositoryMock(getHandler: { id in
+            .mock(id: id, festivalId: "festival-user")
+        })
+        let subject = make(
+            festivalRepository: festivalRepository,
+            districtRepository: districtRepository
+        )
+
+        await #expect(throws: Error.forbidden("この祭典の管理用データにアクセスする権限がありません")) {
+            _ = try await subject.fetchLaunchFestivalPack(
+                festivalId: "festival-target",
+                user: .district("district-user"),
+                now: .now
+            )
+        }
+
+        #expect(districtRepository.getCallCount == 1)
+        #expect(festivalRepository.getCallCount == 0)
+        #expect(districtRepository.queryCallCount == 0)
+    }
+
+    @Test
+    func fetchLaunchFestivalPack_正常_所属祭典の地区権限を許可() async throws {
+        let now = makeDate(year: 2026, month: 2, day: 22, hour: 12)
+        let festival = Festival.mock(id: "festival-1")
+        let district = District.mock(id: "district-1", festivalId: festival.id)
+        let subject = make(
+            festivalRepository: .init(getHandler: { _ in festival }),
+            districtRepository: .init(
+                getHandler: { _ in district },
+                queryHandler: { _ in [district] }
+            ),
+            periodRepository: .init(queryHandler: { _ in [] }),
+            locationRepository: .init(getHandler: { _, _ in nil }),
+            checkpointRepository: .init(queryHandler: { _ in [] }),
+            hazardRepository: .init(queryHandler: { _ in [] })
+        )
+
+        let result = try await subject.fetchLaunchFestivalPack(
+            festivalId: festival.id,
+            user: .district(district.id),
+            now: now
+        )
+
+        #expect(result.festival == festival)
+        #expect(result.districts == [district])
+        #expect(result.checkpoints.isEmpty)
+        #expect(result.hazardSections.isEmpty)
+    }
+
+    @Test
     func fetchLaunchFestivalPack_異常_地区未登録() async {
         let subject = make(
             districtRepository: .init(getHandler: { _ in nil })
