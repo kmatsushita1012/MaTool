@@ -40,6 +40,9 @@ actor SceneUsecase: SceneUsecaseProtocol {
     @Dependency(FestivalDataFetcherKey.self) var festivalDataFetcher
     @Dependency(AuthServiceKey.self) var authService
     @Dependency(AppStatusClientKey.self) var appStatusClient
+    @Dependency(\.defaultDatabase) var database
+    @Dependency(FestivalStoreKey.self) var festivalStore
+    @Dependency(DistrictStoreKey.self) var districtStore
     
     init(userDefaults: UserDefalutsManagerProtocol = UserDefaltsManager()){
         self.userDefaults = userDefaults
@@ -47,14 +50,14 @@ actor SceneUsecase: SceneUsecaseProtocol {
     
     func launch() async -> (LaunchState, StatusCheckResult?) {
         async let appStatusTask = appStatusClient.checkStatus()
+        var userRole: UserRole = .guest
         do {
-            try await dataFetcher.clearCache()
             try authService.initialize()
             guard let festivalId = userDefaults.defaultFestivalId else {
                 try await festivalDataFetcher.fetchAll()
                 return (.onboarding, await appStatusTask)
             }
-            let userRole = await {
+            userRole = await {
                 do {
                     return try await authService.getUserRole()
                 } catch {
@@ -83,7 +86,33 @@ actor SceneUsecase: SceneUsecaseProtocol {
                     return (.error(error.asAppError.message), await appStatusTask)
                 }
             }
+            if let cachedLaunchState = await cachedLaunchState(userRole: userRole) {
+                return (cachedLaunchState, await appStatusTask)
+            }
             return (.error(appError.message), await appStatusTask)
+        }
+    }
+
+    private func cachedLaunchState(userRole: UserRole) async -> LaunchState? {
+        let festivalId = userDefaults.defaultFestivalId
+        let districtId = userDefaults.defaultDistrictId
+        let festivalStore = self.festivalStore
+        let districtStore = self.districtStore
+        do {
+            return try await database.read { db -> LaunchState? in
+                if let festivalId,
+                   try !festivalStore.fetchAll(where: { $0.id.eq(festivalId) }, from: db).isEmpty {
+                    if let districtId,
+                       let district = try districtStore.fetchAll(where: { $0.id.eq(districtId) }, from: db).first,
+                       district.festivalId == festivalId {
+                        return .district(userRole, nil)
+                    }
+                    return .festival(userRole)
+                }
+                return try festivalStore.fetchAll(from: db).isEmpty ? nil : .onboarding
+            }
+        } catch {
+            return nil
         }
     }
 
