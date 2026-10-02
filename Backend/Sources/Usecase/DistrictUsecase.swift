@@ -106,6 +106,9 @@ struct DistrictUsecase: DistrictUsecaseProtocol {
         guard case let .district(districtId) = user, id == districtId else {
             throw Error.unauthorized("アクセス権限がありません")
         }
+        guard item.performances.allSatisfy({ $0.districtId == id }) else {
+            throw Error.badRequest("演舞データに別地区の演舞が含まれています。")
+        }
         // 現在のDistrictを取得して、変更可能なプロパティのみ反映
         guard let current = try await repository.get(id: id) else {
             throw Error.notFound("指定された地区が見つかりません")
