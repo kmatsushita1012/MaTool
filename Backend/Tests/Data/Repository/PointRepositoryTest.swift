@@ -189,6 +189,11 @@ private extension PointRepositoryTest {
         return actualField == field && actual == value
     }
 
+    func isBeginsWith(_ condition: QueryCondition, field: String, prefix: String) -> Bool {
+        guard case let .beginsWith(actualField, actualPrefix) = condition else { return false }
+        return actualField == field && actualPrefix == prefix
+    }
+
     func matches(_ condition: QueryCondition, record: Record<Point>) -> Bool {
         switch condition {
         case let .equals(field, value):
