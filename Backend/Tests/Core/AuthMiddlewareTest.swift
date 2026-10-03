@@ -28,8 +28,8 @@ struct AuthMiddlewareTest {
         #expect(response.statusCode == 401)
         #expect(response.headers["Content-Type"] == "application/json")
         let body = try JSONDecoder().decode(ErrorResponse.self, from: Data(response.body.utf8))
-        #expect(body.message == "Unauthorized")
-        #expect(body.localizedDescription == "Unauthorized")
+        #expect(body.message == "認証に失敗しました。再度サインインしてください。")
+        #expect(body.localizedDescription == "認証に失敗しました。再度サインインしてください。")
         #expect(authManager.getAccessTokenCallCount == 1)
         #expect(routeController.getCallCount == 0)
     }

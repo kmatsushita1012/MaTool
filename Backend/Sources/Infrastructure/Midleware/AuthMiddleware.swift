@@ -28,7 +28,7 @@ struct AuthMiddleware: MiddlewareComponent {
         do {
             result = try await authManager.get(accessToken: token)
         } catch is NotAuthorizedException {
-            throw Application.Error.unauthorized("Unauthorized")
+            throw Application.Error.unauthorized("認証に失敗しました。再度サインインしてください。")
         }
         print("Auth User: \(result) ID: \(String(describing: result.id))")
         request.user = result
