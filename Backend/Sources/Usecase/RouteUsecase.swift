@@ -101,6 +101,9 @@ struct RouteUsecase: RouteUsecaseProtocol {
     }
     
     func put(id: String, pack: RoutePack, user: UserRole) async throws -> RoutePack {
+        guard id == pack.route.id else {
+            throw Error.badRequest("ルートIDが一致しません")
+        }
         guard let old = try await routeRepository.get(id: id) else {
             throw Error.notFound("指定されたルートが見つかりません")
         }
