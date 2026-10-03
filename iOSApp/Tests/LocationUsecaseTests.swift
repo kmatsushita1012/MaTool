@@ -75,6 +75,33 @@ struct LocationUsecaseTests {
         #expect(await usecase.getIsTracking() == false)
     }
 
+    @Test("短時間に重複して届いた位置情報を二重送信しない")
+    func 短時間の重複位置情報を二重送信しない() async {
+        let provider = LocationProviderSpy(authorizationStatus: .authorizedAlways)
+        let dataFetcher = LocationDataFetcherSpy(blockUpdates: true)
+        let usecase = makeUsecase(provider: provider, dataFetcher: dataFetcher)
+
+        let startResult = await usecase.start(
+            id: "district-a",
+            interval: Interval(label: "test", value: 3_600)
+        )
+        #expect(startResult.isStarted)
+
+        let location = CLLocation(latitude: 35, longitude: 139)
+        let firstUpdate = Task { await provider.emit(.success(location)) }
+        await dataFetcher.waitForUpdateStart()
+
+        let duplicateUpdate = Task { await provider.emit(.success(location)) }
+        await duplicateUpdate.value
+        #expect(await dataFetcher.events == ["update-start"])
+
+        await dataFetcher.releaseUpdate()
+        await firstUpdate.value
+        #expect(await dataFetcher.events == ["update-start", "update-finish"])
+
+        await usecase.stop(id: "district-a")
+    }
+
     @Test("停止時は進行中の位置情報更新完了後に削除する")
     func 停止時は進行中の更新後に削除する() async {
         let provider = LocationProviderSpy(authorizationStatus: .authorizedAlways)

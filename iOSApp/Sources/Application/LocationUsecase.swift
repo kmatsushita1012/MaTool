@@ -9,6 +9,7 @@ import Foundation
 import Dependencies
 import CoreLocation
 import Shared
+import os
 
 struct LocationPermissionState: Sendable, Equatable {
     let authorizationStatus: CLAuthorizationStatus
@@ -64,14 +65,11 @@ actor LocationUsecase: LocationUsecaseProtocol {
     private var trackingTask: Task<Void, Never>?
     private var locationHistory: [Status] = []
     private var interval: Interval?
-    private var isTracking = false
-    private var lastSentAt: Date?
-    private var trackingSessionID: UUID?
+    private let sendingState = OSAllocatedUnfairLock(initialState: LocationSendingState())
     private var pendingLocationWrites = 0
     private var pendingLocationWriteWaiters: [CheckedContinuation<Void, Never>] = []
     private var lifecycleLockIsHeld = false
     private var lifecycleLockWaiters: [CheckedContinuation<Void, Never>] = []
-    private let threshold: Double = 0.95
 
     private var continuation: AsyncStream<[Status]>.Continuation?
     
@@ -84,7 +82,7 @@ actor LocationUsecase: LocationUsecaseProtocol {
     }
     
     func getIsTracking() async -> Bool {
-        isTracking
+        sendingState.withLock { $0.sessionID != nil }
     }
 
     func historyStream() async -> AsyncStream<[Status]> {
@@ -133,10 +131,11 @@ actor LocationUsecase: LocationUsecaseProtocol {
         }
 
         self.interval = interval
-        lastSentAt = nil
-        isTracking = true
         let sessionID = UUID()
-        trackingSessionID = sessionID
+        sendingState.withLock {
+            $0.sessionID = sessionID
+            $0.lastSentAt = nil
+        }
         
         await broadcastLocationProvider.startTracking { result in
             await self.sendIfNeeded(id: id, sessionID: sessionID, result: result)
@@ -159,10 +158,11 @@ actor LocationUsecase: LocationUsecaseProtocol {
 
         trackingTask?.cancel()
         trackingTask = nil
-        isTracking = false
-        trackingSessionID = nil
+        sendingState.withLock {
+            $0.sessionID = nil
+            $0.lastSentAt = nil
+        }
         interval = nil
-        lastSentAt = nil
         
         await broadcastLocationProvider.stopTracking()
         await waitForPendingLocationWrites()
@@ -174,15 +174,29 @@ actor LocationUsecase: LocationUsecaseProtocol {
     }
     
     private func sendIfNeeded(id: String, sessionID: UUID, result: AsyncValue<CLLocation>) async {
-        guard isTracking, trackingSessionID == sessionID, let interval else { return }
+        guard let interval else { return }
         let now = Date()
-        let elapsed = lastSentAt.map { now.timeIntervalSince($0) } ?? .infinity
+        let isLocationSuccess: Bool
+        if case .success = result {
+            isLocationSuccess = true
+        } else {
+            isLocationSuccess = false
+        }
+        let shouldSend = sendingState.withLock { state in
+            guard state.sessionID == sessionID else { return false }
+            guard isLocationSuccess else { return true }
+
+            let elapsed = state.lastSentAt.map { now.timeIntervalSince($0) } ?? .infinity
+            guard elapsed >= Double(interval.value) * 0.95 else { return false }
+
+            // 送信できた位置情報だけを更新間隔の基準にする。
+            state.lastSentAt = now
+            return true
+        }
+        guard shouldSend else { return }
+
         switch result {
         case .success:
-            guard elapsed >= Double(interval.value) * threshold else { return }
-
-            // 最低更新間隔の基準は、実際に位置情報を取得できた時だけ進める。
-            lastSentAt = now
             pendingLocationWrites += 1
             await send(id: id, result: result)
             finishPendingLocationWrite()
@@ -285,4 +299,9 @@ actor LocationUsecase: LocationUsecaseProtocol {
         locationHistory.append(status)
         continuation?.yield(locationHistory)
     }
+}
+
+private struct LocationSendingState: Sendable {
+    var sessionID: UUID?
+    var lastSentAt: Date?
 }
