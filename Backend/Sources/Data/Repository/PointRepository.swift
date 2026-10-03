@@ -117,7 +117,7 @@ extension PRecord {
     }
     
     static func makeKeys(_ id: String) -> (indexName: String, pk: QueryCondition, sk: QueryCondition) {
-        (indexName: Self.typeIndex, pk: .equals("type", type), sk: .beginsWith("sk", skPrefix))
+        (indexName: Self.typeIndex, pk: .equals("type", type), sk: .equals("sk", "\(skPrefix)\(id)"))
     }
 
     static let pkPrefix: String = "ROUTE#"
