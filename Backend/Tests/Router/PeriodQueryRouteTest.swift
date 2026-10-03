@@ -79,11 +79,15 @@ private extension PeriodQueryRouteTest {
     func makeHandler(
         usecase: PeriodUsecaseMock
     ) -> (Application.Request) async -> Application.Response {
+        let festivalController = FestivalControllerMock()
+        let districtController = DistrictControllerMock()
+        let locationController = LocationControllerMock()
+        let sceneController = SceneControllerMock()
         let app = withDependencies {
-            $0[FestivalControllerKey.self] = .init()
-            $0[DistrictControllerKey.self] = .init()
-            $0[LocationControllerKey.self] = .init()
-            $0[SceneControllerKey.self] = .init()
+            $0[FestivalControllerKey.self] = festivalController
+            $0[DistrictControllerKey.self] = districtController
+            $0[LocationControllerKey.self] = locationController
+            $0[SceneControllerKey.self] = sceneController
             $0[PeriodUsecaseKey.self] = usecase
         } operation: {
             Application { FestivalRouter() }
@@ -91,10 +95,10 @@ private extension PeriodQueryRouteTest {
 
         return { request in
             await withDependencies {
-                $0[FestivalControllerKey.self] = .init()
-                $0[DistrictControllerKey.self] = .init()
-                $0[LocationControllerKey.self] = .init()
-                $0[SceneControllerKey.self] = .init()
+                $0[FestivalControllerKey.self] = festivalController
+                $0[DistrictControllerKey.self] = districtController
+                $0[LocationControllerKey.self] = locationController
+                $0[SceneControllerKey.self] = sceneController
                 $0[PeriodUsecaseKey.self] = usecase
             } operation: {
                 await app.handle(request)
