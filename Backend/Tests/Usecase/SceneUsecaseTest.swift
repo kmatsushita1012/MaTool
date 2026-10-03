@@ -62,38 +62,80 @@ struct SceneUsecaseTest {
     }
 
     @Test
-    func fetchLaunchFestivalPack_異常_他祭典の本部権限を拒否() async {
-        let festivalRepository = FestivalRepositoryMock()
-        let districtRepository = DistrictRepositoryMock()
+    func fetchLaunchFestivalPack_正常_他祭典の本部権限は公開情報へフォールバック() async throws {
+        let festival = Festival.mock(id: "festival-target")
+        let districts = [District.mock(id: "district-target", festivalId: festival.id)]
+        let checkpointRepository = CheckpointRepositoryMock(queryHandler: { _ in
+            [.mock(id: "private-checkpoint", festivalId: festival.id)]
+        })
+        let hazardRepository = HazardSectionRepositoryMock(queryHandler: { _ in
+            [.mock(id: "private-hazard", festivalId: festival.id)]
+        })
+        let districtRepository = DistrictRepositoryMock(queryHandler: { _ in districts })
         let subject = make(
-            festivalRepository: festivalRepository,
-            districtRepository: districtRepository
+            festivalRepository: .init(getHandler: { _ in festival }),
+            districtRepository: districtRepository,
+            periodRepository: .init(queryByYearHandler: { _, _ in [] }),
+            checkpointRepository: checkpointRepository,
+            hazardRepository: hazardRepository
         )
 
-        await #expect(throws: Error.forbidden("この祭典の管理用データにアクセスする権限がありません")) {
-            _ = try await subject.fetchLaunchFestivalPack(
-                festivalId: "festival-target",
-                user: .headquarter("festival-user"),
-                now: .now
-            )
-        }
+        let result = try await subject.fetchLaunchFestivalPack(
+            festivalId: festival.id,
+            user: .headquarter("festival-other"),
+            now: makeDate(year: 2026, month: 2, day: 22, hour: 12)
+        )
 
-        #expect(festivalRepository.getCallCount == 0)
-        #expect(districtRepository.queryCallCount == 0)
+        #expect(result.festival == festival)
+        #expect(result.districts == districts)
+        #expect(result.checkpoints.isEmpty)
+        #expect(result.hazardSections.isEmpty)
+        #expect(checkpointRepository.queryCallCount == 0)
+        #expect(hazardRepository.queryCallCount == 0)
     }
 
     @Test
-    func fetchLaunchFestivalPack_異常_他祭典の地区権限を拒否() async {
-        let festivalRepository = FestivalRepositoryMock()
-        let districtRepository = DistrictRepositoryMock(getHandler: { id in
-            .mock(id: id, festivalId: "festival-user")
+    func fetchLaunchFestivalPack_正常_所属外の地区権限は公開情報へフォールバック() async throws {
+        let festival = Festival.mock(id: "festival-target")
+        let districtRepository = DistrictRepositoryMock(queryHandler: { _ in [] })
+        let checkpointRepository = CheckpointRepositoryMock(queryHandler: { _ in
+            [.mock(id: "private-checkpoint", festivalId: festival.id)]
+        })
+        let hazardRepository = HazardSectionRepositoryMock(queryHandler: { _ in
+            [.mock(id: "private-hazard", festivalId: festival.id)]
         })
         let subject = make(
-            festivalRepository: festivalRepository,
-            districtRepository: districtRepository
+            festivalRepository: .init(getHandler: { _ in festival }),
+            districtRepository: districtRepository,
+            periodRepository: .init(queryByYearHandler: { _, _ in [] }),
+            checkpointRepository: checkpointRepository,
+            hazardRepository: hazardRepository
         )
 
-        await #expect(throws: Error.forbidden("この祭典の管理用データにアクセスする権限がありません")) {
+        let result = try await subject.fetchLaunchFestivalPack(
+            festivalId: festival.id,
+            user: .district("district-other"),
+            now: makeDate(year: 2026, month: 2, day: 22, hour: 12)
+        )
+
+        #expect(result.festival == festival)
+        #expect(result.districts.isEmpty)
+        #expect(result.checkpoints.isEmpty)
+        #expect(result.hazardSections.isEmpty)
+        #expect(districtRepository.getCallCount == 0)
+        #expect(districtRepository.queryCallCount == 1)
+        #expect(checkpointRepository.queryCallCount == 0)
+        #expect(hazardRepository.queryCallCount == 0)
+    }
+
+    @Test
+    func fetchLaunchFestivalPack_異常_地区一覧取得エラーは伝播() async {
+        let districtRepository = DistrictRepositoryMock(queryHandler: { _ in
+            throw TestError.intentional
+        })
+        let subject = make(districtRepository: districtRepository)
+
+        await #expect(throws: TestError.intentional) {
             _ = try await subject.fetchLaunchFestivalPack(
                 festivalId: "festival-target",
                 user: .district("district-user"),
@@ -101,9 +143,7 @@ struct SceneUsecaseTest {
             )
         }
 
-        #expect(districtRepository.getCallCount == 1)
-        #expect(festivalRepository.getCallCount == 0)
-        #expect(districtRepository.queryCallCount == 0)
+        #expect(districtRepository.queryCallCount == 1)
     }
 
     @Test
@@ -111,12 +151,10 @@ struct SceneUsecaseTest {
         let now = makeDate(year: 2026, month: 2, day: 22, hour: 12)
         let festival = Festival.mock(id: "festival-1")
         let district = District.mock(id: "district-1", festivalId: festival.id)
+        let districtRepository = DistrictRepositoryMock(queryHandler: { _ in [district] })
         let subject = make(
             festivalRepository: .init(getHandler: { _ in festival }),
-            districtRepository: .init(
-                getHandler: { _ in district },
-                queryHandler: { _ in [district] }
-            ),
+            districtRepository: districtRepository,
             periodRepository: .init(queryHandler: { _ in [] }),
             locationRepository: .init(getHandler: { _, _ in nil }),
             checkpointRepository: .init(queryHandler: { _ in [] }),
@@ -133,6 +171,8 @@ struct SceneUsecaseTest {
         #expect(result.districts == [district])
         #expect(result.checkpoints.isEmpty)
         #expect(result.hazardSections.isEmpty)
+        #expect(districtRepository.getCallCount == 0)
+        #expect(districtRepository.queryCallCount == 1)
     }
 
     @Test
