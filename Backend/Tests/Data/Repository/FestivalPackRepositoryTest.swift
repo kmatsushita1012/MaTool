@@ -27,6 +27,10 @@ struct FestivalPackRepositoryTest {
 
         var capturedMutations: [DataStoreMutation] = []
         let store = DataStoreMock(
+            transactionWriteHandler: { mutations in
+                capturedMutations = mutations
+                throw TestError.intentional
+            },
             queryHandler: { _, _, _, _, _, type in
                 if type == Record<Checkpoint>.self {
                     return try encodeForDataStore(oldCheckpoints.map { self.checkpointRecord($0) })
@@ -35,10 +39,6 @@ struct FestivalPackRepositoryTest {
                     return try encodeForDataStore(oldHazards.map { self.hazardRecord($0) })
                 }
                 throw TestError.unimplemented
-            },
-            transactionWriteHandler: { mutations in
-                capturedMutations = mutations
-                throw TestError.intentional
             }
         )
         let subject = make(dataStore: store)
