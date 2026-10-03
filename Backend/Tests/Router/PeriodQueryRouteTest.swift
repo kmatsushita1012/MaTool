@@ -82,11 +82,13 @@ private extension PeriodQueryRouteTest {
         let festivalController = FestivalControllerMock()
         let districtController = DistrictControllerMock()
         let locationController = LocationControllerMock()
+        let periodController = PeriodController()
         let sceneController = SceneControllerMock()
         let app = withDependencies {
             $0[FestivalControllerKey.self] = festivalController
             $0[DistrictControllerKey.self] = districtController
             $0[LocationControllerKey.self] = locationController
+            $0[PeriodControllerKey.self] = periodController
             $0[SceneControllerKey.self] = sceneController
             $0[PeriodUsecaseKey.self] = usecase
         } operation: {
@@ -98,6 +100,7 @@ private extension PeriodQueryRouteTest {
                 $0[FestivalControllerKey.self] = festivalController
                 $0[DistrictControllerKey.self] = districtController
                 $0[LocationControllerKey.self] = locationController
+                $0[PeriodControllerKey.self] = periodController
                 $0[SceneControllerKey.self] = sceneController
                 $0[PeriodUsecaseKey.self] = usecase
             } operation: {
