@@ -64,10 +64,20 @@ struct DistrictUsecase: DistrictUsecaseProtocol {
         }
 
         // 招待処理
-        let _ = try await managerFactory().create(
-            username: districtId,
-            email: email
-        )
+        // Lambda retry で create が UsernameExists になるケースでは、
+        // 既存ユーザーが district と確認できれば続行する。
+        let manager = try await managerFactory()
+        do {
+            let _ = try await manager.create(
+                username: districtId,
+                email: email
+            )
+        } catch {
+            let existing = try? await manager.get(username: districtId)
+            guard case .district(districtId)? = existing else {
+                throw error
+            }
+        }
 
         // District生成
         let item = District(
