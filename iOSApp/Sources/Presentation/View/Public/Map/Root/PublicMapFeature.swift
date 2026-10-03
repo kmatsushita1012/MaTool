@@ -10,31 +10,12 @@ import ComposableArchitecture
 import Shared
 import SQLiteData
 
-struct PublicMapDistrictLaunchRequestGate: Equatable {
-    private(set) var activeID: UUID?
-
-    mutating func begin() -> UUID {
-        let id = UUID()
-        activeID = id
-        return id
-    }
-
-    mutating func invalidate() {
-        activeID = nil
-    }
-
-    func accepts(_ id: UUID) -> Bool {
-        activeID == id
-    }
-}
-
 @Reducer
 struct PublicMapFeature {
-    struct DistrictLaunchResult: Equatable {
-        let district: District
-        let routeId: Route.ID?
+    private enum CancelID {
+        case districtLaunch
     }
-    
+
     enum Content: Equatable{
         case locations(Festival)
         case route(District)
@@ -53,7 +34,6 @@ struct PublicMapFeature {
         var selectedContent: Content
         var currentPeriodId: Period.ID? = nil
         var isLoading: Bool = false
-        var districtLaunchRequestGate = PublicMapDistrictLaunchRequestGate()
         var isDismissed: Bool = false
         @Presents var destination: Destination.State?
         @Shared var mapRegion: MKCoordinateRegion
@@ -66,9 +46,8 @@ struct PublicMapFeature {
         case binding(BindingAction<State>)
         case dismissTapped
         case contentSelected(Content)
-        case routePrepared(UUID, District, Route.ID?)
         case districtContentEvaluated(District, Bool)
-        case districtLaunchReceived(UUID, AppResult<DistrictLaunchResult>)
+        case districtLaunchReceived(District, AppResult<Route.ID?>)
         case errorCaught(AppError)
         case destination(PresentationAction<Destination.Action>)
     }
@@ -99,7 +78,6 @@ struct PublicMapFeature {
             case .contentSelected(let value):
                 state.$toast.withLock { $0 = nil }
                 state.selectedContent = value
-                state.districtLaunchRequestGate.invalidate()
                 state.isLoading = false
                 switch value {
                 case .locations(let festival):
@@ -110,29 +88,16 @@ struct PublicMapFeature {
                             toast: state.$toast
                         )
                     )
-                    return .none
+                    return .cancel(id: CancelID.districtLaunch)
                 case .route(let district):
-                    let requestID = state.districtLaunchRequestGate.begin()
                     state.isLoading = true
                     return districtLaunchEffect(
-                        requestID: requestID,
-                        userRole: state.userRole,
                         district: district,
                         periodId: state.currentPeriodId
                     )
                 }
-            case .districtLaunchReceived(let requestID, .success(let result)):
-                guard state.districtLaunchRequestGate.accepts(requestID) else { return .none }
-                return .send(.routePrepared(requestID, result.district, result.routeId))
-            case .districtLaunchReceived(let requestID, .failure(let error)):
-                guard state.districtLaunchRequestGate.accepts(requestID) else { return .none }
-                state.districtLaunchRequestGate.invalidate()
-                state.isLoading = false
-                state.$toast.withLock { $0 = .error(error, title: "地区情報を取得できませんでした") }
-                return .none
-            case .routePrepared(let requestID, let district, let routeId):
-                guard state.districtLaunchRequestGate.accepts(requestID) else { return .none }
-                state.districtLaunchRequestGate.invalidate()
+            case .districtLaunchReceived(let district, .success(let routeId)):
+                guard PublicMapFeature.isSelected(district, by: state.selectedContent) else { return .none }
                 state.isLoading = false
                 if let routeId,
                    let route = FetchOne(Route.find(routeId)).wrappedValue {
@@ -148,6 +113,11 @@ struct PublicMapFeature {
                 )
                 let hasDisplayableContent = state.destination?.route?.hasDisplayableContent ?? false
                 return .send(.districtContentEvaluated(district, hasDisplayableContent))
+            case .districtLaunchReceived(let district, .failure(let error)):
+                guard PublicMapFeature.isSelected(district, by: state.selectedContent) else { return .none }
+                state.isLoading = false
+                state.$toast.withLock { $0 = .error(error, title: "地区情報を取得できませんでした") }
+                return .none
             case .districtContentEvaluated(let district, let hasDisplayableContent):
                 return .run { [userRole = state.userRole, districtId = district.id] _ in
                     await publicMapAdUsecase.handleDistrictSelectionResult(
@@ -177,18 +147,23 @@ struct PublicMapFeature {
     }
     
     func districtLaunchEffect(
-        requestID: UUID,
-        userRole: UserRole,
         district: District,
         periodId: Period.ID?
     ) -> Effect<Action> {
-        .task({ result in Action.districtLaunchReceived(requestID, result) }) {
-            let routeId = try await publicMapAdUsecase.handleDistrictSelection(
+        .task({ result in Action.districtLaunchReceived(district, result) }) {
+            try await publicMapAdUsecase.handleDistrictSelection(
                 districtId: district.id,
                 periodId: periodId
             )
-            return DistrictLaunchResult(district: district, routeId: routeId)
         }
+        .cancellable(id: CancelID.districtLaunch, cancelInFlight: true)
+    }
+}
+
+extension PublicMapFeature {
+    static func isSelected(_ district: District, by content: Content) -> Bool {
+        guard case .route(let selectedDistrict) = content else { return false }
+        return selectedDistrict.id == district.id
     }
 }
 
