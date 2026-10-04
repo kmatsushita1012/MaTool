@@ -22,13 +22,14 @@ protocol LocationDataFetcherProtocol: DataFetcher {
 struct LocationDataFetcher: LocationDataFetcherProtocol{
     
     @Dependency(FloatLocationStoreKey.self) var store
+    @Dependency(DistrictStoreKey.self) var districtStore
     @Dependency(\.defaultDatabase) var database
     @Dependency(HTTPClientKey.self) var client
     
     func fetchAll(festivalId: Shared.Festival.ID) async throws {
         let token = try await getToken()
         let locations: [FloatLocation] = try await client.get(path: "/festivals/\(festivalId)/locations", accessToken: token)
-        try await sync(locations)
+        try await sync(locations, festivalId: festivalId)
     }
     
     func fetch(districtId: Shared.District.ID) async throws {
@@ -53,9 +54,12 @@ struct LocationDataFetcher: LocationDataFetcherProtocol{
 }
 
 extension LocationDataFetcher{
-    private func sync(_ locations: [FloatLocation]) async throws {
-        let districtIds = locations.map(\.districtId)
+    private func sync(_ locations: [FloatLocation], festivalId: Festival.ID) async throws {
         try await database.write{ db in
+            let districtIds = try districtStore.fetchAll(
+                where: { $0.festivalId.eq(festivalId) },
+                from: db
+            ).map(\.id)
             try store.deleteAll(where: { $0.districtId.in(districtIds) }, from: db)
             try store.upsert(locations, at: db)
         }

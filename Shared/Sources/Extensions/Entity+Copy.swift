@@ -16,7 +16,8 @@ public extension Point {
             checkpointId: self.checkpointId,
             performanceId: self.performanceId,
             anchor: self.anchor,
-            index: self.index
+            index: self.index,
+            isBoundary: self.isBoundary
         )
     }
 }
