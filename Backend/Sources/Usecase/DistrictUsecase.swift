@@ -195,7 +195,7 @@ extension DistrictUsecase {
                 group.addTask {
                     var updated = route
                     updated.visibility = visibility
-                    _ = try await routeRepository.put(updated)
+                    _ = try await routeRepository.put(updated, replacing: route)
                 }
             }
             try await group.waitForAll()

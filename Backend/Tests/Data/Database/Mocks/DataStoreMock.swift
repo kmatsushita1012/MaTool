@@ -4,12 +4,16 @@ import Foundation
 final class DataStoreMock: DataStore, @unchecked Sendable {
     init(
         putHandler: ((any Encodable) async throws -> Void)? = nil,
+        routeTransactionHandler: ((RouteRecord, Route?) async throws -> Void)? = nil,
+        routeDeleteTransactionHandler: ((Route) async throws -> Void)? = nil,
         getHandler: (([String: Codable], Any.Type) async throws -> Data?)? = nil,
         deleteHandler: (([String: Codable]) async throws -> Void)? = nil,
         scanHandler: ((Bool, Any.Type) async throws -> Data)? = nil,
         queryHandler: ((String?, [QueryCondition], [FilterCondition], Int?, Bool, Any.Type) async throws -> Data)? = nil
     ) {
         self.putHandler = putHandler
+        self.routeTransactionHandler = routeTransactionHandler
+        self.routeDeleteTransactionHandler = routeDeleteTransactionHandler
         self.getHandler = getHandler
         self.deleteHandler = deleteHandler
         self.scanHandler = scanHandler
@@ -23,6 +27,22 @@ final class DataStoreMock: DataStore, @unchecked Sendable {
         putCallCount += 1
         guard let putHandler else { throw TestError.unimplemented }
         try await putHandler(item)
+    }
+
+    nonisolated(unsafe) private(set) var routeTransactionCallCount = 0
+    private let routeTransactionHandler: ((RouteRecord, Route?) async throws -> Void)?
+
+    func transactRoute(_ record: RouteRecord, replacing oldRoute: Route?) async throws {
+        routeTransactionCallCount += 1
+        try await routeTransactionHandler?(record, oldRoute)
+    }
+
+    nonisolated(unsafe) private(set) var routeDeleteTransactionCallCount = 0
+    private let routeDeleteTransactionHandler: ((Route) async throws -> Void)?
+
+    func transactDeleteRoute(_ route: Route) async throws {
+        routeDeleteTransactionCallCount += 1
+        try await routeDeleteTransactionHandler?(route)
     }
 
     nonisolated(unsafe) private(set) var getCallCount = 0

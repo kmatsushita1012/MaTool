@@ -38,6 +38,137 @@ struct DynamoDBStore: DataStore {
         let input = PutItemInput(item: attrs, tableName: tableName)
         let _ = try await client.putItem(input: input)
     }
+
+    func transactRoute(_ record: RouteRecord, replacing oldRoute: Route?) async throws {
+        let route = record.content
+        let newUniqueRecord = RouteUniqueRecord(route)
+        var items = [
+            DynamoDBClientTypes.TransactWriteItem(
+                put: Put(
+                    conditionExpression: "attribute_not_exists(pk) OR #route_id = :route_id",
+                    expressionAttributeNames: ["#route_id": "route_id"],
+                    expressionAttributeValues: [":route_id": .s(route.id)],
+                    item: try encoder.encode(newUniqueRecord),
+                    tableName: tableName
+                )
+            )
+        ]
+
+        let newRouteKeys = RouteRecord.makeKeys(route.id, districtId: route.districtId)
+        let sameRouteKey = oldRoute.map {
+            RouteRecord.makeKeys($0.id, districtId: $0.districtId).pk == newRouteKeys.pk
+                && RouteRecord.makeKeys($0.id, districtId: $0.districtId).sk == newRouteKeys.sk
+        } ?? false
+        let routeWriteCondition: (String?, [String: String]?, [String: AttributeValue]?)
+        if let oldRoute, sameRouteKey {
+            let condition = routeContentCondition(oldRoute)
+            routeWriteCondition = (condition.expression, condition.names, condition.values)
+        } else {
+            routeWriteCondition = ("attribute_not_exists(pk)", nil, nil)
+        }
+
+        items.append(
+            DynamoDBClientTypes.TransactWriteItem(
+                put: Put(
+                    conditionExpression: routeWriteCondition.0,
+                    expressionAttributeNames: routeWriteCondition.1,
+                    expressionAttributeValues: routeWriteCondition.2,
+                    item: try encoder.encode(record),
+                    tableName: tableName
+                )
+            )
+        )
+
+        if let oldRoute {
+            let oldKeys = RouteRecord.makeKeys(oldRoute.id, districtId: oldRoute.districtId)
+            if oldKeys.pk != newRouteKeys.pk || oldKeys.sk != newRouteKeys.sk {
+                let condition = routeContentCondition(oldRoute)
+                items.append(
+                    DynamoDBClientTypes.TransactWriteItem(
+                        delete: Delete(
+                            conditionExpression: condition.expression,
+                            expressionAttributeNames: condition.names,
+                            expressionAttributeValues: condition.values,
+                            key: try ["pk": encoder.encodeKey(oldKeys.pk), "sk": encoder.encodeKey(oldKeys.sk)],
+                            tableName: tableName
+                        )
+                    )
+                )
+            }
+
+            let oldUniqueRecord = RouteUniqueRecord(oldRoute)
+            if oldUniqueRecord.pk != newUniqueRecord.pk || oldUniqueRecord.sk != newUniqueRecord.sk {
+                let storedMarker = try await getConsistent(
+                    pk: oldUniqueRecord.pk,
+                    sk: oldUniqueRecord.sk,
+                    as: RouteUniqueRecord.self
+                )
+                if storedMarker == nil || storedMarker?.routeId == oldRoute.id {
+                    items.append(try uniqueDelete(oldUniqueRecord))
+                }
+            }
+        }
+
+        try await transactWrite(items)
+    }
+
+    func transactDeleteRoute(_ route: Route) async throws {
+        let keys = RouteRecord.makeKeys(route.id, districtId: route.districtId)
+        let condition = routeContentCondition(route)
+        var items = [
+            DynamoDBClientTypes.TransactWriteItem(
+                delete: Delete(
+                    conditionExpression: condition.expression,
+                    expressionAttributeNames: condition.names,
+                    expressionAttributeValues: condition.values,
+                    key: try ["pk": encoder.encodeKey(keys.pk), "sk": encoder.encodeKey(keys.sk)],
+                    tableName: tableName
+                )
+            )
+        ]
+        let uniqueRecord = RouteUniqueRecord(route)
+        let storedMarker = try await getConsistent(pk: uniqueRecord.pk, sk: uniqueRecord.sk, as: RouteUniqueRecord.self)
+        if storedMarker == nil || storedMarker?.routeId == route.id {
+            items.append(try uniqueDelete(uniqueRecord))
+        }
+        try await transactWrite(items)
+    }
+
+    private func uniqueDelete(_ record: RouteUniqueRecord) throws -> DynamoDBClientTypes.TransactWriteItem {
+        DynamoDBClientTypes.TransactWriteItem(
+            delete: Delete(
+                conditionExpression: "attribute_not_exists(#route_id) OR #route_id = :route_id",
+                expressionAttributeNames: ["#route_id": "route_id"],
+                expressionAttributeValues: [":route_id": .s(record.routeId)],
+                key: try ["pk": encoder.encodeKey(record.pk), "sk": encoder.encodeKey(record.sk)],
+                tableName: tableName
+            )
+        )
+    }
+
+    private func routeContentCondition(_ route: Route) -> (
+        expression: String,
+        names: [String: String],
+        values: [String: AttributeValue]
+    ) {
+        (
+            "attribute_exists(pk) AND #content.#district_id = :district_id AND #content.#period_id = :period_id",
+            ["#content": "content", "#district_id": "district_id", "#period_id": "period_id"],
+            [":district_id": .s(route.districtId), ":period_id": .s(route.periodId)]
+        )
+    }
+
+    private func transactWrite(_ items: [DynamoDBClientTypes.TransactWriteItem]) async throws {
+        do {
+            _ = try await client.transactWriteItems(input: .init(transactItems: items))
+        } catch let error as TransactionCanceledException {
+            let conflictCodes: Set<String> = ["ConditionalCheckFailed", "TransactionConflict"]
+            if error.properties.cancellationReasons?.contains(where: { conflictCodes.contains($0.code ?? "") }) == true {
+                throw Error.conflict("この地区・日程には既にルートが登録されているか、更新対象が変更されています。")
+            }
+            throw error
+        }
+    }
     
     // MARK: get
     func get<T: RecordProtocol>(keys: [String: Codable], as type: T.Type) async throws -> T? {
@@ -47,6 +178,14 @@ struct DynamoDBStore: DataStore {
             tableName: tableName
         )
         
+        let output = try await client.getItem(input: input)
+        guard let item = output.item else { return nil }
+        return try decoder.decode(item, as: T.self)
+    }
+
+    func getConsistent<T: RecordProtocol>(pk: String, sk: String, as type: T.Type) async throws -> T? {
+        let key = try ["pk": encoder.encodeKey(pk), "sk": encoder.encodeKey(sk)]
+        let input = GetItemInput(consistentRead: true, key: key, tableName: tableName)
         let output = try await client.getItem(input: input)
         guard let item = output.item else { return nil }
         return try decoder.decode(item, as: T.self)
@@ -93,6 +232,37 @@ struct DynamoDBStore: DataStore {
         ascending: Bool = true,
         as type: T.Type
     ) async throws -> [T] {
+        try await queryRows(
+            indexName: indexName,
+            keyConditions: keyConditions,
+            filterConditions: filterConditions,
+            limit: limit,
+            ascending: ascending,
+            consistentRead: false,
+            as: type
+        )
+    }
+
+    func queryConsistent<T: RecordProtocol>(
+        queryConditions: [QueryCondition],
+        as type: T.Type
+    ) async throws -> [T] {
+        try await queryRows(
+            keyConditions: queryConditions,
+            consistentRead: true,
+            as: type
+        )
+    }
+
+    private func queryRows<T: RecordProtocol>(
+        indexName: String? = nil,
+        keyConditions: [QueryCondition],
+        filterConditions: [FilterCondition] = [],
+        limit: Int? = nil,
+        ascending: Bool = true,
+        consistentRead: Bool,
+        as type: T.Type
+    ) async throws -> [T] {
         
         precondition(!keyConditions.isEmpty, "KeyCondition must not be empty")
         guard limit != 0 else { return [] }
@@ -134,6 +304,7 @@ struct DynamoDBStore: DataStore {
                 filterExpression: filterExpression,
                 indexName: indexName,
                 keyConditionExpression: keyConditionExpression,
+                consistentRead: consistentRead,
                 tableName: tableName
             )
 

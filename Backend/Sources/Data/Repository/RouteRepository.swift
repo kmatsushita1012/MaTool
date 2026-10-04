@@ -28,6 +28,7 @@ protocol RouteRepositoryProtocol: Sendable {
     func query(by districtId: String, year: Int) async throws -> [Route]
     func post(_ route: Route) async throws -> Route
     func put(_ route: Route) async throws -> Route
+    func put(_ route: Route, replacing oldRoute: Route) async throws -> Route
     func delete(id: String) async throws
     func delete(_ route: Route) async throws
 }
@@ -65,14 +66,31 @@ struct RouteRepository: RouteRepositoryProtocol {
     func post(_ item: Route) async throws -> Route {
         let date = try await getDate(item)
         let record = RouteRecord(item, date: date)
-        try await store.put(record)
+        try await ensureUnique(item, excludingRouteID: nil)
+        try await store.transactRoute(record, replacing: nil)
         return item
     }
 
     func put(_ item: Route) async throws -> Route {
         let date = try await getDate(item)
+        let oldRoute: Route?
+        if let indexedRoute = try await get(id: item.id) {
+            oldRoute = indexedRoute
+        } else {
+            oldRoute = try await get(id: item.id, inDistrict: item.districtId)
+        }
+        return try await persist(item, date: date, replacing: oldRoute)
+    }
+
+    func put(_ item: Route, replacing oldRoute: Route) async throws -> Route {
+        let date = try await getDate(item)
+        return try await persist(item, date: date, replacing: oldRoute)
+    }
+
+    private func persist(_ item: Route, date: SimpleDate, replacing oldRoute: Route?) async throws -> Route {
         let record = RouteRecord(item, date: date)
-        try await store.put(record)
+        try await ensureUnique(item, excludingRouteID: oldRoute?.id)
+        try await store.transactRoute(record, replacing: oldRoute)
         return item
     }
 
@@ -82,8 +100,31 @@ struct RouteRepository: RouteRepositoryProtocol {
     }
 
     func delete(_ route: Route) async throws {
-        let keys = RouteRecord.makeKeys(route.id, districtId: route.districtId)
-        try await store.delete(pk: keys.pk, sk: keys.sk)
+        try await store.transactDeleteRoute(route)
+    }
+
+    private func ensureUnique(_ route: Route, excludingRouteID: Route.ID?) async throws {
+        let keys = RouteRecord.makeKeys(districtId: route.districtId)
+        let records = try await store.queryConsistent(
+            queryConditions: [keys.pk, keys.sk],
+            as: RouteRecord.self
+        )
+        let duplicate = records.contains { record in
+            record.content.periodId == route.periodId
+                && record.content.id != excludingRouteID
+        }
+        guard !duplicate else {
+            throw Error.conflict("この地区・日程には既にルートが登録されています。")
+        }
+    }
+
+    private func get(id: Route.ID, inDistrict districtId: District.ID) async throws -> Route? {
+        let keys = RouteRecord.makeKeys(districtId: districtId)
+        let records = try await store.queryConsistent(
+            queryConditions: [keys.pk, keys.sk],
+            as: RouteRecord.self
+        )
+        return records.first(where: { $0.content.id == id })?.content
     }
     
     private func getDate(_ content: Route) async throws -> SimpleDate {
@@ -100,7 +141,7 @@ struct RouteRepository: RouteRepositoryProtocol {
     }
 }
 
-fileprivate struct RouteRecord: RecordProtocol {
+struct RouteRecord: RecordProtocol {
     typealias Content = Route
     
     let pk: String
@@ -142,4 +183,26 @@ extension RouteRecord {
     static let type = String(describing: Route.self).uppercased()
     static let typeIndexName = "index-TYPE"
     static let dateIndexName = "index-DATE"
+}
+
+struct RouteUniqueRecord: RecordProtocol {
+    typealias Content = String
+
+    let pk: String
+    let sk: String
+    let type: String
+    let routeId: String
+    let content: String
+
+    init(_ route: Route) {
+        let keys = Self.makeKeys(districtId: route.districtId, periodId: route.periodId)
+        self.init(pk: keys.pk, sk: keys.sk, type: Self.type, routeId: route.id, content: route.id)
+    }
+
+    static func makeKeys(districtId: String, periodId: String) -> (pk: String, sk: String) {
+        (pk: "\(RouteRecord.pkPrefix)\(districtId)", sk: "\(prefix)\(periodId)")
+    }
+
+    static let prefix = "ROUTE_UNIQUE#"
+    static let type = "ROUTE_UNIQUE"
 }
