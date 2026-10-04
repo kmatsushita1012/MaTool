@@ -105,6 +105,7 @@ struct HomeFeature {
                 state.destination = .settings(.init(selection: selection))
                 return .none
             case .settingsPrepared(.failure(let error)):
+                state.isDestinationLoading = false
                 state.alert = AlertFeature.error("設定画面の準備に失敗しました。\n\(error)")
                 return .none
             case .destination(.presented(.settings(.districtSelectReceived(.success(let routeId))))):
