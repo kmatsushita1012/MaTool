@@ -20,7 +20,11 @@ func send(
         )
         $0[PeriodRepositoryKey.self] = PeriodRepositoryMock(getHandler: { periodByID[$0] })
         $0[FestivalRepositoryKey.self] = FestivalRepositoryMock()
-        $0[PointRepositoryKey.self] = PointRepositoryMock(queryHandler: { _ in [] })
+        $0[PointRepositoryKey.self] = PointRepositoryMock(
+            queryHandler: { _ in [] },
+            postHandler: { $0 },
+            putHandler: { $0 }
+        )
         $0[PassageRepositoryKey.self] = PassageRepositoryMock(queryHandler: { _ in [] })
     } operation: {
         let routeRepository = RouteRepository()
@@ -34,7 +38,22 @@ func send(
             $0[PeriodControllerKey.self] = PeriodControllerMock()
         } operation: {
             let app = Application { DistrictRouter(); OtherRouter() }
-            let pack = RoutePack(route: route, points: [], passages: [])
+            let points = [
+                Point.mock(
+                    id: "\(route.id)-start",
+                    routeId: route.id,
+                    time: .init(hour: 9, minute: 0),
+                    anchor: .start
+                ),
+                Point.mock(
+                    id: "\(route.id)-end",
+                    routeId: route.id,
+                    index: 1,
+                    time: .init(hour: 10, minute: 0),
+                    anchor: .end
+                )
+            ]
+            let pack = RoutePack(route: route, points: points, passages: [])
             var request = Application.Request.make(method: method, path: path, body: try pack.toString())
             request.user = .district("district-1")
             return await app.handle(request)
