@@ -20,6 +20,38 @@ struct DistrictRouterTest {
     }
 
     @Test
+    func routesDistrictCore_余分なパス要素があれば404しコントローラを呼ばない() async {
+        let districtController = DistrictControllerMock(
+            updateDistrictHandler: { _, _ in try .success() }
+        )
+        let app = make(districtController: districtController)
+        let request = Application.Request.make(method: .put, path: "/districts/district-1/core/unexpected")
+        let response = await app.handle(request)
+
+        #expect(response.statusCode == 404)
+        #expect(response.body == "Not Found")
+        #expect(districtController.updateDistrictCallCount == 0)
+    }
+
+    @Test
+    func middlewarePathは配下のルートに適用される_正常() async {
+        let middlewareCallCounter = MiddlewareCallCounter()
+        let app = Application()
+        app.use(path: "/api") { request, next in
+            await middlewareCallCounter.increment()
+            return try await next(request)
+        }
+        app.get(path: "/api/items/:itemId") { _, _ in try .success() }
+
+        let request = Application.Request.make(method: .get, path: "/api/items/item-1")
+        let response = await app.handle(request)
+        let middlewareCallCount = await middlewareCallCounter.value
+
+        #expect(response.statusCode == 200)
+        #expect(middlewareCallCount == 1)
+    }
+
+    @Test
     func routesDistrictReissueToDistrictController_正常() async {
         var lastCalledDistrictId: String?
         let app = make(districtController: .init(
@@ -60,6 +92,14 @@ struct DistrictRouterTest {
         let response = await app.handle(request)
 
         #expect(response.statusCode == 500)
+    }
+}
+
+private actor MiddlewareCallCounter {
+    private(set) var value = 0
+
+    func increment() {
+        value += 1
     }
 }
 
