@@ -28,6 +28,8 @@ struct PeriodDataFetcher: PeriodDataFetcherProtocol {
     @Dependency(HTTPClientKey.self) var client
     @Dependency(PeriodStoreKey.self) var periodStore
     @Dependency(RouteStoreKey.self) var routeStore
+    @Dependency(PointStoreKey.self) var pointStore
+    @Dependency(PassageStoreKey.self) var passageStore
     @Dependency(\.defaultDatabase) var database
 
     func fetchAll(festivalID: Festival.ID, query: Query) async throws {
@@ -57,6 +59,14 @@ struct PeriodDataFetcher: PeriodDataFetcherProtocol {
         let token = try await getToken()
         try await client.delete(path: "/periods/\(id)", accessToken: token)
         try await database.write{ db in
+            let routes = try routeStore.fetchAll(where: { $0.periodId.eq(id) }, from: db)
+            try deleteLocalRouteTree(
+                routes.map(\.id),
+                routeStore: routeStore,
+                pointStore: pointStore,
+                passageStore: passageStore,
+                from: db
+            )
             try periodStore.delete(id, from: db)
         }
     }
@@ -65,8 +75,18 @@ struct PeriodDataFetcher: PeriodDataFetcherProtocol {
         try await database.write { db in
             let oldPeriods: [Period] = try fetchOldPeriods(festivalId: festivalId, query: query, maxYear: periods.map(keyPath: \.date.year).max(), db: db)
             let (upsertedPeriods, deletedPeriodIds) = oldPeriods.diffById(with: periods)
+
+            if !deletedPeriodIds.isEmpty {
+                let deletedRoutes = try routeStore.fetchAll(where: { $0.periodId.in(deletedPeriodIds) }, from: db)
+                try deleteLocalRouteTree(
+                    deletedRoutes.map(\.id),
+                    routeStore: routeStore,
+                    pointStore: pointStore,
+                    passageStore: passageStore,
+                    from: db
+                )
+            }
             try periodStore.deleteAll(deletedPeriodIds, from: db)
-            try routeStore.deleteAll(where: { $0.periodId.in(deletedPeriodIds) }, from: db)
             try periodStore.upsert(upsertedPeriods, at: db)
         }
     }

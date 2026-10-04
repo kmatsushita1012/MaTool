@@ -59,7 +59,13 @@ struct RouteDataFetcher: RouteDataFetcherProtocol {
         let token = try await getToken()
         try await client.delete(path: "/routes/\(routeID)", query: [:], accessToken: token)
         try await database.write { db in
-            try routeStore.deleteAll([routeID], from: db)
+            try deleteLocalRouteTree(
+                [routeID],
+                routeStore: routeStore,
+                pointStore: pointStore,
+                passageStore: passageStore,
+                from: db
+            )
         }
     }
 
@@ -84,8 +90,28 @@ struct RouteDataFetcher: RouteDataFetcherProtocol {
         try await database.write { db in
             let oldRoutes = try routeStore.fetchAll(where: { $0.districtId.eq(districtId) }, from: db)
             let (_, deletedRouteIds) = oldRoutes.diffById(with: routes)
-            try routeStore.deleteAll(deletedRouteIds, from: db)
+            try deleteLocalRouteTree(
+                deletedRouteIds,
+                routeStore: routeStore,
+                pointStore: pointStore,
+                passageStore: passageStore,
+                from: db
+            )
             try routeStore.upsert(routes, at: db)
         }
     }
+}
+
+func deleteLocalRouteTree(
+    _ routeIDs: [Route.ID],
+    routeStore: any SQLiteStoreProtocol<Route>,
+    pointStore: any SQLiteStoreProtocol<Point>,
+    passageStore: any SQLiteStoreProtocol<RoutePassage>,
+    from db: Database
+) throws {
+    guard !routeIDs.isEmpty else { return }
+
+    try pointStore.deleteAll(where: { $0.routeId.in(routeIDs) }, from: db)
+    try passageStore.deleteAll(where: { $0.routeId.in(routeIDs) }, from: db)
+    try routeStore.deleteAll(routeIDs, from: db)
 }
