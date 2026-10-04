@@ -99,10 +99,16 @@ struct PeriodRepositoryTest {
     func put_正常_レコード化してputする() async throws {
         let period = Period.mock(id: "period-2", festivalId: "festival-1", date: .init(year: 2026, month: 3, day: 1), start: .init(hour: 12, minute: 0))
         var lastCalledRecord: PeriodRecord?
+        var operations: [String] = []
 
         let dataStore = DataStoreMock(
             putHandler: { item in
+                operations.append("put")
                 lastCalledRecord = try decodeFromEncodable(item, as: PeriodRecord.self)
+            },
+            queryHandler: { _, _, _, _, _, _ in
+                operations.append("query")
+                return try JSONEncoder().encode([PeriodRecord(period)])
             }
         )
         let subject = make(dataStore: dataStore)
@@ -113,6 +119,65 @@ struct PeriodRepositoryTest {
         #expect(dataStore.putCallCount == 1)
         #expect(lastCalledRecord?.content == period)
         #expect(lastCalledRecord?.pk == "FESTIVAL#\(period.festivalId)")
+        #expect(dataStore.deleteCallCount == 0)
+        #expect(operations == ["query", "put"])
+    }
+
+    @Test
+    func put_正常_キー変更時は旧レコードを削除してからputする() async throws {
+        let oldPeriod = Period.mock(
+            id: "period-2",
+            festivalId: "festival-1",
+            date: .init(year: 2026, month: 3, day: 1),
+            start: .init(hour: 12, minute: 0)
+        )
+        let updatedPeriod = Period.mock(
+            id: oldPeriod.id,
+            festivalId: oldPeriod.festivalId,
+            date: oldPeriod.date,
+            start: .init(hour: 12, minute: 30)
+        )
+        let unrelatedPeriod = Period.mock(
+            id: "period-unrelated",
+            festivalId: "festival-2",
+            date: oldPeriod.date,
+            start: .init(hour: 8, minute: 0)
+        )
+        var operations: [String] = []
+        var deletedKeys: (pk: String?, sk: String?) = (nil, nil)
+        var savedRecord: PeriodRecord?
+        var queriedTargetId = false
+
+        let dataStore = DataStoreMock(
+            putHandler: { item in
+                operations.append("put")
+                savedRecord = try decodeFromEncodable(item, as: PeriodRecord.self)
+            },
+            deleteHandler: { keys in
+                operations.append("delete")
+                deletedKeys = (keys["pk"] as? String, keys["sk"] as? String)
+            },
+            queryHandler: { indexName, keyConditions, _, _, _, _ in
+                operations.append("query")
+                queriedTargetId = indexName == "index-type-id"
+                    && keyConditions.contains(where: { isEquals($0, field: "id", value: updatedPeriod.id) })
+                return try JSONEncoder().encode([
+                    PeriodRecord(unrelatedPeriod),
+                    PeriodRecord(oldPeriod)
+                ])
+            }
+        )
+        let subject = make(dataStore: dataStore)
+
+        let result = try await subject.put(updatedPeriod)
+
+        #expect(result == updatedPeriod)
+        #expect(deletedKeys.pk == "FESTIVAL#\(oldPeriod.festivalId)")
+        #expect(deletedKeys.sk == "PERIOD#\(oldPeriod.date.sortableKey)#\(oldPeriod.start.sortableKey)")
+        #expect(queriedTargetId)
+        #expect(dataStore.deleteCallCount == 1)
+        #expect(savedRecord?.content == updatedPeriod)
+        #expect(operations == ["query", "delete", "put"])
     }
 
     @Test
@@ -177,7 +242,10 @@ struct PeriodRepositoryTest {
     func put_異常_依存エラーを透過() async {
         let period = Period.mock(id: "period-1", festivalId: "festival-1")
         let dataStore = DataStoreMock(
-            putHandler: { _ in throw TestError.intentional }
+            putHandler: { _ in throw TestError.intentional },
+            queryHandler: { _, _, _, _, _, _ in
+                try JSONEncoder().encode([PeriodRecord]())
+            }
         )
         let subject = make(dataStore: dataStore)
 

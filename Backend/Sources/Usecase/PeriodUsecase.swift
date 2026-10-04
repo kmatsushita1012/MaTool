@@ -24,6 +24,10 @@ protocol PeriodUsecaseProtocol: Sendable {
 
 struct PeriodUsecase: PeriodUsecaseProtocol {
     @Dependency(PeriodRepositoryKey.self) var repository
+    @Dependency(DistrictRepositoryKey.self) var districtRepository
+    @Dependency(RouteRepositoryKey.self) var routeRepository
+    @Dependency(PointRepositoryKey.self) var pointRepository
+    @Dependency(PassageRepositoryKey.self) var passageRepository
     
     func get(id: String) async throws -> Period {
         guard let period = try await repository.get(id: id) else {
@@ -63,6 +67,20 @@ struct PeriodUsecase: PeriodUsecaseProtocol {
               target.festivalId == id else {
             throw Error.unauthorized("アクセス権限がありません。")
         }
+        try await deleteRoutes(for: target)
         return try await repository.delete(festivalId: target.festivalId, date: target.date, start: target.start )
+    }
+
+    private func deleteRoutes(for period: Period) async throws {
+        // Route has no periodId index, so search each district's route partition.
+        let districts = try await districtRepository.query(by: period.festivalId)
+        for district in districts {
+            let routes = try await routeRepository.query(by: district.id)
+            for route in routes where route.periodId == period.id {
+                try await pointRepository.delete(by: route.id)
+                try await passageRepository.delete(by: route.id)
+                try await routeRepository.delete(route)
+            }
+        }
     }
 }

@@ -10,7 +10,7 @@ import Dependencies
 import Foundation
 import Shared
 
-private func makeDatabaseMigrator() -> DatabaseMigrator {
+func makeDatabaseMigrator() -> DatabaseMigrator {
     var migrator = DatabaseMigrator()
     
     migrator.registerMigration("CreateAllTables") { db in

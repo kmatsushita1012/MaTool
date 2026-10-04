@@ -8,6 +8,10 @@ struct HTTPClientCacheTests {
         let value: String
     }
 
+    private struct DatePayload: Codable, Equatable {
+        let timestamp: Date
+    }
+
     @Test("同じURLでもログイン後は未ログイン応答を再利用しない")
     func ログイン後は再取得する() async throws {
         let (client, _) = makeClient()
@@ -59,6 +63,21 @@ struct HTTPClientCacheTests {
         #expect(cache.cachedResponse(for: cachedRequest) == nil)
     }
 
+    @Test("APIのDateはUnix秒で送受信する")
+    func dateをUnix秒で送受信する() async throws {
+        let (client, _) = makeClient()
+        let expected = Date(timeIntervalSince1970: 1_700_000_000)
+
+        let received: DatePayload = try await client.get(path: "/locations")
+        let echoed: DatePayload = try await client.put(path: "/locations", body: DatePayload(timestamp: expected))
+
+        #expect(received.timestamp == expected)
+        #expect(echoed.timestamp == expected)
+        let body = try #require(CacheTestURLProtocol.recordedRequestBodies().last ?? nil)
+        let object = try #require(JSONSerialization.jsonObject(with: body) as? [String: Double])
+        #expect(object["timestamp"] == expected.timeIntervalSince1970)
+    }
+
     private func makeClient() -> (HTTPClient, URLCache) {
         CacheTestURLProtocol.reset()
         let cache = URLCache(memoryCapacity: 1024 * 1024, diskCapacity: 0)
@@ -72,17 +91,25 @@ struct HTTPClientCacheTests {
 private final class CacheTestURLProtocol: URLProtocol {
     private static let lock = NSLock()
     private static var requests: [URLRequest] = []
+    private static var requestBodies: [Data?] = []
 
     static func reset() {
         lock.lock()
         defer { lock.unlock() }
         requests = []
+        requestBodies = []
     }
 
     static func recordedRequests() -> [URLRequest] {
         lock.lock()
         defer { lock.unlock() }
         return requests
+    }
+
+    static func recordedRequestBodies() -> [Data?] {
+        lock.lock()
+        defer { lock.unlock() }
+        return requestBodies
     }
 
     override class func canInit(with request: URLRequest) -> Bool {
@@ -92,12 +119,19 @@ private final class CacheTestURLProtocol: URLProtocol {
     override class func canonicalRequest(for request: URLRequest) -> URLRequest { request }
 
     override func startLoading() {
+        let body = Self.bodyData(from: request)
         Self.lock.lock()
         Self.requests.append(request)
+        Self.requestBodies.append(body)
         Self.lock.unlock()
 
-        let value = request.value(forHTTPHeaderField: "Authorization") == nil ? "guest" : "signed-in"
-        let data = Data("{\"value\":\"\(value)\"}".utf8)
+        let data: Data
+        if request.url?.path == "/locations" {
+            data = Data("{\"timestamp\":1700000000}".utf8)
+        } else {
+            let value = request.value(forHTTPHeaderField: "Authorization") == nil ? "guest" : "signed-in"
+            data = Data("{\"value\":\"\(value)\"}".utf8)
+        }
         let response = HTTPURLResponse(
             url: request.url!,
             statusCode: 200,
@@ -110,4 +144,21 @@ private final class CacheTestURLProtocol: URLProtocol {
     }
 
     override func stopLoading() {}
+
+    private static func bodyData(from request: URLRequest) -> Data? {
+        if let httpBody = request.httpBody { return httpBody }
+        guard let stream = request.httpBodyStream else { return nil }
+
+        stream.open()
+        defer { stream.close() }
+        let buffer = UnsafeMutablePointer<UInt8>.allocate(capacity: 1024)
+        defer { buffer.deallocate() }
+        var data = Data()
+        while true {
+            let count = stream.read(buffer, maxLength: 1024)
+            guard count > 0 else { break }
+            data.append(buffer, count: count)
+        }
+        return data
+    }
 }
