@@ -11,6 +11,28 @@ import MapKit
 import Shared
 import SQLiteData
 
+struct RoutePointInsertion: Equatable {
+    var points: [Point]
+    var operation: RouteEditFeature.Operation = .add
+
+    @discardableResult
+    mutating func begin(afterPointAt pointIndex: Int) -> Bool {
+        guard pointIndex >= 0, pointIndex < points.count else { return false }
+        operation = .insert(pointIndex + 1)
+        return true
+    }
+
+    @discardableResult
+    mutating func insert(_ point: Point) -> Bool {
+        guard case .insert(let index) = operation,
+              index >= 0,
+              index <= points.count else { return false }
+        points.insert(point, at: index)
+        operation = .add
+        return true
+    }
+}
+
 @Reducer
 struct RouteEditFeature{
     
@@ -127,10 +149,11 @@ struct RouteEditFeature{
                     state.operation = .add
                     return .none
                 case .insert(let index):
-                    if index < 0 || index >= state.points.count { return .none }
+                    var insertion = RoutePointInsertion(points: state.points, operation: .insert(index))
                     let point = Point(id: UUID().uuidString, routeId: state.route.id, coordinate: coordinate)
-                    state.points.insert(point, at: index)
-                    state.operation = .add
+                    guard insertion.insert(point) else { return .none }
+                    state.points = insertion.points
+                    state.operation = insertion.operation
                     return .none
                 }
             case .pointTapped(let entry):
@@ -286,10 +309,9 @@ struct RouteEditFeature{
             case .point(.presented(.insertAfterTapped)):
                 if let (point, index) = findPointIndex(state){
                     state.points[index] = point
-                    let targetIndex = index + 1
-                    if targetIndex < state.points.count {
-                        state.operation = .insert(targetIndex)
-                    }
+                    var insertion = RoutePointInsertion(points: state.points, operation: state.operation)
+                    insertion.begin(afterPointAt: index)
+                    state.operation = insertion.operation
                     state.point = nil
                 }
                 return .none
