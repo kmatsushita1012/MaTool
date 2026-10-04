@@ -51,6 +51,11 @@ struct FestivalUsecase: FestivalUsecaseProtocol {
               headquarterId == pack.festival.id else {
             throw Error.unauthorized("アクセス権限がありません。")
         }
+
+        guard pack.checkpoints.allSatisfy({ $0.festivalId == pack.festival.id }),
+              pack.hazardSections.allSatisfy({ $0.festivalId == pack.festival.id }) else {
+            throw Error.badRequest("祭典と子要素の祭典IDが一致しません。")
+        }
         
         let festival = try await repository.put(pack.festival)
         
