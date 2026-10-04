@@ -45,10 +45,10 @@ struct DynamoDBStore: DataStore {
         let newUniqueRecord = RouteUniqueRecord(route)
         var items = [
             DynamoDBClientTypes.TransactWriteItem(
-                put: Put(
+                put: DynamoDBClientTypes.Put(
                     conditionExpression: "attribute_not_exists(pk) OR #route_id = :route_id",
                     expressionAttributeNames: ["#route_id": "route_id"],
-                    expressionAttributeValues: [":route_id": .s(route.id)],
+                    expressionAttributeValues: [":route_id": AttributeValue.s(route.id)],
                     item: try encoder.encode(newUniqueRecord),
                     tableName: tableName
                 )
@@ -70,7 +70,7 @@ struct DynamoDBStore: DataStore {
 
         items.append(
             DynamoDBClientTypes.TransactWriteItem(
-                put: Put(
+                put: DynamoDBClientTypes.Put(
                     conditionExpression: routeWriteCondition.0,
                     expressionAttributeNames: routeWriteCondition.1,
                     expressionAttributeValues: routeWriteCondition.2,
@@ -86,7 +86,7 @@ struct DynamoDBStore: DataStore {
                 let condition = routeContentCondition(oldRoute)
                 items.append(
                     DynamoDBClientTypes.TransactWriteItem(
-                        delete: Delete(
+                        delete: DynamoDBClientTypes.Delete(
                             conditionExpression: condition.expression,
                             expressionAttributeNames: condition.names,
                             expressionAttributeValues: condition.values,
@@ -118,7 +118,7 @@ struct DynamoDBStore: DataStore {
         let condition = routeContentCondition(route)
         var items = [
             DynamoDBClientTypes.TransactWriteItem(
-                delete: Delete(
+                delete: DynamoDBClientTypes.Delete(
                     conditionExpression: condition.expression,
                     expressionAttributeNames: condition.names,
                     expressionAttributeValues: condition.values,
@@ -137,10 +137,10 @@ struct DynamoDBStore: DataStore {
 
     private func uniqueDelete(_ record: RouteUniqueRecord) throws -> DynamoDBClientTypes.TransactWriteItem {
         DynamoDBClientTypes.TransactWriteItem(
-            delete: Delete(
+            delete: DynamoDBClientTypes.Delete(
                 conditionExpression: "attribute_not_exists(#route_id) OR #route_id = :route_id",
                 expressionAttributeNames: ["#route_id": "route_id"],
-                expressionAttributeValues: [":route_id": .s(record.routeId)],
+                expressionAttributeValues: [":route_id": AttributeValue.s(record.routeId)],
                 key: try ["pk": encoder.encodeKey(record.pk), "sk": encoder.encodeKey(record.sk)],
                 tableName: tableName
             )
@@ -299,13 +299,13 @@ struct DynamoDBStore: DataStore {
 
         repeat {
             var input = QueryInput(
+                consistentRead: consistentRead,
                 exclusiveStartKey: exclusiveStartKey,
                 expressionAttributeNames: expressionNames,
                 expressionAttributeValues: expressionValues,
                 filterExpression: filterExpression,
                 indexName: indexName,
                 keyConditionExpression: keyConditionExpression,
-                consistentRead: consistentRead,
                 tableName: tableName
             )
 
