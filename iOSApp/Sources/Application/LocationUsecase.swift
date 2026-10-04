@@ -66,10 +66,13 @@ actor LocationUsecase: LocationUsecaseProtocol {
     private var locationHistory: [Status] = []
     private var interval: Interval?
     private let sendingState = OSAllocatedUnfairLock(initialState: LocationSendingState())
-    private var pendingLocationWrites = 0
-    private var pendingLocationWriteWaiters: [CheckedContinuation<Void, Never>] = []
+    // await中にactorは再入可能なため、非同期の開始・停止処理全体を直列化する。
+    // 同期ロックだけではprovider呼び出しの順序をawait越しに保てない。
     private var lifecycleLockIsHeld = false
     private var lifecycleLockWaiters: [CheckedContinuation<Void, Never>] = []
+    // 停止前に開始した保存を削除より先に完了させ、停止後の行の復活を防ぐ。
+    private var pendingLocationWrites = 0
+    private var pendingLocationWriteWaiters: [CheckedContinuation<Void, Never>] = []
 
     private var continuation: AsyncStream<[Status]>.Continuation?
     

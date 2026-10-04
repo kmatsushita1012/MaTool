@@ -102,6 +102,39 @@ struct LocationUsecaseTests {
         await usecase.stop(id: "district-a")
     }
 
+    @Test("開始処理中の停止を開始完了後に実行する")
+    func 開始処理と停止処理を直列化する() async {
+        let provider = LocationProviderSpy(
+            authorizationStatus: .authorizedAlways,
+            blockStartTracking: true
+        )
+        let dataFetcher = LocationDataFetcherSpy()
+        let usecase = makeUsecase(provider: provider, dataFetcher: dataFetcher)
+
+        let startTask = Task {
+            await usecase.start(
+                id: "district-a",
+                interval: Interval(label: "test", value: 3_600)
+            )
+        }
+        await provider.waitForStartTracking()
+
+        let stopTask = Task {
+            await usecase.stop(id: "district-a")
+        }
+        try? await Task.sleep(nanoseconds: 50_000_000)
+        #expect(await provider.stopTrackingCallCount == 0)
+
+        await provider.releaseStartTracking()
+        #expect(await startTask.value.isStarted)
+        await stopTask.value
+
+        #expect(await provider.stopTrackingCallCount == 1)
+        #expect(await provider.isTracking == false)
+        #expect(await usecase.getIsTracking() == false)
+        #expect(await dataFetcher.events == ["delete"])
+    }
+
     @Test("停止時は進行中の位置情報更新完了後に削除する")
     func 停止時は進行中の更新後に削除する() async {
         let provider = LocationProviderSpy(authorizationStatus: .authorizedAlways)
@@ -161,14 +194,20 @@ struct LocationUsecaseTests {
 
 private actor LocationProviderSpy: BroadcastLocationProviderProtocol {
     private let authorizationStatusValue: CLAuthorizationStatus
+    private let blockStartTracking: Bool
     private var onAlwaysAuthorizationRequest: (@Sendable () async -> Void)?
     private(set) var startTrackingCallCount = 0
     private(set) var stopTrackingCallCount = 0
+    private var trackingState = false
     private var onUpdate: ((AsyncValue<CLLocation>) async -> Void)?
+    private var startTrackingStarted = false
+    private var startTrackingGate: CheckedContinuation<Void, Never>?
+    private var startTrackingWaiters: [CheckedContinuation<Void, Never>] = []
     private var stopTrackingWaiters: [CheckedContinuation<Void, Never>] = []
 
-    init(authorizationStatus: CLAuthorizationStatus) {
+    init(authorizationStatus: CLAuthorizationStatus, blockStartTracking: Bool = false) {
         self.authorizationStatusValue = authorizationStatus
+        self.blockStartTracking = blockStartTracking
     }
 
     func requestPermission(
@@ -187,11 +226,22 @@ private actor LocationProviderSpy: BroadcastLocationProviderProtocol {
 
     func startTracking(onUpdate: ((AsyncValue<CLLocation>) async -> Void)?) async {
         startTrackingCallCount += 1
+        if blockStartTracking {
+            await withCheckedContinuation { continuation in
+                startTrackingGate = continuation
+                startTrackingStarted = true
+                let waiters = startTrackingWaiters
+                startTrackingWaiters.removeAll()
+                waiters.forEach { $0.resume() }
+            }
+        }
         self.onUpdate = onUpdate
+        trackingState = true
     }
 
     func stopTracking() async {
         stopTrackingCallCount += 1
+        trackingState = false
         let waiters = stopTrackingWaiters
         stopTrackingWaiters.removeAll()
         waiters.forEach { $0.resume() }
@@ -204,6 +254,16 @@ private actor LocationProviderSpy: BroadcastLocationProviderProtocol {
     func waitForStopTracking() async {
         guard stopTrackingCallCount == 0 else { return }
         await withCheckedContinuation { stopTrackingWaiters.append($0) }
+    }
+
+    func waitForStartTracking() async {
+        guard !startTrackingStarted else { return }
+        await withCheckedContinuation { startTrackingWaiters.append($0) }
+    }
+
+    func releaseStartTracking() {
+        startTrackingGate?.resume()
+        startTrackingGate = nil
     }
 
     func getLocation() async -> AsyncValue<CLLocation> {
@@ -219,7 +279,7 @@ private actor LocationProviderSpy: BroadcastLocationProviderProtocol {
     }
 
     var isTracking: Bool {
-        get async { false }
+        get async { trackingState }
     }
 }
 
