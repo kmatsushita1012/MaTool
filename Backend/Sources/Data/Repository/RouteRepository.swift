@@ -196,7 +196,11 @@ struct RouteUniqueRecord: RecordProtocol {
 
     init(_ route: Route) {
         let keys = Self.makeKeys(districtId: route.districtId, periodId: route.periodId)
-        self.init(pk: keys.pk, sk: keys.sk, type: Self.type, routeId: route.id, content: route.id)
+        self.pk = keys.pk
+        self.sk = keys.sk
+        self.type = Self.type
+        self.routeId = route.id
+        self.content = route.id
     }
 
     static func makeKeys(districtId: String, periodId: String) -> (pk: String, sk: String) {
