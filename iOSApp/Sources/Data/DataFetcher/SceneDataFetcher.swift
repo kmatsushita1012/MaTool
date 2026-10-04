@@ -100,9 +100,15 @@ struct SceneDataFetcher: SceneDataFetcherProtocol {
         let pack: LaunchFestivalPack = try await client.get(
             path: path,
             accessToken: token,
-            isCache: !clearsExistingData
+            isCache: false
         )
         try await database.write{ db in
+            let cachedDistrictIds = try districtStore.fetchAll(
+                where: { $0.festivalId.eq(pack.festival.id) },
+                from: db
+            ).map(\.id)
+            let refreshedDistrictIds = Set(cachedDistrictIds + pack.districts.map(\.id))
+
             if clearsExistingData {
                 try festivalStore.deleteAll(from: db)
                 try checkpointStore.deleteAll(from: db)
@@ -116,6 +122,12 @@ struct SceneDataFetcher: SceneDataFetcherProtocol {
             try hazardSectionStore.upsert(pack.hazardSections, at: db)
             try periodStore.upsert(pack.periods, at: db)
             try districtStore.upsert(pack.districts, at: db)
+            if !refreshedDistrictIds.isEmpty {
+                try locationStore.deleteAll(
+                    where: { $0.districtId.in(Array(refreshedDistrictIds)) },
+                    from: db
+                )
+            }
             try locationStore.upsert(pack.locations, at: db)
         }
         return pack
