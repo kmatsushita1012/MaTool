@@ -38,7 +38,11 @@ struct FestivalController: FestivalControllerProtocol {
     }
 
     public func put(_ request: Request, next: Handler) async throws -> Response {
+        let festivalId = try request.parameter("festivalId", as: String.self)
         let body = try request.body(as: FestivalPack.self)
+        guard body.festival.id == festivalId else {
+            throw Error.badRequest("URLの祭典IDと送信データの祭典IDが一致しません。")
+        }
         let user = request.user ?? .guest
         let result = try await usecase.put(body, user: user)
         return try .success(result)

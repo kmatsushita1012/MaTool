@@ -6,8 +6,9 @@ import Testing
 
 struct PointRepositoryTest {
     @Test
-    func get_正常_TYPEインデックス検索で先頭を返す() async throws {
-        let point = Point.mock(id: "point-1", routeId: "route-1")
+    func get_正常_IDで地点を特定する() async throws {
+        let point1 = Point.mock(id: "point-1", routeId: "route-1")
+        let point2 = Point.mock(id: "point-2", routeId: "route-1")
         var lastCalledIndexName: String?
         var lastCalledKeyConditions: [QueryCondition] = []
 
@@ -15,18 +16,23 @@ struct PointRepositoryTest {
             queryHandler: { indexName, keyConditions, _, _, _, _ in
                 lastCalledIndexName = indexName
                 lastCalledKeyConditions = keyConditions
-                return try encodeForDataStore([Record(point)])
+                let records = [Record(point1), Record(point2)].filter { record in
+                    keyConditions.allSatisfy { matches($0, record: record) }
+                }
+                return try encodeForDataStore(records)
             }
         )
         let subject = make(dataStore: dataStore)
 
-        let result = try await subject.get(id: point.id)
+        let result1 = try await subject.get(id: point1.id)
+        let result2 = try await subject.get(id: point2.id)
 
-        #expect(result == point)
-        #expect(dataStore.queryCallCount == 1)
+        #expect(result1 == point1)
+        #expect(result2 == point2)
+        #expect(dataStore.queryCallCount == 2)
         #expect(lastCalledIndexName == "index-TYPE")
         #expect(lastCalledKeyConditions.contains(where: { isEquals($0, field: "type", value: "POINT") }))
-        #expect(lastCalledKeyConditions.contains(where: { isBeginsWith($0, field: "sk", prefix: "POINT#") }))
+        #expect(lastCalledKeyConditions.contains(where: { isEquals($0, field: "sk", value: "POINT#point-2") }))
     }
 
     @Test
@@ -186,5 +192,27 @@ private extension PointRepositoryTest {
     func isBeginsWith(_ condition: QueryCondition, field: String, prefix: String) -> Bool {
         guard case let .beginsWith(actualField, actualPrefix) = condition else { return false }
         return actualField == field && actualPrefix == prefix
+    }
+
+    func matches(_ condition: QueryCondition, record: Record<Point>) -> Bool {
+        switch condition {
+        case let .equals(field, value):
+            guard let value = value as? String else { return false }
+            switch field {
+            case "pk": return record.pk == value
+            case "sk": return record.sk == value
+            case "type": return record.type == value
+            default: return false
+            }
+        case let .beginsWith(field, prefix):
+            switch field {
+            case "pk": return record.pk.hasPrefix(prefix)
+            case "sk": return record.sk.hasPrefix(prefix)
+            case "type": return record.type.hasPrefix(prefix)
+            default: return false
+            }
+        case .between:
+            return false
+        }
     }
 }

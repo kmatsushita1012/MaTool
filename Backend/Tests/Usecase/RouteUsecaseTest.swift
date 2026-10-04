@@ -292,6 +292,32 @@ struct RouteUsecaseTest {
     }
 
     @Test
+    func put_異常_URLと本文のRouteID不一致はBadRequestで保存しない() async {
+        let route = Route.mock(id: "route-body", districtId: "district-1")
+        let pack = RoutePack.mock(route: route, points: [], passages: [])
+        let routeRepository = RouteRepositoryMock(getHandler: { _ in route })
+        let pointRepository = PointRepositoryMock()
+        let passageRepository = PassageRepositoryMock()
+        let subject = make(
+            routeRepository: routeRepository,
+            pointRepository: pointRepository,
+            passageRepository: passageRepository
+        )
+
+        await #expect(throws: Error.badRequest("ルートIDが一致しません")) {
+            _ = try await subject.put(id: "route-url", pack: pack, user: .district(route.districtId))
+        }
+
+        #expect(routeRepository.getCallCount == 0)
+        #expect(routeRepository.postCallCount == 0)
+        #expect(routeRepository.putCallCount == 0)
+        #expect(pointRepository.queryCallCount == 0)
+        #expect(pointRepository.postCallCount == 0)
+        #expect(passageRepository.queryCallCount == 0)
+        #expect(passageRepository.postCallCount == 0)
+    }
+
+    @Test
     func put_正常() async throws {
         let route = Route.mock(id: "route-1", districtId: "district-1")
         var district = District.mock(id: route.districtId, festivalId: "festival-1")

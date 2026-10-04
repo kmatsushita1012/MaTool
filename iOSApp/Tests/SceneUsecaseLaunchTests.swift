@@ -6,12 +6,45 @@
 //
 
 import Dependencies
+import Foundation
 import SQLiteData
 import Shared
 import Testing
 @testable import iOSApp
 
 struct SceneUsecaseLaunchTests {
+    @Test("祭典切替時はログアウト完了後の認証状態で取得する")
+    func 祭典切替時はログアウト完了後の認証状態で取得する() async throws {
+        let authState = FestivalSwitchAuthState()
+        let authService = AuthServiceMock(
+            signOutHandler: { try await authState.signOut() },
+            accessTokenHandler: { await authState.getAccessToken() }
+        )
+        let fetchedTokens = AccessTokenCapture()
+        let sceneDataFetcher = SceneDataFetcherMock(
+            launchFestivalHandler: { _ in
+                await fetchedTokens.record(await authState.getAccessToken())
+            }
+        )
+        let userDefaults = InMemoryUserDefaultsManager(
+            defaultFestivalId: "festival-a",
+            defaultDistrictId: "district-a"
+        )
+
+        let result = try await withDependencies {
+            $0.authService = authService
+            $0[SceneDataFetcherKey.self] = sceneDataFetcher
+        } operation: {
+            try await SceneUsecase(userDefaults: userDefaults).select(festivalId: "festival-b")
+        }
+
+        #expect(result == .changed(.guest))
+        #expect(await fetchedTokens.snapshot() == [nil])
+        #expect(await authState.getAccessToken() == nil)
+        #expect(userDefaults.defaultFestivalId == "festival-b")
+        #expect(userDefaults.defaultDistrictId == nil)
+    }
+
     @Test("保存済みの祭典と参加町を取得する")
     func 保存済みの祭典と参加町を取得する() async {
         let usecase = makeUsecase(
@@ -201,11 +234,22 @@ private struct SceneDataFetcherMock: SceneDataFetcherProtocol, Sendable {
 }
 
 private struct AuthServiceMock: AuthServiceProtocol, Sendable {
+    let signOutHandler: @Sendable () async throws -> UserRole
+    let accessTokenHandler: @Sendable () async -> String?
+
+    init(
+        signOutHandler: @escaping @Sendable () async throws -> UserRole = { .guest },
+        accessTokenHandler: @escaping @Sendable () async -> String? = { nil }
+    ) {
+        self.signOutHandler = signOutHandler
+        self.accessTokenHandler = accessTokenHandler
+    }
+
     func initialize() throws {}
     func signIn(_ username: String, password: String) async throws -> SignInState { .signedIn(.guest) }
     func confirmSignIn(password: String) async throws -> UserRole { .guest }
-    func signOut() async throws -> UserRole { .guest }
-    func getAccessToken() async -> String? { nil }
+    func signOut() async throws -> UserRole { try await signOutHandler() }
+    func getAccessToken() async -> String? { await accessTokenHandler() }
     func changePassword(current: String, new: String) async throws {}
     func resetPassword(username: String) async throws {}
     func confirmResetPassword(username: String, newPassword: String, code: String) async throws {}
@@ -213,6 +257,32 @@ private struct AuthServiceMock: AuthServiceProtocol, Sendable {
     func confirmUpdateEmail(code: String) async throws {}
     func isValidPassword(_ password: String) -> Bool { true }
     func getUserRole() async throws -> UserRole { .guest }
+}
+
+private actor FestivalSwitchAuthState {
+    private var accessToken: String? = "old-account-token"
+
+    func signOut() async throws -> UserRole {
+        try await Task.sleep(for: .milliseconds(50))
+        accessToken = nil
+        return .guest
+    }
+
+    func getAccessToken() -> String? {
+        accessToken
+    }
+}
+
+private actor AccessTokenCapture {
+    private var tokens: [String?] = []
+
+    func record(_ token: String?) {
+        tokens.append(token)
+    }
+
+    func snapshot() -> [String?] {
+        tokens
+    }
 }
 
 private struct AppStatusClientMock: AppStatusClientProtocol, Sendable {
