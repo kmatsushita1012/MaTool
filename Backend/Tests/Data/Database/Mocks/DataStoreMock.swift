@@ -1,5 +1,6 @@
 @testable import Backend
 import Foundation
+import Shared
 
 final class DataStoreMock: DataStore, @unchecked Sendable {
     init(

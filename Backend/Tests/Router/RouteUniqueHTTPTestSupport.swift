@@ -102,8 +102,8 @@ actor RouteMemoryDataStore: DataStore {
         routeRecords.removeValue(forKey: recordKey)
     }
 
-    func get<T: RecordProtocol>(keys: [String: Codable], as type: T.Type) async throws -> T? { nil }
-    func delete(keys: [String: Codable]) async throws {}
+    nonisolated func get<T: RecordProtocol>(keys: [String: Codable], as type: T.Type) async throws -> T? { nil }
+    nonisolated func delete(keys: [String: Codable]) async throws {}
     func scan<T: RecordProtocol>(_ type: T.Type, ignoreDecodeError: Bool) async throws -> [T] { [] }
 
     func query<T: RecordProtocol>(
