@@ -54,7 +54,7 @@ struct RouteEditFeature{
         @FetchOne var festival: Festival
         @FetchOne var period: Period
         
-        let mode: EditMode
+        var mode: EditMode
         var operation: Operation = .add
         var isLoading: Bool = false
         var isSubmitDialogPresented: Bool = false
@@ -258,7 +258,29 @@ struct RouteEditFeature{
                 guard let sourceRoute: Route = FetchOne(Route.find(routeId)).wrappedValue else { return .none }
                 let sourcePoints: [Point] = FetchAll(routeId: sourceRoute.id).wrappedValue
                 let sourcePassages: [RoutePassage] = FetchAll(routeId: sourceRoute.id).wrappedValue
-                state.route = sourceRoute.copyWith(districtId: state.district.id, periodId: state.period.id)
+
+                let destinationRoute = state.route
+                switch state.mode {
+                case .create:
+                    state.route = sourceRoute.copyWith(
+                        districtId: destinationRoute.districtId,
+                        periodId: destinationRoute.periodId
+                    )
+                case .update:
+                    state.route = Route(
+                        id: destinationRoute.id,
+                        districtId: destinationRoute.districtId,
+                        periodId: destinationRoute.periodId,
+                        visibility: sourceRoute.visibility,
+                        description: sourceRoute.description
+                    )
+                case .preview:
+                    state.route = sourceRoute.copyWith(
+                        districtId: destinationRoute.districtId,
+                        periodId: destinationRoute.periodId
+                    )
+                    state.mode = .create
+                }
                 state.points = sourcePoints.copyWith(routeId: state.route.id)
                 state.passages = sourcePassages.copyWith(routeId: state.route.id)
                 state.region = makeRegion(state.points.map(\.coordinate))
