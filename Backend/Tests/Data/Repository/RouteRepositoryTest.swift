@@ -156,7 +156,7 @@ struct RouteRepositoryTest {
                 guard indexName == nil else {
                     return try encodeForDataStore([RouteRecordPayload]())
                 }
-                try encodeForDataStore([RouteRecordPayload(oldRoute, date: .init(year: 2026, month: 2, day: 22))])
+                return try encodeForDataStore([RouteRecordPayload(oldRoute, date: .init(year: 2026, month: 2, day: 22))])
             }
         )
         let subject = make(
