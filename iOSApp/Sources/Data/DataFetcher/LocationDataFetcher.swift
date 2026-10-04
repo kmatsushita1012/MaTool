@@ -28,13 +28,33 @@ struct LocationDataFetcher: LocationDataFetcherProtocol{
     
     func fetchAll(festivalId: Shared.Festival.ID) async throws {
         let token = try await getToken()
-        let locations: [FloatLocation] = try await client.get(path: "/festivals/\(festivalId)/locations", accessToken: token)
+        let locations: [FloatLocation] = try await client.get(
+            path: "/festivals/\(festivalId)/locations",
+            accessToken: token,
+            isCache: false
+        )
         try await sync(locations, festivalId: festivalId)
     }
     
     func fetch(districtId: Shared.District.ID) async throws {
         let token = try await getToken()
-        let location: FloatLocation = try await client.get(path: "/districts/\(districtId)/locations", accessToken: token)
+        let location: FloatLocation?
+        do {
+            location = try await client.get(
+                path: "/districts/\(districtId)/locations",
+                accessToken: token,
+                isCache: false
+            )
+        } catch {
+            guard error.indicatesUnavailableLocationResponse else { throw error }
+            try await deleteCachedLocation(districtId: districtId)
+            throw error
+        }
+
+        guard let location else {
+            try await deleteCachedLocation(districtId: districtId)
+            return
+        }
         try await sync(location)
     }
     
@@ -54,6 +74,12 @@ struct LocationDataFetcher: LocationDataFetcherProtocol{
 }
 
 extension LocationDataFetcher{
+    private func deleteCachedLocation(districtId: District.ID) async throws {
+        try await database.write { db in
+            try store.deleteAll(where: { $0.districtId.eq(districtId) }, from: db)
+        }
+    }
+
     private func sync(_ locations: [FloatLocation], festivalId: Festival.ID) async throws {
         try await database.write{ db in
             let districtIds = try districtStore.fetchAll(
@@ -70,6 +96,17 @@ extension LocationDataFetcher{
         try await database.write{ db in
             try store.deleteAll(where: { $0.districtId.eq(districtId) }, from: db)
             try store.upsert(location, at: db)
+        }
+    }
+}
+
+private extension Error {
+    var indicatesUnavailableLocationResponse: Bool {
+        switch asAppError {
+        case .be(.unauthorized), .be(.notFound):
+            true
+        default:
+            false
         }
     }
 }
