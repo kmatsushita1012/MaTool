@@ -46,6 +46,11 @@ struct RouteEditFeatureTests {
     @Test("編集中の複製は編集先Route IDと外部キーを維持してupdateする") @MainActor
     func 編集中の複製は編集先IDと外部キーでupdateする() async throws {
         let fixture = try await makeRouteCopyFixture(mode: .update)
+        let originalDestinationPointIDs = Set(fixture.destinationPoints.map(\.id))
+        let originalDestinationPassageIDs = Set(fixture.destinationPassages.map(\.id))
+        #expect(Set(fixture.initialState.points.map(\.id)) == originalDestinationPointIDs)
+        #expect(Set(fixture.initialState.passages.map(\.id)) == originalDestinationPassageIDs)
+
         let store = TestStore(initialState: fixture.initialState) {
             RouteEditFeature()
         } withDependencies: {
@@ -64,6 +69,8 @@ struct RouteEditFeatureTests {
         #expect(copiedState.route.periodId == fixture.destinationRoute.periodId)
         #expect(copiedState.route.visibility == fixture.sourceRoute.visibility)
         #expect(copiedState.route.description == fixture.sourceRoute.description)
+        #expect(copiedState.points.allSatisfy { !originalDestinationPointIDs.contains($0.id) })
+        #expect(copiedState.passages.allSatisfy { !originalDestinationPassageIDs.contains($0.id) })
         expectCopiedChildren(copiedState, fixture: fixture)
 
         await store.send(.saveTapped)
@@ -73,8 +80,24 @@ struct RouteEditFeatureTests {
         #expect(submission?.routeID == fixture.destinationRoute.id)
         #expect(submission?.districtID == fixture.destinationRoute.districtId)
         #expect(submission?.periodID == fixture.destinationRoute.periodId)
+        #expect(submission?.visibility == fixture.sourceRoute.visibility)
+        #expect(submission?.description == fixture.sourceRoute.description)
         #expect(submission?.points.allSatisfy { $0.routeID == fixture.destinationRoute.id } == true)
         #expect(submission?.passages.allSatisfy { $0.routeID == fixture.destinationRoute.id } == true)
+        #expect(submission?.points.allSatisfy { !originalDestinationPointIDs.contains($0.id) } == true)
+        #expect(submission?.passages.allSatisfy { !originalDestinationPassageIDs.contains($0.id) } == true)
+        #expect(submission?.points.map(\.id) == copiedState.points.map(\.id))
+        #expect(submission?.passages.map(\.id) == copiedState.passages.map(\.id))
+        #expect(submission?.points.map(\.coordinate) == fixture.sourcePoints.map(\.coordinate))
+        #expect(submission?.points.map(\.time) == fixture.sourcePoints.map(\.time))
+        #expect(submission?.points.map(\.checkpointID) == fixture.sourcePoints.map(\.checkpointId))
+        #expect(submission?.points.map(\.performanceID) == fixture.sourcePoints.map(\.performanceId))
+        #expect(submission?.points.map(\.anchor) == fixture.sourcePoints.map(\.anchor))
+        #expect(submission?.points.map(\.index) == fixture.sourcePoints.map(\.index))
+        #expect(submission?.points.map(\.isBoundary) == fixture.sourcePoints.map(\.isBoundary))
+        #expect(submission?.passages.map(\.districtID) == fixture.sourcePassages.map(\.districtId))
+        #expect(submission?.passages.map(\.memo) == fixture.sourcePassages.map(\.memo))
+        #expect(submission?.passages.map(\.order) == fixture.sourcePassages.map(\.order))
         #expect(await fixture.dataFetcher.createdSubmission() == nil)
         await store.finish()
     }
@@ -96,8 +119,11 @@ private func expectCopiedChildren(_ state: RouteEditFeature.State, fixture: Rout
     #expect(state.points.allSatisfy { $0.routeId == state.route.id })
     #expect(state.points.allSatisfy { !sourcePointIDs.contains($0.id) })
     #expect(state.points.map(\.coordinate) == fixture.sourcePoints.map(\.coordinate))
+    #expect(state.points.map(\.time) == fixture.sourcePoints.map(\.time))
     #expect(state.points.map(\.checkpointId) == fixture.sourcePoints.map(\.checkpointId))
     #expect(state.points.map(\.performanceId) == fixture.sourcePoints.map(\.performanceId))
+    #expect(state.points.map(\.anchor) == fixture.sourcePoints.map(\.anchor))
+    #expect(state.points.map(\.index) == fixture.sourcePoints.map(\.index))
     #expect(state.points.map(\.isBoundary) == fixture.sourcePoints.map(\.isBoundary))
 
     let sourcePassageIDs = Set(fixture.sourcePassages.map(\.id))
@@ -197,6 +223,33 @@ private func makeRouteCopyFixture(mode: RouteEditFeature.EditMode) async throws 
             order: 5
         )
     ]
+    let destinationPoints = mode == .update ? [
+        Point(
+            id: "destination-start",
+            routeId: destinationRoute.id,
+            coordinate: Coordinate(latitude: 34.5, longitude: 138.5),
+            time: SimpleTime(hour: 8, minute: 0),
+            anchor: .start,
+            index: 0
+        ),
+        Point(
+            id: "destination-end",
+            routeId: destinationRoute.id,
+            coordinate: Coordinate(latitude: 34.6, longitude: 138.6),
+            time: SimpleTime(hour: 8, minute: 30),
+            anchor: .end,
+            index: 1
+        )
+    ] : []
+    let destinationPassages = mode == .update ? [
+        RoutePassage(
+            id: "destination-passage",
+            routeId: destinationRoute.id,
+            districtId: district.id,
+            memo: "old destination passage",
+            order: 1
+        )
+    ] : []
     let dataFetcher = RouteDataFetcherSpy()
 
     try await database.write { db in
@@ -204,8 +257,8 @@ private func makeRouteCopyFixture(mode: RouteEditFeature.EditMode) async throws 
         try DistrictStoreKey.liveValue.upsert([district, sourceDistrict, passageDistrict], at: db)
         try PeriodStoreKey.liveValue.upsert([sourcePeriod, destinationPeriod], at: db)
         try RouteStoreKey.liveValue.upsert([sourceRoute, destinationRoute], at: db)
-        try PointStoreKey.liveValue.upsert(sourcePoints, at: db)
-        try PassageStoreKey.liveValue.upsert(sourcePassages, at: db)
+        try PointStoreKey.liveValue.upsert(sourcePoints + destinationPoints, at: db)
+        try PassageStoreKey.liveValue.upsert(sourcePassages + destinationPassages, at: db)
     }
 
     let initialState = try withDependencies {
@@ -223,6 +276,8 @@ private func makeRouteCopyFixture(mode: RouteEditFeature.EditMode) async throws 
         destinationRoute: destinationRoute,
         sourcePoints: sourcePoints,
         sourcePassages: sourcePassages,
+        destinationPoints: destinationPoints,
+        destinationPassages: destinationPassages,
         dataFetcher: dataFetcher
     )
 }
@@ -235,6 +290,8 @@ private struct RouteCopyFixture {
     let destinationRoute: Route
     let sourcePoints: [Point]
     let sourcePassages: [RoutePassage]
+    let destinationPoints: [Point]
+    let destinationPassages: [RoutePassage]
     let dataFetcher: RouteDataFetcherSpy
 }
 
@@ -242,6 +299,8 @@ private struct RouteSubmission: Equatable, Sendable {
     let routeID: String
     let districtID: String
     let periodID: String
+    let visibility: Visibility
+    let description: String?
     let points: [PointSubmission]
     let passages: [PassageSubmission]
 
@@ -249,6 +308,8 @@ private struct RouteSubmission: Equatable, Sendable {
         self.routeID = route.id
         self.districtID = route.districtId
         self.periodID = route.periodId
+        self.visibility = route.visibility
+        self.description = route.description
         self.points = points.map(PointSubmission.init)
         self.passages = passages.map(PassageSubmission.init)
     }
@@ -257,14 +318,24 @@ private struct RouteSubmission: Equatable, Sendable {
 private struct PointSubmission: Equatable, Sendable {
     let id: String
     let routeID: String
+    let coordinate: Coordinate
+    let time: SimpleTime?
     let checkpointID: String?
     let performanceID: String?
+    let anchor: Anchor?
+    let index: Int
+    let isBoundary: Bool
 
     init(_ point: Point) {
         self.id = point.id
         self.routeID = point.routeId
+        self.coordinate = point.coordinate
+        self.time = point.time
         self.checkpointID = point.checkpointId
         self.performanceID = point.performanceId
+        self.anchor = point.anchor
+        self.index = point.index
+        self.isBoundary = point.isBoundary
     }
 }
 
@@ -272,11 +343,15 @@ private struct PassageSubmission: Equatable, Sendable {
     let id: String
     let routeID: String
     let districtID: String?
+    let memo: String?
+    let order: Int
 
     init(_ passage: RoutePassage) {
         self.id = passage.id
         self.routeID = passage.routeId
         self.districtID = passage.districtId
+        self.memo = passage.memo
+        self.order = passage.order
     }
 }
 
