@@ -51,12 +51,30 @@ struct SceneUsecase: SceneUsecaseProtocol {
     
     // MARK: - LaunchFestival
     func fetchLaunchFestivalPack(festivalId: Festival.ID, user: UserRole, now: Date) async throws -> LaunchFestivalPack {
-        let isAdmin = (user != .guest)
-
-        if isAdmin {
-            return try await fetchAdminLaunchPack(festivalId: festivalId, user: user, now: now)
-        } else {
+        switch user {
+        case .guest:
             return try await fetchUserLaunchPack(festivalId: festivalId, now: now)
+        case let .headquarter(userFestivalId):
+            guard userFestivalId == festivalId else {
+                return try await fetchUserLaunchPack(festivalId: festivalId, now: now)
+            }
+            return try await fetchAdminLaunchPack(festivalId: festivalId, user: user, now: now)
+        case let .district(userDistrictId):
+            // fetchAdminLaunchPackでも必要な地区一覧を認可確認に使い、DBアクセスを重複させない。
+            let districts = try await districtRepository.query(by: festivalId)
+            guard districts.contains(where: { $0.id == userDistrictId && $0.festivalId == festivalId }) else {
+                return try await fetchUserLaunchPack(
+                    festivalId: festivalId,
+                    now: now,
+                    prefetchedDistricts: districts
+                )
+            }
+            return try await fetchAdminLaunchPack(
+                festivalId: festivalId,
+                user: user,
+                now: now,
+                prefetchedDistricts: districts
+            )
         }
     }
     
@@ -68,12 +86,23 @@ struct SceneUsecase: SceneUsecaseProtocol {
     }
 
     // MARK: Admin
-    private func fetchAdminLaunchPack(festivalId: Festival.ID, user: UserRole, now: Date) async throws -> LaunchFestivalPack {
+    private func fetchAdminLaunchPack(
+        festivalId: Festival.ID,
+        user: UserRole,
+        now: Date,
+        prefetchedDistricts: [District]? = nil
+    ) async throws -> LaunchFestivalPack {
         async let festivalTask = festivalRepository.get(id: festivalId)
-        async let districtsTask = districtRepository.query(by: festivalId)
         async let checkpointsTask = checkpointRepository.query(by: festivalId)
         async let hazardSectionsTask = hazardRepository.query(by: festivalId)
         async let periodsTask = periodRepository.query(by: festivalId) // 過去全て
+
+        let districts: [District]
+        if let prefetchedDistricts {
+            districts = prefetchedDistricts
+        } else {
+            districts = try await districtRepository.query(by: festivalId)
+        }
 
         guard let festival = try await festivalTask else {
             throw Error.notFound("Festival \(festivalId) が見つかりません")
@@ -92,7 +121,7 @@ struct SceneUsecase: SceneUsecaseProtocol {
 
         return LaunchFestivalPack(
             festival: festival,
-            districts: try await districtsTask,
+            districts: districts,
             periods: periods,
             locations: locations,
             checkpoints: try await checkpointsTask,
@@ -101,14 +130,24 @@ struct SceneUsecase: SceneUsecaseProtocol {
     }
 
     // MARK: Public
-    private func fetchUserLaunchPack(festivalId: Festival.ID, now: Date) async throws -> LaunchFestivalPack {
+    private func fetchUserLaunchPack(
+        festivalId: Festival.ID,
+        now: Date,
+        prefetchedDistricts: [District]? = nil
+    ) async throws -> LaunchFestivalPack {
         async let festivalTask = festivalRepository.get(id: festivalId)
-        async let districtsTask = districtRepository.query(by: festivalId)
         async let periodsTask = LatestPeriodRouteResolver.fetchLatestPeriods(
             festivalId: festivalId,
             nowYear: SimpleDate.from(now).year,
             periodRepository: periodRepository
         )
+
+        let districts: [District]
+        if let prefetchedDistricts {
+            districts = prefetchedDistricts
+        } else {
+            districts = try await districtRepository.query(by: festivalId)
+        }
 
         guard let festival = try await festivalTask else {
             throw Error.notFound("Festival \(festivalId) が見つかりません")
@@ -124,7 +163,7 @@ struct SceneUsecase: SceneUsecaseProtocol {
 
         return LaunchFestivalPack(
             festival: festival,
-            districts: try await districtsTask,
+            districts: districts,
             periods: periods,
             locations: locations,
             checkpoints: [],

@@ -61,7 +61,7 @@ struct DistrictPackScopeHTTPTest {
         let error = try JSONDecoder().decode(ErrorResponse.self, from: Data(response.body.utf8))
 
         #expect(response.statusCode == 400)
-        #expect(error.localizedDescription == "演舞データに別地区の演舞が含まれています。")
+        #expect(error.localizedDescription == "余興データに別の町の余興が含まれています。")
         #expect(districtRepository.getCallCount == 0)
         #expect(districtRepository.putCallCount == 0)
         #expect(performanceRepository.queryCallCount == 0)
