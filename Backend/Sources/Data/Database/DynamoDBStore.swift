@@ -6,6 +6,7 @@
 //
 
 @preconcurrency import AWSDynamoDB
+import Shared
 
 fileprivate typealias AttributeValue = DynamoDBClientTypes.AttributeValue
 

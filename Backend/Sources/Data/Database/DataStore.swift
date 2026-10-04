@@ -6,6 +6,7 @@
 //
 
 import Dependencies
+import Shared
 
 // MARK: - Dependencies
 enum DataStoreFactoryKey: DependencyKey {
