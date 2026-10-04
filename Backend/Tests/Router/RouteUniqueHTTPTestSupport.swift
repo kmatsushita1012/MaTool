@@ -12,7 +12,7 @@ func send(
 ) async throws -> Application.Response {
     let district = District.mock(id: "district-1", festivalId: "festival-1")
     let periodByID = Dictionary(uniqueKeysWithValues: periods.map { ($0.id, $0) })
-    return await withDependencies {
+    return try await withDependencies {
         $0[DataStoreFactoryKey.self] = { _ in store }
         $0[DistrictRepositoryKey.self] = DistrictRepositoryMock(
             getHandler: { _ in district },
@@ -24,7 +24,7 @@ func send(
         $0[PassageRepositoryKey.self] = PassageRepositoryMock(queryHandler: { _ in [] })
     } operation: {
         let routeRepository = RouteRepository()
-        return await withDependencies {
+        return try await withDependencies {
             $0[RouteRepositoryKey.self] = routeRepository
             $0[RouteUsecaseKey.self] = RouteUsecase()
             $0[RouteControllerKey.self] = RouteController()
