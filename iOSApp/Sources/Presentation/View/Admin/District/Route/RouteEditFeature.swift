@@ -155,7 +155,7 @@ struct RouteEditFeature{
                 state.operation = .add
                 return .none
             case .saveTapped:
-                let points = state.points.reindexed()
+                let points = state.points.normalized().reindexed()
                 do {
                     try points.validate()
                 } catch {
@@ -376,7 +376,7 @@ extension RouteEditFeature.State {
             manager.value
         }
         set {
-            manager.apply { $0 = newValue.reindexed() }
+            manager.apply { $0 = newValue.normalized().reindexed() }
         }
     }
     
@@ -401,7 +401,7 @@ extension RouteEditFeature.State {
     init(mode: RouteEditFeature.EditMode, draft: RouteDraft) throws {
         self.mode = mode
         // 呼び出し元の配列順がルート順。indexで再ソートせず、その順でindexを振り直す。
-        self.manager = EditManager(draft.points.reindexed())
+        self.manager = EditManager(draft.points.normalized().reindexed())
         self.passages = draft.passages
         self.route = draft.route
         guard let districtQuery: FetchOne<District> = .init(id: draft.route.districtId),

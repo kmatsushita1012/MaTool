@@ -124,6 +124,14 @@ struct RouteEditFeatureTests {
             end: SimpleTime(hour: 17, minute: 0)
         )
         let route = Route(id: "route", districtId: district.id, periodId: period.id)
+        var unassignedPoint = Point(
+            id: "unassigned",
+            routeId: route.id,
+            coordinate: Coordinate(latitude: 35.005, longitude: 139.005),
+            index: 1
+        )
+        // 旧データのデコード後にだけ起こり得る、関連付けなしの残存時刻を再現する。
+        unassignedPoint.time = SimpleTime(hour: 11, minute: 30)
         let points = [
             Point(
                 id: "start",
@@ -133,6 +141,7 @@ struct RouteEditFeatureTests {
                 anchor: .start,
                 index: 0
             ),
+            unassignedPoint,
             Point(
                 id: "existing-performance",
                 routeId: route.id,
@@ -183,6 +192,7 @@ struct RouteEditFeatureTests {
         }
         #expect(initialState.points.map(\.id) == fetchedPointIDs)
         #expect(initialState.points.map(\.index) == Array(points.indices))
+        #expect(initialState.points.first { $0.id == "unassigned" }?.time == nil)
         let editedPointIndex = try #require(initialState.points.firstIndex { $0.id == "existing-performance" })
         let timedPointIndex = try #require(initialState.points.firstIndex { $0.id == "timed-performance" })
         let editedTime = editedPointIndex < timedPointIndex
@@ -218,6 +228,9 @@ struct RouteEditFeatureTests {
         await store.receive(.saveReceived(.success))
         #expect(await dataFetcher.updatedRouteId() == route.id)
         #expect(await dataFetcher.updatedPointIndexes() == Array(points.indices))
+        let savedPoints = await dataFetcher.updatedPoints()
+        let savedUnassignedPoint = try #require(savedPoints?.first { $0.id == "unassigned" })
+        #expect(savedUnassignedPoint.time == nil)
         await store.finish()
 
     }
@@ -228,6 +241,7 @@ private actor RouteDataFetcherSpy: RouteDataFetcherProtocol {
     private var createdPointIndexValues: [Int]?
     private var updatedId: Route.ID?
     private var updatedPointIndexValues: [Int]?
+    private var updatedPointValues: [Point]?
 
     func fetchAll(districtID: District.ID, query: Query) async throws {}
 
@@ -236,6 +250,7 @@ private actor RouteDataFetcherSpy: RouteDataFetcherProtocol {
     func update(_ route: Route, points: [Point], passages: [RoutePassage]) async throws {
         updatedId = route.id
         updatedPointIndexValues = points.map(\.index)
+        updatedPointValues = points
     }
 
     func create(
@@ -257,4 +272,6 @@ private actor RouteDataFetcherSpy: RouteDataFetcherProtocol {
     func updatedRouteId() -> Route.ID? { updatedId }
 
     func updatedPointIndexes() -> [Int]? { updatedPointIndexValues }
+
+    func updatedPoints() -> [Point]? { updatedPointValues }
 }
