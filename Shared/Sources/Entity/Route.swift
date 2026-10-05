@@ -61,10 +61,10 @@ import Foundation
         self.id = id
         self.routeId = routeId
         self.coordinate = coordinate
-        self.time = time
         self.checkpointId = checkpointId
         self.performanceId = performanceId
         self.anchor = anchor
+        self.time = checkpointId != nil || performanceId != nil || anchor != nil ? time : nil
         self.index = index
         self.isBoundary = isBoundary
     }

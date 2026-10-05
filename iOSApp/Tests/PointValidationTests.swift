@@ -6,9 +6,11 @@ import Testing
 struct PointValidationTests {
     @Test("関連付けのないPointに残った時刻は単調増加判定から除外する")
     func 関連付けのないPointの時刻を無視する() {
+        var unusedTimePoint = point("unused-time", index: 1)
+        unusedTimePoint.time = .init(hour: 11, minute: 30)
         let points = [
             point("start", index: 0, time: .init(hour: 9, minute: 0), anchor: .start),
-            point("unused-time", index: 1, time: .init(hour: 11, minute: 30)),
+            unusedTimePoint,
             point(
                 "checkpoint",
                 index: 2,
@@ -18,7 +20,16 @@ struct PointValidationTests {
             point("end", index: 3, time: .init(hour: 12, minute: 0), anchor: .end)
         ]
 
+        #expect(points[1].time == .init(hour: 11, minute: 30))
+        #expect(points.normalized()[1].time == nil)
         #expect(throws: Never.self) { try points.validate() }
+    }
+
+    @Test("関連付けのないPointを時刻付きで生成した場合は時刻をnilにする")
+    func 関連付けのないPoint生成時に時刻をnilにする() {
+        let point = point("unused-time", index: 0, time: .init(hour: 11, minute: 30))
+
+        #expect(point.time == nil)
     }
 
     @Test("関連付けのあるPoint同士の時刻逆転は検出する")
