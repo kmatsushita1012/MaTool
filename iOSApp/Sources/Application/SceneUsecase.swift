@@ -144,9 +144,8 @@ actor SceneUsecase: SceneUsecaseProtocol {
         guard isFestivalChanged else {
             return .unchanged
         }
-        async let signOutTask: UserRole = authService.signOut()
-        async let launchFestivalTask: () = dataFetcher.launchFestival(festivalId: festivalId, clearsExistingData: false)
-        _ = try await (signOutTask, launchFestivalTask)
+        _ = try await authService.signOut()
+        try await dataFetcher.launchFestival(festivalId: festivalId, clearsExistingData: false)
         userDefaults.defaultFestivalId = festivalId
         userDefaults.defaultDistrictId = nil
         return .changed(.guest)

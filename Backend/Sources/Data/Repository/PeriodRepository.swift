@@ -63,6 +63,19 @@ struct PeriodRepository: PeriodRepositoryProtocol {
 
     func put(_ item: Period) async throws -> Period {
         let record = PeriodRecord(item)
+
+        let idKeys = PeriodRecord.makeKeys(id: item.id)
+        let existingRecords = try await dataStore.query(
+            indexName: idKeys.indexName,
+            queryConditions: [idKeys.pk, idKeys.sk],
+            as: PeriodRecord.self
+        )
+        for existingRecord in existingRecords
+        where existingRecord.content.id == item.id
+            && (existingRecord.pk != record.pk || existingRecord.sk != record.sk) {
+            try await dataStore.delete(pk: existingRecord.pk, sk: existingRecord.sk)
+        }
+
         try await dataStore.put(record)
         return item
     }

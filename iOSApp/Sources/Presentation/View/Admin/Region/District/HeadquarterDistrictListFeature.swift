@@ -146,7 +146,7 @@ struct HeadquarterDistrictListFeature {
             for district in state.districts {
                 let suffix = includesRouteMap ? "" : "_行動表"
                 let renderer = await PDFRenderer(path: district.pdfFileName(suffix: suffix))
-                guard let _ =  try? await routeDataFetcher.fetchAll(districtID: district.id, query: .year(2025)) else { continue }
+                guard let _ =  try? await routeDataFetcher.fetchAll(districtID: district.id, query: .latest) else { continue }
                 let slots: [RouteSlot] = FetchAll(districtId: district.id, latest: true).wrappedValue
                 let routes = slots.compactMap(\.route)
                 for route in routes {

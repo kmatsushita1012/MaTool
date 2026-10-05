@@ -97,9 +97,19 @@ struct SceneDataFetcher: SceneDataFetcherProtocol {
         clearsExistingData: Bool
     ) async throws -> LaunchFestivalPack {
         let token = try await getToken()
-        let pack: LaunchFestivalPack
-        if clearsExistingData {
-            async let deleteTask: () = database.write{ db in
+        let pack: LaunchFestivalPack = try await client.get(
+            path: path,
+            accessToken: token,
+            isCache: false
+        )
+        try await database.write{ db in
+            let cachedDistrictIds = try districtStore.fetchAll(
+                where: { $0.festivalId.eq(pack.festival.id) },
+                from: db
+            ).map(\.id)
+            let refreshedDistrictIds = Set(cachedDistrictIds + pack.districts.map(\.id))
+
+            if clearsExistingData {
                 try festivalStore.deleteAll(from: db)
                 try checkpointStore.deleteAll(from: db)
                 try hazardSectionStore.deleteAll(from: db)
@@ -107,18 +117,17 @@ struct SceneDataFetcher: SceneDataFetcherProtocol {
                 try districtStore.deleteAll(from: db)
                 try locationStore.deleteAll(from: db)
             }
-            async let fetchTask: LaunchFestivalPack = client.get(path: path, accessToken: token, isCache: false)
-            let result = try await (fetchTask, deleteTask)
-            pack = result.0
-        } else {
-            pack = try await client.get(path: path, accessToken: token)
-        }
-        try await database.write{ db in
             try festivalStore.upsert(pack.festival, at: db)
             try checkpointStore.upsert(pack.checkpoints, at: db)
             try hazardSectionStore.upsert(pack.hazardSections, at: db)
             try periodStore.upsert(pack.periods, at: db)
             try districtStore.upsert(pack.districts, at: db)
+            if !refreshedDistrictIds.isEmpty {
+                try locationStore.deleteAll(
+                    where: { $0.districtId.in(Array(refreshedDistrictIds)) },
+                    from: db
+                )
+            }
             try locationStore.upsert(pack.locations, at: db)
         }
         return pack
