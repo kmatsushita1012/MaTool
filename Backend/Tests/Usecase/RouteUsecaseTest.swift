@@ -326,7 +326,7 @@ struct RouteUsecaseTest {
             Point.mock(id: "p-2", routeId: route.id, index: 1, time: .init(hour: 10, minute: 0), anchor: .end)
         ]
         let pack = RoutePack.mock(route: route, points: points, passages: [])
-        let routeRepository = RouteRepositoryMock(getHandler: { _ in route }, postHandler: { $0 })
+        let routeRepository = RouteRepositoryMock(getHandler: { _ in route }, putHandler: { $0 })
         let pointRepository = PointRepositoryMock(queryHandler: { _ in [] }, postHandler: { $0 })
         let subject = make(
             routeRepository: routeRepository,
@@ -340,7 +340,7 @@ struct RouteUsecaseTest {
         #expect(result.route == route)
         #expect(result.points.count == 2)
         #expect(routeRepository.getCallCount == 1)
-        #expect(routeRepository.postCallCount == 1)
+        #expect(routeRepository.putCallCount == 1)
         #expect(pointRepository.postCallCount == 2)
     }
 

@@ -121,7 +121,7 @@ struct RouteUsecase: RouteUsecaseProtocol {
         async let oldPointsTask = pointRepository.query(by: pack.route.id)
         async let oldPassagesTask = passageRepository.query(by: pack.route.id)
         let (oldPoints, oldPassages) = try await (oldPointsTask, oldPassagesTask)
-        let route = try await routeRepository.post(pack.route)
+        let route = try await routeRepository.put(pack.route, replacing: old)
         async let pointsTask = oldPoints.update(with: reindexedPoints, separateDeleteAndUpdate: true, repository: pointRepository)
         async let passagesTask = oldPassages.update(with: reindexedPassages, separateDeleteAndUpdate: true, repository: passageRepository)
         let (points, passages) = try await (pointsTask, passagesTask)

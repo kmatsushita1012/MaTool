@@ -6,6 +6,7 @@
 //
 
 import Dependencies
+import Shared
 
 // MARK: - Dependencies
 enum DataStoreFactoryKey: DependencyKey {
@@ -26,6 +27,9 @@ typealias DataStoreFactory = @Sendable (String) -> DataStore
 // MARK: - DataStore
 protocol DataStore: Sendable {
     func put<T: RecordProtocol>(_ item: T) async throws
+    func transactRoute(_ record: RouteRecord, replacing oldRoute: Route?) async throws
+    func transactDeleteRoute(_ route: Route) async throws
+    func getConsistent<T: RecordProtocol>(pk: String, sk: String, as type: T.Type) async throws -> T?
     func get<T: RecordProtocol>(keys: [String: Codable], as type: T.Type) async throws -> T?
     func delete(keys: [String: Codable]) async throws
     func scan<T: RecordProtocol>(_ type: T.Type, ignoreDecodeError: Bool) async throws -> [T]
@@ -35,6 +39,10 @@ protocol DataStore: Sendable {
         filterConditions: [FilterCondition],
         limit: Int?,
         ascending: Bool,
+        as type: T.Type
+    ) async throws -> [T]
+    func queryConsistent<T: RecordProtocol>(
+        queryConditions: [QueryCondition],
         as type: T.Type
     ) async throws -> [T]
 }
@@ -87,6 +95,10 @@ extension DataStore {
 }
 
 extension DataStore {
+    func getConsistent<T: RecordProtocol>(pk: String, sk: String, as type: T.Type) async throws -> T? {
+        try await get(pk: pk, sk: sk, as: type)
+    }
+
     func get<T: RecordProtocol>(pk: String, sk: String, as type: T.Type) async throws -> T? {
         let keys = [ "pk": pk, "sk": sk ]
         return try await get(keys: keys, as: type)
@@ -113,5 +125,12 @@ extension DataStore {
             ascending: ascending,
             as: type
         )
+    }
+
+    func queryConsistent<T: RecordProtocol>(
+        queryConditions: [QueryCondition],
+        as type: T.Type
+    ) async throws -> [T] {
+        try await query(queryConditions: queryConditions, as: type)
     }
 }
