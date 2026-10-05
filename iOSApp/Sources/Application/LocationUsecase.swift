@@ -9,6 +9,7 @@ import Foundation
 import Dependencies
 import CoreLocation
 import Shared
+import os
 
 struct LocationPermissionState: Sendable, Equatable {
     let authorizationStatus: CLAuthorizationStatus
@@ -64,9 +65,14 @@ actor LocationUsecase: LocationUsecaseProtocol {
     private var trackingTask: Task<Void, Never>?
     private var locationHistory: [Status] = []
     private var interval: Interval?
-    private var isTracking = false
-    private var lastSentAt: Date?
-    private let threshold: Double = 0.95
+    private let sendingState = OSAllocatedUnfairLock(initialState: LocationSendingState())
+    // await中にactorは再入可能なため、非同期の開始・停止処理全体を直列化する。
+    // 同期ロックだけではprovider呼び出しの順序をawait越しに保てない。
+    private var lifecycleLockIsHeld = false
+    private var lifecycleLockWaiters: [CheckedContinuation<Void, Never>] = []
+    // 停止前に開始した保存を削除より先に完了させ、停止後の行の復活を防ぐ。
+    private var pendingLocationWrites = 0
+    private var pendingLocationWriteWaiters: [CheckedContinuation<Void, Never>] = []
 
     private var continuation: AsyncStream<[Status]>.Continuation?
     
@@ -79,7 +85,7 @@ actor LocationUsecase: LocationUsecaseProtocol {
     }
     
     func getIsTracking() async -> Bool {
-        isTracking
+        sendingState.withLock { $0.sessionID != nil }
     }
 
     func historyStream() async -> AsyncStream<[Status]> {
@@ -112,6 +118,9 @@ actor LocationUsecase: LocationUsecaseProtocol {
     }
 
     func start(id: String, interval: Interval) async -> LocationTrackingStartResult {
+        await acquireLifecycleLock()
+        defer { releaseLifecycleLock() }
+
         let permissionState = await locationPermissionState()
         guard permissionState.isAlwaysAuthorized else {
             return .permissionRequired(permissionState)
@@ -125,18 +134,21 @@ actor LocationUsecase: LocationUsecaseProtocol {
         }
 
         self.interval = interval
-        lastSentAt = nil
-        isTracking = true
+        let sessionID = UUID()
+        sendingState.withLock {
+            $0.sessionID = sessionID
+            $0.lastSentAt = nil
+        }
         
         await broadcastLocationProvider.startTracking { result in
-            await self.sendIfNeeded(id: id, result: result)
+            await self.sendIfNeeded(id: id, sessionID: sessionID, result: result)
         }
 
         trackingTask = Task { [weak self] in
             guard let self else { return }
             while !Task.isCancelled {
                 let locationResult = await broadcastLocationProvider.getLocation()
-                await self.sendIfNeeded(id: id, result: locationResult)
+                await self.sendIfNeeded(id: id, sessionID: sessionID, result: locationResult)
                 try? await Task.sleep(nanoseconds: UInt64(interval.value * 1_000_000_000))
             }
         }
@@ -144,12 +156,19 @@ actor LocationUsecase: LocationUsecaseProtocol {
     }
 
     func stop(id: String) async -> Void {
+        await acquireLifecycleLock()
+        defer { releaseLifecycleLock() }
+
         trackingTask?.cancel()
         trackingTask = nil
-        isTracking = false
-        lastSentAt = nil
+        sendingState.withLock {
+            $0.sessionID = nil
+            $0.lastSentAt = nil
+        }
+        interval = nil
         
         await broadcastLocationProvider.stopTracking()
+        await waitForPendingLocationWrites()
         await delete(id)
     }
 
@@ -157,17 +176,33 @@ actor LocationUsecase: LocationUsecaseProtocol {
         await broadcastLocationProvider.getLocation()
     }
     
-    private func sendIfNeeded(id: String, result: AsyncValue<CLLocation>) async {
+    private func sendIfNeeded(id: String, sessionID: UUID, result: AsyncValue<CLLocation>) async {
         guard let interval else { return }
         let now = Date()
-        let elapsed = lastSentAt.map { now.timeIntervalSince($0) } ?? .infinity
+        let isLocationSuccess: Bool
+        if case .success = result {
+            isLocationSuccess = true
+        } else {
+            isLocationSuccess = false
+        }
+        let shouldSend = sendingState.withLock { state in
+            guard state.sessionID == sessionID else { return false }
+            guard isLocationSuccess else { return true }
+
+            let elapsed = state.lastSentAt.map { now.timeIntervalSince($0) } ?? .infinity
+            guard elapsed >= Double(interval.value) * 0.95 else { return false }
+
+            // 送信できた位置情報だけを更新間隔の基準にする。
+            state.lastSentAt = now
+            return true
+        }
+        guard shouldSend else { return }
+
         switch result {
         case .success:
-            guard elapsed >= Double(interval.value) * threshold else { return }
-
-            // 最低更新間隔の基準は、実際に位置情報を取得できた時だけ進める。
-            lastSentAt = now
+            pendingLocationWrites += 1
             await send(id: id, result: result)
+            finishPendingLocationWrite()
         case .loading, .failure:
             // 読み込み中・取得失敗は履歴へ記録するだけで、位置情報の更新間隔には影響させない。
             await send(id: id, result: result)
@@ -213,6 +248,39 @@ actor LocationUsecase: LocationUsecaseProtocol {
         continuation = nil
     }
 
+    private func acquireLifecycleLock() async {
+        guard lifecycleLockIsHeld else {
+            lifecycleLockIsHeld = true
+            return
+        }
+        await withCheckedContinuation { continuation in
+            lifecycleLockWaiters.append(continuation)
+        }
+    }
+
+    private func releaseLifecycleLock() {
+        guard !lifecycleLockWaiters.isEmpty else {
+            lifecycleLockIsHeld = false
+            return
+        }
+        lifecycleLockWaiters.removeFirst().resume()
+    }
+
+    private func waitForPendingLocationWrites() async {
+        guard pendingLocationWrites > 0 else { return }
+        await withCheckedContinuation { continuation in
+            pendingLocationWriteWaiters.append(continuation)
+        }
+    }
+
+    private func finishPendingLocationWrite() {
+        pendingLocationWrites -= 1
+        guard pendingLocationWrites == 0 else { return }
+        let waiters = pendingLocationWriteWaiters
+        pendingLocationWriteWaiters.removeAll()
+        waiters.forEach { $0.resume() }
+    }
+
     private func markAlwaysLocationPermissionRequested() {
         userDefaults.setHasRequestedAlwaysLocationPermission(true)
     }
@@ -234,4 +302,9 @@ actor LocationUsecase: LocationUsecaseProtocol {
         locationHistory.append(status)
         continuation?.yield(locationHistory)
     }
+}
+
+private struct LocationSendingState: Sendable {
+    var sessionID: UUID?
+    var lastSentAt: Date?
 }
