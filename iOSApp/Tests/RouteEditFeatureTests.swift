@@ -84,22 +84,131 @@ struct RouteEditFeatureTests {
         #expect(state.route.id != sourceRoute.id)
         #expect(state.route.id != "edited-route")
         #expect(state.points.count == sourcePoints.count)
+        #expect(state.points.map(\.index) == [0, 1])
         #expect(state.points.allSatisfy { $0.routeId == state.route.id })
         #expect(state.passages.count == 1)
         #expect(state.passages.allSatisfy { $0.routeId == state.route.id })
         #expect(!state.isDeleteable)
 
+        await store.send(.pointTapped(PointEntry(state.points[0])))
+        await store.send(.point(.presented(.insertAfterTapped)))
+        await store.send(.mapLongPressed(Coordinate(latitude: 35.05, longitude: 139.05)))
+        #expect(store.state.points.map(\.index) == [0, 1, 2])
+
         await store.send(.saveTapped)
         await store.receive(.saveReceived(.success))
         #expect(await dataFetcher.createdRouteId() == state.route.id)
+        #expect(await dataFetcher.createdPointIndexes() == [0, 1, 2])
         #expect(await dataFetcher.updatedRouteId() == nil)
         await store.finish()
+    }
+
+    @Test("DistrictDashboardから開いた既存ルートで既存Pointに時刻を設定して保存する") @MainActor
+    func 既存ルートの既存Pointに時刻を設定して保存する() async throws {
+        let database = try DatabaseQueue(path: ":memory:")
+        try makeDatabaseMigrator().migrate(database)
+
+        let festival = Festival(
+            id: "festival",
+            name: "Festival",
+            subname: "Festival",
+            base: Coordinate(latitude: 35, longitude: 139)
+        )
+        let district = District(id: "district", name: "District", festivalId: festival.id)
+        let performance = Performance(id: "performance", districtId: district.id)
+        let period = Period(
+            id: "period",
+            festivalId: festival.id,
+            date: SimpleDate(year: 2026, month: 10, day: 3),
+            start: SimpleTime(hour: 9, minute: 0),
+            end: SimpleTime(hour: 17, minute: 0)
+        )
+        let route = Route(id: "route", districtId: district.id, periodId: period.id)
+        let points = [
+            Point(
+                id: "start",
+                routeId: route.id,
+                coordinate: Coordinate(latitude: 35, longitude: 139),
+                time: SimpleTime(hour: 9, minute: 0),
+                anchor: .start,
+                index: 0
+            ),
+            Point(
+                id: "existing-performance",
+                routeId: route.id,
+                coordinate: Coordinate(latitude: 35.01, longitude: 139.01),
+                performanceId: performance.id,
+                index: 3
+            ),
+            Point(
+                id: "end",
+                routeId: route.id,
+                coordinate: Coordinate(latitude: 35.02, longitude: 139.02),
+                time: SimpleTime(hour: 12, minute: 0),
+                anchor: .end,
+                index: 8
+            )
+        ]
+
+        try await database.write { db in
+            try FestivalStoreKey.liveValue.upsert(festival, at: db)
+            try DistrictStoreKey.liveValue.upsert(district, at: db)
+            try PerformanceStoreKey.liveValue.upsert(performance, at: db)
+            try PeriodStoreKey.liveValue.upsert(period, at: db)
+            try RouteStoreKey.liveValue.upsert(route, at: db)
+            try PointStoreKey.liveValue.upsert(points, at: db)
+        }
+
+        let initialState = try withDependencies {
+            $0.defaultDatabase = database
+        } operation: {
+            try RouteEditFeature.State(
+                mode: .update,
+                route: route
+            )
+        }
+        #expect(initialState.points.map(\.id) == points.map(\.id))
+        #expect(initialState.points.map(\.index) == [0, 1, 2])
+
+        let dataFetcher = RouteDataFetcherSpy()
+        let store = TestStore(initialState: initialState) {
+            RouteEditFeature()
+        } withDependencies: {
+            $0.defaultDatabase = database
+            $0[RouteDataFetcherKey.self] = dataFetcher
+        }
+        store.exhaustivity = .off
+
+        let pointEntry = withDependencies {
+            $0.defaultDatabase = database
+        } operation: {
+            PointEntry(store.state.points[1])
+        }
+        await store.send(.pointTapped(pointEntry))
+        await store.send(.point(.presented(.binding(.set(
+            \.point.time,
+            .some(SimpleTime(hour: 10, minute: 30))
+        )))))
+        await store.send(.point(.presented(.doneTapped)))
+
+        #expect(store.state.points.map(\.id) == points.map(\.id))
+        #expect(store.state.points[1].time == SimpleTime(hour: 10, minute: 30))
+        #expect(throws: Never.self) { try store.state.points.validate() }
+
+        await store.send(.saveTapped)
+        await store.receive(.saveReceived(.success))
+        #expect(await dataFetcher.updatedRouteId() == route.id)
+        #expect(await dataFetcher.updatedPointIndexes() == [0, 1, 2])
+        await store.finish()
+
     }
 }
 
 private actor RouteDataFetcherSpy: RouteDataFetcherProtocol {
     private var createdId: Route.ID?
+    private var createdPointIndexValues: [Int]?
     private var updatedId: Route.ID?
+    private var updatedPointIndexValues: [Int]?
 
     func fetchAll(districtID: District.ID, query: Query) async throws {}
 
@@ -107,6 +216,7 @@ private actor RouteDataFetcherSpy: RouteDataFetcherProtocol {
 
     func update(_ route: Route, points: [Point], passages: [RoutePassage]) async throws {
         updatedId = route.id
+        updatedPointIndexValues = points.map(\.index)
     }
 
     func create(
@@ -116,11 +226,16 @@ private actor RouteDataFetcherSpy: RouteDataFetcherProtocol {
         passages: [RoutePassage]
     ) async throws {
         createdId = route.id
+        createdPointIndexValues = points.map(\.index)
     }
 
     func delete(_ routeID: Route.ID) async throws {}
 
     func createdRouteId() -> Route.ID? { createdId }
 
+    func createdPointIndexes() -> [Int]? { createdPointIndexValues }
+
     func updatedRouteId() -> Route.ID? { updatedId }
+
+    func updatedPointIndexes() -> [Int]? { updatedPointIndexValues }
 }

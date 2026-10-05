@@ -155,8 +155,9 @@ struct RouteEditFeature{
                 state.operation = .add
                 return .none
             case .saveTapped:
+                let points = state.points.reindexed()
                 do {
-                    try state.points.validate()
+                    try points.validate()
                 } catch {
                     state.alert = .notice(.error(error.localizedDescription))
                     return .none
@@ -168,12 +169,12 @@ struct RouteEditFeature{
                     }
                 case .create, .update:
                     state.isLoading = true
-                    return .task(Action.saveReceived) {[state] in
+                    return .task(Action.saveReceived) {[state, points] in
                         switch state.mode {
                         case .create:
-                            try await dataFetcher.create(districtID: state.route.districtId, route: state.route, points: state.points, passages: state.passages)
+                            try await dataFetcher.create(districtID: state.route.districtId, route: state.route, points: points, passages: state.passages)
                         case .update:
-                            try await dataFetcher.update(state.route, points: state.points, passages: state.passages)
+                            try await dataFetcher.update(state.route, points: points, passages: state.passages)
                         case .preview:
                             throw AppError.be(.forbidden("権限がありません"))
                         }
@@ -375,7 +376,7 @@ extension RouteEditFeature.State {
             manager.value
         }
         set {
-            manager.apply { $0 = newValue }
+            manager.apply { $0 = newValue.reindexed() }
         }
     }
     
@@ -399,7 +400,8 @@ extension RouteEditFeature.State {
 
     init(mode: RouteEditFeature.EditMode, draft: RouteDraft) throws {
         self.mode = mode
-        self.manager = EditManager(draft.points.sorted())
+        // 呼び出し元の配列順がルート順。indexで再ソートせず、その順でindexを振り直す。
+        self.manager = EditManager(draft.points.reindexed())
         self.passages = draft.passages
         self.route = draft.route
         guard let districtQuery: FetchOne<District> = .init(id: draft.route.districtId),
