@@ -100,7 +100,14 @@ public extension Array where Element == Point {
         }
 
         // ④ 時刻の単調増加
-        let times = compactMap(\.time)
+        let times = compactMap { point -> SimpleTime? in
+            guard point.checkpointId != nil
+                || point.performanceId != nil
+                || point.anchor != nil else {
+                return nil
+            }
+            return point.time
+        }
         if times != times.sorted() {
             throw Point.Error.nonMonotonicTime
         }
