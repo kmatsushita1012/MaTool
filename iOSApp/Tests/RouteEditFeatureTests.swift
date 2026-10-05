@@ -141,9 +141,17 @@ struct RouteEditFeatureTests {
                 index: 3
             ),
             Point(
+                id: "timed-performance",
+                routeId: route.id,
+                coordinate: Coordinate(latitude: 35.015, longitude: 139.015),
+                time: SimpleTime(hour: 11, minute: 0),
+                performanceId: performance.id,
+                index: 3
+            ),
+            Point(
                 id: "end",
                 routeId: route.id,
-                coordinate: Coordinate(latitude: 35.02, longitude: 139.02),
+                coordinate: Coordinate(latitude: 35.03, longitude: 139.03),
                 time: SimpleTime(hour: 12, minute: 0),
                 anchor: .end,
                 index: 8
@@ -167,8 +175,19 @@ struct RouteEditFeatureTests {
                 route: route
             )
         }
-        #expect(initialState.points.map(\.id) == points.map(\.id))
-        #expect(initialState.points.map(\.index) == [0, 1, 2])
+        let fetchedPointIDs = withDependencies {
+            $0.defaultDatabase = database
+        } operation: {
+            let fetchedPoints: [Point] = FetchAll(routeId: route.id).wrappedValue
+            return fetchedPoints.map(\.id)
+        }
+        #expect(initialState.points.map(\.id) == fetchedPointIDs)
+        #expect(initialState.points.map(\.index) == Array(points.indices))
+        let editedPointIndex = try #require(initialState.points.firstIndex { $0.id == "existing-performance" })
+        let timedPointIndex = try #require(initialState.points.firstIndex { $0.id == "timed-performance" })
+        let editedTime = editedPointIndex < timedPointIndex
+            ? SimpleTime(hour: 10, minute: 30)
+            : SimpleTime(hour: 11, minute: 30)
 
         let dataFetcher = RouteDataFetcherSpy()
         let store = TestStore(initialState: initialState) {
@@ -182,23 +201,23 @@ struct RouteEditFeatureTests {
         let pointEntry = withDependencies {
             $0.defaultDatabase = database
         } operation: {
-            PointEntry(store.state.points[1])
+            PointEntry(store.state.points[editedPointIndex])
         }
         await store.send(.pointTapped(pointEntry))
         await store.send(.point(.presented(.binding(.set(
             \.point.time,
-            .some(SimpleTime(hour: 10, minute: 30))
+            .some(editedTime)
         )))))
         await store.send(.point(.presented(.doneTapped)))
 
-        #expect(store.state.points.map(\.id) == points.map(\.id))
-        #expect(store.state.points[1].time == SimpleTime(hour: 10, minute: 30))
+        #expect(store.state.points.map(\.id) == fetchedPointIDs)
+        #expect(store.state.points[editedPointIndex].time == editedTime)
         #expect(throws: Never.self) { try store.state.points.validate() }
 
         await store.send(.saveTapped)
         await store.receive(.saveReceived(.success))
         #expect(await dataFetcher.updatedRouteId() == route.id)
-        #expect(await dataFetcher.updatedPointIndexes() == [0, 1, 2])
+        #expect(await dataFetcher.updatedPointIndexes() == Array(points.indices))
         await store.finish()
 
     }
