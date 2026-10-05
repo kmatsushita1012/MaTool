@@ -54,6 +54,8 @@ struct PublicRouteFeature {
         @Shared var mapRegion: MKCoordinateRegion
         @Shared var toast: MapToast?
         var replay: Replay
+        var isFloatLocationRequestInProgress = false
+        var isFloatFocusLoading = false
 
         // Navigation
         var detail: Detail?
@@ -62,6 +64,7 @@ struct PublicRouteFeature {
     @CasePathable
     enum Action: Equatable, BindableAction {
         case onAppear
+        case didBecomeActive
         case binding(BindingAction<State>)
         case selected(RouteEntry)
         case pointTapped(PointEntry)
@@ -70,6 +73,7 @@ struct PublicRouteFeature {
         case floatFocusTapped
         case routeReceived(VoidAppResult)
         case floatLocationReceived(VoidAppResult)
+        case floatLocationAutoRefreshReceived(VoidAppResult)
         case userLocationReceived(Coordinate)
         case userLocationFailed(String)
         case toastDismissed
@@ -94,6 +98,17 @@ struct PublicRouteFeature {
                 }
                 guard state.toast != nil else { return .none }
                 return toastDismissEffect()
+            case .didBecomeActive:
+                guard !state.isFloatLocationRequestInProgress else { return .none }
+                let lastUpdatedAt = state.float?.floatLocation.timestamp
+                guard lastUpdatedAt.map({ now.timeIntervalSince($0) >= PublicMapLocationRefreshPolicy.staleInterval }) ?? true else {
+                    return .none
+                }
+                state.isFloatLocationRequestInProgress = true
+                return floatLocationFetchEffect(
+                    districtId: state.district.id,
+                    onAutoRefresh: true
+                )
             case .binding:
                 return .none
             case .selected(let entry):
@@ -113,9 +128,13 @@ struct PublicRouteFeature {
                 state.detail = .location(float)
                 return .none
             case .floatFocusTapped:
-                return .task(Action.floatLocationReceived) { [state] in
-                    try await locationDataFetcher.fetch(districtId: state.district.id)
-                }
+                guard !state.isFloatLocationRequestInProgress else { return .none }
+                state.isFloatLocationRequestInProgress = true
+                state.isFloatFocusLoading = true
+                return floatLocationFetchEffect(
+                    districtId: state.district.id,
+                    onAutoRefresh: false
+                )
             case .routeReceived(.success):
                 state.replay = .initial(state.selected?.id)
                 state.$mapRegion.withLock { $0 = makeRegion(state.points.map(\.coordinate)) }
@@ -124,6 +143,8 @@ struct PublicRouteFeature {
                 state.$toast.withLock { $0 = .error(error, title: "ルートを取得できませんでした") }
                 return toastDismissEffect()
             case .floatLocationReceived(.success):
+                state.isFloatLocationRequestInProgress = false
+                state.isFloatFocusLoading = false
                 if let coordinate = state.float?.floatLocation.coordinate {
                     state.$mapRegion.withLock{ $0 = makeRegion(origin: coordinate, spanDelta: spanDelta) }
                     return .none
@@ -131,8 +152,13 @@ struct PublicRouteFeature {
                 state.$toast.withLock { $0 = state.locationUnavailableToast }
                 return toastDismissEffect()
             case .floatLocationReceived(.failure):
+                state.isFloatLocationRequestInProgress = false
+                state.isFloatFocusLoading = false
                 state.$toast.withLock { $0 = state.locationUnavailableToast }
                 return toastDismissEffect()
+            case .floatLocationAutoRefreshReceived:
+                state.isFloatLocationRequestInProgress = false
+                return .none
             case .replayTapped:
                 if state.replay.isRunning {
                     state.replay = .stop
@@ -179,6 +205,21 @@ struct PublicRouteFeature {
             await send(.toastDismissed)
         }
         .cancellable(id: CancelID.toastDismissal, cancelInFlight: true)
+    }
+
+    private func floatLocationFetchEffect(
+        districtId: District.ID,
+        onAutoRefresh: Bool
+    ) -> Effect<Action> {
+        if onAutoRefresh {
+            return .task(Action.floatLocationAutoRefreshReceived) { [locationDataFetcher] in
+                try await locationDataFetcher.fetch(districtId: districtId)
+            }
+        } else {
+            return .task(Action.floatLocationReceived) { [locationDataFetcher] in
+                try await locationDataFetcher.fetch(districtId: districtId)
+            }
+        }
     }
 }
 
