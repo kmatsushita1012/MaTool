@@ -41,9 +41,9 @@ import Foundation
     @Column(as: SimpleTime?.JSONRepresentation.self)
     @NullEncodable public var time: SimpleTime?
     // マスターデータID　いずれか1つがnon-null 全てnullなら捨てピン
-    public var checkpointId: Checkpoint.ID?
-    public var performanceId: Performance.ID?
-    public var anchor: Anchor?
+    @NullEncodable public var checkpointId: Checkpoint.ID?
+    @NullEncodable public var performanceId: Performance.ID?
+    @NullEncodable public var anchor: Anchor?
     public var index: Int
     public var isBoundary: Bool
     
@@ -61,10 +61,10 @@ import Foundation
         self.id = id
         self.routeId = routeId
         self.coordinate = coordinate
-        self.time = time
         self.checkpointId = checkpointId
         self.performanceId = performanceId
         self.anchor = anchor
+        self.time = checkpointId != nil || performanceId != nil || anchor != nil ? time : nil
         self.index = index
         self.isBoundary = isBoundary
     }

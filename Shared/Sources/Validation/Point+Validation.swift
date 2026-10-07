@@ -100,7 +100,7 @@ public extension Array where Element == Point {
         }
 
         // ④ 時刻の単調増加
-        let times = compactMap(\.time)
+        let times = compactMap { $0.normalized().time }
         if times != times.sorted() {
             throw Point.Error.nonMonotonicTime
         }
@@ -115,7 +115,24 @@ extension Point: Comparable {
     }
 }
 
+public extension Point {
+    /// 関連付けのないPointは時刻を持てないため、残存した値をnilにする。
+    func normalized() -> Point {
+        guard checkpointId == nil, performanceId == nil, anchor == nil else {
+            return self
+        }
+
+        var copy = self
+        copy.time = nil
+        return copy
+    }
+}
+
 public extension Array where Element == Point {
+    func normalized() -> [Point] {
+        map { $0.normalized() }
+    }
+
     func reindexed() -> [Point] {
         return enumerated().map { offset, point in
             var copy = point
