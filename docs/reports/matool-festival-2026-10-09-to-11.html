@@ -1,0 +1,169 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>MaTool 祭典利用レポート｜2026年10月9日〜11日</title>
+  <style>
+    :root { color-scheme:light; --ink:#163244; --muted:#596c77; --line:#d5deda; --green:#116b55; --wash:#edf4ef; }
+    * { box-sizing:border-box; }
+    html { background:#f4f5f0; scroll-behavior:smooth; }
+    body { margin:0; color:var(--ink); font:15px/1.75 -apple-system,BlinkMacSystemFont,"Hiragino Kaku Gothic ProN","Yu Gothic",Meiryo,sans-serif; }
+    .wrap { max-width:1000px; margin:auto; padding:0 36px; }
+    header { padding:40px 0 30px; background:#153747; color:#fff; }
+    .eyebrow { margin:0 0 10px; color:#b6d6c8; font-size:11px; letter-spacing:.15em; }
+    h1 { margin:0; font-size:clamp(28px,4vw,40px); line-height:1.4; letter-spacing:-.03em; }
+    .period { margin:12px 0 0; color:#d4e3de; font-size:14px; }
+    nav { display:flex; gap:24px; flex-wrap:wrap; padding:17px 0; border-bottom:1px solid var(--line); font-size:13px; }
+    a { color:var(--green); text-underline-offset:4px; }
+    nav a { text-decoration:none; }
+    section { padding:32px 0; border-bottom:1px solid var(--line); scroll-margin-top:20px; }
+    .section-no { display:block; margin-bottom:5px; color:var(--green); font-size:11px; font-weight:750; letter-spacing:.12em; }
+    h2 { margin:0 0 20px; font-size:25px; line-height:1.5; letter-spacing:-.02em; }
+    p { margin:10px 0; }
+    .quiet { color:var(--muted); font-size:12px; line-height:1.8; }
+    .figures { display:grid; grid-template-columns:1fr 1fr; gap:30px; margin:0 0 25px; }
+    .figure { padding:16px 0 0; border-top:3px solid var(--green); }
+    .figure-label { margin:0; font-size:13px; font-weight:650; }
+    .figure-value { margin:5px 0; font-size:46px; line-height:1.3; font-weight:750; letter-spacing:-.04em; font-variant-numeric:tabular-nums; }
+    .figure-value small { margin-left:7px; font-size:17px; letter-spacing:0; font-weight:500; }
+    .figure .quiet { margin:0; }
+    .table-scroll { overflow-x:auto; border:1px solid var(--line); border-radius:6px; background:#fff; }
+    table { width:100%; border-collapse:collapse; font-size:14px; font-variant-numeric:tabular-nums; }
+    th,td { padding:13px 16px; border-bottom:1px solid var(--line); text-align:right; vertical-align:middle; }
+    th { background:var(--wash); color:#456256; font-size:12px; font-weight:700; }
+    th:first-child,td:first-child { text-align:left; }
+    th small { display:block; font-size:10px; font-weight:500; }
+    tbody tr:last-child td { border-bottom:0; }
+    .subtotal td { background:#f3f6f1; font-weight:700; }
+    .cumulative { padding:25px 30px; color:#fff; background:var(--green); border-radius:8px; }
+    .caption { margin:0; color:#d2e9d9; font-size:13px; }
+    .grand-total { margin:7px 0 17px; font-size:64px; line-height:1.2; font-weight:750; letter-spacing:-.04em; font-variant-numeric:tabular-nums; }
+    .grand-total small { margin-left:9px; font-size:21px; letter-spacing:0; font-weight:500; }
+    .breakdown { display:grid; grid-template-columns:1fr 1fr; gap:24px; padding-top:17px; border-top:1px solid #ffffff45; }
+    .breakdown span { display:block; color:#d2e9d9; font-size:12px; }
+    .breakdown strong { display:block; font-size:28px; font-weight:650; font-variant-numeric:tabular-nums; }
+    details { padding:23px 0 5px; }
+    summary { cursor:pointer; color:var(--green); font-size:13px; font-weight:650; }
+    .definitions { margin:14px 0 0; padding-left:18px; color:var(--muted); font-size:12px; }
+    .definitions li { margin:7px 0; }
+    footer { padding:18px 0 30px; color:var(--muted); font-size:11px; }
+    @media(max-width:680px) {
+      .wrap { padding:0 20px; }
+      header { padding:28px 0 25px; }
+      nav { gap:15px; font-size:12px; }
+      section { padding:26px 0; }
+      h2 { font-size:22px; }
+      .figures { gap:18px; }
+      .figure-label { font-size:12px; }
+      .figure-value { font-size:34px; }
+      .figure-value small { font-size:14px; }
+      .cumulative { padding:22px; }
+      .grand-total { font-size:49px; }
+      .breakdown strong { font-size:24px; }
+      table { min-width:580px; }
+      th,td { padding:11px 13px; }
+      #downloads table { min-width:430px; }
+    }
+    @page { size:A4; margin:15mm; }
+    @media print {
+      html,body { background:#fff; font-size:10pt; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+      .wrap { max-width:none; padding:0; }
+      header { padding:20px 24px; }
+      h1 { font-size:25pt; }
+      nav { display:none; }
+      section { padding:20px 0; }
+      h2 { font-size:17pt; }
+      .figure-value { font-size:30pt; }
+      .grand-total { font-size:40pt; }
+      table { min-width:0; font-size:9pt; }
+      th,td { padding:9px 10px; }
+      .figures,.cumulative,.table-scroll { break-inside:avoid; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="wrap">
+      <p class="eyebrow">MATOOL / FESTIVAL REPORT 2026</p>
+      <h1>MaTool 祭典利用レポート</h1>
+      <p class="period">2026年10月9日（金）〜10月11日（日） · iOS / Android · 全世界</p>
+    </div>
+  </header>
+  <div class="wrap">
+    <nav aria-label="レポートの内容">
+      <a href="#usage">祭典期間の利用</a>
+      <a href="#acquisition">累計初回獲得</a>
+      <a href="#downloads">当日のダウンロード</a>
+    </nav>
+    <main>
+      <section id="usage" aria-labelledby="usage-heading">
+        <span class="section-no">01 / 祭典期間の利用</span>
+        <h2 id="usage-heading">アクティブユーザー・セッション</h2>
+        <div class="figures">
+          <div class="figure">
+            <p class="figure-label">iOS · 3日間のセッション</p>
+            <p class="figure-value">15,475<small>回</small></p>
+            <p class="quiet">10/9〜10/11の合計</p>
+          </div>
+          <div class="figure">
+            <p class="figure-label">Android · 最大DAU</p>
+            <p class="figure-value">935<small>人</small></p>
+            <p class="quiet">10/10のアクティブユーザー</p>
+          </div>
+        </div>
+        <div class="table-scroll" tabindex="0" role="region" aria-label="祭典期間の日別利用実績">
+          <table>
+            <thead><tr><th scope="col">日付</th><th scope="col">iOS アクティブ端末<small>台 · データ共有同意分</small></th><th scope="col">iOS セッション<small>回 · データ共有同意分</small></th><th scope="col">Android DAU<small>人</small></th></tr></thead>
+            <tbody>
+              <tr><td>10/9（金）</td><td>533</td><td>2,467</td><td>860</td></tr>
+              <tr><td>10/10（土）</td><td>893</td><td>6,897</td><td>935</td></tr>
+              <tr><td>10/11（日）</td><td>839</td><td>6,111</td><td>677</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="quiet">Androidのセッション数：未取得。</p>
+      </section>
+      <section id="acquisition" aria-labelledby="acquisition-heading">
+        <span class="section-no">02 / ユーザー規模の目安</span>
+        <h2 id="acquisition-heading">累計初回ダウンロード・獲得</h2>
+        <div class="cumulative">
+          <p class="caption">OS別の初回獲得合計 · 2026年10月11日時点</p>
+          <p class="grand-total">6,882<small>件</small></p>
+          <div class="breakdown">
+            <div><span>iOS · 初回ダウンロード</span><strong>4,547 件</strong></div>
+            <div><span>Android · 新しいユーザー</span><strong>2,335 人</strong></div>
+          </div>
+        </div>
+        <p class="quiet">同一人物による両OSの利用・複数アカウントは重複計上。</p>
+      </section>
+      <section id="downloads" aria-labelledby="downloads-heading">
+        <span class="section-no">03 / 補足</span>
+        <h2 id="downloads-heading">当日の初回ダウンロード・獲得</h2>
+        <div class="table-scroll" tabindex="0" role="region" aria-label="日別の初回ダウンロードと獲得">
+          <table>
+            <thead><tr><th scope="col">日付</th><th scope="col">iOS 初回DL<small>件</small></th><th scope="col">Android 新しいユーザー<small>人</small></th><th scope="col">OS別合計<small>件</small></th></tr></thead>
+            <tbody>
+              <tr><td>10/9（金）</td><td>199</td><td>183</td><td>382</td></tr>
+              <tr><td>10/10（土）</td><td>349</td><td>133</td><td>482</td></tr>
+              <tr><td>10/11（日）</td><td>159</td><td>31</td><td>190</td></tr>
+              <tr class="subtotal"><td>3日間</td><td>707</td><td>347</td><td>1,054</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+      <details>
+        <summary>指標・集計範囲</summary>
+        <ul class="definitions">
+          <li>iOSの利用指標：データ共有に同意した端末が対象。セッションは2秒以上の利用。</li>
+          <li>AndroidのDAU：その日にアプリを開いたユーザー数。各日の値は同じユーザーの複数日利用を含む。</li>
+          <li>累計：各ストアの全期間から10/11まで。iOSは表の合計行、Androidは「新しいユーザー」の累計。</li>
+          <li>日付基準：iOSはUTC、Google Playのインストール統計は太平洋時間（PT）。</li>
+        </ul>
+        <p class="quiet">公式定義：<a href="https://developer.apple.com/help/app-store-connect-analytics/reference/metrics-definitions/">Apple</a> · <a href="https://support.google.com/googleplay/android-developer/answer/139628?hl=ja">Google</a></p>
+      </details>
+    </main>
+    <footer>出典：App Store Connect / Google Play Console · 2026年10月20日確認</footer>
+  </div>
+</body>
+</html>
