@@ -25,6 +25,8 @@ struct RouteDataFetcher: RouteDataFetcherProtocol {
 
     @Dependency(HTTPClientKey.self) var client
     @Dependency(RouteStoreKey.self) var routeStore
+    @Dependency(DistrictStoreKey.self) var districtStore
+    @Dependency(PeriodStoreKey.self) var periodStore
     @Dependency(PointStoreKey.self) var pointStore
     @Dependency(PassageStoreKey.self) var passageStore
     @Dependency(\.defaultDatabase) var database
@@ -32,7 +34,7 @@ struct RouteDataFetcher: RouteDataFetcherProtocol {
     func fetchAll(districtID: District.ID, query: Query) async throws {
         let token = try await getToken()
         let routes: [Route] = try await client.get(path: "/districts/\(districtID)/routes", query: query.queryItems, accessToken: token)
-        try await syncAll(routes, districtId: districtID)
+        try await syncAll(routes, districtId: districtID, query: query)
     }
 
     func fetch(routeID: Route.ID) async throws {
@@ -80,10 +82,55 @@ struct RouteDataFetcher: RouteDataFetcherProtocol {
         }
     }
 
-    private func syncAll(_ routes: [Route], districtId: District.ID) async throws {
+    private func syncAll(_ routes: [Route], districtId: District.ID, query: Query) async throws {
         try await database.write { db in
             let oldRoutes = try routeStore.fetchAll(where: { $0.districtId.eq(districtId) }, from: db)
-            let (_, deletedRouteIds) = oldRoutes.diffById(with: routes)
+            let routesToReplace: [Route]
+            if query == .all {
+                routesToReplace = oldRoutes
+            } else if let district = try districtStore.fetchAll(where: { $0.id.eq(districtId) }, from: db).first {
+                let periods = try periodStore.fetchAll(
+                    where: { $0.festivalId.eq(district.festivalId) },
+                    from: db
+                )
+                let yearsToReplace: Set<Int>?
+                switch query {
+                case .all:
+                    yearsToReplace = nil
+                case .year(let requestedYear):
+                    yearsToReplace = [requestedYear]
+                case .latest:
+                    let returnedPeriodIds = Set(routes.map(\.periodId))
+                    let cachedPeriodIds = Set(periods.map(\.id))
+                    if returnedPeriodIds.isEmpty {
+                        yearsToReplace = periods.map(\.date.year).max().map { [$0] }
+                    } else if returnedPeriodIds.isSubset(of: cachedPeriodIds) {
+                        yearsToReplace = Set(
+                            periods
+                                .filter { returnedPeriodIds.contains($0.id) }
+                                .map(\.date.year)
+                        )
+                    } else {
+                        // A response referencing uncached periods cannot safely identify its year.
+                        yearsToReplace = nil
+                    }
+                }
+                if let yearsToReplace {
+                    let periodIds = Set(
+                        periods
+                            .filter { yearsToReplace.contains($0.date.year) }
+                            .map(\.id)
+                    )
+                    routesToReplace = oldRoutes.filter { periodIds.contains($0.periodId) }
+                } else {
+                    routesToReplace = []
+                }
+            } else {
+                // Without the district's festival, a partial response cannot safely identify
+                // which cached routes it is allowed to replace.
+                routesToReplace = []
+            }
+            let (_, deletedRouteIds) = routesToReplace.diffById(with: routes)
             try routeStore.deleteAll(deletedRouteIds, from: db)
             try routeStore.upsert(routes, at: db)
         }
