@@ -48,6 +48,10 @@ Packages/
 .build/
 .xcode-source-packages/checkouts/
 
+# Backend Bootstrap source files are not authored; keep only the package entry.
+/Backend/Bootstrap/**/*.swift
+!/Backend/Bootstrap/Bootstrap.swift
+
 # ================================
 # Swift Package Manager (.swiftpm)
 # ================================

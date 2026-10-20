@@ -26,6 +26,10 @@
 - Exception: commit only when adding a new package dependency and the lock update is required.
 - This applies to all package roots (for example: `Shared/Package.resolved`, `Backend/Package.resolved`).
 
+## Swift tests
+
+- Always write Swift tests with the `Testing` framework (`import Testing`); do not use XCTest.
+
 ## Bootstrap execution policy
 
 - Do not execute `Backend/Bootstrap` tests or migration/injector routines in the sandbox.
