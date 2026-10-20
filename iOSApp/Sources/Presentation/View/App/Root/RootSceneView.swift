@@ -38,11 +38,6 @@ public struct RootSceneView: View {
             isPerceptionCheckingEnabled = false
         }
         self._launchState = Shared(value: .loading)
-        do {
-            try setupDefaultDatabase()
-        } catch {
-            fatalError("Failed to setup default database: \(error.localizedDescription)")
-        }
     }
 
     public var body: some View {

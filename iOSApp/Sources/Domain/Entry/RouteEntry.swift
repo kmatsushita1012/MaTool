@@ -88,6 +88,40 @@ extension RouteEntry: Identifiable, Comparable {
     }
 }
 
+struct LatestRouteEntryResolution {
+    let periods: [Period]
+    let year: Int
+}
+
+enum LatestRouteEntryResolver {
+    static func resolve(
+        periods: [Period],
+        routes: [RouteEntry],
+        nowYear: Int
+    ) -> LatestRouteEntryResolution {
+        let nextYearPeriods = periods.filter { $0.date.year == nowYear + 1 }
+        let currentYearPeriods = periods.filter { $0.date.year == nowYear }
+        let candidatePeriods: [Period]
+
+        if nextYearPeriods.isEmpty {
+            candidatePeriods = currentYearPeriods + periods.filter { $0.date.year == nowYear - 1 }
+        } else {
+            candidatePeriods = nextYearPeriods + currentYearPeriods
+        }
+
+        let routePeriodIDs = Set(routes.map(\.period.id))
+        let candidateYears = Set(candidatePeriods.map(\.date.year)).sorted(by: >)
+        let yearWithRoute = candidateYears.first { year in
+            candidatePeriods.contains { $0.date.year == year && routePeriodIDs.contains($0.id) }
+        }
+
+        return LatestRouteEntryResolution(
+            periods: candidatePeriods,
+            year: yearWithRoute ?? candidateYears.first ?? nowYear
+        )
+    }
+}
+
 extension FetchAll where Element == RouteEntry {
     init (districtId: District.ID, year: Int) {
         let district = FetchOne(District.find(districtId)).wrappedValue
@@ -115,8 +149,16 @@ extension FetchAll where Element == RouteEntry {
     init(districtId: District.ID, latest: Bool = false, now: SimpleDate = .now){
         let district = FetchOne(District.find(districtId)).wrappedValue
         if latest {
-            let maxYear: Int = FetchAll<Period>(Period.where{ $0.festivalId.eq(district?.festivalId) }).wrappedValue.map(\.date.year).max() ?? now.year
-            self.init(districtId: districtId, year: maxYear)
+            let periods = FetchAll<Period>(
+                Period.where { $0.festivalId.eq(district?.festivalId) }
+            ).wrappedValue
+            let routes = FetchAll<RouteEntry>(districtId: districtId).wrappedValue
+            let resolution = LatestRouteEntryResolver.resolve(
+                periods: periods,
+                routes: routes,
+                nowYear: now.year
+            )
+            self.init(districtId: districtId, year: resolution.year)
         } else {
             self.init(
                 Period
