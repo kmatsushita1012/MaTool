@@ -11,6 +11,7 @@ import ComposableArchitecture
 struct PublicLocationsMapView: View {
     @SwiftUI.Bindable var store: StoreOf<PublicLocationsFeature>
     @Environment(\.isLiquidGlassDisabled) var isLiquidGlassDisabled
+    @Environment(\.scenePhase) private var scenePhase
     @Namespace private var namespace
     
     var body: some View {
@@ -38,6 +39,11 @@ struct PublicLocationsMapView: View {
             }
             .onAppear {
                 store.send(.onAppear)
+            }
+            .onChange(of: scenePhase) { _, phase in
+                if phase == .active {
+                    store.send(.didBecomeActive)
+                }
             }
             .sheet(item: $store.detail){ location in
                 LocationView(location)
@@ -73,9 +79,7 @@ struct PublicLocationsMapView: View {
                 store.send(.floatFocusSelected($0))
             }
             Divider()
-            FloatingIconButton(icon: "arrow.clockwise"){
-                store.send(.reloadTapped)
-            }
+            reloadButton
         }
         .padding(8)
         .fixedSize()
@@ -114,14 +118,26 @@ struct PublicLocationsMapView: View {
                     .glassEffectUnion(id: "bottombar", namespace: namespace)
                     .disabled(store.floats.isEmpty)
 
-                    FloatingIconButton(icon: "arrow.clockwise") {
-                        store.send(.reloadTapped)
-                    }
+                    reloadButton
                     .glassEffectUnion(id: "bottombar", namespace: namespace)
                 }
             }
 
         }
         .padding(.horizontal)
+    }
+
+    private var reloadButton: some View {
+        FloatingIconButton(icon: "arrow.clockwise") {
+            store.send(.reloadTapped)
+        }
+        .disabled(store.isReloading)
+        .overlay {
+            if store.isReloading {
+                ProgressView()
+                    .controlSize(.small)
+                    .allowsHitTesting(false)
+            }
+        }
     }
 }

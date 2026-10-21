@@ -347,19 +347,17 @@ fileprivate extension MKMapView {
 
         // 追加対象
         let entriesToAdd = newEntries.subtracting(existingEntries)
-
-        removeAnnotations(annotationsToRemove)
-
         let annotationsToAdd = entriesToAdd.map { FloatCurrentAnnotation($0) }
         addAnnotations(annotationsToAdd)
+        removeAnnotations(annotationsToRemove)
     }
     
     func updateFloat(_ float: FloatAnnotation) {
         let old = annotations.compactMap { $0 as? FloatAnnotation }
         let toRemove = old.filter { $0 != float }
         if !old.contains(where: { $0 == float }) {
-            removeAnnotations(toRemove)
             addAnnotation(float)
+            removeAnnotations(toRemove)
         } else {
             removeAnnotations(toRemove)
         }

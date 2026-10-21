@@ -36,6 +36,7 @@ struct PublicRouteMapView: View {
     }
     
     @Environment(\.isLiquidGlassDisabled) var isLiquidGlassDisabled
+    @Environment(\.scenePhase) private var scenePhase
     
     var body: some View {
         WithPerceptionTracking{
@@ -73,6 +74,11 @@ struct PublicRouteMapView: View {
             .onAppear {
                 store.send(.onAppear)
                 updateReplay()
+            }
+            .onChange(of: scenePhase) { _, phase in
+                if phase == .active {
+                    store.send(.didBecomeActive)
+                }
             }
             .onChange(of: store.selected) { _ in updateReplay() }
             .onChange(of: store.replay) { _ in updateReplay() }
@@ -186,9 +192,7 @@ extension PublicRouteMapView {
                 store.send(.userFocusTapped)
             }
             Divider()
-            FloatingIconButton(icon: "mappin.and.ellipse"){
-                store.send(.floatFocusTapped)
-            }
+            floatFocusButton
             Divider()
             FloatingIconButton(
                 icon: {
@@ -259,9 +263,7 @@ extension PublicRouteMapView {
                     }
                     .glassEffectUnion(id: "bottombar", namespace: namespace)
                     
-                    FloatingIconButton(icon: "mappin.and.ellipse") {
-                        store.send(.floatFocusTapped)
-                    }
+                    floatFocusButton
                     .glassEffectUnion(id: "bottombar", namespace: namespace)
                     
                     FloatingIconButton(
@@ -277,6 +279,21 @@ extension PublicRouteMapView {
             }
         }
         .padding(.horizontal)
+    }
+
+    private var floatFocusButton: some View {
+        FloatingIconButton(icon: "mappin.and.ellipse") {
+            store.send(.floatFocusTapped)
+        }
+        .accessibilityLabel("配信中の位置にフォーカス")
+        .disabled(store.isFloatFocusLoading)
+        .overlay {
+            if store.isFloatFocusLoading {
+                ProgressView()
+                    .controlSize(.small)
+                    .allowsHitTesting(false)
+            }
+        }
     }
 }
 

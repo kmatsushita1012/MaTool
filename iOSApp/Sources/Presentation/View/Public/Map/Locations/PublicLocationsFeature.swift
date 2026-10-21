@@ -25,11 +25,14 @@ struct PublicLocationsFeature {
         @Shared var mapRegion: MKCoordinateRegion
         @Shared var toast: MapToast?
         var detail: FloatEntry?
+        var isReloadRequestInProgress = false
+        var isReloading = false
     }
     
     @CasePathable
     enum Action: Equatable, BindableAction {
         case onAppear
+        case didBecomeActive
         case binding(BindingAction<State>)
         case floatTapped(FloatEntry)
         case floatFocusSelected(FloatEntry)
@@ -43,6 +46,7 @@ struct PublicLocationsFeature {
     
     @Dependency(\.mapLocationProvider) var mapLocationProvider
     @Dependency(\.continuousClock) var clock
+    @Dependency(\.date.now) var now
     @Dependency(LocationDataFetcherKey.self) var dataFetcher
     
     var body: some ReducerOf<PublicLocationsFeature> {
@@ -52,6 +56,14 @@ struct PublicLocationsFeature {
             case .onAppear:
                 guard state.toast != nil else { return .none }
                 return toastDismissEffect()
+            case .didBecomeActive:
+                guard !state.isReloadRequestInProgress else { return .none }
+                let latestLocationDate = state.floats.map(\.floatLocation.timestamp).max()
+                guard latestLocationDate.map({ now.timeIntervalSince($0) >= PublicMapLocationRefreshPolicy.staleInterval }) ?? true else {
+                    return .none
+                }
+                state.isReloadRequestInProgress = true
+                return reloadEffect(festivalId: state.festival.id)
             case .binding(_):
                 return .none
             case .floatTapped(let entry):
@@ -61,9 +73,10 @@ struct PublicLocationsFeature {
                 state.$mapRegion.withLock { $0 = makeRegion(origin: entry.floatLocation.coordinate, spanDelta: spanDelta)}
                 return .none
             case .reloadTapped:
-                return .task(Action.reloadReceived) { [state] in
-                    try await dataFetcher.fetchAll(festivalId: state.festival.id)
-                }
+                guard !state.isReloadRequestInProgress else { return .none }
+                state.isReloadRequestInProgress = true
+                state.isReloading = true
+                return reloadEffect(festivalId: state.festival.id)
             case .userLocationReceived(let value):
                 state.$mapRegion.withLock { $0 = makeRegion(origin: value, spanDelta: spanDelta)}
                 return .none
@@ -79,7 +92,13 @@ struct PublicLocationsFeature {
                         await send(.userLocationFailed("現在地を取得できませんでした。"))
                     }
                 }
+            case .reloadReceived(.success):
+                state.isReloadRequestInProgress = false
+                state.isReloading = false
+                return .none
             case .reloadReceived(.failure(let error)):
+                state.isReloadRequestInProgress = false
+                state.isReloading = false
                 state.$toast.withLock { $0 = .error(error, title: "現在地一覧を更新できませんでした") }
                 return toastDismissEffect()
             case .userLocationFailed(let message):
@@ -88,8 +107,6 @@ struct PublicLocationsFeature {
             case .toastDismissed:
                 state.$toast.withLock { $0 = nil }
                 return .cancel(id: CancelID.toastDismissal)
-            default:
-                return .none
             }
         }
     }
@@ -100,6 +117,12 @@ struct PublicLocationsFeature {
             await send(.toastDismissed)
         }
         .cancellable(id: CancelID.toastDismissal, cancelInFlight: true)
+    }
+
+    private func reloadEffect(festivalId: Festival.ID) -> Effect<Action> {
+        .task(Action.reloadReceived) { [dataFetcher] in
+            try await dataFetcher.fetchAll(festivalId: festivalId)
+        }
     }
 }
 
