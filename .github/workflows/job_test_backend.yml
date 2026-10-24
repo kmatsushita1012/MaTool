@@ -46,6 +46,7 @@ jobs:
             --skip DynamoDBStoreTest \
             --skip ProgramMigrator \
             --skip RouteMigrator \
+            --no-parallel \
             --enable-code-coverage \
             | tee build/reports/backend-test.log
 
