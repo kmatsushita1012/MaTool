@@ -6,6 +6,7 @@
 //
 
 import ComposableArchitecture
+import Fallback
 import MapKit
 import Shared
 
@@ -21,9 +22,9 @@ struct PublicLocationsFeature {
         let festivalId: Festival.ID
         @Shared fileprivate var appState: AppState?
 
-        var festival: Festival {
-            appState!.festivalState.festival
-        }
+        @Fallback(\PublicLocationsFeature.State.appState?.festivalState.festival)
+        @ObservationStateIgnored
+        var festival: Festival
 
         var floats: [FloatEntry] {
             guard let festivalState = appState?.festivalState else { return [] }
@@ -121,12 +122,14 @@ struct PublicLocationsFeature {
 extension PublicLocationsFeature.State {
     init(
         festivalId: Festival.ID,
+        festival: Festival,
         appState: Shared<AppState?>,
         mapRegion: Shared<MKCoordinateRegion>,
         toast: Shared<MapToast?>
     ){
         self.festivalId = festivalId
         self._appState = appState
+        self._festival = festival
         self._mapRegion = mapRegion
         self._toast = toast
         if appState.wrappedValue?.festivalState.floatLocations.isEmpty ?? true {

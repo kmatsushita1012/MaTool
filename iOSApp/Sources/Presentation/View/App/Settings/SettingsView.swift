@@ -46,27 +46,31 @@ struct SettingsView: View {
                     }
                     .padding(.vertical, 8)
                     VStack(alignment: .leading){
-                        Link(destination: store.userGuide) {
-                            HStack {
-                                Image("LeftDoubleArrow")
-                                    .resizable()
-                                    .frame(width: 20, height: 20)
-                                Text("MaToolの使い方")
-                                    .font(.headline)
-                                Spacer()
+                        if let userGuide = store.userGuide {
+                            Link(destination: userGuide) {
+                                HStack {
+                                    Image("LeftDoubleArrow")
+                                        .resizable()
+                                        .frame(width: 20, height: 20)
+                                    Text("MaToolの使い方")
+                                        .font(.headline)
+                                    Spacer()
+                                }
+                                .font(.headline)
                             }
-                            .font(.headline)
                         }
-                        Link(destination: store.contact) {
-                            HStack {
-                                Image("LeftDoubleArrow")
-                                    .resizable()
-                                    .frame(width: 20, height: 20)
-                                Text("お問い合わせ")
-                                    .font(.headline)
-                                Spacer()
+                        if let contact = store.contact {
+                            Link(destination: contact) {
+                                HStack {
+                                    Image("LeftDoubleArrow")
+                                        .resizable()
+                                        .frame(width: 20, height: 20)
+                                    Text("お問い合わせ")
+                                        .font(.headline)
+                                    Spacer()
+                                }
+                                .font(.headline)
                             }
-                            .font(.headline)
                         }
                     }
                     Text("バージョン \(AppStatusClient.getCurrentVersion())")

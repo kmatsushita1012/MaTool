@@ -109,7 +109,7 @@ struct HomeFeature {
                     state.alert = AlertFeature.error("設定画面から祭典を選択してください。")
                     return .none
                 }
-                state.destination = .info(.init(appState: state.$appState))
+                state.destination = .info(.init(festival, appState: state.$appState))
                 return .none
             case .adminTapped:
                 return adminTapped(state: &state, action: action)
@@ -196,7 +196,7 @@ struct HomeFeature {
             state.alert = AlertFeature.error("情報の取得に失敗しました")
             return .none
         }
-        state.destination = .adminFestival(.init(appState: state.$appState))
+        state.destination = .adminFestival(.init(festival, appState: state.$appState))
         return .none
     }
     

@@ -6,6 +6,7 @@
 //
 
 import ComposableArchitecture
+import Fallback
 import Shared
 
 @Reducer
@@ -25,9 +26,9 @@ struct InfoListFeature {
     struct State: Equatable {
         @Shared fileprivate var appState: AppState?
 
-        var festival: Festival {
-            appState!.festivalState.festival
-        }
+        @Fallback(\InfoListFeature.State.appState?.festivalState.festival)
+        @ObservationStateIgnored
+        var festival: Festival
 
         var districts: [District] {
             appState?.festivalState.districts ?? []
@@ -38,8 +39,9 @@ struct InfoListFeature {
         @Presents var alert: AlertFeature.State? = nil
         var isLoading: Bool = false
         
-        init(appState: Shared<AppState?>) {
+        init(_ festival: Festival, appState: Shared<AppState?>) {
             self._appState = appState
+            self._festival = festival
         }
     }
     

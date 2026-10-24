@@ -12,14 +12,14 @@ import Shared
 struct DistrictReissueFeature {
     @ObservableState
     struct State: Equatable {
-        let district: District
+        let districtId: District.ID
         @Shared fileprivate var appState: AppState?
         var email: String = ""
         var isLoading: Bool = false
         @Presents var alert: AlertFeature.State?
 
-        init(district: District, appState: Shared<AppState?> = Shared(value: nil)) {
-            self.district = district
+        init(districtId: District.ID, appState: Shared<AppState?> = Shared(value: nil)) {
+            self.districtId = districtId
             self._appState = appState
         }
     }
@@ -48,7 +48,7 @@ struct DistrictReissueFeature {
                     return .none
                 }
                 state.isLoading = true
-                return .task(Action.reissueReceived) { [districtId = state.district.id, email = state.email, appState = state.$appState] in
+                return .task(Action.reissueReceived) { [districtId = state.districtId, email = state.email, appState = state.$appState] in
                     _ = try await reissueDistrictUseCase(
                         districtId: districtId,
                         email: email,

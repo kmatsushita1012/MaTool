@@ -86,7 +86,7 @@ struct HeadquarterDistrictDetailFeature {
                     return .none
                 }
             case .reissueTapped:
-                state.destination = .reissue(.init(district: state.district, appState: state.$appState))
+                state.destination = .reissue(.init(districtId: state.district.id, appState: state.$appState))
                 return .none
             case .routeSelected(let slot):
                 guard let route = slot.route else { return .none }

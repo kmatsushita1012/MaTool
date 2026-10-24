@@ -6,6 +6,7 @@
 //
 
 import ComposableArchitecture
+import Fallback
 import Foundation
 import Shared
 
@@ -22,9 +23,9 @@ struct HeadquarterDistrictListFeature {
     struct State: Equatable {
         @Shared fileprivate var appState: AppState?
 
-        var festival: Festival {
-            appState!.festivalState.festival
-        }
+        @Fallback(\HeadquarterDistrictListFeature.State.appState?.festivalState.festival)
+        @ObservationStateIgnored
+        var festival: Festival
 
         var districts: [District] {
             appState?.festivalState.districts ?? []
@@ -41,6 +42,7 @@ struct HeadquarterDistrictListFeature {
 
         init(_ festival: Festival, appState: Shared<AppState?>) {
             self._appState = appState
+            self._festival = festival
         }
     }
     

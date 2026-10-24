@@ -6,6 +6,7 @@
 //
 
 import ComposableArchitecture
+import Fallback
 import Foundation
 import Shared
 
@@ -25,9 +26,9 @@ struct FestivalDashboardFeature {
     struct State: Equatable {
         @Shared fileprivate var appState: AppState?
 
-        var festival: Festival {
-            appState!.festivalState.festival
-        }
+        @Fallback(\FestivalDashboardFeature.State.appState?.festivalState.festival)
+        @ObservationStateIgnored
+        var festival: Festival
 
         var isApiLoading: Bool = false
         var isAuthLoading: Bool = false
@@ -39,8 +40,9 @@ struct FestivalDashboardFeature {
             isApiLoading || isAuthLoading || isExportLoading
         }
 
-        init(appState: Shared<AppState?>) {
+        init(_ festival: Festival, appState: Shared<AppState?>) {
             self._appState = appState
+            self._festival = festival
         }
     }
 

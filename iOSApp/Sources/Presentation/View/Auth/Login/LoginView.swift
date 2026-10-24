@@ -59,10 +59,12 @@ struct LoginView: View {
             }
             .buttonStyle(SecondaryButtonStyle())
             
-            Link(
-                "ログインできない場合: お問い合わせフォーム",
-                destination: URL(string: contactURLString)!
-            )
+            if let contactURL = URL(string: contactURLString) {
+                Link(
+                    "ログインできない場合: お問い合わせフォーム",
+                    destination: contactURL
+                )
+            }
 
             Text(store.errorMessage ?? " ")
                 .foregroundStyle(.red)

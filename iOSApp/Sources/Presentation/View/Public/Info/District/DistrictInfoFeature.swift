@@ -6,6 +6,7 @@
 //
 
 import ComposableArchitecture
+import Fallback
 import MapKit
 import Shared
 
@@ -16,9 +17,12 @@ struct DistrictInfoFeature {
     struct State: Equatable {
         let districtId: District.ID
         @Shared fileprivate var appState: AppState?
-        var district: District {
-            appState!.festivalState.districts.first { $0.id == districtId }!
+        var appStateDistrict: District? {
+            appState?.festivalState.districts.first { $0.id == districtId }
         }
+        @Fallback(\DistrictInfoFeature.State.appStateDistrict)
+        @ObservationStateIgnored
+        var district: District
         let performances: [Performance]
         var region: MKCoordinateRegion?
         var isLoading: Bool = false
@@ -70,6 +74,7 @@ extension DistrictInfoFeature.State {
     init(_ pack: DistrictPack, appState: Shared<AppState?>){
         self.districtId = pack.district.id
         self._appState = appState
+        self._district = pack.district
         self.performances = pack.performances
         if let base = district.base, district.area.isEmpty{
             region = makeRegion(origin: base, spanDelta: spanDelta)

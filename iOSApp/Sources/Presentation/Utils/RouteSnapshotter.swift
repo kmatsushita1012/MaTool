@@ -146,11 +146,15 @@ struct RouteMapCaptionLayoutPlanner {
                     return result
                 }
 
-                if bestSafe == nil
-                    || result.safePrefixCount > bestSafe!.safePrefixCount
-                    || (result.safePrefixCount == bestSafe!.safePrefixCount
-                        && result.overlapArea < bestSafe!.overlapArea)
-                {
+                let shouldReplaceBestSafe: Bool
+                if let bestSafe {
+                    shouldReplaceBestSafe = result.safePrefixCount > bestSafe.safePrefixCount
+                        || (result.safePrefixCount == bestSafe.safePrefixCount
+                            && result.overlapArea < bestSafe.overlapArea)
+                } else {
+                    shouldReplaceBestSafe = true
+                }
+                if shouldReplaceBestSafe {
                     bestSafe = result
                 }
                 continue
@@ -173,7 +177,7 @@ struct RouteMapCaptionLayoutPlanner {
                 isComplete: false
             )
 
-            if bestFallback == nil || result.overlapArea < bestFallback!.overlapArea {
+            if bestFallback.map({ result.overlapArea < $0.overlapArea }) ?? true {
                 bestFallback = result
             }
         }
@@ -198,7 +202,9 @@ struct RouteMapCaptionLayoutPlanner {
             return []
         }
 
-        let fallback = makeCandidates(for: inputs[index]).last!
+        guard let fallback = makeCandidates(for: inputs[index]).last else {
+            return makeFallbackPlacements(inputs: inputs, index: index + 1)
+        }
         return [fallback] + makeFallbackPlacements(
             inputs: inputs,
             index: index + 1

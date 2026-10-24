@@ -6,6 +6,7 @@
 //
 
 import ComposableArchitecture
+import Fallback
 import Foundation
 import MapKit
 import Shared
@@ -41,9 +42,12 @@ struct PublicRouteFeature {
         let districtId: District.ID
         @Shared fileprivate var appState: AppState?
         var isRouteLoading: Bool = false
-        var district: District {
-            appState!.festivalState.districts.first { $0.id == districtId }!
+        var appStateDistrict: District? {
+            appState?.festivalState.districts.first { $0.id == districtId }
         }
+        @Fallback(\PublicRouteFeature.State.appStateDistrict)
+        @ObservationStateIgnored
+        var district: District
         var routes: [RouteEntry] {
             guard let appState,
                   let districtState = appState.districtState,
@@ -228,6 +232,7 @@ extension PublicRouteFeature.State {
     
     init(
         districtId: District.ID,
+        district: District,
         routeId: Route.ID?,
         appState: Shared<AppState?>,
         mapRegion: Shared<MKCoordinateRegion>,
@@ -235,6 +240,7 @@ extension PublicRouteFeature.State {
     ) {
         self.districtId = districtId
         self._appState = appState
+        self._district = district
         self.selectedRouteId = routeId
         self._mapRegion = mapRegion
         self._toast = toast

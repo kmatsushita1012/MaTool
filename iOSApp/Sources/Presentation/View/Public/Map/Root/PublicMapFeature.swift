@@ -125,6 +125,7 @@ struct PublicMapFeature {
                     state.destination = .locations(
                         PublicLocationsFeature.State(
                             festivalId: festival.id,
+                            festival: festival,
                             appState: state.$appState,
                             mapRegion: state.$mapRegion,
                             toast: state.$toast
@@ -156,6 +157,7 @@ struct PublicMapFeature {
                 state.destination = .route(
                     PublicRouteFeature.State(
                         districtId: district.id,
+                        district: district,
                         routeId: routeId,
                         appState: state.$appState,
                         mapRegion: state.$mapRegion,
@@ -235,6 +237,7 @@ extension PublicMapFeature.State {
         self.destination = .locations(
             PublicLocationsFeature.State(
                 festivalId: festival.id,
+                festival: festival,
                 appState: appState,
                 mapRegion: $mapRegion,
                 toast: $toast
@@ -254,6 +257,7 @@ extension PublicMapFeature.State {
             self.destination = .route(
                 PublicRouteFeature.State(
                     districtId: district.id,
+                    district: district,
                     routeId: routeId,
                     appState: appState,
                     mapRegion: $mapRegion,

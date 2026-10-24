@@ -23,14 +23,14 @@ struct SettingsFeature {
         var selectedDistrict: District? = nil
         var isLoading: Bool = false
         @Shared fileprivate var appState: AppState?
-        var userGuide: URL = {
+        var userGuide: URL? = {
             @Dependency(\.values.userGuideUrl) var userGuideURLString
-            return URL(string: userGuideURLString)!
+            return URL(string: userGuideURLString)
         }()
         
-        var contact: URL = {
+        var contact: URL? = {
             @Dependency(\.values.contactURL) var contactURLString
-            return URL(string: contactURLString)!
+            return URL(string: contactURLString)
         }()
         @Presents var alert: AlertFeature.State? = nil
         var isDismissEnabled: Bool {
