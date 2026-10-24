@@ -173,9 +173,13 @@ struct SceneUsecase: SceneUsecaseProtocol {
         async let performances = performanceRepository.query(by: districtId)
         
         let currentYear = SimpleDate.from(now).year
-        async let routesTask = routeRepository.query(by: districtId, year: currentYear)
-        async let periodsTask = periodRepository.query(by: district.festivalId, year: currentYear)
-        let (routes, periods) = try await (routesTask, periodsTask)
+        let (routes, periods) = try await LatestPeriodRouteResolver.fetchLatestRoutes(
+            districtId: districtId,
+            festivalId: district.festivalId,
+            nowYear: currentYear,
+            periodRepository: periodRepository,
+            routeRepository: routeRepository
+        )
 
         let filteredRoutes = routes.filter { isVisible(visibility: $0.visibility, user: user, district: district) }
 

@@ -26,16 +26,22 @@ jobs:
         with:
           filters: |
             backend:
+              - '.github/workflows/dispatch_pull_request.yml'
+              - '.github/workflows/job_test_backend.yml'
               - 'Backend/Sources/**'
               - 'Backend/Tests/**'
               - 'Backend/Package.swift'
               - 'Backend/Package.resolved'
             iosapp:
+              - '.github/workflows/dispatch_pull_request.yml'
+              - '.github/workflows/job_test_iosapp.yml'
               - 'iOSApp/Sources/**'
               - 'iOSApp/Tests/**'
               - 'iOSApp/MaTool.xcodeproj/project.pbxproj'
               - 'MaTool.xcworkspace/xcshareddata/swiftpm/Package.resolved'
             shared:
+              - '.github/workflows/dispatch_pull_request.yml'
+              - '.github/workflows/job_test_shared.yml'
               - 'Shared/Sources/**'
               - 'Shared/Tests/**'
               - 'Shared/Package.swift'

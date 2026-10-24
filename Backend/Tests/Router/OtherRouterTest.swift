@@ -110,3 +110,51 @@ private extension OtherRouterTest {
         }
     }
 }
+
+struct OtherRoutePackOwnershipTest {
+    @Test
+    func put_別routeIdのPointを拒否し書き込みを行わない() async throws {
+        let route = Route.mock(id: "route-1", districtId: "district-1")
+        let point = Point.mock(id: "point-1", routeId: "route-2", index: 0, anchor: .start)
+        let pack = RoutePack.mock(route: route, points: [point])
+
+        let (response, routeRepository, pointRepository, passageRepository) = try await RoutePackHTTPHarness.send(
+            method: .put,
+            path: "/routes/route-1",
+            pack: pack,
+            existingRoute: route
+        )
+
+        #expect(response.statusCode == 400)
+        #expect(response.body.contains("ルートと子要素のrouteIdが一致しません。"))
+        #expect(routeRepository.postCallCount == 0)
+        #expect(routeRepository.putCallCount == 0)
+        #expect(pointRepository.postCallCount == 0)
+        #expect(pointRepository.putCallCount == 0)
+        #expect(passageRepository.postCallCount == 0)
+        #expect(passageRepository.putCallCount == 0)
+    }
+
+    @Test
+    func put_別routeIdのPassageを拒否し書き込みを行わない() async throws {
+        let route = Route.mock(id: "route-1", districtId: "district-1")
+        let passage = RoutePassage.mock(id: "passage-1", routeId: "route-2", districtId: "district-1")
+        let pack = RoutePack.mock(route: route, passages: [passage])
+
+        let (response, routeRepository, pointRepository, passageRepository) = try await RoutePackHTTPHarness.send(
+            method: .put,
+            path: "/routes/route-1",
+            pack: pack,
+            existingRoute: route
+        )
+
+        #expect(response.statusCode == 400)
+        #expect(response.body.contains("ルートと子要素のrouteIdが一致しません。"))
+        #expect(routeRepository.postCallCount == 0)
+        #expect(routeRepository.putCallCount == 0)
+        #expect(pointRepository.postCallCount == 0)
+        #expect(pointRepository.putCallCount == 0)
+        #expect(passageRepository.postCallCount == 0)
+        #expect(passageRepository.putCallCount == 0)
+    }
+}
