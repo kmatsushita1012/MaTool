@@ -8,55 +8,22 @@
 import SwiftUI
 import ComposableArchitecture
 import NavigationSwipeControl
+import Shared
 
-struct InfoListView: View {
+struct InfoListScreen: View {
     @SwiftUI.Bindable var store: StoreOf<InfoListFeature>
-    
+
     var body: some View {
-        WithPerceptionTracking{
-            VStack {
-                // タイトル
-                TitleView(
-                    text: "町を見てみよう",
-                    image: "InfoBackground"
-                ) {
-                    store.send(.dismissTapped)
-                }
-                .ignoresSafeArea(edges: .top)
-                VStack{
-                    mainItem(store.festival.name)
-                        .onTapGesture{
-                            store.send(.festivalTapped)
-                        }
-                }
-                .padding(.horizontal, 96)
-                // スクロールする町名リスト
-                ScrollView {
-                    VStack(spacing: 8) {
-                        ForEach(store.districts) { district in
-                            listItem(district.name)
-                                .onTapGesture{
-                                    store.send(.districtTapped(district))
-                                }
-                        }
-                    }
-                    .padding(.horizontal, 64)
-                    .padding(.vertical, 24)
-                    .frame(maxWidth: .infinity)
-                }
-                .frame(maxHeight: .infinity)
-                .mask(mask())
-                VStack{
-                    mainItem("　")
-                }
-                .padding(.horizontal, 96)
-            }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .background(Color.white)
-            .preferredColorScheme(.light)
-            .dismissible(backButton: false)
+        WithPerceptionTracking {
+            InfoListContentView(
+                festivalName: store.festival.name,
+                districts: store.districts,
+                onDismissTapped: { store.send(.dismissTapped) },
+                onFestivalTapped: { store.send(.festivalTapped) },
+                onDistrictTapped: { store.send(.districtTapped($0)) }
+            )
             .navigationDestination(item: $store.scope(state: \.destination?.district, action: \.destination.district)) { store in
-                WithPerceptionTracking{
+                WithPerceptionTracking {
                     DistrictInfoView(store: store)
                 }
             }
@@ -66,13 +33,65 @@ struct InfoListView: View {
                 }
             }
             .alert($store.scope(state: \.alert, action: \.alert))
+            .dismissible(backButton: false)
             .dismissOnChange(of: store.isDismissed)
             .loadingOverlay(store.isLoading)
         }
     }
-    
-    @ViewBuilder
-    func mainItem(_ text: String) -> some View{
+}
+
+typealias InfoListView = InfoListScreen
+
+struct InfoListContentView: View {
+    let festivalName: String
+    let districts: [District]
+    let onDismissTapped: () -> Void
+    let onFestivalTapped: () -> Void
+    let onDistrictTapped: (District) -> Void
+
+    var body: some View {
+        VStack {
+            TitleView(
+                text: "町を見てみよう",
+                image: "InfoBackground"
+            ) {
+                onDismissTapped()
+            }
+            .ignoresSafeArea(edges: .top)
+
+            InfoListFestivalItemView(text: festivalName)
+                .onTapGesture(perform: onFestivalTapped)
+                .padding(.horizontal, 96)
+
+            ScrollView {
+                VStack(spacing: 8) {
+                    ForEach(districts) { district in
+                        InfoListDistrictItemView(text: district.name)
+                            .onTapGesture {
+                                onDistrictTapped(district)
+                            }
+                    }
+                }
+                .padding(.horizontal, 64)
+                .padding(.vertical, 24)
+                .frame(maxWidth: .infinity)
+            }
+            .frame(maxHeight: .infinity)
+            .mask(InfoListMaskView())
+
+            InfoListFestivalItemView(text: "　")
+                .padding(.horizontal, 96)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(Color.white)
+        .preferredColorScheme(.light)
+    }
+}
+
+private struct InfoListFestivalItemView: View {
+    let text: String
+
+    var body: some View {
         Text(text)
             .font(.title)
             .foregroundColor(.primary)
@@ -82,9 +101,12 @@ struct InfoListView: View {
             .background(Color.info)
             .cornerRadius(8)
     }
-    
-    @ViewBuilder
-    func listItem(_ text: String) -> some View {
+}
+
+private struct InfoListDistrictItemView: View {
+    let text: String
+
+    var body: some View {
         Text(text)
             .font(.title2)
             .foregroundColor(.primary)
@@ -95,9 +117,10 @@ struct InfoListView: View {
             .background(Color.info.opacity(0.6))
             .cornerRadius(8)
     }
-        
-    @ViewBuilder
-    func mask() -> some View {
+}
+
+private struct InfoListMaskView: View {
+    var body: some View {
         LinearGradient(
             gradient: Gradient(stops: [
                 .init(color: .clear, location: 0),
@@ -109,4 +132,14 @@ struct InfoListView: View {
             endPoint: .bottom
         )
     }
+}
+
+#Preview {
+    InfoListContentView(
+        festivalName: "",
+        districts: [],
+        onDismissTapped: {},
+        onFestivalTapped: {},
+        onDistrictTapped: { _ in }
+    )
 }

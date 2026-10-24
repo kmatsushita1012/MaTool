@@ -10,22 +10,47 @@ import ComposableArchitecture
 import NavigationSwipeControl
 
 @available(iOS 17.0, *)
-struct ConfirmSignInView: View {
+struct ConfirmSignInScreen: View {
     @SwiftUI.Bindable var store: StoreOf<ConfirmSignInFeature>
-    
+
+    var body: some View {
+        ConfirmSignInContentView(
+            password1: $store.password1,
+            password2: $store.password2,
+            isLoading: store.isLoading,
+            onSubmitTapped: { store.send(.submitTapped) },
+            onDismissTapped: { store.send(.dismissTapped) }
+        )
+        .dismissible(backButton: false)
+        .alert($store.scope(state: \.alert, action: \.alert))
+        .loadingOverlay(store.isLoading)
+    }
+}
+
+@available(iOS 17.0, *)
+typealias ConfirmSignInView = ConfirmSignInScreen
+
+@available(iOS 17.0, *)
+struct ConfirmSignInContentView: View {
+    @Binding var password1: String
+    @Binding var password2: String
+    let isLoading: Bool
+    let onSubmitTapped: () -> Void
+    let onDismissTapped: () -> Void
+
     var body: some View {
         VStack {
             Text("パスワード変更")
                 .font(.largeTitle)
                 .padding()
-            TextField("新しいパスワード", text: $store.password1)
+            TextField("新しいパスワード", text: $password1)
                 .textFieldStyle(RoundedBorderTextFieldStyle())
                 .padding()
-            TextField("新しいパスワード（確認用）", text: $store.password2)
+            TextField("新しいパスワード（確認用）", text: $password2)
                 .textFieldStyle(RoundedBorderTextFieldStyle())
                 .padding()
             Button(action: {
-                store.send(.submitTapped)
+                onSubmitTapped()
             }) {
                 Text("送信")
                     .frame(maxWidth: .infinity)
@@ -38,12 +63,19 @@ struct ConfirmSignInView: View {
         }
         .padding()
         .toolbar {
-            ToolbarBackButton(isDisabled: store.isLoading) {
-                store.send(.dismissTapped)
+            ToolbarBackButton(isDisabled: isLoading) {
+                onDismissTapped()
             }
         }
-        .dismissible(backButton: false)
-        .alert($store.scope(state: \.alert, action: \.alert))
-        .loadingOverlay(store.isLoading)
     }
+}
+
+#Preview {
+    ConfirmSignInContentView(
+        password1: .constant(""),
+        password2: .constant(""),
+        isLoading: false,
+        onSubmitTapped: {},
+        onDismissTapped: {}
+    )
 }

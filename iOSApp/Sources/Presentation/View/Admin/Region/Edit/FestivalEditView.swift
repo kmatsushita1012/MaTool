@@ -8,107 +8,143 @@
 import SwiftUI
 import ComposableArchitecture
 import NavigationSwipeControl
+import Shared
 
 @available(iOS 17.0, *)
-struct FestivalEditView: View{
-    
+struct FestivalEditScreen: View {
     @SwiftUI.Bindable var store: StoreOf<FestivalEditFeature>
-    
-    var body: some View{
-        content
-        .navigationTitle("祭典情報")
-        .toolbar {
-            ToolbarCancelButton {
-                store.send(.cancelTapped)
+
+    var body: some View {
+        WithPerceptionTracking {
+            FestivalEditContentView(
+                name: $store.festival.name,
+                subname: $store.festival.subname,
+                prefecture: $store.festival.prefecture,
+                city: $store.festival.city,
+                description: $store.festival.description.nonOptional,
+                baseStatusText: store.base == nil ? "未設定" : "設定済み",
+                checkpoints: store.checkpoints,
+                hazardSections: store.hazardSections,
+                onBaseTapped: { store.send(.baseTapped) },
+                onCheckpointEditTapped: { store.send(.onCheckpointEdit($0)) },
+                onCheckpointAddTapped: { store.send(.onCheckpointAdd) },
+                onHazardTapped: { store.send(.hazardTapped($0)) },
+                onHazardCreateTapped: { store.send(.hazardCreateTapped) },
+                onCancelTapped: { store.send(.cancelTapped) },
+                onSaveTapped: { store.send(.saveTapped) }
+            )
+            .navigationDestination(
+                item: $store.scope(state: \.destination?.base, action: \.destination.base)
+            ) { store in
+                DistrictBaseEditView(store: store)
             }
-            ToolbarSaveButton {
-                store.send(.saveTapped)
+            .navigationDestination(
+                item: $store.scope(state: \.destination?.checkpoint, action: \.destination.checkpoint)
+            ) { store in
+                CheckpointEditView(store: store)
             }
-        }
-        .navigationBarTitleDisplayMode(.inline)
-        .loadingOverlay(store.isLoading)
-        .dismissible(backButton: false, edgeSwipe: false)
-        .alert($store.scope(state: \.alert, action: \.alert))
-        .navigationDestination(
-            item: $store.scope(state: \.destination?.base, action:  \.destination.base)
-        ) { store in
-            DistrictBaseEditView(store: store)
-        }
-        .navigationDestination(
-            item: $store.scope(state: \.destination?.checkpoint, action:  \.destination.checkpoint)
-        ) { store in
-            CheckpointEditView(store: store)
-        }
-        .navigationDestination(
-            item: $store.scope(state: \.destination?.hazard, action:  \.destination.hazard)
-        ) { store in
-            HazardSectionView(store: store)
-        }
-    }
-    
-    @ViewBuilder
-    var content: some View {
-        List {
-            Section(header: Text("祭典名")) {
-                TextField("祭典名を入力", text: $store.festival.name)
+            .navigationDestination(
+                item: $store.scope(state: \.destination?.hazard, action: \.destination.hazard)
+            ) { store in
+                HazardSectionView(store: store)
             }
-            Section(header: Text("本部名")) {
-                TextField("本部名を入力", text: $store.festival.subname)
-            }
-            Section(header: Text("本部所在地")) {
-                NavigationItemView(
-                    title: "地図で選択",
-                    status: store.baseStatusText,
-                    onTap: {
-                        store.send(.baseTapped)
-                    }
-                )
-            }
-            Section(header: Text("紹介文")) {
-                TextEditor(text: $store.festival.description.nonOptional)
-                    .frame(height:120)
-            }
-            Section(header: Text("都道府県")) {
-                TextField("都道府県を入力",text: $store.festival.prefecture)
-            }
-            Section(header: Text("市区町村")) {
-                TextField("市区町村を入力",text: $store.festival.city)
-            }
-            Section(header: Text("交差点")) {
-                ForEach(store.checkpoints) { checkpoint in
-                    NavigationItemView(
-                        title: checkpoint.name,
-                        onTap: {
-                            store.send(.onCheckpointEdit(checkpoint))
-                        }
-                    )
-                }
-                Button("追加", systemImage: "plus.circle") {
-                    store.send(.onCheckpointAdd)
-                }
-            }
-            Section(header: Text("注釈をつける区間")) {
-                ForEach(Array(store.hazardSections.enumerated()), id: \.offset) { index, hazard in
-                    NavigationItemView(
-                        title: "\(String(index+1)). \(hazard.title)",
-                        onTap: {
-                            store.send(.hazardTapped(hazard))
-                        }
-                    )
-                }
-                Button("追加", systemImage: "plus.circle") {
-                    store.send(.hazardCreateTapped)
-                }
-            }
+            .loadingOverlay(store.isLoading)
+            .dismissible(backButton: false, edgeSwipe: false)
+            .alert($store.scope(state: \.alert, action: \.alert))
         }
     }
 }
 
-private extension FestivalEditFeature.State {
-    var baseStatusText: String {
-        if base == nil {
-            return "未設定"
+@available(iOS 17.0, *)
+typealias FestivalEditView = FestivalEditScreen
+
+@available(iOS 17.0, *)
+struct FestivalEditContentView: View {
+    @Binding var name: String
+    @Binding var subname: String
+    @Binding var prefecture: String
+    @Binding var city: String
+    @Binding var description: String
+    let baseStatusText: String
+    let checkpoints: [Checkpoint]
+    let hazardSections: [HazardSection]
+    let onBaseTapped: () -> Void
+    let onCheckpointEditTapped: (Checkpoint) -> Void
+    let onCheckpointAddTapped: () -> Void
+    let onHazardTapped: (HazardSection) -> Void
+    let onHazardCreateTapped: () -> Void
+    let onCancelTapped: () -> Void
+    let onSaveTapped: () -> Void
+
+    var body: some View {
+        List {
+            Section(header: Text("祭典名")) {
+                TextField("祭典名を入力", text: $name)
+            }
+            Section(header: Text("本部名")) {
+                TextField("本部名を入力", text: $subname)
+            }
+            Section(header: Text("本部所在地")) {
+                NavigationItemView(
+                    title: "地図で選択",
+                    status: baseStatusText,
+                    onTap: onBaseTapped
+                )
+            }
+            Section(header: Text("紹介文")) {
+                TextEditor(text: $description)
+                    .frame(height: 120)
+            }
+            Section(header: Text("都道府県")) {
+                TextField("都道府県を入力", text: $prefecture)
+            }
+            Section(header: Text("市区町村")) {
+                TextField("市区町村を入力", text: $city)
+            }
+            Section(header: Text("交差点")) {
+                ForEach(checkpoints) { checkpoint in
+                    NavigationItemView(
+                        title: checkpoint.name,
+                        onTap: { onCheckpointEditTapped(checkpoint) }
+                    )
+                }
+                Button("追加", systemImage: "plus.circle", action: onCheckpointAddTapped)
+            }
+            Section(header: Text("注釈をつける区間")) {
+                ForEach(Array(hazardSections.enumerated()), id: \.offset) { index, hazard in
+                    NavigationItemView(
+                        title: "\(String(index + 1)). \(hazard.title)",
+                        onTap: { onHazardTapped(hazard) }
+                    )
+                }
+                Button("追加", systemImage: "plus.circle", action: onHazardCreateTapped)
+            }
         }
-        return "設定済み"
+        .navigationTitle("祭典情報")
+        .toolbar {
+            ToolbarCancelButton(action: onCancelTapped)
+            ToolbarSaveButton(action: onSaveTapped)
+        }
+        .navigationBarTitleDisplayMode(.inline)
     }
+}
+
+#Preview {
+    FestivalEditContentView(
+        name: .constant(""),
+        subname: .constant(""),
+        prefecture: .constant(""),
+        city: .constant(""),
+        description: .constant(""),
+        baseStatusText: "",
+        checkpoints: [],
+        hazardSections: [],
+        onBaseTapped: {},
+        onCheckpointEditTapped: { _ in },
+        onCheckpointAddTapped: {},
+        onHazardTapped: { _ in },
+        onHazardCreateTapped: {},
+        onCancelTapped: {},
+        onSaveTapped: {}
+    )
 }

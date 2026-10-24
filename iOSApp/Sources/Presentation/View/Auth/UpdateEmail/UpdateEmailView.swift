@@ -10,17 +10,52 @@ import SwiftUI
 import NavigationSwipeControl
 
 @available(iOS 17.0, *)
-struct UpdateEmailView: View {
-    
+struct UpdateEmailScreen: View {
     @SwiftUI.Bindable var store: StoreOf<UpdateEmailFeature>
+
+    var body: some View {
+        UpdateEmailContentView(
+            step: store.step,
+            email: $store.email,
+            code: $store.code,
+            onDismissTapped: {
+                switch store.step {
+                case .enterEmail:
+                    store.send(.enterEmail(.dismissTapped))
+                case .enterCode:
+                    store.send(.enterCode(.dismissTapped))
+                }
+            },
+            onEmailSubmitTapped: { store.send(.enterEmail(.okTapped)) },
+            onCodeSubmitTapped: { store.send(.enterCode(.okTapped)) }
+        )
+        .preferredColorScheme(.light)
+        .dismissible(backButton: false, edgeSwipe: false)
+        .loadingOverlay(store.isLoading)
+        .alert($store.scope(state: \.errorAlert, action: \.errorAlert))
+        .alert($store.scope(state: \.completeAlert, action: \.completeAlert))
+    }
+}
+
+@available(iOS 17.0, *)
+typealias UpdateEmailView = UpdateEmailScreen
+
+@available(iOS 17.0, *)
+struct UpdateEmailContentView: View {
+    let step: UpdateEmailFeature.State.Step
+    @Binding var email: String
+    @Binding var code: String
+    let onDismissTapped: () -> Void
+    let onEmailSubmitTapped: () -> Void
+    let onCodeSubmitTapped: () -> Void
+
     @FocusState private var focusedField: Field?
-    
-    
-    enum Field {
+
+    private enum Field {
         case email
         case code
     }
-    
+
     var body: some View {
         VStack{
             TitleView(
@@ -28,41 +63,35 @@ struct UpdateEmailView: View {
                 image: "AdminBackground",
                 font: .title
             ) {
-                switch store.step{
-                case .enterEmail:
-                    store.send(.enterEmail(.dismissTapped))
-                case .enterCode:
-                    store.send(.enterCode(.dismissTapped))
-                }
+                onDismissTapped()
             }
             .ignoresSafeArea(edges: .top)
             Spacer()
-            switch store.step{
+            switch step {
             case .enterEmail:
                 enterEmail
             case .enterCode(let destination):
-                enterCode(destination: destination)
+                UpdateEmailCodeContentView(
+                    destination: destination,
+                    code: $code,
+                    onSubmitTapped: onCodeSubmitTapped
+                )
             }
             Spacer()
             Spacer()
         }
-        .preferredColorScheme(.light)
-        .dismissible(backButton: false, edgeSwipe: false)
-        .loadingOverlay(store.isLoading)
-        .alert($store.scope(state: \.errorAlert, action: \.errorAlert))
-        .alert($store.scope(state: \.completeAlert, action: \.completeAlert))
     }
     
     @ViewBuilder
     var enterEmail: some View {
         VStack{
-            TextField("新しいメールアドレス", text: $store.email)
+            TextField("新しいメールアドレス", text: $email)
                 .textContentType(.emailAddress)
                 .textFieldStyle(RoundedBorderTextFieldStyle())
                 .focused($focusedField, equals: .email)
                 .padding()
             Button("変更") {
-                store.send(.enterEmail(.okTapped))
+                onEmailSubmitTapped()
                 focusedField = nil
             }
             .buttonStyle(PrimaryButtonStyle())
@@ -71,24 +100,52 @@ struct UpdateEmailView: View {
         
     }
     
-    @ViewBuilder
-    func enterCode(destination: String) -> some View {
+}
+
+@available(iOS 17.0, *)
+struct UpdateEmailCodeContentView: View {
+    let destination: String
+    @Binding var code: String
+    let onSubmitTapped: () -> Void
+
+    @FocusState private var isCodeFieldFocused: Bool
+
+    var body: some View {
         VStack{
             Text("入力されたメールアドレス　\(destination)　に6桁の確認コードを送信しました。次の画面で入力してください。")
                 .foregroundStyle(.gray)
                 .padding()
-            TextField("認証コード（6桁）", text: $store.code)
+            TextField("認証コード（6桁）", text: $code)
                 .textContentType(.oneTimeCode)
                 .textFieldStyle(RoundedBorderTextFieldStyle())
-                .focused($focusedField, equals: .code)
+                .focused($isCodeFieldFocused)
                 .padding()
             Button("認証") {
-                store.send(.enterCode(.okTapped))
-                focusedField = nil
+                onSubmitTapped()
+                isCodeFieldFocused = false
             }
             .buttonStyle(PrimaryButtonStyle())
             .padding()
         }
         .padding()
     }
+}
+
+#Preview {
+    UpdateEmailContentView(
+        step: .enterEmail,
+        email: .constant(""),
+        code: .constant(""),
+        onDismissTapped: {},
+        onEmailSubmitTapped: {},
+        onCodeSubmitTapped: {}
+    )
+}
+
+#Preview("確認コード") {
+    UpdateEmailCodeContentView(
+        destination: "",
+        code: .constant(""),
+        onSubmitTapped: {}
+    )
 }

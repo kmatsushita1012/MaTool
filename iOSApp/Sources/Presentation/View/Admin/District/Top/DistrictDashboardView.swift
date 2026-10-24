@@ -8,14 +8,29 @@
 import SwiftUI
 import ComposableArchitecture
 import NavigationSwipeControl
+import Shared
 
 @available(iOS 17.0, *)
-struct DistrictDashboardView: View{
+struct DistrictDashboardScreen: View {
     @SwiftUI.Bindable var store: StoreOf<DistrictDashboardFeature>
-    
+
     var body: some View {
-        content
-            .navigationDestination(item: $store.scope(state: \.destination, action: \.destination)){ destination in
+        WithPerceptionTracking {
+            DistrictDashboardContentView(
+                districtName: store.district.name,
+                routes: store.routes,
+                isSubmissionExportLoading: store.isSubmissionExportLoading,
+                isTableExportLoading: store.isTableExportLoading,
+                onEditTapped: { store.send(.onEdit) },
+                onLocationTapped: { store.send(.onLocation) },
+                onRouteTapped: { store.send(.onRouteEdit($0)) },
+                onSubmissionExportTapped: { store.send(.submissionExportTapped) },
+                onTableExportTapped: { store.send(.tableExportTapped) },
+                onChangePasswordTapped: { store.send(.changePasswordTapped) },
+                onUpdateEmailTapped: { store.send(.updateEmailTapped) },
+                onSignOutTapped: { store.send(.signOutTapped) }
+            )
+            .navigationDestination(item: $store.scope(state: \.destination, action: \.destination)) { destination in
                 switch destination.case {
                 case .edit(let store):
                     DistrictEditView(store: store)
@@ -34,85 +49,101 @@ struct DistrictDashboardView: View{
             }
             .alert($store.scope(state: \.alert, action: \.alert))
             .loadingOverlay(store.isRouteLoading || store.isAWSLoading)
-        
+        }
     }
-    
-    @ViewBuilder
-    var content: some View {
+}
+
+@available(iOS 17.0, *)
+typealias DistrictDashboardView = DistrictDashboardScreen
+
+@available(iOS 17.0, *)
+struct DistrictDashboardContentView: View {
+    let districtName: String
+    let routes: [RouteSlot]
+    let isSubmissionExportLoading: Bool
+    let isTableExportLoading: Bool
+    let onEditTapped: () -> Void
+    let onLocationTapped: () -> Void
+    let onRouteTapped: (RouteSlot) -> Void
+    let onSubmissionExportTapped: () -> Void
+    let onTableExportTapped: () -> Void
+    let onChangePasswordTapped: () -> Void
+    let onUpdateEmailTapped: () -> Void
+    let onSignOutTapped: () -> Void
+
+    var body: some View {
         List {
             Section {
                 NavigationItemView(
                     title: "地区情報",
-                    iconName: "info.circle" ,
-                    onTap: {
-                        store.send(.onEdit)
-                    })
+                    iconName: "info.circle",
+                    onTap: onEditTapped
+                )
                 NavigationItemView(
                     title: "位置情報配信",
                     iconName: "mappin.and.ellipse",
-                    onTap: {
-                        store.send(.onLocation)
-                    }
+                    onTap: onLocationTapped
                 )
             }
-            Section(header: Text("行動")){
-                ForEach(store.routes) { pair in
-                    RouteSlotView(
-                        pair,
-                        onTap: { store.send(.onRouteEdit(pair)) }
-                    )
+            Section(header: Text("行動")) {
+                ForEach(routes) { pair in
+                    RouteSlotView(pair) {
+                        onRouteTapped(pair)
+                    }
                 }
             }
             Section(header: Text("ルート出力")) {
-                loadingButton(
-                    "提出資料出力",
-                    showsProgress: store.isSubmissionExportLoading,
-                    isDisabled: store.isSubmissionExportLoading || store.isTableExportLoading
-                ) {
-                    store.send(.submissionExportTapped)
-                }
-                loadingButton(
-                    "行動表出力",
-                    showsProgress: store.isTableExportLoading,
-                    isDisabled: store.isSubmissionExportLoading || store.isTableExportLoading
-                ) {
-                    store.send(.tableExportTapped)
-                }
+                DashboardExportButton(
+                    title: "提出資料出力",
+                    showsProgress: isSubmissionExportLoading,
+                    isDisabled: isSubmissionExportLoading || isTableExportLoading,
+                    action: onSubmissionExportTapped
+                )
+                DashboardExportButton(
+                    title: "行動表出力",
+                    showsProgress: isTableExportLoading,
+                    isDisabled: isSubmissionExportLoading || isTableExportLoading,
+                    action: onTableExportTapped
+                )
             }
             Section {
-                Button(action: {
-                    store.send(.changePasswordTapped)
-                }) {
-                    Text("パスワード変更")
-                }
-                Button(action: {
-                    store.send(.updateEmailTapped)
-                }) {
-                    Text("メールアドレス変更")
-                }
+                Button("パスワード変更", action: onChangePasswordTapped)
+                Button("メールアドレス変更", action: onUpdateEmailTapped)
             }
             Section {
-                Button(action: {
-                    store.send(.signOutTapped)
-                }) {
-                    Text("ログアウト")
-                        .foregroundColor(.red)
-                }
+                Button("ログアウト", action: onSignOutTapped)
+                    .foregroundColor(.red)
             }
         }
-        .navigationTitle(
-            store.district.name
-        )
+        .navigationTitle(districtName)
         .navigationBarTitleDisplayMode(.large)
     }
+}
 
-    @ViewBuilder
-    private func loadingButton(
-        _ title: String,
-        showsProgress: Bool,
-        isDisabled: Bool,
-        action: @escaping () -> Void
-    ) -> some View {
+#Preview {
+    DistrictDashboardContentView(
+        districtName: "",
+        routes: [],
+        isSubmissionExportLoading: false,
+        isTableExportLoading: false,
+        onEditTapped: {},
+        onLocationTapped: {},
+        onRouteTapped: { _ in },
+        onSubmissionExportTapped: {},
+        onTableExportTapped: {},
+        onChangePasswordTapped: {},
+        onUpdateEmailTapped: {},
+        onSignOutTapped: {}
+    )
+}
+
+private struct DashboardExportButton: View {
+    let title: String
+    let showsProgress: Bool
+    let isDisabled: Bool
+    let action: () -> Void
+
+    var body: some View {
         Button(action: action) {
             Text(title)
                 .frame(maxWidth: .infinity, alignment: .leading)

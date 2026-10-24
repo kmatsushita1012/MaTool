@@ -10,88 +10,113 @@ import NavigationSwipeControl
 import SwiftUI
 
 @available(iOS 17.0, *)
-struct FestivalDashboardView: View {
+struct FestivalDashboardScreen: View {
     @SwiftUI.Bindable var store: StoreOf<FestivalDashboardFeature>
 
     var body: some View {
-        content
-            .navigationDestination(
-                item: $store.scope(state: \.destination?.edit, action: \.destination.edit)
-            ) { store in
-                FestivalEditView(store: store)
-            }
-            .navigationDestination(
-                item: $store.scope(
-                    state: \.destination?.districts, action: \.destination.districts)
-            ) { store in
-                HeadquarterDistrictListView(store: store)
-            }
-            .navigationDestination(
-                item: $store.scope(state: \.destination?.periods, action: \.destination.periods)
-            ) { store in
-                PeriodListView(store: store)
-            }
-            .navigationDestination(
-                item: $store.scope(
-                    state: \.destination?.changePassword, action: \.destination.changePassword)
-            ) { store in
-                ChangePasswordView(store: store)
-            }
-            .navigationDestination(
-                item: $store.scope(
-                    state: \.destination?.updateEmail, action: \.destination.updateEmail)
-            ) { store in
-                UpdateEmailView(store: store)
-            }
+        WithPerceptionTracking {
+            FestivalDashboardContentView(
+                festivalTitle: festivalTitle,
+                onEditTapped: { store.send(.onEdit) },
+                onPeriodsTapped: { store.send(.periodTapped) },
+                onDistrictsTapped: { store.send(.districtsTapped) },
+                onChangePasswordTapped: { store.send(.changePasswordTapped) },
+                onUpdateEmailTapped: { store.send(.updateEmailTapped) },
+                onSignOutTapped: { store.send(.signOutTapped) }
+            )
+            .modifier(FestivalDashboardDestinations(store: store))
             .alert($store.scope(state: \.alert, action: \.alert))
             .loadingOverlay(store.isLoading)
+        }
     }
 
-    @ViewBuilder
-    var content: some View {
+    private var festivalTitle: String {
+        "\(store.festival.name) \(store.festival.subname)"
+    }
+}
+
+@available(iOS 17.0, *)
+private struct FestivalDashboardDestinations: ViewModifier {
+    @SwiftUI.Bindable var store: StoreOf<FestivalDashboardFeature>
+
+    func body(content: Content) -> some View {
+        content
+            .navigationDestination(item: $store.scope(state: \.destination?.edit, action: \.destination.edit)) { store in
+                FestivalEditView(store: store)
+            }
+            .navigationDestination(item: $store.scope(state: \.destination?.districts, action: \.destination.districts)) { store in
+                HeadquarterDistrictListView(store: store)
+            }
+            .navigationDestination(item: $store.scope(state: \.destination?.periods, action: \.destination.periods)) { store in
+                PeriodListView(store: store)
+            }
+            .navigationDestination(item: $store.scope(state: \.destination?.changePassword, action: \.destination.changePassword)) { store in
+                ChangePasswordView(store: store)
+            }
+            .navigationDestination(item: $store.scope(state: \.destination?.updateEmail, action: \.destination.updateEmail)) { store in
+                UpdateEmailView(store: store)
+            }
+    }
+}
+
+@available(iOS 17.0, *)
+typealias FestivalDashboardView = FestivalDashboardScreen
+
+@available(iOS 17.0, *)
+struct FestivalDashboardContentView: View {
+    let festivalTitle: String
+    let onEditTapped: () -> Void
+    let onPeriodsTapped: () -> Void
+    let onDistrictsTapped: () -> Void
+    let onChangePasswordTapped: () -> Void
+    let onUpdateEmailTapped: () -> Void
+    let onSignOutTapped: () -> Void
+
+    var body: some View {
         List {
             Section {
                 NavigationItemView(
                     title: "祭典情報",
                     iconName: "info.circle",
-                    onTap: { store.send(.onEdit) })
+                    onTap: onEditTapped
+                )
                 NavigationItemView(
                     title: "日程",
                     iconName: "calendar",
-                    onTap: { store.send(.periodTapped) })
+                    onTap: onPeriodsTapped
+                )
             }
-            
+
             Section {
                 NavigationItemView(
                     title: "参加町一覧",
                     iconName: "list.bullet",
-                    onTap: { store.send(.districtsTapped) })
+                    onTap: onDistrictsTapped
+                )
             }
-            
+
             Section {
-                Button(action: {
-                    store.send(.changePasswordTapped)
-                }) {
-                    Text("パスワード変更")
-                }
-                Button(action: {
-                    store.send(.updateEmailTapped)
-                }) {
-                    Text("メールアドレス変更")
-                }
+                Button("パスワード変更", action: onChangePasswordTapped)
+                Button("メールアドレス変更", action: onUpdateEmailTapped)
             }
             Section {
-                Button(action: {
-                    store.send(.signOutTapped)
-                }) {
-                    Text("ログアウト")
-                        .foregroundColor(.red)
-                }
+                Button("ログアウト", action: onSignOutTapped)
+                    .foregroundColor(.red)
             }
         }
-        .navigationTitle(
-            "\(store.festival.name) \(store.festival.subname)"
-        )
+        .navigationTitle(festivalTitle)
         .navigationBarTitleDisplayMode(.large)
     }
+}
+
+#Preview {
+    FestivalDashboardContentView(
+        festivalTitle: "",
+        onEditTapped: {},
+        onPeriodsTapped: {},
+        onDistrictsTapped: {},
+        onChangePasswordTapped: {},
+        onUpdateEmailTapped: {},
+        onSignOutTapped: {}
+    )
 }

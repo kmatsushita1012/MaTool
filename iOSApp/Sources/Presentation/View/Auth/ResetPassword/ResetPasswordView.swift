@@ -10,34 +10,67 @@ import SwiftUI
 import NavigationSwipeControl
 
 @available(iOS 17.0, *)
-struct ResetPasswordView: View {
-    
+struct ResetPasswordScreen: View {
     @SwiftUI.Bindable var store: StoreOf<ResetPasswordFeature>
+
+    var body: some View {
+        ResetPasswordContentView(
+            step: store.step,
+            username: $store.username,
+            newPassword1: $store.newPassword1,
+            newPassword2: $store.newPassword2,
+            code: $store.code,
+            onDismissTapped: {
+                switch store.step {
+                case .enterUsername:
+                    store.send(.enterUsername(.dismissTapped))
+                case .enterCode:
+                    store.send(.enterCode(.dismissTapped))
+                }
+            },
+            onUsernameSubmitTapped: { store.send(.enterUsername(.okTapped)) },
+            onCodeSubmitTapped: { store.send(.enterCode(.okTapped)) }
+        )
+        .dismissible(backButton: false, edgeSwipe: false)
+        .loadingOverlay(store.isLoading)
+        .alert($store.scope(state: \.alert, action: \.alert))
+    }
+}
+
+@available(iOS 17.0, *)
+typealias ResetPasswordView = ResetPasswordScreen
+
+@available(iOS 17.0, *)
+struct ResetPasswordContentView: View {
+    let step: ResetPasswordFeature.State.Step
+    @Binding var username: String
+    @Binding var newPassword1: String
+    @Binding var newPassword2: String
+    @Binding var code: String
+    let onDismissTapped: () -> Void
+    let onUsernameSubmitTapped: () -> Void
+    let onCodeSubmitTapped: () -> Void
+
     @FocusState private var focusedField: Field?
-    
-    enum Field {
+
+    private enum Field {
         case username
         case newPassword1
         case newPassword2
         case code
     }
-    
+
     var body: some View {
         VStack{
             TitleView(
                 text: "パスワード変更",
                 image: "AdminBackground"
             ) {
-                switch store.step{
-                case .enterUsername:
-                    store.send(.enterUsername(.dismissTapped))
-                case .enterCode:
-                    store.send(.enterCode(.dismissTapped))
-                }
+                onDismissTapped()
             }
             .ignoresSafeArea(edges: .top)
             Spacer()
-            switch store.step{
+            switch step {
             case .enterUsername:
                 enterUsername
             case .enterCode:
@@ -46,9 +79,6 @@ struct ResetPasswordView: View {
             Spacer()
         }
         .preferredColorScheme(.light)
-        .dismissible(backButton: false, edgeSwipe: false)
-        .loadingOverlay(store.isLoading)
-        .alert($store.scope(state: \.alert, action: \.alert))
     }
     
     @ViewBuilder
@@ -61,14 +91,14 @@ struct ResetPasswordView: View {
                 Text("ID（ユーザー名）")
                     .font(.subheadline)
                     .foregroundColor(.gray)
-                TextField("", text: $store.username)
+                TextField("", text: $username)
                     .textContentType(.none)
                     .textFieldStyle(RoundedBorderTextFieldStyle())
                     .focused($focusedField, equals: .username)
             }
             .padding()
             Button("認証コードを送信") {
-                store.send(.enterUsername(.okTapped))
+                onUsernameSubmitTapped()
                 focusedField = nil
             }
             .buttonStyle(PrimaryButtonStyle())
@@ -79,27 +109,40 @@ struct ResetPasswordView: View {
     @ViewBuilder
     var enterCode: some View {
         VStack{
-            TextField("新しいパスワード", text: $store.newPassword1)
+            TextField("新しいパスワード", text: $newPassword1)
                 .textContentType(.password)
                 .textFieldStyle(RoundedBorderTextFieldStyle())
                 .focused($focusedField, equals: .newPassword1)
                 .padding()
-            TextField("新しいパスワード（確認用）", text: $store.newPassword2)
+            TextField("新しいパスワード（確認用）", text: $newPassword2)
                 .textContentType(.password)
                 .textFieldStyle(RoundedBorderTextFieldStyle())
                 .focused($focusedField, equals: .newPassword2)
                 .padding()
-            TextField("認証コード（6桁）", text: $store.code)
+            TextField("認証コード（6桁）", text: $code)
                 .textContentType(.oneTimeCode)
                 .textFieldStyle(RoundedBorderTextFieldStyle())
                 .focused($focusedField, equals: .code)
                 .padding()
             Button("パスワードを変更") {
-                store.send(.enterCode(.okTapped))
+                onCodeSubmitTapped()
                 focusedField = nil
             }
             .buttonStyle(PrimaryButtonStyle())
             .padding()
         }
     }
+}
+
+#Preview {
+    ResetPasswordContentView(
+        step: .enterUsername,
+        username: .constant(""),
+        newPassword1: .constant(""),
+        newPassword2: .constant(""),
+        code: .constant(""),
+        onDismissTapped: {},
+        onUsernameSubmitTapped: {},
+        onCodeSubmitTapped: {}
+    )
 }

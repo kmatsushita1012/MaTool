@@ -10,13 +10,34 @@ import ComposableArchitecture
 import NavigationSwipeControl
 
 @available(iOS 17.0, *)
-struct DistrictReissueView: View {
+struct DistrictReissueScreen: View {
     @SwiftUI.Bindable var store: StoreOf<DistrictReissueFeature>
+
+    var body: some View {
+        DistrictReissueContentView(
+            email: $store.email,
+            onCancelTapped: { store.send(.cancelTapped) },
+            onReissueTapped: { store.send(.reissueTapped) }
+        )
+        .dismissible(backButton: false)
+        .loadingOverlay(store.isLoading)
+        .alert($store.scope(state: \.alert, action: \.alert))
+    }
+}
+
+@available(iOS 17.0, *)
+typealias DistrictReissueView = DistrictReissueScreen
+
+@available(iOS 17.0, *)
+struct DistrictReissueContentView: View {
+    @Binding var email: String
+    let onCancelTapped: () -> Void
+    let onReissueTapped: () -> Void
 
     var body: some View {
         List {
             Section {
-                TextField("メールアドレスを入力", text: $store.email)
+                TextField("メールアドレスを入力", text: $email)
                     .textContentType(.emailAddress)
                     .autocapitalization(.none)
                     .disableAutocorrection(true)
@@ -29,16 +50,21 @@ struct DistrictReissueView: View {
         .navigationTitle("アカウント再発行")
         .toolbar {
             ToolbarCancelButton {
-                store.send(.cancelTapped)
+                onCancelTapped()
             }
             ToolbarSaveButton(title: "再発行") {
-                store.send(.reissueTapped)
+                onReissueTapped()
             }
         }
         .navigationBarTitleDisplayMode(.inline)
-        .dismissible(backButton: false)
-        .loadingOverlay(store.isLoading)
-        .alert($store.scope(state: \.alert, action: \.alert))
     }
+}
+
+#Preview {
+    DistrictReissueContentView(
+        email: .constant(""),
+        onCancelTapped: {},
+        onReissueTapped: {}
+    )
 }
 
