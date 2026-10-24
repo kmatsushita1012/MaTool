@@ -6,78 +6,37 @@
 //
 
 import SwiftUI
-import PhotosUI
 import ComposableArchitecture
 import NavigationSwipeControl
 import Shared
 
 @available(iOS 17.0, *)
-struct DistrictEditView: View {
+struct DistrictEditScreen: View {
     @SwiftUI.Bindable var store: StoreOf<DistrictEditFeature>
-    
+
     var body: some View {
-        List {
-            Section(
-                header: Text("町名"),
-                footer: Text("IDは更新できません")
-            ) {
-                TextField("町名を入力",text: $store.district.name)
-            }
-            Section(header: Text("紹介文")) {
-                TextEditor(text: $store.district.description.nonOptional)
-                    .frame(height:120)
-            }
-            Section(header: Text("会所")) {
-                Button(action: {
-                    store.send(.baseTapped)
-                }) {
-                    Label("地図で選択", systemImage: "map")
-                        .font(.body)
-                }
-            }
-            Section(header: Text("町域")) {
-                Button(action: {
-                    store.send(.areaTapped)
-                }) {
-                    Label("地図で選択", systemImage: "map")
-                        .font(.body)
-                }
-            }
-            Section(header: Text("ルート"), footer: Text("最新年の全てのルートの公開範囲が変更されます")) {
-                Picker("デフォルトの公開範囲", selection: $store.district.visibility) {
-                    ForEach(Visibility.allCases) { option in
-                        Text(option.label).tag(option)
-                    }
-                }
-                .pickerStyle(.menu)
-            }
-            Section(header: Text("余興")) {
-                ForEach(store.performances) { item in
-                    NavigationItemView(
-                        title: item.name,
-                        onTap: {
-                            store.send(.performanceEditTapped(item))
-                        }
-                    )
-                }
-                Button(action: {
-                    store.send(.performanceAddTapped)
-                }) {
-                    Label("追加", systemImage: "plus.circle")
-                        .frame(maxWidth: .infinity, alignment: .center)
-                }
-            }
-        }
-        .navigationTitle("地区情報")
-        .navigationBarTitleDisplayMode(.inline)
-        .toolbar {
-            ToolbarCancelButton {
-                store.send(.cancelTapped)
-            }
-            ToolbarSaveButton {
-                store.send(.saveTapped)
-            }
-        }
+        DistrictEditContentView(
+            name: Binding(
+                get: { store.district.name },
+                set: { store.send(.binding(.set(\.district.name, $0))) }
+            ),
+            description: Binding(
+                get: { store.district.description ?? "" },
+                set: { store.send(.binding(.set(\.district.description, $0))) }
+            ),
+            visibility: Binding(
+                get: { store.district.visibility },
+                set: { store.send(.binding(.set(\.district.visibility, $0))) }
+            ),
+            visibilityLabel: { $0.label },
+            performances: store.performances,
+            onBaseTapped: { store.send(.baseTapped) },
+            onAreaTapped: { store.send(.areaTapped) },
+            onPerformanceEditTapped: { store.send(.performanceEditTapped($0)) },
+            onPerformanceAddTapped: { store.send(.performanceAddTapped) },
+            onCancelTapped: { store.send(.cancelTapped) },
+            onSaveTapped: { store.send(.saveTapped) }
+        )
         .dismissible(backButton: false, edgeSwipe: false)
         .navigationDestination(item: $store.scope(state: \.destination?.base, action: \.destination.base)) { store in
             DistrictBaseEditView(store: store)
@@ -93,23 +52,91 @@ struct DistrictEditView: View {
     }
 }
 
+@available(iOS 17.0, *)
+typealias DistrictEditView = DistrictEditScreen
 
-//                Section(header: Text("画像")) {
-//                    PhotosPicker(
-//                        selection: $store.image,
-//                        matching: .images,
-//                        photoLibrary: .shared()) {
-//                            HStack {
-//                                if let image = store.image {
-//                                    Image(uiImage: image)
-//                                        .resizable()
-//                                        .scaledToFill()
-//                                        .frame(width: 80, height: 80)
-//                                        .clipShape(Circle())
-//                                        .clipped()
-//                                } else {
-//                                    Text("画像を選択")
-//                                }
-//                            }
-//                        }
-//                }
+@available(iOS 17.0, *)
+struct DistrictEditContentView<VisibilityValue: Hashable & CaseIterable>: View {
+    @Binding var name: String
+    @Binding var description: String
+    @Binding var visibility: VisibilityValue
+    let visibilityLabel: (VisibilityValue) -> String
+    let performances: [Performance]
+    let onBaseTapped: () -> Void
+    let onAreaTapped: () -> Void
+    let onPerformanceEditTapped: (Performance) -> Void
+    let onPerformanceAddTapped: () -> Void
+    let onCancelTapped: () -> Void
+    let onSaveTapped: () -> Void
+
+    var body: some View {
+        List {
+            Section(
+                header: Text("町名"),
+                footer: Text("IDは更新できません")
+            ) {
+                TextField("町名を入力", text: $name)
+            }
+            Section(header: Text("紹介文")) {
+                TextEditor(text: $description)
+                    .frame(height: 120)
+            }
+            Section(header: Text("会所")) {
+                Button(action: onBaseTapped) {
+                    Label("地図で選択", systemImage: "map")
+                        .font(.body)
+                }
+            }
+            Section(header: Text("町域")) {
+                Button(action: onAreaTapped) {
+                    Label("地図で選択", systemImage: "map")
+                        .font(.body)
+                }
+            }
+            Section(header: Text("ルート"), footer: Text("最新年の全てのルートの公開範囲が変更されます")) {
+                Picker("デフォルトの公開範囲", selection: $visibility) {
+                    ForEach(Array(VisibilityValue.allCases), id: \.self) { option in
+                        Text(visibilityLabel(option)).tag(option)
+                    }
+                }
+                .pickerStyle(.menu)
+            }
+            Section(header: Text("余興")) {
+                ForEach(performances) { item in
+                    NavigationItemView(
+                        title: item.name,
+                        onTap: { onPerformanceEditTapped(item) }
+                    )
+                }
+                Button(action: onPerformanceAddTapped) {
+                    Label("追加", systemImage: "plus.circle")
+                        .frame(maxWidth: .infinity, alignment: .center)
+                }
+            }
+        }
+        .navigationTitle("地区情報")
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarCancelButton(action: onCancelTapped)
+            ToolbarSaveButton(action: onSaveTapped)
+        }
+    }
+}
+
+#Preview {
+    let visibility = District(id: "", name: "", festivalId: "", visibility: .route).visibility
+
+    DistrictEditContentView(
+        name: .constant(""),
+        description: .constant(""),
+        visibility: .constant(visibility),
+        visibilityLabel: { $0.label },
+        performances: [],
+        onBaseTapped: {},
+        onAreaTapped: {},
+        onPerformanceEditTapped: { _ in },
+        onPerformanceAddTapped: {},
+        onCancelTapped: {},
+        onSaveTapped: {}
+    )
+}

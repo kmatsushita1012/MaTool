@@ -7,20 +7,26 @@
 
 import SwiftUI
 import ComposableArchitecture
+import Shared
 
 @available(iOS 17.0, *)
-struct PeriodListView: View {
+struct PeriodListScreen: View {
     @SwiftUI.Bindable var store: StoreOf<PeriodListFeature>
-    @Dependency(\.values.isLiquidGlassEnabled) var isLiquidGlassEnabled: Bool
-    @State private var showBatchCreateDialog = false
-    
+    @State private var isBatchCreateDialogPresented = false
+
     var body: some View {
-        content
-            .toolbar{
-                toolbar
-            }
-            .navigationTitle("日程")
-            .navigationBarTitleDisplayMode(.inline)
+        WithPerceptionTracking {
+            PeriodListContentView(
+                latest: store.latests,
+                archives: store.archives,
+                yearOptions: store.yearOptions,
+                createYear: store.createYear,
+                isBatchCreateDialogPresented: $isBatchCreateDialogPresented,
+                onPeriodTapped: { store.send(.periodTapped($0)) },
+                onArchiveTapped: { store.send(.archiveTapped($0)) },
+                onPeriodCreateTapped: { store.send(.periodCreateTapped) },
+                onBatchCreateTapped: { store.send(.batchCreateTapped($0)) }
+            )
             .loadingOverlay(store.isLoading)
             .navigationDestination(item: $store.scope(state: \.destination?.edit, action: \.destination.edit)) {
                 PeriodEditView(store: $0)
@@ -29,12 +35,28 @@ struct PeriodListView: View {
                 PeriodArchivesView(store: $0)
             }
             .alert($store.scope(state: \.alert, action: \.alert))
+        }
     }
-    
-    @ViewBuilder
-    var content: some View {
+}
+
+@available(iOS 17.0, *)
+typealias PeriodListView = PeriodListScreen
+
+@available(iOS 17.0, *)
+struct PeriodListContentView: View {
+    let latest: PeriodListFeature.State.YearlyPeriods?
+    let archives: [PeriodListFeature.State.YearlyPeriods]
+    let yearOptions: [Int]
+    let createYear: Int
+    @Binding var isBatchCreateDialogPresented: Bool
+    let onPeriodTapped: (Period) -> Void
+    let onArchiveTapped: (PeriodListFeature.State.YearlyPeriods) -> Void
+    let onPeriodCreateTapped: () -> Void
+    let onBatchCreateTapped: (Int) -> Void
+
+    var body: some View {
         Form {
-            if store.latests == nil && store.archives.isEmpty {
+            if latest == nil && archives.isEmpty {
                 Section {
                     ContentUnavailableView {
                         Label("日程がありません", systemImage: "calendar.badge.plus")
@@ -43,58 +65,56 @@ struct PeriodListView: View {
                     }
                 }
             }
-            if let latest = store.latests {
+            if let latest {
                 Section(latest.text) {
                     ForEach(latest.periods) { period in
                         NavigationItemView(title: period.text) {
-                            store.send(.periodTapped(period))
+                            onPeriodTapped(period)
                         }
                     }
                 }
             }
-            
-            if !store.archives.isEmpty {
-                Section("過去の日程"){
-                    ForEach(store.archives){ archive in
+
+            if !archives.isEmpty {
+                Section("過去の日程") {
+                    ForEach(archives) { archive in
                         NavigationItemView(title: archive.text) {
-                            store.send(.archiveTapped(archive))
+                            onArchiveTapped(archive)
                         }
                     }
                 }
             }
         }
-    }
-    
-    @ToolbarContentBuilder
-    var toolbar: some ToolbarContent {
-        ToolbarAddButton {
-            store.send(.periodCreateTapped)
+        .navigationTitle("日程")
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarAddButton(action: onPeriodCreateTapped)
+            batchCreateMenu
         }
-        batchCreateMenu
     }
-    
+
     @ToolbarContentBuilder
-    var batchCreateMenu: some ToolbarContent {
-        if !store.yearOptions.isEmpty {
+    private var batchCreateMenu: some ToolbarContent {
+        if !yearOptions.isEmpty {
             if #available(iOS 26.0, *) {
                 ToolbarSpacer(.flexible, placement: .bottomBar)
             }
             ToolbarItem(placement: .bottomBar) {
                 Button("一括作成") {
-                    showBatchCreateDialog = true
+                    isBatchCreateDialogPresented = true
                 }
                 .confirmationDialog(
-                    "\(String(store.createYear))年を一括作成",
-                    isPresented: $showBatchCreateDialog,
+                    "\(String(createYear))年を一括作成",
+                    isPresented: $isBatchCreateDialogPresented,
                     titleVisibility: .visible
                 ) {
-                    ForEach(store.yearOptions, id: \.self) { year in
+                    ForEach(yearOptions, id: \.self) { year in
                         Button("\(String(year))年") {
-                            store.send(.batchCreateTapped(year))
+                            onBatchCreateTapped(year)
                         }
                     }
                     Button("キャンセル", role: .cancel) {
-                        showBatchCreateDialog = false
+                        isBatchCreateDialogPresented = false
                     }
                 } message: {
                     Text("選択した年の日程をを元に一括で作成します。")
@@ -102,4 +122,18 @@ struct PeriodListView: View {
             }
         }
     }
+}
+
+#Preview {
+    PeriodListContentView(
+        latest: nil,
+        archives: [],
+        yearOptions: [],
+        createYear: 2026,
+        isBatchCreateDialogPresented: .constant(false),
+        onPeriodTapped: { _ in },
+        onArchiveTapped: { _ in },
+        onPeriodCreateTapped: {},
+        onBatchCreateTapped: { _ in }
+    )
 }
