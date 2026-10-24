@@ -12,17 +12,14 @@ import Shared
 struct DistrictReissueFeature {
     @ObservableState
     struct State: Equatable {
-        let districtId: District.ID
+        let district: District
         @Shared fileprivate var appState: AppState?
-        var district: District {
-            appState!.festivalState.districts.first { $0.id == districtId }!
-        }
         var email: String = ""
         var isLoading: Bool = false
         @Presents var alert: AlertFeature.State?
 
         init(district: District, appState: Shared<AppState?> = Shared(value: nil)) {
-            self.districtId = district.id
+            self.district = district
             self._appState = appState
         }
     }

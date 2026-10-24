@@ -161,22 +161,17 @@ struct HeadquarterDistrictListFeature {
                         districtId: district.id,
                         query: .year(festivalState.year)
                       ) else { continue }
-                let routesByPeriodId = Dictionary(uniqueKeysWithValues: fetchedRoutes.map { ($0.periodId, $0) })
-                let slots = festivalState.periods.map { period in
-                    RouteSlot(period: period, route: routesByPeriodId[period.id])
-                }
+                let slots = festivalState.routeSlots(for: fetchedRoutes)
                 let routes = slots.compactMap(\.route)
-                var passagesByRouteID: [Route.ID: [RoutePassage]] = [:]
-                var pointsByRouteID: [Route.ID: [Point]] = [:]
+                var routePacks: [RoutePack] = []
                 for route in routes {
                     guard let pack = try? await fetchRoutePackUseCase(routeId: route.id) else { continue }
-                    passagesByRouteID[route.id] = pack.passages
-                    pointsByRouteID[route.id] = pack.points
+                    routePacks.append(pack)
                 }
                 let tableSnapshotter = await ActionTableSnapshotter(
                     district: district,
                     slots: slots,
-                    passagesByRouteID: passagesByRouteID
+                    routePacks: routePacks
                 )
                 let tablePages = await tableSnapshotter.takeAll()
                 for page in tablePages {
@@ -189,8 +184,8 @@ struct HeadquarterDistrictListFeature {
                 }
                 if !routes.isEmpty {
                     for route in routes {
-                        guard let points = pointsByRouteID[route.id],
-                              let snapshotter = try? await RouteSnapshotter(route: route, points: points),
+                        guard let pack = routePacks.first(where: { $0.route.id == route.id }),
+                              let snapshotter = try? await RouteSnapshotter(route: pack.route, points: pack.points),
                               let image = try? await snapshotter.take() else { continue }
                         await renderer.addPage(with: image)
                     }

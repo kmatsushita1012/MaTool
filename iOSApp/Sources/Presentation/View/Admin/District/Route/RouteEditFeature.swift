@@ -55,8 +55,6 @@ struct RouteEditFeature{
         @Shared fileprivate var appState: AppState?
         
         var mode: EditMode
-        var requiresRoutePackFetch: Bool = false
-        var didLoadRoutePack: Bool = true
         var operation: Operation = .add
         var isLoading: Bool = false
         var isSubmitDialogPresented: Bool = false
@@ -100,7 +98,6 @@ struct RouteEditFeature{
         case historyPrepared(AppResult<[RouteEntry]>)
         case saveReceived(VoidAppResult)
         case copyPrepared(AppResult<RoutePack>)
-        case routePackReceived(AppResult<RoutePack>)
         case deleteReceived(VoidAppResult)
         case previewPrepared(AppResult<ExportedItem>)
         case point(PresentationAction<PointEditFeature.Action>)
@@ -112,7 +109,6 @@ struct RouteEditFeature{
     @Dependency(DeleteRouteUseCaseKey.self) var deleteRouteUseCase
     @Dependency(FetchRoutePackUseCaseKey.self) var fetchRoutePackUseCase
     @Dependency(FetchRouteHistoryUseCaseKey.self) var fetchRouteHistoryUseCase
-    @Dependency(LoadRouteStateUseCaseKey.self) var loadRouteStateUseCase
     @Dependency(\.dismiss) var dismiss
     
     var body: some ReducerOf<RouteEditFeature> {
@@ -120,17 +116,10 @@ struct RouteEditFeature{
         Reduce{ state, action in
             switch action {
             case .onAppear:
-                var effects: [Effect<Action>] = []
                 if !state.district.isEditable && state.mode != .preview {
                     state.alert = .notice(.notice("\(state.festival.subname)がルートの更新を停止しています。"))
                 }
-                if state.requiresRoutePackFetch && !state.didLoadRoutePack && !state.isLoading {
-                    state.isLoading = true
-                    effects.append(.task(Action.routePackReceived) { [routeId = state.route.id, appState = state.$appState] in
-                        try await loadRouteStateUseCase(routeId: routeId, appState: appState)
-                    })
-                }
-                return .merge(effects)
+                return .none
             case .mapLongPressed(let coordinate):
                 switch state.operation {
                 case .add:
@@ -150,7 +139,11 @@ struct RouteEditFeature{
                     return .none
                 }
             case .pointTapped(let entry):
-                state.point = PointEditFeature.State(entry.point, districtId: state.district.id)
+                state.point = PointEditFeature.State(
+                    entry.point,
+                    districtId: state.district.id,
+                    appState: state.$appState
+                )
                 state.operation = .add
                 return .none
             case .districtAreaOverlayTapped:
@@ -171,10 +164,6 @@ struct RouteEditFeature{
                 state.operation = .add
                 return .none
             case .saveTapped:
-                guard state.didLoadRoutePack else {
-                    state.alert = .notice(.error("ルート情報を取得できませんでした。画面を開き直してください。"))
-                    return .none
-                }
                 let points = state.points.normalized().reindexed()
                 do {
                     try points.validate()
@@ -296,8 +285,6 @@ struct RouteEditFeature{
                 state.isLoading = false
                 state.route = pack.route.copyWith(districtId: state.district.id, periodId: state.period.id)
                 state.mode = .create
-                state.requiresRoutePackFetch = false
-                state.didLoadRoutePack = true
                 state.points = pack.points.sorted().copyWith(routeId: state.route.id).normalized().reindexed()
                 state.passages = pack.passages
                     .sorted { $0.order < $1.order }
@@ -305,17 +292,6 @@ struct RouteEditFeature{
                     .reindexed()
                 let origin = state.district.base ?? state.festival.base
                 state.region = makeRegion(points: state.points, origin: origin, spanDelta: spanDelta)
-                return .none
-            case .routePackReceived(.success(let pack)):
-                state.isLoading = false
-                guard pack.route.id == state.route.id else {
-                    state.alert = .notice(.error("取得したルートが一致しません。"))
-                    return .none
-                }
-                state.route = pack.route
-                state.points = pack.points.sorted()
-                state.passages = pack.passages
-                state.didLoadRoutePack = true
                 return .none
             case .previewPrepared(.success(let item)):
                 state.destination = .preview(item)
@@ -377,7 +353,6 @@ struct RouteEditFeature{
                 .deleteReceived(.failure(let error)),
                 .historyPrepared(.failure(let error)),
                 .copyPrepared(.failure(let error)),
-                .routePackReceived(.failure(let error)),
                 .previewPrepared(.failure(let error)):
                 state.isLoading = false
                 state.alert = .notice(.error(error))
@@ -434,7 +409,19 @@ extension RouteEditFeature.State {
     }
     
     var pointEntries: [PointEntry] {
-        points.map{ PointEntry($0) }
+        let checkpoints = appState?.festivalState.checkpoints ?? []
+        let districtState = appState?.districtState.flatMap { $0.districtId == district.id ? $0 : nil }
+        return points.map { point in
+            PointEntry(
+                point,
+                checkpoint: checkpoints.first { $0.id == point.checkpointId },
+                performance: districtState?.performances.first { $0.id == point.performanceId }
+            )
+        }
+    }
+
+    var districts: [District] {
+        appState?.festivalState.districts ?? []
     }
     
     var start: Point? {
@@ -451,6 +438,9 @@ extension RouteEditFeature.State {
         appState: Shared<AppState?> = Shared(value: nil)
     ) throws {
         let routeState = appState.wrappedValue?.routeState.flatMap { $0.route.id == route.id ? $0 : nil }
+        guard mode == .create || routeState != nil else {
+            throw PresentationError.notFound
+        }
         let points = routeState?.points ?? []
         let passages = routeState?.passages ?? []
         try self.init(
@@ -458,8 +448,6 @@ extension RouteEditFeature.State {
             draft: RouteDraft(route: route, points: points, passages: passages),
             appState: appState
         )
-        self.requiresRoutePackFetch = mode == .update || mode == .preview
-        self.didLoadRoutePack = !self.requiresRoutePackFetch
     }
 
     init(

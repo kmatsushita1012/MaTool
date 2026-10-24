@@ -22,14 +22,30 @@ struct PointEditFeature {
     @ObservableState
     struct State: Equatable{
         var point: Point
-        
-        // FIXME: 永続化レイヤー再構築後に交差点一覧を取得する。
-        var checkpoints: [Checkpoint] = []
-        // FIXME: 永続化レイヤー再構築後に余興一覧を取得する。
-        var performances: [Performance] = []
-        
+        let districtId: District.ID
+        @Shared fileprivate var appState: AppState?
+
+        var checkpoints: [Checkpoint] {
+            appState?.festivalState.checkpoints ?? []
+        }
+
+        var performances: [Performance] {
+            guard let districtState = appState?.districtState,
+                  districtState.districtId == districtId else { return [] }
+            return districtState.performances
+        }
+
         var pointType: PointType
-        let validTypes: [PointType]
+        var validTypes: [PointType] {
+            var types: [PointType] = [.start, .end, .rest, .none]
+            if !checkpoints.isEmpty || point.checkpointId != nil {
+                types.insert(.checkpoint, at: 0)
+            }
+            if !performances.isEmpty || point.performanceId != nil {
+                types.insert(.performance, at: min(1, types.count))
+            }
+            return types
+        }
         @Presents var alert: AlertFeature.State?
         
     }
@@ -76,16 +92,11 @@ struct PointEditFeature {
 }
 
 extension PointEditFeature.State {
-    init?(_ point: Point, districtId: District.ID){
-        // FIXME: 永続化レイヤー再構築後に町を取得し、存在しない場合は初期化に失敗させる。
+    init(_ point: Point, districtId: District.ID, appState: Shared<AppState?>) {
         self.point = point
-        // FIXME: 永続化レイヤー再構築後に交差点一覧を取得する。
-        self.checkpoints = []
-        // FIXME: 永続化レイヤー再構築後に余興一覧を取得する。
-        self.performances = []
+        self.districtId = districtId
+        self._appState = appState
         self.pointType = .init(point: point)
-        // FIXME: 永続化レイヤー再構築後に交差点・余興の有無に応じて選択可能な地点種別を構成する。
-        self.validTypes = [.start, .end, .rest, .none]
     }
     
     var selectedCheckpoint: Checkpoint? {

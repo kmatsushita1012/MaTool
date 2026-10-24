@@ -59,20 +59,34 @@ struct RouteEditFeatureTests {
                 RoutePassage(id: "source-passage", routeId: sourceRoute.id, districtId: district.id, order: 0)
             ]
         )
-        let appState = Shared<AppState?>(value: AppState(
-            festivalState: FestivalState(
-                LaunchFestivalPack(
-                    festival: festival,
-                    districts: [district],
-                    periods: [currentPeriod],
-                    locations: [],
-                    checkpoints: [],
-                    hazardSections: []
-                ),
-                year: 2026
-            )
-        ))
         let editedRoute = Route(id: "edited-route", districtId: district.id, periodId: currentPeriod.id)
+        let festivalState = FestivalState(
+            LaunchFestivalPack(
+                festival: festival,
+                districts: [district],
+                periods: [currentPeriod],
+                locations: [],
+                checkpoints: [],
+                hazardSections: []
+            ),
+            year: 2026
+        )
+        let districtState = DistrictState(
+            districtId: district.id,
+            pack: LaunchDistrictPack(
+                performances: [],
+                routes: [editedRoute],
+                points: [],
+                passages: [],
+                currentRouteId: editedRoute.id
+            ),
+            currentPeriodIds: [currentPeriod.id]
+        )
+        let appState = Shared<AppState?>(value: AppState(
+            festivalState: festivalState,
+            districtState: districtState,
+            routeState: RouteState(route: editedRoute, points: [], passages: [])
+        ))
         let initialState = try RouteEditFeature.State(mode: .update, route: editedRoute, appState: appState)
         let store = TestStore(initialState: initialState) {
             RouteEditFeature()

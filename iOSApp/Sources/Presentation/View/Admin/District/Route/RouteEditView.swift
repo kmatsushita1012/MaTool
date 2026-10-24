@@ -79,7 +79,7 @@ struct RouteEditView: View {
             }
         case .passage:
             NavigationStack {
-                PassageOptionsView(festivalId: store.district.festivalId, myDistrictId: store.district.id) {
+                PassageOptionsView(districts: store.districts, myDistrictId: store.district.id) {
                     store.send(.passageSelected(districtId: $0, memo: $1))
                 }
             }
@@ -243,6 +243,7 @@ extension RouteEditView {
                     if let index = store.passages.firstIndex(of: passage){
                         PassageItemView(
                             passage: passage,
+                            district: store.districts.first { $0.id == passage.districtId },
                             canMoveUp: index > 0,
                             canMoveDown: index < store.passages.count - 1,
                             onInsertAbove: {

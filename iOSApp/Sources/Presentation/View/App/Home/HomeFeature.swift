@@ -186,7 +186,7 @@ struct HomeFeature {
         case .district(let id):
             return adminDistrictPrepared(state: &state, action: action, districtId: id)
         case .guest:
-                    state.destination = .login(LoginFeature.State(id: "", appState: state.$appState))// FIXME
+            state.destination = .login(LoginFeature.State(id: "", appState: state.$appState))
             return .none
         }
     }

@@ -11,15 +11,13 @@ import Shared
 @available(iOS 17.0, *)
 struct PassageOptionsView: View {
     
-    // FIXME: 永続化レイヤー再構築後に町一覧を取得する。
-    var districts: [District] = []
+    let districts: [District]
     let myDistrictId: District.ID
     let selected: (_ districtId: District.ID?, _ memo: String?) -> Void
     @State private var memo: String = ""
     
-    init(festivalId: Festival.ID, myDistrictId: District.ID, selected: @escaping (_ districtId: District.ID?, _ memo: String?) -> Void) {
-        // FIXME: 永続化レイヤー再構築後に町一覧を取得する。
-        self.districts = []
+    init(districts: [District], myDistrictId: District.ID, selected: @escaping (_ districtId: District.ID?, _ memo: String?) -> Void) {
+        self.districts = districts
         self.myDistrictId = myDistrictId
         self.selected = selected
     }

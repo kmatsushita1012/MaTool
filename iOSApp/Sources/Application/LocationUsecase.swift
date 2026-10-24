@@ -29,6 +29,12 @@ enum LocationTrackingStartResult: Sendable, Equatable {
     case locationServicesDisabled
 }
 
+struct LocationTrackingPreparation: Sendable, Equatable {
+    let isTracking: Bool
+    let interval: Interval?
+    let permissionState: LocationPermissionState
+}
+
 // MARK: - Dependencies
 enum LocationUsecaseKey: DependencyKey {
     static let liveValue: any LocationUsecaseProtocol = LocationUsecase()
@@ -43,9 +49,8 @@ extension DependencyValues {
 
 // MARK: - LocationUsecaseProtocol
 protocol LocationUsecaseProtocol: Sendable {
+    func prepareTracking() async -> LocationTrackingPreparation
     func getLocationHistory() async -> [Status]
-    func getInterval() async -> Interval?
-    func getIsTracking() async -> Bool
     func historyStream() async -> AsyncStream<[Status]>
     func requestPermission() async -> Void
     func locationPermissionState() async -> LocationPermissionState
@@ -73,19 +78,19 @@ actor LocationUsecase: LocationUsecaseProtocol {
 
     private var continuation: AsyncStream<[Status]>.Continuation?
     private var locationUpdateContinuation: AsyncStream<FloatLocation>.Continuation?
+
+    func prepareTracking() async -> LocationTrackingPreparation {
+        LocationTrackingPreparation(
+            isTracking: isTracking,
+            interval: interval,
+            permissionState: await locationPermissionState()
+        )
+    }
     
     func getLocationHistory() async -> [Status] {
         locationHistory
     }
     
-    func getInterval() async -> Interval? {
-        interval
-    }
-    
-    func getIsTracking() async -> Bool {
-        isTracking
-    }
-
     func historyStream() async -> AsyncStream<[Status]> {
         AsyncStream { continuation in
             // 最新 continuation に置き換える

@@ -20,8 +20,8 @@ struct DistrictBaseEditFeature {
             self.coordinate = base
             self.region = makeRegion(origin: base, spanDelta: spanDelta)
         }
-        init(origin: Coordinate){
-            self.region = makeRegion(origin: origin, spanDelta: spanDelta)
+        init(origin: Coordinate?){
+            self.region = origin.map { makeRegion(origin: $0, spanDelta: spanDelta) }
         }
     }
     @CasePathable

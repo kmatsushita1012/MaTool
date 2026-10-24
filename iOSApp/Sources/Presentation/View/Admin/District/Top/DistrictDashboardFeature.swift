@@ -27,30 +27,15 @@ struct DistrictDashboardFeature {
     
     @ObservableState
     struct State:Equatable {
-        let districtId: District.ID
+        var district: District
         @Shared fileprivate var appState: AppState?
 
-        var district: District {
-            appState!.festivalState.districts.first { $0.id == districtId }!
-        }
-
-        var periods: [Period] {
-            appState?.festivalState.periods ?? []
-        }
-
         var routes: [RouteSlot] {
-            let districtState = appState?.districtState
-            return periods.map { period in
-                RouteSlot(
-                    period: period,
-                    route: districtState?.districtId == districtId
-                        ? districtState?.routes.first { $0.periodId == period.id }
-                        : nil
-                )
-            }
+            appState?.routeSlots(for: district.id) ?? []
         }
         
         var isAWSLoading: Bool = false
+        var isRouteLoading: Bool = false
         var activeExportKind: ExportKind? = nil
         var url: URL? = nil
         
@@ -59,7 +44,7 @@ struct DistrictDashboardFeature {
         @Presents var alert: AlertFeature.State?
 
         init(_ district: District, appState: Shared<AppState?>) {
-            self.districtId = district.id
+            self.district = district
             self._appState = appState
         }
     }
@@ -69,6 +54,7 @@ struct DistrictDashboardFeature {
         case binding(BindingAction<State>)
         case onEdit
         case onRouteEdit(RouteSlot)
+        case routeEditReceived(AppResult<RoutePack>)
         case changePasswordTapped
         case updateEmailTapped
         case routeCreatePrepared
@@ -91,6 +77,7 @@ struct DistrictDashboardFeature {
     @Dependency(\.locationUsecase) var locationUsecase
     @Dependency(SignOutUseCaseKey.self) var signOutUseCase
     @Dependency(FetchRoutePackUseCaseKey.self) var fetchRoutePackUseCase
+    @Dependency(LoadRouteStateUseCaseKey.self) var loadRouteStateUseCase
     @Dependency(\.dismiss) var dismiss
     
     var body: some ReducerOf<DistrictDashboardFeature> {
@@ -103,21 +90,36 @@ struct DistrictDashboardFeature {
                 state.destination = .edit(.init(state.district, appState: state.$appState))
                 return .none
             case .onRouteEdit(let item):
-                do {
-                    if let route = item.route {
-                        state.destination = .route(try .init(mode: .update, route: route, appState: state.$appState))
-                    } else {
-                        let route = Route(
-                            id: UUID().uuidString,
-                            districtId: state.district.id,
-                            periodId: item.period.id,
-                            visibility: state.district.visibility
-                        )
-                        state.destination = .route(try .init(mode: .create, route: route, appState: state.$appState))
+                if let route = item.route {
+                    state.isRouteLoading = true
+                    return .task(Action.routeEditReceived) { [routeId = route.id, appState = state.$appState] in
+                        try await loadRouteStateUseCase(routeId: routeId, appState: appState)
                     }
+                }
+                let route = Route(
+                    id: UUID().uuidString,
+                    districtId: state.district.id,
+                    periodId: item.period.id,
+                    visibility: state.district.visibility
+                )
+                do {
+                    state.destination = .route(try .init(mode: .create, route: route, appState: state.$appState))
                 } catch {
                     state.alert = .error(error.localizedDescription)
                 }
+                return .none
+            case .routeEditReceived(.success(let pack)):
+                state.isRouteLoading = false
+                let draft = RouteDraft(route: pack.route, points: pack.points, passages: pack.passages)
+                do {
+                    state.destination = .route(try .init(mode: .update, draft: draft, appState: state.$appState))
+                } catch {
+                    state.alert = .error(error.localizedDescription)
+                }
+                return .none
+            case .routeEditReceived(.failure(let error)):
+                state.isRouteLoading = false
+                state.alert = .error(error.message)
                 return .none
             case .changePasswordTapped:
                 state.destination = .changePassword(ChangePasswordFeature.State())
@@ -142,16 +144,12 @@ struct DistrictDashboardFeature {
                 return .none
             case .onLocation:
                 return .run { send in
-                    let isTracking = await locationUsecase.getIsTracking()
-                    let interval = await locationUsecase.getInterval()
-                    let permissionState = await locationUsecase.locationPermissionState()
-                    await send(
-                        .locationPrepared(
-                            isTracking: isTracking,
-                            interval: interval,
-                            permissionState: permissionState
-                        )
-                    )
+                    let preparation = await locationUsecase.prepareTracking()
+                    await send(.locationPrepared(
+                        isTracking: preparation.isTracking,
+                        interval: preparation.interval,
+                        permissionState: preparation.permissionState
+                    ))
                 }
             case .submissionExportTapped:
                 state.activeExportKind = .submission
@@ -170,6 +168,9 @@ struct DistrictDashboardFeature {
             case .destination(.presented(let childAction)):
                 switch childAction {
                 case .edit(.postReceived(.success)):
+                    if let updated = state.appState?.festivalState.districts.first(where: { $0.id == state.district.id }) {
+                        state.district = updated
+                    }
                     state.destination = nil
                     return .none
                 case .changePassword(.received(.success)):
@@ -208,7 +209,7 @@ extension DistrictDashboardFeature.Destination.Action: Equatable {}
 
 extension DistrictDashboardFeature.State{
     var isLoading: Bool {
-        isAWSLoading || activeExportKind != nil
+        isAWSLoading || isRouteLoading || activeExportKind != nil
     }
     
     var isSubmissionExportLoading: Bool {
@@ -226,17 +227,15 @@ private extension DistrictDashboardFeature {
         .task(Action.exportReceived) {
             let renderer = await PDFRenderer(path: path)
             let routes = state.routes.compactMap(\.route)
-            var passagesByRouteID: [Route.ID: [RoutePassage]] = [:]
-            var pointsByRouteID: [Route.ID: [Point]] = [:]
+            var routePacks: [RoutePack] = []
             for route in routes {
                 guard let pack = try? await fetchRoutePackUseCase(routeId: route.id) else { continue }
-                passagesByRouteID[route.id] = pack.passages
-                pointsByRouteID[route.id] = pack.points
+                routePacks.append(pack)
             }
             let tableSnapshotter = await ActionTableSnapshotter(
                 district: state.district,
                 slots: state.routes,
-                passagesByRouteID: passagesByRouteID
+                routePacks: routePacks
             )
             let tablePages = await tableSnapshotter.takeAll()
             for page in tablePages {
@@ -246,9 +245,8 @@ private extension DistrictDashboardFeature {
                 let url = await renderer.finalize()
                 return url
             }
-            for route in routes {
-                guard let points = pointsByRouteID[route.id] else { continue }
-                guard let snapshotter = try? await RouteSnapshotter(route: route, points: points),
+            for pack in routePacks {
+                guard let snapshotter = try? await RouteSnapshotter(route: pack.route, points: pack.points),
                       let image = try? await snapshotter.take() else { continue }
                 await renderer.addPage(with: image)
             }

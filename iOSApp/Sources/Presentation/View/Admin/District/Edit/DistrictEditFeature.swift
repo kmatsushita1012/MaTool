@@ -69,20 +69,15 @@ struct DistrictEditFeature {
             case .baseTapped:
                 if let base = state.district.base{
                     state.destination = .base(DistrictBaseEditFeature.State(base: base))
-                } else if let base = state.base {
-                    state.destination = .base(DistrictBaseEditFeature.State(origin: base))
                 } else {
-                    // FIXME: 永続化レイヤー再構築後に基準座標を取得して編集画面を開く。
-                    return .none
+                    state.destination = .base(DistrictBaseEditFeature.State(origin: state.base))
                 }
                 return .none
             case .areaTapped:
-                // FIXME: 永続化レイヤー再構築後に基準座標を取得して区域編集画面を開く。
-                guard let origin = state.district.base ?? state.base else { return .none }
                 state.destination = .area(
                     DistrictAreaEditFeature.State(
                         coordinates: state.district.area,
-                        origin: origin
+                        origin: state.district.base ?? state.base
                     )
                 )
                 return .none

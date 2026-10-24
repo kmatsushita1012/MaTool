@@ -22,6 +22,7 @@ struct PassageItemView: View {
 
     init(
         passage: RoutePassage,
+        district: District?,
         canMoveUp: Bool,
         canMoveDown: Bool,
         onInsertAbove: @escaping () -> Void,
@@ -31,8 +32,7 @@ struct PassageItemView: View {
         onDelete: @escaping () -> Void
     ) {
         self.passage = passage
-        // FIXME: 永続化レイヤー再構築後にdistrictIdから町を取得する。
-        self.district = nil
+        self.district = district
         self.canMoveUp = canMoveUp
         self.canMoveDown = canMoveDown
         self.onInsertAbove = onInsertAbove

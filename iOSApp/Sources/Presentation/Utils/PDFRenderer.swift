@@ -136,7 +136,7 @@ struct ActionTableSnapshotter: Sendable {
 
     private let district: District
     private let slots: [RouteSlot]
-    private let passagesByRouteID: [Route.ID: [RoutePassage]]
+    private let routePacks: [RoutePack]
     private let linesPerPeriod = 5
     private let columnsPerLine = 5
     private let pageLift: CGFloat = -48
@@ -147,10 +147,10 @@ struct ActionTableSnapshotter: Sendable {
     private let arrowFontSize: CGFloat = 16
     private let arrowWidth: CGFloat = 20
 
-    init(district: District, slots: [RouteSlot], passagesByRouteID: [Route.ID: [RoutePassage]] = [:]) {
+    init(district: District, slots: [RouteSlot], routePacks: [RoutePack] = []) {
         self.district = district
         self.slots = slots
-        self.passagesByRouteID = passagesByRouteID
+        self.routePacks = routePacks
     }
 
     func takeAll() -> [UIImage] {
@@ -385,8 +385,7 @@ struct ActionTableSnapshotter: Sendable {
         daySlots.map { slot in
             let entries: [String] = {
                 guard let route = slot.route else { return [] }
-                // FIXME: 永続化レイヤー再構築後にルートの通過地点一覧を取得する。
-                let passages: [RoutePassage] = passagesByRouteID[route.id] ?? []
+                let passages = routePacks.first { $0.route.id == route.id }?.passages ?? []
                 return passages.prefix(linesPerPeriod * columnsPerLine).map { Self.passageTitle($0, routeDistrictId: route.districtId) }
             }()
             return Row(

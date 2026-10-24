@@ -11,8 +11,7 @@ struct PointEntry: Entity, Identifiable {
     var time: SimpleTime? { point.time }
     var title: String? { checkpoint?.name ?? performance?.name ?? anchor?.text }
 
-    // FIXME: 永続化レイヤー再構築後に関連する交差点・余興を渡す。
-    init(_ point: Point, checkpoint: Checkpoint? = nil, performance: Performance? = nil) {
+    init(_ point: Point, checkpoint: Checkpoint?, performance: Performance?) {
         self.point = point
         self.checkpoint = checkpoint
         self.performance = performance
