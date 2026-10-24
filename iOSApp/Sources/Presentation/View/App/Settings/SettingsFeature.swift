@@ -18,8 +18,10 @@ struct SettingsFeature {
         var isOfflineMode: Bool = false
         @FetchAll var festivals: [Festival]
         var selectedFestival: Festival? = nil
+        var savedFestival: Festival? = nil
         @FetchAll var districts: [District]
         var selectedDistrict: District? = nil
+        var savedDistrict: District? = nil
         var isLoading: Bool = false
         var userGuide: URL = {
             @Dependency(\.values.userGuideUrl) var userGuideURLString
@@ -36,8 +38,12 @@ struct SettingsFeature {
         }
         
         init(selection: SceneSelection) {
-            self.selectedFestival = selection.festivalId.flatMap { FetchOne(Festival.find($0)).wrappedValue }
-            self.selectedDistrict = selection.districtId.flatMap { FetchOne(District.find($0)).wrappedValue }
+            let festival = selection.festivalId.flatMap { FetchOne(Festival.find($0)).wrappedValue }
+            let district = selection.districtId.flatMap { FetchOne(District.find($0)).wrappedValue }
+            self.selectedFestival = festival
+            self.savedFestival = festival
+            self.selectedDistrict = district
+            self.savedDistrict = district
             self._festivals = FetchAll()
             self._districts = FetchAll(District.where{ $0.festivalId.eq(selectedFestival?.id) }.order(by: \.order))
         }
@@ -89,15 +95,23 @@ struct SettingsFeature {
             case .festivalSelectReceived(.success(let result)):
                 if case .changed = result {
                     state.selectedDistrict = nil
+                    state.savedDistrict = nil
                     state.$districts = FetchAll(District.where{ $0.festivalId.eq(state.selectedFestival?.id)}.order(by: \.order))
                 }
+                state.savedFestival = state.selectedFestival
                 state.isLoading = false
                 return .none
             case .districtSelectReceived(.success(_)):
+                state.savedDistrict = state.selectedDistrict
                 state.isLoading = false
                 return .none
-            case .festivalSelectReceived(.failure(let error)),
-                .districtSelectReceived(.failure(let error)):
+            case .festivalSelectReceived(.failure(let error)):
+                state.selectedFestival = state.savedFestival
+                state.isLoading = false
+                state.alert = AlertFeature.error("情報の取得に失敗しました \(error.message)")
+                return .none
+            case .districtSelectReceived(.failure(let error)):
+                state.selectedDistrict = state.savedDistrict
                 state.isLoading = false
                 state.alert = AlertFeature.error("情報の取得に失敗しました \(error.message)")
                 return .none
