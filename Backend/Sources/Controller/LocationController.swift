@@ -26,20 +26,23 @@ protocol LocationControllerProtocol: Sendable {
 struct LocationController: LocationControllerProtocol {
 
 	@Dependency(LocationUsecaseKey.self) var usecase
+	private let now: @Sendable () -> Date
 
-	init() {}
+	init(now: @escaping @Sendable () -> Date = { Date() }) {
+		self.now = now
+	}
 
 	func get(_ request: Request, next: Handler) async throws -> Response {
 		let districtId = try request.parameter("districtId", as: String.self)
 		let user = request.user ?? .guest
-        let result = try await usecase.get(districtId: districtId, user: user, now: Date())
+		let result = try await usecase.get(districtId: districtId, user: user, now: now())
 		return try .success(result)
 	}
 
 	func query(_ request: Request, next: Handler) async throws -> Response {
 		let festivalId = try request.parameter("festivalId", as: String.self)
 		let user = request.user ?? .guest
-		let result = try await usecase.query(by: festivalId, user: user, now: Date())
+		let result = try await usecase.query(by: festivalId, user: user, now: now())
 		return try .success(result)
 	}
 
@@ -57,4 +60,3 @@ struct LocationController: LocationControllerProtocol {
         return try .success()
 	}
 }
-

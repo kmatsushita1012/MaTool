@@ -86,10 +86,11 @@ struct LocationUsecase: LocationUsecaseProtocol {
 extension LocationUsecase {
     private func fetchPeriodsForLocationVisibility(festivalId: Festival.ID, now: Date) async throws -> [Period] {
         let nowYear = SimpleDate.from(now).year
+        async let previousYear = periodRepository.query(by: festivalId, year: nowYear - 1)
         async let currentYear = periodRepository.query(by: festivalId, year: nowYear)
         async let nextYear = periodRepository.query(by: festivalId, year: nowYear + 1)
-        let (current, next) = try await (currentYear, nextYear)
-        return current + next
+        let (previous, current, next) = try await (previousYear, currentYear, nextYear)
+        return previous + current + next
     }
 
 }
