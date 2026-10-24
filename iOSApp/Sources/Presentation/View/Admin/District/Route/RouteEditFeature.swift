@@ -409,19 +409,15 @@ extension RouteEditFeature.State {
     }
     
     var pointEntries: [PointEntry] {
-        let checkpoints = appState?.festivalState.checkpoints ?? []
-        let districtState = appState?.districtState.flatMap { $0.districtId == district.id ? $0 : nil }
-        return points.map { point in
-            PointEntry(
-                point,
-                checkpoint: checkpoints.first { $0.id == point.checkpointId },
-                performance: districtState?.performances.first { $0.id == point.performanceId }
-            )
-        }
+        appState?.pointEntries(for: points, districtId: district.id) ?? []
     }
 
     var districts: [District] {
         appState?.festivalState.districts ?? []
+    }
+
+    var districtsById: [District.ID: District] {
+        appState?.districtsById ?? [:]
     }
     
     var start: Point? {
@@ -437,7 +433,7 @@ extension RouteEditFeature.State {
         route: Route,
         appState: Shared<AppState?> = Shared(value: nil)
     ) throws {
-        let routeState = appState.wrappedValue?.routeState.flatMap { $0.route.id == route.id ? $0 : nil }
+        let routeState = appState.wrappedValue?.routeState(for: route.id)
         guard mode == .create || routeState != nil else {
             throw PresentationError.notFound
         }
@@ -457,7 +453,7 @@ extension RouteEditFeature.State {
     ) throws {
         guard let current = appState.wrappedValue,
               let district = current.district(id: draft.route.districtId),
-              let period = current.festivalState.periods.first(where: { $0.id == draft.route.periodId }) else {
+              let period = current.period(id: draft.route.periodId) else {
             throw PresentationError.notFound
         }
         self._appState = appState

@@ -6,6 +6,7 @@
 //
 
 import ComposableArchitecture
+import Fallback
 import Foundation
 import Shared
 
@@ -27,12 +28,16 @@ struct DistrictDashboardFeature {
     
     @ObservableState
     struct State:Equatable {
-        var district: District
+        let districtId: District.ID
         @Shared fileprivate var appState: AppState?
 
-        var routes: [RouteSlot] {
-            appState?.routeSlots(for: district.id) ?? []
+        var appStateDistrict: District? {
+            appState?.district(id: districtId)
         }
+        @Fallback(\DistrictDashboardFeature.State.appStateDistrict)
+        @ObservationStateIgnored
+        var district: District
+        var routes: [RouteSlot]
         
         var isAWSLoading: Bool = false
         var isRouteLoading: Bool = false
@@ -44,8 +49,10 @@ struct DistrictDashboardFeature {
         @Presents var alert: AlertFeature.State?
 
         init(_ district: District, appState: Shared<AppState?>) {
-            self.district = district
+            self.districtId = district.id
             self._appState = appState
+            self._district = district
+            self.routes = appState.wrappedValue?.routeSlots(for: district.id) ?? []
         }
     }
     
@@ -185,6 +192,9 @@ struct DistrictDashboardFeature {
                 default:
                     return .none
                 }
+            case .destination(.dismiss):
+                state.routes = state.appState?.routeSlots(for: state.districtId) ?? []
+                return .none
             case .signOutTapped:
                 state.isAWSLoading = true
                 return .task(Action.signOutReceived) {

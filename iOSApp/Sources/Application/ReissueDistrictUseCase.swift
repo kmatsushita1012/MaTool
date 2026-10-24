@@ -25,7 +25,7 @@ struct ReissueDistrictUseCase: ReissueDistrictUseCaseProtocol {
                   var updated = current,
                   updated.sessionId == sessionId,
                   updated.festivalState.festival.id == response.district.festivalId else { return }
-            replaceDistrict(response.district, in: &updated.festivalState.districts)
+            updated.festivalState.replaceDistrict(response.district)
             current = updated
         }
         return response

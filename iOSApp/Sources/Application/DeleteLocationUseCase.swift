@@ -16,7 +16,7 @@ struct DeleteLocationUseCase: DeleteLocationUseCaseProtocol {
             guard let sessionId,
                   var updated = current,
                   updated.sessionId == sessionId else { return }
-            updated.festivalState.floatLocations.removeAll { $0.districtId == districtId }
+            updated.festivalState.removeFloatLocation(for: districtId)
             current = updated
         }
     }

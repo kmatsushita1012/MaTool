@@ -8,15 +8,11 @@ func applyPeriodResponse(_ response: Period, sessionId: UUID?, to appState: Shar
               var updated = current,
               updated.sessionId == sessionId,
               updated.festivalState.festival.id == response.festivalId else { return }
-        updated.festivalState.periods.removeAll { $0.id == response.id }
-        if response.date.year == updated.festivalState.year {
-            updated.festivalState.periods.append(response)
-            updated.festivalState.periods.sort()
-        }
+        updated.festivalState.upsertPeriod(response)
         let periodIds = Set(updated.festivalState.periods.map(\.id))
-        updated.districtState?.routes.removeAll { !periodIds.contains($0.periodId) }
+        updated.districtState?.removeRoutes(outside: periodIds)
         if let routeState = updated.routeState,
-           !periodIds.contains(routeState.route.periodId) {
+           updated.period(id: routeState.route.periodId) == nil {
             updated.routeState = nil
         }
         current = updated
@@ -28,11 +24,11 @@ func removePeriod(_ id: Period.ID, sessionId: UUID?, from appState: Shared<AppSt
         guard let sessionId,
               var updated = current,
               updated.sessionId == sessionId else { return }
-        updated.festivalState.periods.removeAll { $0.id == id }
+        updated.festivalState.removePeriod(id: id)
         let periodIds = Set(updated.festivalState.periods.map(\.id))
-        updated.districtState?.routes.removeAll { !periodIds.contains($0.periodId) }
+        updated.districtState?.removeRoutes(outside: periodIds)
         if let routeState = updated.routeState,
-           !periodIds.contains(routeState.route.periodId) {
+           updated.period(id: routeState.route.periodId) == nil {
             updated.routeState = nil
         }
         current = updated

@@ -25,7 +25,7 @@ struct SaveDistrictPackUseCase: SaveDistrictPackUseCaseProtocol {
                   var updated = current,
                   updated.sessionId == sessionId,
                   updated.festivalState.festival.id == response.district.festivalId else { return }
-            replaceDistrict(response.district, in: &updated.festivalState.districts)
+            updated.festivalState.replaceDistrict(response.district)
             if updated.districtState?.districtId == response.district.id {
                 updated.districtState?.performances = response.performances
             }

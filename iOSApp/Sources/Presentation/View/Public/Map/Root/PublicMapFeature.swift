@@ -33,11 +33,11 @@ struct PublicMapFeature {
         @Shared fileprivate var appState: AppState?
 
         var contents: [Content] {
-            [.locations] + (appState?.festivalState.districts.map { .route($0.id) } ?? [])
+            [.locations] + (appState?.routeDistrictIds.map(Content.route) ?? [])
         }
         var selectedContent: Content
         var currentPeriodId: Period.ID? {
-            appState?.festivalState.periods.first(where: { $0.contains(Date.now) })?.id
+            appState?.currentPeriod(at: .now)?.id
         }
         var contentTitles: [Content: String] {
             Dictionary(uniqueKeysWithValues: contents.map { content in

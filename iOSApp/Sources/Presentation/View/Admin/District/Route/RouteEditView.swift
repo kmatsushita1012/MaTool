@@ -243,7 +243,7 @@ extension RouteEditView {
                     if let index = store.passages.firstIndex(of: passage){
                         PassageItemView(
                             passage: passage,
-                            district: store.districts.first { $0.id == passage.districtId },
+                            district: passage.districtId.flatMap { store.districtsById[$0] },
                             canMoveUp: index > 0,
                             canMoveDown: index < store.passages.count - 1,
                             onInsertAbove: {

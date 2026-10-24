@@ -16,9 +16,8 @@ struct SaveLocationUseCase: SaveLocationUseCaseProtocol {
             guard let sessionId,
                   var updated = current,
                   updated.sessionId == sessionId,
-                  updated.festivalState.districts.contains(where: { $0.id == response.districtId }) else { return }
-            updated.festivalState.floatLocations.removeAll { $0.districtId == response.districtId }
-            updated.festivalState.floatLocations.append(response)
+                  updated.festivalState.containsDistrict(id: response.districtId) else { return }
+            updated.festivalState.upsertFloatLocation(response)
             current = updated
         }
         return response

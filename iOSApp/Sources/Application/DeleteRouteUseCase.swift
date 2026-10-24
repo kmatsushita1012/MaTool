@@ -19,8 +19,8 @@ struct DeleteRouteUseCase: DeleteRouteUseCaseProtocol {
                   updated.sessionId == sessionId,
                   updated.districtState?.requestId == context.1 else { return }
             updated.routeLoadRequestId = UUID()
-            updated.districtState?.routes.removeAll { $0.id == routeId }
-            if updated.routeState?.route.id == routeId {
+            updated.districtState?.removeRoute(id: routeId)
+            if updated.routeState(for: routeId) != nil {
                 updated.routeState = nil
             }
             current = updated

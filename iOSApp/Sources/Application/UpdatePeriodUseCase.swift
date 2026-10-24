@@ -49,7 +49,7 @@ struct UpdatePeriodUseCase: UpdatePeriodUseCaseProtocol {
             updated.districtState?.routes = currentRoutes
             updated.routeLoadRequestId = UUID()
             if let routeState = updated.routeState,
-               !currentRoutes.contains(where: { $0.id == routeState.route.id }) {
+               updated.districtState?.route(id: routeState.route.id) == nil {
                 updated.routeState = nil
             }
             current = updated

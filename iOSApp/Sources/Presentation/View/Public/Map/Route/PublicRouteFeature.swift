@@ -49,42 +49,21 @@ struct PublicRouteFeature {
         @ObservationStateIgnored
         var district: District
         var routes: [RouteEntry] {
-            guard let appState,
-                  let districtState = appState.districtState,
-                  districtState.districtId == districtId else { return [] }
-            let periodsById = Dictionary(uniqueKeysWithValues: appState.festivalState.periods.map { ($0.id, $0) })
-            return districtState.routes.compactMap { route in
-                guard let period = periodsById[route.periodId] else { return nil }
-                return RouteEntry(period: period, route: route)
-            }.sorted()
+            appState?.routeEntries(for: districtId) ?? []
         }
         var periods: [Period] {
             appState?.festivalState.periods ?? []
         }
         var selectedRouteId: Route.ID?
         var selected: RouteEntry? {
-            routes.first { $0.id == selectedRouteId }
+            appState?.routeEntry(id: selectedRouteId, districtId: districtId)
         }
         var points: [PointEntry] {
-            guard let appState,
-                  let districtState = appState.districtState,
-                  districtState.districtId == districtId,
-                  let selectedRouteId,
-                  let routeState = appState.routeState,
-                  routeState.route.id == selectedRouteId else { return [] }
-            return routeState.points.sorted().map { point in
-                PointEntry(
-                    point,
-                    checkpoint: appState.festivalState.checkpoints.first { $0.id == point.checkpointId },
-                    performance: districtState.performances.first { $0.id == point.performanceId }
-                )
-            }
+            guard let selectedRouteId else { return [] }
+            return appState?.pointEntries(for: selectedRouteId, districtId: districtId) ?? []
         }
         var float: FloatEntry? {
-            guard let appState,
-                  let location = appState.floatLocation(for: districtId),
-                  let district = appState.district(id: districtId) else { return nil }
-            return FloatEntry(floatLocation: location, district: district)
+            appState?.floatEntry(for: districtId)
         }
         @Shared var mapRegion: MKCoordinateRegion
         @Shared var toast: MapToast?
@@ -247,8 +226,8 @@ extension PublicRouteFeature.State {
         self.replay = .initial(routeId)
         let current = appState.wrappedValue
         let district = current?.district(id: districtId)
-        let points = current?.routeState.flatMap { $0.route.id == routeId ? $0.points : nil } ?? []
-        let location = current?.festivalState.floatLocations.first { $0.districtId == districtId }
+        let points = current?.routeState(for: routeId)?.points ?? []
+        let location = current?.floatLocation(for: districtId)
         if let mapRegion = makeRegion(points: points, location: location, origin: district?.base, spanDelta: spanDelta) {
             self.$mapRegion.withLock{ $0 = mapRegion }
         }
@@ -276,7 +255,7 @@ extension PublicRouteFeature.State {
     }
 
     fileprivate func currentLocationToast(now: Date) -> MapToast? {
-        guard float == nil, periods.contains(where: { $0.contains(now) }) else {
+        guard float == nil, appState?.currentPeriod(at: now) != nil else {
             return nil
         }
         return locationUnavailableToast

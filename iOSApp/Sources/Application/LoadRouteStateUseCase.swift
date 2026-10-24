@@ -15,7 +15,7 @@ struct LoadRouteStateUseCase: LoadRouteStateUseCaseProtocol {
         let context = appState.withLock { current -> (sessionId: UUID, districtRequestId: UUID, districtId: District.ID)? in
             guard var updated = current,
                   let districtState = updated.districtState,
-                  districtState.routes.contains(where: { $0.id == routeId }) else { return nil }
+                  districtState.route(id: routeId) != nil else { return nil }
             updated.routeLoadRequestId = requestId
             current = updated
             return (updated.sessionId, districtState.requestId, districtState.districtId)
@@ -31,11 +31,10 @@ struct LoadRouteStateUseCase: LoadRouteStateUseCaseProtocol {
                   updated.districtState?.districtId == context.districtId,
                   response.route.id == routeId,
                   updated.districtState?.districtId == response.route.districtId,
-                  updated.festivalState.periods.contains(where: { $0.id == response.route.periodId }),
-                  let routeIndex = updated.districtState?.routes.firstIndex(where: { $0.id == response.route.id }) else {
+                  updated.period(id: response.route.periodId) != nil else {
                 return false
             }
-            updated.districtState?.routes[routeIndex] = response.route
+            updated.districtState?.upsertRoute(response.route)
             updated.routeState = RouteState(response)
             current = updated
             return true

@@ -28,20 +28,15 @@ func applyRoutePackResponse(
               updated.districtState?.requestId == context.districtRequestId,
               updated.districtState?.districtId == response.route.districtId else { return }
         updated.routeLoadRequestId = UUID()
-        let currentPeriodIds = Set(updated.festivalState.periods.map(\.id))
-        guard currentPeriodIds.contains(response.route.periodId) else {
-            updated.districtState?.routes.removeAll { $0.id == response.route.id }
+        guard updated.period(id: response.route.periodId) != nil else {
+            updated.districtState?.removeRoute(id: response.route.id)
             if updated.routeState?.route.id == response.route.id {
                 updated.routeState = nil
             }
             current = updated
             return
         }
-        if let routeIndex = updated.districtState?.routes.firstIndex(where: { $0.id == response.route.id }) {
-            updated.districtState?.routes[routeIndex] = response.route
-        } else {
-            updated.districtState?.routes.append(response.route)
-        }
+        updated.districtState?.upsertRoute(response.route)
         updated.routeState = RouteState(response)
         current = updated
     }

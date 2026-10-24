@@ -103,14 +103,14 @@ extension PointEditFeature.State {
         guard case .checkpoint = pointType, let checkpointId = point.checkpointId else {
             return nil
         }
-        return checkpoints.first(where: { $0.id == checkpointId })
+        return appState?.checkpoint(id: checkpointId)
     }
     
     var selectedPerformance: Performance? {
         guard case .performance = pointType, let performanceId = point.performanceId else {
             return nil
         }
-        return performances.first(where: { $0.id == performanceId })
+        return appState?.performance(id: performanceId, districtId: districtId)
     }
     
     func validate() throws {

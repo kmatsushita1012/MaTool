@@ -27,7 +27,7 @@ struct CreateDistrictUseCase: CreateDistrictUseCaseProtocol {
                   var updated = current,
                   updated.sessionId == sessionId,
                   updated.festivalState.festival.id == response.district.festivalId else { return }
-            upsertDistrict(response.district, in: &updated.festivalState.districts)
+            updated.festivalState.upsertDistrict(response.district)
             current = updated
         }
         return response

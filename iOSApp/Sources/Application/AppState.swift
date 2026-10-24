@@ -107,7 +107,7 @@ struct AppState: Equatable, Sendable {
         }
         let routeState: RouteState? = districtPack.flatMap { pack in
             guard let routeId = pack.currentRouteId,
-                  let route = districtState?.routes.first(where: { $0.id == routeId }) else { return nil }
+                  let route = districtState?.route(id: routeId) else { return nil }
             return RouteState(route: route, points: pack.points, passages: pack.passages)
         }
 

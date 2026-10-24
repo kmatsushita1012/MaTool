@@ -200,7 +200,7 @@ struct HomeFeature {
     }
     
     func adminDistrictPrepared(state: inout State, action: Action, districtId: District.ID) -> Effect<Action> {
-        guard let district = state.districts.first(where: { $0.id == districtId }) else {
+        guard let district = state.appState?.district(id: districtId) else {
             state.alert = AlertFeature.error("情報の取得に失敗しました")
             return .none
         }

@@ -27,13 +27,7 @@ struct PublicLocationsFeature {
         var festival: Festival
 
         var floats: [FloatEntry] {
-            guard let appState else { return [] }
-            return appState.festivalState.floatLocations.compactMap { location in
-                guard let district = appState.district(id: location.districtId) else {
-                    return nil
-                }
-                return FloatEntry(floatLocation: location, district: district)
-            }
+            appState?.floatEntries ?? []
         }
         
         @Shared var mapRegion: MKCoordinateRegion
