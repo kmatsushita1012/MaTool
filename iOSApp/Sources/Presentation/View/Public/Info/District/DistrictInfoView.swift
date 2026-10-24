@@ -60,23 +60,7 @@ private struct DistrictInfoContentView: View {
                             spacing: 8
                         ) {
                             ForEach(performances) { performance in
-                                VStack(alignment: .leading, spacing: 8) {
-                                    Text(performance.name)
-                                        .font(.headline)
-                                        .lineLimit(2)
-                                    Text(performance.performer)
-                                        .font(.subheadline)
-                                        .lineLimit(2)
-                                    if let description = performance.description {
-                                        Text(description)
-                                            .font(.footnote)
-                                            .lineLimit(5)
-                                    }
-                                    Spacer(minLength: 0)
-                                }
-                                .frame(maxWidth: .infinity, minHeight: 160, alignment: .topLeading)
-                                .padding(12)
-                                .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+                                PerformanceInfoCardView(performance: performance)
                             }
                         }
                     }
@@ -130,6 +114,109 @@ private struct DistrictInfoContentView: View {
                 }
             }
         }
+    }
+}
+
+private struct PerformanceInfoCardView: View {
+    let performance: Performance
+
+    @State private var isExpanded = false
+    @State private var naturalContentHeight: CGFloat?
+
+    private let collapsedContentHeight: CGFloat = 160
+
+    var body: some View {
+        Group {
+            if let description = performance.description {
+                if isExpanded || !shouldShowMoreButton {
+                    cardContent(description: description, descriptionLineLimit: nil, showsMoreButton: false)
+                } else {
+                    ViewThatFits(in: .vertical) {
+                        cardContent(description: description, descriptionLineLimit: 5, showsMoreButton: true)
+                        cardContent(description: description, descriptionLineLimit: 4, showsMoreButton: true)
+                        cardContent(description: description, descriptionLineLimit: 3, showsMoreButton: true)
+                        cardContent(description: description, descriptionLineLimit: 2, showsMoreButton: true)
+                        cardContent(description: description, descriptionLineLimit: 1, showsMoreButton: true)
+                    }
+                    .frame(height: collapsedContentHeight, alignment: .topLeading)
+                }
+            } else {
+                cardContent(
+                    description: nil,
+                    descriptionLineLimit: nil,
+                    showsMoreButton: false
+                )
+            }
+        }
+        .padding(12)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+        .background {
+            if performance.description != nil {
+                cardContent(
+                    description: performance.description,
+                    descriptionLineLimit: nil,
+                    showsMoreButton: false
+                )
+                .fixedSize(horizontal: false, vertical: true)
+                .padding(12)
+                .hidden()
+                .overlay {
+                    GeometryReader { proxy in
+                        Color.clear.preference(
+                            key: PerformanceCardContentHeightKey.self,
+                            value: max(0, proxy.size.height - 24)
+                        )
+                    }
+                }
+            }
+        }
+        .onPreferenceChange(PerformanceCardContentHeightKey.self) { height in
+            guard abs((naturalContentHeight ?? 0) - height) > 0.5 else { return }
+            naturalContentHeight = height
+        }
+    }
+
+    private var shouldShowMoreButton: Bool {
+        naturalContentHeight.map { $0 > collapsedContentHeight } ?? false
+    }
+
+    private func cardContent(
+        description: String?,
+        descriptionLineLimit: Int?,
+        showsMoreButton: Bool
+    ) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text(performance.name)
+                .font(.headline)
+                .lineLimit(2)
+            Text(performance.performer)
+                .font(.subheadline)
+                .lineLimit(2)
+
+            if let description {
+                Text(description)
+                    .font(.footnote)
+                    .lineLimit(descriptionLineLimit)
+                    .fixedSize(horizontal: false, vertical: true)
+
+                if showsMoreButton {
+                    Button("もっと読む") {
+                        isExpanded = true
+                    }
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(.tint)
+                }
+            }
+        }
+    }
+}
+
+private struct PerformanceCardContentHeightKey: PreferenceKey {
+    static let defaultValue: CGFloat = 0
+
+    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
+        value = nextValue()
     }
 }
 
