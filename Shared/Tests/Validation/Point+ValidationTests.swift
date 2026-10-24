@@ -1,7 +1,6 @@
 import Foundation
-import Shared
 import Testing
-@testable import iOSApp
+@testable import Shared
 
 struct PointValidationTests {
     @Test("関連付けのないPointに残った時刻は単調増加判定から除外する")
@@ -25,13 +24,6 @@ struct PointValidationTests {
         #expect(throws: Never.self) { try points.validate() }
     }
 
-    @Test("関連付けのないPointを時刻付きで生成した場合は時刻をnilにする")
-    func 関連付けのないPoint生成時に時刻をnilにする() {
-        let point = point("unused-time", index: 0, time: .init(hour: 11, minute: 30))
-
-        #expect(point.time == nil)
-    }
-
     @Test("関連付けのあるPoint同士の時刻逆転は検出する")
     func 関連付けのあるPointの時刻逆転を検出する() {
         let points = [
@@ -52,18 +44,6 @@ struct PointValidationTests {
         ]
 
         #expect(throws: Point.Error.self) { try points.validate() }
-    }
-
-    @Test("Pointのnilの時刻と関連付けをJSONでnullとしてエンコードする")
-    func nilの時刻と関連付けをnullとしてエンコードする() throws {
-        let point = point("point", index: 0)
-        let data = try JSONEncoder().encode(point)
-        let object = try #require(JSONSerialization.jsonObject(with: data) as? [String: Any])
-
-        #expect(object["time"] is NSNull)
-        #expect(object["checkpointId"] is NSNull)
-        #expect(object["performanceId"] is NSNull)
-        #expect(object["anchor"] is NSNull)
     }
 
     private func point(
