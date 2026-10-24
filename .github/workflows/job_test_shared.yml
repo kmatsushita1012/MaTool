@@ -9,123 +9,52 @@ jobs:
     runs-on: macos-26
 
     steps:
-    - name: Checkout
-      uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
 
-    - name: Setup Xcode 26.6
-      uses: maxim-lobanov/setup-xcode@v1
-      with:
-        xcode-version: "26.6"
+      - name: Setup Xcode 26.6
+        uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: "26.6"
 
-    - name: Ensure SPM Cache Dir Exists
-      run: mkdir -p Shared/Caches/org.swift.swiftpm
+      - name: Cache SwiftPM artifacts
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/Library/Caches/org.swift.swiftpm/
+            Shared/.build
+          key: ${{ runner.os }}-spm-Shared-xcode-26.6-${{ github.ref_name }}-${{ hashFiles('Shared/Package.swift', 'Shared/Package.resolved') }}
+          restore-keys: |
+            ${{ runner.os }}-spm-Shared-xcode-26.6-${{ github.ref_name }}-
+            ${{ runner.os }}-spm-Shared-xcode-26.6-
 
-     # --- SPM キャッシュ ---
-    - name: Cache SPM
-      uses: actions/cache@v3
-      with:
-        path: |
-          ~/Library/Caches/org.swift.swiftpm/
-        key: ${{ runner.os }}-spm-Shared-26.6
-        restore-keys: |
-          ${{ runner.os }}-spm-Shared-
+      - name: Resolve Shared package dependencies
+        run: swift package resolve
+        working-directory: Shared
 
-    # --- DerivedData キャッシュ ---
-    - name: Cache DerivedData
-      uses: actions/cache@v3
-      with:
-        path: Shared/.derivedData
-        key: ${{ runner.os }}-derived-26.6
-        restore-keys: |
-          ${{ runner.os }}-derived-
+      - name: Build & Test
+        run: |
+          set -o pipefail
+          mkdir -p build/reports
+          swift test \
+            --package-path Shared \
+            --filter '^SharedTests\.' \
+            --enable-code-coverage \
+            | tee build/reports/shared-test.log
 
-    - name: Build & Test
-      run: |
-        set -o pipefail
-        mkdir -p build/reports
-        xcodebuild \
-          -workspace MaTool.xcworkspace \
-          -scheme SharedTests \
-          -testPlan SharedTests \
-          -destination 'platform=macOS' \
-          -configuration Debug \
-          -derivedDataPath Shared/.derivedData \
-          -enableCodeCoverage YES \
-          -skipMacroValidation \
-          CODE_SIGNING_ALLOWED=NO \
-          ENABLE_SWIFT_MACROS=YES \
-          test \
-          | tee build/reports/shared-test.log
+      - name: Upload Test Results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: shared-test-results
+          path: Shared/.build/debug/codecov/
 
-    - name: Upload Test Results
-      if: always()
-      uses: actions/upload-artifact@v4
-      with:
-        name: shared-test-results
-        path: Shared/.build/debug/codecov/
-
-    - name: Print Test Summary
-      if: always()
-      run: |
-        set -e
-        echo "===== Test Results Summary ====="
-
-        xcresult_path=$(find Shared/.derivedData/Logs/Test -type d -name "*.xcresult" | sort | tail -n 1)
-        echo "Using result: $xcresult_path"
-
-        # JSONを取得
-        xcrun xcresulttool get test-results summary --path "$xcresult_path" --format json > build/reports/test_summary.json
-
-        # 失敗したテストを整形表示
-        echo "----- Failed Tests -----"
-        jq -r '
-          .testFailures[]? |
-          "✘ \(.testIdentifierString)\t\"\(.failureText)\""
-        ' build/reports/test_summary.json || echo "✅ No failed tests"
-
-        echo ""
-        echo "───────────────💻 Environment ───────────────"
-
-        title=$(jq -r '.title' build/reports/test_summary.json)
-        platform=$(jq -r '.devicesAndConfigurations[0].device.platform' build/reports/test_summary.json)
-        device=$(jq -r '.devicesAndConfigurations[0].device.deviceName' build/reports/test_summary.json)
-        osver=$(jq -r '.devicesAndConfigurations[0].device.osVersion' build/reports/test_summary.json)
-
-        # 右側のカラム幅を固定（例：30文字）
-        pad() {
-          printf "%-30s" "$1"
-        }
-
-        echo "┌──────────────────────┬────────────────────────────────┐"
-        printf "│ %-20s │ %s │\n" "Title"     "$(pad "$title")"
-        printf "│ %-20s │ %s │\n" "Platform"  "$(pad "$platform")"
-        printf "│ %-20s │ %s │\n" "Device"    "$(pad "$device")"
-        printf "│ %-20s │ %s │\n" "OS Version" "$(pad "$osver")"
-        echo "└──────────────────────┴────────────────────────────────┘"
-
-
-        echo ""
-        echo "───────────────📊 Test Counts ───────────────"
-        passed=$(jq '.devicesAndConfigurations[0].passedTests' build/reports/test_summary.json)
-        skipped=$(jq '.devicesAndConfigurations[0].skippedTests' build/reports/test_summary.json)
-        failed=$(jq '.devicesAndConfigurations[0].failedTests' build/reports/test_summary.json)
-        total=$((passed + skipped + failed))
-
-        passed=$((passed + 0))
-        skipped=$((skipped + 0))
-        failed=$((failed + 0))
-
-        echo "┌─────────────┬──────────┐"
-        printf "│ %-11s │ %8s │\n" "Passed" "$passed"
-        printf "│ %-11s │ %8s │\n" "Skipped" "$skipped"
-        printf "│ %-11s │ %8s │\n" "Failed" "$failed"
-        printf "│ %-11s │ %8s │\n" "Total" "$total"
-        echo "└─────────────┴──────────┘"
-
-        echo ""
-        if [ "$failed" -gt 0 ]; then
-          echo "❌ Some tests failed ($failed)"
-          exit 1
-        else
-          echo "✅ All tests passed"
-        fi
+      - name: Print Test Summary
+        if: always()
+        run: |
+          echo "===== Shared Swift Package Test Summary ====="
+          if [ -f build/reports/shared-test.log ]; then
+            tail -n 80 build/reports/shared-test.log
+          else
+            echo "Shared test log was not created."
+          fi
