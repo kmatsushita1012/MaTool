@@ -6,18 +6,14 @@
 //
 
 import Foundation
-import SQLiteData
 
 // MARK: - Period
-@Table public struct Period: Entity, Identifiable {
+public struct Period: Entity, Identifiable {
     public let id: String
     public let festivalId: Festival.ID
-    @Column(as: SimpleDate.ISODateRepresentation.self)
     public let date: SimpleDate
     public var title: String
-    @Column(as: SimpleTime.JSONRepresentation.self)
     public var start: SimpleTime
-    @Column(as: SimpleTime.JSONRepresentation.self)
     public var end: SimpleTime
     
     public init(

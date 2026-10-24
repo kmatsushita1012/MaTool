@@ -5,66 +5,34 @@
 //  Created by 松下和也 on 2026/01/18.
 //
 
-import SwiftUI
 import Shared
-import SQLiteData
-
-
-@available(iOS 17.0, *)
-@Observable
-final class RouteHistoryPresenter {
-    let districtId: District.ID
-    let excludingRouteId: Route.ID?
-    
-    @ObservationIgnored
-    @FetchAll var entry: [RouteEntry]
-    
-    let selected: (RouteEntry) -> Void
-    
-    private var groupedByYear: [Int: [RouteEntry]]
-    
-    var years: [Int] { groupedByYear.keys.sorted(by: >) }
-    
-    init(
-        districtId: District.ID,
-        excludingRouteId: Route.ID? = nil,
-        selected: @escaping (RouteEntry) -> Void
-    ) {
-        self.districtId = districtId
-        self.excludingRouteId = excludingRouteId
-        self.selected = selected
-        let entryQuery: FetchAll<RouteEntry> = .init(districtId: districtId)
-        self._entry = entryQuery
-        let filteredEntry = entryQuery.wrappedValue.filter { entry in
-            entry.id != excludingRouteId
-        }
-        self.groupedByYear =  Dictionary(grouping: filteredEntry.sorted()) {
-            $0.period.date.year
-        }
-    }
-    
-    func group(year: Int) -> [RouteEntry]? {
-        groupedByYear[year]
-    }
-}
+import SwiftUI
 
 @available(iOS 17.0, *)
 struct RouteHistoryView: View {
-    var presenter: RouteHistoryPresenter
-    
-    init(_ presenter: RouteHistoryPresenter) {
-        self.presenter = presenter
+    let entries: [RouteEntry]
+    let excludingRouteId: Route.ID?
+    let selected: (RouteEntry) -> Void
+
+    @Environment(\.dismiss) private var dismiss
+
+    private var groupedByYear: [Int: [RouteEntry]] {
+        Dictionary(grouping: entries.filter { $0.id != excludingRouteId }.sorted()) {
+            $0.period.date.year
+        }
     }
-    
-    @Environment(\.dismiss) var dismiss
-    
+
+    private var years: [Int] {
+        groupedByYear.keys.sorted(by: >)
+    }
+
     var body: some View {
         Form {
-            ForEach(presenter.years, id: \.self) { year in
+            ForEach(years, id: \.self) { year in
                 Section("\(String(year))年") {
-                    ForEach(presenter.group(year: year) ?? []) { entry in
-                        Button(entry.period.shortText){
-                            presenter.selected(entry)
+                    ForEach(groupedByYear[year] ?? []) { entry in
+                        Button(entry.period.shortText) {
+                            selected(entry)
                         }
                     }
                 }
@@ -79,5 +47,4 @@ struct RouteHistoryView: View {
             }
         }
     }
-    
 }

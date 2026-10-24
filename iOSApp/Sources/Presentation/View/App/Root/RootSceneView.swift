@@ -1,74 +1,52 @@
-//
-//  RootSceneView.swift
-//  MaTool
-//
-//  Created by 松下和也 on 2025/10/30.
-//
-
-import Foundation
 import ComposableArchitecture
 import Dependencies
 import SwiftUI
 
 public struct RootSceneView: View {
-    @Shared var launchState: LaunchState
-    @State var status: StatusCheckResult?
-    @State private var hasLaunchedScene = false
-    @Dependency(SceneUsecaseKey.self) var sceneUsecase
-    @Dependency(\.values.isLiquidGlassEnabled) var isLiquidGlassEnabled
-    
-    // 追加：エラー時だけ拾うBinding
+    @State private var store: StoreOf<RootFeature>
+    @Dependency(\.values.isLiquidGlassEnabled) private var isLiquidGlassEnabled
+
     private var errorStatusBinding: Binding<StatusCheckResult?> {
         Binding(
-            get: { if case .error = launchState { return status } else { return nil } },
-            set: { status = $0 }
+            get: { store.errorStatus },
+            set: { _ in store.send(.statusDismissed) }
         )
     }
 
-    // 追加：エラー以外だけ拾うBinding
     private var normalStatusBinding: Binding<StatusCheckResult?> {
         Binding(
-            get: { if case .error = launchState { return nil } else { return status } },
-            set: { status = $0 }
+            get: { store.normalStatus },
+            set: { _ in store.send(.statusDismissed) }
         )
     }
 
     public init() {
-        if #available(iOS 17.0, *){
+        if #available(iOS 17.0, *) {
             isPerceptionCheckingEnabled = false
         }
-        self._launchState = Shared(value: .loading)
-        do {
-            try setupDefaultDatabase()
-        } catch {
-            fatalError("Failed to setup default database: \(error.localizedDescription)")
-        }
+        self._store = State(initialValue: Store(initialState: RootFeature.State()) {
+            RootFeature()
+        })
     }
 
     public var body: some View {
         Group {
-            switch launchState {
-            case .district(let userRole, let routeId):
-                let store = Store(initialState: HomeFeature.State(userRole: userRole, currentRouteId: routeId)) { HomeFeature() }
-                NavigationStack{
-                    HomeView(store: store)
-                        .task {
-                            store.send(.initialize)
-                        }
-                }
-            case .festival(let userRole):
-                let store = Store(initialState: HomeFeature.State(userRole: userRole)) { HomeFeature() }
-                NavigationStack{
-                    HomeView(store: store)
-                        .task {
-                            store.send(.initialize)
-                        }
+            switch store.scene {
+            case .home:
+                if let homeStore = store.scope(state: \.home, action: \.home) {
+                    NavigationStack {
+                        HomeView(store: homeStore)
+                    }
+                } else {
+                    LoadingView()
                 }
             case .onboarding:
-                OnboardingView(store: .init(initialState: OnboardingFeature.State(launchState: $launchState)) {
-                    OnboardingFeature() }
-                )
-                .preferredColorScheme(.light)
+                if let onboardingStore = store.scope(state: \.onboarding, action: \.onboarding) {
+                    OnboardingView(store: onboardingStore)
+                        .preferredColorScheme(.light)
+                } else {
+                    LoadingView()
+                }
             case .loading:
                 LoadingView()
                     .preferredColorScheme(.light)
@@ -85,16 +63,12 @@ public struct RootSceneView: View {
         }
         .environment(\.isLiquidGlassDisabled, !isLiquidGlassEnabled)
         .task {
-            guard !hasLaunchedScene else { return }
-            hasLaunchedScene = true
-            let (launchState, status) = await sceneUsecase.launch()
-            self.$launchState.withLock { $0 = launchState }
-            self.status = status
+            store.send(.launch)
         }
     }
 
     @ViewBuilder
-    func errorView(_ message: String) -> some View {
+    private func errorView(_ message: String) -> some View {
         VStack {
             Spacer()
             Text("申し訳ございません。システムエラーにより停止しています。\n\(message)")
@@ -118,5 +92,4 @@ private struct AppScrollEdgeEffectModifier: ViewModifier {
     }
 }
 
-//定数
 let spanDelta: Double = 0.005

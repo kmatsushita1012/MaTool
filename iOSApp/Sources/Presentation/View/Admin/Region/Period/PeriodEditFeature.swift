@@ -17,7 +17,14 @@ struct PeriodEditFeature {
         let mode: Mode
         var period: Period
         var isLoading: Bool = false
+        @Shared fileprivate var appState: AppState?
         @Presents var alert: AlertFeature.State?
+
+        init(mode: Mode, period: Period, appState: Shared<AppState?> = Shared(value: nil)) {
+            self.mode = mode
+            self.period = period
+            self._appState = appState
+        }
     }
     
     @CasePathable
@@ -27,13 +34,15 @@ struct PeriodEditFeature {
         case cancelTapped
         case deleteTapped
         case dateChanged(SimpleDate)
-        case saveReceived(VoidAppResult)
-        case deleteReceived(VoidAppResult)
+        case saveReceived(AppResult<Period>)
+        case deleteReceived(AppResult<Period.ID>)
         case catched(AppError)
         case alert(PresentationAction<AlertFeature.Action>)
     }
     
-    @Dependency(PeriodDataFetcherKey.self) var dataFetcher
+    @Dependency(CreatePeriodUseCaseKey.self) var createPeriodUseCase
+    @Dependency(UpdatePeriodUseCaseKey.self) var updatePeriodUseCase
+    @Dependency(DeletePeriodUseCaseKey.self) var deletePeriodUseCase
     
     var body: some ReducerOf<Self> {
         BindingReducer()
@@ -43,14 +52,15 @@ struct PeriodEditFeature {
                 return .none
             case .saveTapped:
                 state.isLoading = true
-                return saveEffect(mode: state.mode, period: state.period)
+                return saveEffect(mode: state.mode, period: state.period, appState: state.$appState)
             case .cancelTapped:
                 return .dismiss
             case .deleteTapped:
                 guard state.mode == .update else { return .none }
                 state.isLoading = true
-                return .task(Action.deleteReceived) { [id = state.period.id] in
-                    try await dataFetcher.delete(id)
+                return .task(Action.deleteReceived) { [id = state.period.id, appState = state.$appState] in
+                    try await deletePeriodUseCase(id: id, appState: appState)
+                    return id
                 }
             case .dateChanged(let date):
                 if state.mode == .create {
@@ -70,27 +80,28 @@ struct PeriodEditFeature {
         .ifLet(\.$alert, action: \.alert)
     }
     
-    private func saveEffect(mode: Mode, period: Period) -> Effect<Action> {
+    private func saveEffect(mode: Mode, period: Period, appState: Shared<AppState?>? = nil) -> Effect<Action> {
         .task(Action.saveReceived) {
             switch mode {
             case .create:
-                try await dataFetcher.create(period)
+                return try await createPeriodUseCase(period, appState: appState ?? Shared(value: nil))
             case .update:
-                try await dataFetcher.update(period)
+                return try await updatePeriodUseCase(period, appState: appState ?? Shared(value: nil))
             }
         }
     }
 }
 
 extension PeriodEditFeature.State {
-    static func update(_ period: Period) -> Self {
+    static func update(_ period: Period, appState: Shared<AppState?> = Shared(value: nil)) -> Self {
         .init(
             mode: .update,
-            period: period
+            period: period,
+            appState: appState
         )
     }
     
-    static func create(_ festivalId: String) -> Self {
+    static func create(_ festivalId: String, appState: Shared<AppState?> = Shared(value: nil)) -> Self {
         .init(
             mode: .create,
             period: Period(
@@ -100,7 +111,8 @@ extension PeriodEditFeature.State {
                 date: .now,
                 start: .init(hour: 9, minute: 0),
                 end: .init(hour: 12, minute: 0)
-            )
+            ),
+            appState: appState
         )
     }
     

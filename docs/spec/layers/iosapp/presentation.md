@@ -9,8 +9,8 @@
 
 - 画面状態の管理（State/Action/Reducer）
 - ユーザー入力の受付と Application への委譲
-- バケツリレー型の同期/取得処理では DataFetcher 呼び出しの起点になる
-- 参照系は `SQLiteData` マクロ（`FetchOne`/`FetchAll`）でローカルSQLキャッシュを直接参照する
+- AppState を読み取り、画面に必要な参照データを公開する
+- 非同期の取得・更新は Application の UseCase に委譲する
 - ローディング/エラー/遷移状態の表現
 
 ## 3. 非責務
@@ -19,10 +19,9 @@
 
 ## 4. 依存ルール
 
-- 原則: Presentation は Application 層のユースケースへ依存する。
-- 例外: バケツリレー型アクセス（画面起点で段階取得する処理）では DataFetcher への直接依存を許容する。
-- 直接依存時も、通信・永続化の実装詳細は Data 層に閉じ込める。
-- 参照データは Presentation のStateへ過剰に複製せず、SQLキャッシュを正本として都度取得する。
+- Presentation は Application 層の UseCase に依存し、DataFetcher を直接呼び出さない。
+- UseCase は DataFetcher のレスポンスを AppState に反映する。
+- View は AppState を直接参照せず、Feature の State が公開する値を使用する。
 
 ## 5. 参照
 

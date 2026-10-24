@@ -14,8 +14,7 @@
   - Entity/ValueObject の振る舞い拡張
   - コピー/並び替え/比較/参照補助など
 - Infrastructure Extension:
-  - SQLiteData などストレージ・I/O都合の拡張
-  - クエリ補助や `FetchOne`/`FetchAll` の簡略化
+  - ストレージやI/O実装に固有の拡張は Shared に置かない
 - Presentation Extension:
   - 文字列整形、見た目に依存するフォーマット
   - UI のみで消費される拡張
@@ -25,7 +24,6 @@
 - 形式は `+<拡張対象>` を使う。
 - 例:
   - `Entity+Copy.swift`
-  - `Entity+SQLiteData.swift`
   - `Period+Text.swift`
   - `View+LiquidGlass.swift`
 
@@ -33,7 +31,6 @@
 
 - Sharedへ移行済み:
   - `Shared/Sources/Extensions/Entity+Copy.swift`
-  - `Shared/Sources/Extensions/Entity+SQLiteData.swift`
   - `Shared/Sources/Extensions/Array+AsyncDiff.swift`
   - `Shared/Sources/Extensions/Array+Upsert.swift`
   - `Shared/Sources/Extensions/Array+Diff.swift`

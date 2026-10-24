@@ -29,6 +29,12 @@ enum LocationTrackingStartResult: Sendable, Equatable {
     case locationServicesDisabled
 }
 
+struct LocationTrackingPreparation: Sendable, Equatable {
+    let isTracking: Bool
+    let interval: Interval?
+    let permissionState: LocationPermissionState
+}
+
 // MARK: - Dependencies
 enum LocationUsecaseKey: DependencyKey {
     static let liveValue: any LocationUsecaseProtocol = LocationUsecase()
@@ -43,21 +49,23 @@ extension DependencyValues {
 
 // MARK: - LocationUsecaseProtocol
 protocol LocationUsecaseProtocol: Sendable {
+    func prepareTracking() async -> LocationTrackingPreparation
     func getLocationHistory() async -> [Status]
-    func getInterval() async -> Interval?
-    func getIsTracking() async -> Bool
     func historyStream() async -> AsyncStream<[Status]>
     func requestPermission() async -> Void
     func locationPermissionState() async -> LocationPermissionState
     func start(id: String, interval: Interval) async -> LocationTrackingStartResult
     func stop(id: String) async -> Void
     func getLocation() async -> AsyncValue<CLLocation>
+    func locationUpdateStream() async -> AsyncStream<FloatLocation>
+    func recordLocationUpdate(_ location: FloatLocation) async
+    func recordLocationDelete() async
+    func recordLocationError(_ error: AppError) async
 }
 
 // MARK: - LocationUsecase
 actor LocationUsecase: LocationUsecaseProtocol {
     
-    @Dependency(LocationDataFetcherKey.self) var dataFetcher
     @Dependency(\.broadcastLocationProvider) var broadcastLocationProvider
     @Dependency(UserDefaltsManagerKey.self) var userDefaults
 
@@ -69,19 +77,20 @@ actor LocationUsecase: LocationUsecaseProtocol {
     private let threshold: Double = 0.95
 
     private var continuation: AsyncStream<[Status]>.Continuation?
+    private var locationUpdateContinuation: AsyncStream<FloatLocation>.Continuation?
+
+    func prepareTracking() async -> LocationTrackingPreparation {
+        LocationTrackingPreparation(
+            isTracking: isTracking,
+            interval: interval,
+            permissionState: await locationPermissionState()
+        )
+    }
     
     func getLocationHistory() async -> [Status] {
         locationHistory
     }
     
-    func getInterval() async -> Interval? {
-        interval
-    }
-    
-    func getIsTracking() async -> Bool {
-        isTracking
-    }
-
     func historyStream() async -> AsyncStream<[Status]> {
         AsyncStream { continuation in
             // 最新 continuation に置き換える
@@ -150,11 +159,31 @@ actor LocationUsecase: LocationUsecaseProtocol {
         lastSentAt = nil
         
         await broadcastLocationProvider.stopTracking()
-        await delete(id)
     }
 
     func getLocation() async -> AsyncValue<CLLocation> {
         await broadcastLocationProvider.getLocation()
+    }
+
+    func locationUpdateStream() async -> AsyncStream<FloatLocation> {
+        AsyncStream { continuation in
+            locationUpdateContinuation = continuation
+            continuation.onTermination = { @Sendable _ in
+                Task { await self.clearLocationUpdateContinuation() }
+            }
+        }
+    }
+
+    func recordLocationUpdate(_ location: FloatLocation) async {
+        appendHistory(.update(location))
+    }
+
+    func recordLocationDelete() async {
+        appendHistory(.delete(Date()))
+    }
+
+    func recordLocationError(_ error: AppError) async {
+        appendHistory(.apiError(Date(), error))
     }
     
     private func sendIfNeeded(id: String, result: AsyncValue<CLLocation>) async {
@@ -187,25 +216,7 @@ actor LocationUsecase: LocationUsecaseProtocol {
                 coordinate: Coordinate.fromCL(cllocation.coordinate),
                 timestamp: Date.now
             )
-            do {
-                try await dataFetcher.update(location)
-                appendHistory(.update(location))
-            } catch let error as AppError {
-                appendHistory(.apiError(Date(), error))
-            } catch {
-                appendHistory(.apiError(Date(), error.asAppError))
-            }
-        }
-    }
-
-    private func delete(_ id: String) async {
-        do {
-            try await dataFetcher.delete(districtId: id)
-            appendHistory(.delete(Date()))
-        } catch let error as AppError {
-            appendHistory(.apiError(Date(), error))
-        } catch {
-            appendHistory(.apiError(Date(), error.asAppError))
+            locationUpdateContinuation?.yield(location)
         }
     }
     
@@ -213,8 +224,12 @@ actor LocationUsecase: LocationUsecaseProtocol {
         continuation = nil
     }
 
+    private func clearLocationUpdateContinuation() {
+        locationUpdateContinuation = nil
+    }
+
     private func markAlwaysLocationPermissionRequested() {
-        userDefaults.setHasRequestedAlwaysLocationPermission(true)
+        userDefaults.saveHasRequestedAlwaysLocationPermission(true)
     }
 
     private func locationErrorDetail(_ error: Error) -> String {

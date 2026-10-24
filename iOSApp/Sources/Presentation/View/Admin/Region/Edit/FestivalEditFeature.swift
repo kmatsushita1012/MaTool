@@ -8,7 +8,6 @@
 import Foundation
 import ComposableArchitecture
 import Shared
-import SQLiteData
 
 @Reducer
 struct FestivalEditFeature {
@@ -26,6 +25,7 @@ struct FestivalEditFeature {
         var base: Coordinate?
         var checkpoints: [Checkpoint]
         var hazardSections: [HazardSection]
+        @Shared fileprivate var appState: AppState?
         var isLoading: Bool = false
         @Presents var destination: Destination.State?
         @Presents var alert: AlertFeature.State?
@@ -46,7 +46,7 @@ struct FestivalEditFeature {
         case alert(PresentationAction<AlertFeature.Action>)
     }
     
-    @Dependency(FestivalDataFetcherKey.self) var festivalDataFetcher
+    @Dependency(SaveFestivalUseCaseKey.self) var saveFestivalUseCase
     @Dependency(\.dismiss) var dismiss
     
     var body: some ReducerOf<FestivalEditFeature> {
@@ -74,8 +74,13 @@ struct FestivalEditFeature {
                 state.festival.subname = subname
                 state.festival.base = base
                 state.isLoading = true
-                return .task(Action.putReceived) { [festival = state.festival, checkpoints = state.checkpoints, hazardSections = state.hazardSections] in
-                    try await festivalDataFetcher.update(festival: festival, checkPoints: checkpoints, hazardSections: hazardSections)
+                return .task(Action.putReceived) { [festival = state.festival, checkpoints = state.checkpoints, hazardSections = state.hazardSections, appState = state.$appState] in
+                    _ = try await saveFestivalUseCase(
+                        festival: festival,
+                        checkpoints: checkpoints,
+                        hazardSections: hazardSections,
+                        appState: appState
+                    )
                     await dismiss()
                 }
             case .cancelTapped:
@@ -158,10 +163,13 @@ extension FestivalEditFeature.Destination.State: Equatable{}
 extension FestivalEditFeature.Destination.Action: Equatable{}
 
 extension FestivalEditFeature.State{
-    init(_ festival: Festival){
-        self.festival = festival
-        self.base = festival.base
-        self._checkpoints = FetchAll(Checkpoint.where{ $0.festivalId.eq(festival.id) }).wrappedValue
-        self._hazardSections = FetchAll(HazardSection.where{ $0.festivalId.eq(festival.id) }).wrappedValue
+    init(_ festival: Festival, appState: Shared<AppState?> = Shared(value: nil)){
+        self._appState = appState
+        let festivalState = appState.wrappedValue?.festivalState
+        let resolvedFestival = festivalState?.festival ?? festival
+        self.festival = resolvedFestival
+        self.base = resolvedFestival.base
+        self.checkpoints = festivalState?.checkpoints ?? []
+        self.hazardSections = festivalState?.hazardSections ?? []
     }
 }

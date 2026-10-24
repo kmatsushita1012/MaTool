@@ -134,7 +134,15 @@ private final class UserDefaultsManagerSpy: UserDefalutsManagerProtocol, @unchec
         self.hasRequestedAlwaysLocationPermission = hasRequestedAlwaysLocationPermission
     }
 
-    func setHasRequestedAlwaysLocationPermission(_ value: Bool) {
+    func saveDefaultFestivalId(_ value: String?) {
+        defaultFestivalId = value
+    }
+
+    func saveDefaultDistrictId(_ value: String?) {
+        defaultDistrictId = value
+    }
+
+    func saveHasRequestedAlwaysLocationPermission(_ value: Bool) {
         hasRequestedAlwaysLocationPermission = value
     }
 }

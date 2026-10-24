@@ -7,7 +7,6 @@
 
 import ComposableArchitecture
 import Shared
-import SQLiteData
 
 @Reducer
 struct PointEditFeature {
@@ -23,12 +22,30 @@ struct PointEditFeature {
     @ObservableState
     struct State: Equatable{
         var point: Point
-        
-        @FetchAll var checkpoints: [Checkpoint]
-        @FetchAll var performances: [Performance]
-        
+        let districtId: District.ID
+        @Shared fileprivate var appState: AppState?
+
+        var checkpoints: [Checkpoint] {
+            appState?.festivalState.checkpoints ?? []
+        }
+
+        var performances: [Performance] {
+            guard let districtState = appState?.districtState,
+                  districtState.districtId == districtId else { return [] }
+            return districtState.performances
+        }
+
         var pointType: PointType
-        let validTypes: [PointType]
+        var validTypes: [PointType] {
+            var types: [PointType] = [.start, .end, .rest, .none]
+            if !checkpoints.isEmpty || point.checkpointId != nil {
+                types.insert(.checkpoint, at: 0)
+            }
+            if !performances.isEmpty || point.performanceId != nil {
+                types.insert(.performance, at: min(1, types.count))
+            }
+            return types
+        }
         @Presents var alert: AlertFeature.State?
         
     }
@@ -75,39 +92,25 @@ struct PointEditFeature {
 }
 
 extension PointEditFeature.State {
-    init?(_ point: Point, districtId: District.ID){
+    init(_ point: Point, districtId: District.ID, appState: Shared<AppState?>) {
         self.point = point
-        guard let district: District = FetchOne(id: districtId)?.wrappedValue else { return nil }
-        let checkpointQuery = FetchAll(Checkpoint.where{ $0.festivalId.eq(district.festivalId) })
-        self._checkpoints = checkpointQuery
-        let performanceQuery = FetchAll(Performance.where{ $0.districtId.eq(district.id) })
-        self._performances =  performanceQuery
+        self.districtId = districtId
+        self._appState = appState
         self.pointType = .init(point: point)
-        
-        var types: [PointEditFeature.PointType] = [.start, .end, .rest]
-        if !checkpointQuery.wrappedValue.isEmpty {
-            types.append(.checkpoint)
-        }
-        if !performanceQuery.wrappedValue.isEmpty {
-            types.append(.performance)
-        }
-        types.append(.none)
-        
-        self.validTypes = types
     }
     
     var selectedCheckpoint: Checkpoint? {
         guard case .checkpoint = pointType, let checkpointId = point.checkpointId else {
             return nil
         }
-        return checkpoints.first(where: { $0.id == checkpointId })
+        return appState?.checkpoint(id: checkpointId)
     }
     
     var selectedPerformance: Performance? {
         guard case .performance = pointType, let performanceId = point.performanceId else {
             return nil
         }
-        return performances.first(where: { $0.id == performanceId })
+        return appState?.performance(id: performanceId, districtId: districtId)
     }
     
     func validate() throws {

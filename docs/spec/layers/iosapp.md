@@ -6,15 +6,15 @@
 
 - Presentation: SwiftUI + TCA による画面状態管理
 - Application: 起動/認証/同期オーケストレーション
-- Data: API 通信とローカル SSOT（SQLite）反映
-- 参照系の主要パス: `SQLiteData` マクロ（`FetchOne`/`FetchAll`）で SQL キャッシュを直接参照
+- Data: API 通信クライアント
+- 永続化撤去フェーズの DataFetcher は no-op で、ローカル永続化とデータ取得を行わない
 
 ## 2. 依存方向
 
-`Presentation -> Application -> Data (HTTP/SQLite)` を原則とする。  
+`Presentation -> Application -> Data (HTTP)` を原則とする。
 バケツリレー型アクセスでは `Presentation -> DataFetcher -> Data` の直接経路を許容する。
 
-参照データは「SQLキャッシュ正本」を前提とし、Presentation は最小限の表示状態のみ保持する。
+参照データは現在提供されず、画面の該当状態は空配列または `nil` となる。
 
 ## 3. 正本ドキュメント
 

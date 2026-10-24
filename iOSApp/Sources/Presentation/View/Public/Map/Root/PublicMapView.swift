@@ -85,7 +85,7 @@ struct PublicMapView: View {
                 store.send(.contentSelected(item))
             }
         }) {
-            Text(item.text)
+            Text(store.contentTitles[item] ?? "")
                 .foregroundColor(.black)
                 .padding(.vertical, 8)
                 .padding(.horizontal, 16)

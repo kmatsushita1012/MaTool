@@ -6,12 +6,11 @@
 //
 
 import SwiftUI
-import SQLiteData
 import Shared
 
 struct PassageItemView: View {
     let passage: RoutePassage
-    @FetchOne var district: District?
+    var district: District?
 
     let canMoveUp: Bool
     let canMoveDown: Bool
@@ -23,6 +22,7 @@ struct PassageItemView: View {
 
     init(
         passage: RoutePassage,
+        district: District?,
         canMoveUp: Bool,
         canMoveDown: Bool,
         onInsertAbove: @escaping () -> Void,
@@ -32,7 +32,7 @@ struct PassageItemView: View {
         onDelete: @escaping () -> Void
     ) {
         self.passage = passage
-        self._district = FetchOne(District.find(passage.districtId ?? "__none__"))
+        self.district = district
         self.canMoveUp = canMoveUp
         self.canMoveDown = canMoveDown
         self.onInsertAbove = onInsertAbove

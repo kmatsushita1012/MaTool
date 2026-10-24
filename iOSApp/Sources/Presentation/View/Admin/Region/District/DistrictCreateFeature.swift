@@ -17,7 +17,13 @@ struct DistrictCreateFeature {
         var name: String = ""
         var email: String = ""
         var isLoading: Bool = false
+        @Shared fileprivate var appState: AppState?
         @Presents var alert: AlertFeature.State?
+
+        init(festivalId: Festival.ID, appState: Shared<AppState?> = Shared(value: nil)) {
+            self.festivalId = festivalId
+            self._appState = appState
+        }
     }
     @CasePathable
     enum Action: Equatable, BindableAction {
@@ -28,7 +34,7 @@ struct DistrictCreateFeature {
         case alert(PresentationAction<AlertFeature.Action>)
     }
     
-    @Dependency(DistrictDataFetcherKey.self) var dataFetcher
+    @Dependency(CreateDistrictUseCaseKey.self) var createDistrictUseCase
     @Dependency(\.dismiss) var dismiss
     
     var body: some ReducerOf<DistrictCreateFeature> {
@@ -61,11 +67,12 @@ struct DistrictCreateFeature {
     }
 
     private func createEffect(_ state: State) -> Effect<Action> {
-        .task(Action.createReceived) { [state] in
-            try await dataFetcher.create(
-                name: state.name,
-                email: state.email,
-                festivalId: state.festivalId
+        .task(Action.createReceived) { [name = state.name, email = state.email, festivalId = state.festivalId, appState = state.$appState] in
+            _ = try await createDistrictUseCase(
+                name: name,
+                email: email,
+                festivalId: festivalId,
+                appState: appState
             )
             await dismiss()
         }

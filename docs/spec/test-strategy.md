@@ -59,8 +59,7 @@
   - 起動シナリオ（launch/signIn/select）を分岐網羅。
   - Auth/DataFetcher/UserDefaults は依存差し替えで固定化。
 - DataFetcher/Client:
-  - 通信結果と SQLite 同期の副作用を分離検証。
-  - 成功・失敗・空配列・権限エラーの分岐を網羅。
+  - 永続化撤去フェーズでは DataFetcher が no-op であることを前提とする。
 - Presentation:
   - ロジックは Feature 単位でテストし、View スナップショットは必要最小限。
 - ラージテスト:

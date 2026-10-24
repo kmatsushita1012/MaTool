@@ -5,7 +5,7 @@
 ### Shared層
 通過する町を記録するRoutePassageを以下に示す
 ```swift
-@Table public struct RoutePassage: Entity, Identifiable {
+public struct RoutePassage: Entity, Identifiable {
     public let id: String
     public let routeId: Route.ID
     public let districtId: District.ID
@@ -44,7 +44,7 @@
 想定モデル:
 
 ```swift
-@Table public struct RoutePassage: Entity, Identifiable {
+public struct RoutePassage: Entity, Identifiable {
     public let id: String
     public let routeId: Route.ID
     public let districtId: District.ID?
