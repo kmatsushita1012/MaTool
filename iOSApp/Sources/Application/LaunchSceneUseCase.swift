@@ -9,7 +9,6 @@ protocol LaunchSceneUseCaseProtocol: Sendable {
 
 struct LaunchSceneUseCase: LaunchSceneUseCaseProtocol {
     @Dependency(SceneDataFetcherKey.self) private var dataFetcher
-    @Dependency(LoadAppStateUseCaseKey.self) private var loadAppStateUseCase
     @Dependency(SceneSessionCoordinatorKey.self) private var sessionCoordinator
     @Dependency(AuthServiceKey.self) private var authService
     @Dependency(AppStatusClientKey.self) private var appStatusClient
@@ -34,14 +33,15 @@ struct LaunchSceneUseCase: LaunchSceneUseCaseProtocol {
                     return (.loading, await appStatusTask)
                 }
                 if let appState {
-                    _ = loadAppStateUseCase(
-                        festivalResponse,
-                        districtPack: districtResponse,
-                        districtId: districtId,
-                        year: Calendar.current.component(.year, from: .now),
-                        sessionId: requestId,
-                        appState: appState
-                    )
+                    appState.withLock {
+                        $0 = AppState(
+                            festivalPack: festivalResponse,
+                            districtPack: districtResponse,
+                            districtId: districtId,
+                            year: Calendar.current.component(.year, from: .now),
+                            sessionId: requestId
+                        )
+                    }
                 }
                 return (.district(userRole, districtResponse.currentRouteId), await appStatusTask)
             }
@@ -51,14 +51,13 @@ struct LaunchSceneUseCase: LaunchSceneUseCaseProtocol {
                 return (.loading, await appStatusTask)
             }
             if let appState {
-                _ = loadAppStateUseCase(
-                    response,
-                    districtPack: nil,
-                    districtId: nil,
-                    year: Calendar.current.component(.year, from: .now),
-                    sessionId: requestId,
-                    appState: appState
-                )
+                appState.withLock {
+                    $0 = AppState(
+                        festivalPack: response,
+                        year: Calendar.current.component(.year, from: .now),
+                        sessionId: requestId
+                    )
+                }
             }
             return (.festival(userRole), await appStatusTask)
         } catch {

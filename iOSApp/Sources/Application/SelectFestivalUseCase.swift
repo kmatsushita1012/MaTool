@@ -9,7 +9,6 @@ protocol SelectFestivalUseCaseProtocol: Sendable {
 
 struct SelectFestivalUseCase: SelectFestivalUseCaseProtocol {
     @Dependency(SceneDataFetcherKey.self) private var dataFetcher
-    @Dependency(LoadAppStateUseCaseKey.self) private var loadAppStateUseCase
     @Dependency(SceneSessionCoordinatorKey.self) private var sessionCoordinator
     @Dependency(AuthServiceKey.self) private var authService
     @Dependency(UserDefaltsManagerKey.self) private var userDefaults
@@ -22,14 +21,13 @@ struct SelectFestivalUseCase: SelectFestivalUseCaseProtocol {
         let response = try await dataFetcher.launchFestival(festivalId: festivalId)
         guard await sessionCoordinator.isCurrent(requestId) else { throw CancellationError() }
         if let appState {
-            _ = loadAppStateUseCase(
-                response,
-                districtPack: nil,
-                districtId: nil,
-                year: Calendar.current.component(.year, from: .now),
-                sessionId: requestId,
-                appState: appState
-            )
+            appState.withLock {
+                $0 = AppState(
+                    festivalPack: response,
+                    year: Calendar.current.component(.year, from: .now),
+                    sessionId: requestId
+                )
+            }
         }
         userDefaults.saveDefaultFestivalId(festivalId)
         userDefaults.saveDefaultDistrictId(nil)

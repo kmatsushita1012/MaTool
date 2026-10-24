@@ -88,4 +88,34 @@ struct AppState: Equatable, Sendable {
         self.districtLoadRequestId = districtLoadRequestId
         self.routeLoadRequestId = routeLoadRequestId
     }
+
+    init(
+        festivalPack: LaunchFestivalPack,
+        districtPack: LaunchDistrictPack? = nil,
+        districtId: District.ID? = nil,
+        year: Int = Calendar.current.component(.year, from: .now),
+        sessionId: UUID = UUID()
+    ) {
+        let festivalState = FestivalState(festivalPack, year: year)
+        let districtState: DistrictState? = districtPack.flatMap { pack in
+            guard let districtId else { return nil }
+            return DistrictState(
+                districtId: districtId,
+                pack: pack,
+                currentPeriodIds: Set(festivalState.periods.map(\.id))
+            )
+        }
+        let routeState: RouteState? = districtPack.flatMap { pack in
+            guard let routeId = pack.currentRouteId,
+                  let route = districtState?.routes.first(where: { $0.id == routeId }) else { return nil }
+            return RouteState(route: route, points: pack.points, passages: pack.passages)
+        }
+
+        self.init(
+            festivalState: festivalState,
+            districtState: districtState,
+            routeState: routeState,
+            sessionId: sessionId
+        )
+    }
 }
