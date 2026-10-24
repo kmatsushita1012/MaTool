@@ -22,7 +22,7 @@ struct DistrictEditScreen: View {
             ),
             description: Binding(
                 get: { store.district.description ?? "" },
-                set: { store.send(.binding(.set(\.district.description, $0))) }
+                set: { store.send(.binding(.set(\.district.description, $0.isEmpty ? nil : $0))) }
             ),
             visibility: Binding(
                 get: { store.district.visibility },
