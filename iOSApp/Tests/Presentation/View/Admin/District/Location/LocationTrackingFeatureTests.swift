@@ -2,7 +2,7 @@ import CoreLocation
 import Testing
 @testable import iOSApp
 
-struct LocationPermissionSheetModeTests {
+struct LocationTrackingFeatureTests {
     @Test("権限状態ごとに位置情報許可シナリオを分ける")
     func 権限状態ごとに位置情報許可シナリオを分ける() {
         #expect(

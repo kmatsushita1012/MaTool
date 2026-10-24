@@ -3,7 +3,7 @@ import Testing
 @testable import iOSApp
 
 @Suite(.serialized)
-struct HTTPClientCacheTests {
+struct HTTPClientTests {
     private struct Payload: Codable, Equatable {
         let value: String
     }

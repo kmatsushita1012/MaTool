@@ -1,5 +1,5 @@
 //
-//  SceneUsecaseLaunchTests.swift
+//  SceneUsecaseTests.swift
 //  MaToolTests
 //
 //  Created by Codex on 2026/06/30.
@@ -12,7 +12,7 @@ import Shared
 import Testing
 @testable import iOSApp
 
-struct SceneUsecaseLaunchTests {
+struct SceneUsecaseTests {
     @Test("祭典切替時はログアウト完了後の認証状態で取得する")
     func 祭典切替時はログアウト完了後の認証状態で取得する() async throws {
         let authState = FestivalSwitchAuthState()

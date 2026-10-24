@@ -1,15 +1,9 @@
-//
-//  PublicMapAdPolicyTests.swift
-//  MaToolTests
-//
-//  Created by Codex on 2026/06/30.
-//
-
-import XCTest
+import Testing
 @testable import iOSApp
 
-final class PublicMapAdPolicyTests: XCTestCase {
-    func test本部権限では広告表示しない() {
+struct PublicMapAdUsecaseTests {
+    @Test
+    func 本部権限では広告表示しない() {
         let counter = PublicMapAdCounter(districtSelectionCount: 2)
         let decision = PublicMapAdPolicy.evaluate(
             userRole: .headquarter("festival"),
@@ -18,11 +12,12 @@ final class PublicMapAdPolicyTests: XCTestCase {
             counter: counter
         )
 
-        XCTAssertEqual(decision.counter, counter)
-        XCTAssertFalse(decision.shouldShowInterstitial)
+        #expect(decision.counter == counter)
+        #expect(!decision.shouldShowInterstitial)
     }
 
-    func test自町defaultDistrictではカウントしない() {
+    @Test
+    func 自町defaultDistrictではカウントしない() {
         let counter = PublicMapAdCounter(districtSelectionCount: 2)
         let decision = PublicMapAdPolicy.evaluate(
             userRole: .guest,
@@ -31,11 +26,12 @@ final class PublicMapAdPolicyTests: XCTestCase {
             counter: counter
         )
 
-        XCTAssertEqual(decision.counter, counter)
-        XCTAssertFalse(decision.shouldShowInterstitial)
+        #expect(decision.counter == counter)
+        #expect(!decision.shouldShowInterstitial)
     }
 
-    func testお気に入り外の町では3回に1回表示する() {
+    @Test
+    func お気に入り外の町では3回に1回表示する() {
         let decision = PublicMapAdPolicy.evaluate(
             userRole: .guest,
             targetDistrictId: "district-b",
@@ -43,11 +39,12 @@ final class PublicMapAdPolicyTests: XCTestCase {
             counter: .init(districtSelectionCount: 2)
         )
 
-        XCTAssertEqual(decision.counter.districtSelectionCount, 3)
-        XCTAssertTrue(decision.shouldShowInterstitial)
+        #expect(decision.counter.districtSelectionCount == 3)
+        #expect(decision.shouldShowInterstitial)
     }
 
-    func testお気に入りも権限もない場合は最初の5回をスキップする() {
+    @Test
+    func お気に入りも権限もない場合は最初の5回をスキップする() {
         let decision = PublicMapAdPolicy.evaluate(
             userRole: .guest,
             targetDistrictId: "district-a",
@@ -55,11 +52,12 @@ final class PublicMapAdPolicyTests: XCTestCase {
             counter: .init(districtSelectionCount: 4)
         )
 
-        XCTAssertEqual(decision.counter.districtSelectionCount, 5)
-        XCTAssertFalse(decision.shouldShowInterstitial)
+        #expect(decision.counter.districtSelectionCount == 5)
+        #expect(!decision.shouldShowInterstitial)
     }
 
-    func testお気に入りも権限もない場合は6回目で表示する() {
+    @Test
+    func お気に入りも権限もない場合は6回目で表示する() {
         let decision = PublicMapAdPolicy.evaluate(
             userRole: .guest,
             targetDistrictId: "district-a",
@@ -67,11 +65,12 @@ final class PublicMapAdPolicyTests: XCTestCase {
             counter: .init(districtSelectionCount: 5)
         )
 
-        XCTAssertEqual(decision.counter.districtSelectionCount, 6)
-        XCTAssertTrue(decision.shouldShowInterstitial)
+        #expect(decision.counter.districtSelectionCount == 6)
+        #expect(decision.shouldShowInterstitial)
     }
 
-    func test各町権限の自町は除外する() {
+    @Test
+    func 各町権限の自町は除外する() {
         let counter = PublicMapAdCounter(districtSelectionCount: 1)
         let decision = PublicMapAdPolicy.evaluate(
             userRole: .district("district-a"),
@@ -80,7 +79,7 @@ final class PublicMapAdPolicyTests: XCTestCase {
             counter: counter
         )
 
-        XCTAssertEqual(decision.counter, counter)
-        XCTAssertFalse(decision.shouldShowInterstitial)
+        #expect(decision.counter == counter)
+        #expect(!decision.shouldShowInterstitial)
     }
 }
