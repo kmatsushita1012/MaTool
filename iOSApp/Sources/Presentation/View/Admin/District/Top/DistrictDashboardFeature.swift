@@ -54,7 +54,7 @@ struct DistrictDashboardFeature {
         case binding(BindingAction<State>)
         case onEdit
         case onRouteEdit(RouteSlot)
-        case routeEditReceived(AppResult<RoutePack>)
+        case routeEditReceived(AppResult<RoutePack?>)
         case changePasswordTapped
         case updateEmailTapped
         case routeCreatePrepared
@@ -87,7 +87,11 @@ struct DistrictDashboardFeature {
             case .binding:
                 return .none
             case .onEdit:
-                state.destination = .edit(.init(state.district, appState: state.$appState))
+                do {
+                    state.destination = .edit(try .init(state.district, appState: state.$appState))
+                } catch {
+                    state.alert = .error("情報の取得に失敗しました")
+                }
                 return .none
             case .onRouteEdit(let item):
                 if let route = item.route {
@@ -110,6 +114,7 @@ struct DistrictDashboardFeature {
                 return .none
             case .routeEditReceived(.success(let pack)):
                 state.isRouteLoading = false
+                guard let pack else { return .none }
                 let draft = RouteDraft(route: pack.route, points: pack.points, passages: pack.passages)
                 do {
                     state.destination = .route(try .init(mode: .update, draft: draft, appState: state.$appState))

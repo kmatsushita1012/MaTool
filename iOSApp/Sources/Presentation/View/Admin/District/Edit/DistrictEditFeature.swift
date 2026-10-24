@@ -28,7 +28,6 @@ struct DistrictEditFeature {
         var isLoading: Bool = false
         @Presents var destination: Destination.State?
         @Presents var alert: AlertFeature.State?
-        var base: Coordinate?
     }
     
     @CasePathable
@@ -70,14 +69,22 @@ struct DistrictEditFeature {
                 if let base = state.district.base{
                     state.destination = .base(DistrictBaseEditFeature.State(base: base))
                 } else {
-                    state.destination = .base(DistrictBaseEditFeature.State(origin: state.base))
+                    guard let origin = state.appState?.festivalState.festival.base else {
+                        state.alert = AlertFeature.error("情報の取得に失敗しました")
+                        return .none
+                    }
+                    state.destination = .base(DistrictBaseEditFeature.State(origin: origin))
                 }
                 return .none
             case .areaTapped:
+                guard let origin = state.district.base ?? state.appState?.festivalState.festival.base else {
+                    state.alert = AlertFeature.error("情報の取得に失敗しました")
+                    return .none
+                }
                 state.destination = .area(
                     DistrictAreaEditFeature.State(
                         coordinates: state.district.area,
-                        origin: state.district.base ?? state.base
+                        origin: origin
                     )
                 )
                 return .none
@@ -139,14 +146,17 @@ extension DistrictEditFeature.Destination.State: Equatable {}
 extension DistrictEditFeature.Destination.Action: Equatable {}
 
 extension DistrictEditFeature.State {
-    init(_ district: District, appState: Shared<AppState?> = Shared(value: nil)) {
+    init(_ district: District, appState: Shared<AppState?>) throws {
+        guard let current = appState.wrappedValue,
+              let districtState = current.districtState,
+              districtState.districtId == district.id,
+              let currentDistrict = current.festivalState.districts.first(where: { $0.id == district.id }) else {
+            throw PresentationError.notFound
+        }
+
         self._appState = appState
-        let current = appState.wrappedValue
-        self.district = current?.festivalState.districts.first { $0.id == district.id } ?? district
-        self.performances = current?.districtState?.districtId == district.id
-            ? current?.districtState?.performances ?? []
-            : []
-        self.base = current?.festivalState.festival.base
+        self.district = currentDistrict
+        self.performances = districtState.performances
     }
 }
 

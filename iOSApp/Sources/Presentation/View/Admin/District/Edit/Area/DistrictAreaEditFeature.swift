@@ -15,9 +15,9 @@ struct DistrictAreaEditFeature{
     struct State:Equatable {
         var coordinates: [Coordinate]
         var region: MKCoordinateRegion?
-        init(coordinates: [Coordinate], origin: Coordinate?){
+        init(coordinates: [Coordinate], origin: Coordinate){
             self.coordinates = coordinates
-            region = origin.map { makeRegion(origin: $0, spanDelta: spanDelta) }
+            region = makeRegion(origin: origin, spanDelta: spanDelta)
         }
     }
     

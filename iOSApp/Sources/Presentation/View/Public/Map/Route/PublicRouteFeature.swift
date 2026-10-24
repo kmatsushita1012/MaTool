@@ -95,7 +95,7 @@ struct PublicRouteFeature {
         case onAppear
         case binding(BindingAction<State>)
         case selected(RouteEntry)
-        case routeLoaded(AppResult<RoutePack>)
+        case routeLoaded(AppResult<RoutePack?>)
         case pointTapped(PointEntry)
         case locationTapped(FloatEntry)
         case userFocusTapped
@@ -144,6 +144,7 @@ struct PublicRouteFeature {
                 )
             case .routeLoaded(.success(let pack)):
                 state.isRouteLoading = false
+                guard let pack else { return .none }
                 guard pack.route.id == state.selectedRouteId else { return .none }
                 state.$mapRegion.withLock { $0 = makeRegion(state.points.map(\.coordinate)) }
                 return .none

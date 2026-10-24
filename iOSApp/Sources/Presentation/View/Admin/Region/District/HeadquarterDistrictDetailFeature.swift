@@ -56,7 +56,7 @@ struct HeadquarterDistrictDetailFeature {
         case batchExportTapped
         case tableExportTapped
         case updateReceived(AppResult<District>)
-        case routeReceived(AppResult<RoutePack>)
+        case routeReceived(AppResult<RoutePack?>)
         case batchExportReceived(AppResult<URL>)
         case destination(PresentationAction<Destination.Action>)
         case alert(PresentationAction<AlertFeature.Action>)
@@ -115,6 +115,7 @@ struct HeadquarterDistrictDetailFeature {
                 return .none
             case .routeReceived(.success(let pack)):
                 state.isLoading = false
+                guard let pack else { return .none }
                 let draft = RouteDraft(route: pack.route, points: pack.points, passages: pack.passages)
                 do {
                     state.destination = .route(try .init(mode: .preview, draft: draft, appState: state.$appState))
