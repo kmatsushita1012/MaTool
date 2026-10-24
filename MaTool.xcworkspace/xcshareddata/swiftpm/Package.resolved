@@ -1,5 +1,5 @@
 {
-  "originHash" : "b0a6ff8d024876448206d35451be9c38d926906803e10e742ec8992027b915f3",
+  "originHash" : "9c7e3584094d665045f0948b4b84afa5192758f2e3f4fd018439ac416ec45ffe",
   "pins" : [
     {
       "identity" : "amplify-ios",
@@ -56,15 +56,6 @@
       }
     },
     {
-      "identity" : "grdb.swift",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/groue/GRDB.swift.git",
-      "state" : {
-        "revision" : "b83108d10f42680d78f23fe4d4d80fc88dab3212",
-        "version" : "7.11.1"
-      }
-    },
-    {
       "identity" : "jmespath.swift",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/jmespath/jmespath.swift.git",
@@ -107,15 +98,6 @@
       "state" : {
         "revision" : "6e12c0eb072821ff80d49aadeb4ccba6e9106bae",
         "version" : "7.15.0"
-      }
-    },
-    {
-      "identity" : "sqlite-data",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/pointfreeco/sqlite-data.git",
-      "state" : {
-        "revision" : "164bb5f223738af3d5da7a1b8de14e67e4d9cd5d",
-        "version" : "1.12.0"
       }
     },
     {
@@ -290,6 +272,15 @@
       }
     },
     {
+      "identity" : "swift-fallback-macro",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/kmatsushita1012/swift-fallback-macro",
+      "state" : {
+        "revision" : "f5eb5a8e1d1453e4c2b274e8942b5fad2f3de320",
+        "version" : "0.1.0"
+      }
+    },
+    {
       "identity" : "swift-http-structured-headers",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/apple/swift-http-structured-headers.git",
@@ -461,24 +452,6 @@
       }
     },
     {
-      "identity" : "swift-snapshot-testing",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/pointfreeco/swift-snapshot-testing",
-      "state" : {
-        "revision" : "28e5de025e3fd98991791bfbf83023ab3708da03",
-        "version" : "1.19.6"
-      }
-    },
-    {
-      "identity" : "swift-structured-queries",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/pointfreeco/swift-structured-queries",
-      "state" : {
-        "revision" : "72d536d5f0319097612bea961e356f4223efd926",
-        "version" : "0.39.2"
-      }
-    },
-    {
       "identity" : "swift-syntax",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/swiftlang/swift-syntax",
@@ -503,15 +476,6 @@
       "state" : {
         "revision" : "b626d3002773b1a1304166643e7f118f724b2132",
         "version" : "1.0.4"
-      }
-    },
-    {
-      "identity" : "xctest-dynamic-overlay",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/pointfreeco/xctest-dynamic-overlay",
-      "state" : {
-        "revision" : "d9308ad679143c26a30dec52daefe82f54af2b82",
-        "version" : "1.13.1"
       }
     }
   ],

@@ -8,13 +8,13 @@ struct HomeFeatureTests {
     @Test("設定準備に失敗した後は読み込みを終了して再試行できる")
     @MainActor
     func 設定準備の失敗後に再試行できる() async {
-        let fetcher = FailingFestivalDataFetcher()
+        let useCase = FailingFestivalListUseCase()
         let error = AppError.be(.network("network"))
         let alertMessage = "設定画面の準備に失敗しました。\n\(error)"
         let store = TestStore(initialState: HomeFeature.State(userRole: .guest)) {
             HomeFeature()
         } withDependencies: {
-            $0.festivalDataFetcher = fetcher
+            $0[FetchFestivalListUseCaseKey.self] = useCase
         }
 
         await store.send(.settingsTapped) {
@@ -36,21 +36,17 @@ struct HomeFeatureTests {
             $0.alert = AlertFeature.error(alertMessage)
         }
 
-        #expect(await fetcher.fetchCallCount() == 2)
+        #expect(await useCase.fetchCallCount() == 2)
     }
 }
 
-private actor FailingFestivalDataFetcher: FestivalDataFetcherProtocol {
+private actor FailingFestivalListUseCase: FetchFestivalListUseCaseProtocol {
     private var fetchCalls = 0
 
-    func update(festival: Festival, checkPoints: [Checkpoint], hazardSections: [HazardSection]) async throws {}
-
-    func fetchAll() async throws {
+    func callAsFunction() async throws -> [Festival] {
         fetchCalls += 1
         throw AppError.be(.network("network"))
     }
-
-    func fetch(festivalID: Festival.ID) async throws {}
 
     func fetchCallCount() -> Int {
         fetchCalls

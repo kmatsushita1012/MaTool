@@ -61,36 +61,36 @@ struct UserDefaltsManager: Sendable {
 }
 
 protocol UserDefalutsManagerProtocol: Sendable {
-    var defaultFestivalId: String? { get set }
-    var defaultDistrictId: String? { get set }
+    var defaultFestivalId: String? { get }
+    var defaultDistrictId: String? { get }
     var hasRequestedAlwaysLocationPermission: Bool { get }
-    func setHasRequestedAlwaysLocationPermission(_ value: Bool)
+    func saveDefaultFestivalId(_ value: String?)
+    func saveDefaultDistrictId(_ value: String?)
+    func saveHasRequestedAlwaysLocationPermission(_ value: Bool)
 }
 
 extension UserDefaltsManager: UserDefalutsManagerProtocol {
     var defaultFestivalId: String? {
-        get {
-            defaults.string(forKey: Key.defaultFestivalId.rawValue)
-        }
-        set {
-            defaults.set(newValue, forKey: Key.defaultFestivalId.rawValue)
-        }
+        defaults.string(forKey: Key.defaultFestivalId.rawValue)
     }
     
     var defaultDistrictId: String? {
-        get {
-            defaults.string(forKey: Key.defaultDistrictId.rawValue)
-        }
-        set {
-            defaults.set(newValue, forKey: Key.defaultDistrictId.rawValue)
-        }
+        defaults.string(forKey: Key.defaultDistrictId.rawValue)
     }
 
     var hasRequestedAlwaysLocationPermission: Bool {
         defaults.bool(forKey: Key.hasRequestedAlwaysLocationPermission.rawValue)
     }
 
-    func setHasRequestedAlwaysLocationPermission(_ value: Bool) {
+    func saveDefaultFestivalId(_ value: String?) {
+        defaults.set(value, forKey: Key.defaultFestivalId.rawValue)
+    }
+
+    func saveDefaultDistrictId(_ value: String?) {
+        defaults.set(value, forKey: Key.defaultDistrictId.rawValue)
+    }
+
+    func saveHasRequestedAlwaysLocationPermission(_ value: Bool) {
         defaults.set(value, forKey: Key.hasRequestedAlwaysLocationPermission.rawValue)
     }
 }

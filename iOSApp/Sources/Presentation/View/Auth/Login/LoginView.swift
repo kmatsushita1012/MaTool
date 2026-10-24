@@ -18,7 +18,7 @@ struct LoginScreen: View {
         LoginContentView(
             id: $store.id,
             password: $store.password,
-            contactURL: URL(string: contactURLString)!,
+            contactURL: URL(string: contactURLString),
             errorMessage: store.errorMessage,
             onSignInTapped: { store.send(.signInTapped) },
             onResetPasswordTapped: { store.send(.resetPasswordTapped) }
@@ -40,7 +40,7 @@ typealias LoginView = LoginScreen
 struct LoginContentView: View {
     @Binding var id: String
     @Binding var password: String
-    let contactURL: URL
+    let contactURL: URL?
     let errorMessage: String?
     let onSignInTapped: () -> Void
     let onResetPasswordTapped: () -> Void
@@ -90,7 +90,12 @@ struct LoginContentView: View {
             }
             .buttonStyle(SecondaryButtonStyle())
             
-            Link("ログインできない場合: お問い合わせフォーム", destination: contactURL)
+            if let contactURL {
+                Link(
+                    "ログインできない場合: お問い合わせフォーム",
+                    destination: contactURL
+                )
+            }
 
             Text(errorMessage ?? " ")
                 .foregroundStyle(.red)
@@ -104,7 +109,7 @@ struct LoginContentView: View {
     LoginContentView(
         id: .constant(""),
         password: .constant(""),
-        contactURL: URL(string: "https://example.com")!,
+        contactURL: nil,
         errorMessage: nil,
         onSignInTapped: {},
         onResetPasswordTapped: {}

@@ -8,7 +8,6 @@
 import Foundation
 import ComposableArchitecture
 import Shared
-import SQLiteData
 
 @Reducer
 struct SettingsFeature {
@@ -16,30 +15,38 @@ struct SettingsFeature {
     @ObservableState
     struct State: Equatable {
         var isOfflineMode: Bool = false
-        @FetchAll var festivals: [Festival]
+        var festivals: [Festival] = []
         var selectedFestival: Festival? = nil
-        @FetchAll var districts: [District]
+        var districts: [District] {
+            appState?.festivalState.districts ?? []
+        }
         var selectedDistrict: District? = nil
         var isLoading: Bool = false
-        var userGuide: URL = {
+        @Shared fileprivate var appState: AppState?
+        var userGuide: URL? = {
             @Dependency(\.values.userGuideUrl) var userGuideURLString
-            return URL(string: userGuideURLString)!
+            return URL(string: userGuideURLString)
         }()
         
-        var contact: URL = {
+        var contact: URL? = {
             @Dependency(\.values.contactURL) var contactURLString
-            return URL(string: contactURLString)!
+            return URL(string: contactURLString)
         }()
         @Presents var alert: AlertFeature.State? = nil
         var isDismissEnabled: Bool {
             !isLoading && (selectedFestival != nil || isOfflineMode)
         }
         
-        init(selection: SceneSelection) {
-            self.selectedFestival = selection.festivalId.flatMap { FetchOne(Festival.find($0)).wrappedValue }
-            self.selectedDistrict = selection.districtId.flatMap { FetchOne(District.find($0)).wrappedValue }
-            self._festivals = FetchAll()
-            self._districts = FetchAll(District.where{ $0.festivalId.eq(selectedFestival?.id) }.order(by: \.order))
+        init(
+            selection: SceneSelection,
+            festivals: [Festival] = [],
+            appState: Shared<AppState?> = Shared(value: nil)
+        ) {
+            self._appState = appState
+            self.festivals = festivals
+            self.selectedFestival = appState.wrappedValue?.festivalState.festival
+                ?? festivals.first(where: { $0.id == selection.festivalId })
+            self.selectedDistrict = appState.wrappedValue?.selectedDistrict
         }
     }
 
@@ -48,15 +55,16 @@ struct SettingsFeature {
         case binding(BindingAction<State>)
         case dismissTapped
         case signOutTapped
-        case signOutReceived(AppResult<UserRole>)
+        case signOutReceived(VoidAppResult)
         case festivalSelectReceived(AppResult<FestivalSelectionResult>)
         case districtSelectReceived(AppResult<Route.ID?>)
         case alert(PresentationAction<AlertFeature.Action>)
     }
     
     @Dependency(\.dismiss) var dismiss
-    @Dependency(\.authService) var authService
-    @Dependency(SceneUsecaseKey.self) var sceneUsecase
+    @Dependency(SelectFestivalUseCaseKey.self) var selectFestivalUseCase
+    @Dependency(SelectDistrictUseCaseKey.self) var selectDistrictUseCase
+    @Dependency(SignOutUseCaseKey.self) var signOutUseCase
     
     var body: some ReducerOf<SettingsFeature> {
         BindingReducer()
@@ -65,31 +73,34 @@ struct SettingsFeature {
             case .binding(\.selectedFestival):
                 guard let festival = state.selectedFestival else { return .none }
                 state.isLoading = true
-                return .task(Action.festivalSelectReceived) {
-                    try await sceneUsecase.select(festivalId: festival.id)
+                return .task(Action.festivalSelectReceived) { [appState = state.$appState] in
+                    try await selectFestivalUseCase(festivalId: festival.id, appState: appState)
                 }
+                .cancellable(id: SceneSessionCancellationID.active, cancelInFlight: true)
             case .binding(\.selectedDistrict):
                 let districtId = state.selectedDistrict?.id
                 state.isLoading = true
-                return .task(Action.districtSelectReceived) {
-                    try await sceneUsecase.select(districtId: districtId)
+                return .task(Action.districtSelectReceived) { [appState = state.$appState] in
+                    try await selectDistrictUseCase(districtId: districtId, appState: appState)
                 }
+                .cancellable(id: SceneSessionCancellationID.active, cancelInFlight: true)
             case .binding:
                 return .none
             case .signOutTapped:
+                state.isLoading = true
                 return .task(Action.signOutReceived) {
-                    try await authService.signOut()
+                    try await signOutUseCase()
                 }
-            case .signOutReceived(.success):
-                state.alert = AlertFeature.success("ログアウトしました")
-                return .none
+                .cancellable(id: SceneSessionCancellationID.active, cancelInFlight: true)
             case .signOutReceived(.failure(let error)):
+                state.isLoading = false
                 state.alert = AlertFeature.error("情報の取得に失敗しました \(error.message)")
+                return .none
+            case .signOutReceived(.success):
                 return .none
             case .festivalSelectReceived(.success(let result)):
                 if case .changed = result {
                     state.selectedDistrict = nil
-                    state.$districts = FetchAll(District.where{ $0.festivalId.eq(state.selectedFestival?.id)}.order(by: \.order))
                 }
                 state.isLoading = false
                 return .none

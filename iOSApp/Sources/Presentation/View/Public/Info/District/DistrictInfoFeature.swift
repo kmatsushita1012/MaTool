@@ -6,17 +6,24 @@
 //
 
 import ComposableArchitecture
+import Fallback
 import MapKit
 import Shared
-import SQLiteData
 
 @Reducer
 struct DistrictInfoFeature {
     
     @ObservableState
     struct State: Equatable {
-        @FetchOne var district: District
-        @FetchAll var performances: [Performance]
+        let districtId: District.ID
+        @Shared fileprivate var appState: AppState?
+        var appStateDistrict: District? {
+            appState?.district(id: districtId)
+        }
+        @Fallback(\DistrictInfoFeature.State.appStateDistrict)
+        @ObservationStateIgnored
+        var district: District
+        let performances: [Performance]
         var region: MKCoordinateRegion?
         var isLoading: Bool = false
         var isDismissed:Bool = false
@@ -31,7 +38,7 @@ struct DistrictInfoFeature {
     }
     
     @Dependency(\.dismiss) var dismiss
-    @Dependency(SceneDataFetcherKey.self) var sceneDataFetcher
+    @Dependency(LoadDistrictStateUseCaseKey.self) var loadDistrictStateUseCase
     
     var body: some ReducerOf<DistrictInfoFeature> {
         BindingReducer()
@@ -49,8 +56,8 @@ struct DistrictInfoFeature {
             //　MARK: Homeに移譲
             case .mapTapped:
                 state.isLoading = true
-                return .task(Action.routeIdReceived) { [districtId = state.district.id] in
-                    try await sceneDataFetcher.launchDistrict(districtId: districtId, clearsExistingData: false)
+                return .task(Action.routeIdReceived) { [districtId = state.districtId, appState = state.$appState] in
+                    try await loadDistrictStateUseCase(districtId: districtId, appState: appState).currentRouteId
                 }
             case .routeIdReceived(.success):
                 state.isLoading = false
@@ -64,9 +71,11 @@ struct DistrictInfoFeature {
 }
 
 extension DistrictInfoFeature.State {
-    init(_ district: District){
-        self._district = FetchOne(district)
-        self._performances = FetchAll(Performance.where{ $0.districtId.eq(district.id) })
+    init(_ pack: DistrictPack, appState: Shared<AppState?>){
+        self.districtId = pack.district.id
+        self._appState = appState
+        self._district = pack.district
+        self.performances = pack.performances
         if let base = district.base, district.area.isEmpty{
             region = makeRegion(origin: base, spanDelta: spanDelta)
         }else{

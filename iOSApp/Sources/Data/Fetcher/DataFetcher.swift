@@ -1,21 +1,11 @@
-//
-//  DataFetcher.swift
-//  MaTool
-//
-//  Created by 松下和也 on 2026/01/14.
-//
-
 import Dependencies
 
 protocol DataFetcher: Sendable {}
 
-
 extension DataFetcher {
-    func getToken() async throws -> String? {
+    func getToken() async -> String? {
         @Dependency(AuthServiceKey.self) var authService
-        
-        let token = await authService.getAccessToken()
-        return token
+        return await authService.getAccessToken()
     }
 }
 
@@ -27,11 +17,11 @@ enum Query: Sendable, Equatable {
     var queryItems: [String: Any] {
         switch self {
         case .all:
-            return [:]
-        case .year(let y):
-            return ["year": y]
+            [:]
+        case .year(let year):
+            ["year": year]
         case .latest:
-            return ["year": "latest"]
+            ["year": "latest"]
         }
     }
 }

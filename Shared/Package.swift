@@ -13,14 +13,12 @@ let package = Package(
     ],
     dependencies: [
         .package(url: "https://github.com/pointfreeco/swift-case-paths.git", from: "1.10.0"),
-        .package(url: "https://github.com/pointfreeco/sqlite-data.git", from: "1.12.0"),
     ],
     targets: [
         .target(
             name: "Shared",
             dependencies: [
                 .product(name: "CasePaths", package: "swift-case-paths"),
-                .product(name: "SQLiteData", package: "sqlite-data"),
             ],
             path: "Sources"
         ),

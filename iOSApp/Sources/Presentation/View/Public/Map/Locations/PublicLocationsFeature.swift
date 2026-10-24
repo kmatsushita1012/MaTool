@@ -6,9 +6,9 @@
 //
 
 import ComposableArchitecture
+import Fallback
 import MapKit
 import Shared
-import SQLiteData
 
 @Reducer
 struct PublicLocationsFeature {
@@ -19,8 +19,16 @@ struct PublicLocationsFeature {
     @ObservableState
     struct State:Equatable {
 
-        let festival: Festival
-        @FetchAll var floats: [FloatEntry]
+        let festivalId: Festival.ID
+        @Shared fileprivate var appState: AppState?
+
+        @Fallback(\PublicLocationsFeature.State.appState?.festivalState.festival)
+        @ObservationStateIgnored
+        var festival: Festival
+
+        var floats: [FloatEntry] {
+            appState?.floatEntries ?? []
+        }
         
         @Shared var mapRegion: MKCoordinateRegion
         @Shared var toast: MapToast?
@@ -38,12 +46,12 @@ struct PublicLocationsFeature {
         case userLocationFailed(String)
         case toastDismissed
         case reloadTapped
-        case reloadReceived(VoidAppResult)
+        case reloadReceived(AppResult<[FloatLocation]>)
     }
     
     @Dependency(\.mapLocationProvider) var mapLocationProvider
     @Dependency(\.continuousClock) var clock
-    @Dependency(LocationDataFetcherKey.self) var dataFetcher
+    @Dependency(FetchLocationUseCaseKey.self) var fetchLocationUseCase
     
     var body: some ReducerOf<PublicLocationsFeature> {
         BindingReducer()
@@ -61,8 +69,8 @@ struct PublicLocationsFeature {
                 state.$mapRegion.withLock { $0 = makeRegion(origin: entry.floatLocation.coordinate, spanDelta: spanDelta)}
                 return .none
             case .reloadTapped:
-                return .task(Action.reloadReceived) { [state] in
-                    try await dataFetcher.fetchAll(festivalId: state.festival.id)
+                return .task(Action.reloadReceived) { [festivalId = state.festivalId, appState = state.$appState] in
+                    try await fetchLocationUseCase(festivalId: festivalId, appState: appState)
                 }
             case .userLocationReceived(let value):
                 state.$mapRegion.withLock { $0 = makeRegion(origin: value, spanDelta: spanDelta)}
@@ -82,6 +90,8 @@ struct PublicLocationsFeature {
             case .reloadReceived(.failure(let error)):
                 state.$toast.withLock { $0 = .error(error, title: "現在地一覧を更新できませんでした") }
                 return toastDismissEffect()
+            case .reloadReceived(.success):
+                return .none
             case .userLocationFailed(let message):
                 state.$toast.withLock { $0 = .error(message, title: "現在地を取得できませんでした") }
                 return toastDismissEffect()
@@ -105,17 +115,18 @@ struct PublicLocationsFeature {
 
 extension PublicLocationsFeature.State {
     init(
-        _ festival: Festival,
+        festivalId: Festival.ID,
+        festival: Festival,
+        appState: Shared<AppState?>,
         mapRegion: Shared<MKCoordinateRegion>,
         toast: Shared<MapToast?>
     ){
-        self.festival = festival
-        self._floats = FetchAll(festivalId: festival.id)
+        self.festivalId = festivalId
+        self._appState = appState
+        self._festival = festival
         self._mapRegion = mapRegion
         self._toast = toast
-        if !self.floats.isEmpty {
-            self.$mapRegion.withLock{ $0 = makeRegion(locations: floats.map(keyPath: \.floatLocation), origin: festival.base) }
-        } else {
+        if appState.wrappedValue?.festivalState.floatLocations.isEmpty ?? true {
             self.$toast.withLock { $0 = .notice("現在、配信中の情報はありません。") }
         }
     }

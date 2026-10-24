@@ -5,20 +5,19 @@
 //  Created by 松下和也 on 2026/02/18.
 //
 
-import SQLiteData
 import SwiftUI
 import Shared
 
 @available(iOS 17.0, *)
 struct PassageOptionsView: View {
     
-    @FetchAll var districts: [District]
+    let districts: [District]
     let myDistrictId: District.ID
     let selected: (_ districtId: District.ID?, _ memo: String?) -> Void
     @State private var memo: String = ""
     
-    init(festivalId: Festival.ID, myDistrictId: District.ID, selected: @escaping (_ districtId: District.ID?, _ memo: String?) -> Void) {
-        self._districts = FetchAll(festivalId: festivalId)
+    init(districts: [District], myDistrictId: District.ID, selected: @escaping (_ districtId: District.ID?, _ memo: String?) -> Void) {
+        self.districts = districts
         self.myDistrictId = myDistrictId
         self.selected = selected
     }

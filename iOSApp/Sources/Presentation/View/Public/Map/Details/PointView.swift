@@ -7,7 +7,6 @@
 
 import SwiftUI
 import Shared
-import SQLiteData
 
 struct PointView: View {
     let entry: PointEntry

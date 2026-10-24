@@ -7,7 +7,6 @@
 
 import SwiftUI
 import Shared
-import SQLiteData
 
 struct LocationView: View {
     let entry: FloatEntry

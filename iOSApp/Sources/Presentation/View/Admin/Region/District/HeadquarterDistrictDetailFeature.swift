@@ -6,7 +6,6 @@
 //
 
 import ComposableArchitecture
-import SQLiteData
 import Shared
 import Foundation
 
@@ -25,9 +24,13 @@ struct HeadquarterDistrictDetailFeature {
     
     @ObservableState
     struct State: Equatable {
-        var district: District
-        var routes: [RouteSlot]
+        @Shared fileprivate var appState: AppState?
         var routeDrafts: [Route.ID: RouteDraft] = [:]
+        var district: District
+
+        var routes: [RouteSlot] {
+            appState?.routeSlots(for: district.id, routeOverrides: routeDrafts.mapValues(\.route)) ?? []
+        }
         
         var isEditable: Bool = false
         var isLoading: Bool = false
@@ -36,6 +39,11 @@ struct HeadquarterDistrictDetailFeature {
         @Presents var destination: Destination.State?
         @Presents var alert: AlertFeature.State?
         var url: URL? = nil
+
+        init(_ district: District, appState: Shared<AppState?>) {
+            self._appState = appState
+            self.district = district
+        }
     }
     
     @CasePathable
@@ -47,15 +55,16 @@ struct HeadquarterDistrictDetailFeature {
         case resetDraftsTapped
         case batchExportTapped
         case tableExportTapped
-        case updateReceived(VoidAppResult)
-        case routeReceived(AppResult<RouteEntry>)
+        case updateReceived(AppResult<District>)
+        case routeReceived(AppResult<RoutePack?>)
         case batchExportReceived(AppResult<URL>)
         case destination(PresentationAction<Destination.Action>)
         case alert(PresentationAction<AlertFeature.Action>)
     }
     
-    @Dependency(DistrictDataFetcherKey.self) var dataFetcher
-    @Dependency(RouteDataFetcherKey.self) var routeDataFetcher
+    @Dependency(SaveDistrictUseCaseKey.self) var saveDistrictUseCase
+    @Dependency(FetchRoutePackUseCaseKey.self) var fetchRoutePackUseCase
+    @Dependency(LoadRouteStateUseCaseKey.self) var loadRouteStateUseCase
     
     var body: some ReducerOf<HeadquarterDistrictDetailFeature> {
         BindingReducer()
@@ -64,31 +73,30 @@ struct HeadquarterDistrictDetailFeature {
             case .binding(_):
                 return .none
             case .editTapped:
-                defer {
-                    state.isEditable.toggle()
-                }
                 if state.isEditable {
                     state.isLoading = true
-                    return .task(Action.updateReceived) { [state] in
-                        try await dataFetcher.update(district: state.district)
+                    return .task(Action.updateReceived) { [district = state.district, appState = state.$appState] in
+                        try await saveDistrictUseCase(district: district, appState: appState)
                     }
                 } else {
+                    if let current = state.appState?.district(id: state.district.id) {
+                        state.district = current
+                    }
+                    state.isEditable = true
                     return .none
                 }
             case .reissueTapped:
-                state.destination = .reissue(.init(district: state.district))
+                state.destination = .reissue(.init(districtId: state.district.id, appState: state.$appState))
                 return .none
             case .routeSelected(let slot):
                 guard let route = slot.route else { return .none }
                 if let draft = state.routeDrafts[route.id] {
-                    state.destination = try? { .route(try .init(mode: .preview, draft: draft)) }()
+                    state.destination = try? { .route(try .init(mode: .preview, draft: draft, appState: state.$appState)) }()
                     return .none
                 }
                 state.isLoading = true
-                let entry: RouteEntry = .init(period: slot.period, route: route)
-                return .task(Action.routeReceived) {
-                    try await routeDataFetcher.fetch(routeID: route.id)
-                    return entry
+                return .task(Action.routeReceived) { [routeId = route.id, appState = state.$appState] in
+                    try await loadRouteStateUseCase(routeId: routeId, appState: appState)
                 }
             case .batchExportTapped:
                 state.activeExportKind = .submission
@@ -99,14 +107,21 @@ struct HeadquarterDistrictDetailFeature {
             case .resetDraftsTapped:
                 guard !state.routeDrafts.isEmpty else { return .none }
                 state.routeDrafts = [:]
-                state.routes = FetchAll(districtId: state.district.id, latest: true).wrappedValue
                 return .none
-            case .updateReceived(.success):
+            case .updateReceived(.success(let district)):
                 state.isLoading = false
+                state.district = district
+                state.isEditable = false
                 return .none
-            case .routeReceived(.success(let entry)):
+            case .routeReceived(.success(let pack)):
                 state.isLoading = false
-                state.destination = try? { .route(try .init(mode: .preview, route: entry.route)) }()
+                guard let pack else { return .none }
+                let draft = RouteDraft(route: pack.route, points: pack.points, passages: pack.passages)
+                do {
+                    state.destination = .route(try .init(mode: .preview, draft: draft, appState: state.$appState))
+                } catch {
+                    state.alert = .error(error.localizedDescription)
+                }
                 return .none
             case .destination(.presented(.route(.modified(.success)))):
                 guard let routeState = state.destination?.route else { return .none }
@@ -116,10 +131,6 @@ struct HeadquarterDistrictDetailFeature {
                     passages: routeState.passages
                 )
                 state.routeDrafts[draft.route.id] = draft
-                if let index = state.routes.firstIndex(where: { $0.route?.id == draft.route.id }) {
-                    let slot = state.routes[index]
-                    state.routes[index] = RouteSlot(period: slot.period, route: draft.route)
-                }
                 return .none
             case .batchExportReceived(.success(let url)):
                 state.activeExportKind = nil
@@ -147,31 +158,19 @@ struct HeadquarterDistrictDetailFeature {
             //非同期並列にするとBEでアクセス過多
             let renderer = await PDFRenderer(path: path)
             let routes = state.routes.compactMap(\.route)
-            var passagesByRouteID: [Route.ID: [RoutePassage]] = [:]
-            var pointsByRouteID: [Route.ID: [Point]] = [:]
-            var resolvedRoutesByRouteID: [Route.ID: Route] = [:]
+            var routePacks: [RoutePack] = []
             for route in routes {
                 if let draft = state.routeDrafts[route.id] {
-                    passagesByRouteID[route.id] = draft.passages
-                    pointsByRouteID[route.id] = draft.points
-                    resolvedRoutesByRouteID[route.id] = draft.route
+                    routePacks.append(RoutePack(route: draft.route, points: draft.points, passages: draft.passages))
                     continue
                 }
-                do {
-                    try await routeDataFetcher.fetch(routeID: route.id)
-                    let passages: [RoutePassage] = FetchAll(routeId: route.id).wrappedValue
-                    let points: [Point] = FetchAll(routeId: route.id).wrappedValue
-                    passagesByRouteID[route.id] = passages
-                    pointsByRouteID[route.id] = points
-                    resolvedRoutesByRouteID[route.id] = route
-                } catch {
-                    continue
-                }
+                guard let pack = try? await fetchRoutePackUseCase(routeId: route.id) else { continue }
+                routePacks.append(pack)
             }
             let tableSnapshotter = await ActionTableSnapshotter(
                 district: state.district,
                 slots: state.routes,
-                passagesByRouteID: passagesByRouteID
+                routePacks: routePacks
             )
             let tablePages = await tableSnapshotter.takeAll()
             for page in tablePages {
@@ -182,9 +181,8 @@ struct HeadquarterDistrictDetailFeature {
                 return url
             }
             for route in routes {
-                let resolvedRoute = resolvedRoutesByRouteID[route.id] ?? route
-                guard let points = pointsByRouteID[route.id],
-                      let snapshotter = try? await RouteSnapshotter(route: resolvedRoute, points: points),
+                guard let pack = routePacks.first(where: { $0.route.id == route.id }),
+                      let snapshotter = try? await RouteSnapshotter(route: pack.route, points: pack.points),
                       let image = try? await snapshotter.take() else { continue }
                 await renderer.addPage(with: image)
             }
@@ -215,12 +213,3 @@ extension HeadquarterDistrictDetailFeature.State {
 
 extension HeadquarterDistrictDetailFeature.Destination.State: Equatable {}
 extension HeadquarterDistrictDetailFeature.Destination.Action: Equatable {}
-
-extension HeadquarterDistrictDetailFeature.State {
-    init(_ district: District) {
-        let routes: [RouteSlot] = FetchAll(districtId: district.id, latest: true).wrappedValue
-        self.district = district
-        self.routes = routes
-    }
-    
-}

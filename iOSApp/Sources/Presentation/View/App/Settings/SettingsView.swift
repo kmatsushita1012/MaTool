@@ -15,7 +15,7 @@ struct SettingsScreen: View {
     @SwiftUI.Bindable var store: StoreOf<SettingsFeature>
 
     var body: some View {
-        WithPerceptionTracking{
+        WithPerceptionTracking {
             SettingsContentView(
                 festivals: store.festivals,
                 districts: store.districts,
@@ -44,8 +44,8 @@ struct SettingsContentView: View {
     let districts: [District]
     @Binding var selectedFestival: Festival?
     @Binding var selectedDistrict: District?
-    let userGuide: URL
-    let contact: URL
+    let userGuide: URL?
+    let contact: URL?
     let appVersion: String
     let isDismissEnabled: Bool
     let onDismissTapped: () -> Void
@@ -83,27 +83,31 @@ struct SettingsContentView: View {
                 }
                 .padding(.vertical, 8)
                 VStack(alignment: .leading){
-                    Link(destination: userGuide) {
-                        HStack {
-                            Image("LeftDoubleArrow")
-                                .resizable()
-                                .frame(width: 20, height: 20)
-                            Text("MaToolの使い方")
-                                .font(.headline)
-                            Spacer()
+                    if let userGuide {
+                        Link(destination: userGuide) {
+                            HStack {
+                                Image("LeftDoubleArrow")
+                                    .resizable()
+                                    .frame(width: 20, height: 20)
+                                Text("MaToolの使い方")
+                                    .font(.headline)
+                                Spacer()
+                            }
+                            .font(.headline)
                         }
-                        .font(.headline)
                     }
-                    Link(destination: contact) {
-                        HStack {
-                            Image("LeftDoubleArrow")
-                                .resizable()
-                                .frame(width: 20, height: 20)
-                            Text("お問い合わせ")
-                                .font(.headline)
-                            Spacer()
+                    if let contact {
+                        Link(destination: contact) {
+                            HStack {
+                                Image("LeftDoubleArrow")
+                                    .resizable()
+                                    .frame(width: 20, height: 20)
+                                Text("お問い合わせ")
+                                    .font(.headline)
+                                Spacer()
+                            }
+                            .font(.headline)
                         }
-                        .font(.headline)
                     }
                 }
                 Text("バージョン \(appVersion)")
@@ -130,8 +134,8 @@ struct SettingsContentView: View {
         districts: [],
         selectedFestival: .constant(nil),
         selectedDistrict: .constant(nil),
-        userGuide: URL(string: "https://example.com")!,
-        contact: URL(string: "https://example.com")!,
+        userGuide: nil,
+        contact: nil,
         appVersion: "",
         isDismissEnabled: true,
         onDismissTapped: {},

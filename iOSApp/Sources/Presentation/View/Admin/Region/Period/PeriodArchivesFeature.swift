@@ -7,41 +7,42 @@
 
 import ComposableArchitecture
 import Shared
-import SQLiteData
 
 @Reducer
 struct PeriodArchivesFeature {
-    
+
     @Reducer
     enum Destination {
         case edit(PeriodEditFeature)
     }
-    
+
     @ObservableState
     struct State: Equatable {
-        let festivalId: String
+        let festivalId: Festival.ID
         let year: Int
-        @FetchAll var periods: [Period]
+        let periods: [Period]
+        @Shared fileprivate var appState: AppState?
         @Presents var destination: Destination.State?
-        
-        init(festivalId: String, year: Int) {
+
+        init(festivalId: Festival.ID, year: Int, periods: [Period], appState: Shared<AppState?>) {
             self.festivalId = festivalId
             self.year = year
-            self._periods = FetchAll(Period.where{ $0.festivalId.eq(festivalId) && $0.date.inYear(year) })
+            self.periods = periods.sorted()
+            self._appState = appState
         }
     }
-    
+
     @CasePathable
     enum Action: Equatable {
         case periodTapped(Period)
         case destination(PresentationAction<Destination.Action>)
     }
-    
+
     var body: some ReducerOf<Self> {
         Reduce { state, action in
             switch action {
             case .periodTapped(let period):
-                state.destination = .edit(.update(period))
+                state.destination = .edit(.update(period, appState: state.$appState))
                 return .none
             default:
                 return .none

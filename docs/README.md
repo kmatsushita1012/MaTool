@@ -23,18 +23,16 @@ iOS アプリの deployment target は iOS 17.0、Backend パッケージの対�
 ### iOS
 
 - `Presentation/`: SwiftUI の View と TCA の Feature。表示状態・操作・画面遷移を扱います。
-- `Application/`: 起動、認証、祭典・参加町の選択、位置配信、広告判定などのユースケースを扱います。
+- `Application/`: 起動、認証、祭典・参加町の選択、データ取得・更新などのユースケースを扱います。
 - `Domain/`: アプリ固有の型、入力データ、エラーを定義します。
-- `Data/`: HTTP、認証、位置情報、広告、UserDefaults、SQLite へのアクセスを扱います。
+- `Data/`: HTTP、認証、位置情報、広告、UserDefaults など外部 I/O を扱います。
 - 依存注入には `swift-dependencies` を使います。
 
-永続化する祭典・町・ルートなどは SQLiteData のテーブルで管理し、Feature / View が必要なデータを参照します。
-通信とローカルデータの更新は `DataFetcher` と `SQLiteStore` が担います。
-SQLite のテーブル作成は `Data/SQLite/SQLiteStore+Setup.swift` のマイグレーションに集約しています。
+`Data/Fetcher/` の DataFetcher は `HTTPClient` 経由で API を呼び出します。取得・更新結果は Application の UseCase が `AppState` に反映します。
+アプリ内にローカルデータベースはなく、祭典・町・ルートなどのデータはメモリ上で保持されます。祭典と参加町の選択など、再起動後も必要な設定は UserDefaults に保存します。
 
 設計方針はクリーンアーキテクチャ、TCA、可能な限り AppState を SSOT にすることです。
-現状の起動状態は `RootSceneView` の共有 `LaunchState`、各画面の状態は `HomeFeature.State` などに分かれており、
-アプリ全体が単一の AppState に統合済みという構成ではありません。
+`AppState` は祭典・地区・ルートの実行時データをまとめ、TCA の `@Shared` で Feature 間に共有します。画面遷移や読み込み状態は `RootFeature` などの TCA State が保持します。
 
 ### Backend
 
@@ -60,14 +58,12 @@ Backend はレイヤードアーキテクチャを採用します。共有モデ
 
 ### 起動・選択・同期
 
-1. `RootSceneView` で SQLite を用意し、`SceneUsecase.launch()` を呼びます。
-2. 起動時はローカルキャッシュを消し、保存済みの祭典・参加町と認証状態に応じてデータを取得します。
-3. 祭典が未設定なら祭典一覧を取得してオンボーディングを表示します。
-4. 保存済みの対象が見つからない場合は選択を解除します。一時的な通信エラーでは保存済み選択を維持します。
-5. 祭典を切り替えるときはサインアウトの完了を待ってからデータを取得し、参加町の選択を解除します。
+1. `RootSceneView` が起動アクションを送り、`RootFeature` から `LaunchSceneUseCase` を呼びます。
+2. 保存済みの祭典・参加町を UserDefaults から読み、`SceneDataFetcher` が起動用 Pack を API から取得します。
+3. 祭典が未設定ならオンボーディングを表示します。保存済みの対象が見つからない場合は選択を解除し、一時的な通信エラーでは保存済み選択を維持します。
+4. 取得した Pack は `AppState` に反映され、画面 Feature は共有状態を読み書きします。祭典・地区・ルートの選択や編集後の更新も、対応する UseCase が API 応答を `AppState` に反映します。
 
-選択した祭典・参加町は UserDefaults、取得したモデルは SQLite、画面固有の状態は TCA が保持します。
-`SceneDataFetcher` は起動用 Pack を取得して SQLite を更新し、`currentRouteId` を画面側へ返します。
+`AppState` はメモリ上の実行時状態です。アプリ内のローカル永続化やオフライン用データベースはありません。HTTPClient は公開 GET の応答にサーバーが指定した HTTP キャッシュ方針を適用します。
 
 ### 公開範囲・整合性
 
@@ -143,7 +139,7 @@ Swift Testing（`import Testing`）を使い、ソースとテストを1ファ�
 モック・共通ヘルパーは検証ケースとは分けて管理します。
 
 - build・test・起動は XcodeBuildMCP を使います。
-- iOS は iPhone シミュレータを指定し、`iOSAppTests` スキームでテストします。
+- iOS は iPhone シミュレータを指定し、`iOSAppTests` スキーム（`iOSApp.xctestplan`）でテストします。
 - Shared / Backend は My Mac で `SharedTests` / `BackendTests` スキームと対応するテストプランを選びます。
 - `BackendBootstrap` は初期データ投入・マイグレーション用の別ターゲットです。通常の検証では実行しません。
 - iOS の実装後は `iOSApp` スキームで iPhone シミュレータに起動し、sim-use で対象画面へ移動します。

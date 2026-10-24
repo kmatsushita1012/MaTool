@@ -6,9 +6,9 @@
 //
 
 import ComposableArchitecture
+import Fallback
 import Foundation
 import Shared
-import SQLiteData
 
 @Reducer
 struct HeadquarterDistrictListFeature {
@@ -21,8 +21,15 @@ struct HeadquarterDistrictListFeature {
     
     @ObservableState
     struct State: Equatable {
-        @FetchOne var festival: Festival
-        @FetchAll var districts: [District]
+        @Shared fileprivate var appState: AppState?
+
+        @Fallback(\HeadquarterDistrictListFeature.State.appState?.festivalState.festival)
+        @ObservationStateIgnored
+        var festival: Festival
+
+        var districts: [District] {
+            appState?.festivalState.districts ?? []
+        }
         var draftDistricts: [District]? = nil
         var isReordering: Bool = false
         var searchText: String = ""
@@ -32,6 +39,11 @@ struct HeadquarterDistrictListFeature {
         var folder: ExportedFolder? = nil
         @Presents var destination: Destination.State?
         @Presents var alert: AlertFeature.State?
+
+        init(_ festival: Festival, appState: Shared<AppState?>) {
+            self._appState = appState
+            self._festival = festival
+        }
     }
     
     enum Action: Equatable, BindableAction {
@@ -49,8 +61,10 @@ struct HeadquarterDistrictListFeature {
         case alert(PresentationAction<AlertFeature.Action>)
     }
     
-    @Dependency(DistrictDataFetcherKey.self) var dataFetcher
-    @Dependency(RouteDataFetcherKey.self) var routeDataFetcher
+    @Dependency(FetchRouteUseCaseKey.self) var fetchRouteUseCase
+    @Dependency(FetchRoutePackUseCaseKey.self) var fetchRoutePackUseCase
+    @Dependency(LoadDistrictStateUseCaseKey.self) var loadDistrictStateUseCase
+    @Dependency(SaveDistrictUseCaseKey.self) var saveDistrictUseCase
     
     var body: some ReducerOf<HeadquarterDistrictListFeature> {
         BindingReducer()
@@ -65,14 +79,12 @@ struct HeadquarterDistrictListFeature {
                 return .none
             case .selected(let district):
                 state.isLoading = true
-                return .task(Action.selectedReceived) {
-                    async let districtFetch: Void = dataFetcher.fetch(districtID: district.id)
-                    async let routeFetch: Void = routeDataFetcher.fetchAll(districtID: district.id, query: .latest)
-                    _ = try await (districtFetch, routeFetch)
-                    return district
+                return .task(Action.selectedReceived) { [appState = state.$appState] in
+                    _ = try await loadDistrictStateUseCase(districtId: district.id, appState: appState)
+                    return appState.wrappedValue?.district(id: district.id) ?? district
                 }
             case .createTapped:
-                state.destination = .create(.init(festivalId: state.festival.id))
+                state.destination = .create(.init(festivalId: state.festival.id, appState: state.$appState))
                 return .none
             case .reorderTapped:
                 if state.isReordering {
@@ -83,9 +95,9 @@ struct HeadquarterDistrictListFeature {
                         return .none
                     }
                     state.isLoading = true
-                    return .task(Action.reorderReceived) {
+                    return .task(Action.reorderReceived) { [appState = state.$appState] in
                         for district in changed {
-                            try await dataFetcher.update(district: district)
+                            _ = try await saveDistrictUseCase(district: district, appState: appState)
                         }
                     }
                 } else {
@@ -116,7 +128,7 @@ struct HeadquarterDistrictListFeature {
                 return batchExportEffect(state, includesRouteMap: false)
             case .selectedReceived(.success(let district)):
                 state.isLoading = false
-                state.destination = .detail(.init(district))
+                state.destination = .detail(.init(district, appState: state.$appState))
                 return .none
             case .batchExportReceived(.success(let urls)):
                 state.isExportLoading = false
@@ -146,17 +158,23 @@ struct HeadquarterDistrictListFeature {
             for district in state.districts {
                 let suffix = includesRouteMap ? "" : "_行動表"
                 let renderer = await PDFRenderer(path: district.pdfFileName(suffix: suffix))
-                guard let _ =  try? await routeDataFetcher.fetchAll(districtID: district.id, query: .latest) else { continue }
-                let slots: [RouteSlot] = FetchAll(districtId: district.id, latest: true).wrappedValue
+                guard let festivalState = state.appState?.festivalState,
+                      let fetchedRoutes = try? await fetchRouteUseCase(
+                        districtId: district.id,
+                        query: .year(festivalState.year)
+                      ) else { continue }
+                let slots = festivalState.routeSlots(for: fetchedRoutes)
                 let routes = slots.compactMap(\.route)
+                var routePacks: [RoutePack] = []
                 for route in routes {
-                    do {
-                        try await routeDataFetcher.fetch(routeID: route.id)
-                    } catch {
-                        continue
-                    }
+                    guard let pack = try? await fetchRoutePackUseCase(routeId: route.id) else { continue }
+                    routePacks.append(pack)
                 }
-                let tableSnapshotter = await ActionTableSnapshotter(district: district, slots: slots)
+                let tableSnapshotter = await ActionTableSnapshotter(
+                    district: district,
+                    slots: slots,
+                    routePacks: routePacks
+                )
                 let tablePages = await tableSnapshotter.takeAll()
                 for page in tablePages {
                     await renderer.addPage(with: page)
@@ -168,7 +186,8 @@ struct HeadquarterDistrictListFeature {
                 }
                 if !routes.isEmpty {
                     for route in routes {
-                        guard let snapshotter = try? await RouteSnapshotter(route),
+                        guard let pack = routePacks.first(where: { $0.route.id == route.id }),
+                              let snapshotter = try? await RouteSnapshotter(route: pack.route, points: pack.points),
                               let image = try? await snapshotter.take() else { continue }
                         await renderer.addPage(with: image)
                     }
@@ -183,13 +202,6 @@ struct HeadquarterDistrictListFeature {
 
 extension HeadquarterDistrictListFeature.Destination.State: Equatable {}
 extension HeadquarterDistrictListFeature.Destination.Action: Equatable {}
-
-extension HeadquarterDistrictListFeature.State{
-    init(_ festival: Festival){
-        self._festival = FetchOne(festival)
-        self._districts = FetchAll(festivalId: festival.id)
-    }
-}
 
 private extension HeadquarterDistrictListFeature {
     func changedDistricts(_ state: State) -> [District] {

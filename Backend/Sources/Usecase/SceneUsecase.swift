@@ -95,7 +95,7 @@ struct SceneUsecase: SceneUsecaseProtocol {
         async let festivalTask = festivalRepository.get(id: festivalId)
         async let checkpointsTask = checkpointRepository.query(by: festivalId)
         async let hazardSectionsTask = hazardRepository.query(by: festivalId)
-        async let periodsTask = periodRepository.query(by: festivalId) // 過去全て
+        async let periodsTask = periodRepository.query(by: festivalId, year: SimpleDate.from(now).year)
 
         let districts: [District]
         if let prefetchedDistricts {
@@ -136,11 +136,7 @@ struct SceneUsecase: SceneUsecaseProtocol {
         prefetchedDistricts: [District]? = nil
     ) async throws -> LaunchFestivalPack {
         async let festivalTask = festivalRepository.get(id: festivalId)
-        async let periodsTask = LatestPeriodRouteResolver.fetchLatestPeriods(
-            festivalId: festivalId,
-            nowYear: SimpleDate.from(now).year,
-            periodRepository: periodRepository
-        )
+        async let periodsTask = periodRepository.query(by: festivalId, year: SimpleDate.from(now).year)
 
         let districts: [District]
         if let prefetchedDistricts {
@@ -176,13 +172,10 @@ struct SceneUsecase: SceneUsecaseProtocol {
         let district = try await getDistrict(districtId)
         async let performances = performanceRepository.query(by: districtId)
         
-        let (routes, periods) = try await LatestPeriodRouteResolver.fetchLatestRoutes(
-            districtId: districtId,
-            festivalId: district.festivalId,
-            nowYear: SimpleDate.from(now).year,
-            periodRepository: periodRepository,
-            routeRepository: routeRepository
-        )
+        let currentYear = SimpleDate.from(now).year
+        async let routesTask = routeRepository.query(by: districtId, year: currentYear)
+        async let periodsTask = periodRepository.query(by: district.festivalId, year: currentYear)
+        let (routes, periods) = try await (routesTask, periodsTask)
 
         let filteredRoutes = routes.filter { isVisible(visibility: $0.visibility, user: user, district: district) }
 
@@ -216,9 +209,9 @@ struct SceneUsecase: SceneUsecaseProtocol {
             points = []
             passages = []
         }
-        let sanitizedPoints = currentRoute != nil
-        ? removeTimeIfNeeded(routeVisibility: currentRoute!.visibility, district: district, points: points, user: user)
-        : points
+        let sanitizedPoints = currentRoute.map {
+            removeTimeIfNeeded(routeVisibility: $0.visibility, district: district, points: points, user: user)
+        } ?? points
 
         return .init(
             performances: try await performances,
