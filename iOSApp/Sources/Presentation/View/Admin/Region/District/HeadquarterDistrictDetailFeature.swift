@@ -6,7 +6,6 @@
 //
 
 import ComposableArchitecture
-import SQLiteData
 import Shared
 import Foundation
 
@@ -25,9 +24,20 @@ struct HeadquarterDistrictDetailFeature {
     
     @ObservableState
     struct State: Equatable {
-        var district: District
-        var routes: [RouteSlot]
+        let districtId: District.ID
+        @Shared fileprivate var appState: AppState?
         var routeDrafts: [Route.ID: RouteDraft] = [:]
+        var district: District
+
+        var routes: [RouteSlot] {
+            guard let current = appState,
+                  let districtState = current.districtState,
+                  districtState.districtId == district.id else { return [] }
+            return current.festivalState.periods.map { period in
+                let route = districtState.routes.first { $0.periodId == period.id }
+                return RouteSlot(period: period, route: routeDrafts[route?.id ?? ""]?.route ?? route)
+            }
+        }
         
         var isEditable: Bool = false
         var isLoading: Bool = false
@@ -36,6 +46,12 @@ struct HeadquarterDistrictDetailFeature {
         @Presents var destination: Destination.State?
         @Presents var alert: AlertFeature.State?
         var url: URL? = nil
+
+        init(_ district: District, appState: Shared<AppState?>) {
+            self.districtId = district.id
+            self._appState = appState
+            self.district = district
+        }
     }
     
     @CasePathable
@@ -47,15 +63,15 @@ struct HeadquarterDistrictDetailFeature {
         case resetDraftsTapped
         case batchExportTapped
         case tableExportTapped
-        case updateReceived(VoidAppResult)
+        case updateReceived(AppResult<District>)
         case routeReceived(AppResult<RouteEntry>)
         case batchExportReceived(AppResult<URL>)
         case destination(PresentationAction<Destination.Action>)
         case alert(PresentationAction<AlertFeature.Action>)
     }
     
-    @Dependency(DistrictDataFetcherKey.self) var dataFetcher
-    @Dependency(RouteDataFetcherKey.self) var routeDataFetcher
+    @Dependency(SaveDistrictUseCaseKey.self) var saveDistrictUseCase
+    @Dependency(FetchRoutePackUseCaseKey.self) var fetchRoutePackUseCase
     
     var body: some ReducerOf<HeadquarterDistrictDetailFeature> {
         BindingReducer()
@@ -64,32 +80,29 @@ struct HeadquarterDistrictDetailFeature {
             case .binding(_):
                 return .none
             case .editTapped:
-                defer {
-                    state.isEditable.toggle()
-                }
                 if state.isEditable {
                     state.isLoading = true
-                    return .task(Action.updateReceived) { [state] in
-                        try await dataFetcher.update(district: state.district)
+                    return .task(Action.updateReceived) { [district = state.district, appState = state.$appState] in
+                        try await saveDistrictUseCase(district: district, appState: appState)
                     }
                 } else {
+                    if let current = state.appState?.festivalState.districts.first(where: { $0.id == state.districtId }) {
+                        state.district = current
+                    }
+                    state.isEditable = true
                     return .none
                 }
             case .reissueTapped:
-                state.destination = .reissue(.init(district: state.district))
+                state.destination = .reissue(.init(district: state.district, appState: state.$appState))
                 return .none
             case .routeSelected(let slot):
                 guard let route = slot.route else { return .none }
                 if let draft = state.routeDrafts[route.id] {
-                    state.destination = try? { .route(try .init(mode: .preview, draft: draft)) }()
+                    state.destination = try? { .route(try .init(mode: .preview, draft: draft, appState: state.$appState)) }()
                     return .none
                 }
-                state.isLoading = true
                 let entry: RouteEntry = .init(period: slot.period, route: route)
-                return .task(Action.routeReceived) {
-                    try await routeDataFetcher.fetch(routeID: route.id)
-                    return entry
-                }
+                return .send(.routeReceived(.success(entry)))
             case .batchExportTapped:
                 state.activeExportKind = .submission
                 return exportEffect(state: state, path: state.district.pdfFileName(), includesRouteMap: true)
@@ -99,14 +112,15 @@ struct HeadquarterDistrictDetailFeature {
             case .resetDraftsTapped:
                 guard !state.routeDrafts.isEmpty else { return .none }
                 state.routeDrafts = [:]
-                state.routes = FetchAll(districtId: state.district.id, latest: true).wrappedValue
                 return .none
-            case .updateReceived(.success):
+            case .updateReceived(.success(let district)):
                 state.isLoading = false
+                state.district = district
+                state.isEditable = false
                 return .none
             case .routeReceived(.success(let entry)):
                 state.isLoading = false
-                state.destination = try? { .route(try .init(mode: .preview, route: entry.route)) }()
+                state.destination = try? { .route(try .init(mode: .preview, route: entry.route, appState: state.$appState)) }()
                 return .none
             case .destination(.presented(.route(.modified(.success)))):
                 guard let routeState = state.destination?.route else { return .none }
@@ -116,10 +130,6 @@ struct HeadquarterDistrictDetailFeature {
                     passages: routeState.passages
                 )
                 state.routeDrafts[draft.route.id] = draft
-                if let index = state.routes.firstIndex(where: { $0.route?.id == draft.route.id }) {
-                    let slot = state.routes[index]
-                    state.routes[index] = RouteSlot(period: slot.period, route: draft.route)
-                }
                 return .none
             case .batchExportReceived(.success(let url)):
                 state.activeExportKind = nil
@@ -157,16 +167,10 @@ struct HeadquarterDistrictDetailFeature {
                     resolvedRoutesByRouteID[route.id] = draft.route
                     continue
                 }
-                do {
-                    try await routeDataFetcher.fetch(routeID: route.id)
-                    let passages: [RoutePassage] = FetchAll(routeId: route.id).wrappedValue
-                    let points: [Point] = FetchAll(routeId: route.id).wrappedValue
-                    passagesByRouteID[route.id] = passages
-                    pointsByRouteID[route.id] = points
-                    resolvedRoutesByRouteID[route.id] = route
-                } catch {
-                    continue
-                }
+                guard let pack = try? await fetchRoutePackUseCase(routeId: route.id) else { continue }
+                passagesByRouteID[route.id] = pack.passages
+                pointsByRouteID[route.id] = pack.points
+                resolvedRoutesByRouteID[route.id] = pack.route
             }
             let tableSnapshotter = await ActionTableSnapshotter(
                 district: state.district,
@@ -215,12 +219,3 @@ extension HeadquarterDistrictDetailFeature.State {
 
 extension HeadquarterDistrictDetailFeature.Destination.State: Equatable {}
 extension HeadquarterDistrictDetailFeature.Destination.Action: Equatable {}
-
-extension HeadquarterDistrictDetailFeature.State {
-    init(_ district: District) {
-        let routes: [RouteSlot] = FetchAll(districtId: district.id, latest: true).wrappedValue
-        self.district = district
-        self.routes = routes
-    }
-    
-}

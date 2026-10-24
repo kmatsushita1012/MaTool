@@ -1,4 +1,4 @@
-# データ同期・SSOT仕様（構造/フローレベル）
+# データ同期・SSOT設計メモ（構造/フローレベル）
 
 本仕様は、実装言語やライブラリに依存しない形で、データ同期とSSOT（Single Source of Truth）の設計方針を定義する。
 
@@ -8,12 +8,11 @@
 - オフライン/通信遅延があっても、アプリ内の状態を一貫して扱う。
 - オフライン/キャッシュ戦略を別プラットフォームへ移植可能にする。
 
-## 1.1 現状ステータス（As-Is）
+## 1.1 現状ステータス
 
-- 完全オフライン対応は未完了。
-- ただし、データ取得タイミングは概ね整備済み。
-- 既知の未完了点:
-  - Settingsでの町（District）切り替え時の取得フローは改善余地がある。
+- Phase 1でiOSAppのローカル永続化とデータ取得実装を撤去した。
+- 本書の同期フローとSQL一覧は現在の実装を表さない設計メモである。
+- 次期アーキテクチャが実装されるまで、データ参照状態は空配列または `nil` を使う。
 
 ## 2. SSOTの定義
 
@@ -157,14 +156,14 @@
   - 画面はRoomを購読して表示
   - 同期単位は Festival/District/Route Pack を維持
 
-## 14. ORM使用箇所一覧（As-Is）
+## 14. 旧データ層の実装箇所（削除済み）
 
-実装依存の詳細は省くが、現行でORM相当を利用している箇所は以下。
+以下はPhase 1で削除した実装の記録であり、現行コードには存在しない。
 
 - スキーマ定義:
-  - `iOSApp/Sources/Data/SQLite/SQLiteStore+Setup.swift`
+  - ローカルDBスキーマ定義（Phase 1で削除済み）
 - 共通CRUDラッパ:
-  - `iOSApp/Sources/Data/SQLite/SQLiteStore.swift`
+  - ローカルDBアクセス層（Phase 1で削除済み）
 - 同期書き込み（DataFetcher）:
   - `iOSApp/Sources/Data/DataFetcher/FestivalDataFetcher.swift`
   - `iOSApp/Sources/Data/DataFetcher/DistrictDataFetcher.swift`
@@ -176,7 +175,7 @@
   - `iOSApp/Sources/Domain/Entry/RouteEntry.swift`
   - `iOSApp/Sources/Domain/Entry/PointEntry.swift`
   - `iOSApp/Sources/Domain/Entry/LocationEntry.swift`
-  - `iOSApp/Sources/Domain/Extensions/Entity+SQLiteData.swift`
+  - 永続化用Entity拡張（Phase 1で削除済み）
 - 画面側の直接参照（主にFetchOne/FetchAll）:
   - `iOSApp/Sources/Application/SceneUsecase.swift`
   - `iOSApp/Sources/Presentation/StoreView/App/Home/Home.swift`
@@ -184,7 +183,7 @@
   - `iOSApp/Sources/Presentation/StoreView/Admin/District/Route/Point/PointEditFeature.swift`
   - ほか `FetchOne/FETCHAll` 使用箇所（Route/Map/Info関連）
 
-## 15. 必要SQL一覧（Room DAO化のための列挙）
+## 15. 旧同期設計のSQLメモ（現行実装なし）
 
 以下は As-Is のクエリパターンを SQL へ展開した一覧。  
 `Entry` の join 系を含む。

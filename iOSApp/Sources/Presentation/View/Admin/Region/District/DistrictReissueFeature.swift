@@ -12,10 +12,19 @@ import Shared
 struct DistrictReissueFeature {
     @ObservableState
     struct State: Equatable {
-        let district: District
+        let districtId: District.ID
+        @Shared fileprivate var appState: AppState?
+        var district: District {
+            appState!.festivalState.districts.first { $0.id == districtId }!
+        }
         var email: String = ""
         var isLoading: Bool = false
         @Presents var alert: AlertFeature.State?
+
+        init(district: District, appState: Shared<AppState?> = Shared(value: nil)) {
+            self.districtId = district.id
+            self._appState = appState
+        }
     }
 
     @CasePathable
@@ -27,7 +36,7 @@ struct DistrictReissueFeature {
         case alert(PresentationAction<AlertFeature.Action>)
     }
 
-    @Dependency(DistrictDataFetcherKey.self) var dataFetcher
+    @Dependency(ReissueDistrictUseCaseKey.self) var reissueDistrictUseCase
     @Dependency(\.dismiss) var dismiss
 
     var body: some ReducerOf<DistrictReissueFeature> {
@@ -42,8 +51,12 @@ struct DistrictReissueFeature {
                     return .none
                 }
                 state.isLoading = true
-                return .task(Action.reissueReceived) { [state] in
-                    try await dataFetcher.reissue(districtId: state.district.id, email: state.email)
+                return .task(Action.reissueReceived) { [districtId = state.district.id, email = state.email, appState = state.$appState] in
+                    _ = try await reissueDistrictUseCase(
+                        districtId: districtId,
+                        email: email,
+                        appState: appState
+                    )
                     await dismiss()
                 }
             case .cancelTapped:

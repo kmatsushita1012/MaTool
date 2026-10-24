@@ -6,12 +6,11 @@
 //
 
 import SwiftUI
-import SQLiteData
 import Shared
 
 struct PassageItemView: View {
     let passage: RoutePassage
-    @FetchOne var district: District?
+    var district: District?
 
     let canMoveUp: Bool
     let canMoveDown: Bool
@@ -32,7 +31,8 @@ struct PassageItemView: View {
         onDelete: @escaping () -> Void
     ) {
         self.passage = passage
-        self._district = FetchOne(District.find(passage.districtId ?? "__none__"))
+        // FIXME: 永続化レイヤー再構築後にdistrictIdから町を取得する。
+        self.district = nil
         self.canMoveUp = canMoveUp
         self.canMoveDown = canMoveDown
         self.onInsertAbove = onInsertAbove

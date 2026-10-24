@@ -8,7 +8,6 @@
 import ComposableArchitecture
 import Foundation
 import MapKit
-import SQLiteData
 import Shared
 
 @Reducer
@@ -34,23 +33,55 @@ struct PublicRouteFeature {
 
     @ObservableState
     struct State: Equatable {
-        @Selection struct Float: Equatable {
+        struct Float: Equatable {
             let district: District
             let location: FloatLocation
         }
         
-        @FetchOne var district: District
-        @FetchAll var routes: [RouteEntry]
-        @FetchAll var periods: [Period]
-
+        let districtId: District.ID
+        @Shared fileprivate var appState: AppState?
+        var isRouteLoading: Bool = false
+        var district: District {
+            appState!.festivalState.districts.first { $0.id == districtId }!
+        }
+        var routes: [RouteEntry] {
+            guard let appState,
+                  let districtState = appState.districtState,
+                  districtState.districtId == districtId else { return [] }
+            let periodsById = Dictionary(uniqueKeysWithValues: appState.festivalState.periods.map { ($0.id, $0) })
+            return districtState.routes.compactMap { route in
+                guard let period = periodsById[route.periodId] else { return nil }
+                return RouteEntry(period: period, route: route)
+            }.sorted()
+        }
+        var periods: [Period] {
+            appState?.festivalState.periods ?? []
+        }
+        var selectedRouteId: Route.ID?
         var selected: RouteEntry? {
-            didSet {
-                self._points = FetchAll(routeId: selected?.id)
+            routes.first { $0.id == selectedRouteId }
+        }
+        var points: [PointEntry] {
+            guard let appState,
+                  let districtState = appState.districtState,
+                  districtState.districtId == districtId,
+                  let selectedRouteId,
+                  let routeState = appState.routeState,
+                  routeState.route.id == selectedRouteId else { return [] }
+            return routeState.points.sorted().map { point in
+                PointEntry(
+                    point,
+                    checkpoint: appState.festivalState.checkpoints.first { $0.id == point.checkpointId },
+                    performance: districtState.performances.first { $0.id == point.performanceId }
+                )
             }
         }
-        @FetchAll var points: [PointEntry]
-
-        @FetchOne var float: FloatEntry?
+        var float: FloatEntry? {
+            guard let appState,
+                  let location = appState.festivalState.floatLocations.first(where: { $0.districtId == districtId }),
+                  let district = appState.festivalState.districts.first(where: { $0.id == districtId }) else { return nil }
+            return FloatEntry(floatLocation: location, district: district)
+        }
         @Shared var mapRegion: MKCoordinateRegion
         @Shared var toast: MapToast?
         var replay: Replay
@@ -64,12 +95,11 @@ struct PublicRouteFeature {
         case onAppear
         case binding(BindingAction<State>)
         case selected(RouteEntry)
+        case routeLoaded(AppResult<RoutePack>)
         case pointTapped(PointEntry)
         case locationTapped(FloatEntry)
         case userFocusTapped
         case floatFocusTapped
-        case routeReceived(VoidAppResult)
-        case floatLocationReceived(VoidAppResult)
         case userLocationReceived(Coordinate)
         case userLocationFailed(String)
         case toastDismissed
@@ -79,32 +109,48 @@ struct PublicRouteFeature {
     }
 
     @Dependency(\.mapLocationProvider) var mapLocationProvider
+    @Dependency(LoadRouteStateUseCaseKey.self) var loadRouteStateUseCase
     @Dependency(\.continuousClock) var clock
     @Dependency(\.date.now) var now
-    @Dependency(RouteDataFetcherKey.self) var dataFetcher
-    @Dependency(LocationDataFetcherKey.self) var locationDataFetcher
 
     var body: some ReducerOf<PublicRouteFeature> {
         BindingReducer()
         Reduce { state, action in
             switch action {
             case .onAppear:
+                var effects: [Effect<Action>] = []
                 if state.toast == nil, let toast = state.initialToast(now: now) {
                     state.$toast.withLock { $0 = toast }
                 }
-                guard state.toast != nil else { return .none }
-                return toastDismissEffect()
+                if state.toast != nil {
+                    effects.append(toastDismissEffect())
+                }
+                if let routeId = state.selectedRouteId {
+                    state.isRouteLoading = true
+                    effects.append(loadRouteEffect(routeId: routeId, appState: state.$appState))
+                }
+                return .merge(effects)
             case .binding:
                 return .none
             case .selected(let entry):
                 state.$toast.withLock { $0 = nil }
-                state.selected = entry
+                state.selectedRouteId = entry.id
+                state.replay = .initial(entry.id)
+                state.$mapRegion.withLock { $0 = makeRegion(state.points.map(\.coordinate)) }
+                state.isRouteLoading = true
                 return .merge(
                     .cancel(id: CancelID.toastDismissal),
-                    .task(Action.routeReceived) {
-                        try await dataFetcher.fetch(routeID: entry.route.id)
-                    }
+                    loadRouteEffect(routeId: entry.id, appState: state.$appState)
                 )
+            case .routeLoaded(.success(let pack)):
+                state.isRouteLoading = false
+                guard pack.route.id == state.selectedRouteId else { return .none }
+                state.$mapRegion.withLock { $0 = makeRegion(state.points.map(\.coordinate)) }
+                return .none
+            case .routeLoaded(.failure(let error)):
+                state.isRouteLoading = false
+                state.$toast.withLock { $0 = .error(error.message, title: "ルートを取得できませんでした") }
+                return toastDismissEffect()
             case .pointTapped(let value):
                 state.detail = .point(value)
                 return .none
@@ -113,24 +159,10 @@ struct PublicRouteFeature {
                 state.detail = .location(float)
                 return .none
             case .floatFocusTapped:
-                return .task(Action.floatLocationReceived) { [state] in
-                    try await locationDataFetcher.fetch(districtId: state.district.id)
-                }
-            case .routeReceived(.success):
-                state.replay = .initial(state.selected?.id)
-                state.$mapRegion.withLock { $0 = makeRegion(state.points.map(\.coordinate)) }
-                return .none
-            case .routeReceived(.failure(let error)):
-                state.$toast.withLock { $0 = .error(error, title: "ルートを取得できませんでした") }
-                return toastDismissEffect()
-            case .floatLocationReceived(.success):
                 if let coordinate = state.float?.floatLocation.coordinate {
                     state.$mapRegion.withLock{ $0 = makeRegion(origin: coordinate, spanDelta: spanDelta) }
                     return .none
                 }
-                state.$toast.withLock { $0 = state.locationUnavailableToast }
-                return toastDismissEffect()
-            case .floatLocationReceived(.failure):
                 state.$toast.withLock { $0 = state.locationUnavailableToast }
                 return toastDismissEffect()
             case .replayTapped:
@@ -180,6 +212,12 @@ struct PublicRouteFeature {
         }
         .cancellable(id: CancelID.toastDismissal, cancelInFlight: true)
     }
+
+    private func loadRouteEffect(routeId: Route.ID, appState: Shared<AppState?>) -> Effect<Action> {
+        .task(Action.routeLoaded) {
+            try await loadRouteStateUseCase(routeId: routeId, appState: appState)
+        }
+    }
 }
 
 extension PublicRouteFeature.State {
@@ -188,39 +226,23 @@ extension PublicRouteFeature.State {
     }
     
     init(
-        _ district: District,
+        districtId: District.ID,
         routeId: Route.ID?,
+        appState: Shared<AppState?>,
         mapRegion: Shared<MKCoordinateRegion>,
         toast: Shared<MapToast?>
     ) {
+        self.districtId = districtId
+        self._appState = appState
+        self.selectedRouteId = routeId
         self._mapRegion = mapRegion
         self._toast = toast
-        self._district = FetchOne(district)
-        let routeQuery: FetchAll<RouteEntry> = .init(districtId: district.id, latest: true)
-        self._routes = routeQuery
-        let allPeriods = FetchAll<Period>(
-            Period.where { $0.festivalId.eq(district.festivalId) }
-        ).wrappedValue
-        let latestYear = allPeriods.map(\.date.year).max() ?? SimpleDate.now.year
-        self._periods = FetchAll(
-            Period.where {
-                $0.festivalId.eq(district.festivalId) && $0.date.inYear(latestYear)
-            }
-        )
-        // 存在しなければ先頭要素で代替
-        let selected = routeQuery.wrappedValue.first { $0.route.id == routeId } ?? routeQuery.wrappedValue.first
-        self.selected = selected
-        self.replay = .initial(selected?.id)
-        self._points = FetchAll(routeId: selected?.id)
-        self._float = FetchOne(districtId: district.id)
-        let points: [Point] = {
-            if let routeId {
-                FetchAll(routeId: routeId).wrappedValue
-            } else {
-                []
-            }
-        }()
-        if let mapRegion = makeRegion(points: points, location: self.float?.floatLocation, origin: district.base, spanDelta: spanDelta) {
+        self.replay = .initial(routeId)
+        let current = appState.wrappedValue
+        let district = current?.festivalState.districts.first { $0.id == districtId }
+        let points = current?.routeState.flatMap { $0.route.id == routeId ? $0.points : nil } ?? []
+        let location = current?.festivalState.floatLocations.first { $0.districtId == districtId }
+        if let mapRegion = makeRegion(points: points, location: location, origin: district?.base, spanDelta: spanDelta) {
             self.$mapRegion.withLock{ $0 = mapRegion }
         }
     }

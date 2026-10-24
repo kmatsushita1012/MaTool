@@ -50,9 +50,8 @@ iOSApp/Sources/
 ├── Application/  # 画面起動・認証・シーン遷移のユースケース層
 ├── Domain/       # クライアント側ドメインモデル/契約
 ├── Data/
-│   ├── DataFetcher/ # API呼び出し + ローカル同期
+│   ├── Temporary/   # 永続化撤去フェーズ用の no-op DataFetcher
 │   ├── Client/      # HTTP / UserDefaults / 認証プロバイダ
-│   └── SQLite/      # ローカルDBアクセス
 ├── Utils/
 ├── SupportingFiles/
 └── MaToolApp.swift
@@ -95,23 +94,22 @@ iOSApp/Sources/
   - 役割: エンティティ、契約、業務的な型定義
 - Infrastructure 層:
   - `iOSApp/Sources/Data/Client`
-  - `iOSApp/Sources/Data/DataFetcher`
-  - `iOSApp/Sources/Data/SQLite`
-  - 役割: API通信、認証トークン、ローカル永続化、同期
+  - `iOSApp/Sources/Data/Temporary/RemovalPhaseDataFetchers.swift`
+  - 役割: API通信クライアントと、データを取得・保存しない一時的な no-op
 
-実装上の流れは概ね `Presentation -> Application -> DataFetcher/Client -> API/SQLite`。
+実装上の流れは概ね `Presentation -> Application -> DataFetcher/Client`。DataFetcherは現在 no-op。
 
 ## 3.3 Shared の位置づけ
 
 - 基本は Domain 中心（共有エンティティ・値オブジェクト）
-- 一部は Infrastructure 寄り（SQLite 連携拡張など）
+- Entityと値オブジェクトを中心に構成
 - 実務上は「クロスモジュール共通レイヤー」として機能
 
 ## 4. アーキテクチャ所見
 
 - 明確に層が分かれており、命名も整っている。
 - `Usecase` と `Data/Repository` の境界が明瞭で、依存逆転（DI）を利用している。
-- iOS 側は TCA + Application + Data の分離がされ、画面とデータアクセスの責務が分離されている。
+- iOS 側は TCA + Application + Data に分かれている。データ取得とローカル永続化は現在提供されない。
 - `Shared` がドメイン共通言語として機能しており、Backend/iOS 間で型整合を取りやすい構成。
 
 ## 5. 補足（現状の分類で迷いやすい点）

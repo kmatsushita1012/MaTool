@@ -1,16 +1,12 @@
 import ComposableArchitecture
-import Dependencies
-import SQLiteData
 import Shared
 import Testing
 @testable import iOSApp
 
 struct RouteEditFeatureTests {
-    @Test("ルート複製後は新規作成モードで保存する") @MainActor
-    func ルート複製後は新規作成モードになる() async throws {
-        let database = try DatabaseQueue(path: ":memory:")
-        try makeDatabaseMigrator().migrate(database)
-
+    @Test("過去のRouteをコピーすると別IDの新規RouteとPoint、Passageになる")
+    @MainActor
+    func 過去Routeのコピーで新しいEntityを作る() async throws {
         let festival = Festival(
             id: "festival",
             name: "Festival",
@@ -18,109 +14,97 @@ struct RouteEditFeatureTests {
             base: Coordinate(latitude: 35, longitude: 139)
         )
         let district = District(id: "district", name: "District", festivalId: festival.id)
-        let period = Period(
-            id: "period",
+        let currentPeriod = Period(
+            id: "current-period",
             festivalId: festival.id,
             date: SimpleDate(year: 2026, month: 10, day: 3),
             start: SimpleTime(hour: 9, minute: 0),
             end: SimpleTime(hour: 17, minute: 0)
         )
-        let sourceRoute = Route(id: "source-route", districtId: district.id, periodId: period.id)
-        let sourcePoints = [
-            Point(
-                id: "source-start",
-                routeId: sourceRoute.id,
-                coordinate: Coordinate(latitude: 35, longitude: 139),
-                time: SimpleTime(hour: 9, minute: 0),
-                anchor: .start,
-                index: 0
-            ),
-            Point(
-                id: "source-end",
-                routeId: sourceRoute.id,
-                coordinate: Coordinate(latitude: 35.1, longitude: 139.1),
-                time: SimpleTime(hour: 10, minute: 0),
-                anchor: .end,
-                index: 1
-            )
-        ]
-        let sourcePassage = RoutePassage(
-            id: "source-passage",
-            routeId: sourceRoute.id,
-            districtId: district.id
+        let pastPeriod = Period(
+            id: "past-period",
+            festivalId: festival.id,
+            date: SimpleDate(year: 2025, month: 10, day: 4),
+            start: SimpleTime(hour: 9, minute: 0),
+            end: SimpleTime(hour: 17, minute: 0)
         )
-        let dataFetcher = RouteDataFetcherSpy()
-
-        try await database.write { db in
-            try FestivalStoreKey.liveValue.upsert(festival, at: db)
-            try DistrictStoreKey.liveValue.upsert(district, at: db)
-            try PeriodStoreKey.liveValue.upsert(period, at: db)
-            try RouteStoreKey.liveValue.upsert(sourceRoute, at: db)
-            try PointStoreKey.liveValue.upsert(sourcePoints, at: db)
-            try PassageStoreKey.liveValue.upsert(sourcePassage, at: db)
-        }
-
-        let initialState = try withDependencies {
-            $0.defaultDatabase = database
-        } operation: {
-            try RouteEditFeature.State(
-                mode: .update,
-                route: Route(id: "edited-route", districtId: district.id, periodId: period.id)
+        let sourceRoute = Route(
+            id: "source-route",
+            districtId: district.id,
+            periodId: pastPeriod.id,
+            visibility: .admin,
+            description: "source description"
+        )
+        let sourcePack = RoutePack(
+            route: sourceRoute,
+            points: [
+                Point(
+                    id: "source-start",
+                    routeId: sourceRoute.id,
+                    coordinate: Coordinate(latitude: 35, longitude: 139),
+                    time: SimpleTime(hour: 9, minute: 0),
+                    anchor: .start,
+                    index: 0
+                ),
+                Point(
+                    id: "source-end",
+                    routeId: sourceRoute.id,
+                    coordinate: Coordinate(latitude: 35.1, longitude: 139.1),
+                    time: SimpleTime(hour: 10, minute: 0),
+                    anchor: .end,
+                    index: 1
+                )
+            ],
+            passages: [
+                RoutePassage(id: "source-passage", routeId: sourceRoute.id, districtId: district.id, order: 0)
+            ]
+        )
+        let appState = Shared<AppState?>(value: AppState(
+            festivalState: FestivalState(
+                LaunchFestivalPack(
+                    festival: festival,
+                    districts: [district],
+                    periods: [currentPeriod],
+                    locations: [],
+                    checkpoints: [],
+                    hazardSections: []
+                ),
+                year: 2026
             )
-        }
+        ))
+        let editedRoute = Route(id: "edited-route", districtId: district.id, periodId: currentPeriod.id)
+        let initialState = try RouteEditFeature.State(mode: .update, route: editedRoute, appState: appState)
         let store = TestStore(initialState: initialState) {
             RouteEditFeature()
         } withDependencies: {
-            $0.defaultDatabase = database
-            $0[RouteDataFetcherKey.self] = dataFetcher
+            $0[FetchRoutePackUseCaseKey.self] = StaticRoutePackUseCase(pack: sourcePack)
         }
         store.exhaustivity = .off
 
-        await store.send(.sourceSelected(RouteEntry(period: period, route: sourceRoute)))
-        await store.receive(.copyPrepared(.success(sourceRoute.id)))
-        let state = store.state
+        await store.send(.sourceSelected(RouteEntry(period: pastPeriod, route: sourceRoute)))
+        await store.receive(.copyPrepared(.success(sourcePack)))
 
-        #expect(state.mode == .create)
-        #expect(state.route.id != sourceRoute.id)
-        #expect(state.route.id != "edited-route")
-        #expect(state.points.count == sourcePoints.count)
-        #expect(state.points.allSatisfy { $0.routeId == state.route.id })
-        #expect(state.passages.count == 1)
-        #expect(state.passages.allSatisfy { $0.routeId == state.route.id })
-        #expect(!state.isDeleteable)
-
-        await store.send(.saveTapped)
-        await store.receive(.saveReceived(.success))
-        #expect(await dataFetcher.createdRouteId() == state.route.id)
-        #expect(await dataFetcher.updatedRouteId() == nil)
+        let copiedRoute = store.state.route
+        #expect(store.state.mode == .create)
+        #expect(copiedRoute.id != editedRoute.id)
+        #expect(copiedRoute.id != sourceRoute.id)
+        #expect(copiedRoute.districtId == district.id)
+        #expect(copiedRoute.periodId == currentPeriod.id)
+        #expect(copiedRoute.visibility == sourceRoute.visibility)
+        #expect(copiedRoute.description == sourceRoute.description)
+        #expect(store.state.points.map(\.id).allSatisfy { !sourcePack.points.map(\.id).contains($0) })
+        #expect(store.state.points.allSatisfy { $0.routeId == copiedRoute.id })
+        #expect(store.state.points.map(\.index) == [0, 1])
+        #expect(store.state.passages.map(\.id) != sourcePack.passages.map(\.id))
+        #expect(store.state.passages.allSatisfy { $0.routeId == copiedRoute.id })
         await store.finish()
     }
 }
 
-private actor RouteDataFetcherSpy: RouteDataFetcherProtocol {
-    private var createdId: Route.ID?
-    private var updatedId: Route.ID?
+private struct StaticRoutePackUseCase: FetchRoutePackUseCaseProtocol {
+    let pack: RoutePack
 
-    func fetchAll(districtID: District.ID, query: Query) async throws {}
-
-    func fetch(routeID: Route.ID) async throws {}
-
-    func update(_ route: Route, points: [Point], passages: [RoutePassage]) async throws {
-        updatedId = route.id
+    func callAsFunction(routeId: Route.ID) async throws -> RoutePack {
+        pack
     }
-
-    func create(
-        districtID: District.ID,
-        route: Route,
-        points: [Point],
-        passages: [RoutePassage]
-    ) async throws {
-        createdId = route.id
-    }
-
-    func delete(_ routeID: Route.ID) async throws {}
-
-    func createdRouteId() -> Route.ID? { createdId }
-
-    func updatedRouteId() -> Route.ID? { updatedId }
 }

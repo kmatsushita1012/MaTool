@@ -21,7 +21,6 @@ extension DependencyValues {
 
 protocol PublicMapAdUsecaseProtocol: Sendable {
     func prepareSession() async
-    func handleDistrictSelection(districtId: District.ID, periodId: Period.ID?) async throws -> Route.ID?
     func handleDistrictSelectionResult(userRole: UserRole, districtId: District.ID, hasDisplayableContent: Bool) async
 }
 
@@ -78,7 +77,6 @@ enum PublicMapAdPolicy {
 actor PublicMapAdUsecase: PublicMapAdUsecaseProtocol {
     private var counter = PublicMapAdCounter()
 
-    @Dependency(SceneDataFetcherKey.self) var sceneDataFetcher
     @Dependency(UserDefaltsManagerKey.self) var userDefaults
     @Dependency(\.adManager) var adManager
 
@@ -86,17 +84,6 @@ actor PublicMapAdUsecase: PublicMapAdUsecaseProtocol {
         counter = .init()
         await adManager.configureIfNeeded()
         await adManager.preloadInterstitial(for: .publicMapInterstitial)
-    }
-
-    func handleDistrictSelection(
-        districtId: District.ID,
-        periodId: Period.ID?
-    ) async throws -> Route.ID? {
-        try await sceneDataFetcher.launchDistrict(
-            districtId: districtId,
-            periodId: periodId,
-            clearsExistingData: false
-        )
     }
 
     func handleDistrictSelectionResult(

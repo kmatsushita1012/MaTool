@@ -30,7 +30,7 @@ Shared
   - Validation（`Point+Validation`）
   - 値オブジェクト（Coordinate, SimpleDate, SimpleTime）
 - 補足:
-  - Domain中心だがSQLite連携を意識した表現（`@Table`, `SQLiteData`）を含む
+  - ストレージ実装に依存しない共通ドメイン型を提供する
 
 ## 3.2 Backend（サーバサイド）
 
@@ -56,13 +56,12 @@ Shared
 - レイヤー:
   - UI: `Presentation`（SwiftUI + TCA Feature）
   - Application: `Application`（SceneUsecase, AuthService）
-  - Data: `DataFetcher`, `Client`, `SQLite`
+  - Data: `Client` と永続化撤去フェーズ用の一時的な no-op DataFetcher
   - Domain: `Domain` + `Shared Entity`
 - 起動時:
-  - DB初期化（SQLite）
   - 認証状態取得
-  - Festival/District単位でAPI取得
-  - 取得結果をSQLiteへ同期
+  - DataFetcher は永続化撤去フェーズ用の no-op 実装
+  - ローカル永続化とデータ同期は提供しない
 - 注記:
   - フロントのエラーハンドリングは現在整備途中のため、本書では詳細設計には踏み込まず、構造と責務の記述に留める。
 
@@ -82,11 +81,10 @@ Router -> Controller -> Usecase -> Repository -> DataStore(DynamoDB)
 
 ```text
 Presentation -> Application(Usecase/Service) -> DataFetcher -> HTTPClient/AuthProvider
-                                         \-> SQLiteStore
 ```
 
 - `SceneUsecase` が起動シナリオのオーケストレーションを担当
-- DataFetcher が API取得 + SQLite同期を担当
+- DataFetcher は現在データを取得・保存しない一時実装
 
 ## 4.3 Shared
 
@@ -103,7 +101,7 @@ Shared Entity <- iOSApp
 - Routeはドメイン上 `districtId × periodId` で決まる運行単位
 - PointはRoute配下の最小要素（`index`, `coordinate`, `time`, `anchor`等）
 - Visibilityで公開範囲を制御（`admin`, `route`, `all`）
-- iOSローカルはSQLiteをSSOTとして扱う設計（取得後に差分同期/再構成）
+- iOSAppには現在ローカル永続化がなく、参照データは一時的に空配列または `nil` を返す
 
 ## 6. 認証・認可（As-Is）
 
@@ -131,18 +129,18 @@ Shared Entity <- iOSApp
 - iOS:
   - SwiftUI
   - The Composable Architecture
-  - SQLiteData / GRDB
   - Amplify Auth
+  - 永続化撤去フェーズ用の一時的な no-op DataFetcher
 - Shared:
   - Swift Package
-  - `SQLiteData` を用いた共通Entity定義
+  - ストレージに依存しない共通Entity定義
 
 ## 9. As-Isの強み
 
 - ドメインモデル共有によりBackend/iOSの整合性が高い
 - Usecase境界とRepository境界が比較的明確
 - `swift-dependencies` を軸にテスト容易性が高い
-- iOS側でAPIとローカル永続化の責務が分離されている
+- SharedのEntityがストレージ実装に依存しない
 
 ## 10. As-Isの課題
 

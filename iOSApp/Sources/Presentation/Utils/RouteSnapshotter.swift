@@ -8,7 +8,6 @@
 import UIKit
 @preconcurrency import MapKit
 import Shared
-import SQLiteData
 
 struct RouteMapCaptionLayoutPlanner {
     private struct SearchResult {
@@ -278,20 +277,11 @@ struct RouteSnapshotter: Equatable {
     var hazardSections: [HazardSection]
     
     init (_ route: Route) throws {
-        let points: [Point] = FetchAll(routeId: route.id).wrappedValue
-        try self.init(route: route, points: points)
+        throw AppError.export(.notFound("必要な情報の取得に失敗しました。"))
     }
     
     init (route: Route, points: [Point]) throws {
-        guard let district: District = FetchOne(District.find(route.districtId)).wrappedValue,
-              let period: Period = FetchOne(Period.find(route.periodId)).wrappedValue else {
-            throw AppError.export(.notFound("必要な情報の取得に失敗しました。"))
-        }
-        self.district = district
-        self.period = period
-        self.route = route
-        self.points = points
-        self.hazardSections = FetchAll(festivalId: district.festivalId).wrappedValue
+        throw AppError.export(.notFound("必要な情報の取得に失敗しました。"))
     }
     
     private var coordinates: [Coordinate] {
@@ -515,10 +505,7 @@ struct RouteSnapshotter: Equatable {
     }
     
     private func makeTitle(_ point: Point) -> String? {
-        if let checkpointId = point.checkpointId,
-           let checkpoint = FetchOne(Checkpoint.find(checkpointId)).wrappedValue {
-            checkpoint.name
-        } else if let anchor = point.anchor{
+        if let anchor = point.anchor {
             anchor.text
         } else {
             nil

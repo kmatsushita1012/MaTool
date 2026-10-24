@@ -29,20 +29,7 @@ struct RouteEditView: View {
                 contentBeforeLiquidGlass
             }
         }
-        .safeAreaInset(edge: .bottom){
-            if store.mode == .preview && store.tab != .info {
-                Group {
-                    if #available(iOS 26.0, *), isLiquidGlassEnabled {
-                        districtAreaOverlayButton
-                            .glassEffect()
-                    } else {
-                        districtAreaOverlayButton
-                    }
-                }
-                .padding(.horizontal)
-                .frame(maxWidth: .infinity, alignment: .trailing)
-            }
-        }
+        .safeAreaInset(edge: .bottom, content: districtAreaOverlay)
         .toolbar {
             toolbar
         }
@@ -55,29 +42,47 @@ struct RouteEditView: View {
             .presentationDetents([.fraction(0.3), .fraction(0.5), .large], selection: $selectedDetent)
             .interactiveDismissDisabled()
         }
-        .sheet(item: $store.destination){ destination in
-            switch destination {
-            case .preview(let item):
-                PreviewView(item: item)
-            case .history:
-                NavigationStack {
-                    RouteHistoryView(.init(districtId: store.district.id, excludingRouteId: store.route.id) {
-                        store.send(.sourceSelected($0))
-                    })
-                }
-            case .passage:
-                NavigationStack{
-                    PassageOptionsView(festivalId: store.district.festivalId, myDistrictId: store.district.id) {
-                        store.send(.passageSelected(districtId: $0, memo: $1))
-                    }
-                }
-            }
-        }
+        .sheet(item: $store.destination, content: destinationSheet)
         .alert($store.scope(state: \.alert?.notice, action: \.alert.notice))
         .alert($store.scope(state: \.alert?.delete, action: \.alert.delete))
         .loadingOverlay(store.isLoading)
         .onAppear{
             store.send(.onAppear)
+        }
+    }
+
+    @ViewBuilder
+    private func districtAreaOverlay() -> some View {
+        if store.mode == .preview && store.tab != .info {
+            Group {
+                if #available(iOS 26.0, *), isLiquidGlassEnabled {
+                    districtAreaOverlayButton.glassEffect()
+                } else {
+                    districtAreaOverlayButton
+                }
+            }
+            .padding(.horizontal)
+            .frame(maxWidth: .infinity, alignment: .trailing)
+        }
+    }
+
+    @ViewBuilder
+    private func destinationSheet(_ destination: RouteEditFeature.Destination) -> some View {
+        switch destination {
+        case .preview(let item):
+            PreviewView(item: item)
+        case .history(let entries):
+            NavigationStack {
+                RouteHistoryView(entries: entries, excludingRouteId: store.route.id) {
+                    store.send(.sourceSelected($0))
+                }
+            }
+        case .passage:
+            NavigationStack {
+                PassageOptionsView(festivalId: store.district.festivalId, myDistrictId: store.district.id) {
+                    store.send(.passageSelected(districtId: $0, memo: $1))
+                }
+            }
         }
     }
     

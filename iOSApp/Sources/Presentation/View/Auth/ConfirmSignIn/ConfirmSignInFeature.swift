@@ -16,7 +16,12 @@ struct ConfirmSignInFeature {
         var password1: String = ""
         var password2: String = ""
         var isLoading: Bool = false
+        @Shared fileprivate var appState: AppState?
         @Presents var alert: AlertFeature.State? = nil
+
+        init(appState: Shared<AppState?> = Shared(value: nil)) {
+            self._appState = appState
+        }
     }
     
     @CasePathable
@@ -28,7 +33,8 @@ struct ConfirmSignInFeature {
         case alert(PresentationAction<AlertFeature.Action>)
     }
     
-    @Dependency(SceneUsecaseKey.self) var sceneUsecase
+    @Dependency(\.authService) var authService
+    @Dependency(ConfirmSignInUseCaseKey.self) var confirmSignInUseCase
     
     var body: some ReducerOf<ConfirmSignInFeature> {
         BindingReducer()
@@ -40,14 +46,15 @@ struct ConfirmSignInFeature {
                 if state.password1 != state.password2 {
                     state.alert = AlertFeature.error("パスワードが一致しません。")
                     return .none
-                } else if !sceneUsecase.isValidPassword(state.password1) {
+                } else if !authService.isValidPassword(state.password1) {
                     state.alert = AlertFeature.error("パスワードが条件を満たしていません。次の条件を満たしてください。\n 8文字以上 \n 少なくとも 1 つの数字を含む \n 少なくとも 1 つの大文字を含む \n 少なくとも 1 つの小文字を含む")
                     return .none
                 }
                 state.isLoading = true
-                return .task(Action.received) { [password = state.password1] in
-                    try await sceneUsecase.confirmSignIn(password: password)
+                return .task(Action.received) { [password = state.password1, appState = state.$appState] in
+                    try await confirmSignInUseCase(password: password, appState: appState)
                 }
+                .cancellable(id: SceneSessionCancellationID.active, cancelInFlight: true)
             case .dismissTapped:
                 return .dismiss
             case .received(.success(let userRole)):

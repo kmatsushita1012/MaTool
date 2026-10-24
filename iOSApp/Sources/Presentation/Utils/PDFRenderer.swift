@@ -8,7 +8,6 @@
 @preconcurrency import PDFKit
 import UIKit
 import Shared
-import SQLiteData
 
 @MainActor
 final class PDFRenderer: Sendable {
@@ -386,7 +385,8 @@ struct ActionTableSnapshotter: Sendable {
         daySlots.map { slot in
             let entries: [String] = {
                 guard let route = slot.route else { return [] }
-                let passages: [RoutePassage] = passagesByRouteID[route.id] ?? FetchAll(routeId: route.id).wrappedValue
+                // FIXME: 永続化レイヤー再構築後にルートの通過地点一覧を取得する。
+                let passages: [RoutePassage] = passagesByRouteID[route.id] ?? []
                 return passages.prefix(linesPerPeriod * columnsPerLine).map { Self.passageTitle($0, routeDistrictId: route.districtId) }
             }()
             return Row(
@@ -399,11 +399,6 @@ struct ActionTableSnapshotter: Sendable {
     static func passageTitle(_ passage: RoutePassage, routeDistrictId: District.ID) -> String {
         if passage.districtId == routeDistrictId {
             return "自町"
-        }
-
-        if let districtId = passage.districtId,
-           let district = FetchOne(District.find(districtId)).wrappedValue {
-            return district.name
         }
 
         if let memo = passage.memo?.trimmingCharacters(in: .whitespacesAndNewlines),

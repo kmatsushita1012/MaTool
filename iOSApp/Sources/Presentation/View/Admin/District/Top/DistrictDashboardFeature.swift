@@ -8,7 +8,6 @@
 import ComposableArchitecture
 import Foundation
 import Shared
-import SQLiteData
 
 @Reducer
 struct DistrictDashboardFeature {
@@ -28,12 +27,29 @@ struct DistrictDashboardFeature {
     
     @ObservableState
     struct State:Equatable {
+        let districtId: District.ID
+        @Shared fileprivate var appState: AppState?
+
+        var district: District {
+            appState!.festivalState.districts.first { $0.id == districtId }!
+        }
+
+        var periods: [Period] {
+            appState?.festivalState.periods ?? []
+        }
+
+        var routes: [RouteSlot] {
+            let districtState = appState?.districtState
+            return periods.map { period in
+                RouteSlot(
+                    period: period,
+                    route: districtState?.districtId == districtId
+                        ? districtState?.routes.first { $0.periodId == period.id }
+                        : nil
+                )
+            }
+        }
         
-        @FetchOne var district: District
-        @FetchAll var routes: [RouteSlot]
-        @FetchAll var periods: [Period]
-        
-        var isRouteLoading: Bool = false
         var isAWSLoading: Bool = false
         var activeExportKind: ExportKind? = nil
         var url: URL? = nil
@@ -41,6 +57,11 @@ struct DistrictDashboardFeature {
         // Navigation
         @Presents var destination: Destination.State?
         @Presents var alert: AlertFeature.State?
+
+        init(_ district: District, appState: Shared<AppState?>) {
+            self.districtId = district.id
+            self._appState = appState
+        }
     }
     
     @CasePathable
@@ -62,15 +83,14 @@ struct DistrictDashboardFeature {
         case exportReceived(AppResult<URL>)
         case destination(PresentationAction<Destination.Action>)
         case signOutTapped
-        case signOutReceived(AppResult<UserRole>)
-        case routeEditReceived(AppResult<RouteSlot>)
+        case signOutReceived(VoidAppResult)
         case dismissTapped
         case alert(PresentationAction<AlertFeature.Action>)
     }
     
     @Dependency(\.locationUsecase) var locationUsecase
-    @Dependency(\.authService) var authService
-    @Dependency(RouteDataFetcherKey.self) var routeDateFetcher
+    @Dependency(SignOutUseCaseKey.self) var signOutUseCase
+    @Dependency(FetchRoutePackUseCaseKey.self) var fetchRoutePackUseCase
     @Dependency(\.dismiss) var dismiss
     
     var body: some ReducerOf<DistrictDashboardFeature> {
@@ -80,41 +100,30 @@ struct DistrictDashboardFeature {
             case .binding:
                 return .none
             case .onEdit:
-                state.destination = .edit(.init(state.district))
+                state.destination = .edit(.init(state.district, appState: state.$appState))
                 return .none
             case .onRouteEdit(let item):
-                state.isRouteLoading = true
-                if let route = item.route {
-                    return .task(Action.routeEditReceived) { [state] in
-                        async let listTask: () = routeDateFetcher.fetchAll(districtID: state.district.id, query: .all)
-                        async let detailTask: () = routeDateFetcher.fetch(routeID: route.id)
-                        let _ = try await (listTask, detailTask)
-                        return item
+                do {
+                    if let route = item.route {
+                        state.destination = .route(try .init(mode: .update, route: route, appState: state.$appState))
+                    } else {
+                        let route = Route(
+                            id: UUID().uuidString,
+                            districtId: state.district.id,
+                            periodId: item.period.id,
+                            visibility: state.district.visibility
+                        )
+                        state.destination = .route(try .init(mode: .create, route: route, appState: state.$appState))
                     }
-                } else {
-                    return .task(Action.routeEditReceived) { [state] in
-                        try await routeDateFetcher.fetchAll(districtID: state.district.id, query: .all)
-                        return item
-                    }
+                } catch {
+                    state.alert = .error(error.localizedDescription)
                 }
+                return .none
             case .changePasswordTapped:
                 state.destination = .changePassword(ChangePasswordFeature.State())
                 return .none
             case .updateEmailTapped:
                 state.destination = .updateEmail(UpdateEmailFeature.State())
-                return .none
-            case .routeEditReceived(.success(let item)):
-                state.isRouteLoading = false
-                if let route = item.route{
-                    state.destination = try? { .route(try .init(mode: .update, route: route)) }()
-                } else {
-                    let route = Route(id: UUID().uuidString, districtId: state.district.id, periodId: item.period.id, visibility: state.district.visibility)
-                    state.destination = try? { .route(try .init(mode: .create, route: route)) }()
-                }
-                return .none
-            case .routeEditReceived(.failure(let error)):
-                state.isRouteLoading = false
-                state.alert = .error(error.message)
                 return .none
             case .locationPrepared(
                 isTracking: let isTracking,
@@ -126,7 +135,8 @@ struct DistrictDashboardFeature {
                         id: state.district.id,
                         isTracking: isTracking,
                         selectedInterval: interval ?? Interval.sample,
-                        permissionState: permissionState
+                        permissionState: permissionState,
+                        appState: state.$appState
                     )
                 )
                 return .none
@@ -172,8 +182,9 @@ struct DistrictDashboardFeature {
             case .signOutTapped:
                 state.isAWSLoading = true
                 return .task(Action.signOutReceived) {
-                    try await authService.signOut()
+                    try await signOutUseCase()
                 }
+                .cancellable(id: SceneSessionCancellationID.active, cancelInFlight: true)
             case .signOutReceived(.failure(let error)):
                 state.isAWSLoading = false
                 state.alert = .error("ログアウトに失敗しました。 \(error.message)")
@@ -197,7 +208,7 @@ extension DistrictDashboardFeature.Destination.Action: Equatable {}
 
 extension DistrictDashboardFeature.State{
     var isLoading: Bool {
-        isAWSLoading || isRouteLoading || activeExportKind != nil
+        isAWSLoading || activeExportKind != nil
     }
     
     var isSubmissionExportLoading: Bool {
@@ -208,10 +219,6 @@ extension DistrictDashboardFeature.State{
         activeExportKind == .table
     }
     
-    init(_ district: District){
-        self._district = FetchOne(district)
-        self._routes = .init(districtId: district.id, latest: true)
-    }
 }
 
 private extension DistrictDashboardFeature {
@@ -219,14 +226,18 @@ private extension DistrictDashboardFeature {
         .task(Action.exportReceived) {
             let renderer = await PDFRenderer(path: path)
             let routes = state.routes.compactMap(\.route)
+            var passagesByRouteID: [Route.ID: [RoutePassage]] = [:]
+            var pointsByRouteID: [Route.ID: [Point]] = [:]
             for route in routes {
-                do {
-                    try await routeDateFetcher.fetch(routeID: route.id)
-                } catch {
-                    continue
-                }
+                guard let pack = try? await fetchRoutePackUseCase(routeId: route.id) else { continue }
+                passagesByRouteID[route.id] = pack.passages
+                pointsByRouteID[route.id] = pack.points
             }
-            let tableSnapshotter = await ActionTableSnapshotter(district: state.district, slots: state.routes)
+            let tableSnapshotter = await ActionTableSnapshotter(
+                district: state.district,
+                slots: state.routes,
+                passagesByRouteID: passagesByRouteID
+            )
             let tablePages = await tableSnapshotter.takeAll()
             for page in tablePages {
                 await renderer.addPage(with: page)
@@ -236,7 +247,8 @@ private extension DistrictDashboardFeature {
                 return url
             }
             for route in routes {
-                guard let snapshotter = try? await RouteSnapshotter(route),
+                guard let points = pointsByRouteID[route.id] else { continue }
+                guard let snapshotter = try? await RouteSnapshotter(route: route, points: points),
                       let image = try? await snapshotter.take() else { continue }
                 await renderer.addPage(with: image)
             }

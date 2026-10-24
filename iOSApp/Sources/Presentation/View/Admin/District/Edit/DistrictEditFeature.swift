@@ -8,7 +8,6 @@
 //state 共通
 import ComposableArchitecture
 import Shared
-import SQLiteData
 
 @Reducer
 struct DistrictEditFeature {
@@ -24,11 +23,12 @@ struct DistrictEditFeature {
     struct State: Equatable{
         var district: District
         var performances: [Performance]
+        @Shared fileprivate var appState: AppState?
         
         var isLoading: Bool = false
         @Presents var destination: Destination.State?
         @Presents var alert: AlertFeature.State?
-        @FetchOne var base: Coordinate
+        var base: Coordinate?
     }
     
     @CasePathable
@@ -45,8 +45,7 @@ struct DistrictEditFeature {
         case alert(PresentationAction<AlertFeature.Action>)
     }
     
-    @Dependency(\.authService) var authService
-    @Dependency(DistrictDataFetcherKey.self) var dataFetcher
+    @Dependency(SaveDistrictPackUseCaseKey.self) var saveDistrictPackUseCase
     @Dependency(\.dismiss) var dismiss
     
     var body: some ReducerOf<DistrictEditFeature>{
@@ -59,22 +58,31 @@ struct DistrictEditFeature {
                 return .dismiss
             case .saveTapped:
                 state.isLoading = true
-                return .task(Action.postReceived) { [state] in
-                    try await dataFetcher.update(district: state.district, performances: state.performances)
+                return .task(Action.postReceived) { [district = state.district, performances = state.performances, appState = state.$appState] in
+                    _ = try await saveDistrictPackUseCase(
+                        district: district,
+                        performances: performances,
+                        appState: appState
+                    )
                     await dismiss()
                 }
             case .baseTapped:
                 if let base = state.district.base{
                     state.destination = .base(DistrictBaseEditFeature.State(base: base))
+                } else if let base = state.base {
+                    state.destination = .base(DistrictBaseEditFeature.State(origin: base))
                 } else {
-                    state.destination = .base(DistrictBaseEditFeature.State(origin: state.base))
+                    // FIXME: 永続化レイヤー再構築後に基準座標を取得して編集画面を開く。
+                    return .none
                 }
                 return .none
             case .areaTapped:
+                // FIXME: 永続化レイヤー再構築後に基準座標を取得して区域編集画面を開く。
+                guard let origin = state.district.base ?? state.base else { return .none }
                 state.destination = .area(
                     DistrictAreaEditFeature.State(
                         coordinates: state.district.area,
-                        origin: state.district.base ?? state.base
+                        origin: origin
                     )
                 )
                 return .none
@@ -136,10 +144,14 @@ extension DistrictEditFeature.Destination.State: Equatable {}
 extension DistrictEditFeature.Destination.Action: Equatable {}
 
 extension DistrictEditFeature.State {
-    init(_ district: District) {
-        self.district = district
-        self.performances = FetchAll(Performance.where{ $0.districtId.eq(district.id) }).wrappedValue
-        self._base = FetchOne(wrappedValue: .init(latitude: 0, longitude: 0), Festival.where{ $0.id.eq(district.festivalId) }.select(\.base))
+    init(_ district: District, appState: Shared<AppState?> = Shared(value: nil)) {
+        self._appState = appState
+        let current = appState.wrappedValue
+        self.district = current?.festivalState.districts.first { $0.id == district.id } ?? district
+        self.performances = current?.districtState?.districtId == district.id
+            ? current?.districtState?.performances ?? []
+            : []
+        self.base = current?.festivalState.festival.base
     }
 }
 

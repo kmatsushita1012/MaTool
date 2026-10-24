@@ -39,6 +39,7 @@ struct LocationTrackingFeature{
     @ObservableState
     struct State:Equatable{
         let id: String
+        @Shared fileprivate var appState: AppState?
         var isTracking: Bool
         var isLoading: Bool = false
         var history: [Status] = []
@@ -66,10 +67,13 @@ struct LocationTrackingFeature{
         case locationPermissionProceedTapped
         case locationPermissionSheetDismissed
         case historyUpdated([Status])
+        case locationUpdateRequested(FloatLocation)
         case dismissTapped
     }
     
     @Dependency(\.locationUsecase) var locationUsecase
+    @Dependency(SaveLocationUseCaseKey.self) var saveLocationUseCase
+    @Dependency(DeleteLocationUseCaseKey.self) var deleteLocationUseCase
     @Dependency(\.dismiss) var dismiss
     
     var body: some ReducerOf<LocationTrackingFeature> {
@@ -77,15 +81,22 @@ struct LocationTrackingFeature{
         Reduce{state, action in
             switch action{
             case .onAppear:
-                return .run { send in
-                    let initial = await locationUsecase.getLocationHistory()
-                    await send(.historyUpdated(initial))
-                    // 以降の更新を購読
-                    for await history in await locationUsecase.historyStream() {
-                        await send(.historyUpdated(history))
+                return .merge(
+                    .run { send in
+                        let initial = await locationUsecase.getLocationHistory()
+                        await send(.historyUpdated(initial))
+                        for await history in await locationUsecase.historyStream() {
+                            await send(.historyUpdated(history))
+                        }
                     }
-                }
-                .cancellable(id: "HistoryStream", cancelInFlight: true)
+                    .cancellable(id: "HistoryStream", cancelInFlight: true),
+                    .run { send in
+                        for await location in await locationUsecase.locationUpdateStream() {
+                            await send(.locationUpdateRequested(location))
+                        }
+                    }
+                    .cancellable(id: "LocationUpdateStream", cancelInFlight: true)
+                )
             case .locationPermissionButtonTapped:
                 return .run { send in
                     await send(
@@ -113,8 +124,15 @@ struct LocationTrackingFeature{
                 state.isAlwaysLocationAuthorized = permissionState.isAlwaysAuthorized
                 let id = state.id
                 guard state.isTracking else {
+                    let appState = state.$appState
                     return .run { _ in
                         await locationUsecase.stop(id: id)
+                        do {
+                            try await deleteLocationUseCase(districtId: id, appState: appState)
+                            await locationUsecase.recordLocationDelete()
+                        } catch {
+                            await locationUsecase.recordLocationError(error.asAppError)
+                        }
                     }
                 }
                 return .none
@@ -154,11 +172,18 @@ struct LocationTrackingFeature{
                 return .run { [
                     id,
                     isTracking,
-                    interval = state.selectedInterval
+                    interval = state.selectedInterval,
+                    appState = state.$appState
                 ] send in
                     await send(.locationPermissionStateRefreshed(await locationUsecase.locationPermissionState()))
                     if !isTracking {
                         await locationUsecase.stop(id: id)
+                        do {
+                            try await deleteLocationUseCase(districtId: id, appState: appState)
+                            await locationUsecase.recordLocationDelete()
+                        } catch {
+                            await locationUsecase.recordLocationError(error.asAppError)
+                        }
                         return
                     }
                     let result = await locationUsecase.start(id: id, interval: interval)
@@ -170,6 +195,16 @@ struct LocationTrackingFeature{
             case .historyUpdated(let history):
                 state.history = history
                 return .none
+            case .locationUpdateRequested(let location):
+                let appState = state.$appState
+                return .run { _ in
+                    do {
+                        let response = try await saveLocationUseCase(location, appState: appState)
+                        await locationUsecase.recordLocationUpdate(response)
+                    } catch {
+                        await locationUsecase.recordLocationError(error.asAppError)
+                    }
+                }
             case .dismissTapped:
                 return .dismiss
             }
@@ -182,9 +217,11 @@ extension LocationTrackingFeature.State {
         id: String,
         isTracking: Bool,
         selectedInterval: Interval,
-        permissionState: LocationPermissionState
+        permissionState: LocationPermissionState,
+        appState: Shared<AppState?>
     ) {
         self.id = id
+        self._appState = appState
         self.isTracking = isTracking
         self.selectedInterval = selectedInterval
         let sheetMode = LocationPermissionSheetMode(

@@ -33,7 +33,7 @@ struct DistrictDashboardView: View{
                 ShareSheet(item: url)
             }
             .alert($store.scope(state: \.alert, action: \.alert))
-            .loadingOverlay(store.isRouteLoading || store.isAWSLoading)
+        .loadingOverlay(store.isAWSLoading)
         
     }
     

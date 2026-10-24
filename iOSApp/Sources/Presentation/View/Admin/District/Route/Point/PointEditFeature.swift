@@ -7,7 +7,6 @@
 
 import ComposableArchitecture
 import Shared
-import SQLiteData
 
 @Reducer
 struct PointEditFeature {
@@ -24,8 +23,10 @@ struct PointEditFeature {
     struct State: Equatable{
         var point: Point
         
-        @FetchAll var checkpoints: [Checkpoint]
-        @FetchAll var performances: [Performance]
+        // FIXME: 永続化レイヤー再構築後に交差点一覧を取得する。
+        var checkpoints: [Checkpoint] = []
+        // FIXME: 永続化レイヤー再構築後に余興一覧を取得する。
+        var performances: [Performance] = []
         
         var pointType: PointType
         let validTypes: [PointType]
@@ -76,24 +77,15 @@ struct PointEditFeature {
 
 extension PointEditFeature.State {
     init?(_ point: Point, districtId: District.ID){
+        // FIXME: 永続化レイヤー再構築後に町を取得し、存在しない場合は初期化に失敗させる。
         self.point = point
-        guard let district: District = FetchOne(id: districtId)?.wrappedValue else { return nil }
-        let checkpointQuery = FetchAll(Checkpoint.where{ $0.festivalId.eq(district.festivalId) })
-        self._checkpoints = checkpointQuery
-        let performanceQuery = FetchAll(Performance.where{ $0.districtId.eq(district.id) })
-        self._performances =  performanceQuery
+        // FIXME: 永続化レイヤー再構築後に交差点一覧を取得する。
+        self.checkpoints = []
+        // FIXME: 永続化レイヤー再構築後に余興一覧を取得する。
+        self.performances = []
         self.pointType = .init(point: point)
-        
-        var types: [PointEditFeature.PointType] = [.start, .end, .rest]
-        if !checkpointQuery.wrappedValue.isEmpty {
-            types.append(.checkpoint)
-        }
-        if !performanceQuery.wrappedValue.isEmpty {
-            types.append(.performance)
-        }
-        types.append(.none)
-        
-        self.validTypes = types
+        // FIXME: 永続化レイヤー再構築後に交差点・余興の有無に応じて選択可能な地点種別を構成する。
+        self.validTypes = [.start, .end, .rest, .none]
     }
     
     var selectedCheckpoint: Checkpoint? {

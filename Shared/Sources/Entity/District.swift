@@ -5,21 +5,16 @@
 //  Created by 松下和也 on 2025/10/30.
 //
 
-import SQLiteData
-
 // MARK: - District
-@Table public struct District: Entity, Identifiable {
+public struct District: Entity, Identifiable {
     public let id: String
     public var name: String
     public let festivalId: Festival.ID
     public var order: Int
     @NullEncodable public var group: String?
     @NullEncodable public var description: String?
-    @Column(as: Coordinate?.JSONRepresentation.self)
     @NullEncodable public var base: Coordinate?
-    @Column(as: [Coordinate].JSONRepresentation.self)
     public var area: [Coordinate]
-    @Column(as: ImagePath.JSONRepresentation.self)
     public var image: ImagePath
     public var visibility: Visibility
     public var isEditable: Bool
@@ -52,7 +47,7 @@ import SQLiteData
 }
 
 // MARK: - Performance
-@Table public struct Performance: Entity {
+public struct Performance: Entity {
     public let id: String
     public var name: String = ""
     public let districtId: District.ID

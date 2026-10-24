@@ -7,7 +7,6 @@
 
 import ComposableArchitecture
 import Foundation
-import SQLiteData
 import Shared
 
 @Reducer
@@ -24,7 +23,11 @@ struct FestivalDashboardFeature {
 
     @ObservableState
     struct State: Equatable {
-        @FetchOne var festival: Festival
+        @Shared fileprivate var appState: AppState?
+
+        var festival: Festival {
+            appState!.festivalState.festival
+        }
 
         var isApiLoading: Bool = false
         var isAuthLoading: Bool = false
@@ -34,6 +37,10 @@ struct FestivalDashboardFeature {
         @Presents var alert: AlertFeature.State? = nil
         var isLoading: Bool {
             isApiLoading || isAuthLoading || isExportLoading
+        }
+
+        init(appState: Shared<AppState?>) {
+            self._appState = appState
         }
     }
 
@@ -47,13 +54,14 @@ struct FestivalDashboardFeature {
         case changePasswordTapped
         case updateEmailTapped
         case signOutTapped
-        case signOutReceived(AppResult<UserRole>)
+        case signOutReceived(VoidAppResult)
+        case periodsPrepared(AppResult<[Period]>)
         case destination(PresentationAction<Destination.Action>)
         case alert(PresentationAction<AlertFeature.Action>)
     }
 
-    @Dependency(RouteDataFetcherKey.self) var routeDataFetcher
-    @Dependency(\.authService) var authService
+    @Dependency(FetchFestivalPeriodsUseCaseKey.self) var fetchFestivalPeriodsUseCase
+    @Dependency(SignOutUseCaseKey.self) var signOutUseCase
     @Dependency(\.dismiss) var dismiss
 
     var body: some ReducerOf<FestivalDashboardFeature> {
@@ -61,13 +69,28 @@ struct FestivalDashboardFeature {
         Reduce { state, action in
             switch action {
             case .onEdit:
-                state.destination = .edit(FestivalEditFeature.State(state.festival))
+                state.destination = .edit(FestivalEditFeature.State(state.festival, appState: state.$appState))
                 return .none
             case .periodTapped:
-                state.destination = .periods(PeriodListFeature.State(festivalId: state.festival.id))
+                state.isApiLoading = true
+                let festivalId = state.festival.id
+                return .task(Action.periodsPrepared) {
+                    try await fetchFestivalPeriodsUseCase(festivalId: festivalId)
+                }
+            case .periodsPrepared(.success(let periods)):
+                state.isApiLoading = false
+                state.destination = .periods(PeriodListFeature.State(
+                    festivalId: state.festival.id,
+                    periods: periods,
+                    appState: state.$appState
+                ))
+                return .none
+            case .periodsPrepared(.failure(let error)):
+                state.isApiLoading = false
+                state.alert = AlertFeature.error("日程の取得に失敗しました。\n\(error.message)")
                 return .none
             case .districtsTapped:
-                state.destination = .districts(.init(state.festival))
+                state.destination = .districts(.init(state.festival, appState: state.$appState))
                 return .none
             case .dismissTapped:
                 return .dismiss
@@ -80,8 +103,9 @@ struct FestivalDashboardFeature {
             case .signOutTapped:
                 state.isAuthLoading = true
                 return .task(Action.signOutReceived) {
-                    try await authService.signOut()
+                    try await signOutUseCase()
                 }
+                .cancellable(id: SceneSessionCancellationID.active, cancelInFlight: true)
             case .signOutReceived(.failure(let error)):
                 state.isAuthLoading = false
                 state.alert = AlertFeature.error("ログアウトに失敗しました　\(error.message)")
@@ -107,9 +131,3 @@ struct FestivalDashboardFeature {
 
 extension FestivalDashboardFeature.Destination.State: Equatable {}
 extension FestivalDashboardFeature.Destination.Action: Equatable {}
-
-extension FestivalDashboardFeature.State {
-    init(_ festival: Festival) {
-        self._festival = FetchOne(festival)
-    }
-}

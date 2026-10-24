@@ -7,7 +7,6 @@
 
 import ComposableArchitecture
 import Shared
-import SQLiteData
 
 @Reducer
 struct InfoListFeature {
@@ -24,17 +23,23 @@ struct InfoListFeature {
     
     @ObservableState
     struct State: Equatable {
-        @FetchOne var festival: Festival
-        @FetchAll var districts: [District]
+        @Shared fileprivate var appState: AppState?
+
+        var festival: Festival {
+            appState!.festivalState.festival
+        }
+
+        var districts: [District] {
+            appState?.festivalState.districts ?? []
+        }
         
         var isDismissed: Bool = false
         @Presents var destination: Destination.State? = nil
         @Presents var alert: AlertFeature.State? = nil
         var isLoading: Bool = false
         
-        init(festival: Festival) {
-            self._festival = FetchOne(festival)
-            self._districts = FetchAll(festivalId: festival.id)
+        init(appState: Shared<AppState?>) {
+            self._appState = appState
         }
     }
     
@@ -44,12 +49,12 @@ struct InfoListFeature {
         case districtTapped(District)
         case mapRequested(MapRequest)
         case dismissTapped
-        case districtReceived(AppResult<District>)
+        case districtReceived(AppResult<DistrictPack>)
         case destination(PresentationAction<Destination.Action>)
         case alert(PresentationAction<AlertFeature.Action>)
     }
     
-    @Dependency(DistrictDataFetcherKey.self) var dataFetcher
+    @Dependency(FetchDistrictUseCaseKey.self) var fetchDistrictUseCase
     @Dependency(\.dismiss) var dismiss
     
     var body: some ReducerOf<InfoListFeature> {
@@ -61,8 +66,7 @@ struct InfoListFeature {
             case .districtTapped(let district):
                 state.isLoading = true
                 return .task(Action.districtReceived) {
-                    try await dataFetcher.fetch(districtID: district.id)
-                    return district
+                    try await fetchDistrictUseCase(districtId: district.id)
                 }
             case .mapRequested:
                 return .none
@@ -73,8 +77,8 @@ struct InfoListFeature {
                     state.isDismissed = true
                     return .none
                 }
-            case .districtReceived(.success(let district)):
-                state.destination = .district(DistrictInfoFeature.State(district))
+            case .districtReceived(.success(let pack)):
+                state.destination = .district(DistrictInfoFeature.State(pack, appState: state.$appState))
                 state.isLoading = false
                 return .none
             case .districtReceived(.failure(let error)):

@@ -345,4 +345,4 @@ Festival
 
 - `Entity` / `Pack` / `DTO` は `Codable & Sendable & Hashable & Equatable` を満たす。
 - API層とローカル永続化層の両方で同一モデルを再利用し、整合を優先。
-- 永続化形式（SQLite列, JSON表現）は実装依存だが、意味的な正本は本ドキュメントのモデル定義とする。
+- 永続化形式とJSON表現は実装依存だが、意味的な正本は本ドキュメントのモデル定義とする。

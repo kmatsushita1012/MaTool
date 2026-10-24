@@ -9,14 +9,13 @@ import ComposableArchitecture
 import Foundation
 import MapKit
 import Shared
-import SQLiteData
 
 @Reducer
 struct RouteEditFeature{
     
     enum Destination: Equatable {
         case preview(ExportedItem)
-        case history
+        case history([RouteEntry])
         case passage
     }
     
@@ -50,11 +49,14 @@ struct RouteEditFeature{
         var route: Route
         var passages: [RoutePassage]
         
-        @FetchOne var district: District
-        @FetchOne var festival: Festival
-        @FetchOne var period: Period
+        var district: District
+        var festival: Festival
+        var period: Period
+        @Shared fileprivate var appState: AppState?
         
         var mode: EditMode
+        var requiresRoutePackFetch: Bool = false
+        var didLoadRoutePack: Bool = true
         var operation: Operation = .add
         var isLoading: Bool = false
         var isSubmitDialogPresented: Bool = false
@@ -95,15 +97,22 @@ struct RouteEditFeature{
         case passageMoved(from: IndexSet, to: Int)
         case passageDeleteTapped(Int)
         case sourceSelected(RouteEntry)
+        case historyPrepared(AppResult<[RouteEntry]>)
         case saveReceived(VoidAppResult)
-        case copyPrepared(AppResult<Route.ID>)
+        case copyPrepared(AppResult<RoutePack>)
+        case routePackReceived(AppResult<RoutePack>)
         case deleteReceived(VoidAppResult)
         case previewPrepared(AppResult<ExportedItem>)
         case point(PresentationAction<PointEditFeature.Action>)
         case alert(PresentationAction<AlertDestination.Action>)
     }
     
-    @Dependency(RouteDataFetcherKey.self) var dataFetcher
+    @Dependency(CreateRouteUseCaseKey.self) var createRouteUseCase
+    @Dependency(UpdateRouteUseCaseKey.self) var updateRouteUseCase
+    @Dependency(DeleteRouteUseCaseKey.self) var deleteRouteUseCase
+    @Dependency(FetchRoutePackUseCaseKey.self) var fetchRoutePackUseCase
+    @Dependency(FetchRouteHistoryUseCaseKey.self) var fetchRouteHistoryUseCase
+    @Dependency(LoadRouteStateUseCaseKey.self) var loadRouteStateUseCase
     @Dependency(\.dismiss) var dismiss
     
     var body: some ReducerOf<RouteEditFeature> {
@@ -111,10 +120,17 @@ struct RouteEditFeature{
         Reduce{ state, action in
             switch action {
             case .onAppear:
+                var effects: [Effect<Action>] = []
                 if !state.district.isEditable && state.mode != .preview {
                     state.alert = .notice(.notice("\(state.festival.subname)がルートの更新を停止しています。"))
                 }
-                return .none
+                if state.requiresRoutePackFetch && !state.didLoadRoutePack && !state.isLoading {
+                    state.isLoading = true
+                    effects.append(.task(Action.routePackReceived) { [routeId = state.route.id, appState = state.$appState] in
+                        try await loadRouteStateUseCase(routeId: routeId, appState: appState)
+                    })
+                }
+                return .merge(effects)
             case .mapLongPressed(let coordinate):
                 switch state.operation {
                 case .add:
@@ -142,7 +158,7 @@ struct RouteEditFeature{
                 state.isDistrictAreaOverlayVisible.toggle()
                 return .none
             case .autoPassageTapped:
-                let districts: [District] = FetchAll(festivalId: state.district.festivalId).wrappedValue
+                let districts = state.appState?.festivalState.districts ?? []
                 let detector = RoutePassageAutoDetector(mode: .includeTouch)
                 state.passages = detector.makePassages(routeId: state.route.id, points: state.points, districts: districts)
                 return .none
@@ -155,8 +171,13 @@ struct RouteEditFeature{
                 state.operation = .add
                 return .none
             case .saveTapped:
+                guard state.didLoadRoutePack else {
+                    state.alert = .notice(.error("ルート情報を取得できませんでした。画面を開き直してください。"))
+                    return .none
+                }
+                let points = state.points.normalized().reindexed()
                 do {
-                    try state.points.validate()
+                    try points.validate()
                 } catch {
                     state.alert = .notice(.error(error.localizedDescription))
                     return .none
@@ -168,12 +189,23 @@ struct RouteEditFeature{
                     }
                 case .create, .update:
                     state.isLoading = true
-                    return .task(Action.saveReceived) {[state] in
+                    return .task(Action.saveReceived) {[state, points, appState = state.$appState] in
                         switch state.mode {
                         case .create:
-                            try await dataFetcher.create(districtID: state.route.districtId, route: state.route, points: state.points, passages: state.passages)
+                            _ = try await createRouteUseCase(
+                                districtId: state.route.districtId,
+                                route: state.route,
+                                points: points,
+                                passages: state.passages,
+                                appState: appState
+                            )
                         case .update:
-                            try await dataFetcher.update(state.route, points: state.points, passages: state.passages)
+                            _ = try await updateRouteUseCase(
+                                state.route,
+                                points: points,
+                                passages: state.passages,
+                                appState: appState
+                            )
                         case .preview:
                             throw AppError.be(.forbidden("権限がありません"))
                         }
@@ -213,8 +245,12 @@ struct RouteEditFeature{
                     return ExportedItem(image: image, url: url)
                 }
             case .copyTapped:
-                state.destination = .history
-                return .none
+                state.isLoading = true
+                let districtId = state.district.id
+                let festivalId = state.festival.id
+                return .task(Action.historyPrepared) {
+                    try await fetchRouteHistoryUseCase(districtId: districtId, festivalId: festivalId)
+                }
             case .passageAddTapped:
                 state.passageInsertIndex = nil
                 state.destination = .passage
@@ -249,21 +285,37 @@ struct RouteEditFeature{
                 state.isLoading = true
                 state.destination = nil
                 return .task(Action.copyPrepared) {
-                    try await dataFetcher.fetch(routeID: route.id)
-                    return route.id
+                    try await fetchRoutePackUseCase(routeId: route.id)
                 }
             // MARK: - Received
-            case .copyPrepared(.success(let routeId)):
+            case .historyPrepared(.success(let entries)):
                 state.isLoading = false
-                guard let sourceRoute: Route = FetchOne(Route.find(routeId)).wrappedValue else { return .none }
-                let sourcePoints: [Point] = FetchAll(routeId: sourceRoute.id).wrappedValue
-                let sourcePassages: [RoutePassage] = FetchAll(routeId: sourceRoute.id).wrappedValue
+                state.destination = .history(entries)
+                return .none
+            case .copyPrepared(.success(let pack)):
+                state.isLoading = false
+                state.route = pack.route.copyWith(districtId: state.district.id, periodId: state.period.id)
                 state.mode = .create
-                state.route = sourceRoute.copyWith(districtId: state.district.id, periodId: state.period.id)
-                state.points = sourcePoints.copyWith(routeId: state.route.id)
-                state.passages = sourcePassages.copyWith(routeId: state.route.id)
-                state.region = makeRegion(state.points.map(\.coordinate))
+                state.requiresRoutePackFetch = false
+                state.didLoadRoutePack = true
+                state.points = pack.points.sorted().copyWith(routeId: state.route.id).normalized().reindexed()
+                state.passages = pack.passages
+                    .sorted { $0.order < $1.order }
+                    .copyWith(routeId: state.route.id)
+                    .reindexed()
+                let origin = state.district.base ?? state.festival.base
+                state.region = makeRegion(points: state.points, origin: origin, spanDelta: spanDelta)
+                return .none
+            case .routePackReceived(.success(let pack)):
                 state.isLoading = false
+                guard pack.route.id == state.route.id else {
+                    state.alert = .notice(.error("取得したルートが一致しません。"))
+                    return .none
+                }
+                state.route = pack.route
+                state.points = pack.points.sorted()
+                state.passages = pack.passages
+                state.didLoadRoutePack = true
                 return .none
             case .previewPrepared(.success(let item)):
                 state.destination = .preview(item)
@@ -315,15 +367,17 @@ struct RouteEditFeature{
                 case .delete(.okTapped):
                     state.alert = nil
                     state.isLoading = true
-                    return .task(Action.deleteReceived) { [state] in
-                        try await dataFetcher.delete(state.route.id)
+                    return .task(Action.deleteReceived) { [routeId = state.route.id, appState = state.$appState] in
+                        try await deleteRouteUseCase(routeId: routeId, appState: appState)
                         await dismiss()
                     }
                 }
             // MARK: - Error
             case .saveReceived(.failure(let error)),
                 .deleteReceived(.failure(let error)),
+                .historyPrepared(.failure(let error)),
                 .copyPrepared(.failure(let error)),
+                .routePackReceived(.failure(let error)),
                 .previewPrepared(.failure(let error)):
                 state.isLoading = false
                 state.alert = .notice(.error(error))
@@ -375,7 +429,7 @@ extension RouteEditFeature.State {
             manager.value
         }
         set {
-            manager.apply { $0 = newValue }
+            manager.apply { $0 = newValue.normalized().reindexed() }
         }
     }
     
@@ -391,31 +445,43 @@ extension RouteEditFeature.State {
         points.last
     }
     
-    init(mode: RouteEditFeature.EditMode, route: Route) throws {
-        let points: [Point] = FetchAll(routeId: route.id).wrappedValue
-        let passages: [RoutePassage] = FetchAll(routeId: route.id).wrappedValue
-        try self.init(mode: mode, draft: RouteDraft(route: route, points: points, passages: passages))
+    init(
+        mode: RouteEditFeature.EditMode,
+        route: Route,
+        appState: Shared<AppState?> = Shared(value: nil)
+    ) throws {
+        let routeState = appState.wrappedValue?.routeState.flatMap { $0.route.id == route.id ? $0 : nil }
+        let points = routeState?.points ?? []
+        let passages = routeState?.passages ?? []
+        try self.init(
+            mode: mode,
+            draft: RouteDraft(route: route, points: points, passages: passages),
+            appState: appState
+        )
+        self.requiresRoutePackFetch = mode == .update || mode == .preview
+        self.didLoadRoutePack = !self.requiresRoutePackFetch
     }
 
-    init(mode: RouteEditFeature.EditMode, draft: RouteDraft) throws {
-        self.mode = mode
-        self.manager = EditManager(draft.points.sorted())
-        self.passages = draft.passages
-        self.route = draft.route
-        guard let districtQuery: FetchOne<District> = .init(id: draft.route.districtId),
-            let periodQuery: FetchOne<Period> = .init(id: draft.route.periodId),
-            let festivalQuery: FetchOne<Festival> = .init(id: districtQuery.wrappedValue.festivalId) else {
+    init(
+        mode: RouteEditFeature.EditMode,
+        draft: RouteDraft,
+        appState: Shared<AppState?> = Shared(value: nil)
+    ) throws {
+        guard let current = appState.wrappedValue,
+              let district = current.festivalState.districts.first(where: { $0.id == draft.route.districtId }),
+              let period = current.festivalState.periods.first(where: { $0.id == draft.route.periodId }) else {
             throw PresentationError.notFound
         }
-        self._district = districtQuery
-        self._period = periodQuery
-        self._festival = festivalQuery
-        self.districtAreaOverlays = assignDistrictAreaOverlays(
-            districts: FetchAll(festivalId: districtQuery.wrappedValue.festivalId).wrappedValue
-        )
-        
-        let origin: Coordinate = districtQuery.wrappedValue.base ?? festivalQuery.wrappedValue.base
-
+        self._appState = appState
+        self.mode = mode
+        self.manager = EditManager(draft.points.sorted().normalized().reindexed())
+        self.passages = draft.passages
+        self.route = draft.route
+        self.district = district
+        self.festival = current.festivalState.festival
+        self.period = period
+        self.districtAreaOverlays = assignDistrictAreaOverlays(districts: current.festivalState.districts)
+        let origin = district.base ?? current.festivalState.festival.base
         self.region = makeRegion(points: draft.points, origin: origin, spanDelta: spanDelta)
         self.tab = .info
     }

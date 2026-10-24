@@ -24,7 +24,13 @@ struct LoginFeature {
         var password: String = ""
         var isLoading: Bool = false
         var errorMessage: String? = nil
+        @Shared fileprivate var appState: AppState?
         @Presents var destination: Destination.State?
+
+        init(id: String = "", appState: Shared<AppState?> = Shared(value: nil)) {
+            self.id = id
+            self._appState = appState
+        }
     }
     @CasePathable
     enum Action: Equatable, BindableAction {
@@ -37,8 +43,7 @@ struct LoginFeature {
         case confirmSignInCompleted(UserRole)
     }
     
-    @Dependency(\.userDefaultsClient) var userDefaultsClient
-    @Dependency(SceneUsecaseKey.self) var sceneUsecase
+    @Dependency(SignInUseCaseKey.self) var signInUseCase
     @Dependency(\.dismiss) var dismiss
     
     var body: some ReducerOf<LoginFeature> {
@@ -49,16 +54,17 @@ struct LoginFeature {
                 return .none
             case .signInTapped:
                 state.isLoading = true
-                return .task(Action.received) { [state] in
-                    try await sceneUsecase.signIn(username: state.id, password: state.password)
+                return .task(Action.received) { [id = state.id, password = state.password, appState = state.$appState] in
+                    try await signInUseCase(username: id, password: password, appState: appState)
                 }
+                .cancellable(id: SceneSessionCancellationID.active, cancelInFlight: true)
             case .dismissTapped:
                 return .dismiss
             case .resetPasswordTapped:
                 state.destination = .resetPassword(ResetPasswordFeature.State(username: state.id))
                 return .none
             case .received(.success(.newPasswordRequired)):
-                state.destination = .confirmSignIn(ConfirmSignInFeature.State())
+                state.destination = .confirmSignIn(ConfirmSignInFeature.State(appState: state.$appState))
                 state.isLoading = false
                 state.errorMessage = nil
                 return .none
