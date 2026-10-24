@@ -1,36 +1,39 @@
-# MaTool Agent Rules
+# MaTool エージェントルール
 
-## Git command execution
+## iOS
 
-- Run Git commands from the project root: `/Users/matsushitakazuya/private/MaTool`.
-- Do not use `git -C ...` in this repository because it may fail in this environment.
-- Before any branch/commit/PR operation, read and follow [$matool-git](/Users/matsushitakazuya/private/MaTool/.codex/skills/matool-git/SKILL.md).
-- Before any build/test/run operation, read and follow [$matool-build-test](/Users/matsushitakazuya/private/MaTool/.codex/skills/matool-build-test/SKILL.md).
-- Backend / iOSApp の build・test・run は必ず XcodeBuildMCP を使用する。シェルから `xcodebuild` や build/test スクリプトを直接実行しない。
+- 原則として [$swift-app-architecture](/Users/matsushitakazuya/.homesick/repos/dotfiles/home/.agents/skills/swift-app-architecture/SKILL.md) に従い、クリーンアーキテクチャを目指す。
+- ViewModel の代わりに TCA（The Composable Architecture）を使用する。スキルの ViewModel に関する方針より、このルールを優先する。
+- AppState を可能な限り状態の唯一の情報源（SSOT）にする。
+- iOSApp の変更後は Simulator で起動して動作を確認する。
 
-## Runtime policy (summary)
+## Backend
 
-- After iOSApp work, launch iOSApp on Simulator for verification.
-- When working on both iOSApp and Backend:
-  - Push `backend/<topic>` branch first.
-  - Use API base URL `dev-XXX` for iOSApp launch verification (`XXX` must match `<topic>`).
-  - Do not commit this temporary API URL change.
-  - If this temporary change was pushed by mistake, revert only that part before creating PR.
-- When working on Backend only:
-  - Run locally by default.
-  - Push only when explicitly instructed.
+- レイヤードアーキテクチャを使用する。
+- Backend 単独の作業では、原則としてローカルで実行・確認する。
+- Backend 単独の作業では、明示的な指示がある場合のみ push する。
 
-## Package.resolved rule
+## 共通
 
-- Do not commit `Package.resolved` changes by default.
-- Exception: commit only when adding a new package dependency and the lock update is required.
-- This applies to all package roots (for example: `Shared/Package.resolved`, `Backend/Package.resolved`).
+### テスト
 
-## Swift tests
+- Swift のテストには必ず Swift Testing（`import Testing`）を使用し、XCTest は使用しない。
+- テスト対象のソースファイルとテストファイルを1対1で対応させる。テストファイルはテストターゲット配下に置き、対象ソースのディレクトリ構造をそのまま再現する。
 
-- Always write Swift tests with the `Testing` framework (`import Testing`); do not use XCTest.
+### iOSApp と Backend を同時に変更する場合
 
-## Bootstrap execution policy
+- 最初に `backend/<topic>` ブランチを push する。
+- iOSApp の起動確認では API ベース URL を `dev-XXX` にする。`XXX` は `<topic>` と一致させる。
+- この一時的な API URL の変更はコミットしない。
+- 誤って push した場合は、PR 作成前にその変更だけを取り消す。
 
-- Do not execute `Backend/Bootstrap` tests or migration/injector routines in the sandbox.
-- In normal development and CI-fix workflows, treat Bootstrap as out of scope unless explicitly instructed by the user.
+### Package.resolved
+
+- `Package.resolved` の変更は原則としてコミットしない。
+- 新しいパッケージ依存を追加し、ロックファイルの更新が必要な場合のみコミットする。
+- すべてのパッケージルートに適用する（例: `Shared/Package.resolved`、`Backend/Package.resolved`）。
+
+### Bootstrap
+
+- サンドボックス内では `Backend/Bootstrap` のテストやマイグレーション・データ投入処理を実行しない。
+- 通常の開発や CI 修正では、ユーザーから明示的な指示がない限り Bootstrap を対象外とする。
