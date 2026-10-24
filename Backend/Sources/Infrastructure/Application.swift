@@ -57,6 +57,7 @@ final class Application: @unchecked Sendable {
         let method: Method?
         let path: [PathComponent]
         let middlewares: [Middleware]
+        let matchesSubpaths: Bool
     }
     
     typealias Handler = @Sendable (Request) async throws -> Response
@@ -90,7 +91,7 @@ final class Application: @unchecked Sendable {
         let components = path.split(separator: "/").map { p -> PathComponent in
             p.hasPrefix(":") ? .parameter(String(p.dropFirst())) : .constant(String(p))
         }
-        layers.append(Layer(method: method, path: components, middlewares: middlewares))
+        layers.append(Layer(method: method, path: components, middlewares: middlewares, matchesSubpaths: false))
     }
     
     func use(path: String = "/", _ middlewares: Middleware...) {
@@ -101,7 +102,7 @@ final class Application: @unchecked Sendable {
         let components = path.split(separator: "/").map { p -> PathComponent in
             p.hasPrefix(":") ? .parameter(String(p.dropFirst())) : .constant(String(p))
         }
-        layers.append(Layer(method: nil, path: components, middlewares: middlewares))
+        layers.append(Layer(method: nil, path: components, middlewares: middlewares, matchesSubpaths: true))
     }
 
     func handle(_ request: Request) async -> Response {
@@ -135,7 +136,7 @@ final class Application: @unchecked Sendable {
             let layer = layers[index]
             return { req in
                 guard layer.method == nil || layer.method == req.method,
-                      let parameters = self.match(layer.path, req.path)
+                      let parameters = self.match(layer.path, req.path, matchesSubpaths: layer.matchesSubpaths)
                 else {
                     return try await makeLayerChain(index + 1)(req)
                 }
@@ -155,9 +156,11 @@ final class Application: @unchecked Sendable {
     }
 
 
-    private func match(_ route: [PathComponent], _ path: String) -> [String: String]? {
+    private func match(_ route: [PathComponent], _ path: String, matchesSubpaths: Bool) -> [String: String]? {
         let pathParts = path.split(separator: "/").map(String.init)
-        guard route.count <= pathParts.count else { return nil }
+        guard route.count <= pathParts.count,
+              matchesSubpaths || route.count == pathParts.count
+        else { return nil }
 
         var params: [String: String] = [:]
 
@@ -192,4 +195,3 @@ enum ApplicationBuilder {
         components
     }
 }
-
