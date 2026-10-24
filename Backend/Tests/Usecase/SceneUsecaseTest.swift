@@ -45,7 +45,7 @@ struct SceneUsecaseTest {
         let subject = make(
             festivalRepository: festivalRepository,
             districtRepository: districtRepository,
-            periodRepository: .init(queryHandler: { _ in [period] }),
+            periodRepository: .init(queryByYearHandler: { _, _ in [period] }),
             locationRepository: .init(queryHandler: { _ in [location] }),
             checkpointRepository: .init(queryHandler: { _ in [checkpoint] }),
             hazardRepository: .init(queryHandler: { _ in [hazard] })
@@ -155,7 +155,7 @@ struct SceneUsecaseTest {
         let subject = make(
             festivalRepository: .init(getHandler: { _ in festival }),
             districtRepository: districtRepository,
-            periodRepository: .init(queryHandler: { _ in [] }),
+            periodRepository: .init(queryByYearHandler: { _, _ in [] }),
             locationRepository: .init(getHandler: { _, _ in nil }),
             checkpointRepository: .init(queryHandler: { _ in [] }),
             hazardRepository: .init(queryHandler: { _ in [] })
