@@ -173,7 +173,7 @@ struct DistrictDashboardFeature {
             case .destination(.presented(let childAction)):
                 switch childAction {
                 case .edit(.postReceived(.success)):
-                    if let updated = state.appState?.festivalState.districts.first(where: { $0.id == state.district.id }) {
+                    if let updated = state.appState?.district(id: state.district.id) {
                         state.district = updated
                     }
                     state.destination = nil

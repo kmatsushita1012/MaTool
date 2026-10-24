@@ -81,7 +81,7 @@ struct HeadquarterDistrictListFeature {
                 state.isLoading = true
                 return .task(Action.selectedReceived) { [appState = state.$appState] in
                     _ = try await loadDistrictStateUseCase(districtId: district.id, appState: appState)
-                    return appState.wrappedValue?.festivalState.districts.first { $0.id == district.id } ?? district
+                    return appState.wrappedValue?.district(id: district.id) ?? district
                 }
             case .createTapped:
                 state.destination = .create(.init(festivalId: state.festival.id, appState: state.$appState))

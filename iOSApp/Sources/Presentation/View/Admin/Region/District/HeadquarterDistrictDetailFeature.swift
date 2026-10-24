@@ -79,7 +79,7 @@ struct HeadquarterDistrictDetailFeature {
                         try await saveDistrictUseCase(district: district, appState: appState)
                     }
                 } else {
-                    if let current = state.appState?.festivalState.districts.first(where: { $0.id == state.district.id }) {
+                    if let current = state.appState?.district(id: state.district.id) {
                         state.district = current
                     }
                     state.isEditable = true

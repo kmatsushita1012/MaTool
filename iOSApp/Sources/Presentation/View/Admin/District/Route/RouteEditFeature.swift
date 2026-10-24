@@ -456,7 +456,7 @@ extension RouteEditFeature.State {
         appState: Shared<AppState?> = Shared(value: nil)
     ) throws {
         guard let current = appState.wrappedValue,
-              let district = current.festivalState.districts.first(where: { $0.id == draft.route.districtId }),
+              let district = current.district(id: draft.route.districtId),
               let period = current.festivalState.periods.first(where: { $0.id == draft.route.periodId }) else {
             throw PresentationError.notFound
         }

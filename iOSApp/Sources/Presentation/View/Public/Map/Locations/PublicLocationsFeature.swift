@@ -27,9 +27,9 @@ struct PublicLocationsFeature {
         var festival: Festival
 
         var floats: [FloatEntry] {
-            guard let festivalState = appState?.festivalState else { return [] }
-            return festivalState.floatLocations.compactMap { location in
-                guard let district = festivalState.districts.first(where: { $0.id == location.districtId }) else {
+            guard let appState else { return [] }
+            return appState.festivalState.floatLocations.compactMap { location in
+                guard let district = appState.district(id: location.districtId) else {
                     return nil
                 }
                 return FloatEntry(floatLocation: location, district: district)

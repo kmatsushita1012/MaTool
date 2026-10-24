@@ -43,8 +43,7 @@ struct HomeFeature {
         }
 
         var selectedDistrict: District? {
-            guard let districtId = appState?.districtState?.districtId else { return nil }
-            return appState?.festivalState.districts.first { $0.id == districtId }
+            appState?.selectedDistrict
         }
 
         var performances: [Performance] {

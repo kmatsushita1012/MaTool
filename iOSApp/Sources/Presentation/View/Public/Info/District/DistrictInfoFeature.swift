@@ -18,7 +18,7 @@ struct DistrictInfoFeature {
         let districtId: District.ID
         @Shared fileprivate var appState: AppState?
         var appStateDistrict: District? {
-            appState?.festivalState.districts.first { $0.id == districtId }
+            appState?.district(id: districtId)
         }
         @Fallback(\DistrictInfoFeature.State.appStateDistrict)
         @ObservationStateIgnored

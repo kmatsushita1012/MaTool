@@ -150,7 +150,7 @@ extension DistrictEditFeature.State {
         guard let current = appState.wrappedValue,
               let districtState = current.districtState,
               districtState.districtId == district.id,
-              let currentDistrict = current.festivalState.districts.first(where: { $0.id == district.id }) else {
+              let currentDistrict = current.district(id: district.id) else {
             throw PresentationError.notFound
         }
 

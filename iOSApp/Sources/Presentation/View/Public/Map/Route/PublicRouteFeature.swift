@@ -43,7 +43,7 @@ struct PublicRouteFeature {
         @Shared fileprivate var appState: AppState?
         var isRouteLoading: Bool = false
         var appStateDistrict: District? {
-            appState?.festivalState.districts.first { $0.id == districtId }
+            appState?.district(id: districtId)
         }
         @Fallback(\PublicRouteFeature.State.appStateDistrict)
         @ObservationStateIgnored
@@ -82,8 +82,8 @@ struct PublicRouteFeature {
         }
         var float: FloatEntry? {
             guard let appState,
-                  let location = appState.festivalState.floatLocations.first(where: { $0.districtId == districtId }),
-                  let district = appState.festivalState.districts.first(where: { $0.id == districtId }) else { return nil }
+                  let location = appState.floatLocation(for: districtId),
+                  let district = appState.district(id: districtId) else { return nil }
             return FloatEntry(floatLocation: location, district: district)
         }
         @Shared var mapRegion: MKCoordinateRegion
@@ -246,7 +246,7 @@ extension PublicRouteFeature.State {
         self._toast = toast
         self.replay = .initial(routeId)
         let current = appState.wrappedValue
-        let district = current?.festivalState.districts.first { $0.id == districtId }
+        let district = current?.district(id: districtId)
         let points = current?.routeState.flatMap { $0.route.id == routeId ? $0.points : nil } ?? []
         let location = current?.festivalState.floatLocations.first { $0.districtId == districtId }
         if let mapRegion = makeRegion(points: points, location: location, origin: district?.base, spanDelta: spanDelta) {

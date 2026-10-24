@@ -45,7 +45,7 @@ struct PublicMapFeature {
                 case .locations:
                     return (content, "現在地一覧")
                 case .route(let districtId):
-                    return (content, appState?.festivalState.districts.first(where: { $0.id == districtId })?.name ?? "")
+                    return (content, appState?.district(id: districtId)?.name ?? "")
                 }
             })
         }
@@ -98,7 +98,7 @@ struct PublicMapFeature {
                     await publicMapAdUsecase.prepareSession()
                 }
                 guard case .route(let districtId) = state.selectedContent,
-                      let district = state.appState?.festivalState.districts.first(where: { $0.id == districtId }),
+                      let district = state.appState?.district(id: districtId),
                       state.appState?.districtState?.districtId != districtId else {
                     return permissionEffect
                 }
@@ -133,7 +133,7 @@ struct PublicMapFeature {
                     )
                     return .none
                 case .route(let districtId):
-                    guard let district = state.appState?.festivalState.districts.first(where: { $0.id == districtId }) else {
+                    guard let district = state.appState?.district(id: districtId) else {
                         return .none
                     }
                     state.isLoading = true
@@ -151,7 +151,7 @@ struct PublicMapFeature {
                 return .none
             case .routePrepared(let districtId, let routeId):
                 state.isLoading = false
-                guard let district = state.appState?.festivalState.districts.first(where: { $0.id == districtId }) else {
+                guard let district = state.appState?.district(id: districtId) else {
                     return .send(.errorCaught(.be(.notFound("地区が見つかりません。"))))
                 }
                 state.destination = .route(
