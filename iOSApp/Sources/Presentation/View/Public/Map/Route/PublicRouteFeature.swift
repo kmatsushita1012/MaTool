@@ -21,7 +21,6 @@ struct PublicRouteFeature {
     @CasePathable
     enum Detail: Equatable {
         case point(PointEntry)
-        case location(FloatEntry)
     }
 
     @CasePathable
@@ -139,8 +138,6 @@ struct PublicRouteFeature {
                 state.detail = .point(value)
                 return .none
             case .locationTapped:
-                guard let float = state.float else { return .none }
-                state.detail = .location(float)
                 return .none
             case .floatFocusTapped:
                 if let coordinate = state.float?.floatLocation.coordinate {
@@ -281,8 +278,6 @@ extension PublicRouteFeature.Detail: Identifiable {
     var id: String {
         switch self {
         case .point(let item):
-            return item.id
-        case .location(let item):
             return item.id
         }
     }

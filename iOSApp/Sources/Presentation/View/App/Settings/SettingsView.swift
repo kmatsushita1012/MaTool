@@ -7,7 +7,6 @@
 
 import ComposableArchitecture
 import SwiftUI
-import NavigationSwipeControl
 import Shared
 
 
@@ -24,15 +23,19 @@ struct SettingsScreen: View {
                 userGuide: store.userGuide,
                 contact: store.contact,
                 appVersion: AppStatusClient.getCurrentVersion(),
-                isDismissEnabled: store.isDismissEnabled,
-                onDismissTapped: { store.send(.dismissTapped) },
+                userRole: store.userRole,
+                isLoading: store.isLoading,
+                onLoginTapped: { store.send(.loginTapped) },
                 onSignOutTapped: { store.send(.signOutTapped) }
             )
-            .preferredColorScheme(.light)
-            .dismissible(backButton: false)
+            .navigationDestination(item: $store.scope(
+                state: \.destination?.login,
+                action: \.destination.login
+            )) { store in
+                LoginView(store: store)
+            }
             .alert($store.scope(state: \.alert, action: \.alert))
             .loadingOverlay(store.isLoading)
-            .ignoresSafeArea(edges: .top)
         }
     }
 }
@@ -47,84 +50,66 @@ struct SettingsContentView: View {
     let userGuide: URL?
     let contact: URL?
     let appVersion: String
-    let isDismissEnabled: Bool
-    let onDismissTapped: () -> Void
+    let userRole: UserRole
+    let isLoading: Bool
+    let onLoginTapped: () -> Void
     let onSignOutTapped: () -> Void
 
     var body: some View {
-        VStack(spacing: 8){
-            TitleView(
-                text: "設定",
-                image: "SettingsBackground",
-                isDismissEnabled: isDismissEnabled
-            ) {
-                onDismissTapped()
+        Form {
+            Section("参加設定") {
+                Picker("祭典", selection: $selectedFestival) {
+                    if festivals.isEmpty {
+                        Text("未設定").tag(Optional<Festival>.none)
+                    }
+                    ForEach(festivals) { festival in
+                        Text(festival.name).tag(Optional(festival))
+                    }
+                }
+                .pickerStyle(.menu)
+                .disabled(festivals.isEmpty || isLoading)
+                .overlay(alignment: .trailing) {
+                    if isLoading {
+                        ProgressView()
+                            .controlSize(.small)
+                    }
+                }
+
+                Picker("町", selection: $selectedDistrict) {
+                    Text("未設定").tag(Optional<District>.none)
+                    ForEach(districts) { district in
+                        Text(district.name).tag(Optional(district))
+                    }
+                }
+                .pickerStyle(.menu)
+                .disabled(selectedFestival == nil || isLoading)
+                .overlay(alignment: .trailing) {
+                    if isLoading {
+                        ProgressView()
+                            .controlSize(.small)
+                    }
+                }
             }
-            .ignoresSafeArea(edges: .top)
-            VStack(spacing: 8){
-                VStack{
-                    MenuSelector(
-                        title: "祭典を変更",
-                        items: festivals,
-                        selection: $selectedFestival,
-                        label: { festival in
-                            festival?.name ?? "未設定"
-                        },
-                        isNullable: false
-                    )
-                    MenuSelector(
-                        title: "参加町を変更",
-                        items: districts,
-                        selection: $selectedDistrict,
-                        label: { district in
-                            district?.name ?? "未設定"
-                        }
-                    )
+
+            Section("アカウント") {
+                if userRole == .guest {
+                    Button("管理者ログイン", systemImage: "person.badge.key", action: onLoginTapped)
+                } else {
+                    Button("ログアウト", role: .destructive, action: onSignOutTapped)
                 }
-                .padding(.vertical, 8)
-                VStack(alignment: .leading){
-                    if let userGuide {
-                        Link(destination: userGuide) {
-                            HStack {
-                                Image("LeftDoubleArrow")
-                                    .resizable()
-                                    .frame(width: 20, height: 20)
-                                Text("MaToolの使い方")
-                                    .font(.headline)
-                                Spacer()
-                            }
-                            .font(.headline)
-                        }
-                    }
-                    if let contact {
-                        Link(destination: contact) {
-                            HStack {
-                                Image("LeftDoubleArrow")
-                                    .resizable()
-                                    .frame(width: 20, height: 20)
-                                Text("お問い合わせ")
-                                    .font(.headline)
-                                Spacer()
-                            }
-                            .font(.headline)
-                        }
-                    }
-                }
-                Text("バージョン \(appVersion)")
-                VStack{
-                    Button(action: onSignOutTapped) {
-                        Text("強制ログアウト")
-                    }
-                    .buttonStyle(.borderedProminent)
-                    .tint(.red)
-                    Text("※この操作は管理者のみ有効です")
-                        .font(.footnote)
-                        .foregroundColor(.gray)
-                }
-                Spacer()
             }
-            .padding(.horizontal)
+
+            Section("サポート") {
+                if let userGuide {
+                    Link("MaToolの使い方", destination: userGuide)
+                }
+                if let contact {
+                    Link("お問い合わせ", destination: contact)
+                }
+                LabeledContent("バージョン", value: appVersion)
+            }
         }
+        .navigationTitle("設定")
     }
 }
 
@@ -137,8 +122,9 @@ struct SettingsContentView: View {
         userGuide: nil,
         contact: nil,
         appVersion: "",
-        isDismissEnabled: true,
-        onDismissTapped: {},
+        userRole: .guest,
+        isLoading: false,
+        onLoginTapped: {},
         onSignOutTapped: {}
     )
 }

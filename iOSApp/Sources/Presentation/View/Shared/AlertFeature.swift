@@ -37,6 +37,8 @@ struct AlertFeature {
     @CasePathable
     enum Action: Equatable {
         case okTapped
+        case confirmTapped
+        case cancelTapped
     }
 
     // typealias で AlertState を短縮
@@ -96,6 +98,21 @@ struct AlertFeature {
             }
         } message: {
             TextState(text)
+        }
+    }
+
+    static func participationChangeConfirmation() -> State {
+        State {
+            TextState("参加設定を変更")
+        } actions: {
+            ButtonState(role: .cancel, action: .cancelTapped) {
+                TextState("キャンセル")
+            }
+            ButtonState(action: .confirmTapped) {
+                TextState("OK")
+            }
+        } message: {
+            TextState("参加設定を変更すると、管理者アカウントからサインアウトします。続けますか？")
         }
     }
 }

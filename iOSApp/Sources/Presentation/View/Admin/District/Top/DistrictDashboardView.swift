@@ -28,7 +28,8 @@ struct DistrictDashboardScreen: View {
                 onTableExportTapped: { store.send(.tableExportTapped) },
                 onChangePasswordTapped: { store.send(.changePasswordTapped) },
                 onUpdateEmailTapped: { store.send(.updateEmailTapped) },
-                onSignOutTapped: { store.send(.signOutTapped) }
+                onSignOutTapped: { store.send(.signOutTapped) },
+                onSettingsTapped: { store.send(.settingsTapped) }
             )
             .navigationDestination(item: $store.scope(state: \.destination, action: \.destination)) { destination in
                 switch destination.case {
@@ -42,13 +43,15 @@ struct DistrictDashboardScreen: View {
                     ChangePasswordView(store: store)
                 case .updateEmail(let store):
                     UpdateEmailView(store: store)
+                case .settings(let store):
+                    SettingsView(store: store)
                 }
             }
             .sheet(item: $store.url) { url in
                 ShareSheet(item: url)
             }
             .alert($store.scope(state: \.alert, action: \.alert))
-            .loadingOverlay(store.isRouteLoading || store.isAWSLoading)
+            .loadingOverlay(store.isLoading)
         }
     }
 }
@@ -70,6 +73,7 @@ struct DistrictDashboardContentView: View {
     let onChangePasswordTapped: () -> Void
     let onUpdateEmailTapped: () -> Void
     let onSignOutTapped: () -> Void
+    let onSettingsTapped: () -> Void
 
     var body: some View {
         List {
@@ -117,6 +121,11 @@ struct DistrictDashboardContentView: View {
         }
         .navigationTitle(districtName)
         .navigationBarTitleDisplayMode(.large)
+        .toolbar {
+            ToolbarItem(placement: .navigationBarTrailing) {
+                Button("設定", systemImage: "gearshape", action: onSettingsTapped)
+            }
+        }
     }
 }
 
@@ -133,7 +142,8 @@ struct DistrictDashboardContentView: View {
         onTableExportTapped: {},
         onChangePasswordTapped: {},
         onUpdateEmailTapped: {},
-        onSignOutTapped: {}
+        onSignOutTapped: {},
+        onSettingsTapped: {}
     )
 }
 

@@ -20,6 +20,7 @@ struct FestivalDashboardFeature {
         case periods(PeriodListFeature)
         case changePassword(ChangePasswordFeature)
         case updateEmail(UpdateEmailFeature)
+        case settings(SettingsFeature)
     }
 
     @ObservableState
@@ -33,11 +34,12 @@ struct FestivalDashboardFeature {
         var isApiLoading: Bool = false
         var isAuthLoading: Bool = false
         var isExportLoading: Bool = false
+        var isSettingsLoading: Bool = false
 
         @Presents var destination: Destination.State? = nil
         @Presents var alert: AlertFeature.State? = nil
         var isLoading: Bool {
-            isApiLoading || isAuthLoading || isExportLoading
+            isApiLoading || isAuthLoading || isExportLoading || isSettingsLoading
         }
 
         init(_ festival: Festival, appState: Shared<AppState?>) {
@@ -55,6 +57,8 @@ struct FestivalDashboardFeature {
         case dismissTapped
         case changePasswordTapped
         case updateEmailTapped
+        case settingsTapped
+        case settingsPrepared(AppResult<SettingsPreparation>)
         case signOutTapped
         case signOutReceived(VoidAppResult)
         case periodsPrepared(AppResult<[Period]>)
@@ -64,6 +68,8 @@ struct FestivalDashboardFeature {
 
     @Dependency(FetchFestivalPeriodsUseCaseKey.self) var fetchFestivalPeriodsUseCase
     @Dependency(SignOutUseCaseKey.self) var signOutUseCase
+    @Dependency(FetchFestivalListUseCaseKey.self) var fetchFestivalListUseCase
+    @Dependency(GetSceneSelectionUseCaseKey.self) var getSceneSelectionUseCase
     @Dependency(\.dismiss) var dismiss
 
     var body: some ReducerOf<FestivalDashboardFeature> {
@@ -102,6 +108,26 @@ struct FestivalDashboardFeature {
             case .updateEmailTapped:
                 state.destination = .updateEmail(UpdateEmailFeature.State())
                 return .none
+            case .settingsTapped:
+                state.isSettingsLoading = true
+                return .task(Action.settingsPrepared) {
+                    let festivals = try await fetchFestivalListUseCase()
+                    let selection = getSceneSelectionUseCase()
+                    return SettingsPreparation(festivals: festivals, selection: selection)
+                }
+            case .settingsPrepared(.success(let preparation)):
+                state.isSettingsLoading = false
+                state.destination = .settings(.init(
+                    selection: preparation.selection,
+                    festivals: preparation.festivals,
+                    userRole: .headquarter(state.festival.id),
+                    appState: state.$appState
+                ))
+                return .none
+            case .settingsPrepared(.failure(let error)):
+                state.isSettingsLoading = false
+                state.alert = AlertFeature.error("設定画面の準備に失敗しました。\n\(error.message)")
+                return .none
             case .signOutTapped:
                 state.isAuthLoading = true
                 return .task(Action.signOutReceived) {
@@ -111,6 +137,9 @@ struct FestivalDashboardFeature {
             case .signOutReceived(.failure(let error)):
                 state.isAuthLoading = false
                 state.alert = AlertFeature.error("ログアウトに失敗しました　\(error.message)")
+                return .none
+            case .signOutReceived(.success):
+                state.isAuthLoading = false
                 return .none
             case .destination(.presented(.edit(.putReceived(.success)))):
                 state.destination = nil

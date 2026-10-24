@@ -22,7 +22,8 @@ struct FestivalDashboardScreen: View {
                 onDistrictsTapped: { store.send(.districtsTapped) },
                 onChangePasswordTapped: { store.send(.changePasswordTapped) },
                 onUpdateEmailTapped: { store.send(.updateEmailTapped) },
-                onSignOutTapped: { store.send(.signOutTapped) }
+                onSignOutTapped: { store.send(.signOutTapped) },
+                onSettingsTapped: { store.send(.settingsTapped) }
             )
             .modifier(FestivalDashboardDestinations(store: store))
             .alert($store.scope(state: \.alert, action: \.alert))
@@ -56,6 +57,9 @@ private struct FestivalDashboardDestinations: ViewModifier {
             .navigationDestination(item: $store.scope(state: \.destination?.updateEmail, action: \.destination.updateEmail)) { store in
                 UpdateEmailView(store: store)
             }
+            .navigationDestination(item: $store.scope(state: \.destination?.settings, action: \.destination.settings)) { store in
+                SettingsView(store: store)
+            }
     }
 }
 
@@ -71,6 +75,7 @@ struct FestivalDashboardContentView: View {
     let onChangePasswordTapped: () -> Void
     let onUpdateEmailTapped: () -> Void
     let onSignOutTapped: () -> Void
+    let onSettingsTapped: () -> Void
 
     var body: some View {
         List {
@@ -106,6 +111,11 @@ struct FestivalDashboardContentView: View {
         }
         .navigationTitle(festivalTitle)
         .navigationBarTitleDisplayMode(.large)
+        .toolbar {
+            ToolbarItem(placement: .navigationBarTrailing) {
+                Button("設定", systemImage: "gearshape", action: onSettingsTapped)
+            }
+        }
     }
 }
 
@@ -117,6 +127,7 @@ struct FestivalDashboardContentView: View {
         onDistrictsTapped: {},
         onChangePasswordTapped: {},
         onUpdateEmailTapped: {},
-        onSignOutTapped: {}
+        onSignOutTapped: {},
+        onSettingsTapped: {}
     )
 }

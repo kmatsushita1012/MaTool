@@ -347,6 +347,9 @@ struct RouteEditFeature{
                         try await deleteRouteUseCase(routeId: routeId, appState: appState)
                         await dismiss()
                     }
+                default:
+                    state.alert = nil
+                    return .none
                 }
             // MARK: - Error
             case .saveReceived(.failure(let error)),

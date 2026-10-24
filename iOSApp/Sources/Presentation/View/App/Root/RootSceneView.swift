@@ -4,6 +4,7 @@ import SwiftUI
 
 public struct RootSceneView: View {
     @State private var store: StoreOf<RootFeature>
+    @State private var infoSheetDetent: PresentationDetent = .medium
     @Dependency(\.values.isLiquidGlassEnabled) private var isLiquidGlassEnabled
 
     private var errorStatusBinding: Binding<StatusCheckResult?> {
@@ -21,9 +22,7 @@ public struct RootSceneView: View {
     }
 
     public init() {
-        if #available(iOS 17.0, *) {
-            isPerceptionCheckingEnabled = false
-        }
+        isPerceptionCheckingEnabled = false
         self._store = State(initialValue: Store(initialState: RootFeature.State()) {
             RootFeature()
         })
@@ -32,11 +31,42 @@ public struct RootSceneView: View {
     public var body: some View {
         Group {
             switch store.scene {
-            case .home:
-                if let homeStore = store.scope(state: \.home, action: \.home) {
+            case .map:
+                if let mapStore = store.scope(state: \.map, action: \.map) {
                     NavigationStack {
-                        HomeView(store: homeStore)
+                        PublicMapView(store: mapStore)
+                            .navigationDestination(item: $store.scope(
+                                state: \.destination,
+                                action: \.destination
+                            )) { destinationStore in
+                                switch destinationStore.case {
+                                case .settings(let store):
+                                    SettingsView(store: store)
+                                case .adminDistrict(let store):
+                                    DistrictDashboardView(store: store)
+                                case .adminFestival(let store):
+                                    FestivalDashboardView(store: store)
+                                }
+                            }
                     }
+                    .sheet(item: $store.scope(
+                        state: \.sheet,
+                        action: \.sheet
+                    ), onDismiss: {
+                        infoSheetDetent = .medium
+                    }) { sheetStore in
+                        NavigationStack {
+                            switch sheetStore.case {
+                            case .festival(let infoStore):
+                                FestivalInfoView(store: infoStore, isSheetRoot: true)
+                            case .district(let districtStore):
+                                DistrictIntroductionRootView(store: districtStore)
+                            }
+                        }
+                        .presentationDetents([.medium, .large], selection: $infoSheetDetent)
+                        .presentationDragIndicator(.visible)
+                    }
+                    .loadingOverlay(store.isDestinationLoading || store.isIntroductionLoading)
                 } else {
                     LoadingView()
                 }
@@ -61,6 +91,7 @@ public struct RootSceneView: View {
         .fullScreenCover(item: errorStatusBinding) { status in
             AppStatusModal(status, canDismiss: false)
         }
+        .alert($store.scope(state: \.alert, action: \.alert))
         .environment(\.isLiquidGlassDisabled, !isLiquidGlassEnabled)
         .task {
             store.send(.launch)

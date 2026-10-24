@@ -32,7 +32,6 @@ struct PublicLocationsFeature {
         
         @Shared var mapRegion: MKCoordinateRegion
         @Shared var toast: MapToast?
-        var detail: FloatEntry?
     }
     
     @CasePathable
@@ -62,8 +61,7 @@ struct PublicLocationsFeature {
                 return toastDismissEffect()
             case .binding(_):
                 return .none
-            case .floatTapped(let entry):
-                state.detail = entry
+            case .floatTapped:
                 return .none
             case .floatFocusSelected(let entry):
                 state.$mapRegion.withLock { $0 = makeRegion(origin: entry.floatLocation.coordinate, spanDelta: spanDelta)}

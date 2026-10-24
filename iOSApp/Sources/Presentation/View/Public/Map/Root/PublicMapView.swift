@@ -7,100 +7,219 @@
 
 import ComposableArchitecture
 import SwiftUI
-import NavigationSwipeControl
 
 struct PublicMapView: View {
     @SwiftUI.Bindable var store: StoreOf<PublicMapFeature>
     
     var body: some View {
-        WithPerceptionTracking{
-            VStack(spacing: 0){
-                picker()
+        WithPerceptionTracking {
+            Group {
                 if let routeStore = store.scope(state: \.destination?.route, action: \.destination.route) {
-                    PublicRouteMapView(store: routeStore)
-                        .id(routeStore.district.id)
-                } else if let locationsStore = store.scope(state: \.destination?.locations, action: \.destination.locations) {
-                    PublicLocationsMapView(store: locationsStore)
+                    mapContent(
+                        routes: routeStore.routes,
+                        selectedPeriodTitle: routeStore.selected?.text ?? "日程を選択",
+                        isRouteLoading: routeStore.isRouteLoading,
+                        isPeriodDisabled: store.isLoading,
+                        toast: routeStore.toast,
+                        onPeriodSelected: { routeStore.send(.selected($0)) },
+                        onToastDismissed: { routeStore.send(.toastDismissed) }
+                    ) {
+                        PublicRouteMapView(store: routeStore)
+                            .id(routeStore.district.id)
+                    }
+                } else if let locationsStore = store.scope(
+                    state: \.destination?.locations,
+                    action: \.destination.locations
+                ) {
+                    mapContent(
+                        toast: locationsStore.toast,
+                        onToastDismissed: { locationsStore.send(.toastDismissed) }
+                    ) {
+                        PublicLocationsMapView(store: locationsStore)
+                    }
                 } else {
                     Spacer()
                 }
             }
-            .loadingOverlay(store.isLoading)
-            .background(Color.map)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button(systemImage: "house"){
-                        store.send(.dismissTapped)
-                    }
-                    .tint(.black)
-                }
-                .hideSharedBackgroundVisibility()
-                
-                ToolbarItem(placement: .title){
-                    Text("地図")
-                        .foregroundStyle(.black)
-                }
-            }
-            .dismissible(backButton: false)
-            .onAppear{
-                store.send(.onAppear)
-            }
-            .dismissOnChange(of: store.isDismissed)
+            .onAppear { store.send(.onAppear) }
         }
     }
-    
-    @ViewBuilder
-    private func picker() -> some View {
-        ScrollViewReader { proxy in
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 8) {
-                    ForEach(store.contents, id: \.self) { item in
-                        WithPerceptionTracking{
-                            menuButton(for: item)
-                                .id(item)
+
+    private func mapContent<MapContent: View>(
+        routes: [RouteEntry]? = nil,
+        selectedPeriodTitle: String = "日程を選択",
+        isRouteLoading: Bool = false,
+        isPeriodDisabled: Bool = false,
+        toast: MapToast? = nil,
+        onPeriodSelected: @escaping (RouteEntry) -> Void = { _ in },
+        onToastDismissed: @escaping () -> Void = {},
+        @ViewBuilder content: @escaping () -> MapContent
+    ) -> some View {
+        PublicMapContentView(
+            festivalTitle: store.festivalTitle,
+            contents: store.contents,
+            selectedContent: store.selectedContent,
+            contentTitles: store.contentTitles,
+            isLoading: store.isLoading,
+            routes: routes,
+            selectedPeriodTitle: selectedPeriodTitle,
+            isRouteLoading: isRouteLoading,
+            isPeriodDisabled: isPeriodDisabled,
+            toast: toast,
+            onSettingsTapped: { store.send(.delegate(.settingsOrAdminTapped)) },
+            onIntroductionTapped: { store.send(.delegate(.introductionTapped)) },
+            onContentSelected: { store.send(.contentSelected($0)) },
+            onPeriodSelected: onPeriodSelected,
+            onToastDismissed: onToastDismissed,
+            mapContent: content
+        )
+    }
+
+}
+
+struct PublicMapContentView<MapContent: View>: View {
+    let festivalTitle: String
+    let contents: [PublicMapFeature.Content]
+    let selectedContent: PublicMapFeature.Content
+    let contentTitles: [PublicMapFeature.Content: String]
+    let isLoading: Bool
+    let routes: [RouteEntry]?
+    let selectedPeriodTitle: String
+    let isRouteLoading: Bool
+    let isPeriodDisabled: Bool
+    let toast: MapToast?
+    let onSettingsTapped: () -> Void
+    let onIntroductionTapped: () -> Void
+    let onContentSelected: (PublicMapFeature.Content) -> Void
+    let onPeriodSelected: (RouteEntry) -> Void
+    let onToastDismissed: () -> Void
+    @ViewBuilder let mapContent: () -> MapContent
+    @Environment(\.isLiquidGlassDisabled) private var isLiquidGlassDisabled
+
+    var body: some View {
+        ZStack {
+            mapContent()
+                .ignoresSafeArea(edges: .top)
+        }
+        .safeAreaInset(edge: .top, spacing: 0) {
+            VStack(alignment: .leading, spacing: 16) {
+                topControls
+                if let toast {
+                    MapToastView(toast: toast, onDismiss: onToastDismissed)
+                        .transition(.opacity)
+                }
+            }
+            .animation(.easeInOut(duration: 0.2), value: toast)
+        }
+        .loadingOverlay(isLoading)
+        .toolbar {
+            ToolbarItem(placement: .topBarLeading) {
+                Text(festivalTitle)
+                    .font(.title2)
+                    .bold()
+                    .lineLimit(1)
+                    .fixedSize(horizontal: true, vertical: false)
+            }
+            .hideSharedBackgroundVisibility()
+            ToolbarItemGroup(placement: .topBarTrailing) {
+                Button("設定", systemImage: "gearshape", action: onSettingsTapped)
+                Button("紹介", systemImage: "info.circle", action: onIntroductionTapped)
+            }
+        }
+        .toolbarBackground(.hidden, for: .navigationBar)
+    }
+
+    private var topControls: some View {
+        HStack(spacing: 16) {
+            Menu {
+                ForEach(contents, id: \.self) { item in
+                    Button {
+                        guard item != selectedContent else { return }
+                        onContentSelected(item)
+                    } label: {
+                        let title = contentTitles[item] ?? ""
+                        if item == selectedContent {
+                            Label(title, systemImage: "checkmark")
+                        } else {
+                            Text(title)
                         }
                     }
                 }
+            } label: {
+                Label(contentTitles[selectedContent] ?? "", systemImage: selectedContent.menuSymbol)
             }
-            .background(Color.map)
-            .onAppear{
-                withAnimation {
-                    proxy.scrollTo(store.selectedContent, anchor: .center)
+            .modifier(MapTopMenuStyle(isLiquidGlassDisabled: isLiquidGlassDisabled))
+            .disabled(isLoading)
+
+            if let routes {
+                Menu {
+                    ForEach(routes) { entry in
+                        Button(entry.text) {
+                            onPeriodSelected(entry)
+                        }
+                    }
+                } label: {
+                    Label(selectedPeriodTitle, systemImage: "calendar")
                 }
+                .modifier(MapTopMenuStyle(isLiquidGlassDisabled: isLiquidGlassDisabled))
+                .disabled(isPeriodDisabled || isRouteLoading || routes.isEmpty)
             }
-            .onChange(of: store.selectedContent) { newValue in
-                withAnimation {
-                    proxy.scrollTo(store.selectedContent, anchor: .center)
-                }
-            }
+
+            Spacer(minLength: 0)
+        }
+        .padding(.horizontal, 16)
+    }
+}
+
+private struct MapTopMenuStyle: ViewModifier {
+    let isLiquidGlassDisabled: Bool
+
+    @ViewBuilder
+    func body(content: Content) -> some View {
+        if #available(iOS 26.0, *), !isLiquidGlassDisabled {
+            content
+                .menuStyle(.button)
+                .buttonStyle(.glass)
+                .buttonSizing(.fitted)
+                .controlSize(.large)
+        } else {
+            content
+                .menuStyle(.button)
+                .buttonStyle(.bordered)
+                .controlSize(.large)
         }
     }
-    
-    @ViewBuilder
-    private func menuButton(for item: PublicMapFeature.Content) -> some View {
-        let isSelected = item == store.selectedContent
-        
-        Button(action: {
-            if !isSelected {
-                store.send(.contentSelected(item))
-            }
-        }) {
-            Text(store.contentTitles[item] ?? "")
-                .foregroundColor(.black)
-                .padding(.vertical, 8)
-                .padding(.horizontal, 16)
-                .frame(minWidth: 48)
-                .background(isSelected ? Color.white : .clear)
-                .clipShape(
-                    isSelected
-                    ? .rect(
-                        topLeadingRadius: 16,
-                        bottomLeadingRadius: 0,
-                        bottomTrailingRadius: 0,
-                        topTrailingRadius: 16
-                    )
-                    : .rect()
-                )
+}
+
+private extension PublicMapFeature.Content {
+    var menuSymbol: String {
+        switch self {
+        case .locations: "mappin.and.ellipse"
+        case .route(_): "map"
+        }
+    }
+}
+
+#Preview {
+    NavigationStack {
+        PublicMapContentView(
+            festivalTitle: "祭典名",
+            contents: [.locations],
+            selectedContent: .locations,
+            contentTitles: [.locations: "現在地一覧"],
+            isLoading: false,
+            routes: nil,
+            selectedPeriodTitle: "日程を選択",
+            isRouteLoading: false,
+            isPeriodDisabled: false,
+            toast: nil,
+            onSettingsTapped: {},
+            onIntroductionTapped: {},
+            onContentSelected: { _ in },
+            onPeriodSelected: { _ in },
+            onToastDismissed: {}
+        ) {
+            Color.gray
         }
     }
 }

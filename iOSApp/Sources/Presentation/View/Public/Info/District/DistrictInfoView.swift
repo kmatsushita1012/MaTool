@@ -1,138 +1,161 @@
-//
-//  DistrictInfoView.swift
-//  MaTool
-//
-//  Created by 松下和也 on 2025/07/29.
-//
-
-import SwiftUI
 import ComposableArchitecture
-import NavigationSwipeControl
+import MapKit
+import SwiftUI
 import Shared
 
 struct DistrictInfoView: View {
     @SwiftUI.Bindable var store: StoreOf<DistrictInfoFeature>
-    
-    var body: some View {
-        WithPerceptionTracking{
-            ZStack{
-                ScrollView {
-                    VStack(spacing: 16) {
-                        TitleView(
-                            text: store.district.name,
-                            image: "InfoBackground"
-                        ) {
-                            store.send(.dismissTapped)
-                        }
-                        
-                        if let imagePath = store.district.image.light {
-                            VStack{
-                                WebImageView(imagePath: imagePath, contentMode: .fit)
-                            }
-                            .cornerRadius(8)
-                            .padding(.horizontal)
-                        }
-                        
-                        if let description = store.district.description {
-                            VStack{
-                                ScrollableTextView(description, maxHeight: 192)
-                                    .padding()
-                            }
-                            .background(Color.info.opacity(0.3))
-                            .cornerRadius(8)
-                            .padding(.horizontal)
-                        }
-                        // 横スクロール（上で修正したもの）
-                        if !store.performances.isEmpty{
-                            VStack(alignment: .leading){
-                                Text("余興")
-                                    .font(.headline)
-                                    .foregroundColor(.primary)
-                                    .padding(.horizontal)
-                                ScrollView(.horizontal, showsIndicators: false) {
-                                    HStack(spacing: 16) {
-                                        ForEach(store.performances) { item in
-                                            WithPerceptionTracking {
-                                                performance(item)
-                                            }
-                                        }
-                                    }
-                                    .padding(.horizontal)
-                                }
-                            }
-                        }
-                        VStack{
-                            InfoMapView(
-                                base: store.district.base,
-                                area: store.district.area,
-                                region: $store.region
-                            )
-                            .clipShape(RoundedRectangle(cornerRadius: 12))
-                            .background(
-                                RoundedRectangle(cornerRadius: 12)
-                                    .fill(Color(UIColor.secondarySystemGroupedBackground))
-                            )
-                            .overlay(
-                                RoundedRectangle(cornerRadius: 12)
-                                    .stroke(Color(UIColor.separator), lineWidth: 0.5)
-                            )
-                        }
-                        .frame(height: 384)
-                        .padding(.horizontal)
-                }
-                .padding(.bottom, 88)
-                }
-                VStack{
-                    Spacer()
-                    mapButton()
-                        .padding(32)
-                }
-            }
-            .ignoresSafeArea()
-            .loadingOverlay(store.isLoading)
-            .dismissible(backButton: false)
-            .dismissOnChange(of: store.isDismissed)
-        }
-    }
-    
-    @ViewBuilder
-    func performance(_ item: Performance) -> some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text(item.name)
-                .font(.headline)
-                .lineLimit(1)
-                .truncationMode(.tail)
-                
-            Text(item.performer)
-                .font(.subheadline)
-                .lineLimit(1)
+    let festivalName: String?
+    let onFestivalTapped: () -> Void
+    let isSheetRoot: Bool
 
-            if let description = item.description {
-                ScrollableTextView(description, maxHeight: 128)
-            }
-            Spacer()
+    var body: some View {
+        WithPerceptionTracking {
+            DistrictInfoContentView(
+                district: store.district,
+                performances: store.performances,
+                region: $store.region,
+                isSheetRoot: isSheetRoot,
+                festivalName: festivalName,
+                onFestivalTapped: onFestivalTapped
+            )
         }
-        .padding()
-        .frame(width: 256, height: 192, alignment: .topLeading)
-        .background(Color.info.opacity(0.3))
-        .cornerRadius(8)
     }
-    
-    @ViewBuilder
-    func mapButton() -> some View {
-        Button(action: {
-            store.send(.mapTapped)
-        }) {
-            HStack(spacing: 16) {
-                Text("現在地とルート")
-                    .font(.title3)
-                Image(systemName: "paperplane.fill")
+}
+
+private struct DistrictInfoContentView: View {
+    let district: District
+    let performances: [Performance]
+    @Binding var region: MKCoordinateRegion?
+    let isSheetRoot: Bool
+    let festivalName: String?
+    let onFestivalTapped: () -> Void
+    @State private var isMapMovementLocked = true
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        InfoScrollView {
+            InfoHeaderImageView(
+                lightPath: district.image.light,
+                darkPath: district.image.dark
+            )
+
+            if let description = district.description {
+                InfoMaterialContainer {
+                    ExpandableTextView(text: description)
+                }
             }
-            .padding(.horizontal, 32)
-            .padding(.vertical, 8)
+
+            if !performances.isEmpty {
+                InfoMaterialContainer {
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("余興")
+                            .font(.headline)
+
+                        LazyVGrid(
+                            columns: [
+                                GridItem(.flexible(), spacing: 8),
+                                GridItem(.flexible(), spacing: 8)
+                            ],
+                            spacing: 8
+                        ) {
+                            ForEach(performances) { performance in
+                                VStack(alignment: .leading, spacing: 8) {
+                                    Text(performance.name)
+                                        .font(.headline)
+                                        .lineLimit(2)
+                                    Text(performance.performer)
+                                        .font(.subheadline)
+                                        .lineLimit(2)
+                                    if let description = performance.description {
+                                        Text(description)
+                                            .font(.footnote)
+                                            .lineLimit(5)
+                                    }
+                                    Spacer(minLength: 0)
+                                }
+                                .frame(maxWidth: .infinity, minHeight: 160, alignment: .topLeading)
+                                .padding(12)
+                                .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+                            }
+                        }
+                    }
+                }
+            }
+
+            InfoMaterialContainer {
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("会所と町域")
+                        .font(.headline)
+
+                    ZStack(alignment: .bottomTrailing) {
+                        InfoMapView(
+                            base: district.base,
+                            area: district.area,
+                            isMapMovementEnabled: !isMapMovementLocked,
+                            region: $region
+                        )
+                        .frame(height: 384)
+
+                        InfoMapMovementButton(isMapMovementLocked: $isMapMovementLocked)
+                            .padding(8)
+                    }
+                    .clipShape(RoundedRectangle(cornerRadius: 12))
+                }
+            }
         }
-        .clipShape(.capsule)
-        .buttonStyle(.borderedProminent)
-        .tint(Color.info)
+        .background {
+            InfoImageBlurredBackgroundView(
+                lightPath: district.image.light,
+                darkPath: district.image.dark
+            )
+            .ignoresSafeArea()
+        }
+        .navigationTitle(district.name)
+        .toolbarTitleDisplayMode(.inline)
+        .toolbar {
+            if isSheetRoot {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button {
+                        dismiss()
+                    } label: {
+                        Image(systemName: "xmark")
+                    }
+                    .accessibilityLabel("閉じる")
+                }
+                if let festivalName {
+                    ToolbarItem(placement: .topBarTrailing) {
+                        Button(festivalName, action: onFestivalTapped)
+                    }
+                }
+            }
+        }
+    }
+}
+
+typealias DistrictInfoScreen = DistrictInfoView
+
+struct DistrictIntroductionRootView: View {
+    @SwiftUI.Bindable var store: StoreOf<DistrictIntroductionRootFeature>
+
+    var body: some View {
+        WithPerceptionTracking {
+            DistrictInfoView(
+                store: store.scope(state: \.district, action: \.district),
+                festivalName: store.festival.name,
+                onFestivalTapped: { store.send(.festivalTapped) },
+                isSheetRoot: true
+            )
+            .navigationDestination(item: $store.scope(
+                state: \.destination,
+                action: \.destination
+            )) { destinationStore in
+                switch destinationStore.case {
+                case .festival(let festivalStore):
+                    FestivalInfoView(store: festivalStore, isSheetRoot: false)
+                }
+            }
+            .loadingOverlay(store.isLoading)
+        }
     }
 }

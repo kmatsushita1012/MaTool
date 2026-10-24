@@ -64,7 +64,14 @@ extension AppState {
     }
 
     var routeDistrictIds: [District.ID] {
-        festivalState.districts.map(\.id)
+        festivalState.districts
+            .sorted { lhs, rhs in
+                if lhs.order != rhs.order {
+                    return lhs.order < rhs.order
+                }
+                return lhs.name.localizedStandardCompare(rhs.name) == .orderedAscending
+            }
+            .map(\.id)
     }
 
     func routeEntries(for districtId: District.ID) -> [RouteEntry] {
