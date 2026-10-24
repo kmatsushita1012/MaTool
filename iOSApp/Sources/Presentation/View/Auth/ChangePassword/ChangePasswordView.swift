@@ -10,45 +10,70 @@ import ComposableArchitecture
 import NavigationSwipeControl
 
 @available(iOS 17.0, *)
-struct ChangePasswordView: View {
-    
+struct ChangePasswordScreen: View {
     @SwiftUI.Bindable var store: StoreOf<ChangePasswordFeature>
+
+    var body: some View {
+        ChangePasswordContentView(
+            current: $store.current,
+            new1: $store.new1,
+            new2: $store.new2,
+            onSubmitTapped: { store.send(.okTapped) },
+            onDismissTapped: { store.send(.dismissTapped) }
+        )
+        .dismissible(backButton: false, edgeSwipe: false)
+        .loadingOverlay(store.isLoading)
+        .alert($store.scope(state: \.alert, action: \.alert))
+    }
+}
+
+@available(iOS 17.0, *)
+typealias ChangePasswordView = ChangePasswordScreen
+
+@available(iOS 17.0, *)
+struct ChangePasswordContentView: View {
+    @Binding var current: String
+    @Binding var new1: String
+    @Binding var new2: String
+    let onSubmitTapped: () -> Void
+    let onDismissTapped: () -> Void
+
     @FocusState private var focusedField: Field?
-    
-    enum Field: Hashable {
+
+    private enum Field: Hashable {
         case current
         case new1
         case new2
     }
-    
+
     var body: some View {
         VStack {
             TitleView(
                 text: "パスワード変更",
                 image: "AdminBackground"
             ) {
-                store.send(.dismissTapped)
+                onDismissTapped()
             }
             .ignoresSafeArea(edges: .top)
             Spacer()
             VStack {
-                TextField("現在のパスワード", text: $store.current)
+                TextField("現在のパスワード", text: $current)
                     .textContentType(.password)
                     .textFieldStyle(RoundedBorderTextFieldStyle())
                     .focused($focusedField, equals: .current)
                     .padding()
-                TextField("新しいパスワード", text: $store.new1)
+                TextField("新しいパスワード", text: $new1)
                     .textContentType(.password)
                     .textFieldStyle(RoundedBorderTextFieldStyle())
                     .focused($focusedField, equals: .new1)
                     .padding()
-                TextField("新しいパスワード（確認用）", text: $store.new2)
+                TextField("新しいパスワード（確認用）", text: $new2)
                     .textContentType(.password)
                     .textFieldStyle(RoundedBorderTextFieldStyle())
                     .focused($focusedField, equals: .new2)
                     .padding()
                 Button("パスワードを変更") {
-                    store.send(.okTapped)
+                    onSubmitTapped()
                     focusedField = nil
                 }
                 .buttonStyle(PrimaryButtonStyle())
@@ -58,8 +83,15 @@ struct ChangePasswordView: View {
             Spacer()
         }
         .preferredColorScheme(.light)
-        .dismissible(backButton: false, edgeSwipe: false)
-        .loadingOverlay(store.isLoading)
-        .alert($store.scope(state: \.alert, action: \.alert))
     }
+}
+
+#Preview {
+    ChangePasswordContentView(
+        current: .constant(""),
+        new1: .constant(""),
+        new2: .constant(""),
+        onSubmitTapped: {},
+        onDismissTapped: {}
+    )
 }

@@ -8,88 +8,26 @@
 import ComposableArchitecture
 import SwiftUI
 import NavigationSwipeControl
+import Shared
 
 
-struct SettingsView: View {
+struct SettingsScreen: View {
     @SwiftUI.Bindable var store: StoreOf<SettingsFeature>
-    
+
     var body: some View {
-        WithPerceptionTracking{
-            VStack(spacing: 8){
-                TitleView(
-                    text: "設定",
-                    image: "SettingsBackground",
-                    isDismissEnabled: store.isDismissEnabled
-                ) {
-                    store.send(.dismissTapped)
-                }
-                .ignoresSafeArea(edges: .top)
-                VStack(spacing: 8){
-                    VStack{
-                        MenuSelector(
-                            title: "祭典を変更",
-                            items: store.festivals,
-                            selection: $store.selectedFestival,
-                            label: { festival in
-                                festival?.name ?? "未設定"
-                            },
-                            isNullable: false
-                        )
-                        MenuSelector(
-                            title: "参加町を変更",
-                            items: store.districts,
-                            selection: $store.selectedDistrict,
-                            label: { district in
-                                district?.name ?? "未設定"
-                            }
-                        )
-                    }
-                    .padding(.vertical, 8)
-                    VStack(alignment: .leading){
-                        if let userGuide = store.userGuide {
-                            Link(destination: userGuide) {
-                                HStack {
-                                    Image("LeftDoubleArrow")
-                                        .resizable()
-                                        .frame(width: 20, height: 20)
-                                    Text("MaToolの使い方")
-                                        .font(.headline)
-                                    Spacer()
-                                }
-                                .font(.headline)
-                            }
-                        }
-                        if let contact = store.contact {
-                            Link(destination: contact) {
-                                HStack {
-                                    Image("LeftDoubleArrow")
-                                        .resizable()
-                                        .frame(width: 20, height: 20)
-                                    Text("お問い合わせ")
-                                        .font(.headline)
-                                    Spacer()
-                                }
-                                .font(.headline)
-                            }
-                        }
-                    }
-                    Text("バージョン \(AppStatusClient.getCurrentVersion())")
-                    VStack{
-                        Button(action: {
-                            store.send(.signOutTapped)
-                        }) {
-                            Text("強制ログアウト")
-                        }
-                        .buttonStyle(.borderedProminent)
-                        .tint(.red)
-                        Text("※この操作は管理者のみ有効です")
-                            .font(.footnote)
-                            .foregroundColor(.gray)
-                    }
-                    Spacer()
-                }
-                .padding(.horizontal)
-            }
+        WithPerceptionTracking {
+            SettingsContentView(
+                festivals: store.festivals,
+                districts: store.districts,
+                selectedFestival: $store.selectedFestival,
+                selectedDistrict: $store.selectedDistrict,
+                userGuide: store.userGuide,
+                contact: store.contact,
+                appVersion: AppStatusClient.getCurrentVersion(),
+                isDismissEnabled: store.isDismissEnabled,
+                onDismissTapped: { store.send(.dismissTapped) },
+                onSignOutTapped: { store.send(.signOutTapped) }
+            )
             .preferredColorScheme(.light)
             .dismissible(backButton: false)
             .alert($store.scope(state: \.alert, action: \.alert))
@@ -97,4 +35,110 @@ struct SettingsView: View {
             .ignoresSafeArea(edges: .top)
         }
     }
+}
+
+typealias SettingsView = SettingsScreen
+
+struct SettingsContentView: View {
+    let festivals: [Festival]
+    let districts: [District]
+    @Binding var selectedFestival: Festival?
+    @Binding var selectedDistrict: District?
+    let userGuide: URL?
+    let contact: URL?
+    let appVersion: String
+    let isDismissEnabled: Bool
+    let onDismissTapped: () -> Void
+    let onSignOutTapped: () -> Void
+
+    var body: some View {
+        VStack(spacing: 8){
+            TitleView(
+                text: "設定",
+                image: "SettingsBackground",
+                isDismissEnabled: isDismissEnabled
+            ) {
+                onDismissTapped()
+            }
+            .ignoresSafeArea(edges: .top)
+            VStack(spacing: 8){
+                VStack{
+                    MenuSelector(
+                        title: "祭典を変更",
+                        items: festivals,
+                        selection: $selectedFestival,
+                        label: { festival in
+                            festival?.name ?? "未設定"
+                        },
+                        isNullable: false
+                    )
+                    MenuSelector(
+                        title: "参加町を変更",
+                        items: districts,
+                        selection: $selectedDistrict,
+                        label: { district in
+                            district?.name ?? "未設定"
+                        }
+                    )
+                }
+                .padding(.vertical, 8)
+                VStack(alignment: .leading){
+                    if let userGuide {
+                        Link(destination: userGuide) {
+                            HStack {
+                                Image("LeftDoubleArrow")
+                                    .resizable()
+                                    .frame(width: 20, height: 20)
+                                Text("MaToolの使い方")
+                                    .font(.headline)
+                                Spacer()
+                            }
+                            .font(.headline)
+                        }
+                    }
+                    if let contact {
+                        Link(destination: contact) {
+                            HStack {
+                                Image("LeftDoubleArrow")
+                                    .resizable()
+                                    .frame(width: 20, height: 20)
+                                Text("お問い合わせ")
+                                    .font(.headline)
+                                Spacer()
+                            }
+                            .font(.headline)
+                        }
+                    }
+                }
+                Text("バージョン \(appVersion)")
+                VStack{
+                    Button(action: onSignOutTapped) {
+                        Text("強制ログアウト")
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .tint(.red)
+                    Text("※この操作は管理者のみ有効です")
+                        .font(.footnote)
+                        .foregroundColor(.gray)
+                }
+                Spacer()
+            }
+            .padding(.horizontal)
+        }
+    }
+}
+
+#Preview {
+    SettingsContentView(
+        festivals: [],
+        districts: [],
+        selectedFestival: .constant(nil),
+        selectedDistrict: .constant(nil),
+        userGuide: nil,
+        contact: nil,
+        appVersion: "",
+        isDismissEnabled: true,
+        onDismissTapped: {},
+        onSignOutTapped: {}
+    )
 }

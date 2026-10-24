@@ -7,31 +7,48 @@
 
 import SwiftUI
 import ComposableArchitecture
+import Shared
 
 @available(iOS 17.0, *)
-struct PeriodArchivesView: View {
+struct PeriodArchivesScreen: View {
     @SwiftUI.Bindable var store: StoreOf<PeriodArchivesFeature>
-    @Dependency(\.values.isLiquidGlassEnabled) var isLiquidGlassEnabled: Bool
     
     var body: some View {
-        content
-            .navigationTitle("過去の日程")
-            .navigationBarTitleDisplayMode(.inline)
+        PeriodArchivesContentView(
+            year: store.year,
+            periods: store.periods,
+            onPeriodTapped: { store.send(.periodTapped($0)) }
+        )
             .navigationDestination(item: $store.scope(state: \.destination?.edit, action: \.destination.edit)) {
                 PeriodEditView(store: $0)
             }
     }
-    
-    @ViewBuilder
-    var content: some View {
+}
+
+@available(iOS 17.0, *)
+typealias PeriodArchivesView = PeriodArchivesScreen
+
+@available(iOS 17.0, *)
+struct PeriodArchivesContentView: View {
+    let year: Int
+    let periods: [Period]
+    let onPeriodTapped: (Period) -> Void
+
+    var body: some View {
         Form {
-            Section("\(String(store.year))年") {
-                ForEach(store.periods) { period in
+            Section("\(String(year))年") {
+                ForEach(periods) { period in
                     NavigationItemView(title: period.text) {
-                        store.send(.periodTapped(period))
+                        onPeriodTapped(period)
                     }
                 }
             }
         }
+        .navigationTitle("過去の日程")
+        .navigationBarTitleDisplayMode(.inline)
     }
+}
+
+#Preview {
+    PeriodArchivesContentView(year: 2026, periods: [], onPeriodTapped: { _ in })
 }

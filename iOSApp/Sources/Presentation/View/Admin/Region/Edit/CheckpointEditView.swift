@@ -10,36 +10,70 @@ import ComposableArchitecture
 import NavigationSwipeControl
 
 @available(iOS 17.0, *)
-struct CheckpointEditView: View {
-    
+struct CheckpointEditScreen: View {
     @SwiftUI.Bindable var store: StoreOf<CheckpointEditFeature>
-    
+
+    var body: some View {
+        CheckpointEditContentView(
+            name: $store.item.name,
+            description: $store.item.description.nonOptional,
+            title: store.title,
+            onDeleteTapped: { store.send(.deleteTapped) },
+            onCancelTapped: { store.send(.cancelTapped) },
+            onDoneTapped: { store.send(.doneTapped) }
+        )
+        .dismissible(backButton: false, edgeSwipe: false)
+    }
+}
+
+@available(iOS 17.0, *)
+typealias CheckpointEditView = CheckpointEditScreen
+
+@available(iOS 17.0, *)
+struct CheckpointEditContentView: View {
+    @Binding var name: String
+    @Binding var description: String
+    let title: String
+    let onDeleteTapped: () -> Void
+    let onCancelTapped: () -> Void
+    let onDoneTapped: () -> Void
+
     var body: some View {
         List {
             Section(header: Text("名称")) {
-                TextField("名称を入力", text: $store.item.name)
+                TextField("名称を入力", text: $name)
             }
             Section(header: Text("詳細")) {
-                TextEditor(text: $store.item.description.nonOptional)
-                    .frame(height:60)
+                TextEditor(text: $description)
+                    .frame(height: 60)
             }
             Section {
                 Button("削除", systemImage: "trash", role: .destructive) {
-                    store.send(.deleteTapped)
+                    onDeleteTapped()
                 }
                 .foregroundStyle(.red)
             }
         }
-        .navigationTitle(store.title)
+        .navigationTitle(title)
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarCancelButton {
-                store.send(.cancelTapped)
+                onCancelTapped()
             }
             ToolbarDoneButton {
-                store.send(.doneTapped)
+                onDoneTapped()
             }
         }
-        .dismissible(backButton: false, edgeSwipe: false)
     }
+}
+
+#Preview {
+    CheckpointEditContentView(
+        name: .constant(""),
+        description: .constant(""),
+        title: "",
+        onDeleteTapped: {},
+        onCancelTapped: {},
+        onDoneTapped: {}
+    )
 }
