@@ -62,8 +62,7 @@ struct DistrictIntroductionRootFeature {
                 state.isLoading = false
                 state.destination = .festival(FestivalInfoFeature.State(
                     state.festival,
-                    appState: state.$appState,
-                    locationTimestamp: state.locationTimestamp
+                    appState: state.$appState
                 ))
                 return .none
             case .district, .destination:

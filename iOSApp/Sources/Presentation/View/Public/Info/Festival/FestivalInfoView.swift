@@ -13,7 +13,6 @@ struct FestivalInfoView: View {
         WithPerceptionTracking {
             FestivalInfoContentView(
                 festival: store.festival,
-                locationTimestamp: store.locationTimestamp,
                 districts: store.districts,
                 isSheetRoot: isSheetRoot,
                 displayMode: $store.displayMode,
@@ -45,7 +44,6 @@ private struct FestivalInfoContentView: View {
     @Dependency(\.values.isLiquidGlassEnabled) private var isLiquidGlassEnabled
 
     let festival: Festival
-    let locationTimestamp: Date?
     let districts: [District]
     let isSheetRoot: Bool
     @Binding var displayMode: FestivalInfoFeature.DisplayMode
@@ -98,27 +96,11 @@ private struct FestivalInfoContentView: View {
                 ToolbarSpacer(.fixed, placement: .topBarLeading)
             }
             ToolbarItem(placement: .topBarLeading) {
-                Group {
-                    if let locationTimestamp {
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text(festival.name)
-                                .font(.headline)
-                                .foregroundStyle(.primary)
-                                .lineLimit(1)
-
-                            Text(locationTimestamp, style: .date)
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                                .lineLimit(1)
-                        }
-                    } else {
-                        Text(festival.name)
-                            .font(.headline)
-                            .foregroundStyle(.primary)
-                            .lineLimit(1)
-                    }
-                }
-                .fixedSize(horizontal: true, vertical: false)
+                Text(festival.name)
+                    .font(.headline)
+                    .foregroundStyle(.primary)
+                    .lineLimit(1)
+                    .fixedSize(horizontal: true, vertical: false)
             }
             .hideSharedBackgroundVisibility()
         }

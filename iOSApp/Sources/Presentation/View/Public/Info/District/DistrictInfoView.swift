@@ -126,7 +126,7 @@ private struct DistrictInfoContentView: View {
                                 .foregroundStyle(.primary)
                                 .lineLimit(1)
 
-                            Text(locationTimestamp, style: .date)
+                            Text("配信時刻: \(locationTimestamp.locationTimestampText)")
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
                                 .lineLimit(1)

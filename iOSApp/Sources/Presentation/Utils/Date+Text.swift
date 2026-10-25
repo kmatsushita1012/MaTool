@@ -1,6 +1,14 @@
 import Foundation
 
 extension Date {
+    var locationTimestampText: String {
+#if DEBUG
+        text(of: "M/d H:mm:ss")
+#else
+        text(of: "M/d H:mm")
+#endif
+    }
+
     func text(year: Bool) -> String {
         let formatter = DateFormatter()
         formatter.dateFormat = year ? "yyyy/MM/dd HH:mm:ss" : "MM/dd HH:mm:ss"
