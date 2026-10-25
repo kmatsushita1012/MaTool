@@ -36,20 +36,24 @@ public struct RootSceneView: View {
                     NavigationStack {
                         PublicMapView(store: mapStore)
                             .navigationDestination(item: $store.scope(
-                                state: \.destination,
-                                action: \.destination
-                            )) { destinationStore in
-                                switch destinationStore.case {
-                                case .settings(let store):
-                                    SettingsView(store: store)
-                                case .adminDistrict(let store):
-                                    DistrictDashboardView(store: store)
-                                case .adminFestival(let store):
-                                    FestivalDashboardView(store: store)
-                                }
+                                state: \.destination?.settings,
+                                action: \.destination.settings
+                            )) { settingsStore in
+                                SettingsView(store: settingsStore)
+                            }
+                            .navigationDestination(item: $store.scope(
+                                state: \.destination?.adminDistrict,
+                                action: \.destination.adminDistrict
+                            )) { adminStore in
+                                DistrictDashboardView(store: adminStore)
+                            }
+                            .navigationDestination(item: $store.scope(
+                                state: \.destination?.adminFestival,
+                                action: \.destination.adminFestival
+                            )) { adminStore in
+                                FestivalDashboardView(store: adminStore)
                             }
                     }
-                    .id(store.destination?.id ?? .map)
                     .sheet(item: $store.scope(
                         state: \.sheet,
                         action: \.sheet

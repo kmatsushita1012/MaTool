@@ -18,13 +18,6 @@ struct RootFeature {
         case adminFestival(FestivalDashboardFeature)
     }
 
-    enum NavigationStackIdentity: Hashable {
-        case map
-        case settings
-        case adminDistrict
-        case adminFestival
-    }
-
     @Reducer
     enum Sheet {
         case festival(FestivalInfoFeature)
@@ -486,19 +479,6 @@ extension RootFeature.Destination.State: Equatable {}
 extension RootFeature.Destination.Action: Equatable {}
 extension RootFeature.Sheet.State: Equatable {}
 extension RootFeature.Sheet.Action: Equatable {}
-
-extension RootFeature.Destination.State: Identifiable {
-    var id: RootFeature.NavigationStackIdentity {
-        switch self {
-        case .settings:
-            .settings
-        case .adminDistrict:
-            .adminDistrict
-        case .adminFestival:
-            .adminFestival
-        }
-    }
-}
 
 enum IntroSheetPreparation: Equatable {
     case festival(Festival)
