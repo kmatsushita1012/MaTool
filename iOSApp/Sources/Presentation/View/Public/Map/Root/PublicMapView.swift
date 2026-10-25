@@ -10,6 +10,7 @@ import SwiftUI
 
 struct PublicMapView: View {
     @SwiftUI.Bindable var store: StoreOf<PublicMapFeature>
+    var isAdminLoggedIn = false
     var isNavigationDisabled = false
     
     var body: some View {
@@ -66,6 +67,7 @@ struct PublicMapView: View {
             selectedPeriodTitle: selectedPeriodTitle,
             isRouteLoading: isRouteLoading,
             isPeriodDisabled: isPeriodDisabled,
+            isAdminLoggedIn: isAdminLoggedIn,
             isNavigationDisabled: isNavigationDisabled,
             toast: toast,
             onSettingsTapped: { store.send(.delegate(.settingsOrAdminTapped)) },
@@ -89,6 +91,7 @@ struct PublicMapContentView<MapContent: View>: View {
     let selectedPeriodTitle: String
     let isRouteLoading: Bool
     let isPeriodDisabled: Bool
+    let isAdminLoggedIn: Bool
     let isNavigationDisabled: Bool
     let toast: MapToast?
     let onSettingsTapped: () -> Void
@@ -131,8 +134,11 @@ struct PublicMapContentView<MapContent: View>: View {
                 ToolbarSpacer(.fixed, placement: .topBarTrailing)
             }
             ToolbarItem(placement: .topBarTrailing) {
-                Button("設定", systemImage: "gearshape", action: onSettingsTapped)
-                    .disabled(isNavigationDisabled)
+                Button(action: onSettingsTapped) {
+                    Image(systemName: isAdminLoggedIn ? "person.crop.circle.badge.checkmark" : "gearshape")
+                }
+                .accessibilityLabel(isAdminLoggedIn ? "管理者" : "設定")
+                .disabled(isNavigationDisabled)
             }
         }
         .toolbarBackground(.hidden, for: .navigationBar)
@@ -227,6 +233,7 @@ private extension PublicMapFeature.Content {
             selectedPeriodTitle: "日程を選択",
             isRouteLoading: false,
             isPeriodDisabled: false,
+            isAdminLoggedIn: false,
             isNavigationDisabled: false,
             toast: nil,
             onSettingsTapped: {},

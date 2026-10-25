@@ -58,6 +58,15 @@ struct RootFeature {
             }
         }
 
+        var isAdminLoggedIn: Bool {
+            switch launchState {
+            case .district(let userRole, _), .festival(let userRole):
+                userRole != .guest
+            case .onboarding, .loading, .error:
+                false
+            }
+        }
+
         var errorStatus: StatusCheckResult? {
             if case .error = launchState { status } else { nil }
         }
