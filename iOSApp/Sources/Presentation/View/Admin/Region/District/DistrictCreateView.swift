@@ -17,11 +17,11 @@ struct DistrictCreateScreen: View {
         DistrictCreateContentView(
             name: $store.name,
             email: $store.email,
+            isLoading: store.isLoading,
             onCancelTapped: { store.send(.cancelTapped) },
             onCreateTapped: { store.send(.createTapped) }
         )
         .dismissible(backButton: false)
-        .loadingOverlay(store.isLoading)
         .alert($store.scope(state: \.alert, action: \.alert))
     }
 }
@@ -33,6 +33,7 @@ typealias DistrictCreateView = DistrictCreateScreen
 struct DistrictCreateContentView: View {
     @Binding var name: String
     @Binding var email: String
+    let isLoading: Bool
     let onCancelTapped: () -> Void
     let onCreateTapped: () -> Void
 
@@ -50,10 +51,10 @@ struct DistrictCreateContentView: View {
         }
         .navigationTitle("新規作成")
         .toolbar {
-            ToolbarCancelButton {
+            ToolbarCancelButton(isDisabled: isLoading) {
                 onCancelTapped()
             }
-            ToolbarSaveButton(title: "作成") {
+            ToolbarSaveButton(title: "作成", isLoading: isLoading) {
                 onCreateTapped()
             }
         }
@@ -65,6 +66,7 @@ struct DistrictCreateContentView: View {
     DistrictCreateContentView(
         name: .constant(""),
         email: .constant(""),
+        isLoading: false,
         onCancelTapped: {},
         onCreateTapped: {}
     )

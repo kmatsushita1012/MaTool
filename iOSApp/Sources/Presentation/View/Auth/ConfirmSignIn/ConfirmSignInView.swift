@@ -23,7 +23,6 @@ struct ConfirmSignInScreen: View {
         )
         .dismissible(backButton: false)
         .alert($store.scope(state: \.alert, action: \.alert))
-        .loadingOverlay(store.isLoading)
     }
 }
 
@@ -60,6 +59,7 @@ struct ConfirmSignInContentView: View {
                     .cornerRadius(10)
             }
             .padding()
+            .loadingIndicator(isLoading: isLoading)
         }
         .padding()
         .toolbar {

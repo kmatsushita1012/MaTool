@@ -57,6 +57,7 @@ struct ResetPasswordFeature {
                 return .none
             case .enterUsername(.okTapped),
                 .resendTapped:
+                state.isLoading = true
                 return .task(Action.resetReceived) { [username = state.username] in
                     try await resetPasswordUseCase(username: username)
                 }

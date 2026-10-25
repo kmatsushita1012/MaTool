@@ -17,6 +17,7 @@ struct FestivalInfoFeature {
     @ObservableState
     struct State: Equatable {
         let festival: Festival
+        let locationTimestamp: Date?
         @Shared fileprivate var appState: AppState?
         var districts: [District] {
             (appState?.festivalState.districts.filter { $0.festivalId == festival.id } ?? [])
@@ -41,9 +42,11 @@ struct FestivalInfoFeature {
 
         init(
             _ festival: Festival,
-            appState: Shared<AppState?>
+            appState: Shared<AppState?>,
+            locationTimestamp: Date? = nil
         ) {
             self.festival = festival
+            self.locationTimestamp = locationTimestamp
             self._appState = appState
             self.region = makeRegion(origin: festival.base, spanDelta: spanDelta)
         }

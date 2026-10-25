@@ -25,11 +25,13 @@ struct PeriodEditScreen: View {
             title: $store.period.title,
             start: $store.period.start,
             end: $store.period.end,
+            isLoading: store.isLoading,
+            isSaving: store.isSaving,
+            isDeleting: store.isDeleting,
             onCancelTapped: { store.send(.cancelTapped) },
             onSaveTapped: { store.send(.saveTapped) },
             onDeleteTapped: { store.send(.deleteTapped) }
         )
-        .loadingOverlay(store.isLoading)
         .alert($store.scope(state: \.alert, action: \.alert))
         .dismissible(backButton: false)
     }
@@ -46,6 +48,9 @@ struct PeriodEditContentView: View {
     @Binding var title: String
     @Binding var start: SimpleTime
     @Binding var end: SimpleTime
+    let isLoading: Bool
+    let isSaving: Bool
+    let isDeleting: Bool
     let onCancelTapped: () -> Void
     let onSaveTapped: () -> Void
     let onDeleteTapped: () -> Void
@@ -73,13 +78,14 @@ struct PeriodEditContentView: View {
                 Button("削除", systemImage: "trash", role: .destructive) {
                     onDeleteTapped()
                 }
+                .loadingIndicator(isLoading: isDeleting)
                 .foregroundStyle(.red)
             }
         }
         .navigationTitle(modeTitle)
         .toolbar{
-            ToolbarCancelButton(action: onCancelTapped)
-            ToolbarSaveButton(action: onSaveTapped)
+            ToolbarCancelButton(isDisabled: isLoading, action: onCancelTapped)
+            ToolbarSaveButton(isLoading: isSaving, action: onSaveTapped)
         }
     }
 }
@@ -92,6 +98,9 @@ struct PeriodEditContentView: View {
         title: .constant(""),
         start: .constant(.now),
         end: .constant(.now),
+        isLoading: false,
+        isSaving: false,
+        isDeleting: false,
         onCancelTapped: {},
         onSaveTapped: {},
         onDeleteTapped: {}

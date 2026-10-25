@@ -12,6 +12,7 @@ import SwiftUI
 struct RouteHistoryView: View {
     let entries: [RouteEntry]
     let excludingRouteId: Route.ID?
+    var isLoading = false
     let selected: (RouteEntry) -> Void
 
     @Environment(\.dismiss) private var dismiss
@@ -34,6 +35,7 @@ struct RouteHistoryView: View {
                         Button(entry.period.shortText) {
                             selected(entry)
                         }
+                        .disabled(isLoading)
                     }
                 }
             }
@@ -42,7 +44,7 @@ struct RouteHistoryView: View {
         .navigationTitle("コピー元のルートを選択")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
-            ToolbarCancelButton {
+            ToolbarCancelButton(isDisabled: isLoading) {
                 dismiss()
             }
         }

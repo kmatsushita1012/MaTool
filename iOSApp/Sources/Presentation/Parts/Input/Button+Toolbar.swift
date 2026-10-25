@@ -43,11 +43,18 @@ struct SaveButton: View {
 struct ToolbarSaveButton: ToolbarContent {
     let title: String
     let isDisabled: Bool
+    let isLoading: Bool
     let action: () -> Void
     
-    init(title: String = "保存", isDisabled: Bool = false, action: @escaping () -> Void) {
+    init(
+        title: String = "保存",
+        isDisabled: Bool = false,
+        isLoading: Bool = false,
+        action: @escaping () -> Void
+    ) {
         self.title = title
         self.isDisabled = isDisabled
+        self.isLoading = isLoading
         self.action = action
     }
     
@@ -60,12 +67,24 @@ struct ToolbarSaveButton: ToolbarContent {
                     action()
                 }
                 .buttonStyle(.glassProminent)
-                .disabled(isDisabled)
+                .overlay {
+                    if isLoading {
+                        ProgressView()
+                            .controlSize(.small)
+                    }
+                }
+                .disabled(isDisabled || isLoading)
             } else {
                 SaveButton(title: title) {
                     action()
                 }
-                .disabled(isDisabled)
+                .overlay {
+                    if isLoading {
+                        ProgressView()
+                            .controlSize(.small)
+                    }
+                }
+                .disabled(isDisabled || isLoading)
             }
         }
     }

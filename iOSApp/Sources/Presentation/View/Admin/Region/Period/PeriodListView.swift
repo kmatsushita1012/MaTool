@@ -21,13 +21,13 @@ struct PeriodListScreen: View {
                 archives: store.archives,
                 yearOptions: store.yearOptions,
                 createYear: store.createYear,
+                isLoading: store.isLoading,
                 isBatchCreateDialogPresented: $isBatchCreateDialogPresented,
                 onPeriodTapped: { store.send(.periodTapped($0)) },
                 onArchiveTapped: { store.send(.archiveTapped($0)) },
                 onPeriodCreateTapped: { store.send(.periodCreateTapped) },
                 onBatchCreateTapped: { store.send(.batchCreateTapped($0)) }
             )
-            .loadingOverlay(store.isLoading)
             .navigationDestination(item: $store.scope(state: \.destination?.edit, action: \.destination.edit)) {
                 PeriodEditView(store: $0)
             }
@@ -48,6 +48,7 @@ struct PeriodListContentView: View {
     let archives: [PeriodListFeature.State.YearlyPeriods]
     let yearOptions: [Int]
     let createYear: Int
+    let isLoading: Bool
     @Binding var isBatchCreateDialogPresented: Bool
     let onPeriodTapped: (Period) -> Void
     let onArchiveTapped: (PeriodListFeature.State.YearlyPeriods) -> Void
@@ -71,6 +72,7 @@ struct PeriodListContentView: View {
                         NavigationItemView(title: period.text) {
                             onPeriodTapped(period)
                         }
+                        .disabled(isLoading)
                     }
                 }
             }
@@ -81,6 +83,7 @@ struct PeriodListContentView: View {
                         NavigationItemView(title: archive.text) {
                             onArchiveTapped(archive)
                         }
+                    .disabled(isLoading)
                     }
                 }
             }
@@ -88,7 +91,7 @@ struct PeriodListContentView: View {
         .navigationTitle("日程")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
-            ToolbarAddButton(action: onPeriodCreateTapped)
+            ToolbarAddButton(isDisabled: isLoading, action: onPeriodCreateTapped)
             batchCreateMenu
         }
     }
@@ -103,6 +106,7 @@ struct PeriodListContentView: View {
                 Button("一括作成") {
                     isBatchCreateDialogPresented = true
                 }
+                .loadingIndicator(isLoading: isLoading)
                 .confirmationDialog(
                     "\(String(createYear))年を一括作成",
                     isPresented: $isBatchCreateDialogPresented,
@@ -130,6 +134,7 @@ struct PeriodListContentView: View {
         archives: [],
         yearOptions: [],
         createYear: 2026,
+        isLoading: false,
         isBatchCreateDialogPresented: .constant(false),
         onPeriodTapped: { _ in },
         onArchiveTapped: { _ in },

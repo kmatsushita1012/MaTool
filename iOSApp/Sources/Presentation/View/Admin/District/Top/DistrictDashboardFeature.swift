@@ -42,6 +42,7 @@ struct DistrictDashboardFeature {
         
         var isAWSLoading: Bool = false
         var isRouteLoading: Bool = false
+        var isLocationLoading: Bool = false
         var isSettingsLoading: Bool = false
         var activeExportKind: ExportKind? = nil
         var url: URL? = nil
@@ -170,6 +171,7 @@ struct DistrictDashboardFeature {
                 interval: let interval,
                 permissionState: let permissionState
             ):
+                state.isLocationLoading = false
                 state.destination = .location(
                     LocationTrackingFeature.State(
                         id: state.district.id,
@@ -181,6 +183,7 @@ struct DistrictDashboardFeature {
                 )
                 return .none
             case .onLocation:
+                state.isLocationLoading = true
                 return .run { send in
                     let preparation = await locationUsecase.prepareTracking()
                     await send(.locationPrepared(
@@ -253,7 +256,11 @@ extension DistrictDashboardFeature.Destination.Action: Equatable {}
 
 extension DistrictDashboardFeature.State{
     var isLoading: Bool {
-        isAWSLoading || isRouteLoading || isSettingsLoading || activeExportKind != nil
+        isNavigationLoading || activeExportKind != nil
+    }
+
+    var isNavigationLoading: Bool {
+        isAWSLoading || isRouteLoading || isLocationLoading || isSettingsLoading
     }
     
     var isSubmissionExportLoading: Bool {

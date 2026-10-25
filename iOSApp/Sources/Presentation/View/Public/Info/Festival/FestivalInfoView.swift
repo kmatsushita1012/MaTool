@@ -1,7 +1,9 @@
 import ComposableArchitecture
+import Dependencies
 import MapKit
 import SwiftUI
 import Shared
+import UIKit
 
 struct FestivalInfoView: View {
     @SwiftUI.Bindable var store: StoreOf<FestivalInfoFeature>
@@ -11,6 +13,7 @@ struct FestivalInfoView: View {
         WithPerceptionTracking {
             FestivalInfoContentView(
                 festival: store.festival,
+                locationTimestamp: store.locationTimestamp,
                 districts: store.districts,
                 isSheetRoot: isSheetRoot,
                 displayMode: $store.displayMode,
@@ -34,13 +37,15 @@ struct FestivalInfoView: View {
                 }
             }
             .alert($store.scope(state: \.alert, action: \.alert))
-            .loadingOverlay(store.isLoading)
         }
     }
 }
 
 private struct FestivalInfoContentView: View {
+    @Dependency(\.values.isLiquidGlassEnabled) private var isLiquidGlassEnabled
+
     let festival: Festival
+    let locationTimestamp: Date?
     let districts: [District]
     let isSheetRoot: Bool
     @Binding var displayMode: FestivalInfoFeature.DisplayMode
@@ -51,6 +56,86 @@ private struct FestivalInfoContentView: View {
     @Environment(\.dismiss) private var dismiss
 
     var body: some View {
+        Group {
+            if #available(iOS 26.0, *), isLiquidGlassEnabled {
+                displayContent
+                    .safeAreaInset(edge: .top, spacing: 0) {
+                        displayModePicker
+                            .glassEffect(.regular)
+                            .padding(.horizontal)
+                            .padding(.vertical, 8)
+                    }
+            } else {
+                VStack(spacing: 0) {
+                    displayModePicker
+                        .padding(.horizontal)
+                    displayContent
+                    Spacer(minLength: 0)
+                }
+            }
+        }
+        .background {
+            InfoImageBlurredBackgroundView(
+                lightPath: festival.image.light,
+                darkPath: festival.image.dark
+            )
+            .ignoresSafeArea()
+        }
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            if isSheetRoot {
+                ToolbarItem(placement: .topBarLeading) {
+                    Button {
+                        dismiss()
+                    } label: {
+                        Image(systemName: "xmark")
+                    }
+                    .accessibilityLabel("閉じる")
+                    .disabled(isLoading)
+                }
+            }
+            if #available(iOS 26.0, *) {
+                ToolbarSpacer(.fixed, placement: .topBarLeading)
+            }
+            ToolbarItem(placement: .topBarLeading) {
+                Group {
+                    if let locationTimestamp {
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(festival.name)
+                                .font(.headline)
+                                .foregroundStyle(.primary)
+                                .lineLimit(1)
+
+                            Text(locationTimestamp, style: .date)
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                                .lineLimit(1)
+                        }
+                    } else {
+                        Text(festival.name)
+                            .font(.headline)
+                            .foregroundStyle(.primary)
+                            .lineLimit(1)
+                    }
+                }
+                .fixedSize(horizontal: true, vertical: false)
+            }
+            .hideSharedBackgroundVisibility()
+        }
+    }
+
+    private var displayModePicker: some View {
+        Picker("紹介表示", selection: $displayMode) {
+            ForEach(FestivalInfoFeature.DisplayMode.allCases, id: \.self) { mode in
+                Text(mode.rawValue).tag(mode)
+            }
+        }
+        .modifier(FestivalInfoSegmentPickerStyleModifier())
+        .frame(maxWidth: .infinity)
+    }
+
+    @ViewBuilder
+    private var displayContent: some View {
         Group {
             switch displayMode {
             case .festival:
@@ -64,35 +149,26 @@ private struct FestivalInfoContentView: View {
                 )
             }
         }
-        .navigationTitle(festival.name)
-        .background {
-            InfoImageBlurredBackgroundView(
-                lightPath: festival.image.light,
-                darkPath: festival.image.dark
-            )
-            .ignoresSafeArea()
-        }
-        .toolbarTitleDisplayMode(.inline)
-        .toolbar {
-            if isSheetRoot {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button {
-                        dismiss()
-                    } label: {
-                        Image(systemName: "xmark")
-                    }
-                    .accessibilityLabel("閉じる")
-                }
-            }
-            ToolbarItem(placement: .principal) {
-                Picker("紹介表示", selection: $displayMode) {
-                    ForEach(FestivalInfoFeature.DisplayMode.allCases, id: \.self) { mode in
-                        Text(mode.rawValue).tag(mode)
-                    }
-                }
-                .pickerStyle(.segmented)
-            }
-        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+}
+
+private struct FestivalInfoSegmentPickerStyleModifier: ViewModifier {
+    init() {
+        UISegmentedControl.appearance().setTitleTextAttributes(
+            [.font: UIFont.preferredFont(forTextStyle: .body)],
+            for: .normal
+        )
+        UISegmentedControl.appearance().setTitleTextAttributes(
+            [.font: UIFont.preferredFont(forTextStyle: .headline)],
+            for: .selected
+        )
+    }
+
+    func body(content: Content) -> some View {
+        content
+            .pickerStyle(.segmented)
+            .controlSize(.large)
     }
 }
 

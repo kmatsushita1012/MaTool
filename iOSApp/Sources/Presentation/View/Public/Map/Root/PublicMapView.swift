@@ -10,6 +10,7 @@ import SwiftUI
 
 struct PublicMapView: View {
     @SwiftUI.Bindable var store: StoreOf<PublicMapFeature>
+    var isNavigationDisabled = false
     
     var body: some View {
         WithPerceptionTracking {
@@ -65,6 +66,7 @@ struct PublicMapView: View {
             selectedPeriodTitle: selectedPeriodTitle,
             isRouteLoading: isRouteLoading,
             isPeriodDisabled: isPeriodDisabled,
+            isNavigationDisabled: isNavigationDisabled,
             toast: toast,
             onSettingsTapped: { store.send(.delegate(.settingsOrAdminTapped)) },
             onIntroductionTapped: { store.send(.delegate(.introductionTapped)) },
@@ -87,6 +89,7 @@ struct PublicMapContentView<MapContent: View>: View {
     let selectedPeriodTitle: String
     let isRouteLoading: Bool
     let isPeriodDisabled: Bool
+    let isNavigationDisabled: Bool
     let toast: MapToast?
     let onSettingsTapped: () -> Void
     let onIntroductionTapped: () -> Void
@@ -111,7 +114,6 @@ struct PublicMapContentView<MapContent: View>: View {
             }
             .animation(.easeInOut(duration: 0.2), value: toast)
         }
-        .loadingOverlay(isLoading)
         .toolbar {
             ToolbarItem(placement: .topBarLeading) {
                 Text(festivalTitle)
@@ -121,9 +123,16 @@ struct PublicMapContentView<MapContent: View>: View {
                     .fixedSize(horizontal: true, vertical: false)
             }
             .hideSharedBackgroundVisibility()
-            ToolbarItemGroup(placement: .topBarTrailing) {
+            ToolbarItem(placement: .topBarTrailing) {
+                Button(selectedContent == .locations ? "祭紹介" : "町紹介", action: onIntroductionTapped)
+                    .disabled(isNavigationDisabled)
+            }
+            if #available(iOS 26.0, *) {
+                ToolbarSpacer(.fixed, placement: .topBarTrailing)
+            }
+            ToolbarItem(placement: .topBarTrailing) {
                 Button("設定", systemImage: "gearshape", action: onSettingsTapped)
-                Button("紹介", systemImage: "info.circle", action: onIntroductionTapped)
+                    .disabled(isNavigationDisabled)
             }
         }
         .toolbarBackground(.hidden, for: .navigationBar)
@@ -149,7 +158,7 @@ struct PublicMapContentView<MapContent: View>: View {
                 Label(contentTitles[selectedContent] ?? "", systemImage: selectedContent.menuSymbol)
             }
             .modifier(MapTopMenuStyle(isLiquidGlassDisabled: isLiquidGlassDisabled))
-            .disabled(isLoading)
+            .loadingIndicator(isLoading: isLoading)
 
             if let routes {
                 Menu {
@@ -163,6 +172,12 @@ struct PublicMapContentView<MapContent: View>: View {
                 }
                 .modifier(MapTopMenuStyle(isLiquidGlassDisabled: isLiquidGlassDisabled))
                 .disabled(isPeriodDisabled || isRouteLoading || routes.isEmpty)
+                .overlay {
+                    if isRouteLoading {
+                        ProgressView()
+                            .controlSize(.small)
+                    }
+                }
             }
 
             Spacer(minLength: 0)
@@ -212,6 +227,7 @@ private extension PublicMapFeature.Content {
             selectedPeriodTitle: "日程を選択",
             isRouteLoading: false,
             isPeriodDisabled: false,
+            isNavigationDisabled: false,
             toast: nil,
             onSettingsTapped: {},
             onIntroductionTapped: {},

@@ -36,6 +36,14 @@ struct RouteEditFeature{
         case move(Int)
         case insert(Int)
     }
+
+    enum LoadingAction: Equatable {
+        case save
+        case delete
+        case export
+        case history
+        case source
+    }
     
     @Reducer
     enum AlertDestination{
@@ -56,7 +64,13 @@ struct RouteEditFeature{
         
         var mode: EditMode
         var operation: Operation = .add
-        var isLoading: Bool = false
+        var loadingAction: LoadingAction?
+        var isLoading: Bool { loadingAction != nil }
+        var isSaving: Bool { loadingAction == .save }
+        var isDeleting: Bool { loadingAction == .delete }
+        var isExportLoading: Bool { loadingAction == .export }
+        var isHistoryLoading: Bool { loadingAction == .history }
+        var isSourceLoading: Bool { loadingAction == .source }
         var isSubmitDialogPresented: Bool = false
         var tab: Tab
         var districtAreaOverlays: [DistrictAreaOverlay]
@@ -177,7 +191,7 @@ struct RouteEditFeature{
                         await dismiss()
                     }
                 case .create, .update:
-                    state.isLoading = true
+                    state.loadingAction = .save
                     return .task(Action.saveReceived) {[state, points, appState = state.$appState] in
                         switch state.mode {
                         case .create:
@@ -216,7 +230,7 @@ struct RouteEditFeature{
                 state.alert = .delete(AlertFeature.delete())
                 return .none
             case .wholeTapped:
-                state.isLoading = true
+                state.loadingAction = .export
                 return .task(Action.previewPrepared){ [state] in
                     let snapshotter = try await RouteSnapshotter(route: state.route, points: state.points)
                     let (image, url) = try await snapshotter.take()
@@ -227,14 +241,14 @@ struct RouteEditFeature{
                     state.alert = .notice(.error("描画範囲の取得に失敗しました。"))
                       return .none
                 }
-                state.isLoading = true
+                state.loadingAction = .export
                 return .task(Action.previewPrepared){ [state] in
                     let snapshotter = try await RouteSnapshotter(route: state.route, points: state.points)
                     let (image, url) = try await snapshotter.take(of: state.region, size: size)
                     return ExportedItem(image: image, url: url)
                 }
             case .copyTapped:
-                state.isLoading = true
+                state.loadingAction = .history
                 let districtId = state.district.id
                 let festivalId = state.festival.id
                 return .task(Action.historyPrepared) {
@@ -271,18 +285,18 @@ struct RouteEditFeature{
                 state.passages.move(fromOffsets: source, toOffset: destination)
                 return .none
             case .sourceSelected(let route):
-                state.isLoading = true
-                state.destination = nil
+                state.loadingAction = .source
                 return .task(Action.copyPrepared) {
                     try await fetchRoutePackUseCase(routeId: route.id)
                 }
             // MARK: - Received
             case .historyPrepared(.success(let entries)):
-                state.isLoading = false
+                state.loadingAction = nil
                 state.destination = .history(entries)
                 return .none
             case .copyPrepared(.success(let pack)):
-                state.isLoading = false
+                state.loadingAction = nil
+                state.destination = nil
                 state.route = pack.route.copyWith(districtId: state.district.id, periodId: state.period.id)
                 state.mode = .create
                 state.points = pack.points.sorted().copyWith(routeId: state.route.id).normalized().reindexed()
@@ -295,7 +309,7 @@ struct RouteEditFeature{
                 return .none
             case .previewPrepared(.success(let item)):
                 state.destination = .preview(item)
-                state.isLoading = false
+                state.loadingAction = nil
                 return .none
             // MARK: - Destination
             case .point(.presented(.moveTapped)):
@@ -342,7 +356,7 @@ struct RouteEditFeature{
                     return .none
                 case .delete(.okTapped):
                     state.alert = nil
-                    state.isLoading = true
+                    state.loadingAction = .delete
                     return .task(Action.deleteReceived) { [routeId = state.route.id, appState = state.$appState] in
                         try await deleteRouteUseCase(routeId: routeId, appState: appState)
                         await dismiss()
@@ -357,7 +371,7 @@ struct RouteEditFeature{
                 .historyPrepared(.failure(let error)),
                 .copyPrepared(.failure(let error)),
                 .previewPrepared(.failure(let error)):
-                state.isLoading = false
+                state.loadingAction = nil
                 state.alert = .notice(.error(error))
                 return .none
             default:

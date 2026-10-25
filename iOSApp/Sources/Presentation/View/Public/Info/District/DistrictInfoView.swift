@@ -6,6 +6,8 @@ import Shared
 struct DistrictInfoView: View {
     @SwiftUI.Bindable var store: StoreOf<DistrictInfoFeature>
     let festivalName: String?
+    var locationTimestamp: Date? = nil
+    var isNavigationLoading = false
     let onFestivalTapped: () -> Void
     let isSheetRoot: Bool
 
@@ -17,6 +19,8 @@ struct DistrictInfoView: View {
                 region: $store.region,
                 isSheetRoot: isSheetRoot,
                 festivalName: festivalName,
+                locationTimestamp: locationTimestamp,
+                isNavigationLoading: isNavigationLoading,
                 onFestivalTapped: onFestivalTapped
             )
         }
@@ -29,6 +33,8 @@ private struct DistrictInfoContentView: View {
     @Binding var region: MKCoordinateRegion?
     let isSheetRoot: Bool
     let festivalName: String?
+    let locationTimestamp: Date?
+    let isNavigationLoading: Bool
     let onFestivalTapped: () -> Void
     @State private var isMapMovementLocked = true
     @Environment(\.dismiss) private var dismiss
@@ -95,21 +101,51 @@ private struct DistrictInfoContentView: View {
             )
             .ignoresSafeArea()
         }
-        .navigationTitle(district.name)
-        .toolbarTitleDisplayMode(.inline)
+        .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             if isSheetRoot {
-                ToolbarItem(placement: .cancellationAction) {
+                ToolbarItem(placement: .topBarLeading) {
                     Button {
                         dismiss()
                     } label: {
                         Image(systemName: "xmark")
                     }
                     .accessibilityLabel("閉じる")
+                    .disabled(isNavigationLoading)
                 }
+            }
+            if #available(iOS 26.0, *) {
+                ToolbarSpacer(.fixed, placement: .topBarLeading)
+            }
+            ToolbarItem(placement: .topBarLeading) {
+                Group {
+                    if let locationTimestamp {
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(district.name)
+                                .font(.headline)
+                                .foregroundStyle(.primary)
+                                .lineLimit(1)
+
+                            Text(locationTimestamp, style: .date)
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                                .lineLimit(1)
+                        }
+                    } else {
+                        Text(district.name)
+                            .font(.headline)
+                            .foregroundStyle(.primary)
+                            .lineLimit(1)
+                    }
+                }
+                .fixedSize(horizontal: true, vertical: false)
+            }
+            .hideSharedBackgroundVisibility()
+            if isSheetRoot {
                 if let festivalName {
                     ToolbarItem(placement: .topBarTrailing) {
                         Button(festivalName, action: onFestivalTapped)
+                        .disabled(isNavigationLoading)
                     }
                 }
             }
@@ -230,6 +266,8 @@ struct DistrictIntroductionRootView: View {
             DistrictInfoView(
                 store: store.scope(state: \.district, action: \.district),
                 festivalName: store.festival.name,
+                locationTimestamp: store.locationTimestamp,
+                isNavigationLoading: store.isLoading,
                 onFestivalTapped: { store.send(.festivalTapped) },
                 isSheetRoot: true
             )
@@ -242,7 +280,6 @@ struct DistrictIntroductionRootView: View {
                     FestivalInfoView(store: festivalStore, isSheetRoot: false)
                 }
             }
-            .loadingOverlay(store.isLoading)
         }
     }
 }

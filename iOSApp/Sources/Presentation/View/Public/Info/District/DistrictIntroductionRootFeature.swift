@@ -1,4 +1,5 @@
 import ComposableArchitecture
+import Foundation
 import Shared
 
 @Reducer
@@ -11,6 +12,7 @@ struct DistrictIntroductionRootFeature {
     @ObservableState
     struct State: Equatable {
         let festival: Festival
+        let locationTimestamp: Date?
         @Shared fileprivate var appState: AppState?
         var district: DistrictInfoFeature.State
         var isLoading = false
@@ -19,9 +21,11 @@ struct DistrictIntroductionRootFeature {
         init(
             _ pack: DistrictPack,
             festival: Festival,
+            locationTimestamp: Date? = nil,
             appState: Shared<AppState?>
         ) {
             self.festival = festival
+            self.locationTimestamp = locationTimestamp
             self._appState = appState
             self.district = DistrictInfoFeature.State(pack, appState: appState)
         }
@@ -58,7 +62,8 @@ struct DistrictIntroductionRootFeature {
                 state.isLoading = false
                 state.destination = .festival(FestivalInfoFeature.State(
                     state.festival,
-                    appState: state.$appState
+                    appState: state.$appState,
+                    locationTimestamp: state.locationTimestamp
                 ))
                 return .none
             case .district, .destination:

@@ -30,6 +30,7 @@ struct DistrictEditScreen: View {
             ),
             visibilityLabel: { $0.label },
             performances: store.performances,
+            isSaving: store.isLoading,
             onBaseTapped: { store.send(.baseTapped) },
             onAreaTapped: { store.send(.areaTapped) },
             onPerformanceEditTapped: { store.send(.performanceEditTapped($0)) },
@@ -48,7 +49,6 @@ struct DistrictEditScreen: View {
             PerformanceEditView(store: store)
         }
         .alert($store.scope(state: \.alert, action: \.alert))
-        .loadingOverlay(store.isLoading)
     }
 }
 
@@ -62,6 +62,7 @@ struct DistrictEditContentView<VisibilityValue: Hashable & CaseIterable>: View {
     @Binding var visibility: VisibilityValue
     let visibilityLabel: (VisibilityValue) -> String
     let performances: [Performance]
+    let isSaving: Bool
     let onBaseTapped: () -> Void
     let onAreaTapped: () -> Void
     let onPerformanceEditTapped: (Performance) -> Void
@@ -86,12 +87,14 @@ struct DistrictEditContentView<VisibilityValue: Hashable & CaseIterable>: View {
                     Label("地図で選択", systemImage: "map")
                         .font(.body)
                 }
+                .disabled(isSaving)
             }
             Section(header: Text("町域")) {
                 Button(action: onAreaTapped) {
                     Label("地図で選択", systemImage: "map")
                         .font(.body)
                 }
+                .disabled(isSaving)
             }
             Section(header: Text("ルート"), footer: Text("最新年の全てのルートの公開範囲が変更されます")) {
                 Picker("デフォルトの公開範囲", selection: $visibility) {
@@ -107,6 +110,7 @@ struct DistrictEditContentView<VisibilityValue: Hashable & CaseIterable>: View {
                         title: item.name,
                         onTap: { onPerformanceEditTapped(item) }
                     )
+                    .disabled(isSaving)
                 }
                 Button(action: onPerformanceAddTapped) {
                     Label("追加", systemImage: "plus.circle")
@@ -117,8 +121,8 @@ struct DistrictEditContentView<VisibilityValue: Hashable & CaseIterable>: View {
         .navigationTitle("地区情報")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
-            ToolbarCancelButton(action: onCancelTapped)
-            ToolbarSaveButton(action: onSaveTapped)
+            ToolbarCancelButton(isDisabled: isSaving, action: onCancelTapped)
+            ToolbarSaveButton(isLoading: isSaving, action: onSaveTapped)
         }
     }
 }
@@ -132,6 +136,7 @@ struct DistrictEditContentView<VisibilityValue: Hashable & CaseIterable>: View {
         visibility: .constant(visibility),
         visibilityLabel: { $0.label },
         performances: [],
+        isSaving: false,
         onBaseTapped: {},
         onAreaTapped: {},
         onPerformanceEditTapped: { _ in },

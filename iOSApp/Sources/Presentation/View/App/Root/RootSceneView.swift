@@ -34,7 +34,10 @@ public struct RootSceneView: View {
             case .map:
                 if let mapStore = store.scope(state: \.map, action: \.map) {
                     NavigationStack {
-                        PublicMapView(store: mapStore)
+                        PublicMapView(
+                            store: mapStore,
+                            isNavigationDisabled: store.isDestinationLoading || store.isIntroductionLoading
+                        )
                             .navigationDestination(item: $store.scope(
                                 state: \.destination?.settings,
                                 action: \.destination.settings
@@ -71,7 +74,6 @@ public struct RootSceneView: View {
                         .presentationDetents([.medium, .large], selection: $infoSheetDetent)
                         .presentationDragIndicator(.visible)
                     }
-                    .loadingOverlay(store.isDestinationLoading || store.isIntroductionLoading)
                 } else {
                     LoadingView()
                 }

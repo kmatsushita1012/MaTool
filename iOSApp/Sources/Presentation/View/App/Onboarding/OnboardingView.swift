@@ -18,11 +18,12 @@ struct OnboardingScreen: View {
                 festivals: store.festivals,
                 districts: store.districts,
                 selectedFestival: $store.selectedFestival,
+                isFestivalLoading: store.isFestivalLoading,
+                isDistrictLoading: store.isDistrictLoading,
                 festivalErrorMessage: store.festivalErrorMessaage,
                 onDistrictSelected: { store.send(.districtSelected($0)) },
                 onExternalGuestTapped: { store.send(.externalGuestTapped) }
             )
-            .loadingOverlay(store.isLoading)
         }
     }
 }
@@ -33,6 +34,8 @@ struct OnboardingContentView: View {
     let festivals: [Festival]
     let districts: [District]
     @Binding var selectedFestival: Festival?
+    let isFestivalLoading: Bool
+    let isDistrictLoading: Bool
     let festivalErrorMessage: String?
     let onDistrictSelected: (District) -> Void
     let onExternalGuestTapped: () -> Void
@@ -66,6 +69,7 @@ struct OnboardingContentView: View {
                     borderColor : .onboarding
                 )
                 .padding(.horizontal)
+                .loadingIndicator(isLoading: isFestivalLoading)
             }
             VStack(spacing: 8){
                 Text("② どのように祭に参加しますか？")
@@ -83,12 +87,14 @@ struct OnboardingContentView: View {
                 .buttonStyle(PrimaryButtonStyle(.onboarding))
                 .id(districts)
                 .padding(.horizontal)
+                .loadingIndicator(isLoading: isDistrictLoading)
 
                 Button(action: onExternalGuestTapped) {
                     Text("観光・見物（参加町以外）")
                 }
                 .buttonStyle(SecondaryButtonStyle(.onboarding))
                 .padding(.horizontal)
+                .disabled(isFestivalLoading || isDistrictLoading)
             }
         }
         .padding()
@@ -112,6 +118,8 @@ struct OnboardingContentView: View {
         festivals: [],
         districts: [],
         selectedFestival: .constant(nil),
+        isFestivalLoading: false,
+        isDistrictLoading: false,
         festivalErrorMessage: nil,
         onDistrictSelected: { _ in },
         onExternalGuestTapped: {}

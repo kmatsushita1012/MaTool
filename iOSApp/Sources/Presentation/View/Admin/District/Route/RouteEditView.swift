@@ -45,7 +45,6 @@ struct RouteEditView: View {
         .sheet(item: $store.destination, content: destinationSheet)
         .alert($store.scope(state: \.alert?.notice, action: \.alert.notice))
         .alert($store.scope(state: \.alert?.delete, action: \.alert.delete))
-        .loadingOverlay(store.isLoading)
         .onAppear{
             store.send(.onAppear)
         }
@@ -73,7 +72,11 @@ struct RouteEditView: View {
             PreviewView(item: item)
         case .history(let entries):
             NavigationStack {
-                RouteHistoryView(entries: entries, excludingRouteId: store.route.id) {
+                RouteHistoryView(
+                    entries: entries,
+                    excludingRouteId: store.route.id,
+                    isLoading: store.isSourceLoading
+                ) {
                     store.send(.sourceSelected($0))
                 }
             }
@@ -88,10 +91,14 @@ struct RouteEditView: View {
     
     @ToolbarContentBuilder
     var toolbar: some ToolbarContent {
-        ToolbarSaveButton(title: store.saveButtonTitle, isDisabled: store.isConfirmDisabled){
+        ToolbarSaveButton(
+            title: store.saveButtonTitle,
+            isDisabled: store.isConfirmDisabled || (store.isLoading && !store.isSaving),
+            isLoading: store.isSaving
+        ){
             store.send(.saveTapped)
         }
-        ToolbarCancelButton {
+        ToolbarCancelButton(isDisabled: store.isLoading) {
             store.send(.cancelTapped)
         }
         if #available(iOS 26.0, *), isLiquidGlassEnabled {
@@ -130,6 +137,7 @@ extension RouteEditView {
                     Button("コピー"){
                         store.send(.copyTapped)
                     }
+                    .loadingIndicator(isLoading: store.isHistoryLoading)
                 case .edit, .public:
                     undoButton
                     redoButton
@@ -179,6 +187,7 @@ extension RouteEditView {
                 Button("コピー"){
                     store.send(.copyTapped)
                 }
+                .loadingIndicator(isLoading: store.isHistoryLoading)
             }
         case .edit, .public:
             ToolbarItemGroup(placement: .bottomBar) {
@@ -294,6 +303,7 @@ extension RouteEditView {
                     Button("ルートを削除", systemImage: "trash", role: .destructive){
                         store.send(.deleteTapped)
                     }
+                .loadingIndicator(isLoading: store.isDeleting)
                     .labelStyle(.titleAndIcon)
                 }
             }
@@ -355,13 +365,7 @@ extension RouteEditView {
         } label: {
             Text("提出用")
         }
-        .overlay {
-            if store.isLoading {
-                ProgressView()
-                    .controlSize(.small)
-            }
-        }
-        .disabled(store.isLoading)
+        .loadingIndicator(isLoading: store.isExportLoading)
         .simultaneousGesture(
             LongPressGesture(minimumDuration: 0.6).onEnded { _ in
                 if store.isPartialEnable {
@@ -383,6 +387,7 @@ extension RouteEditView {
             }
             .disabled(!store.isPartialEnable)
         }
+        .disabled(store.isLoading)
     }
 
     @ViewBuilder

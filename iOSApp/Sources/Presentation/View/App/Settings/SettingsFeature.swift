@@ -41,7 +41,8 @@ struct SettingsFeature {
         }
         var selectedDistrict: District? = nil
         var confirmedDistrict: District? = nil
-        var isLoading: Bool = false
+        var isParticipationLoading: Bool = false
+        var isSignOutLoading: Bool = false
         var pendingParticipationChange: PendingParticipationChange?
         @Shared fileprivate var appState: AppState?
         var userGuide: URL? = {
@@ -106,7 +107,7 @@ struct SettingsFeature {
                     state.alert = AlertFeature.participationChangeConfirmation()
                     return .none
                 }
-                state.isLoading = true
+                state.isParticipationLoading = true
                 return .task(Action.festivalSelectReceived) { [appState = state.$appState] in
                     try await selectFestivalUseCase(festivalId: festival.id, appState: appState)
                 }
@@ -120,7 +121,7 @@ struct SettingsFeature {
                     state.alert = AlertFeature.participationChangeConfirmation()
                     return .none
                 }
-                state.isLoading = true
+                state.isParticipationLoading = true
                 return .task(Action.districtSelectReceived) { [appState = state.$appState] in
                     try await selectDistrictUseCase(districtId: districtId, appState: appState)
                 }
@@ -131,17 +132,17 @@ struct SettingsFeature {
                 state.destination = .login(LoginFeature.State(appState: state.$appState))
                 return .none
             case .signOutTapped:
-                state.isLoading = true
+                state.isSignOutLoading = true
                 return .task(Action.signOutReceived) {
                     try await signOutUseCase()
                 }
                 .cancellable(id: SceneSessionCancellationID.active, cancelInFlight: true)
             case .signOutReceived(.failure(let error)):
-                state.isLoading = false
+                state.isSignOutLoading = false
                 state.alert = AlertFeature.error("情報の取得に失敗しました \(error.message)")
                 return .none
             case .signOutReceived(.success):
-                state.isLoading = false
+                state.isSignOutLoading = false
                 return .none
             case .festivalSelectReceived(.success(let result)):
                 if case .changed = result {
@@ -149,15 +150,15 @@ struct SettingsFeature {
                 }
                 state.confirmedFestival = state.selectedFestival
                 state.confirmedDistrict = state.selectedDistrict
-                state.isLoading = false
+                state.isParticipationLoading = false
                 guard case .changed(let userRole) = result else { return .none }
                 return .send(.delegate(.sceneSelectionChanged(userRole, nil)))
             case .districtSelectReceived(.success(let routeId)):
-                state.isLoading = false
+                state.isParticipationLoading = false
                 state.confirmedDistrict = state.selectedDistrict
                 return .send(.delegate(.sceneSelectionChanged(state.userRole, routeId)))
             case .participationChangeReceived(let completion):
-                state.isLoading = false
+                state.isParticipationLoading = false
                 state.pendingParticipationChange = nil
 
                 guard completion.didSignOut else {
@@ -189,7 +190,7 @@ struct SettingsFeature {
                 return .send(.delegate(.participationChanged(preparation)))
             case .festivalSelectReceived(.failure(let error)),
                  .districtSelectReceived(.failure(let error)):
-                state.isLoading = false
+                state.isParticipationLoading = false
                 state.alert = AlertFeature.error("情報の取得に失敗しました \(error.message)")
                 return .none
             case .destination:
@@ -202,7 +203,7 @@ struct SettingsFeature {
                     return .none
                 }
                 state.alert = nil
-                state.isLoading = true
+                state.isParticipationLoading = true
                 return .run { [appState = state.$appState] send in
                     var didSignOut = false
                     do {

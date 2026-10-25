@@ -32,6 +32,7 @@ struct HeadquarterDistrictListView: View {
                                 store.send(.selected(district))
                             }
                         )
+                        .disabled(store.isLoading)
                     }
                 }
             }
@@ -69,11 +70,13 @@ struct HeadquarterDistrictListView: View {
                         store.send(.reorderTapped)
                     }
                     .buttonStyle(.borderedProminent)
+                    .loadingIndicator(isLoading: store.isReorderingSaving)
+                    .disabled(store.isReorderingSaving || store.loadingDistrictID != nil)
                 } else {
                     Button("並替") {
                         store.send(.reorderTapped)
                     }
-                    .disabled(store.isReorderDisabled)
+                    .disabled(store.isReorderDisabled || store.isLoading)
                 }
             }
             if #available(iOS 26.0, *) {
@@ -84,11 +87,11 @@ struct HeadquarterDistrictListView: View {
                     Button("追加") {
                         store.send(.createTapped)
                     }
+                    .disabled(store.isLoading)
                 }
             }
         }
         .environment(\.editMode, .constant(store.isReordering ? .active : .inactive))
-        .loadingOverlay(store.isLoading && !store.isExportLoading)
     }
 }
 
@@ -104,12 +107,6 @@ private extension HeadquarterDistrictListView {
             Text(title)
                 .frame(maxWidth: .infinity, alignment: .leading)
         }
-        .overlay(alignment: .trailing) {
-            if isLoading {
-                ProgressView()
-                    .controlSize(.small)
-            }
-        }
-        .disabled(isLoading)
+        .loadingIndicator(isLoading: isLoading)
     }
 }

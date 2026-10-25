@@ -19,8 +19,10 @@ struct DistrictDashboardScreen: View {
             DistrictDashboardContentView(
                 districtName: store.district.name,
                 routes: store.routes,
+                isNavigationLoading: store.isNavigationLoading,
                 isSubmissionExportLoading: store.isSubmissionExportLoading,
                 isTableExportLoading: store.isTableExportLoading,
+                isSignOutLoading: store.isAWSLoading,
                 onEditTapped: { store.send(.onEdit) },
                 onLocationTapped: { store.send(.onLocation) },
                 onRouteTapped: { store.send(.onRouteEdit($0)) },
@@ -51,7 +53,6 @@ struct DistrictDashboardScreen: View {
                 ShareSheet(item: url)
             }
             .alert($store.scope(state: \.alert, action: \.alert))
-            .loadingOverlay(store.isLoading)
         }
     }
 }
@@ -63,8 +64,10 @@ typealias DistrictDashboardView = DistrictDashboardScreen
 struct DistrictDashboardContentView: View {
     let districtName: String
     let routes: [RouteSlot]
+    let isNavigationLoading: Bool
     let isSubmissionExportLoading: Bool
     let isTableExportLoading: Bool
+    let isSignOutLoading: Bool
     let onEditTapped: () -> Void
     let onLocationTapped: () -> Void
     let onRouteTapped: (RouteSlot) -> Void
@@ -83,30 +86,33 @@ struct DistrictDashboardContentView: View {
                     iconName: "info.circle",
                     onTap: onEditTapped
                 )
+                .disabled(isNavigationLoading)
                 NavigationItemView(
                     title: "位置情報配信",
                     iconName: "mappin.and.ellipse",
                     onTap: onLocationTapped
                 )
+                .disabled(isNavigationLoading)
             }
             Section(header: Text("行動")) {
                 ForEach(routes) { pair in
                     RouteSlotView(pair) {
                         onRouteTapped(pair)
                     }
+                    .disabled(isNavigationLoading)
                 }
             }
             Section(header: Text("ルート出力")) {
                 DashboardExportButton(
                     title: "提出資料出力",
                     showsProgress: isSubmissionExportLoading,
-                    isDisabled: isSubmissionExportLoading || isTableExportLoading,
+                    isDisabled: isSubmissionExportLoading || isTableExportLoading || isSignOutLoading,
                     action: onSubmissionExportTapped
                 )
                 DashboardExportButton(
                     title: "行動表出力",
                     showsProgress: isTableExportLoading,
-                    isDisabled: isSubmissionExportLoading || isTableExportLoading,
+                    isDisabled: isSubmissionExportLoading || isTableExportLoading || isSignOutLoading,
                     action: onTableExportTapped
                 )
             }
@@ -117,6 +123,7 @@ struct DistrictDashboardContentView: View {
             Section {
                 Button("ログアウト", action: onSignOutTapped)
                     .foregroundColor(.red)
+                    .loadingIndicator(isLoading: isSignOutLoading)
             }
         }
         .navigationTitle(districtName)
@@ -124,6 +131,7 @@ struct DistrictDashboardContentView: View {
         .toolbar {
             ToolbarItem(placement: .navigationBarTrailing) {
                 Button("設定", systemImage: "gearshape", action: onSettingsTapped)
+                    .disabled(isNavigationLoading || isSignOutLoading)
             }
         }
     }
@@ -133,8 +141,10 @@ struct DistrictDashboardContentView: View {
     DistrictDashboardContentView(
         districtName: "",
         routes: [],
+        isNavigationLoading: false,
         isSubmissionExportLoading: false,
         isTableExportLoading: false,
+        isSignOutLoading: false,
         onEditTapped: {},
         onLocationTapped: {},
         onRouteTapped: { _ in },

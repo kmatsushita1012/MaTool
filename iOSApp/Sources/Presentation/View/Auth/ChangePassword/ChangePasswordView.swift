@@ -18,11 +18,11 @@ struct ChangePasswordScreen: View {
             current: $store.current,
             new1: $store.new1,
             new2: $store.new2,
+            isLoading: store.isLoading,
             onSubmitTapped: { store.send(.okTapped) },
             onDismissTapped: { store.send(.dismissTapped) }
         )
         .dismissible(backButton: false, edgeSwipe: false)
-        .loadingOverlay(store.isLoading)
         .alert($store.scope(state: \.alert, action: \.alert))
     }
 }
@@ -35,6 +35,7 @@ struct ChangePasswordContentView: View {
     @Binding var current: String
     @Binding var new1: String
     @Binding var new2: String
+    let isLoading: Bool
     let onSubmitTapped: () -> Void
     let onDismissTapped: () -> Void
 
@@ -54,6 +55,7 @@ struct ChangePasswordContentView: View {
             ) {
                 onDismissTapped()
             }
+            .disabled(isLoading)
             .ignoresSafeArea(edges: .top)
             Spacer()
             VStack {
@@ -78,6 +80,7 @@ struct ChangePasswordContentView: View {
                 }
                 .buttonStyle(PrimaryButtonStyle())
                 .padding()
+                .loadingIndicator(isLoading: isLoading)
             }
             .padding()
             Spacer()
@@ -91,6 +94,7 @@ struct ChangePasswordContentView: View {
         current: .constant(""),
         new1: .constant(""),
         new2: .constant(""),
+        isLoading: false,
         onSubmitTapped: {},
         onDismissTapped: {}
     )

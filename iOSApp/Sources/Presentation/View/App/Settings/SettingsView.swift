@@ -24,7 +24,8 @@ struct SettingsScreen: View {
                 contact: store.contact,
                 appVersion: AppStatusClient.getCurrentVersion(),
                 userRole: store.userRole,
-                isLoading: store.isLoading,
+                isParticipationLoading: store.isParticipationLoading,
+                isSignOutLoading: store.isSignOutLoading,
                 onLoginTapped: { store.send(.loginTapped) },
                 onSignOutTapped: { store.send(.signOutTapped) }
             )
@@ -35,7 +36,6 @@ struct SettingsScreen: View {
                 LoginView(store: store)
             }
             .alert($store.scope(state: \.alert, action: \.alert))
-            .loadingOverlay(store.isLoading)
         }
     }
 }
@@ -51,7 +51,8 @@ struct SettingsContentView: View {
     let contact: URL?
     let appVersion: String
     let userRole: UserRole
-    let isLoading: Bool
+    let isParticipationLoading: Bool
+    let isSignOutLoading: Bool
     let onLoginTapped: () -> Void
     let onSignOutTapped: () -> Void
 
@@ -67,9 +68,9 @@ struct SettingsContentView: View {
                     }
                 }
                 .pickerStyle(.menu)
-                .disabled(festivals.isEmpty || isLoading)
+                .disabled(festivals.isEmpty || isParticipationLoading || isSignOutLoading)
                 .overlay(alignment: .trailing) {
-                    if isLoading {
+                    if isParticipationLoading {
                         ProgressView()
                             .controlSize(.small)
                     }
@@ -82,9 +83,9 @@ struct SettingsContentView: View {
                     }
                 }
                 .pickerStyle(.menu)
-                .disabled(selectedFestival == nil || isLoading)
+                .disabled(selectedFestival == nil || isParticipationLoading || isSignOutLoading)
                 .overlay(alignment: .trailing) {
-                    if isLoading {
+                    if isParticipationLoading {
                         ProgressView()
                             .controlSize(.small)
                     }
@@ -94,8 +95,10 @@ struct SettingsContentView: View {
             Section("アカウント") {
                 if userRole == .guest {
                     Button("管理者ログイン", systemImage: "person.badge.key", action: onLoginTapped)
+                        .disabled(isParticipationLoading || isSignOutLoading)
                 } else {
                     Button("ログアウト", role: .destructive, action: onSignOutTapped)
+                        .loadingIndicator(isLoading: isSignOutLoading)
                 }
             }
 
@@ -123,7 +126,8 @@ struct SettingsContentView: View {
         contact: nil,
         appVersion: "",
         userRole: .guest,
-        isLoading: false,
+        isParticipationLoading: false,
+        isSignOutLoading: false,
         onLoginTapped: {},
         onSignOutTapped: {}
     )

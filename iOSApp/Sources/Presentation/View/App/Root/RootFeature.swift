@@ -186,6 +186,7 @@ struct RootFeature {
                 }
 
             case .map(.delegate(.settingsOrAdminTapped)):
+                guard !state.isDestinationLoading && !state.isIntroductionLoading else { return .none }
                 guard let userRole = currentUserRole(state.launchState) else { return .none }
                 if userRole == .guest {
                     state.isDestinationLoading = true
@@ -200,6 +201,7 @@ struct RootFeature {
                 return .none
 
             case .map(.delegate(.introductionTapped)):
+                guard !state.isDestinationLoading && !state.isIntroductionLoading else { return .none }
                 guard let festival = state.appState?.festivalState.festival,
                       let map = state.map else { return .none }
                 let initialDistrictID: District.ID?
@@ -213,12 +215,21 @@ struct RootFeature {
 
             case .map(.destination(.presented(.locations(.floatTapped(let entry))))):
                 guard let festival = state.appState?.festivalState.festival else { return .none }
-                return prepareIntroduction(state: &state, festival: festival, districtId: entry.district.id)
+                return prepareIntroduction(
+                    state: &state,
+                    festival: festival,
+                    districtId: entry.district.id,
+                    locationTimestamp: entry.floatLocation.timestamp
+                )
 
-            case .map(.destination(.presented(.route(.locationTapped)))):
-                guard case .route(let districtId) = state.map?.selectedContent,
-                      let festival = state.appState?.festivalState.festival else { return .none }
-                return prepareIntroduction(state: &state, festival: festival, districtId: districtId)
+            case .map(.destination(.presented(.route(.locationTapped(let entry))))):
+                guard let festival = state.appState?.festivalState.festival else { return .none }
+                return prepareIntroduction(
+                    state: &state,
+                    festival: festival,
+                    districtId: entry.district.id,
+                    locationTimestamp: entry.floatLocation.timestamp
+                )
 
             case .map:
                 return .none
@@ -247,10 +258,11 @@ struct RootFeature {
                         festival,
                         appState: state.$appState
                     ))
-                case .district(let festival, let pack):
+                case .district(let festival, let pack, let locationTimestamp):
                     state.sheet = .district(DistrictIntroductionRootFeature.State(
                         pack,
                         festival: festival,
+                        locationTimestamp: locationTimestamp,
                         appState: state.$appState
                     ))
                 }
@@ -366,7 +378,8 @@ struct RootFeature {
     private func prepareIntroduction(
         state: inout State,
         festival: Festival,
-        districtId: District.ID?
+        districtId: District.ID?,
+        locationTimestamp: Date? = nil
     ) -> Effect<Action> {
         guard !state.isIntroductionLoading else { return .none }
         state.isIntroductionLoading = true
@@ -381,7 +394,7 @@ struct RootFeature {
                         pack.district.image.light,
                         pack.district.image.dark
                     ])
-                    await send(.introductionPrepared(.success(.district(festival, pack))))
+                    await send(.introductionPrepared(.success(.district(festival, pack, locationTimestamp))))
                 } else {
                     await imageCacheClient.preload(paths: [festival.image.light, festival.image.dark])
                     await send(.introductionPrepared(.success(.festival(festival))))
@@ -482,5 +495,5 @@ extension RootFeature.Sheet.Action: Equatable {}
 
 enum IntroSheetPreparation: Equatable {
     case festival(Festival)
-    case district(Festival, DistrictPack)
+    case district(Festival, DistrictPack, Date?)
 }
