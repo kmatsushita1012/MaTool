@@ -11,7 +11,6 @@ struct SettingsFeature {
     }
 
     enum Delegate: Equatable {
-        case loginSucceeded(UserRole)
         case sceneSelectionChanged(UserRole, Route.ID?)
         case participationChanged(SettingsPreparation)
     }
@@ -193,12 +192,6 @@ struct SettingsFeature {
                 state.isLoading = false
                 state.alert = AlertFeature.error("情報の取得に失敗しました \(error.message)")
                 return .none
-            case .destination(.presented(.login(.received(.success(.signedIn(let userRole)))))):
-                state.destination = nil
-                return .send(.delegate(.loginSucceeded(userRole)))
-            case .destination(.presented(.login(.confirmSignInCompleted(let userRole)))):
-                state.destination = nil
-                return .send(.delegate(.loginSucceeded(userRole)))
             case .destination:
                 return .none
             case .delegate:

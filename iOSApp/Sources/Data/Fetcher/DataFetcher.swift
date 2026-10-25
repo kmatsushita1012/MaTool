@@ -4,8 +4,8 @@ protocol DataFetcher: Sendable {}
 
 extension DataFetcher {
     func getToken() async -> String? {
-        @Dependency(AuthServiceKey.self) var authService
-        return await authService.getAccessToken()
+        @Dependency(\.authProvider) var authProvider
+        return try? await authProvider.getTokens()
     }
 }
 

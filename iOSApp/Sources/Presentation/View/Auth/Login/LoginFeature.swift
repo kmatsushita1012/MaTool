@@ -7,7 +7,14 @@
 
 import Foundation
 import ComposableArchitecture
+import OSLog
 import Shared
+
+private let loginLogger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "MaTool", category: "LoginFeature")
+
+private enum LoginCancellationID {
+    case signIn
+}
 
 @Reducer
 struct LoginFeature {
@@ -40,7 +47,6 @@ struct LoginFeature {
         case received(AppResult<SignInState>)
         case resetPasswordTapped
         case destination(PresentationAction<Destination.Action>)
-        case confirmSignInCompleted(UserRole)
     }
     
     @Dependency(SignInUseCaseKey.self) var signInUseCase
@@ -53,33 +59,42 @@ struct LoginFeature {
             case .binding(_):
                 return .none
             case .signInTapped:
+                guard !state.isLoading else { return .none }
+                loginLogger.info("signInTapped: starting sign-in effect")
                 state.isLoading = true
                 return .task(Action.received) { [id = state.id, password = state.password, appState = state.$appState] in
                     try await signInUseCase(username: id, password: password, appState: appState)
                 }
-                .cancellable(id: SceneSessionCancellationID.active, cancelInFlight: true)
+                .cancellable(id: LoginCancellationID.signIn, cancelInFlight: true)
             case .dismissTapped:
                 return .dismiss
             case .resetPasswordTapped:
                 state.destination = .resetPassword(ResetPasswordFeature.State(username: state.id))
                 return .none
             case .received(.success(.newPasswordRequired)):
+                loginLogger.info("received: new password required")
                 state.destination = .confirmSignIn(ConfirmSignInFeature.State(appState: state.$appState))
                 state.isLoading = false
                 state.errorMessage = nil
                 return .none
+            case .received(.success(.signedIn(_))):
+                loginLogger.info("received: sign-in succeeded")
+                state.isLoading = false
+                state.errorMessage = nil
+                return .none
             case .received(.failure(let error)):
+                loginLogger.error("received: sign-in failed (\(String(reflecting: type(of: error)), privacy: .public))")
                 state.isLoading = false
                 state.errorMessage = error.message
                 return .none
             case .destination(.presented(.resetPassword(.confirmResetReceived(.success)))):
                 state.destination = nil
                 return .none
-            case .destination(.presented(.confirmSignIn(.received(.success(let userRole))))):
+            case .destination(.presented(.confirmSignIn(.received(.success(_))))):
                 state.destination = nil
-                return .run{ send in
-                    await send(.confirmSignInCompleted(userRole))
-                }
+                state.isLoading = false
+                state.errorMessage = nil
+                return .none
             default:
                 return .none
             }

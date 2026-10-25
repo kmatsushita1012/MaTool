@@ -49,6 +49,7 @@ public struct RootSceneView: View {
                                 }
                             }
                     }
+                    .id(store.navigationDestinationIdentity)
                     .sheet(item: $store.scope(
                         state: \.sheet,
                         action: \.sheet

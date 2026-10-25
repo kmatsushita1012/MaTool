@@ -70,7 +70,7 @@ struct RootFeatureTests {
         var initialState = RootFeature.State(appState: appState)
         initialState.$launchState.withLock { $0 = .festival(.guest) }
         initialState.map = initialState.makeMapState(userRole: .guest)
-        initialState.destination = .settings(withDependencies {
+        var settingsState = withDependencies {
             $0.values = rootTestConstantValues()
         } operation: {
             SettingsFeature.State(
@@ -79,7 +79,9 @@ struct RootFeatureTests {
                 userRole: .guest,
                 appState: appState
             )
-        })
+        }
+        settingsState.destination = .login(LoginFeature.State(appState: appState))
+        initialState.destination = .settings(settingsState)
         let lastMainScreen = LastMainScreenUseCaseSpy()
         let store = TestStore(initialState: initialState) {
             RootFeature()
@@ -89,7 +91,9 @@ struct RootFeatureTests {
         }
         store.exhaustivity = .off
 
-        await store.send(.destination(.presented(.settings(.delegate(.loginSucceeded(role))))))
+        await store.send(.destination(.presented(.settings(
+            .destination(.presented(.login(.received(.success(.signedIn(role))))))
+        ))))
 
         #expect(store.state.launchState == .festival(role))
         #expect(store.state.map?.userRole == role)

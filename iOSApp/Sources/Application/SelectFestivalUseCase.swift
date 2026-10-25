@@ -27,7 +27,7 @@ extension SelectFestivalUseCaseProtocol {
 struct SelectFestivalUseCase: SelectFestivalUseCaseProtocol {
     @Dependency(SceneDataFetcherKey.self) private var dataFetcher
     @Dependency(SceneSessionCoordinatorKey.self) private var sessionCoordinator
-    @Dependency(AuthServiceKey.self) private var authService
+    @Dependency(\.authProvider) private var authProvider
     @Dependency(UserDefaltsManagerKey.self) private var userDefaults
 
     func callAsFunction(
@@ -39,7 +39,7 @@ struct SelectFestivalUseCase: SelectFestivalUseCaseProtocol {
         let requestId = await sessionCoordinator.beginSession()
         appState?.withLock { $0 = nil }
         if signOutCurrentUser {
-            _ = try await authService.signOut()
+            try await authProvider.signOut()
         }
         let response = try await dataFetcher.launchFestival(festivalId: festivalId)
         guard await sessionCoordinator.isCurrent(requestId) else { throw CancellationError() }

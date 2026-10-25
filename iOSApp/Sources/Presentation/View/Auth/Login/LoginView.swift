@@ -59,6 +59,8 @@ struct LoginContentView: View {
             TextField("ID", text: $id)
                 .padding()
                 .textContentType(.username)
+                .textInputAutocapitalization(.never)
+                .autocorrectionDisabled()
                 .textFieldStyle(.plain)
                 .background(.regularMaterial, in: .capsule)
                 .overlay {

@@ -45,7 +45,8 @@ struct ResetPasswordFeature {
         }
     }
     
-    @Dependency(\.authService) var authService
+    @Dependency(ResetPasswordUseCaseKey.self) var resetPasswordUseCase
+    @Dependency(ConfirmResetPasswordUseCaseKey.self) var confirmResetPasswordUseCase
     @Dependency(\.dismiss) var dismiss
     
     var body: some ReducerOf<ResetPasswordFeature> {
@@ -57,13 +58,13 @@ struct ResetPasswordFeature {
             case .enterUsername(.okTapped),
                 .resendTapped:
                 return .task(Action.resetReceived) { [username = state.username] in
-                    try await authService.resetPassword(username: username)
+                    try await resetPasswordUseCase(username: username)
                 }
             case .enterCode(.okTapped):
                 if state.newPassword1 != state.newPassword2 {
                     state.alert = AlertFeature.error("パスワード（確認用）が一致しません")
                     return .none
-                } else if !authService.isValidPassword(state.newPassword1) {
+                } else if !PasswordPolicy.isValid(state.newPassword1) {
                     state.alert =  AlertFeature.error("パスワードが条件を満たしていません。次の条件を満たしてください。\n 8文字以上 \n 少なくとも 1 つの数字を含む \n 少なくとも 1 つの大文字を含む \n 少なくとも 1 つの小文字を含む")
                     return .none
                 }
@@ -74,7 +75,7 @@ struct ResetPasswordFeature {
                         password = state.newPassword1,
                         code = state.code
                     ] in
-                    try await authService.confirmResetPassword(
+                    try await confirmResetPasswordUseCase(
                         username: username,
                         newPassword: password,
                         code: code

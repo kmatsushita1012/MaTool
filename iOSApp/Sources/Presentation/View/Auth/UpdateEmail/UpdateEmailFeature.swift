@@ -45,7 +45,8 @@ struct UpdateEmailFeature {
         case completeAlert(PresentationAction<AlertFeature.Action>)
     }
     
-    @Dependency(\.authService) var authService
+    @Dependency(UpdateEmailUseCaseKey.self) var updateEmailUseCase
+    @Dependency(ConfirmUpdateEmailUseCaseKey.self) var confirmUpdateEmailUseCase
     @Dependency(\.dismiss) var dismiss
     
     var body: some ReducerOf<UpdateEmailFeature> {
@@ -58,12 +59,12 @@ struct UpdateEmailFeature {
                 .resendTapped:
                 state.isLoading = true
                 return .task(Action.updateReceived) { [email = state.email] in
-                    try await authService.updateEmail(to: email)
+                    try await updateEmailUseCase(email: email)
                 }
             case .enterCode(.okTapped):
                 state.isLoading = true
                 return .task(Action.confirmUpdateReceived) { [code = state.code] in
-                    try await authService.confirmUpdateEmail(code: code)
+                    try await confirmUpdateEmailUseCase(code: code)
                 }
             case .enterEmail(.dismissTapped),
                 .enterCode(.dismissTapped):

@@ -94,28 +94,59 @@ extension AsyncValue: Equatable where T: Equatable {
     }
 }
 
-func withTimeout<T>(
+func withTimeout<T: Sendable>(
     seconds: Int,
-    operation: @escaping () async throws -> T
+    operation: @escaping @Sendable () async throws -> T
 ) async throws -> T {
-    try await withThrowingTaskGroup(of: T.self) { group in
-        group.addTask {
-            try await operation()
+    return try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<T, Error>) in
+        let race = TimeoutRace<T>(continuation)
+        let operationTask = Task {
+            do {
+                await race.resolve(.success(try await operation()))
+            } catch {
+                await race.resolve(.failure(error))
+            }
         }
-
-        group.addTask {
-            try await Task.sleep(
-                nanoseconds: UInt64(seconds) * 1_000_000_000
-            )
-            throw AppError.auth(.timeout("タイムアウトしました"))
+        let timeoutTask = Task {
+            do {
+                try await Task.sleep(
+                    nanoseconds: UInt64(max(seconds, 0)) * 1_000_000_000
+                )
+                await race.resolve(.failure(AppError.auth(.timeout("タイムアウトしました"))))
+            } catch {
+                // The operation completed first and canceled this timer.
+            }
         }
-
-        guard let result = try await group.next() else {
-            throw CancellationError()
+        Task {
+            await race.add(operationTask)
+            await race.add(timeoutTask)
         }
+    }
+}
 
-        group.cancelAll()
-        return result
+private actor TimeoutRace<Value: Sendable> {
+    private let continuation: CheckedContinuation<Value, Error>
+    private var hasResolved = false
+    private var tasks: [Task<Void, Never>] = []
+
+    init(_ continuation: CheckedContinuation<Value, Error>) {
+        self.continuation = continuation
+    }
+
+    func add(_ task: Task<Void, Never>) {
+        if hasResolved {
+            task.cancel()
+        } else {
+            tasks.append(task)
+        }
+    }
+
+    func resolve(_ result: Result<Value, Error>) {
+        guard !hasResolved else { return }
+        hasResolved = true
+        continuation.resume(with: result)
+        tasks.forEach { $0.cancel() }
+        tasks.removeAll()
     }
 }
 

@@ -8,6 +8,10 @@
 import ComposableArchitecture
 import Shared
 
+private enum ConfirmSignInCancellationID {
+    case submit
+}
+
 @Reducer
 struct ConfirmSignInFeature {
     
@@ -33,7 +37,6 @@ struct ConfirmSignInFeature {
         case alert(PresentationAction<AlertFeature.Action>)
     }
     
-    @Dependency(\.authService) var authService
     @Dependency(ConfirmSignInUseCaseKey.self) var confirmSignInUseCase
     
     var body: some ReducerOf<ConfirmSignInFeature> {
@@ -46,7 +49,7 @@ struct ConfirmSignInFeature {
                 if state.password1 != state.password2 {
                     state.alert = AlertFeature.error("パスワードが一致しません。")
                     return .none
-                } else if !authService.isValidPassword(state.password1) {
+                } else if !PasswordPolicy.isValid(state.password1) {
                     state.alert = AlertFeature.error("パスワードが条件を満たしていません。次の条件を満たしてください。\n 8文字以上 \n 少なくとも 1 つの数字を含む \n 少なくとも 1 つの大文字を含む \n 少なくとも 1 つの小文字を含む")
                     return .none
                 }
@@ -54,10 +57,11 @@ struct ConfirmSignInFeature {
                 return .task(Action.received) { [password = state.password1, appState = state.$appState] in
                     try await confirmSignInUseCase(password: password, appState: appState)
                 }
-                .cancellable(id: SceneSessionCancellationID.active, cancelInFlight: true)
+                .cancellable(id: ConfirmSignInCancellationID.submit, cancelInFlight: true)
             case .dismissTapped:
                 return .dismiss
             case .received(.success(let userRole)):
+                state.isLoading = false
                 return .none
             case .received(.failure(let error)):
                 state.isLoading = false

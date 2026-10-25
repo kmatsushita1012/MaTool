@@ -1,6 +1,9 @@
 import ComposableArchitecture
 import Dependencies
+import OSLog
 import Shared
+
+private let rootFeatureLogger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "MaTool", category: "RootFeature")
 
 enum SceneSessionCancellationID {
     case active
@@ -52,6 +55,19 @@ struct RootFeature {
                 .loading
             case .error(let message):
                 .error(message)
+            }
+        }
+
+        var navigationDestinationIdentity: String {
+            switch destination {
+            case .none:
+                "map"
+            case .settings:
+                "settings"
+            case .adminDistrict:
+                "adminDistrict"
+            case .adminFestival:
+                "adminFestival"
             }
         }
 
@@ -266,16 +282,6 @@ struct RootFeature {
                 finishSignOut(state: &state)
                 return .none
 
-            case .destination(.presented(.settings(.delegate(.loginSucceeded(let userRole))))),
-                 .destination(.presented(.adminDistrict(.destination(.presented(.settings(.delegate(.loginSucceeded(let userRole)))))))),
-                 .destination(.presented(.adminFestival(.destination(.presented(.settings(.delegate(.loginSucceeded(let userRole)))))))):
-                guard activateAdminSession(state: &state, userRole: userRole) else {
-                    lastMainScreenUseCase.save(.map)
-                    return .none
-                }
-                lastMainScreenUseCase.save(.admin)
-                return .none
-
             case .destination(.presented(.settings(.delegate(.sceneSelectionChanged(let userRole, let routeId))))),
                  .destination(.presented(.adminDistrict(.destination(.presented(.settings(.delegate(.sceneSelectionChanged(let userRole, let routeId)))))))),
                  .destination(.presented(.adminFestival(.destination(.presented(.settings(.delegate(.sceneSelectionChanged(let userRole, let routeId)))))))):
@@ -294,6 +300,25 @@ struct RootFeature {
                     appState: state.$appState
                 ))
                 return .none
+
+            case .destination(.presented(.settings(let settingsAction))),
+                 .destination(.presented(.adminDistrict(.destination(.presented(.settings(let settingsAction)))))),
+                 .destination(.presented(.adminFestival(.destination(.presented(.settings(let settingsAction)))))):
+                switch settingsAction {
+                case .destination(.presented(.login(.received(.success(.signedIn(let userRole)))))),
+                     .destination(.presented(.login(.destination(.presented(.confirmSignIn(.received(.success(let userRole)))))))):
+                    rootFeatureLogger.info("login success action reached RootFeature")
+                    guard activateAdminSession(state: &state, userRole: userRole) else {
+                        rootFeatureLogger.error("admin destination activation failed")
+                        lastMainScreenUseCase.save(.map)
+                        return .none
+                    }
+                    rootFeatureLogger.info("admin destination activated")
+                    lastMainScreenUseCase.save(.admin)
+                    return .none
+                default:
+                    return .none
+                }
 
             case .destination(.dismiss):
                 if let userRole = currentUserRole(state.launchState), userRole != .guest {
@@ -406,7 +431,6 @@ struct RootFeature {
     @discardableResult
     private func activateAdminSession(state: inout State, userRole: UserRole) -> Bool {
         let currentRouteId = state.appState?.routeState?.route.id
-        state.destination = nil
         switch userRole {
         case .headquarter:
             state.$launchState.withLock { $0 = .festival(userRole) }
