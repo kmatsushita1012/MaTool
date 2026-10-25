@@ -37,7 +37,9 @@ public struct RootSceneView: View {
                         PublicMapView(
                             store: mapStore,
                             isAdminLoggedIn: store.isAdminLoggedIn,
-                            isNavigationDisabled: store.isDestinationLoading || store.isIntroductionLoading
+                            isNavigationDisabled: store.isDestinationLoading
+                                || store.isIntroductionLoading
+                                || store.isEmergencySignOutLoading
                         )
                             .navigationDestination(item: $store.scope(
                                 state: \.destination?.settings,

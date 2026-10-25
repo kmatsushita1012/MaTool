@@ -71,6 +71,7 @@ struct PublicMapView: View {
             isNavigationDisabled: isNavigationDisabled,
             toast: toast,
             onSettingsTapped: { store.send(.delegate(.settingsOrAdminTapped)) },
+            onEmergencySignOutTapped: { store.send(.delegate(.emergencySignOutTapped)) },
             onIntroductionTapped: { store.send(.delegate(.introductionTapped)) },
             onContentSelected: { store.send(.contentSelected($0)) },
             onPeriodSelected: onPeriodSelected,
@@ -95,6 +96,7 @@ struct PublicMapContentView<MapContent: View>: View {
     let isNavigationDisabled: Bool
     let toast: MapToast?
     let onSettingsTapped: () -> Void
+    let onEmergencySignOutTapped: () -> Void
     let onIntroductionTapped: () -> Void
     let onContentSelected: (PublicMapFeature.Content) -> Void
     let onPeriodSelected: (RouteEntry) -> Void
@@ -134,11 +136,24 @@ struct PublicMapContentView<MapContent: View>: View {
                 ToolbarSpacer(.fixed, placement: .topBarTrailing)
             }
             ToolbarItem(placement: .topBarTrailing) {
-                Button(action: onSettingsTapped) {
-                    Image(systemName: isAdminLoggedIn ? "person.crop.circle.badge.checkmark" : "gearshape")
+                if isAdminLoggedIn {
+                    Menu {
+                        Button("管理者ページ", action: onSettingsTapped)
+                        Button("ログアウト", role: .destructive, action: onEmergencySignOutTapped)
+                    } label: {
+                        Image(systemName: "person.crop.circle")
+                    } primaryAction: {
+                        onSettingsTapped()
+                    }
+                    .accessibilityLabel("管理者")
+                    .disabled(isNavigationDisabled)
+                } else {
+                    Button(action: onSettingsTapped) {
+                        Image(systemName: "gearshape")
+                    }
+                    .accessibilityLabel("設定")
+                    .disabled(isNavigationDisabled)
                 }
-                .accessibilityLabel(isAdminLoggedIn ? "管理者" : "設定")
-                .disabled(isNavigationDisabled)
             }
         }
         .toolbarBackground(.hidden, for: .navigationBar)
@@ -237,6 +252,7 @@ private extension PublicMapFeature.Content {
             isNavigationDisabled: false,
             toast: nil,
             onSettingsTapped: {},
+            onEmergencySignOutTapped: {},
             onIntroductionTapped: {},
             onContentSelected: { _ in },
             onPeriodSelected: { _ in },

@@ -44,6 +44,7 @@ struct RootFeature {
         @Presents var alert: AlertFeature.State?
         var isDestinationLoading = false
         var isIntroductionLoading = false
+        var isEmergencySignOutLoading = false
 
         var scene: Scene {
             switch launchState {
@@ -120,6 +121,7 @@ struct RootFeature {
         case settingsPrepared(AppResult<SettingsPreparation>)
         case introductionPrepared(AppResult<IntroSheetPreparation>)
         case alert(PresentationAction<AlertFeature.Action>)
+        case emergencySignOutReceived(VoidAppResult)
     }
 
     @Dependency(LaunchSceneUseCaseKey.self) private var launchSceneUseCase
@@ -127,6 +129,7 @@ struct RootFeature {
     @Dependency(FetchDistrictUseCaseKey.self) private var fetchDistrictUseCase
     @Dependency(GetSceneSelectionUseCaseKey.self) private var getSceneSelectionUseCase
     @Dependency(LastMainScreenUseCaseKey.self) private var lastMainScreenUseCase
+    @Dependency(SignOutUseCaseKey.self) private var signOutUseCase
     @Dependency(\.imageCacheClient) private var imageCacheClient
 
     var body: some ReducerOf<Self> {
@@ -207,6 +210,23 @@ struct RootFeature {
                 }
                 guard setAdminDestination(state: &state, userRole: userRole) else { return .none }
                 lastMainScreenUseCase.save(.admin)
+                return .none
+
+            case .map(.delegate(.emergencySignOutTapped)):
+                guard !state.isEmergencySignOutLoading else { return .none }
+                state.isEmergencySignOutLoading = true
+                return .task(Action.emergencySignOutReceived) {
+                    try await signOutUseCase()
+                }
+
+            case .emergencySignOutReceived(.failure(let error)):
+                state.isEmergencySignOutLoading = false
+                state.alert = .error("ログアウトに失敗しました。 \(error.message)")
+                return .none
+
+            case .emergencySignOutReceived(.success):
+                state.isEmergencySignOutLoading = false
+                finishSignOut(state: &state)
                 return .none
 
             case .map(.delegate(.introductionTapped)):
