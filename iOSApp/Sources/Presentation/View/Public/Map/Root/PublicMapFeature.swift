@@ -33,7 +33,13 @@ struct PublicMapFeature {
         @Shared fileprivate var appState: AppState?
 
         var contents: [Content] {
-            [.locations] + (appState?.routeDistrictIds.map(Content.route) ?? [])
+            let selectedDistrictId: District.ID?
+            if case .route(let districtId) = selectedContent {
+                selectedDistrictId = districtId
+            } else {
+                selectedDistrictId = nil
+            }
+            return [.locations] + (appState?.routeDistrictIds(prioritizing: selectedDistrictId).map(Content.route) ?? [])
         }
         var festivalTitle: String {
             appState?.festivalState.festival.name ?? ""

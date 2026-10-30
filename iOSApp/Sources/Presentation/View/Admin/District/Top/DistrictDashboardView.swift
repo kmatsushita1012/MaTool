@@ -118,7 +118,9 @@ struct DistrictDashboardContentView: View {
             }
             Section {
                 Button("パスワード変更", action: onChangePasswordTapped)
+                    .disabled(isNavigationLoading)
                 Button("メールアドレス変更", action: onUpdateEmailTapped)
+                    .disabled(isNavigationLoading)
             }
             Section {
                 Button("ログアウト", action: onSignOutTapped)

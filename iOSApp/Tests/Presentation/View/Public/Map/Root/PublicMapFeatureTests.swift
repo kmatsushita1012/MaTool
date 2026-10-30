@@ -5,7 +5,7 @@ import Testing
 @testable import iOSApp
 
 struct PublicMapFeatureTests {
-    @Test("地図の町PickerはDistrict.orderの昇順で並ぶ")
+    @Test("地図の町Pickerはgroup名、町名の順で並び、選択中の町と同じgroupを優先する")
     func districtsAreSortedForMapPicker() {
         let festival = Festival(
             id: "festival",
@@ -13,13 +13,14 @@ struct PublicMapFeatureTests {
             subname: "Festival",
             base: Coordinate(latitude: 35, longitude: 139)
         )
-        let laterDistrict = District(id: "later", name: "Later", festivalId: festival.id, order: 2)
-        let firstDistrict = District(id: "first", name: "First", festivalId: festival.id, order: 0)
-        let middleDistrict = District(id: "middle", name: "Middle", festivalId: festival.id, order: 1)
+        let selectedDistrict = District(id: "selected", name: "Zeta", festivalId: festival.id, group: "A")
+        let sameGroupDistrict = District(id: "same-group", name: "Alpha", festivalId: festival.id, group: "A")
+        let laterGroupDistrict = District(id: "later-group", name: "Alpha", festivalId: festival.id, group: "B")
+        let firstGroupDistrict = District(id: "first-group", name: "Beta", festivalId: festival.id, group: "A")
         let appState = Shared<AppState?>(value: AppState(
             festivalPack: LaunchFestivalPack(
                 festival: festival,
-                districts: [laterDistrict, firstDistrict, middleDistrict],
+                districts: [laterGroupDistrict, selectedDistrict, sameGroupDistrict, firstGroupDistrict],
                 periods: [],
                 locations: [],
                 checkpoints: [],
@@ -27,7 +28,7 @@ struct PublicMapFeatureTests {
             ),
             year: 2026
         ))
-        let state = PublicMapFeature.State(
+        var state = PublicMapFeature.State(
             festival: festival,
             userRole: .guest,
             appState: appState
@@ -35,9 +36,19 @@ struct PublicMapFeatureTests {
 
         #expect(state.contents == [
             .locations,
-            .route(firstDistrict.id),
-            .route(middleDistrict.id),
-            .route(laterDistrict.id)
+            .route(firstGroupDistrict.id),
+            .route(sameGroupDistrict.id),
+            .route(selectedDistrict.id),
+            .route(laterGroupDistrict.id)
+        ])
+
+        state.selectedContent = .route(selectedDistrict.id)
+        #expect(state.contents == [
+            .locations,
+            .route(selectedDistrict.id),
+            .route(firstGroupDistrict.id),
+            .route(sameGroupDistrict.id),
+            .route(laterGroupDistrict.id)
         ])
     }
 
