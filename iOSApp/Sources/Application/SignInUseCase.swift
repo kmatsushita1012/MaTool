@@ -54,7 +54,7 @@ struct SignInUseCase: SignInUseCaseProtocol {
             } catch {
                 signInUseCaseLogger.error("authProvider.getUserRole: failed; signing out (\(String(reflecting: type(of: error)), privacy: .public))")
                 try? await authProvider.signOut()
-                userRole = .guest
+                throw error
             }
             result = .signedIn(userRole)
         }

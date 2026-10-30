@@ -20,6 +20,32 @@ struct AsyncTests {
 
         await gate.release()
     }
+
+    @Test("キャンセル時に処理のタイムアウトを待たずに戻る")
+    func cancellationReturnsWithoutWaitingForOperation() async {
+        let gate = ContinuationGate()
+        let operation = Task {
+            try await withTimeout(seconds: 60) {
+                await gate.wait()
+                return "finished"
+            }
+        }
+
+        operation.cancel()
+        var didCancel = false
+
+        do {
+            _ = try await operation.value
+            Issue.record("キャンセルが伝播しませんでした")
+        } catch is CancellationError {
+            didCancel = true
+        } catch {
+            Issue.record("想定外のエラー: \(error)")
+        }
+
+        #expect(didCancel)
+        await gate.release()
+    }
 }
 
 private actor ContinuationGate {

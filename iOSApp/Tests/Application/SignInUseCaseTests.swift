@@ -53,6 +53,48 @@ struct SignInUseCaseTests {
         #expect(appState.wrappedValue?.selectedDistrict?.id == district.id)
         #expect(await fetcher.requestedResources().sorted() == ["district", "festival"])
     }
+
+    @Test("認証後のロール取得に失敗したらサインアウトしてエラーを返す")
+    func roleLookupFailureSignsOutAndPropagatesError() async {
+        let signOutSpy = SignInSignOutSpy()
+        var provider = AuthProvider.noop
+        provider.signOut = { await signOutSpy.record() }
+        provider.signIn = { _, _ in .success }
+        provider.getUserRole = { throw SignInTestError.roleLookup }
+        let useCase = withDependencies {
+            $0.authProvider = provider
+            $0[UserDefaltsManagerKey.self] = SignInUserDefaultsManager()
+        } operation: {
+            SignInUseCase()
+        }
+
+        do {
+            _ = try await useCase(username: "admin", password: "secret", appState: Shared(value: nil))
+            Issue.record("Role取得エラーを返していません")
+        } catch let error as SignInTestError {
+            #expect(error == .roleLookup)
+        } catch {
+            Issue.record("想定外のエラー: \(error)")
+        }
+
+        #expect(await signOutSpy.count() == 2)
+    }
+}
+
+private enum SignInTestError: Error, Equatable {
+    case roleLookup
+}
+
+private actor SignInSignOutSpy {
+    private var calls = 0
+
+    func record() {
+        calls += 1
+    }
+
+    func count() -> Int {
+        calls
+    }
 }
 
 private actor SignInSceneDataFetcherSpy: SceneDataFetcherProtocol {

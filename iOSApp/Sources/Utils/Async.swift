@@ -98,43 +98,54 @@ func withTimeout<T: Sendable>(
     seconds: Int,
     operation: @escaping @Sendable () async throws -> T
 ) async throws -> T {
-    return try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<T, Error>) in
-        let race = TimeoutRace<T>(continuation)
-        let operationTask = Task {
-            do {
-                await race.resolve(.success(try await operation()))
-            } catch {
-                await race.resolve(.failure(error))
+    let race = TimeoutRace<T>()
+    return try await withTaskCancellationHandler {
+        try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<T, Error>) in
+            let operationTask = Task {
+                do {
+                    await race.resolve(.success(try await operation()))
+                } catch {
+                    await race.resolve(.failure(error))
+                }
+            }
+            let timeoutTask = Task {
+                do {
+                    try await Task.sleep(
+                        nanoseconds: UInt64(max(seconds, 0)) * 1_000_000_000
+                    )
+                    await race.resolve(.failure(AppError.auth(.timeout("タイムアウトしました"))))
+                } catch {
+                    // The operation completed first and canceled this timer.
+                }
+            }
+            Task {
+                await race.setContinuation(continuation)
+                await race.add(operationTask)
+                await race.add(timeoutTask)
             }
         }
-        let timeoutTask = Task {
-            do {
-                try await Task.sleep(
-                    nanoseconds: UInt64(max(seconds, 0)) * 1_000_000_000
-                )
-                await race.resolve(.failure(AppError.auth(.timeout("タイムアウトしました"))))
-            } catch {
-                // The operation completed first and canceled this timer.
-            }
-        }
+    } onCancel: {
         Task {
-            await race.add(operationTask)
-            await race.add(timeoutTask)
+            await race.resolve(.failure(CancellationError()))
         }
     }
 }
 
 private actor TimeoutRace<Value: Sendable> {
-    private let continuation: CheckedContinuation<Value, Error>
-    private var hasResolved = false
+    private var continuation: CheckedContinuation<Value, Error>?
+    private var result: Result<Value, Error>?
     private var tasks: [Task<Void, Never>] = []
 
-    init(_ continuation: CheckedContinuation<Value, Error>) {
-        self.continuation = continuation
+    func setContinuation(_ continuation: CheckedContinuation<Value, Error>) {
+        if let result {
+            continuation.resume(with: result)
+        } else {
+            self.continuation = continuation
+        }
     }
 
     func add(_ task: Task<Void, Never>) {
-        if hasResolved {
+        if result != nil {
             task.cancel()
         } else {
             tasks.append(task)
@@ -142,9 +153,10 @@ private actor TimeoutRace<Value: Sendable> {
     }
 
     func resolve(_ result: Result<Value, Error>) {
-        guard !hasResolved else { return }
-        hasResolved = true
-        continuation.resume(with: result)
+        guard self.result == nil else { return }
+        self.result = result
+        continuation?.resume(with: result)
+        continuation = nil
         tasks.forEach { $0.cancel() }
         tasks.removeAll()
     }
