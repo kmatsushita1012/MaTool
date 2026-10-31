@@ -29,6 +29,11 @@ actor ImageCacheClient: ImageCacheClientProtocol {
 
 enum ImageCacheClientKey: DependencyKey {
     static let liveValue: any ImageCacheClientProtocol = ImageCacheClient()
+    static let testValue: any ImageCacheClientProtocol = TestImageCacheClient()
+}
+
+private actor TestImageCacheClient: ImageCacheClientProtocol {
+    func preload(paths: [String?]) async {}
 }
 
 extension DependencyValues {
