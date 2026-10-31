@@ -7,10 +7,10 @@ import Testing
 struct LocationUsecaseTests {
     @Test("LocationUsecaseは権限状態とUD managerの保存値を返す")
     func 権限状態と保存値を返す() async {
-        let userDefaults = UserDefaultsManagerSpy(
+        let userDefaults = DefaultUserDefaultsSpy(
             hasRequestedAlwaysLocationPermission: true
         )
-        let provider = LocationProviderSpy(authorizationStatus: .authorizedWhenInUse)
+        let provider = BroadcastLocationProviderSpy(authorizationStatus: .authorizedWhenInUse)
         let usecase = makeUsecase(provider: provider, userDefaults: userDefaults)
 
         let state = await usecase.locationPermissionState()
@@ -21,10 +21,10 @@ struct LocationUsecaseTests {
 
     @Test("常に許可要求の通知を受けた時だけUD managerへ保存する")
     func 常に許可要求の通知時だけ保存する() async {
-        let userDefaults = UserDefaultsManagerSpy(
+        let userDefaults = DefaultUserDefaultsSpy(
             hasRequestedAlwaysLocationPermission: false
         )
-        let provider = LocationProviderSpy(authorizationStatus: .authorizedWhenInUse)
+        let provider = BroadcastLocationProviderSpy(authorizationStatus: .authorizedWhenInUse)
         let usecase = makeUsecase(provider: provider, userDefaults: userDefaults)
 
         await usecase.requestPermission()
@@ -37,10 +37,10 @@ struct LocationUsecaseTests {
 
     @Test("配信開始前に常に許可を再確認し、未許可なら開始しない")
     func 配信開始前に常に許可を再確認する() async {
-        let userDefaults = UserDefaultsManagerSpy(
+        let userDefaults = DefaultUserDefaultsSpy(
             hasRequestedAlwaysLocationPermission: false
         )
-        let provider = LocationProviderSpy(authorizationStatus: .authorizedWhenInUse)
+        let provider = BroadcastLocationProviderSpy(authorizationStatus: .authorizedWhenInUse)
         let usecase = makeUsecase(provider: provider, userDefaults: userDefaults)
 
         let result = await usecase.start(id: "district-a", interval: .sample)
@@ -57,82 +57,15 @@ struct LocationUsecaseTests {
     }
 
     private func makeUsecase(
-        provider: LocationProviderSpy,
+        provider: BroadcastLocationProviderSpy,
         userDefaults: UserDefaultsManagerSpy
     ) -> LocationUsecase {
         withDependencies {
+            $0.installTestSpies()
             $0[BroadcastLocationProviderKey.self] = provider
             $0[UserDefaltsManagerKey.self] = userDefaults
         } operation: {
             LocationUsecase()
         }
-    }
-}
-
-private actor LocationProviderSpy: BroadcastLocationProviderProtocol {
-    private let authorizationStatusValue: CLAuthorizationStatus
-    private var onAlwaysAuthorizationRequest: (@Sendable () async -> Void)?
-    private(set) var startTrackingCallCount = 0
-
-    init(authorizationStatus: CLAuthorizationStatus) {
-        self.authorizationStatusValue = authorizationStatus
-    }
-
-    func requestPermission(
-        onAlwaysAuthorizationRequest: @escaping @Sendable () async -> Void
-    ) async {
-        self.onAlwaysAuthorizationRequest = onAlwaysAuthorizationRequest
-    }
-
-    func notifyAlwaysAuthorizationRequest() async {
-        await onAlwaysAuthorizationRequest?()
-    }
-
-    func authorizationStatus() async -> CLAuthorizationStatus {
-        authorizationStatusValue
-    }
-
-    func startTracking(onUpdate: ((AsyncValue<CLLocation>) async -> Void)?) async {
-        startTrackingCallCount += 1
-    }
-
-    func stopTracking() async {}
-
-    func getLocation() async -> AsyncValue<CLLocation> {
-        .loading
-    }
-
-    func isAlwaysAuthorized() async -> Bool {
-        authorizationStatusValue == .authorizedAlways
-    }
-
-    func isLocationServicesEnabled() async -> Bool {
-        true
-    }
-
-    var isTracking: Bool {
-        get async { false }
-    }
-}
-
-private final class UserDefaultsManagerSpy: UserDefalutsManagerProtocol, @unchecked Sendable {
-    var defaultFestivalId: String?
-    var defaultDistrictId: String?
-    var hasRequestedAlwaysLocationPermission: Bool
-
-    init(hasRequestedAlwaysLocationPermission: Bool) {
-        self.hasRequestedAlwaysLocationPermission = hasRequestedAlwaysLocationPermission
-    }
-
-    func saveDefaultFestivalId(_ value: String?) {
-        defaultFestivalId = value
-    }
-
-    func saveDefaultDistrictId(_ value: String?) {
-        defaultDistrictId = value
-    }
-
-    func saveHasRequestedAlwaysLocationPermission(_ value: Bool) {
-        hasRequestedAlwaysLocationPermission = value
     }
 }

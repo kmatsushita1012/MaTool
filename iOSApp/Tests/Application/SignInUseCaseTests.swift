@@ -29,7 +29,7 @@ struct SignInUseCaseTests {
             passages: [],
             currentRouteId: nil
         )
-        var provider = AuthProvider.noop
+        var provider = AuthProviderSpy().client
         provider.signOut = {}
         provider.signIn = { _, _ in .success }
         provider.getUserRole = { .district(district.id) }
@@ -39,6 +39,7 @@ struct SignInUseCaseTests {
         )
         let appState = Shared<AppState?>(value: nil)
         let useCase = withDependencies {
+            $0.installTestSpies()
             $0.authProvider = provider
             $0[SceneDataFetcherKey.self] = fetcher
             $0[UserDefaltsManagerKey.self] = SignInUserDefaultsManager()
@@ -57,11 +58,12 @@ struct SignInUseCaseTests {
     @Test("認証後のロール取得に失敗したらサインアウトしてエラーを返す")
     func roleLookupFailureSignsOutAndPropagatesError() async {
         let signOutSpy = SignInSignOutSpy()
-        var provider = AuthProvider.noop
+        var provider = AuthProviderSpy().client
         provider.signOut = { await signOutSpy.record() }
         provider.signIn = { _, _ in .success }
         provider.getUserRole = { throw SignInTestError.roleLookup }
         let useCase = withDependencies {
+            $0.installTestSpies()
             $0.authProvider = provider
             $0[UserDefaltsManagerKey.self] = SignInUserDefaultsManager()
         } operation: {
@@ -83,56 +85,4 @@ struct SignInUseCaseTests {
 
 private enum SignInTestError: Error, Equatable {
     case roleLookup
-}
-
-private actor SignInSignOutSpy {
-    private var calls = 0
-
-    func record() {
-        calls += 1
-    }
-
-    func count() -> Int {
-        calls
-    }
-}
-
-private actor SignInSceneDataFetcherSpy: SceneDataFetcherProtocol {
-    private let festivalPack: LaunchFestivalPack
-    private let districtPack: LaunchDistrictPack
-    private var requests: [String] = []
-
-    init(festivalPack: LaunchFestivalPack, districtPack: LaunchDistrictPack) {
-        self.festivalPack = festivalPack
-        self.districtPack = districtPack
-    }
-
-    func launchFestival(festivalId: Festival.ID) async throws -> LaunchFestivalPack {
-        requests.append("festival")
-        return festivalPack
-    }
-
-    func launchFestival(districtId: District.ID) async throws -> LaunchFestivalPack {
-        requests.append("festival")
-        return festivalPack
-    }
-
-    func launchDistrict(districtId: District.ID, periodId: Period.ID?) async throws -> LaunchDistrictPack {
-        requests.append("district")
-        return districtPack
-    }
-
-    func requestedResources() -> [String] {
-        requests
-    }
-}
-
-private struct SignInUserDefaultsManager: UserDefalutsManagerProtocol {
-    var defaultFestivalId: String? { nil }
-    var defaultDistrictId: String? { nil }
-    var hasRequestedAlwaysLocationPermission: Bool { false }
-
-    func saveDefaultFestivalId(_ value: String?) {}
-    func saveDefaultDistrictId(_ value: String?) {}
-    func saveHasRequestedAlwaysLocationPermission(_ value: Bool) {}
 }

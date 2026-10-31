@@ -64,8 +64,9 @@ struct SelectDistrictUseCaseTests {
         ))
         let dataFetcher = SceneDataFetcherSpy(response: response)
         let useCase = withDependencies {
+            $0.installTestSpies()
             $0[SceneDataFetcherKey.self] = dataFetcher
-            $0[UserDefaltsManagerKey.self] = EmptyUserDefaultsManager()
+            $0[UserDefaltsManagerKey.self] = DefaultUserDefaultsSpy()
         } operation: {
             SelectDistrictUseCase()
         }
@@ -80,40 +81,4 @@ struct SelectDistrictUseCaseTests {
         #expect(appState.wrappedValue?.routeState?.points == [point])
         #expect(appState.wrappedValue?.routeState?.passages == [passage])
     }
-}
-
-private actor SceneDataFetcherSpy: SceneDataFetcherProtocol {
-    private let response: LaunchDistrictPack
-    private var districtLaunchCalls = 0
-
-    init(response: LaunchDistrictPack) {
-        self.response = response
-    }
-
-    func launchFestival(festivalId: Festival.ID) async throws -> LaunchFestivalPack {
-        throw CancellationError()
-    }
-
-    func launchFestival(districtId: District.ID) async throws -> LaunchFestivalPack {
-        throw CancellationError()
-    }
-
-    func launchDistrict(districtId: District.ID, periodId: Period.ID?) async throws -> LaunchDistrictPack {
-        districtLaunchCalls += 1
-        return response
-    }
-
-    func districtLaunchCallCount() -> Int {
-        districtLaunchCalls
-    }
-}
-
-private struct EmptyUserDefaultsManager: UserDefalutsManagerProtocol {
-    var defaultFestivalId: String? { nil }
-    var defaultDistrictId: String? { nil }
-    var hasRequestedAlwaysLocationPermission: Bool { false }
-
-    func saveDefaultFestivalId(_ value: String?) {}
-    func saveDefaultDistrictId(_ value: String?) {}
-    func saveHasRequestedAlwaysLocationPermission(_ value: Bool) {}
 }
