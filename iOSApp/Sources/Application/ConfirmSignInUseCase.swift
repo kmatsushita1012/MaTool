@@ -10,13 +10,20 @@ protocol ConfirmSignInUseCaseProtocol: Sendable {
 struct ConfirmSignInUseCase: ConfirmSignInUseCaseProtocol {
     @Dependency(SceneDataFetcherKey.self) private var dataFetcher
     @Dependency(SceneSessionCoordinatorKey.self) private var sessionCoordinator
-    @Dependency(AuthServiceKey.self) private var authService
+    @Dependency(\.authProvider) private var authProvider
     @Dependency(UserDefaltsManagerKey.self) private var userDefaults
 
     func callAsFunction(password: String, appState: Shared<AppState?>?) async throws -> UserRole {
         let requestId = await sessionCoordinator.beginSession()
         appState?.withLock { $0 = nil }
-        let role = try await authService.confirmSignIn(password: password)
+        let role: UserRole
+        do {
+            try await authProvider.confirmSignIn(password)
+            role = try await authProvider.getUserRole()
+        } catch {
+            try? await authProvider.signOut()
+            throw error
+        }
         switch role {
         case .headquarter(let festivalId):
             let response = try await dataFetcher.launchFestival(festivalId: festivalId)

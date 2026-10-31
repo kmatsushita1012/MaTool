@@ -17,16 +17,19 @@ struct FestivalDashboardScreen: View {
         WithPerceptionTracking {
             FestivalDashboardContentView(
                 festivalTitle: festivalTitle,
+                isPeriodsLoading: store.isApiLoading,
+                isSettingsLoading: store.isSettingsLoading,
+                isSignOutLoading: store.isAuthLoading,
                 onEditTapped: { store.send(.onEdit) },
                 onPeriodsTapped: { store.send(.periodTapped) },
                 onDistrictsTapped: { store.send(.districtsTapped) },
                 onChangePasswordTapped: { store.send(.changePasswordTapped) },
                 onUpdateEmailTapped: { store.send(.updateEmailTapped) },
-                onSignOutTapped: { store.send(.signOutTapped) }
+                onSignOutTapped: { store.send(.signOutTapped) },
+                onSettingsTapped: { store.send(.settingsTapped) }
             )
             .modifier(FestivalDashboardDestinations(store: store))
             .alert($store.scope(state: \.alert, action: \.alert))
-            .loadingOverlay(store.isLoading)
         }
     }
 
@@ -56,6 +59,9 @@ private struct FestivalDashboardDestinations: ViewModifier {
             .navigationDestination(item: $store.scope(state: \.destination?.updateEmail, action: \.destination.updateEmail)) { store in
                 UpdateEmailView(store: store)
             }
+            .navigationDestination(item: $store.scope(state: \.destination?.settings, action: \.destination.settings)) { store in
+                SettingsView(store: store)
+            }
     }
 }
 
@@ -65,12 +71,20 @@ typealias FestivalDashboardView = FestivalDashboardScreen
 @available(iOS 17.0, *)
 struct FestivalDashboardContentView: View {
     let festivalTitle: String
+    let isPeriodsLoading: Bool
+    let isSettingsLoading: Bool
+    let isSignOutLoading: Bool
     let onEditTapped: () -> Void
     let onPeriodsTapped: () -> Void
     let onDistrictsTapped: () -> Void
     let onChangePasswordTapped: () -> Void
     let onUpdateEmailTapped: () -> Void
     let onSignOutTapped: () -> Void
+    let onSettingsTapped: () -> Void
+
+    private var isNavigationDisabled: Bool {
+        isPeriodsLoading || isSettingsLoading || isSignOutLoading
+    }
 
     var body: some View {
         List {
@@ -80,11 +94,13 @@ struct FestivalDashboardContentView: View {
                     iconName: "info.circle",
                     onTap: onEditTapped
                 )
+                .disabled(isNavigationDisabled)
                 NavigationItemView(
                     title: "日程",
                     iconName: "calendar",
                     onTap: onPeriodsTapped
                 )
+                .disabled(isNavigationDisabled)
             }
 
             Section {
@@ -93,30 +109,44 @@ struct FestivalDashboardContentView: View {
                     iconName: "list.bullet",
                     onTap: onDistrictsTapped
                 )
+                .disabled(isNavigationDisabled)
             }
 
             Section {
                 Button("パスワード変更", action: onChangePasswordTapped)
+                    .disabled(isNavigationDisabled)
                 Button("メールアドレス変更", action: onUpdateEmailTapped)
+                    .disabled(isNavigationDisabled)
             }
             Section {
                 Button("ログアウト", action: onSignOutTapped)
                     .foregroundColor(.red)
+                    .loadingIndicator(isLoading: isSignOutLoading)
             }
         }
         .navigationTitle(festivalTitle)
         .navigationBarTitleDisplayMode(.large)
+        .toolbar {
+            ToolbarItem(placement: .navigationBarTrailing) {
+                Button("設定", systemImage: "gearshape", action: onSettingsTapped)
+                    .disabled(isNavigationDisabled)
+            }
+        }
     }
 }
 
 #Preview {
     FestivalDashboardContentView(
         festivalTitle: "",
+        isPeriodsLoading: false,
+        isSettingsLoading: false,
+        isSignOutLoading: false,
         onEditTapped: {},
         onPeriodsTapped: {},
         onDistrictsTapped: {},
         onChangePasswordTapped: {},
         onUpdateEmailTapped: {},
-        onSignOutTapped: {}
+        onSignOutTapped: {},
+        onSettingsTapped: {}
     )
 }

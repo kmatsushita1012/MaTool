@@ -9,6 +9,9 @@ import Dependencies
 import Shared
 import Amplify
 import AWSCognitoAuthPlugin
+import OSLog
+
+private let authProviderLogger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "MaTool", category: "AuthProvider")
 
 // MARK: - Dependencies
 extension DependencyValues {
@@ -44,22 +47,26 @@ extension AuthProvider: DependencyKey {
                     try Amplify.add(plugin: AWSCognitoAuthPlugin())
                     try Amplify.configure()
                 } catch {
-                    try Self.rethrowAsAuthErrorIfNeeded(error, operation: "signIn")
+                    try Self.rethrowAsAuthErrorIfNeeded(error, operation: "initialize")
                 }
             },
             signIn: { username, password in
+                authProviderLogger.info("signIn: started")
                 do {
                     let result = try await withTimeout(seconds: timeout) {
                         try await Amplify.Auth.signIn(username: username, password: password)
                     }
                     if result.isSignedIn {
+                        authProviderLogger.info("signIn: completed")
                         return .success
                     } else if case .confirmSignInWithNewPassword = result.nextStep {
+                        authProviderLogger.info("signIn: new password required")
                         return .newPasswordRequired
                     } else {
                         throw AppError.auth(.unknown("予期しないエラーです \(result.nextStep)"))
                     }
                 } catch {
+                    authProviderLogger.error("signIn: failed (\(String(reflecting: type(of: error)), privacy: .public))")
                     try Self.rethrowAsAuthErrorIfNeeded(error, operation: "signIn")
                 }
             },
@@ -75,6 +82,7 @@ extension AuthProvider: DependencyKey {
             },
             
             getUserRole: {
+                authProviderLogger.info("getUserRole: started")
                 do {
                     let (attributes, user) = try await withTimeout(seconds: timeout) {
                         async let attributes = Amplify.Auth.fetchUserAttributes()
@@ -84,43 +92,55 @@ extension AuthProvider: DependencyKey {
                     
                     if let role = attributes.first(where: { $0.key.rawValue == "custom:role" })?.value {
                         switch role {
-                        case "region": return .headquarter(user.username)
-                        case "district": return .district(user.username)
-                        default: return .guest
+                        case "region":
+                            authProviderLogger.info("getUserRole: completed as headquarter")
+                            return .headquarter(user.username)
+                        case "district":
+                            authProviderLogger.info("getUserRole: completed as district")
+                            return .district(user.username)
+                        default:
+                            authProviderLogger.info("getUserRole: completed as guest")
+                            return .guest
                         }
                     }
+                    authProviderLogger.info("getUserRole: completed without role attribute")
                     return .guest
                 } catch {
+                    authProviderLogger.error("getUserRole: failed (\(String(reflecting: type(of: error)), privacy: .public))")
                     try Self.rethrowAsAuthErrorIfNeeded(error, operation: "getUserRole")
                 }
             },
             
             getTokens: {
                 do {
-                    guard let session = try await Amplify.Auth.fetchAuthSession() as? AWSAuthCognitoSession else {
-                        throw AppError.auth(.unknown("予期せぬエラーが発生しました"))
-                    }
-                    if !session.isSignedIn  {
-                        throw AppError.auth(.unauthorized("ログインしていません。"))
-                    }
-                        
-                    let result = session.getCognitoTokens()
-                    switch result {
-                    case .success(let tokens):
-                        return tokens.accessToken
-                    case .failure(let error):
-                        throw error
+                    return try await withTimeout(seconds: timeout) {
+                        guard let session = try await Amplify.Auth.fetchAuthSession() as? AWSAuthCognitoSession else {
+                            throw AppError.auth(.unknown("予期せぬエラーが発生しました"))
+                        }
+                        guard session.isSignedIn else {
+                            throw AppError.auth(.unauthorized("ログインしていません。"))
+                        }
+
+                        switch session.getCognitoTokens() {
+                        case .success(let tokens):
+                            return tokens.accessToken
+                        case .failure(let error):
+                            throw error
+                        }
                     }
                 } catch {
                     try Self.rethrowAsAuthErrorIfNeeded(error, operation: "getTokens")
                 }
             },
             signOut: {
+                authProviderLogger.info("signOut: started")
                 do {
                     let _ = try await withTimeout(seconds: timeout) {
                         await Amplify.Auth.signOut()
                     }
+                    authProviderLogger.info("signOut: completed")
                 } catch {
+                    authProviderLogger.error("signOut: failed (\(String(reflecting: type(of: error)), privacy: .public))")
                     try Self.rethrowAsAuthErrorIfNeeded(error, operation: "signOut")
                 }
             },

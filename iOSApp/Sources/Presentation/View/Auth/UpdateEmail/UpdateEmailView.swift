@@ -18,6 +18,7 @@ struct UpdateEmailScreen: View {
             step: store.step,
             email: $store.email,
             code: $store.code,
+            isLoading: store.isLoading,
             onDismissTapped: {
                 switch store.step {
                 case .enterEmail:
@@ -31,7 +32,6 @@ struct UpdateEmailScreen: View {
         )
         .preferredColorScheme(.light)
         .dismissible(backButton: false, edgeSwipe: false)
-        .loadingOverlay(store.isLoading)
         .alert($store.scope(state: \.errorAlert, action: \.errorAlert))
         .alert($store.scope(state: \.completeAlert, action: \.completeAlert))
     }
@@ -45,6 +45,7 @@ struct UpdateEmailContentView: View {
     let step: UpdateEmailFeature.State.Step
     @Binding var email: String
     @Binding var code: String
+    let isLoading: Bool
     let onDismissTapped: () -> Void
     let onEmailSubmitTapped: () -> Void
     let onCodeSubmitTapped: () -> Void
@@ -65,6 +66,7 @@ struct UpdateEmailContentView: View {
             ) {
                 onDismissTapped()
             }
+            .disabled(isLoading)
             .ignoresSafeArea(edges: .top)
             Spacer()
             switch step {
@@ -74,6 +76,7 @@ struct UpdateEmailContentView: View {
                 UpdateEmailCodeContentView(
                     destination: destination,
                     code: $code,
+                    isLoading: isLoading,
                     onSubmitTapped: onCodeSubmitTapped
                 )
             }
@@ -96,6 +99,7 @@ struct UpdateEmailContentView: View {
             }
             .buttonStyle(PrimaryButtonStyle())
             .padding()
+            .loadingIndicator(isLoading: isLoading)
         }
         
     }
@@ -106,6 +110,7 @@ struct UpdateEmailContentView: View {
 struct UpdateEmailCodeContentView: View {
     let destination: String
     @Binding var code: String
+    let isLoading: Bool
     let onSubmitTapped: () -> Void
 
     @FocusState private var isCodeFieldFocused: Bool
@@ -126,6 +131,7 @@ struct UpdateEmailCodeContentView: View {
             }
             .buttonStyle(PrimaryButtonStyle())
             .padding()
+            .loadingIndicator(isLoading: isLoading)
         }
         .padding()
     }
@@ -136,6 +142,7 @@ struct UpdateEmailCodeContentView: View {
         step: .enterEmail,
         email: .constant(""),
         code: .constant(""),
+        isLoading: false,
         onDismissTapped: {},
         onEmailSubmitTapped: {},
         onCodeSubmitTapped: {}
@@ -146,6 +153,7 @@ struct UpdateEmailCodeContentView: View {
     UpdateEmailCodeContentView(
         destination: "",
         code: .constant(""),
+        isLoading: false,
         onSubmitTapped: {}
     )
 }

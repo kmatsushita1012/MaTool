@@ -16,7 +16,9 @@ struct PeriodEditFeature {
     struct State: Equatable {
         let mode: Mode
         var period: Period
-        var isLoading: Bool = false
+        var isSaving: Bool = false
+        var isDeleting: Bool = false
+        var isLoading: Bool { isSaving || isDeleting }
         @Shared fileprivate var appState: AppState?
         @Presents var alert: AlertFeature.State?
 
@@ -51,13 +53,13 @@ struct PeriodEditFeature {
             case .binding(_):
                 return .none
             case .saveTapped:
-                state.isLoading = true
+                state.isSaving = true
                 return saveEffect(mode: state.mode, period: state.period, appState: state.$appState)
             case .cancelTapped:
                 return .dismiss
             case .deleteTapped:
                 guard state.mode == .update else { return .none }
-                state.isLoading = true
+                state.isDeleting = true
                 return .task(Action.deleteReceived) { [id = state.period.id, appState = state.$appState] in
                     try await deletePeriodUseCase(id: id, appState: appState)
                     return id
@@ -70,7 +72,8 @@ struct PeriodEditFeature {
                 return .none
             case .saveReceived(.failure(let error)),
                 .deleteReceived(.failure(let error)):
-                state.isLoading = false
+                state.isSaving = false
+                state.isDeleting = false
                 state.alert = AlertFeature.error(error.message)
                 return .none
             default:

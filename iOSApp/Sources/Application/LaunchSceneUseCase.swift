@@ -10,7 +10,7 @@ protocol LaunchSceneUseCaseProtocol: Sendable {
 struct LaunchSceneUseCase: LaunchSceneUseCaseProtocol {
     @Dependency(SceneDataFetcherKey.self) private var dataFetcher
     @Dependency(SceneSessionCoordinatorKey.self) private var sessionCoordinator
-    @Dependency(AuthServiceKey.self) private var authService
+    @Dependency(\.authProvider) private var authProvider
     @Dependency(AppStatusClientKey.self) private var appStatusClient
     @Dependency(UserDefaltsManagerKey.self) private var userDefaults
 
@@ -19,12 +19,18 @@ struct LaunchSceneUseCase: LaunchSceneUseCaseProtocol {
         appState?.withLock { $0 = nil }
         async let appStatusTask = appStatusClient.checkStatus()
         do {
-            try authService.initialize()
+            try authProvider.initialize()
             guard let festivalId = userDefaults.defaultFestivalId else {
                 return (.onboarding, await appStatusTask)
             }
 
-            let userRole = await (try? authService.getUserRole()) ?? .guest
+            let userRole: UserRole
+            do {
+                userRole = try await authProvider.getUserRole()
+            } catch {
+                try? await authProvider.signOut()
+                userRole = .guest
+            }
             if let districtId = userDefaults.defaultDistrictId {
                 async let festivalTask = dataFetcher.launchFestival(festivalId: festivalId)
                 async let districtTask = dataFetcher.launchDistrict(districtId: districtId)

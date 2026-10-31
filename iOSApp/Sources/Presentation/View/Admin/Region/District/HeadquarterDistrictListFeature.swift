@@ -23,7 +23,7 @@ struct HeadquarterDistrictListFeature {
     struct State: Equatable {
         @Shared fileprivate var appState: AppState?
 
-        @Fallback(\HeadquarterDistrictListFeature.State.appState?.festivalState.festival)
+        @Fallback(select: { (state: HeadquarterDistrictListFeature.State) in state.appState?.festivalState.festival })
         @ObservationStateIgnored
         var festival: Festival
 
@@ -34,7 +34,9 @@ struct HeadquarterDistrictListFeature {
         var isReordering: Bool = false
         var searchText: String = ""
 
-        var isLoading: Bool = false
+        var loadingDistrictID: District.ID? = nil
+        var isReorderingSaving = false
+        var isLoading: Bool { loadingDistrictID != nil || isReorderingSaving }
         var isExportLoading: Bool = false
         var folder: ExportedFolder? = nil
         @Presents var destination: Destination.State?
@@ -78,7 +80,7 @@ struct HeadquarterDistrictListFeature {
             case .binding:
                 return .none
             case .selected(let district):
-                state.isLoading = true
+                state.loadingDistrictID = district.id
                 return .task(Action.selectedReceived) { [appState = state.$appState] in
                     _ = try await loadDistrictStateUseCase(districtId: district.id, appState: appState)
                     return appState.wrappedValue?.district(id: district.id) ?? district
@@ -94,7 +96,7 @@ struct HeadquarterDistrictListFeature {
                         state.draftDistricts = nil
                         return .none
                     }
-                    state.isLoading = true
+                    state.isReorderingSaving = true
                     return .task(Action.reorderReceived) { [appState = state.$appState] in
                         for district in changed {
                             _ = try await saveDistrictUseCase(district: district, appState: appState)
@@ -116,7 +118,7 @@ struct HeadquarterDistrictListFeature {
                 state.draftDistricts = draftDistricts
                 return .none
             case .reorderReceived(.success):
-                state.isLoading = false
+                state.isReorderingSaving = false
                 state.isReordering = false
                 state.draftDistricts = nil
                 return .none
@@ -127,7 +129,7 @@ struct HeadquarterDistrictListFeature {
                 state.isExportLoading = true
                 return batchExportEffect(state, includesRouteMap: false)
             case .selectedReceived(.success(let district)):
-                state.isLoading = false
+                state.loadingDistrictID = nil
                 state.destination = .detail(.init(district, appState: state.$appState))
                 return .none
             case .batchExportReceived(.success(let urls)):
@@ -137,7 +139,8 @@ struct HeadquarterDistrictListFeature {
             case .selectedReceived(.failure(let error)),
                 .reorderReceived(.failure(let error)),
                 .batchExportReceived(.failure(let error)):
-                state.isLoading = false
+                state.loadingDistrictID = nil
+                state.isReorderingSaving = false
                 state.isExportLoading = false
                 state.alert = AlertFeature.error(error.message)
                 return .none

@@ -94,28 +94,71 @@ extension AsyncValue: Equatable where T: Equatable {
     }
 }
 
-func withTimeout<T>(
+func withTimeout<T: Sendable>(
     seconds: Int,
-    operation: @escaping () async throws -> T
+    operation: @escaping @Sendable () async throws -> T
 ) async throws -> T {
-    try await withThrowingTaskGroup(of: T.self) { group in
-        group.addTask {
-            try await operation()
+    let race = TimeoutRace<T>()
+    return try await withTaskCancellationHandler {
+        try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<T, Error>) in
+            let operationTask = Task {
+                do {
+                    await race.resolve(.success(try await operation()))
+                } catch {
+                    await race.resolve(.failure(error))
+                }
+            }
+            let timeoutTask = Task {
+                do {
+                    try await Task.sleep(
+                        nanoseconds: UInt64(max(seconds, 0)) * 1_000_000_000
+                    )
+                    await race.resolve(.failure(AppError.auth(.timeout("タイムアウトしました"))))
+                } catch {
+                    // The operation completed first and canceled this timer.
+                }
+            }
+            Task {
+                await race.setContinuation(continuation)
+                await race.add(operationTask)
+                await race.add(timeoutTask)
+            }
         }
-
-        group.addTask {
-            try await Task.sleep(
-                nanoseconds: UInt64(seconds) * 1_000_000_000
-            )
-            throw AppError.auth(.timeout("タイムアウトしました"))
+    } onCancel: {
+        Task {
+            await race.resolve(.failure(CancellationError()))
         }
+    }
+}
 
-        guard let result = try await group.next() else {
-            throw CancellationError()
+private actor TimeoutRace<Value: Sendable> {
+    private var continuation: CheckedContinuation<Value, Error>?
+    private var result: Result<Value, Error>?
+    private var tasks: [Task<Void, Never>] = []
+
+    func setContinuation(_ continuation: CheckedContinuation<Value, Error>) {
+        if let result {
+            continuation.resume(with: result)
+        } else {
+            self.continuation = continuation
         }
+    }
 
-        group.cancelAll()
-        return result
+    func add(_ task: Task<Void, Never>) {
+        if result != nil {
+            task.cancel()
+        } else {
+            tasks.append(task)
+        }
+    }
+
+    func resolve(_ result: Result<Value, Error>) {
+        guard self.result == nil else { return }
+        self.result = result
+        continuation?.resume(with: result)
+        continuation = nil
+        tasks.forEach { $0.cancel() }
+        tasks.removeAll()
     }
 }
 

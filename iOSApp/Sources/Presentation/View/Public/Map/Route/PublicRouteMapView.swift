@@ -51,7 +51,6 @@ struct PublicRouteMapView: View {
                 )
                 .equatable()
                 .ignoresSafeArea(edges: .bottom)
-                menuLayer
             }
             .safeAreaInset(edge: .bottom) {
                 if isLiquidGlassDisabled {
@@ -65,9 +64,6 @@ struct PublicRouteMapView: View {
                 case .point(let item):
                     PointView(item)
                         .presentationDetents([.fraction(0.3), .medium, .large])
-                case .location(let item):
-                    LocationView(item)
-                        .presentationDetents([.fraction(0.3), .medium, .large])
                 }
             }
             .onAppear {
@@ -79,86 +75,6 @@ struct PublicRouteMapView: View {
         }
     }
     
-    @ViewBuilder
-    var menuLayer: some View {
-        VStack(spacing: 16) {
-            if !store.routes.isEmpty {
-                RoutePeriodMenu(
-                    selected: store.selected,
-                    routes: store.routes,
-                    onSelected: { store.send(.selected($0)) }
-                )
-                .padding(.horizontal, 16)
-            }
-            if let toast = store.toast {
-                MapToastView(toast: toast) {
-                    store.send(.toastDismissed)
-                }
-                .transition(.opacity)
-            }
-            Spacer()
-        }
-        .padding(.top, 16)
-        .animation(.easeInOut(duration: 0.2), value: store.toast)
-    }
-}
-
-private struct RoutePeriodMenu: View {
-    let selected: RouteEntry?
-    let routes: [RouteEntry]
-    let onSelected: (RouteEntry) -> Void
-
-    @Environment(\.isLiquidGlassDisabled) private var isLiquidGlassDisabled
-
-    var body: some View {
-        if #available(iOS 26.0, *), !isLiquidGlassDisabled {
-            menu
-                .buttonStyle(.glass)
-        } else {
-            menu
-                .background {
-                    RoundedRectangle(cornerRadius: 16)
-                        .fill(.ultraThinMaterial)
-                        .shadow(radius: 2)
-                }
-                .buttonStyle(.plain)
-        }
-    }
-
-    private var menu: some View {
-        Menu {
-            ForEach(routes.sorted()) { entry in
-                Button(entry.text) {
-                    onSelected(entry)
-                }
-            }
-        } label: {
-            if #available(iOS 26.0, *), !isLiquidGlassDisabled {
-                menuLabel
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 4)
-                    .contentShape(.rect)
-            } else {
-                menuLabel
-                    .padding(.horizontal, 16)
-                    .padding(.vertical, 8)
-                    .contentShape(.rect)
-            }
-        }
-    }
-    
-    private var menuLabel: some View {
-        HStack {
-            Text(selected?.text ?? "期間")
-                .font(.title3)
-                .lineLimit(1)
-            Spacer()
-            Image(systemName: "chevron.down")
-                .foregroundStyle(.secondary)
-        }
-        .foregroundStyle(.primary)
-        .frame(maxWidth: .infinity, alignment: .leading)
-    }
 }
     
 extension PublicRouteMapView {
@@ -195,11 +111,7 @@ extension PublicRouteMapView {
                     if store.replay.isRunning {
                         return "stop.circle"
                     } else {
-                        if #available(iOS 17.0, *) {
-                            return "point.bottomleft.forward.to.arrow.triangle.scurvepath.fill"
-                        } else {
-                            return "play.circle"
-                        }
+                        return "point.bottomleft.forward.to.arrow.triangle.scurvepath.fill"
                     }
                 }()
             ){

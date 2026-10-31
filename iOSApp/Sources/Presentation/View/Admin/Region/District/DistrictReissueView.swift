@@ -16,11 +16,11 @@ struct DistrictReissueScreen: View {
     var body: some View {
         DistrictReissueContentView(
             email: $store.email,
+            isLoading: store.isLoading,
             onCancelTapped: { store.send(.cancelTapped) },
             onReissueTapped: { store.send(.reissueTapped) }
         )
         .dismissible(backButton: false)
-        .loadingOverlay(store.isLoading)
         .alert($store.scope(state: \.alert, action: \.alert))
     }
 }
@@ -31,6 +31,7 @@ typealias DistrictReissueView = DistrictReissueScreen
 @available(iOS 17.0, *)
 struct DistrictReissueContentView: View {
     @Binding var email: String
+    let isLoading: Bool
     let onCancelTapped: () -> Void
     let onReissueTapped: () -> Void
 
@@ -49,10 +50,10 @@ struct DistrictReissueContentView: View {
         }
         .navigationTitle("アカウント再発行")
         .toolbar {
-            ToolbarCancelButton {
+            ToolbarCancelButton(isDisabled: isLoading) {
                 onCancelTapped()
             }
-            ToolbarSaveButton(title: "再発行") {
+            ToolbarSaveButton(title: "再発行", isLoading: isLoading) {
                 onReissueTapped()
             }
         }
@@ -63,6 +64,7 @@ struct DistrictReissueContentView: View {
 #Preview {
     DistrictReissueContentView(
         email: .constant(""),
+        isLoading: false,
         onCancelTapped: {},
         onReissueTapped: {}
     )

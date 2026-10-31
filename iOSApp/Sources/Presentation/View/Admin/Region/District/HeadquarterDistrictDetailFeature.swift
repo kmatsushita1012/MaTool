@@ -34,6 +34,7 @@ struct HeadquarterDistrictDetailFeature {
         
         var isEditable: Bool = false
         var isLoading: Bool = false
+        var isSaving: Bool = false
         var activeExportKind: ExportKind? = nil
         
         @Presents var destination: Destination.State?
@@ -75,6 +76,7 @@ struct HeadquarterDistrictDetailFeature {
             case .editTapped:
                 if state.isEditable {
                     state.isLoading = true
+                    state.isSaving = true
                     return .task(Action.updateReceived) { [district = state.district, appState = state.$appState] in
                         try await saveDistrictUseCase(district: district, appState: appState)
                     }
@@ -110,6 +112,7 @@ struct HeadquarterDistrictDetailFeature {
                 return .none
             case .updateReceived(.success(let district)):
                 state.isLoading = false
+                state.isSaving = false
                 state.district = district
                 state.isEditable = false
                 return .none
@@ -140,6 +143,7 @@ struct HeadquarterDistrictDetailFeature {
                 .routeReceived(.failure(let error)),
                 .batchExportReceived(.failure(let error)):
                 state.isLoading = false
+                state.isSaving = false
                 state.activeExportKind = nil
                 state.alert = AlertFeature.error(error.message)
                 return .none

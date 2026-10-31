@@ -7,10 +7,10 @@ protocol SignOutUseCaseProtocol: Sendable {
 
 struct SignOutUseCase: SignOutUseCaseProtocol {
     @Dependency(SceneSessionCoordinatorKey.self) private var sessionCoordinator
-    @Dependency(AuthServiceKey.self) private var authService
+    @Dependency(\.authProvider) private var authProvider
 
     func callAsFunction() async throws {
-        _ = try await authService.signOut()
+        try await authProvider.signOut()
         _ = await sessionCoordinator.beginSession()
     }
 }

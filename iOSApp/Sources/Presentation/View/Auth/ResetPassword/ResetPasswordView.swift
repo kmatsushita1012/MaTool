@@ -20,6 +20,7 @@ struct ResetPasswordScreen: View {
             newPassword1: $store.newPassword1,
             newPassword2: $store.newPassword2,
             code: $store.code,
+            isLoading: store.isLoading,
             onDismissTapped: {
                 switch store.step {
                 case .enterUsername:
@@ -32,7 +33,6 @@ struct ResetPasswordScreen: View {
             onCodeSubmitTapped: { store.send(.enterCode(.okTapped)) }
         )
         .dismissible(backButton: false, edgeSwipe: false)
-        .loadingOverlay(store.isLoading)
         .alert($store.scope(state: \.alert, action: \.alert))
     }
 }
@@ -47,6 +47,7 @@ struct ResetPasswordContentView: View {
     @Binding var newPassword1: String
     @Binding var newPassword2: String
     @Binding var code: String
+    let isLoading: Bool
     let onDismissTapped: () -> Void
     let onUsernameSubmitTapped: () -> Void
     let onCodeSubmitTapped: () -> Void
@@ -68,6 +69,7 @@ struct ResetPasswordContentView: View {
             ) {
                 onDismissTapped()
             }
+            .disabled(isLoading)
             .ignoresSafeArea(edges: .top)
             Spacer()
             switch step {
@@ -102,6 +104,7 @@ struct ResetPasswordContentView: View {
                 focusedField = nil
             }
             .buttonStyle(PrimaryButtonStyle())
+            .loadingIndicator(isLoading: isLoading)
             .padding()
         }
     }
@@ -129,6 +132,7 @@ struct ResetPasswordContentView: View {
                 focusedField = nil
             }
             .buttonStyle(PrimaryButtonStyle())
+            .loadingIndicator(isLoading: isLoading)
             .padding()
         }
     }
@@ -141,6 +145,7 @@ struct ResetPasswordContentView: View {
         newPassword1: .constant(""),
         newPassword2: .constant(""),
         code: .constant(""),
+        isLoading: false,
         onDismissTapped: {},
         onUsernameSubmitTapped: {},
         onCodeSubmitTapped: {}

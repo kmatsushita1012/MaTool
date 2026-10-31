@@ -24,8 +24,9 @@ struct DistrictDashboardFeature {
         case location(LocationTrackingFeature)
         case changePassword(ChangePasswordFeature)
         case updateEmail(UpdateEmailFeature)
+        case settings(SettingsFeature)
     }
-    
+
     @ObservableState
     struct State:Equatable {
         let districtId: District.ID
@@ -34,13 +35,15 @@ struct DistrictDashboardFeature {
         var appStateDistrict: District? {
             appState?.district(id: districtId)
         }
-        @Fallback(\DistrictDashboardFeature.State.appStateDistrict)
+        @Fallback(select: { (state: DistrictDashboardFeature.State) in state.appStateDistrict })
         @ObservationStateIgnored
         var district: District
         var routes: [RouteSlot]
         
         var isAWSLoading: Bool = false
         var isRouteLoading: Bool = false
+        var isLocationLoading: Bool = false
+        var isSettingsLoading: Bool = false
         var activeExportKind: ExportKind? = nil
         var url: URL? = nil
         
@@ -64,6 +67,8 @@ struct DistrictDashboardFeature {
         case routeEditReceived(AppResult<RoutePack?>)
         case changePasswordTapped
         case updateEmailTapped
+        case settingsTapped
+        case settingsPrepared(AppResult<SettingsPreparation>)
         case routeCreatePrepared
         case locationPrepared(
             isTracking: Bool,
@@ -83,6 +88,8 @@ struct DistrictDashboardFeature {
     
     @Dependency(\.locationUsecase) var locationUsecase
     @Dependency(SignOutUseCaseKey.self) var signOutUseCase
+    @Dependency(FetchFestivalListUseCaseKey.self) var fetchFestivalListUseCase
+    @Dependency(GetSceneSelectionUseCaseKey.self) var getSceneSelectionUseCase
     @Dependency(FetchRoutePackUseCaseKey.self) var fetchRoutePackUseCase
     @Dependency(LoadRouteStateUseCaseKey.self) var loadRouteStateUseCase
     @Dependency(\.dismiss) var dismiss
@@ -139,11 +146,32 @@ struct DistrictDashboardFeature {
             case .updateEmailTapped:
                 state.destination = .updateEmail(UpdateEmailFeature.State())
                 return .none
+            case .settingsTapped:
+                state.isSettingsLoading = true
+                return .task(Action.settingsPrepared) {
+                    let festivals = try await fetchFestivalListUseCase()
+                    let selection = getSceneSelectionUseCase()
+                    return SettingsPreparation(festivals: festivals, selection: selection)
+                }
+            case .settingsPrepared(.success(let preparation)):
+                state.isSettingsLoading = false
+                state.destination = .settings(.init(
+                    selection: preparation.selection,
+                    festivals: preparation.festivals,
+                    userRole: .district(state.district.id),
+                    appState: state.$appState
+                ))
+                return .none
+            case .settingsPrepared(.failure(let error)):
+                state.isSettingsLoading = false
+                state.alert = .error("設定画面の準備に失敗しました。\n\(error.message)")
+                return .none
             case .locationPrepared(
                 isTracking: let isTracking,
                 interval: let interval,
                 permissionState: let permissionState
             ):
+                state.isLocationLoading = false
                 state.destination = .location(
                     LocationTrackingFeature.State(
                         id: state.district.id,
@@ -155,6 +183,7 @@ struct DistrictDashboardFeature {
                 )
                 return .none
             case .onLocation:
+                state.isLocationLoading = true
                 return .run { send in
                     let preparation = await locationUsecase.prepareTracking()
                     await send(.locationPrepared(
@@ -205,6 +234,9 @@ struct DistrictDashboardFeature {
                 state.isAWSLoading = false
                 state.alert = .error("ログアウトに失敗しました。 \(error.message)")
                 return .none
+            case .signOutReceived(.success):
+                state.isAWSLoading = false
+                return .none
             case .dismissTapped:
                 return .dismiss
             case .alert(.presented(.okTapped)):
@@ -224,7 +256,11 @@ extension DistrictDashboardFeature.Destination.Action: Equatable {}
 
 extension DistrictDashboardFeature.State{
     var isLoading: Bool {
-        isAWSLoading || isRouteLoading || activeExportKind != nil
+        isNavigationLoading || activeExportKind != nil
+    }
+
+    var isNavigationLoading: Bool {
+        isAWSLoading || isRouteLoading || isLocationLoading || isSettingsLoading
     }
     
     var isSubmissionExportLoading: Bool {

@@ -63,8 +63,29 @@ extension AppState {
         return FloatEntry(floatLocation: location, district: district)
     }
 
-    var routeDistrictIds: [District.ID] {
-        festivalState.districts.map(\.id)
+    func routeDistrictIds(prioritizing districtId: District.ID?) -> [District.ID] {
+        let sortedDistricts = festivalState.districts.sorted { lhs, rhs in
+            let groupOrder = (lhs.group ?? "").localizedStandardCompare(rhs.group ?? "")
+            if groupOrder != .orderedSame {
+                return groupOrder == .orderedAscending
+            }
+            let nameOrder = lhs.name.localizedStandardCompare(rhs.name)
+            if nameOrder != .orderedSame {
+                return nameOrder == .orderedAscending
+            }
+            return lhs.id < rhs.id
+        }
+
+        guard let districtId,
+              let selectedDistrict = sortedDistricts.first(where: { $0.id == districtId }) else {
+            return sortedDistricts.map(\.id)
+        }
+
+        let sameGroup = sortedDistricts.filter {
+            $0.id != selectedDistrict.id && $0.group == selectedDistrict.group
+        }
+        let otherGroups = sortedDistricts.filter { $0.group != selectedDistrict.group }
+        return ([selectedDistrict] + sameGroup + otherGroups).map(\.id)
     }
 
     func routeEntries(for districtId: District.ID) -> [RouteEntry] {

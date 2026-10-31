@@ -20,6 +20,7 @@ struct LoginScreen: View {
             password: $store.password,
             contactURL: URL(string: contactURLString),
             errorMessage: store.errorMessage,
+            isLoading: store.isLoading,
             onSignInTapped: { store.send(.signInTapped) },
             onResetPasswordTapped: { store.send(.resetPasswordTapped) }
         )
@@ -29,7 +30,6 @@ struct LoginScreen: View {
         .navigationDestination(item: $store.scope(state: \.destination?.resetPassword, action: \.destination.resetPassword)) { store in
             ResetPasswordView(store: store)
         }
-        .loadingOverlay(store.isLoading)
     }
 }
 
@@ -42,6 +42,7 @@ struct LoginContentView: View {
     @Binding var password: String
     let contactURL: URL?
     let errorMessage: String?
+    let isLoading: Bool
     let onSignInTapped: () -> Void
     let onResetPasswordTapped: () -> Void
 
@@ -59,6 +60,8 @@ struct LoginContentView: View {
             TextField("ID", text: $id)
                 .padding()
                 .textContentType(.username)
+                .textInputAutocapitalization(.never)
+                .autocorrectionDisabled()
                 .textFieldStyle(.plain)
                 .background(.regularMaterial, in: .capsule)
                 .overlay {
@@ -83,12 +86,14 @@ struct LoginContentView: View {
                 focusedField = nil
             }
             .buttonStyle(PrimaryButtonStyle())
+            .loadingIndicator(isLoading: isLoading)
             
             Button("パスワードを忘れた場合") {
                 onResetPasswordTapped()
                 focusedField = nil
             }
             .buttonStyle(SecondaryButtonStyle())
+            .disabled(isLoading)
             
             if let contactURL {
                 Link(
@@ -111,6 +116,7 @@ struct LoginContentView: View {
         password: .constant(""),
         contactURL: nil,
         errorMessage: nil,
+        isLoading: false,
         onSignInTapped: {},
         onResetPasswordTapped: {}
     )

@@ -4,20 +4,43 @@ import Foundation
 import Shared
 
 protocol SelectFestivalUseCaseProtocol: Sendable {
-    func callAsFunction(festivalId: Festival.ID, appState: Shared<AppState?>?) async throws -> FestivalSelectionResult
+    func callAsFunction(
+        festivalId: Festival.ID,
+        appState: Shared<AppState?>?,
+        signOutCurrentUser: Bool
+    ) async throws -> FestivalSelectionResult
+}
+
+extension SelectFestivalUseCaseProtocol {
+    func callAsFunction(
+        festivalId: Festival.ID,
+        appState: Shared<AppState?>?
+    ) async throws -> FestivalSelectionResult {
+        try await callAsFunction(
+            festivalId: festivalId,
+            appState: appState,
+            signOutCurrentUser: true
+        )
+    }
 }
 
 struct SelectFestivalUseCase: SelectFestivalUseCaseProtocol {
     @Dependency(SceneDataFetcherKey.self) private var dataFetcher
     @Dependency(SceneSessionCoordinatorKey.self) private var sessionCoordinator
-    @Dependency(AuthServiceKey.self) private var authService
+    @Dependency(\.authProvider) private var authProvider
     @Dependency(UserDefaltsManagerKey.self) private var userDefaults
 
-    func callAsFunction(festivalId: Festival.ID, appState: Shared<AppState?>?) async throws -> FestivalSelectionResult {
+    func callAsFunction(
+        festivalId: Festival.ID,
+        appState: Shared<AppState?>?,
+        signOutCurrentUser: Bool
+    ) async throws -> FestivalSelectionResult {
         guard userDefaults.defaultFestivalId != festivalId else { return .unchanged }
         let requestId = await sessionCoordinator.beginSession()
         appState?.withLock { $0 = nil }
-        _ = try await authService.signOut()
+        if signOutCurrentUser {
+            try await authProvider.signOut()
+        }
         let response = try await dataFetcher.launchFestival(festivalId: festivalId)
         guard await sessionCoordinator.isCurrent(requestId) else { throw CancellationError() }
         if let appState {

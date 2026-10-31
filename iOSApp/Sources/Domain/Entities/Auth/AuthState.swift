@@ -7,17 +7,17 @@
 
 import Shared
 
-enum SignInState: Equatable {
+enum SignInState: Equatable, Sendable {
     case signedIn(UserRole)
     case newPasswordRequired
 }
 
-enum UpdateEmailState: Equatable {
+enum UpdateEmailState: Equatable, Sendable {
     case completed
     case verificationRequired(destination: String)
 }
 
-enum SignInResponse {
+enum SignInResponse: Sendable {
     case success
     case newPasswordRequired
 }

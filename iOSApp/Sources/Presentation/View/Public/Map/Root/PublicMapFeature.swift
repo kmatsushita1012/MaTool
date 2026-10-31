@@ -33,11 +33,23 @@ struct PublicMapFeature {
         @Shared fileprivate var appState: AppState?
 
         var contents: [Content] {
-            [.locations] + (appState?.routeDistrictIds.map(Content.route) ?? [])
+            let selectedDistrictId: District.ID?
+            if case .route(let districtId) = selectedContent {
+                selectedDistrictId = districtId
+            } else {
+                selectedDistrictId = nil
+            }
+            return [.locations] + (appState?.routeDistrictIds(prioritizing: selectedDistrictId).map(Content.route) ?? [])
+        }
+        var festivalTitle: String {
+            appState?.festivalState.festival.name ?? ""
         }
         var selectedContent: Content
         var currentPeriodId: Period.ID? {
             appState?.currentPeriod(at: .now)?.id
+        }
+        var selectedPeriodId: Period.ID? {
+            destination?.route?.selected?.period.id ?? currentPeriodId
         }
         var contentTitles: [Content: String] {
             Dictionary(uniqueKeysWithValues: contents.map { content in
@@ -50,7 +62,6 @@ struct PublicMapFeature {
             })
         }
         var isLoading: Bool = false
-        var isDismissed: Bool = false
         @Presents var destination: Destination.State?
         @Shared var mapRegion: MKCoordinateRegion
         @Shared var toast: MapToast?
@@ -72,21 +83,26 @@ struct PublicMapFeature {
     
     @CasePathable
     enum Action: BindableAction, Equatable {
+        enum Delegate: Equatable {
+            case settingsOrAdminTapped
+            case emergencySignOutTapped
+            case introductionTapped
+        }
+
         case onAppear
         case binding(BindingAction<State>)
-        case dismissTapped
         case contentSelected(Content)
         case routePrepared(District.ID, Route.ID?)
         case districtContentEvaluated(District, Bool)
         case districtLaunchReceived(AppResult<DistrictLaunchResult>)
         case errorCaught(AppError)
+        case delegate(Delegate)
         case destination(PresentationAction<Destination.Action>)
     }
     
     @Dependency(\.mapLocationProvider) var mapLocationProvider
     @Dependency(LoadDistrictStateUseCaseKey.self) var loadDistrictStateUseCase
     @Dependency(\.publicMapAdUsecase) var publicMapAdUsecase
-    @Dependency(\.dismiss) var dismiss
     
     var body: some ReducerOf<PublicMapFeature> {
         Reduce{ state, action in
@@ -109,14 +125,10 @@ struct PublicMapFeature {
                 )
             case .binding:
                 return .none
-            case .dismissTapped:
-                if #available(iOS 17.0, *) {
-                    return .dismiss
-                } else {
-                    state.isDismissed = true
-                    return .none
-                }
+            case .delegate:
+                return .none
             case .contentSelected(let value):
+                let selectedPeriodId = state.selectedPeriodId
                 state.$toast.withLock { $0 = nil }
                 state.selectedContent = value
                 switch value {
@@ -139,7 +151,7 @@ struct PublicMapFeature {
                     state.isLoading = true
                     return districtLaunchEffect(
                         district: district,
-                        periodId: state.currentPeriodId,
+                        periodId: selectedPeriodId,
                         appState: state.$appState
                     )
                 }
@@ -178,19 +190,12 @@ struct PublicMapFeature {
                 state.$toast.withLock { $0 = .error(error, title: "地図を表示できませんでした") }
                 return .none
             case .destination:
-                return destinationAction(state: &state, action: action)
+                return .none
             }
         }
         .ifLet(\.$destination, action: \.destination)
     }
     
-    private func destinationAction(state: inout State, action: Action) -> Effect<Action> {
-        switch action {
-        default:
-            return .none
-        }
-    }
-
     func districtLaunchEffect(
         district: District,
         periodId: Period.ID?,

@@ -45,11 +45,13 @@ struct HeadquarterDistrictDetailView: View {
                     ) {
                         store.send(.routeSelected(pair))
                     }
+                    .disabled(store.isLoading)
                 }
                 Button("修正をリセット") {
                     store.send(.resetDraftsTapped)
                 }
                 .disabled(store.routeDrafts.isEmpty)
+                .disabled(store.isLoading)
             }
             Section {
                 loadingButton(
@@ -73,6 +75,7 @@ struct HeadquarterDistrictDetailView: View {
                 } label: {
                     Text("アカウント再発行")
                 }
+                .disabled(store.isLoading)
             } footer: {
                 Text("町データは保持されます。再発行後は入力したメールアドレスでアカウント再登録が必要です。")
             }
@@ -81,7 +84,10 @@ struct HeadquarterDistrictDetailView: View {
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             if store.isEditable {
-                ToolbarSaveButton {
+                ToolbarSaveButton(
+                    isDisabled: store.isLoading && !store.isSaving,
+                    isLoading: store.isSaving
+                ) {
                     store.send(.editTapped)
                 }
             } else {
@@ -107,7 +113,6 @@ struct HeadquarterDistrictDetailView: View {
             DistrictReissueView(store: store)
         }
         .alert($store.scope(state: \.alert, action: \.alert))
-        .loadingOverlay(store.isLoading && !store.isExportLoading)
     }
 }
 
@@ -124,12 +129,7 @@ private extension HeadquarterDistrictDetailView {
             Text(title)
                 .frame(maxWidth: .infinity, alignment: .leading)
         }
-        .overlay(alignment: .trailing) {
-            if showsProgress {
-                ProgressView()
-                    .controlSize(.small)
-            }
-        }
-        .disabled(isDisabled)
+        .loadingIndicator(isLoading: showsProgress)
+        .disabled(isDisabled || showsProgress)
     }
 }

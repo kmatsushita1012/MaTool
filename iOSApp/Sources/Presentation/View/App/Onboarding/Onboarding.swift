@@ -24,7 +24,8 @@ struct OnboardingFeature {
         @Shared fileprivate var appState: AppState?
         
         var festivalErrorMessaage: String?
-        var isLoading: Bool = false
+        var isFestivalLoading: Bool = false
+        var isDistrictLoading: Bool = false
         
         init(launchState: Shared<LaunchState>, appState: Shared<AppState?>) {
             self._launchState = launchState
@@ -72,7 +73,7 @@ struct OnboardingFeature {
                 return .none
             case .binding(\.selectedFestival):
                 guard let festival = state.selectedFestival else { return .none }
-                state.isLoading = true
+                state.isFestivalLoading = true
                 return .task(Action.festivalDidSet) { [appState = state.$appState] in
                     _ = try await selectFestivalUseCase(festivalId: festival.id, appState: appState)
                     return
@@ -93,22 +94,23 @@ struct OnboardingFeature {
                     state.festivalErrorMessaage = "祭典を選択してください。"
                     return .none
                 }
+                state.isDistrictLoading = true
                 return .task(Action.districtDidSet) { [appState = state.$appState] in
                     try await selectDistrictUseCase(districtId: district.id, appState: appState)
                 }
                 .cancellable(id: SceneSessionCancellationID.active, cancelInFlight: true)
             case .festivalDidSet(.success):
-                state.isLoading = false
+                state.isFestivalLoading = false
                 return .none
             case .festivalDidSet(.failure(_)):
-                state.isLoading = false
+                state.isFestivalLoading = false
                 return .none
             case .districtDidSet(.success(let routeId)):
-                state.isLoading = false
+                state.isDistrictLoading = false
                 state.$launchState.withLock{ $0 = .district(.guest, routeId) }
                 return .send(.delegate(.districtSelected(routeId)))
             case .districtDidSet(.failure(_)):
-                state.isLoading = false
+                state.isDistrictLoading = false
                 return .none
             }
         }

@@ -25,6 +25,7 @@ struct FestivalEditScreen: View {
                 baseStatusText: store.base == nil ? "未設定" : "設定済み",
                 checkpoints: store.checkpoints,
                 hazardSections: store.hazardSections,
+                isLoading: store.isLoading,
                 onBaseTapped: { store.send(.baseTapped) },
                 onCheckpointEditTapped: { store.send(.onCheckpointEdit($0)) },
                 onCheckpointAddTapped: { store.send(.onCheckpointAdd) },
@@ -48,7 +49,6 @@ struct FestivalEditScreen: View {
             ) { store in
                 HazardSectionView(store: store)
             }
-            .loadingOverlay(store.isLoading)
             .dismissible(backButton: false, edgeSwipe: false)
             .alert($store.scope(state: \.alert, action: \.alert))
         }
@@ -68,6 +68,7 @@ struct FestivalEditContentView: View {
     let baseStatusText: String
     let checkpoints: [Checkpoint]
     let hazardSections: [HazardSection]
+    let isLoading: Bool
     let onBaseTapped: () -> Void
     let onCheckpointEditTapped: (Checkpoint) -> Void
     let onCheckpointAddTapped: () -> Void
@@ -90,6 +91,7 @@ struct FestivalEditContentView: View {
                     status: baseStatusText,
                     onTap: onBaseTapped
                 )
+                .disabled(isLoading)
             }
             Section(header: Text("紹介文")) {
                 TextEditor(text: $description)
@@ -107,8 +109,10 @@ struct FestivalEditContentView: View {
                         title: checkpoint.name,
                         onTap: { onCheckpointEditTapped(checkpoint) }
                     )
+                    .disabled(isLoading)
                 }
                 Button("追加", systemImage: "plus.circle", action: onCheckpointAddTapped)
+                    .disabled(isLoading)
             }
             Section(header: Text("注釈をつける区間")) {
                 ForEach(Array(hazardSections.enumerated()), id: \.offset) { index, hazard in
@@ -116,14 +120,16 @@ struct FestivalEditContentView: View {
                         title: "\(String(index + 1)). \(hazard.title)",
                         onTap: { onHazardTapped(hazard) }
                     )
+                    .disabled(isLoading)
                 }
                 Button("追加", systemImage: "plus.circle", action: onHazardCreateTapped)
+                    .disabled(isLoading)
             }
         }
         .navigationTitle("祭典情報")
         .toolbar {
-            ToolbarCancelButton(action: onCancelTapped)
-            ToolbarSaveButton(action: onSaveTapped)
+            ToolbarCancelButton(isDisabled: isLoading, action: onCancelTapped)
+            ToolbarSaveButton(isLoading: isLoading, action: onSaveTapped)
         }
         .navigationBarTitleDisplayMode(.inline)
     }
@@ -139,6 +145,7 @@ struct FestivalEditContentView: View {
         baseStatusText: "",
         checkpoints: [],
         hazardSections: [],
+        isLoading: false,
         onBaseTapped: {},
         onCheckpointEditTapped: { _ in },
         onCheckpointAddTapped: {},

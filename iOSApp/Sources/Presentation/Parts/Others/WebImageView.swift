@@ -14,15 +14,24 @@ typealias ContentMode = SwiftUI.ContentMode
 struct WebImageView: View {
     let imagePath: String
     let contentMode: ContentMode
+    private let onImageLoaded: ((CGSize) -> Void)?
 
-    init(imagePath: String, contentMode: ContentMode = .fill) {
+    init(
+        imagePath: String,
+        contentMode: ContentMode = .fill,
+        onImageLoaded: ((CGSize) -> Void)? = nil
+    ) {
         self.imagePath = imagePath
         self.contentMode = contentMode
+        self.onImageLoaded = onImageLoaded
     }
 
     var body: some View {
         if let url = URL(string: imagePath) {
             KFImage(url)
+                .onSuccess { result in
+                    onImageLoaded?(result.image.size)
+                }
                 .placeholder {
                     WithPerceptionTracking{
                         ProgressView()
