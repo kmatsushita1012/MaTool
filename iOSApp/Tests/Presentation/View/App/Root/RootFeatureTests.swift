@@ -313,7 +313,7 @@ struct RootFeatureTests {
     @Test("設定準備に失敗した後は読み込みを終了して再試行できる")
     @MainActor
     func retriesSettingsPreparationAfterFailure() async {
-        let useCase = FailingFestivalListUseCaseSpy(
+        let useCase = FailingFestivalListUseCaseSpy()
         let error = AppError.be(.network("network"))
         let fixture = RootFeatureFixture()
         let appState = Shared<AppState?>(value: fixture.appState)
