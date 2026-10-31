@@ -22,7 +22,7 @@ struct PublicLocationsFeature {
         let festivalId: Festival.ID
         @Shared fileprivate var appState: AppState?
 
-        @Fallback(\PublicLocationsFeature.State.appState?.festivalState.festival)
+        @Fallback(select: { (state: PublicLocationsFeature.State) in state.appState?.festivalState.festival })
         @ObservationStateIgnored
         var festival: Festival
 

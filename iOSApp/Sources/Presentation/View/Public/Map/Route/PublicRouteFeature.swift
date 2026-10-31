@@ -44,7 +44,7 @@ struct PublicRouteFeature {
         var appStateDistrict: District? {
             appState?.district(id: districtId)
         }
-        @Fallback(\PublicRouteFeature.State.appStateDistrict)
+        @Fallback(select: { (state: PublicRouteFeature.State) in state.appStateDistrict })
         @ObservationStateIgnored
         var district: District
         var routes: [RouteEntry] {

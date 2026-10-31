@@ -639,7 +639,7 @@
 			repositoryURL = "https://github.com/kmatsushita1012/swift-fallback-macro";
 			requirement = {
 				kind = upToNextMajorVersion;
-				minimumVersion = 0.1.0;
+				minimumVersion = 0.2.0;
 			};
 		};
 		2957A6C32F6BE2E8005B5EB4 /* XCRemoteSwiftPackageReference "swift-composable-architecture" */ = {

@@ -23,7 +23,7 @@ struct HeadquarterDistrictListFeature {
     struct State: Equatable {
         @Shared fileprivate var appState: AppState?
 
-        @Fallback(\HeadquarterDistrictListFeature.State.appState?.festivalState.festival)
+        @Fallback(select: { (state: HeadquarterDistrictListFeature.State) in state.appState?.festivalState.festival })
         @ObservationStateIgnored
         var festival: Festival
 

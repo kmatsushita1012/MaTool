@@ -27,7 +27,7 @@ struct FestivalDashboardFeature {
     struct State: Equatable {
         @Shared fileprivate var appState: AppState?
 
-        @Fallback(\FestivalDashboardFeature.State.appState?.festivalState.festival)
+        @Fallback(select: { (state: FestivalDashboardFeature.State) in state.appState?.festivalState.festival })
         @ObservationStateIgnored
         var festival: Festival
 

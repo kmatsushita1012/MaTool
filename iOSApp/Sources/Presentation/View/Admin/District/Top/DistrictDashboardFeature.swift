@@ -35,7 +35,7 @@ struct DistrictDashboardFeature {
         var appStateDistrict: District? {
             appState?.district(id: districtId)
         }
-        @Fallback(\DistrictDashboardFeature.State.appStateDistrict)
+        @Fallback(select: { (state: DistrictDashboardFeature.State) in state.appStateDistrict })
         @ObservationStateIgnored
         var district: District
         var routes: [RouteSlot]

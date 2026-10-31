@@ -20,7 +20,7 @@ struct DistrictInfoFeature {
         var appStateDistrict: District? {
             appState?.district(id: districtId)
         }
-        @Fallback(\DistrictInfoFeature.State.appStateDistrict)
+        @Fallback(select: { (state: DistrictInfoFeature.State) in state.appStateDistrict })
         @ObservationStateIgnored
         var district: District
         let performances: [Performance]
