@@ -11,7 +11,7 @@ import CoreLocation
 // MARK: - Dependencies
 enum MapLocationProviderKey: DependencyKey {
     static let liveValue: MapLocationProviderProtocol = MapLocationProvider()
-    static let testValue: MapLocationProviderProtocol = TestMapLocationProvider()
+    static var testValue: MapLocationProviderProtocol { TestMapLocationProvider() }
 }
 
 private actor TestMapLocationProvider: MapLocationProviderProtocol {
