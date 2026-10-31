@@ -10,11 +10,12 @@ struct LoadRouteStateUseCaseTests {
     @MainActor
     func staleRouteResponseIsIgnored() async throws {
         let fixture = RouteLoadingFixture()
-        let dataFetcher = SupersedingRouteDataFetcher(
+        let dataFetcher = SupersedingRouteDataFetcherSpy(
             appState: fixture.appState,
             response: RoutePack(route: fixture.responseRoute, points: [], passages: [])
         )
         let useCase = withDependencies {
+            $0.installTestSpies()
             $0[RouteDataFetcherKey.self] = dataFetcher
         } operation: {
             LoadRouteStateUseCase()
@@ -27,6 +28,8 @@ struct LoadRouteStateUseCaseTests {
         dashboardInitialState.isRouteLoading = true
         let dashboardStore = TestStore(initialState: dashboardInitialState) {
             DistrictDashboardFeature()
+        } withDependencies: {
+            $0.installTestSpies()
         }
 
         let response = try await useCase(routeId: fixture.route.id, appState: fixture.appState)
@@ -48,6 +51,8 @@ struct LoadRouteStateUseCaseTests {
         detailInitialState.isLoading = true
         let detailStore = TestStore(initialState: detailInitialState) {
             HeadquarterDistrictDetailFeature()
+        } withDependencies: {
+            $0.installTestSpies()
         }
         await detailStore.send(.routeReceived(.success(response))) {
             $0.isLoading = false
@@ -109,35 +114,5 @@ private struct RouteLoadingFixture {
             districtId: district.id,
             year: 2026
         ))
-    }
-}
-
-private struct SupersedingRouteDataFetcher: RouteDataFetcherProtocol {
-    let appState: Shared<AppState?>
-    let response: RoutePack
-
-    func fetchAll(districtID: District.ID, query: Query) async throws -> [Route] {
-        throw CancellationError()
-    }
-
-    func fetch(routeID: Route.ID) async throws -> RoutePack {
-        appState.withLock { current in
-            guard var updated = current else { return }
-            updated.routeLoadRequestId = UUID()
-            current = updated
-        }
-        return response
-    }
-
-    func update(_ route: Route, points: [Point], passages: [RoutePassage]) async throws -> RoutePack {
-        throw CancellationError()
-    }
-
-    func create(districtID: District.ID, route: Route, points: [Point], passages: [RoutePassage]) async throws -> RoutePack {
-        throw CancellationError()
-    }
-
-    func delete(_ routeID: Route.ID) async throws {
-        throw CancellationError()
     }
 }

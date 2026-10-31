@@ -47,6 +47,7 @@ struct SettingsFeatureTests {
         ))
 
         let state = withDependencies {
+            $0.installTestSpies()
             $0.values = ConstantValues(
                 apiBaseUrl: "",
                 appStatusUrl: "",

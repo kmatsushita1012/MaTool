@@ -14,6 +14,8 @@ struct DistrictEditFeatureTests {
         )
         let store = TestStore(initialState: initialState) {
             DistrictEditFeature()
+        } withDependencies: {
+            $0.installTestSpies()
         }
 
         #expect(store.state.performances == [fixture.performance])
@@ -36,6 +38,8 @@ struct DistrictEditFeatureTests {
         )
         let store = TestStore(initialState: initialState) {
             DistrictEditFeature()
+        } withDependencies: {
+            $0.installTestSpies()
         }
 
         await store.send(.areaTapped) {
@@ -60,6 +64,8 @@ struct DistrictEditFeatureTests {
             initialState: DistrictDashboardFeature.State(fixture.district, appState: appState)
         ) {
             DistrictDashboardFeature()
+        } withDependencies: {
+            $0.installTestSpies()
         }
 
         await store.send(.onEdit) {

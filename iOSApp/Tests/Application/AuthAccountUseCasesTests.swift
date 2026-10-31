@@ -6,7 +6,7 @@ struct AuthAccountUseCasesTests {
     @Test("認証アカウントUseCaseが各操作をAuthProviderへ渡す")
     func forwardsAccountOperationsToAuthProvider() async throws {
         let calls = AuthAccountCalls()
-        var provider = AuthProvider.noop
+        var provider = AuthProviderSpy().client
         provider.changePassword = { current, new in
             await calls.append("change:\(current):\(new)")
         }
@@ -25,6 +25,7 @@ struct AuthAccountUseCasesTests {
         }
 
         let useCases = withDependencies {
+            $0.installTestSpies()
             $0.authProvider = provider
         } operation: {
             (
