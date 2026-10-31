@@ -33,6 +33,20 @@ struct UserDefaultsClient {
 
 // MARK: - UserDefaultsClient
 extension UserDefaultsClient: DependencyKey {
+  static let testValue = Self(
+    string: unimplemented("UserDefaultsClient.string", placeholder: nil),
+    bool: unimplemented("UserDefaultsClient.bool", placeholder: false),
+    data: unimplemented("UserDefaultsClient.data", placeholder: nil),
+    double: unimplemented("UserDefaultsClient.double", placeholder: 0),
+    integer: unimplemented("UserDefaultsClient.integer", placeholder: 0),
+    remove: unimplemented("UserDefaultsClient.remove"),
+    setString: unimplemented("UserDefaultsClient.setString"),
+    setBool: unimplemented("UserDefaultsClient.setBool"),
+    setData: unimplemented("UserDefaultsClient.setData"),
+    setDouble: unimplemented("UserDefaultsClient.setDouble"),
+    setInteger: unimplemented("UserDefaultsClient.setInteger")
+  )
+
   public static let liveValue: Self = {
     let defaults = { UserDefaults(suiteName: "matool")! }
     return Self(
