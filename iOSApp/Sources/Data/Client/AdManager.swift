@@ -14,6 +14,8 @@ import GoogleMobileAds
 #endif
 
 enum AdManagerKey: DependencyKey {
+    static let testValue: any AdManagerProtocol = TestAdManager()
+
     static let liveValue: any AdManagerProtocol = {
         @Dependency(\.values) var values
         return AdManager(
