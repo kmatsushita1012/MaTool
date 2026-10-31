@@ -111,6 +111,17 @@ extension UserDefaltsManager: UserDefalutsManagerProtocol {
 
 enum UserDefaltsManagerKey: DependencyKey {
     static let liveValue: UserDefalutsManagerProtocol = UserDefaltsManager()
+    static let testValue: UserDefalutsManagerProtocol = TestUserDefaultsManager()
+}
+
+private struct TestUserDefaultsManager: UserDefalutsManagerProtocol {
+    var defaultFestivalId: String? { nil }
+    var defaultDistrictId: String? { nil }
+    var hasRequestedAlwaysLocationPermission: Bool { false }
+
+    func saveDefaultFestivalId(_ value: String?) {}
+    func saveDefaultDistrictId(_ value: String?) {}
+    func saveHasRequestedAlwaysLocationPermission(_ value: Bool) {}
 }
 
 extension UserDefaults: @retroactive @unchecked Sendable {}
