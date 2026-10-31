@@ -4,16 +4,12 @@
 //
 //  Created by 松下和也 on 2025/03/07.
 //
-import Dependencies
 @testable import iOSApp
 
 extension UserDefaultsClient {
-}
-
-extension UserDefaultsClient{
     static let noop = Self(
-        string: { _ in return "" },
-        bool: { _ in return true },
+        string: { _ in nil },
+        bool: { _ in false },
         data: { _ in return nil},
         double: { _ in return 0.0},
         integer: { _ in return 0},
