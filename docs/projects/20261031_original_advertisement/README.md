@@ -85,44 +85,57 @@ Store.ownerId は Backend が認証結果から設定し、クライアントの
 
 本部・町の管理者 Role に広告主の編集権限を自動付与しない。運営側の掲載停止は別の運用権限で実行し、広告主自身が強制停止を解除できないようにする。
 
-## 5. Entity と公開 DTO
+## 5. Entity と公開 DTO（全型一覧・推奨）
 
-MVP は次の主な Entity で構成し、複雑な Advertisement / Campaign / Advertiser / StoreMember の独立 Entity は初期導入しない。
+この案件で追加・変更する型を **Entity／未認証公開 DTO／認証・書き込み DTO／内部補助型** に分け、全件を表にまとめる。既存の Festival・District 等は対象外。型名・細部は実装前の案。
 
-### 5.1 Store（Shared）
+### 5.1 Entity（正本として保持）
 
-| フィールド | 型の例 | 役割 |
+| Entity | フィールド（型の例） | 責務・保存先 | 公開範囲 |
+| --- | --- | --- | --- |
+| **Store** | id: String, festivalId: Festival.ID, ownerId: String, name: String, address: String, coordinate: Coordinate, businessHours: String, description: String?, bannerImagePath: String?, interstitialImagePath: String?, ownerPaused: Bool, moderationStatus: ModerationStatus, createdAt: Date, updatedAt: Date | 店舗情報・広告設定・固定正式画像パス。FESTIVAL# 配下 | 所有者向けのみフル Entity を返却 |
+| **CreditAccount** | storeId: Store.ID, balance: Int, lastPurchasedAt: Date? | 店舗ごとに1つの Credit。STORE# 配下 | 所有者のみ |
+| **PurchaseRecord** | transactionId: String, storeId: Store.ID, productId: String, creditedAmount: Int, purchasedAt: Date, environment: String, revocationStatus: String? | 購入の一意性と検証台帳。PURCHASE# 配下 | 内部のみ。履歴画面には PurchaseHistoryItem |
+| **ImpressionRecord** | impressionId: String, storeId: Store.ID, placement: AdPlacement, chargedAmount: Int, chargedAt: Date | 表示実績・二重減算防止。STORE# 配下 | 内部のみ |
+| **UserRole（既存変更）** | headquarter(festivalId), district(districtId), advertiser(cognitoSub), guest | 認証・認可の Role | API の認証コンテキストで使用 |
+
+Store の画像パスは **一時パス（新画像）・正式パス（維持）・null（削除）** を区別する。`PUT /stores/:storeId` は Store Entity を受け取るが、id・festivalId・ownerId・moderationStatus・createdAt 等のサーバー管理属性はクライアント値を正本としない。既存 Store と照合し、不正変更を拒否する。
+
+### 5.2 公開 DTO（未認証の来場者に返却可能）
+
+| DTO | フィールド（型の例） | 使用先 | 含めない情報 |
+| --- | --- | --- | --- |
+| **PublicStore** | id: String, festivalId: Festival.ID, name: String, address: String, coordinate: Coordinate, businessHours: String, description: String?, bannerImagePath: String?, interstitialImagePath: String? | `GET /festivals/:festivalId/stores`・地図・店舗詳細 | ownerId、残高、停止理由、購入・表示台帳 |
+| **AdCandidate** | storeId: Store.ID, placement: AdPlacement, imagePath: String, impressionId: String, impressionToken: String | `GET /festivals/:festivalId/advertisements/next` | ownerId、残高、他店舗の情報 |
+
+PublicStore / AdCandidate の画像は **正式配置のみ** を参照し、`temporary/` は公開レスポンスに含めない。画像配信方式（CDN・認証 URL 等）は未決定。
+
+### 5.3 認証・書き込み用 DTO（API 境界）
+
+| DTO | フィールド（型の例） | 用途 | アクセス |
+| --- | --- | --- | --- |
+| **StoreCreateRequest** | name: String, address: String, coordinate: Coordinate, businessHours: String, description: String? | `POST /festivals/:festivalId/stores`。id / ownerId は Backend が設定 | 広告主 |
+| **ImageUploadURLRequest** | kind: AdPlacement, contentType: String | `POST /stores/:storeId/images/upload-url` | 所有者 |
+| **ImageUploadURLResponse** | url: String, path: String, expiresAt: Date | 固定一時 S3 パスと署名付き URL を返す。uploadId は不要 | 所有者 |
+| **PurchaseClaimRequest** | signedTransactionInfo: String | `POST /stores/:storeId/purchases` | 所有者 |
+| **PurchaseResult** | transactionId: String, creditedAmount: Int, balance: Int | 同 API の購入確定結果 | 所有者 |
+| **PurchaseHistoryItem** | transactionId: String, productId: String, creditedAmount: Int, purchasedAt: Date | `GET /stores/:storeId/purchases` の表示用 | 所有者 |
+| **ImpressionReportRequest** | impressionId: String, impressionToken: String | `POST /advertisements/impressions` | 来場者 |
+| **AdvertisementReportRequest** | storeId: Store.ID, placement: AdPlacement?, reason: String | `POST /advertisements/reports` | 来場者 |
+
+Store 更新は Store Entity 自体を PUT し、更新済み Store を返す。残高 GET も CreditAccount をそのまま返すため、追加のレスポンス型を作らない。Impression や通報の成功は既存の空応答で返す。
+
+### 5.4 補助型・索引レコード（ドメイン Entity を増やさない）
+
+| 型・レコード | 内容 | 目的 |
 | --- | --- | --- |
-| id | String | Store ID（年度非依存） |
-| festivalId | Festival.ID | 所属する祭典 |
-| ownerId | String | Cognito sub |
-| name / address | String | 店名・住所 |
-| coordinate | Coordinate | 地図上の位置 |
-| businessHours | String | 営業時間（自由記述で開始） |
-| description | String? | 自由記述 |
-| bannerImagePath | String? | 正式登録画像キー |
-| interstitialImagePath | String? | 正式登録画像キー |
-| ownerPaused | Bool | 広告主による停止 |
-| moderationStatus | enum 相当 | 運営停止・許可状態 |
-| createdAt / updatedAt | Date | 管理用 |
+| **AdPlacement** | banner / interstitial | 画像種別・消費量（1 / 2 Credit） |
+| **ModerationStatus** | approved / suspended 等 | 運営停止と広告主停止の分離 |
+| **StoreOwnerReference** | ownerId、storeId、festivalId | `USER#{cognitoSub} / STORE#{storeId}` の検索用参照 |
+| **VerifiedPurchase** | 検証済み取引データ | 未検証入力と Credit Repository の境界 |
+| **VerifiedImpression** | 検証済み表示データ | 未検証入力と減算処理の境界 |
 
-広告主による停止と運営による停止は、単一の isSuspended フラグでは表現しない（後者の解除権限を区別するため）。上記は論理スキーマ案で、Swift の公開 API、NullEncodable 等は既存 Entity の規約に合わせる。
-
-### 5.2 CreditAccount
-
-- storeId
-- balance（非負整数）
-- lastPurchasedAt（未購入時は nil）
-- 更新競合を防ぐ条件付き加減算
-
-残高は Backend / DynamoDB が正本。購入・表示回数を iOS で累積して正本にしない。
-
-### 5.3 購入・表示記録
-
-- PurchaseRecord: transactionId、storeId、productId、creditedAmount、purchasedAt、environment、取消等の照合情報。
-- ImpressionRecord: impressionId、storeId、placement、chargedAmount、chargedAt、必要な一意性情報。
-- 広告配信用 DTO は ownerId・Credit 等を含まない。管理用 Store と来場者向け PublicStore / AdCandidate の公開範囲を分ける。
-- 購入記録は店舗横断で transactionId の一意性を保証する。
+**初期には作らない型**: 独立 Advertiser、Advertisement、Campaign、StoreMember、画像ごとの Upload Entity／uploadId／UUID。1店舗につきバナー1枚・全画面1枚の固定パスで十分。
 
 ## 6. DynamoDB レコード設計（推奨）
 
