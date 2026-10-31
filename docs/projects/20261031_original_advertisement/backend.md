@@ -243,7 +243,7 @@ S3 と DB の同一 Transaction は作らず、コピー成功・DB 失敗の一
 - `AppStoreClient` は Apple の署名済み Transaction、Bundle ID、Environment、Product ID、取引状態、appAccountToken を検証。**Base64 デコードだけでは検証としない。**
 - `PurchaseUsecase` は Store 所有権と署名済み appAccountToken の一致を必須とする。Product ID → 500 / 1000 Credit は Backend が決める。
 - `PurchaseRecord` の付与済みへの条件付き作成／更新と、`CreditAccount` の加算を同一 DynamoDB `TransactWriteItems` で確定。全 Store で transactionId は一意。付与済み Transaction の再送は二重加算せず成功を返す。
-- **未付与かつ返金済み**の取引に、古い署名済み購入情報だけで Credit を付与しない。返金取消後の未付与取引は、正当な購入 Claim を再検証してから一度だけ付与する。
+- **未付与かつ返金済み**の取引に、古い署名済み購入情報だけで Credit を付与しない。返金取消後の未付与取引は、正当な購入 Claim を再検証してから一度だけ付与する。**未付与マーカーから付与済みに更新するとき、`lastRefundEventSignedDate` と `refundStatus` を維持し、後着した古い REFUND を再適用させない**。
 - iOS は Backend の付与成功を確認してから `Transaction.finish()` を実行。未完了取引は `Transaction.unfinished` / `Transaction.updates` で冪等に再送。
 
 ### 9.2 Apple 通知の入口と既存クラスへの追加
@@ -274,8 +274,8 @@ Apple **App Store Server Notifications V2** の HTTPS エンドポイントを A
 1. `PurchaseController` が受信し、`AppStoreClient` が通知と取引の署名・Bundle / Environment / Product を検証する。
 2. `PurchaseUsecase` は `notificationType`、`notificationUUID`、`signedDate`、`transactionId`、`appAccountToken`、`revocationDate` 等を検証済み値から取得。
 3. `PURCHASE#{transactionId} / METADATA` を直接参照する。既存レコードがあれば Store・商品・appAccountToken・環境の一致を検証。
-4. 同じ通知・返金状態を再適用しない。**取引単位で保持する `lastRefundEventSignedDate` より古い通知を反映しない**。`notificationUUID` も診断・重複判定に使う。状態遷移は Repository の条件付き書き込みで確定する。
-5. 第9.4節の Credit 調整を含めて DynamoDB で原子的に確定した後、**HTTP 200**。既処理・対象外も200。DB 障害等で確定できなければ **5xx** として再送可能にする。確定前に200を返さない。
+4. **`REFUND` と `REFUND_REVERSED` は「残高を変えない場合」も必ず処理済み通知時刻を永続化する**。各取引の `lastRefundEventSignedDate` を比較して、**`signedDate <= lastRefundEventSignedDate` の通知は古い／重複として再適用しない**。より新しければ、現在の `refundStatus` と同じイベントでも **`lastRefundEventSignedDate = signedDate` を条件付き UpdateItem で保存**する。購入台帳がない場合は第9.5節の未付与マーカーを保存する。`notificationUUID` は診断に利用し、専用の通知台帳は設けない。
+5. 第9.4節の Credit 調整（必要な場合）または **時刻だけの状態確定**を DynamoDB で完了した後、**HTTP 200**。既処理・対象外も200。**新しい signedDate を保存できなかった段階で成功扱いしない**。DB 障害等で確定できなければ **5xx** として再送可能にする。確定前に200を返さない。
 6. Apple の Production には通知再送があるが Sandbox には同じ再送を期待しない。障害で取りこぼした通知は Apple の **Get Notification History** を使って運営が再取得・再処理する。常時ポーリング基盤は初期には作らない。
 
 ### 9.4 返金時の残高調整（方針 A・採用）
@@ -287,17 +287,18 @@ Apple **App Store Server Notifications V2** の HTTPS エンドポイントを A
 - 購入Bの Credit が残っている場合、購入Aの返金で**購入Bに由来する残高も差し引かれ得る**ことを MVP の割り切りとして許容する。
 - `PurchaseRecord.refundDeductedCredits = deduction` を必ず保存し、`refundStatus = refunded` にする。
 - `REFUND_REVERSED` は **前回の `refundDeductedCredits` だけ加算**し、状態を active に戻す。返金時に回収しなかった消費済み Credit は復元しない。二重加算はしない。
-- 未付与での REFUND / REFUND_REVERSED は **残高を操作しない**。取消後の初回 Credit 加算は、後日正当な購入 Claim があった場合だけ。
+- 未付与での REFUND / REFUND_REVERSED は **残高を操作しないが `lastRefundEventSignedDate` は必ず更新**する。取消後の初回 Credit 加算は、後日正当な購入 Claim があった場合だけ。付与済みで既に `active` の状態への `REFUND_REVERSED` も **残高は触らず signedDate だけ更新**し、後着した古い `REFUND` を防ぐ。
 
 **DynamoDB の処理**: PurchaseRecord と CreditAccount を読み `deduction` を計算。同一 `TransactWriteItems` で (1) PurchaseRecord の前状態・`signedDate` に対する条件付き更新、(2) CreditAccount の **読取残高一致条件付き**減算を実行する。Impression や他購入と競合した場合は最新値を取得して再計算・再試行する。残高を負にしない。返金取り消しの再加算も同様に一回限りの原子的更新で行う。
 
 ### 9.5 付与前に REFUND が先着する場合
 
 - 購入が先に Apple で返金されたが、通信失敗で **PurchaseRecord も Credit 付与もまだない**ケースを扱う。
-- 検証済み REFUND を受信したら同じ `PURCHASE#{transactionId} / METADATA` キーに **`creditGranted = false / refundStatus = refunded` の未付与マーカーを条件付きで新規保存**する。新しい Refund Entity やテーブルは不要。
+- 検証済み `REFUND` を受信したら、同じ `PURCHASE#{transactionId} / METADATA` キーに **`creditGranted = false / refundStatus = refunded` の未付与マーカーを条件付きで新規保存**する。**`REFUND_REVERSED` が先に届き PurchaseRecord がない場合も、`creditGranted = false / refundStatus = active / lastRefundEventSignedDate = T2` の未付与マーカーを保存**する。残高はどちらの場合も変更しない。別の Refund Entity やテーブルは不要。
 - マーカーには Apple が署名した transactionId・productId・appAccountToken・Environment・signedDate を保持。**付与前は Store の逆引きができないため `storeId` は任意**とし、付与済み状態では必須とする。
-- iOS が後から古い購入情報を送っても、マーカーが `refunded` なら付与を拒否。`REFUND_REVERSED` を受けたら `active` に戻すが**自動付与せず**、iOS の検証済み Claim により初回加算する。
-- Claim と REFUND が同時でも同じ PURCHASE キーの条件付き作成・更新が競合を防止する。
+- iOS が後から古い購入情報を送っても、マーカーが `refunded` なら付与を拒否。`REFUND_REVERSED` を受けたら `active` に戻すが**自動付与せず**、iOS の検証済み Claim により初回加算する。その際、未付与マーカーの **最新 `lastRefundEventSignedDate` は保持**する。
+- Claim と通知が同時でも同じ PURCHASE キーの条件付き作成・更新で競合を検出し、最新レコードを再取得して判断する。
+- **必須の順序逆転テスト**：取引が付与済み・`refundStatus=active` の状態で `REFUND_REVERSED(T2)` が届く → Credit を変えず `lastRefundEventSignedDate=T2` を保存 → 後着の `REFUND(T1<T2)` は無視する。**購入台帳がない場合**も、`REFUND_REVERSED(T2)` が active の未付与マーカーを作成 → `REFUND(T1)` は無視 → 後日の検証済み Claim だけが1回付与できる。DB 条件付き更新の競合・再送を確認する。
 
 ### 9.6 リリース条件
 
@@ -416,7 +417,7 @@ scripts/moderate-store                    [追加案: IAM権限の運営停止�
 | Store PUT | 固定一時／正式／明示 null、画像フィールド省略400 |
 | S3 | 他店舗パス拒否、画像形式・サイズ不正、コピー失敗時の DB 未保存、一時画像の整理 |
 | IAP | 署名不正、別 Bundle/Environment/Product、別 Store appAccountToken、二重付与なし |
-| **返金・返金取消** | 未使用500 Credit返金で残高0、使用後は `min(購入 Credit, 残高)`、複数購入・他購入分の残高、REFUND_REVERSEDで実減算額だけ復元、同一通知・古いsignedDateを再適用しない、返金とImpressionの競合時にも負残高なし、未付与REFUND先着→後日Claim拒否、未付与の取消→Claimで一度だけ付与、署名不正、DBエラー時5xx・処理済み200、通知履歴からの再処理 |
+| **返金・返金取消** | 未使用500 Credit返金で残高0、使用後は `min(購入 Credit, 残高)`、複数購入・他購入分の残高、REFUND_REVERSEDで実減算額だけ復元、同一通知・古いsignedDateを再適用しない、返金とImpressionの競合時にも負残高なし、未付与REFUND先着→後日Claim拒否、未付与の取消→Claimで一度だけ付与。**REFUND_REVERSED(T2)→REFUND(T1<T2) は (a) 付与済みactive、(b) PurchaseRecord未作成の両方で最新時刻を保持し、古い REFUND を無視**。署名不正、DBエラー時5xx・処理済み200、通知履歴からの再処理 |
 | Consumable | Backend 成功前に finish しない、未完了 Transaction 再試行、応答消失後の冪等復旧 |
 | Credit と日時 | 残高不足・同時消費で負残高なし。**購入日が新→旧の順に到着しても lastPurchasedAt は逆行しない**、条件付き更新競合時の再取得。**DynamoDBEncoder/Decoder の実属性 `content.last_purchased_at` で更新し、Credit と日時を再取得して round-trip 検証** |
 | Impression | token 改ざん／期限切れ、重複、候補発行後の停止・画像削除 |
