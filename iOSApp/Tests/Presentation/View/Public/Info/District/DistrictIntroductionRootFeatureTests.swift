@@ -34,7 +34,8 @@ struct DistrictIntroductionRootFeatureTests {
         let store = TestStore(initialState: initialState) {
             DistrictIntroductionRootFeature()
         } withDependencies: {
-            $0[ImageCacheClientKey.self] = NoopImageCacheClient()
+            $0.installTestSpies()
+            $0[ImageCacheClientKey.self] = ImageCacheClientSpy()
         }
 
         await store.send(.festivalTapped) {
@@ -49,8 +50,4 @@ struct DistrictIntroductionRootFeatureTests {
         }
         await store.finish()
     }
-}
-
-private struct NoopImageCacheClient: ImageCacheClientProtocol {
-    func preload(paths: [String?]) async {}
 }

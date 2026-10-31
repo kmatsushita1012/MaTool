@@ -10,6 +10,8 @@ struct FestivalInfoFeatureTests {
         let fixture = FestivalInfoFixture()
         let store = TestStore(initialState: fixture.makeState()) {
             FestivalInfoFeature()
+        } withDependencies: {
+            $0.installTestSpies()
         }
 
         await store.send(.binding(.set(\.displayMode, .districts))) {
@@ -29,8 +31,9 @@ struct FestivalInfoFeatureTests {
         let store = TestStore(initialState: fixture.makeState()) {
             FestivalInfoFeature()
         } withDependencies: {
-            $0[FetchDistrictUseCaseKey.self] = StaticFetchDistrictUseCase(pack: pack)
-            $0[ImageCacheClientKey.self] = NoopImageCacheClient()
+            $0.installTestSpies()
+            $0[FetchDistrictUseCaseKey.self] = FetchDistrictUseCaseSpy(pack: pack)
+            $0[ImageCacheClientKey.self] = ImageCacheClientSpy()
         }
 
         await store.send(.districtSelected(fixture.district.id)) {
@@ -108,16 +111,4 @@ private struct FestivalInfoFixture {
     func makeState() -> FestivalInfoFeature.State {
         FestivalInfoFeature.State(festival, appState: appState)
     }
-}
-
-private struct StaticFetchDistrictUseCase: FetchDistrictUseCaseProtocol {
-    let pack: DistrictPack
-
-    func callAsFunction(districtId: District.ID) async throws -> DistrictPack {
-        pack
-    }
-}
-
-private struct NoopImageCacheClient: ImageCacheClientProtocol {
-    func preload(paths: [String?]) async {}
 }

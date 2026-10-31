@@ -91,7 +91,8 @@ struct RouteEditFeatureTests {
         let store = TestStore(initialState: initialState) {
             RouteEditFeature()
         } withDependencies: {
-            $0[FetchRoutePackUseCaseKey.self] = StaticRoutePackUseCase(pack: sourcePack)
+            $0.installTestSpies()
+            $0[FetchRoutePackUseCaseKey.self] = FetchRoutePackUseCaseSpy(pack: sourcePack)
         }
         store.exhaustivity = .off
 
@@ -112,13 +113,5 @@ struct RouteEditFeatureTests {
         #expect(store.state.passages.map(\.id) != sourcePack.passages.map(\.id))
         #expect(store.state.passages.allSatisfy { $0.routeId == copiedRoute.id })
         await store.finish()
-    }
-}
-
-private struct StaticRoutePackUseCase: FetchRoutePackUseCaseProtocol {
-    let pack: RoutePack
-
-    func callAsFunction(routeId: Route.ID) async throws -> RoutePack {
-        pack
     }
 }

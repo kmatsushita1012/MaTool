@@ -20,9 +20,10 @@ struct RootFeatureTests {
         let store = TestStore(initialState: initialState) {
             RootFeature()
         } withDependencies: {
+            $0.installTestSpies()
             $0.values = rootTestConstantValues()
-            $0[FetchFestivalListUseCaseKey.self] = StaticFestivalListUseCase(festivals: [fixture.festival])
-            $0[GetSceneSelectionUseCaseKey.self] = StaticSceneSelectionUseCase(selection: selection)
+            $0[FetchFestivalListUseCaseKey.self] = FetchFestivalListUseCaseSpy(festivals: [fixture.festival])
+            $0[GetSceneSelectionUseCaseKey.self] = GetSceneSelectionUseCaseSpy(selection: selection)
             $0[LastMainScreenUseCaseKey.self] = LastMainScreenUseCaseSpy()
         }
         store.exhaustivity = .off
@@ -50,6 +51,7 @@ struct RootFeatureTests {
         let store = TestStore(initialState: initialState) {
             RootFeature()
         } withDependencies: {
+            $0.installTestSpies()
             $0[LastMainScreenUseCaseKey.self] = lastMainScreen
         }
         store.exhaustivity = .off
@@ -71,6 +73,7 @@ struct RootFeatureTests {
         initialState.$launchState.withLock { $0 = .festival(.guest) }
         initialState.map = initialState.makeMapState(userRole: .guest)
         var settingsState = withDependencies {
+            $0.installTestSpies()
             $0.values = rootTestConstantValues()
         } operation: {
             SettingsFeature.State(
@@ -86,6 +89,7 @@ struct RootFeatureTests {
         let store = TestStore(initialState: initialState) {
             RootFeature()
         } withDependencies: {
+            $0.installTestSpies()
             $0.values = rootTestConstantValues()
             $0[LastMainScreenUseCaseKey.self] = lastMainScreen
         }
@@ -117,6 +121,7 @@ struct RootFeatureTests {
         let store = TestStore(initialState: initialState) {
             RootFeature()
         } withDependencies: {
+            $0.installTestSpies()
             $0[LastMainScreenUseCaseKey.self] = lastMainScreen
         }
         store.exhaustivity = .off
@@ -140,6 +145,7 @@ struct RootFeatureTests {
         let store = TestStore(initialState: initialState) {
             RootFeature()
         } withDependencies: {
+            $0.installTestSpies()
             $0[LastMainScreenUseCaseKey.self] = lastMainScreen
         }
         store.exhaustivity = .off
@@ -161,6 +167,7 @@ struct RootFeatureTests {
         let store = TestStore(initialState: initialState) {
             RootFeature()
         } withDependencies: {
+            $0.installTestSpies()
             $0[LastMainScreenUseCaseKey.self] = lastMainScreen
         }
         store.exhaustivity = .off
@@ -183,6 +190,7 @@ struct RootFeatureTests {
         let store = TestStore(initialState: initialState) {
             RootFeature()
         } withDependencies: {
+            $0.installTestSpies()
             $0[LastMainScreenUseCaseKey.self] = lastMainScreen
         }
         store.exhaustivity = .off
@@ -205,8 +213,9 @@ struct RootFeatureTests {
         let store = TestStore(initialState: initialState) {
             RootFeature()
         } withDependencies: {
+            $0.installTestSpies()
             $0[LastMainScreenUseCaseKey.self] = LastMainScreenUseCaseSpy()
-            $0[ImageCacheClientKey.self] = NoopImageCacheClient()
+            $0[ImageCacheClientKey.self] = ImageCacheClientSpy()
         }
         store.exhaustivity = .off
 
@@ -240,11 +249,12 @@ struct RootFeatureTests {
         let routeStore = TestStore(initialState: routeInitialState) {
             RootFeature()
         } withDependencies: {
+            $0.installTestSpies()
             $0[LastMainScreenUseCaseKey.self] = LastMainScreenUseCaseSpy()
-            $0[FetchDistrictUseCaseKey.self] = StaticDistrictUseCase(
+            $0[FetchDistrictUseCaseKey.self] = FetchDistrictUseCaseSpy(
                 pack: DistrictPack(district: fixture.district, performances: [])
             )
-            $0[ImageCacheClientKey.self] = NoopImageCacheClient()
+            $0[ImageCacheClientKey.self] = ImageCacheClientSpy()
         }
         routeStore.exhaustivity = .off
 
@@ -276,11 +286,12 @@ struct RootFeatureTests {
         let store = TestStore(initialState: initialState) {
             RootFeature()
         } withDependencies: {
+            $0.installTestSpies()
             $0[LastMainScreenUseCaseKey.self] = LastMainScreenUseCaseSpy()
-            $0[FetchDistrictUseCaseKey.self] = StaticDistrictUseCase(
+            $0[FetchDistrictUseCaseKey.self] = FetchDistrictUseCaseSpy(
                 pack: DistrictPack(district: fixture.district, performances: [])
             )
-            $0[ImageCacheClientKey.self] = NoopImageCacheClient()
+            $0[ImageCacheClientKey.self] = ImageCacheClientSpy()
         }
         store.exhaustivity = .off
 
@@ -302,7 +313,7 @@ struct RootFeatureTests {
     @Test("設定準備に失敗した後は読み込みを終了して再試行できる")
     @MainActor
     func retriesSettingsPreparationAfterFailure() async {
-        let useCase = FailingFestivalListUseCase()
+        let useCase = FailingFestivalListUseCaseSpy(
         let error = AppError.be(.network("network"))
         let fixture = RootFeatureFixture()
         let appState = Shared<AppState?>(value: fixture.appState)
@@ -316,6 +327,7 @@ struct RootFeatureTests {
         let store = TestStore(initialState: initialState) {
             RootFeature()
         } withDependencies: {
+            $0.installTestSpies()
             $0.values = rootTestConstantValues()
             $0[FetchFestivalListUseCaseKey.self] = useCase
         }
@@ -367,63 +379,6 @@ private struct RootFeatureFixture {
             ),
             year: 2026
         )
-    }
-}
-
-private struct StaticFestivalListUseCase: FetchFestivalListUseCaseProtocol {
-    let festivals: [Festival]
-
-    func callAsFunction() async throws -> [Festival] {
-        festivals
-    }
-}
-
-private struct StaticDistrictUseCase: FetchDistrictUseCaseProtocol {
-    let pack: DistrictPack
-
-    func callAsFunction(districtId: District.ID) async throws -> DistrictPack {
-        pack
-    }
-}
-
-private struct NoopImageCacheClient: ImageCacheClientProtocol {
-    func preload(paths: [String?]) async {}
-}
-
-private struct StaticSceneSelectionUseCase: GetSceneSelectionUseCaseProtocol {
-    let selection: SceneSelection
-
-    func callAsFunction() -> SceneSelection {
-        selection
-    }
-}
-
-private final class LastMainScreenUseCaseSpy: LastMainScreenUseCaseProtocol, @unchecked Sendable {
-    var value: LastMainScreen?
-
-    init(value: LastMainScreen? = nil) {
-        self.value = value
-    }
-
-    func load() -> LastMainScreen? {
-        value
-    }
-
-    func save(_ screen: LastMainScreen?) {
-        value = screen
-    }
-}
-
-private actor FailingFestivalListUseCase: FetchFestivalListUseCaseProtocol {
-    private var fetchCalls = 0
-
-    func callAsFunction() async throws -> [Festival] {
-        fetchCalls += 1
-        throw AppError.be(.network("network"))
-    }
-
-    func fetchCallCount() -> Int {
-        fetchCalls
     }
 }
 
