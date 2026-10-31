@@ -11,7 +11,7 @@ struct MapView: View {
     let points: [PointEntry]
     let districtAreaOverlays: [DistrictAreaOverlay]
     let floats: [FloatEntry]
-    let floatAnnotation: FloatAnnotation?
+    let floatAnnotation: FloatMapItem?
     let showsDistrictAreaOverlay: Bool
     @Binding var region: MKCoordinateRegion
     @Binding var size: CGSize?
@@ -22,7 +22,7 @@ struct MapView: View {
     @State private var displayedRegion: MKCoordinateRegion
     @State private var selectedPoint: Point.ID?
 
-    init(style: Style, points: [PointEntry] = [], districtAreaOverlays: [DistrictAreaOverlay] = [], showsDistrictAreaOverlay: Bool = false, floatAnnotation: FloatAnnotation? = nil, region: Binding<MKCoordinateRegion>, size: Binding<CGSize?> = .constant(nil), pointTapped: @escaping (PointEntry) -> Void = { _ in }, floatTapped: @escaping (FloatEntry) -> Void = { _ in }, onLongPress: @escaping (Coordinate) -> Void = { _ in }) {
+    init(style: Style, points: [PointEntry] = [], districtAreaOverlays: [DistrictAreaOverlay] = [], showsDistrictAreaOverlay: Bool = false, floatAnnotation: FloatMapItem? = nil, region: Binding<MKCoordinateRegion>, size: Binding<CGSize?> = .constant(nil), pointTapped: @escaping (PointEntry) -> Void = { _ in }, floatTapped: @escaping (FloatEntry) -> Void = { _ in }, onLongPress: @escaping (Coordinate) -> Void = { _ in }) {
         self.init(style: style, points: points, floats: [], districtAreaOverlays: districtAreaOverlays, showsDistrictAreaOverlay: showsDistrictAreaOverlay, floatAnnotation: floatAnnotation, region: region, size: size, pointTapped: pointTapped, floatTapped: floatTapped, onLongPress: onLongPress)
     }
 
@@ -30,7 +30,7 @@ struct MapView: View {
         self.init(style: style, points: points, floats: floats, districtAreaOverlays: districtAreaOverlays, showsDistrictAreaOverlay: showsDistrictAreaOverlay, floatAnnotation: nil, region: region, size: size, pointTapped: pointTapped, floatTapped: floatTapped, onLongPress: onLongPress)
     }
 
-    private init(style: Style, points: [PointEntry], floats: [FloatEntry], districtAreaOverlays: [DistrictAreaOverlay], showsDistrictAreaOverlay: Bool, floatAnnotation: FloatAnnotation?, region: Binding<MKCoordinateRegion>, size: Binding<CGSize?>, pointTapped: @escaping (PointEntry) -> Void, floatTapped: @escaping (FloatEntry) -> Void, onLongPress: @escaping (Coordinate) -> Void) {
+    private init(style: Style, points: [PointEntry], floats: [FloatEntry], districtAreaOverlays: [DistrictAreaOverlay], showsDistrictAreaOverlay: Bool, floatAnnotation: FloatMapItem?, region: Binding<MKCoordinateRegion>, size: Binding<CGSize?>, pointTapped: @escaping (PointEntry) -> Void, floatTapped: @escaping (FloatEntry) -> Void, onLongPress: @escaping (Coordinate) -> Void) {
         self.style = style
         self.points = points
         self.floats = floats
@@ -79,9 +79,9 @@ struct MapView: View {
                             .tag(point.id)
                     }
                     if let floatAnnotation {
-                        Annotation(floatAnnotation.title ?? "", coordinate: floatAnnotation.coordinate) {
-                            FloatMapLabel(title: floatAnnotation.title ?? "") {
-                                if let current = floatAnnotation as? FloatCurrentAnnotation { floatTapped(current.entry) }
+                        Annotation(floatAnnotation.title, coordinate: floatAnnotation.coordinate.toCL()) {
+                            FloatMapLabel(title: floatAnnotation.title) {
+                                if let entry = floatAnnotation.entry { floatTapped(entry) }
                             }
                         }
                         .annotationTitles(.hidden)

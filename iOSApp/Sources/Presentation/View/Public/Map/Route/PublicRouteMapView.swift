@@ -25,11 +25,11 @@ struct PublicRouteMapView: View {
         )
     }
     
-    var floatAnnotation: FloatAnnotation? {
+    var floatAnnotation: FloatMapItem? {
         if store.replay.isRunning {
-            replayController.annotation
+            replayController.frame.annotation
         } else if let float = store.float  {
-            FloatCurrentAnnotation(float)
+            FloatMapItem(title: float.district.name, coordinate: float.floatLocation.coordinate, entry: float)
         } else {
             nil
         }
@@ -132,7 +132,7 @@ extension PublicRouteMapView {
     var slider: some View {
         Slider(
             value: Binding(
-                get: { replayController.seekValue },
+                get: { replayController.frame.progress },
                 set: { store.send(.didSeek($0)) }
             )
         )
