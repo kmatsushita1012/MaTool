@@ -1,435 +1,200 @@
-//
-//  MapView.swift
-//  MaTool
-//
-//  Created by 松下和也 on 2026/01/18.
-//
-
-import SwiftUI
-import UIKit
-import Shared
 import MapKit
+import Shared
+import SwiftUI
 
-struct MapView: UIViewRepresentable {
+struct MapView: View {
     enum Style: Entity {
-        case `public`
-        case admin
-        case edit
+        case `public`, admin, edit
     }
-    
+
     let style: Style
     let points: [PointEntry]
-    let polyline: [Coordinate]
     let districtAreaOverlays: [DistrictAreaOverlay]
     let floats: [FloatEntry]
     let floatAnnotation: FloatAnnotation?
     let showsDistrictAreaOverlay: Bool
     @Binding var region: MKCoordinateRegion
     @Binding var size: CGSize?
-    let pointTapped: (PointEntry)->Void
-    let floatTapped: (FloatEntry)->Void
+    let pointTapped: (PointEntry) -> Void
+    let floatTapped: (FloatEntry) -> Void
     let onLongPress: (Coordinate) -> Void
-    
-    private init(style: Style, points: [PointEntry], polyline: [Coordinate], districtAreaOverlays: [DistrictAreaOverlay] = [], floats: [FloatEntry] = [], floatAnnotation: FloatAnnotation? = nil, showsDistrictAreaOverlay: Bool = false, region: Binding<MKCoordinateRegion>, size: Binding<CGSize?>, pointTapped: @escaping (PointEntry) -> Void, floatTapped: @escaping (FloatEntry) -> Void, onLongPress: @escaping (Coordinate) -> Void) {
+    @State private var position: MapCameraPosition
+    @State private var displayedRegion: MKCoordinateRegion
+    @State private var selectedPoint: Point.ID?
+
+    init(style: Style, points: [PointEntry] = [], districtAreaOverlays: [DistrictAreaOverlay] = [], showsDistrictAreaOverlay: Bool = false, floatAnnotation: FloatAnnotation? = nil, region: Binding<MKCoordinateRegion>, size: Binding<CGSize?> = .constant(nil), pointTapped: @escaping (PointEntry) -> Void = { _ in }, floatTapped: @escaping (FloatEntry) -> Void = { _ in }, onLongPress: @escaping (Coordinate) -> Void = { _ in }) {
+        self.init(style: style, points: points, floats: [], districtAreaOverlays: districtAreaOverlays, showsDistrictAreaOverlay: showsDistrictAreaOverlay, floatAnnotation: floatAnnotation, region: region, size: size, pointTapped: pointTapped, floatTapped: floatTapped, onLongPress: onLongPress)
+    }
+
+    init(style: Style, points: [PointEntry] = [], floats: [FloatEntry], districtAreaOverlays: [DistrictAreaOverlay] = [], showsDistrictAreaOverlay: Bool = false, region: Binding<MKCoordinateRegion>, size: Binding<CGSize?> = .constant(nil), pointTapped: @escaping (PointEntry) -> Void = { _ in }, floatTapped: @escaping (FloatEntry) -> Void = { _ in }, onLongPress: @escaping (Coordinate) -> Void = { _ in }) {
+        self.init(style: style, points: points, floats: floats, districtAreaOverlays: districtAreaOverlays, showsDistrictAreaOverlay: showsDistrictAreaOverlay, floatAnnotation: nil, region: region, size: size, pointTapped: pointTapped, floatTapped: floatTapped, onLongPress: onLongPress)
+    }
+
+    private init(style: Style, points: [PointEntry], floats: [FloatEntry], districtAreaOverlays: [DistrictAreaOverlay], showsDistrictAreaOverlay: Bool, floatAnnotation: FloatAnnotation?, region: Binding<MKCoordinateRegion>, size: Binding<CGSize?>, pointTapped: @escaping (PointEntry) -> Void, floatTapped: @escaping (FloatEntry) -> Void, onLongPress: @escaping (Coordinate) -> Void) {
         self.style = style
         self.points = points
-        self.polyline = polyline
-        self.districtAreaOverlays = districtAreaOverlays
         self.floats = floats
-        self.floatAnnotation = floatAnnotation
+        self.districtAreaOverlays = districtAreaOverlays
         self.showsDistrictAreaOverlay = showsDistrictAreaOverlay
-        self._size = size
+        self.floatAnnotation = floatAnnotation
         self._region = region
+        self._size = size
         self.pointTapped = pointTapped
         self.floatTapped = floatTapped
         self.onLongPress = onLongPress
-    }
-    
-    init(
-        style: Style,
-        points: [PointEntry] = [],
-        districtAreaOverlays: [DistrictAreaOverlay] = [],
-        showsDistrictAreaOverlay: Bool = false,
-        floatAnnotation: FloatAnnotation? = nil,
-        region: Binding<MKCoordinateRegion>,
-        size: Binding<CGSize?> = .constant(nil),
-        pointTapped: @escaping (PointEntry) -> Void = { _ in },
-        floatTapped: @escaping (FloatEntry) -> Void = { _ in },
-        onLongPress: @escaping (Coordinate) -> Void = { _ in }
-    ) {
-        self.init(style: style, points: points, polyline: points.map(\.coordinate), districtAreaOverlays: districtAreaOverlays, floatAnnotation: floatAnnotation, showsDistrictAreaOverlay: showsDistrictAreaOverlay, region: region, size: size, pointTapped: pointTapped, floatTapped: floatTapped, onLongPress: onLongPress)
-    }
-    
-    init(
-        style: Style,
-        points: [PointEntry] = [],
-        floats: [FloatEntry],
-        districtAreaOverlays: [DistrictAreaOverlay] = [],
-        showsDistrictAreaOverlay: Bool = false,
-        region: Binding<MKCoordinateRegion>,
-        size: Binding<CGSize?> = .constant(nil),
-        pointTapped: @escaping (PointEntry) -> Void = { _ in },
-        floatTapped: @escaping (FloatEntry) -> Void = { _ in },
-        onLongPress: @escaping (Coordinate) -> Void = { _ in }
-    ) {
-        self.init(style: style, points: points, polyline: points.map(\.coordinate), districtAreaOverlays: districtAreaOverlays, floats: floats, showsDistrictAreaOverlay: showsDistrictAreaOverlay, region: region, size: size, pointTapped: pointTapped, floatTapped: floatTapped, onLongPress: onLongPress)
-    }
-   
-    
-    func makeCoordinator() -> Coordinator {
-        Coordinator(self)
+        self._position = State(initialValue: .region(region.wrappedValue))
+        self._displayedRegion = State(initialValue: region.wrappedValue)
     }
 
-    func makeUIView(context: Context) -> MKMapView {
-        let mapView = MKMapView()
-        mapView.delegate = context.coordinator
-        mapView.setRegion(region, animated: false)
-        mapView.showsUserLocation = true
-        // 長押しジェスチャー追加
-        let longPress = UILongPressGestureRecognizer(target: context.coordinator, action: #selector(Coordinator.handleLongPress(_:)))
-        mapView.addGestureRecognizer(longPress)
-        
-        mapView.showsCompass = false
-        
-        return mapView
+    var body: some View {
+        GeometryReader { geometry in
+            MapReader { proxy in
+                Map(position: $position, selection: $selectedPoint) {
+                    UserAnnotation()
+                    if showsDistrictAreaOverlay {
+                        ForEach(districtAreaOverlays) { overlay in
+                            let color = Color(uiColor: districtAreaPalette[overlay.colorIndex % districtAreaPalette.count])
+                            MapPolygon(coordinates: overlay.area.map { $0.toCL() })
+                                .foregroundStyle(color.opacity(0.2))
+                                .stroke(color.opacity(0.9), lineWidth: 1.5)
+                            Annotation(overlay.districtName, coordinate: overlay.center.toCL()) {
+                                Text(overlay.districtName)
+                                    .font(.caption.bold())
+                                    .foregroundStyle(.white)
+                                    .padding(.horizontal, 14)
+                                    .padding(.vertical, 8)
+                                    .background(color.opacity(0.8), in: Capsule())
+                                    .overlay(Capsule().stroke(.white, lineWidth: 1))
+                            }
+                            .annotationTitles(.hidden)
+                        }
+                    }
+                    ForEach(Array(splitPoints().enumerated()), id: \.offset) { index, segment in
+                        MapPolyline(coordinates: segment.map { $0.toCL() })
+                            .stroke(index.isMultiple(of: 2) ? .blue : .green, lineWidth: 4)
+                    }
+                    ForEach(points.filter(style: style)) { point in
+                        Marker(point.title ?? "", coordinate: point.coordinate.toCL())
+                            .tint(Color.annotation)
+                            .tag(point.id)
+                    }
+                    if let floatAnnotation {
+                        Annotation(floatAnnotation.title ?? "", coordinate: floatAnnotation.coordinate) {
+                            FloatMapLabel(title: floatAnnotation.title ?? "") {
+                                if let current = floatAnnotation as? FloatCurrentAnnotation { floatTapped(current.entry) }
+                            }
+                        }
+                        .annotationTitles(.hidden)
+                    } else {
+                        ForEach(floats) { float in
+                            Annotation(float.district.name, coordinate: float.floatLocation.coordinate.toCL()) {
+                                FloatMapLabel(title: float.district.name) { floatTapped(float) }
+                            }
+                            .annotationTitles(.hidden)
+                        }
+                    }
+                }
+                .mapStyle(.standard(pointsOfInterest: style == .public ? .excluding(.excludedForPublic) : .including(.includedForAdmin)))
+                .mapControlVisibility(.hidden)
+                .onChange(of: selectedPoint) { _, id in
+                    guard let id, let point = points.first(where: { $0.id == id }) else { return }
+                    selectedPoint = nil
+                    pointTapped(point)
+                }
+                .onMapCameraChange(frequency: .onEnd) { context in
+                    displayedRegion = context.region
+                    region = context.region
+                }
+                .onChange(of: region) { _, newRegion in
+                    guard !sameRegion(newRegion, displayedRegion) else { return }
+                    displayedRegion = newRegion
+                    withAnimation { position = .region(newRegion) }
+                }
+                .simultaneousGesture(
+                    LongPressGesture().sequenced(before: DragGesture(minimumDistance: 0))
+                        .onEnded { value in
+                            if case let .second(true, drag?) = value,
+                               let coordinate = proxy.convert(drag.startLocation, from: .local) {
+                                onLongPress(.fromCL(coordinate))
+                            }
+                        }
+                )
+            }
+            .onAppear { size = geometry.size }
+            .onChange(of: geometry.size) { _, newSize in size = newSize }
+        }
     }
 
-    func updateUIView(_ mapView: MKMapView, context: Context) {
-        context.coordinator.updateDistrictAreaOverlays(
-            districtAreaOverlays,
-            isVisible: showsDistrictAreaOverlay,
-            in: mapView
-        )
-        mapView.updatePoints(from: points.filter(style: style))
-        // ポリラインを isBoundary で分割し、色を交互に設定
-        let segments: [[Coordinate]] = splitPoints()
-        // 色を交互に
-        var coloredPolylines: [PathPolyline] = []
-        for (i, seg) in segments.enumerated() {
-            let color: UIColor = (i % 2 == 0) ? .systemBlue : .systemGreen
-            coloredPolylines.append(PathPolyline(seg, color: color))
-        }
-        mapView.updatePolylines(coloredPolylines)
-        
-        if let floatAnnotation {
-            mapView.updateFloat(floatAnnotation)
-        } else if !floats.isEmpty {
-            mapView.updateFloats(from: floats)
-        } else {
-            mapView.removeFloats()
-        }
-        
-        
-        if !context.coordinator.isSameRegion(lhs: region, rhs: mapView.region) {
-            context.coordinator.applyExternalRegion(region, to: mapView)
-        }
-        
-        if size != mapView.frame.size{
-            size = mapView.frame.size
-        }
-        
-        if style == .admin || style == .edit {
-            mapView.pointOfInterestFilter = MKPointOfInterestFilter(including: .includedForAdmin)
-        } else {
-            mapView.pointOfInterestFilter = MKPointOfInterestFilter(excluding: .excludedForPublic)
-        }
-    }
-    
     private func splitPoints() -> [[Coordinate]] {
-        // points と polyline は同一順序を前提にし、points の isBoundary を見て分割
-        guard points.count == polyline.count else {
-            // フォールバック: 単一セグメント
-            return [polyline]
-        }
         var result: [[Coordinate]] = []
         var current: [Coordinate] = []
-        for (idx, coord) in polyline.enumerated() {
-            // セグメントに座標を追加
-            current.append(coord)
-            // 次が境界、または末尾なら確定
-            let isBoundary = points[idx].point.isBoundary
-            if isBoundary && !current.isEmpty {
+        for point in points {
+            current.append(point.coordinate)
+            if point.point.isBoundary {
                 result.append(current)
-                current = [coord]
+                current = [point.coordinate]
             }
         }
-        if !current.isEmpty { result.append(current) }
-        // 2点未満のセグメントは描画しない
+        result.append(current)
         return result.filter { $0.count >= 2 }
     }
 
-    class Coordinator: NSObject, MKMapViewDelegate {
-        var parent: MapView
-        private var renderedDistrictAreaOverlays: Set<DistrictAreaOverlay> = []
-        private var isDistrictAreaOverlayVisible = false
-        private var pendingExternalRegion: MKCoordinateRegion?
-        
-        init(_ parent: MapView) {
-            self.parent = parent
-        }
-        
-        //MARK: - MKMapViewDelegate
-        func mapView(_ mapView: MKMapView, viewFor annotation: MKAnnotation) -> MKAnnotationView? {
-            if annotation is MKUserLocation {
-                return nil
-            }
-            if let districtAnnotation = annotation as? DistrictAreaLabelAnnotation {
-                return DistrictAreaLabelAnnotationView.view(for: mapView, annotation: districtAnnotation)
-            }
-            if let pointAnnotation = annotation as? PointAnnotation {
-                return PointAnnotationView.view(for: mapView, annotation: pointAnnotation)
-            }
-            if let FloatCurrentAnnotation = annotation as? FloatAnnotation {
-                return FloatAnnotationView.view(for: mapView, annotation: FloatCurrentAnnotation)
-            }
-            return nil
-        }
-        
-        func mapView(_ mapView: MKMapView, didSelect view: MKAnnotationView) {
-            // 膨らみ防止
-            if let annotation = view.annotation {
-                mapView.deselectAnnotation(annotation, animated: false)
-            }
-            
-            if let annotation = view.annotation as? PointAnnotation {
-                parent.pointTapped(annotation.entry)
-            } else if let annotation = view.annotation as? FloatCurrentAnnotation {
-                parent.floatTapped(annotation.entry)
-            }
-        }
-        
-        func mapView(_ mapView: MKMapView, rendererFor overlay: MKOverlay) -> MKOverlayRenderer {
-            if let polygon = overlay as? DistrictPolygonOverlay {
-                return polygon.renderer()
-            }
-            if let polyline = overlay as? PathPolyline {
-                return polyline.renderer()
-            }
-            return MKOverlayRenderer()
-        }
-        
-        func mapView(_ mapView: MKMapView, regionDidChangeAnimated animated: Bool) {
-            if let pendingExternalRegion {
-                if isSameRegion(lhs: pendingExternalRegion, rhs: mapView.region) {
-                    self.pendingExternalRegion = nil
-                    return
-                }
-
-                self.pendingExternalRegion = nil
-            }
-            parent.region = mapView.region
-        }
-        
-        @objc func handleLongPress(_ gesture: UILongPressGestureRecognizer) {
-            guard gesture.state == .began,
-                  let mapView = gesture.view as? MKMapView else { return }
-            let location = gesture.location(in: mapView)
-            let coordinate = mapView.convert(location, toCoordinateFrom: mapView)
-            parent.onLongPress(Coordinate.fromCL(coordinate))
-        }
-
-        func updateDistrictAreaOverlays(
-            _ districtAreaOverlays: [DistrictAreaOverlay],
-            isVisible: Bool,
-            in mapView: MKMapView
-        ) {
-            let newOverlays = Set(districtAreaOverlays)
-
-            guard isVisible != isDistrictAreaOverlayVisible || newOverlays != renderedDistrictAreaOverlays else {
-                return
-            }
-
-            if !isVisible {
-                removeDistrictAreaOverlays(in: mapView)
-                renderedDistrictAreaOverlays = []
-                isDistrictAreaOverlayVisible = false
-                return
-            }
-
-            removeDistrictAreaOverlays(in: mapView)
-            mapView.addOverlays(districtAreaOverlays.map(DistrictPolygonOverlay.init))
-            mapView.addAnnotations(districtAreaOverlays.map(DistrictAreaLabelAnnotation.init))
-            renderedDistrictAreaOverlays = newOverlays
-            isDistrictAreaOverlayVisible = true
-        }
-
-        private func removeDistrictAreaOverlays(in mapView: MKMapView) {
-            let oldPolygons = mapView.overlays.compactMap { $0 as? DistrictPolygonOverlay }
-            let oldLabels = mapView.annotations.compactMap { $0 as? DistrictAreaLabelAnnotation }
-            mapView.removeOverlays(oldPolygons)
-            mapView.removeAnnotations(oldLabels)
-        }
-
-        func applyExternalRegion(_ region: MKCoordinateRegion, to mapView: MKMapView) {
-            guard !isSameRegion(lhs: region, rhs: mapView.region) else { return }
-            pendingExternalRegion = region
-            mapView.setRegion(region, animated: true)
-        }
-
-        func isSameRegion(lhs: MKCoordinateRegion, rhs: MKCoordinateRegion) -> Bool {
-            let centerEpsilon: CLLocationDegrees = 0.00001
-            let spanEpsilon: CLLocationDegrees = 0.00001
-
-            let latDiff = abs(lhs.center.latitude - rhs.center.latitude)
-            let lonDiff = abs(lhs.center.longitude - rhs.center.longitude)
-            let latSpanDiff = abs(lhs.span.latitudeDelta - rhs.span.latitudeDelta)
-            let lonSpanDiff = abs(lhs.span.longitudeDelta - rhs.span.longitudeDelta)
-
-            return latDiff <= centerEpsilon
-                && lonDiff <= centerEpsilon
-                && latSpanDiff <= spanEpsilon
-                && lonSpanDiff <= spanEpsilon
-        }
+    private func sameRegion(_ lhs: MKCoordinateRegion, _ rhs: MKCoordinateRegion) -> Bool {
+        abs(lhs.center.latitude - rhs.center.latitude) <= 0.00001 &&
+        abs(lhs.center.longitude - rhs.center.longitude) <= 0.00001 &&
+        abs(lhs.span.latitudeDelta - rhs.span.latitudeDelta) <= 0.00001 &&
+        abs(lhs.span.longitudeDelta - rhs.span.longitudeDelta) <= 0.00001
     }
 }
 
-fileprivate extension Array where Element == PointEntry {
+private struct FloatMapLabel: View {
+    let title: String
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            VStack(spacing: 2) {
+                Image(systemName: "circle.circle.fill")
+                    .font(.title)
+                    .foregroundStyle(.red)
+                Text(title)
+                    .font(.system(size: 14, weight: .bold))
+                    .foregroundStyle(.primary)
+            }
+            .shadow(color: Color(uiColor: .systemBackground), radius: 4, y: 2)
+        }
+        .buttonStyle(.plain)
+    }
+}
+
+private extension Array where Element == PointEntry {
     func filter(style: MapView.Style) -> Self {
         switch style {
-        case .public:
-            self.filter{ $0.anchor != nil || $0.performance != nil }
-        case .admin:
-            self.filter{ $0.anchor != nil || $0.checkpoint != nil }
-        case .edit:
-            self
-        }
-    }
-}
-
-fileprivate extension MKMapView {
-    func updatePoints(from entries: [PointEntry], stryle: PointAnnotation.Stryle = .simple){
-        let existingAnnotations = annotations.compactMap { $0 as? PointAnnotation }
-
-        let existingEntries = Set(existingAnnotations.map { $0.entry })
-        let newEntries = Set(entries)
-
-        // 削除対象
-        let annotationsToRemove = existingAnnotations.filter {
-            !newEntries.contains($0.entry)
-        }
-
-        // 追加対象
-        let entriesToAdd = newEntries.subtracting(existingEntries)
-
-        removeAnnotations(annotationsToRemove)
-
-        let annotationsToAdd = entriesToAdd.map { PointAnnotation($0, style: stryle) }
-        addAnnotations(annotationsToAdd)
-    }
-    
-    func updatePolyline(_ coordinates: [Coordinate]) {
-        let oldPolylines = overlays.compactMap { $0 as? PathPolyline }
-        addOverlay(PathPolyline(coordinates))
-        removeOverlays(oldPolylines)
-    }
-    
-    func updatePolylines(_ polylines: [PathPolyline]) {
-        let oldPolylines = overlays.compactMap { $0 as? PathPolyline }
-        addOverlays(polylines)
-        removeOverlays(oldPolylines)
-    }
-
-    func removeFloats() {
-        let old = annotations.compactMap { $0 as? FloatAnnotation }
-        removeAnnotations(old)
-    }
-    
-    func updateFloats(from entries: [FloatEntry]){
-        let existingAnnotations = annotations.compactMap { $0 as? FloatCurrentAnnotation }
-
-        let existingEntries = Set(existingAnnotations.map { $0.entry })
-        let newEntries = Set(entries)
-
-        // 削除対象
-        let annotationsToRemove = existingAnnotations.filter {
-            !newEntries.contains($0.entry)
-        }
-
-        // 追加対象
-        let entriesToAdd = newEntries.subtracting(existingEntries)
-
-        removeAnnotations(annotationsToRemove)
-
-        let annotationsToAdd = entriesToAdd.map { FloatCurrentAnnotation($0) }
-        addAnnotations(annotationsToAdd)
-    }
-    
-    func updateFloat(_ float: FloatAnnotation) {
-        let old = annotations.compactMap { $0 as? FloatAnnotation }
-        let toRemove = old.filter { $0 != float }
-        if !old.contains(where: { $0 == float }) {
-            removeAnnotations(toRemove)
-            addAnnotation(float)
-        } else {
-            removeAnnotations(toRemove)
+        case .public: filter { $0.anchor != nil || $0.performance != nil }
+        case .admin: filter { $0.anchor != nil || $0.checkpoint != nil }
+        case .edit: self
         }
     }
 }
 
 extension MapView: Equatable {
     static func == (lhs: MapView, rhs: MapView) -> Bool {
-        return lhs.style == rhs.style &&
-        lhs.points == rhs.points &&
-        lhs.polyline == rhs.polyline &&
-        lhs.districtAreaOverlays == rhs.districtAreaOverlays &&
-        lhs.floats == rhs.floats &&
+        lhs.style == rhs.style && lhs.points == rhs.points &&
+        lhs.districtAreaOverlays == rhs.districtAreaOverlays && lhs.floats == rhs.floats &&
         lhs.floatAnnotation == rhs.floatAnnotation &&
-        lhs.showsDistrictAreaOverlay == rhs.showsDistrictAreaOverlay &&
-        lhs.region == rhs.region
+        lhs.showsDistrictAreaOverlay == rhs.showsDistrictAreaOverlay && lhs.region == rhs.region
     }
 }
 
 extension Array where Element == MKPointOfInterestCategory {
-    static var excludedForPublic : [MKPointOfInterestCategory] {
-        var categories: [MKPointOfInterestCategory] = [
-            .nightlife,
-            .restaurant
-        ]
-        if #available(iOS 18.0, *) {
-            categories.append(contentsOf: [
-                .beauty
-            ])
-        }
-        return categories
+    static var excludedForPublic: [MKPointOfInterestCategory] {
+        [.nightlife, .restaurant, .beauty]
     }
-    
+
     static var includedForAdmin: [MKPointOfInterestCategory] {
-        var categories: [MKPointOfInterestCategory] = [
-            .airport,
-            .aquarium,
-            .bank,
-            .beach,
-            .campground,
-            .fireStation,
-            .hospital,
-            .library,
-            .museum,
-            .nationalPark,
-            .park,
-            .publicTransport,
-            .police,
-            .postOffice,
-            .restroom,
-            .stadium,
-            .school,
-            .university,
-            .zoo
-        ]
-        if #available(iOS 18.0, *) {
-            categories.append(contentsOf: [
-                .castle,
-                .conventionCenter,
-                .fortress,
-                .fairground,
-                .golf,
-                .miniGolf,
-                .kayaking,
-                .landmark,
-                .mailbox,
-                .musicVenue,
-                .nationalMonument
-            ])
-        }
-        return categories
+        [.airport, .aquarium, .bank, .beach, .campground, .fireStation, .hospital, .library,
+         .museum, .nationalPark, .park, .publicTransport, .police, .postOffice, .restroom,
+         .stadium, .school, .university, .zoo, .castle, .conventionCenter, .fortress,
+         .fairground, .golf, .miniGolf, .kayaking, .landmark, .mailbox, .musicVenue, .nationalMonument]
     }
 }
