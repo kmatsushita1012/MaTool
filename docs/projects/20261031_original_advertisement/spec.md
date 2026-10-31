@@ -229,78 +229,95 @@ Store 作成時、Backend が **Store ごとに固有かつ不変の `purchaseAc
 
 ## 9. 配信・Viewable・消費
 
-### 9.1 掲載可能条件
+### 9.1 掲載可能条件・ランダム選択
 
-Festival が一致し、店舗が停止されておらず、その形式の画像があり、残高が形式の消費量（バナー 1 / 全画面 2）以上の店舗だけを候補にする。地図ピンに画像がなくても店舗詳細を残すか、ピンの課金有無は後述の未確定事項。
+Festival 一致・店舗公開可・運営停止なし・広告主停止なし・対象画像の有効な `path + imageVersionId` がある・残高がバナー1／全画面2 Credit 以上、を候補の必須条件とする。掲載可能な店舗の間では **単純ランダムで各店舗を等確率**に選び、表示回数を使った重み付けをしない。地図ピンの消費については未確定。
 
-候補から **各店舗等確率**で選択する。過去表示回数に基づく重み付け、直近除外、時間帯・Period 別出し分けは作らない。店舗が多数の場合の候補取得最適化はパフォーマンスを測ってから対応する。
+### 9.2 iOS 表示
 
-### 9.2 広告表示
+- バナー: 地図下部に表示し、5秒後に消去。画面遷移を機に次を選ぶ。自動ローテーションしない。
+- 全画面: 2 Credit。表示タイミングは未確定。
+- タップ: MaTool 内の店舗詳細へ。プレビューでは消費しない。
+- 掲載可能な店舗広告がない場合は、既存の Google AdMob を補完表示する。
 
-- バナー: 地図下部に表示し、5 秒経過で消す。画面遷移時に次候補を選ぶ。5 秒ごとに別広告へ入れ替えない。
-- 全画面: 2 Credit。表示タイミングは **未確定**。
-- タップ: MaTool 内の店舗詳細へ。
-- 店舗広告が掲載不可: 既存 Google AdMob にフォールバック。現状の AdManager は広告停止フラグを持つため稼働時に調整する。
-- iOS 上の広告プレビューでは表示実績を送らず、Credit を消費しない。
+### 9.3 Impression フロー
 
-### 9.3 Impression プロトコル（推奨）
+1. 候補 API は適用するレート制限・セッション識別を検証し、`storeId / festivalId / placement / imageVersionId / impressionId / 有効期限 / sessionHash` を **改ざんできない署名付き token** に関連付けて返す。候補を返した時点では減算しない。
+2. iOS は画像を実際に表示して Viewable 判定を満たした場合だけ、対象 token と impressionId を報告する。**署名は「表示された証明」にはならない。**
+3. Backend は token 署名・期限・sessionHash・発行頻度・報告頻度を検証。**最新の Store と Festival の掲載状態、運営停止／本人停止、対象形式の画像有無と `imageVersionId` の一致**を再確認する。候補発行後に停止・画像差替・削除があれば **減算しない**。
+4. DynamoDB Transaction に **Store の状態と画像 VersionId を確認する ConditionCheck、Credit の条件付き減算、impressionId の一意な記録**をまとめる（既にチェック済みでも競合を排除する）。必要なら Festival の公開状態の整合も条件付き確認する。
+5. 同じ impressionId の再送は追加請求しない。残高不足・掲載停止・旧画像世代・失効 token・レート超過なら消費せず終了。残高は負にしない。
+6. 報告が Backend に届かなかったときは減算しない。**オフラインでためて後日請求しない**。Backend が確定した後に応答が失われた場合だけは減算済みとし、クライアントエラーを理由に取り消さない。
 
-1. Backend が選択した storeId / placement / impressionId / 短命な署名付き impressionToken を返す。表示候補の取得だけでは減算しない。
-2. iOS が画像を取得し、**Viewable 条件を満たした場合だけ** token を Backend に送る。
-3. Backend が token の署名・期限・対象店舗・形式を照合し、残高の条件付き減算と impressionId の重複防止記録を原子的に確定する。
-4. 通信に失敗してサーバーで確定されなかった報告は請求しない。オフラインキューによる後日請求はしない。
-5. タイムアウト等で応答だけが失われ、Backend では確定済みの場合は減算済みと扱う。クライアントの通信エラーだけを理由に確定済み減算を取り消さない。
-6. 同時に候補として選ばれた後で Credit が尽きた場合、減算が失敗した表示は課金しない。残高は負にしない。
+### 9.4 不正消費対策（MVP 必須・推奨）
 
-**未確定**: Viewable の閾値（可視割合・最短時間など）。全画面の表示タイミングとともに公開前に確定する。
+**未認証利用者も token を取得できるため、署名・impressionId だけでは不正な Credit 消費を防げない。** スクリプトによる連続発行や偽表示のリスクを残すことを明記し、課金する前に次の保護を実装・検証する。
+
+- **発行と確定の両方**に API Gateway / WAF 等の IP ベース制限と Backend の短寿命セッション単位の頻度制限を適用する。session ID は偽造可能なので IP 等と併用し、単独の証明にしない。
+- 設定の初期例: 同じセッションの候補発行は **5秒に1回まで、1分12回まで**。IP 単位の急増にも上限を設ける。実値は運用設定で調整可能にし、リリース前に負荷試験で確定する。
+- Store ごとの一定時間内の消費量・同一 IP/セッションの異常連続表示を監視し、閾値超過時には **対象イベントの請求を停止**して人手確認できるようにする。監査ログには PII を最小限だけ残す。
+- 不正利用が多い場合は **App Attest / DeviceCheck 等の attestation** を導入する。これも実表示の証明ではない。対策は「不正を難しくする・検知する」もので、表示の完全な証明はできない。
+
+**未確定**: Viewable の画面可視割合・時間の具体値、全画面の表示タイミング。閾値は課金開始前に確定する。
 
 ## 10. S3 画像入稿（固定パス + Store PUT）
 
-### 10.1 決定した方式
+### 10.1 確定したキーと API 方針
 
-**画像ごとの UUID / uploadId を発行しない。** 1 店舗につき画像はバナー1枚と全画面1枚だけなので、一時キー・正式キーともに storeId と画像種別による固定パスとする。
+1店舗につきバナー1枚と全画面1枚。**画像用の UUID / uploadId も画像確定・削除専用 API も作らない**。iOS は固定一時キーに画像を直接 PUT し、そのパスを Store Entity に設定して通常の Store PUT を呼ぶ。
 
     temporary/stores/{storeId}/banner.jpg
     temporary/stores/{storeId}/interstitial.jpg
     stores/{storeId}/banner.jpg
     stores/{storeId}/interstitial.jpg
 
-画像は必要なら iOS で JPEG に圧縮。署名付き PUT URL により **iOS から一時 S3 パスに直接送信**する。Store Entity の画像フィールドに一時パスを設定して **通常の Store PUT** に含める。Backend はそのパスを検証し、本配置へのコピー、Entity のパス置換、DynamoDB 保存までを Store 更新の処理として行う。画像付きの API Gateway リクエストや画像専用確定 API は設けない。
+画像は必要に応じて iOS で JPEG 圧縮する。storeId を先に発行し、所有者だけが一時アップロード URL を取得できるようにする。
 
-### 10.2 具体的な処理
+### 10.2 上書き競合の対策（固定キーは維持）
 
-1. `POST /festivals/:festivalId/stores` で Store を先に作成し、storeId を得る。
-2. `POST /stores/:storeId/images/upload-url` で所有権・画像種別をチェックし、指定した **固定一時キーにだけ PUT できる**短寿命 URL と一時キーを返す。
-3. iOS → S3: `temporary/stores/{storeId}/{kind}.jpg` に画像を PUT。次回は同じ一時パスを上書きする。
-4. iOS → `PUT /stores/:storeId`: Store の `bannerImagePath` または `interstitialImagePath` に返却済み一時キーを指定。他の Store フィールドも通常どおり送信。
-5. Backend: Store の所有権・パスが当該 storeId と kind に完全一致すること・画像の実体とサイズ等を検証し、S3 CopyObject で `stores/{storeId}/{kind}.jpg` に上書きコピー。
-6. Backend: Store Entity 内の該当フィールドを **正式パスに置換**して DynamoDB に保存し、確定した Store を応答する。画像のない形式は `null`、正式パスが送られた形式は維持と解釈。
-7. 画像削除は画像フィールドを `null` にして同じ Store PUT を実行する。S3 の正式オブジェクトは参照解除後に削除。不要な一時画像は Lifecycle で後日削除（例: 1 日）。
+**固定一時パスが同じでも、連続する2つのアップロードを混同してはならない。**
 
-Store PUT 例（その他の必須フィールドは省略した概念例）:
+1. `POST /stores/:storeId/images/upload-url` で対象店舗・kind にだけ書き込める短寿命 S3 PUT URL を発行。画像バイナリは API Gateway を通さない。
+2. iOS が S3 にアップロードし、レスポンス `ETag` を取得。CORS の `ExposeHeaders` に `ETag` を含める。S3 一時オブジェクトのパスは固定で、上書きされ得る。
+3. iOS は **Store Entity の一時パス**に加え、変更する形式の `ETag` を `X-MaTool-Banner-ETag` / `X-MaTool-Interstitial-ETag` ヘッダーで Store PUT に添える。`If-Match` には取得済み `Store.revision` を指定する。
+4. Backend は ownerId、固定一時パスの完全一致、S3 の実体・形式・サイズを検証。`CopyObject` の **`x-amz-copy-source-if-match`** にアップロード済み ETag を指定し、一時ファイルの上書き後に古い Store PUT が別画像をコピーすることを防ぐ。条件不一致は **409**、再アップロード・Store 再取得を案内する。
+5. **正式保存先は固定キーのまま、広告用 S3 バケットの Versioning を有効化する。** `CopyObject` が返す **正式画像の S3 VersionId** を Store の `bannerImageVersionId` / `interstitialImageVersionId` に設定して DynamoDB 保存する。Store.revision の CAS 不一致は 409 とする。
+6. S3 コピー成功後に DB 更新が失敗しても **新しい S3 バージョンは未参照のまま残るだけ**で、来場者は DB に記録された **正式キーと旧 VersionId** を取得する。S3 のコピーと DB 更新を一体のトランザクションにはしない。後日の安全なガベージ回収対象とする。
+7. 成功時は Backend が一時パスを正式パスへ置換し、更新済み Store（新 revision、VersionId）を返す。クライアントは応答後にローカル状態を更新する。
+
+**同一内容の ETag が同じことは許容する**。異なるバイト列が上書きされたかを検証するために使い、画像独自の UUID は発行しない。必要なら S3 一時アップロードの VersionId を直接送る方式へ置き換え可能だが、初期実装は ETag で十分。
+
+### 10.3 画像削除・公開・GC
+
+- Store PUT で画像フィールドを **明示 JSON null** にしたら、まず DB の公開参照（正式パス・VersionId）を同一 revision 更新で null にする。**その PUT の直後には正式 S3 キーへ DeleteObject しない。**
+- 後の画像差替は同じ固定正式キーに **新しい S3 バージョン**を作り、DB はその VersionId を参照する。先行削除処理で新しい素材を消す競合を避ける。
+- 定期的な GC は **現在の Store で参照されていない特定の S3 VersionId** だけを削除する。削除対象の VersionId と DB の最新参照を照合してから消す。**キー全体を削除しない。** 正式領域の NoncurrentVersion を無条件で消す Lifecycle は使わない（失敗した S3 コピーで最新でなくなっても、DB が古い VersionId を使用し得るため）。
+- `temporary/` にだけ短期 Lifecycle（例: 1日）を設定する。署名 URL は短命にし、所有権の照合・ファイル検査を必須にする。
+- 公開 DTO に `imageVersionId` を含め、画像 URL は S3 バージョンを指定して取得する。CDN の場合は version をキャッシュキーに含める。**運営停止・通報時は新規公開 URL を出さず、既存 CDN キャッシュを無効化する**。既発行の短命 URL は有効期限まで残る可能性があるため短い期限を設ける。
+- 画像なしの形式は広告配信不可。既存 Credit は保持する。S3 の Versioning の追加保存コストは計測し、正式画像の不要バージョンだけ適切に回収する。
+
+### 10.4 Store PUT 例（概念）
+
+```http
+PUT /stores/store-123
+If-Match: 7
+X-MaTool-Banner-ETag: "S3-PUT-ETag"
+Content-Type: application/json
+```
 
 ```json
 {
   "id": "store-123",
+  "revision": 7,
   "name": "店舗A",
   "bannerImagePath": "temporary/stores/store-123/banner.jpg",
   "interstitialImagePath": "stores/store-123/interstitial.jpg"
 }
 ```
 
-成功後、レスポンスの `bannerImagePath` は `stores/store-123/banner.jpg` になる。画像選択のキャンセルや PUT 未実行でも正式な Store は更新されず、一時画像のみが残る。
+**両画像フィールドを必ず送信**し、存在しない画像は JSON `null`。省略は 400。成功後の Store は正式キー、新しい `bannerImageVersionId` と `revision: 8` を返す。
 
-### 10.3 整合性・セキュリティ（MVP）
-
-**S3 のコピーと DynamoDB の Store 更新を一体のトランザクションにはしない。** コピー成功後に DB 更新が失敗した場合、正式キーの画像だけ更新されてしまう可能性を許容する。Store PUT は再実行でき、一時画像は Lifecycle に任せる。
-
-- 一時・正式パスは勝手な文字列を受け付けず、現在の Store と kind からサーバー側で期待パスを計算する。UUID は不要だが URL の有効期間内は同じ一時キーの上書きが可能。
-- 署名付き URL 発行時・Store PUT 時とも所有権を確認する。S3 オブジェクトが存在するだけで安全とはみなさず、画像の実データ・寸法・容量を検証する。
-- 固定正式パスは上書きされるため、画像キャッシュには Store.updatedAt 等のバージョン値を利用する実装案とする。
-- S3 バケットは原則非公開。正式画像の配信方法は既存環境に合わせて決める。
-- 画像なしの形式は掲出不可だが、Credit は保持。長期未利用画像の削除方針は第12章に従う。
-
-**未確定**: 画像最大サイズ、画素、縦横比、署名 URL の有効期限、公開画像の配信方法。
+**未確定**: 画像の最大サイズ、画素・縦横比、公開画像の配信基盤、署名 URL 有効期限の正確な値。
 
 ## 11. 地図と一般利用者 UI
 
