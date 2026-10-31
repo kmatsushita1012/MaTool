@@ -23,4 +23,5 @@ actor SceneSessionCoordinator: SceneSessionCoordinatorProtocol {
 
 enum SceneSessionCoordinatorKey: DependencyKey {
     static let liveValue: any SceneSessionCoordinatorProtocol = SceneSessionCoordinator()
+    static var testValue: any SceneSessionCoordinatorProtocol { SceneSessionCoordinator() }
 }
