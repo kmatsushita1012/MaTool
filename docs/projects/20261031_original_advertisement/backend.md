@@ -89,7 +89,7 @@ Shared に置く共通型を使用し、Backend 独自の同一 Entity を増や
 | `Store` | id、festivalId、ownerId、purchaseAccountToken(UUID)、name、address、coordinate、businessHours、description、bannerImagePath、interstitialImagePath、ownerPaused、moderationStatus、createdAt、updatedAt | DynamoDB |
 | `CreditAccount` | storeId、balance、lastPurchasedAt | DynamoDB |
 | `PurchaseRecord` | transactionId、storeId?、appAccountToken?、productId、creditedAmount、purchasedAt、environment、**creditGranted**、**refundStatus**、**refundDeductedCredits**、**lastRefundEventSignedDate**、refundedAt など | DynamoDB。付与済み・返金済み・未付与の正本。`storeId` の省略は返金先着の未付与レコードに限定 |
-| **StorePurchaseReference（検索用 Record）** | storeId、transactionId、purchasedAt | 店舗別購入履歴の Query 専用参照。**別の購入 Entity ではない**。Credit を付与した取引だけを作成 |
+| **StorePurchaseReference（検索用 Record）** | storeId、transactionId、productId、creditedAmount、purchasedAt | 店舗別購入履歴の Query 専用参照。**独立したドメイン Entity ではない**。Credit を付与した取引だけを作成し、`PurchaseHistoryItem` に変換 |
 | `ImpressionRecord` | impressionId、storeId、placement、chargedAmount、chargedAt | DynamoDB |
 | `UserRole`（既存変更） | headquarter / district / advertiser(sub) / guest | 認証情報から算出 |
 
@@ -326,14 +326,38 @@ token の対象は impressionId / storeId / festivalId / placement / expiry。�
 
 署名 token は実表示の証明ではない。MVP は短命 token、重複防止、API Gateway 等の基本レート制限に留める。高度なセッション追跡、App Attest、異常消費自動検出は導入しない。Store 停止と消費の厳密な同時 Transaction も要求しない。
 
-## 11. 運営停止・保持期間
+## 11. 運営停止・通報・保持期間
 
-- 広告主の停止: AdCandidate から除外、PublicStore の広告画像は非公開。Credit は保持。
-- 運営の強制停止: Store 自体を公開一覧から除外。運営専用経路で停止・復旧（Festival 管理者には権限付与しない）。
-- 通報: 最小限の受付→ID 指定停止→必要時電話確認→復旧。専用ダッシュボード・重複店舗の専用索引は作らない。
-- 店舗登録にはアカウント当たりの数の上限を設ける。値は後決め。
-- 整理起点: `creditAccount.lastPurchasedAt ?? store.createdAt`。残高があり画像がある Store は2年を超えても通常保持。Credit が残り画像がない場合や残高0で2年超の場合に `spec.md` に従い不要リソースのみ整理。Credit・購入台帳・必要な所有情報は失効させない。
-- 一時画像は Lifecycle、正式画像は休眠・退会等で利用を停止した Store の整理時に限り削除する。
+### 11.1 運営による強制停止・復旧
+
+**運営専用の IAM 権限を用いた小さな管理スクリプト**で Store の状態を変更する。**管理画面・一般用の停止 API・新しい Cognito Role は作らない**。Festival の本部・町管理者にも権限を付与しない。
+
+- **実行主体**: 運営者が引き受ける AWS IAM ロール。通常の Lambda 実行ロールや広告主の権限とは分離し、対象 DynamoDB テーブルに必要な書込み権限だけを許可。運営者認証・操作記録（監査ログ）を必須にする。
+- **操作経路**: 例 `scripts/moderate-store`（CLI）。`festivalId`、`storeId`、`suspend / approve`、理由を引数に受け、ベーステーブルの `FESTIVAL#{festivalId} / STORE#{storeId}` を直接取得。存在・一致を検証し、**`content.moderation_status` と `content.updated_at` だけを更新**する。Record 全体の無条件上書きは避ける。Enum の実際の保存形は Shared の Codable と Encoder で確認する。
+- **公開への反映**: 強制停止は店舗自体を PublicStore の一覧から除外、AdCandidate に出さず、Impression も減算前の状態確認で拒否。復旧は運営判断のみ。既発行の画像 URL の残存は `spec.md` の許容範囲。
+- **停止中の Credit** は保持。広告主自身による `ownerPaused` の変更と、運営の `moderationStatus` は別物として扱う。
+
+**運営停止の実装前テスト**: 認可されていない IAM 主体は更新不可、存在しない Store / Festival 不一致を拒否、停止後の PublicStore / AdCandidate / Impression の動作、広告主の PUT では停止解除できないこと、運営による復旧が可能なこと。停止スクリプトは最小の操作手段として用意し、公開ユーザー向け API は増やさない。
+
+### 11.2 通報を運営に届ける
+
+`POST /advertisements/reports` は、公開 API から匿名でも利用できる**最小の通知経路**として実装する。
+
+1. `AdvertisementController` は `AdvertisementReportRequest(storeId, placement?, reason)` を decode。Store の存在を確認し、reason の長さ・空白、入力形式を検証。未認証利用者も送信可能だが、**API Gateway 等の基本レート制限**を適用する。
+2. `AdvertisementUsecase` は通報対象 Store / Festival と受信日時（UTC）を添えて、**運営者が確認できる既存の連絡先へ通知**する。既存手段がなければ **Amazon SNS Topic → 運営メール（購読を確認済み）**を初期実装とする。
+3. `ReportNotificationClient` は SNS Publish などの外部操作だけを担当する薄い Data Client。通知には Store ID、Festival ID、理由、日時を含め、不要な IP・個人情報を保存しない。成功したら API は正常応答。
+4. **通知先に届く前に成功応答しない**。SNS Publish 失敗なら 5xx を返す。初期は専用の通報 Entity、DB 台帳、審査画面・キューを増やさない。再送で運営に重複通知され得ることは MVP として許容。
+5. 運営は届いた通報を確認し、必要なら前節の **IAM 管理スクリプトで Store ID を指定して停止**、電話確認してから同じ経路で復旧する。
+
+**定期的な簡易 AI チェック**は `spec.md` の運用方針として維持。ただし **今回の Backend Lambda 詳細設計とは別の運用タスク**として実装する。頻度・実行環境・異常時の通知先は初期公開前に確定し、専用の管理システムを本案件に追加しない。AI の判定のみで Credit 没収や自動的な不可逆削除はしない。
+
+### 11.3 Store 数制限・長期保持
+
+- 登録数の上限は1アカウント単位で設ける。具体値は実装前に決める。店舗名・住所のハッシュ索引による厳密な重複防止は行わない。
+- 整理起点: `creditAccount.lastPurchasedAt ?? store.createdAt`。**未完了購入の到着順で lastPurchasedAt を逆行させない**（`4`）。
+- Credit が残り画像がある店舗は2年後も通常保持。Credit が残り画像がない場合や、残高0で2年超の場合は `spec.md` に従い不要なリソースのみ整理する。
+- **購入済み Credit・購入台帳・必要な所有者情報は失効させない。** 一時画像は S3 Lifecycle、正式画像は休眠・退会等で更新を停止した店舗の整理時に限り削除する。
+
 
 ## 12. 実装時のファイル配置案
 
@@ -365,12 +389,14 @@ Backend/Sources/
 │   │   └── ImpressionRepository.swift    [追加]
 │   └── Client/
 │       ├── StoreImageClient.swift        [追加]
-│       └── AppStoreClient.swift          [追加: 購入＋Apple通知検証]
+│       ├── AppStoreClient.swift          [追加: 購入＋Apple通知検証]
+│       └── ReportNotificationClient.swift [追加: SNS等の運営通知]
 ├── Infrastructure/Application.swift      [変更]
 └── Utils/Environment.swift               [変更]
 
 Shared/Sources/Entity/                     [追加・変更]
-Backend/Package.swift                     [S3 SDK＋Apple公式Swift Library]
+Backend/Package.swift                     [S3 / 必要に応じて SNS SDK＋Apple公式Swift Library]
+scripts/moderate-store                    [追加案: IAM権限の運営停止・復旧CLI]
 ```
 
 分割数は候補。委譲のみの薄い Usecase / Repository は実装時に統合してよい。`AGENTS.md` に従い Swift Testing、テスト対象とテストファイルを1対1、ソースのディレクトリ構成を再現する。
@@ -382,23 +408,28 @@ Backend/Package.swift                     [S3 SDK＋Apple公式Swift Library]
 | 対象 | ケース |
 | --- | --- |
 | Cognito / 認可 | sub 取得、広告主 Role、管理者への不正昇格拒否、他人の Store を拒否 |
-| Store | 店舗数制限、サーバー管理値の改ざん拒否、更新後の Store 返却 |
+| Store 作成 | Store / Owner Reference / Credit0 を**単一 Transaction** で作成。条件付き書込み失敗時に3件とも未作成。HTTP 応答消失時は POST 自動再送せず強整合な所有 Store 一覧で作成結果を確認。Store ID の一意性と所有店舗数上限 |
+| Store 読取 | 作成直後の所有 Store GET・画像 URL 発行・所有一覧で **GSI を使わず ConsistentRead**。User Reference → Festival Store の直接 Get、認証 sub と Store.ownerId の一致・別人の Store 拒否 |
+| 購入履歴 | 同じ Store の複数購入を SK `PURCHASE#{purchasedAtUTC}#{transactionId}` で Query。順序・同時刻の重複・他 Store 混入・未付与返金マーカーが履歴にならないこと・トランザクション失敗で参照だけ残らないこと |
+| Store PUT | ID / festivalId / ownerId / purchaseAccountToken / moderationStatus / createdAt の不一致 400、他人の Store 403、更新後の Store 返却、updatedAt は Backend が設定 |
 | Store PUT | 固定一時／正式／明示 null、画像フィールド省略400 |
 | S3 | 他店舗パス拒否、画像形式・サイズ不正、コピー失敗時の DB 未保存、一時画像の整理 |
 | IAP | 署名不正、別 Bundle/Environment/Product、別 Store appAccountToken、二重付与なし |
 | **返金・返金取消** | 未使用500 Credit返金で残高0、使用後は `min(購入 Credit, 残高)`、複数購入・他購入分の残高、REFUND_REVERSEDで実減算額だけ復元、同一通知・古いsignedDateを再適用しない、返金とImpressionの競合時にも負残高なし、未付与REFUND先着→後日Claim拒否、未付与の取消→Claimで一度だけ付与、署名不正、DBエラー時5xx・処理済み200、通知履歴からの再処理 |
 | Consumable | Backend 成功前に finish しない、未完了 Transaction 再試行、応答消失後の冪等復旧 |
-| Credit | 残高不足・同時消費でもマイナスにしない |
+| Credit と日時 | 残高不足・同時消費で負残高なし。**購入日が新→旧の順に到着しても lastPurchasedAt は逆行しない**、条件付き更新競合時の再取得。**DynamoDBEncoder/Decoder の実属性 `content.last_purchased_at` で更新し、Credit と日時を再取得して round-trip 検証** |
 | Impression | token 改ざん／期限切れ、重複、候補発行後の停止・画像削除 |
 | 公開 DTO | 運営停止で店舗非公開、本人停止で画像 null、ownerId 等の非公開 |
 | 保持期間 | 未購入は createdAt 起点、残高のある店舗の権利保持 |
 | Festival | 異なる Festival への広告混入を拒否 |
+| 運営停止 | IAM 非許可主体の書込み禁止、対象 Festival / Store ID の照合、停止で公開店舗・候補・減算が停止、広告主 PUT による解除拒否、運営スクリプトで復旧 |
+| 通報 | 公開 POST の入力検証・基本レート制限・運営通知の Publish 成功、SNS 送信失敗時 5xx、運営受信内容の確認。簡易 AI チェックは**別運用タスク**に分割して初期公開前に実施方法確定 |
 
 **非採用のテスト**：画像 ETag / S3 VersionId・画像世代 GC、Store revision、App Attest、重複店舗ハッシュ索引。これらは MVP の実装対象ではない。
 
 ## 14. 実装順序と残課題
 
-順序：① Router の完全一致と回帰テスト → ② Shared モデル / Cognito Role → ③ Store CRUD と所有権 → ④ S3 入稿 → ⑤ Credit の原子的更新 → ⑥ Apple 取引検証と Purchase → **⑦ Apple V2通知・返金／取消と原子的テスト** → ⑧ 広告配信 / Impression → ⑨ 運営停止・整理と結合テスト。**⑦まで検証するまで IAP リリース不可。**
+順序：① Router の完全一致と回帰テスト → ② Shared モデル / Cognito Role → ③ Store CRUD（**初回3件 Transaction + 強整合 Store 取得**）と所有権 → ④ S3 入稿 → ⑤ Credit 原子的操作（**購入履歴参照・lastPurchasedAt 逆行防止・snake_case 実属性テスト**） → ⑥ Apple 取引検証と Purchase → **⑦ Apple V2通知・返金／取消と原子的テスト** → ⑧ 広告配信 / Impression → ⑨ **IAM 運営停止 CLI + 通報通知経路**・整理と結合テスト。**⑦まで検証するまで IAP リリース不可。運営停止・通報の受信と運用経路も初期公開前に動作確認する。**
 
 | 未確定 | 実装前の確認 |
 | --- | --- |
@@ -406,7 +437,7 @@ Backend/Package.swift                     [S3 SDK＋Apple公式Swift Library]
 | Apple 取引 JWS の検証方法 | Apple 公式 Swift Library を基本とし、証明書・Production / Sandbox 設定を検証 |
 | IAP 返金・取消 | **方針A採用**：現在残高の範囲で減算・返金取消は実減算額だけ復元。残課題は通知先設定と本番／Sandbox 疎通・再送テスト |
 | S3 | 画像上限・公開配信 URL / キャッシュ・署名 URL の期限 |
-| 運営 | Store 数上限、停止・復旧する経路 |
+| 運営 | Store 数上限と IAM 管理スクリプトの認可・監査設定を確定。**停止・復旧手段は第11.1節で決定済み**。通報通知先の SNS Topic / 運営メール購読を設定し実際の受信を確認。**簡易 AI チェックは別運用タスク**として頻度と実行方法を初期公開前に決める |
 | 広告 | Viewable 閾値・全画面表示の条件 |
 | セキュリティ | token の署名鍵管理と基本レート制限 |
 
