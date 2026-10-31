@@ -89,6 +89,7 @@ Shared に置く共通型を使用し、Backend 独自の同一 Entity を増や
 | `Store` | id、festivalId、ownerId、purchaseAccountToken(UUID)、name、address、coordinate、businessHours、description、bannerImagePath、interstitialImagePath、ownerPaused、moderationStatus、createdAt、updatedAt | DynamoDB |
 | `CreditAccount` | storeId、balance、lastPurchasedAt | DynamoDB |
 | `PurchaseRecord` | transactionId、storeId?、appAccountToken?、productId、creditedAmount、purchasedAt、environment、**creditGranted**、**refundStatus**、**refundDeductedCredits**、**lastRefundEventSignedDate**、refundedAt など | DynamoDB。付与済み・返金済み・未付与の正本。`storeId` の省略は返金先着の未付与レコードに限定 |
+| **StorePurchaseReference（検索用 Record）** | storeId、transactionId、purchasedAt | 店舗別購入履歴の Query 専用参照。**別の購入 Entity ではない**。Credit を付与した取引だけを作成 |
 | `ImpressionRecord` | impressionId、storeId、placement、chargedAmount、chargedAt | DynamoDB |
 | `UserRole`（既存変更） | headquarter / district / advertiser(sub) / guest | 認証情報から算出 |
 
@@ -117,21 +118,26 @@ Store 作成時に Backend が **店舗単位の購入用 purchaseAccountToken �
 | `FESTIVAL#{festivalId}` | `STORE#{storeId}` | Store |
 | `USER#{cognitoSub}` | `STORE#{storeId}` | Store 所有者参照（festivalId を含む） |
 | `STORE#{storeId}` | `CREDIT` | CreditAccount |
-| `PURCHASE#{transactionId}` | `METADATA` | PurchaseRecord |
+| `PURCHASE#{transactionId}` | `METADATA` | **PurchaseRecord の正本・全店舗一意** |
+| `STORE#{storeId}` | `PURCHASE#{purchasedAtUTC}#{transactionId}` | **StorePurchaseReference（店舗別購入履歴の検索用参照）** |
 | `STORE#{storeId}` | `IMPRESSION#{impressionId}` | ImpressionRecord |
 
-- Festival 内 Store は PK + SK beginsWith、所有 Store は USER PK で Query。
-- Store ID 単独取得は既存 `index-TYPE` と `sk` の検索方法を踏襲（ID は全体で一意）。Festival ID があれば直接 Get。
-- Credit は STORE PK の直接 Get。購入・表示実績はそれぞれのキーで照合。
+- Festival 内 Store は FESTIVAL PK + SK beginsWith で Query。公開一覧の結果整合性は許容する。
+- **所有者操作（Store GET / PUT・画像 URL・購入・残高）の Store 取得**は GSI を使わず、認証済み Cognito sub から **`USER#{sub} / STORE#{storeId}` をベーステーブルの一貫性の強い GetItem で取得**して festivalId を得て、次に **`FESTIVAL#{festivalId} / STORE#{storeId}` を一貫性の強い GetItem** で読む。所有参照の存在だけに頼らず、取得した Store の ownerId == sub を再確認する。参照不在・不一致なら拒否。Store ID 単独で GSI を Query する処理をこの経路で使わない。
+- **所有 Store 一覧**も `USER#{sub}` PK をベーステーブルの **ConsistentRead 付き Query** で取得し、参照の festivalId から Store 本体を取得する。作成直後の一覧・画像入稿で 404／欠落しないことを保証する。直接 Get / Query で必要な箇所だけ `ConsistentRead: true` を DataStore に渡せるよう最小限拡張する（既存呼出のデフォルトは変更しない）。
+- **店舗別の購入履歴**は `STORE#{storeId}` PK、`PURCHASE#` SK prefix で Query する。SK の日時は UTC の**辞書順に時系列となる固定形式**（例: `2026-10-31T12:30:00.000Z`）とし、transactionId を付けて同時刻の衝突を防ぐ。必要なら降順で返す。全 PurchaseRecord の Scan / Filter は使わない。
+- Credit は STORE PK の直接 Get。購入の正本は transactionId で Get、Impression は storeId + impressionId で照合。
 
 **金銭・Credit 操作だけに原子的整合性を要求する。**
 
-- 購入: `PurchaseRecord` を `attribute_not_exists` で作成 + `CreditAccount.content.balance` を加算し最終購入日更新 → **DynamoDB TransactWriteItems**。
+- 購入: **PurchaseRecord のグローバル一意な条件付き作成／未付与マーカー更新 + StorePurchaseReference の条件付き作成 + Credit 加算**を **同一 DynamoDB TransactWriteItems** で確定。購入の正本の transactionId で二重付与を防ぎ、同一店舗の履歴を効率よく取得する。StorePurchaseReference は初回付与に成功する場合のみ作成し、返金が先に届いた未付与マーカーには作らない。返金後も付与済みの参照は保持する。
+- **`lastPurchasedAt` は `max(既存値, Apple の署名済み purchasedAt)` として単調増加**させる。購入・未完了取引の到着順は信頼しない。CreditAccount を読み、現在の `lastPurchasedAt`（未設定を含む）との一致を **TransactWriteItems 内の Credit 更新条件**にして、より新しい日時のみ採用する。競合時は再取得して再計算し、正本・参照・残高をすべて原子的に確定する。**単純な GET→PUT や日時の無条件上書きは禁止**。返金では `lastPurchasedAt` を巻き戻さない。
 - 表示: `ImpressionRecord` の条件付き新規作成 + 残高 `balance >= cost` を条件とする減算 → **TransactWriteItems**。
-- 既存 `DynamoDBEncoder` の `content` は map のため、UpdateExpression のネスト属性パスに注意して検証する。
+- DynamoDBEncoder は `.convertToSnakeCase`、Decoder は `.convertFromSnakeCase`。**保存属性は `content.balance` と `content.last_purchased_at`**（後者を `lastPurchasedAt` と書かない）。DynamoDB のネストマップの式を実際にテストし、**購入後の再読込で最終購入日時が正しく復元される**ことを検証する。
 - 購入台帳は二重付与防止のため保持。**返金も同じ PURCHASE キーの状態更新と Credit 残高調整を同一 TransactWriteItems で確定**し、未付与で返金が先着した取引は同じキーにマーカーを保存する。Impression は token の有効期間と再送可能期間を超えた後 TTL 等で整理。
 
-Store 初回登録は Store / Owner Reference / Credit0 の保存を行う。途中で失敗しても部分欠損が放置されないよう再実行・整合処理を用意する。既存 DynamoDB Transaction の再利用も可能だが、**画像を含む分散 Transaction は作らない**。Store PUT に revision / If-Match は付けず、Last Write Wins を許容する。
+**Store の初回登録は Store / Owner Reference / CreditAccount(balance=0) の3レコードを一回の TransactWriteItems で条件付き作成する。** 書込み途中の部分成功・孤立参照を許容しない（S3 は巻き込まない）。Store ID の衝突も条件式で拒否する。
+HTTP 応答をクライアントが受け取れなかった場合、**iOS は POST を自動再送して新しい Store を作らず、まず所有 Store 一覧を一貫性の強い読取りで再取得して作成結果を確認する**。新しい冪等キー専用の台帳は MVP で追加しない。重複を完全には防げない残余リスクと、同時作成時の店舗数上限チェックの競合は許容する。Store PUT に revision / If-Match は付けず、Last Write Wins を許容する。
 
 ## 5. 認証・認可（Cognito）
 
@@ -155,7 +161,7 @@ Store 初回登録は Store / Owner Reference / Credit0 の保存を行う。途
 | 公開店舗・広告候補・Impression・通報 | 未認証も可能。公開条件や token 検証を別途実施 |
 | 運営による公開停止・解除 | 広告主不可。Festival 管理者にも自動付与しない |
 
-Store PUT は既存 Store を読み、許可された編集フィールドだけ上書きする。既存 `DistrictUsecase` の権限別 merge に合わせる。
+Store PUT は所有権を確認後、既存 Store を読み、**変更禁止フィールドの受信値が現在値と同一であることを検証（不一致 400）**してから許可項目だけ反映する。URL と body の ID 不一致も400、他人の Store は403。**updatedAt は Backend が発行し直す時刻であって revision ではない**。既存 `DistrictUsecase` の権限別 merge に合わせる。
 
 ## 6. API 一覧
 
@@ -183,15 +189,15 @@ Controller は decode / parameter / user / Usecase / encode のみ。使用す�
 1. `advertiser(sub)` と Festival 存在を確認。
 2. 本人の Store 一覧で登録上限を確認。
 3. Store ID / Store ごとの `purchaseAccountToken` を生成。
-4. Store、Owner Reference、CreditAccount（balance=0）を保存。
-5. 作成した Store を返す。**画像入稿は Store ID が発行された後**。
+4. Store、Owner Reference、CreditAccount（balance=0）を**同一 TransactWriteItems で条件付き作成**。
+5. 作成した Store を返す。**画像入稿は Store ID が発行された後**。POST の応答が失われたら iOS は新規 POST を即再送せず、強い整合性の所有 Store 一覧を再読込して存在を確認する。
 
 重複店舗ハッシュの専用索引や、登録前の運営承認は設けない。
 
 ### Store PUT
 
 1. URL の Store ID・所有者を確認し、既存 Store を取得。
-2. 編集可能な name / address / coordinate / businessHours / description / ownerPaused / 画像パスのみ適用。サーバー管理情報は維持。
+2. **受信 Store.id と URL が不一致、または受信した festivalId / ownerId / purchaseAccountToken / moderationStatus / createdAt が DB の現在値と異なれば 400**。それとは別に、認証 sub と現在の Store.ownerId が不一致なら 403。編集可能な name / address / coordinate / businessHours / description / ownerPaused / 画像パスのみ適用する。**updatedAt は競合制御に使わず Backend が保存時に再設定**する（クライアントからの値は採用しない）。管理属性の改ざんを黙って無視しない。
 3. 画像パスが一時キーなら `StoreImageUsecase` による S3 本配置を実行。
 4. `updatedAt` を更新して DynamoDB 保存し、**保存した Store** を返す。
 
