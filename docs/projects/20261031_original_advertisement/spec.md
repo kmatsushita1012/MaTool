@@ -93,22 +93,22 @@ Store.ownerId は Backend が認証結果から設定し、クライアントの
 
 | Entity | フィールド（型の例） | 責務・保存先 | 公開範囲 |
 | --- | --- | --- | --- |
-| **Store** | id: String, festivalId: Festival.ID, ownerId: String, name: String, address: String, coordinate: Coordinate, businessHours: String, description: String?, bannerImagePath: String?, interstitialImagePath: String?, ownerPaused: Bool, moderationStatus: ModerationStatus, createdAt: Date, updatedAt: Date | 店舗情報・広告設定・固定正式画像パス。FESTIVAL# 配下 | 所有者向けのみフル Entity を返却 |
+| **Store** | id: String, festivalId: Festival.ID, ownerId: String, **purchaseAccountToken: UUID**, name: String, address: String, coordinate: Coordinate, businessHours: String, description: String?, bannerImagePath: String?, interstitialImagePath: String?, **bannerImageVersionId: String?**, **interstitialImageVersionId: String?**, ownerPaused: Bool, moderationStatus: ModerationStatus, **revision: Int**, createdAt: Date, updatedAt: Date | 店舗・画像の有効な S3 VersionId・購入先識別・更新競合を管理。FESTIVAL# 配下 | 所有者のみフル Entity を返却 |
 | **CreditAccount** | storeId: Store.ID, balance: Int, lastPurchasedAt: Date? | 店舗ごとに1つの Credit。STORE# 配下 | 所有者のみ |
-| **PurchaseRecord** | transactionId: String, storeId: Store.ID, productId: String, creditedAmount: Int, purchasedAt: Date, environment: String, revocationStatus: String? | 購入の一意性と検証台帳。PURCHASE# 配下 | 内部のみ。履歴画面には PurchaseHistoryItem |
-| **ImpressionRecord** | impressionId: String, storeId: Store.ID, placement: StoreAdPlacement, chargedAmount: Int, chargedAt: Date | 表示実績・二重減算防止。STORE# 配下 | 内部のみ |
+| **PurchaseRecord** | transactionId: String, storeId: Store.ID, **appAccountToken: UUID**, productId: String, creditedAmount: Int, purchasedAt: Date, environment: String, revocationStatus: String? | グローバル一意の Apple 取引台帳 | 非公開。広告主には PurchaseHistoryItem |
+| **ImpressionRecord** | impressionId: String, storeId: Store.ID, festivalId: Festival.ID, placement: StoreAdPlacement, **imageVersionId: String**, chargedAmount: Int, chargedAt: Date | 画像世代と請求内容を含む重複防止台帳 | 非公開 |
 | **UserRole（既存変更）** | headquarter(festivalId), district(districtId), advertiser(cognitoSub), guest | 認証・認可の Role | API の認証コンテキストで使用 |
 
-Store の画像パスは **一時パス（新画像）・正式パス（維持）・null（削除）** を区別する。`PUT /stores/:storeId` は Store Entity を受け取るが、id・festivalId・ownerId・moderationStatus・createdAt 等のサーバー管理属性はクライアント値を正本としない。既存 Store と照合し、不正変更を拒否する。
+Store の画像パスは **固定一時パス（新画像）・正式パス（維持）・明示 JSON null（削除）**。Store の作成時に Backend が **店舗単位の appAccountToken（UUID）を一度だけ**発行する。画像ごとの UUID ではない。`revision` は Store PUT が成功するごとに条件付きで増やし、古い版の書き込みには 409 を返す。クライアントからの ownerId・festivalId・purchaseAccountToken・moderationStatus 等のサーバー管理値の変更は拒否する。
 
 ### 5.2 公開 DTO（未認証の来場者に返却可能）
 
 | DTO | フィールド（型の例） | 使用先 | 含めない情報 |
 | --- | --- | --- | --- |
-| **PublicStore** | id: String, festivalId: Festival.ID, name: String, address: String, coordinate: Coordinate, businessHours: String, description: String?, bannerImagePath: String?, interstitialImagePath: String? | `GET /festivals/:festivalId/stores`・地図・店舗詳細 | ownerId、残高、停止理由、購入・表示台帳 |
-| **AdCandidate** | storeId: Store.ID, placement: StoreAdPlacement, imagePath: String, impressionId: String, impressionToken: String | `GET /festivals/:festivalId/advertisements/next` | ownerId、残高、他店舗の情報 |
+| **PublicStore** | id: String, festivalId: Festival.ID, name: String, address: String, coordinate: Coordinate, businessHours: String, description: String?, bannerImagePath: String?, **bannerImageVersionId: String?**, interstitialImagePath: String?, **interstitialImageVersionId: String?** | `GET /festivals/:festivalId/stores`・地図・店舗詳細 | ownerId、Credit、購入・審査台帳を除く。停止・審査 NG の画像は null。運営が店舗を非公開にした場合は一覧から除外 |
+| **AdCandidate** | storeId: Store.ID, festivalId: Festival.ID, placement: StoreAdPlacement, imagePath: String, **imageVersionId: String**, impressionId: String, impressionToken: String | `GET /festivals/:festivalId/advertisements/next` | 現在配信可能な正式画像だけを返す |
 
-PublicStore / AdCandidate の画像は **正式配置のみ** を参照し、`temporary/` は公開レスポンスに含めない。画像配信方式（CDN・認証 URL 等）は未決定。
+PublicStore / AdCandidate の画像は **正式パスと公開中の S3 VersionId を必ずセットで返却**する。配信側は「キーの最新版」を無条件に取得せず、指定 VersionId に一致する内容を返す。停止中・審査 NG・対象画像なしのときは PublicStore の画像フィールド（パス・VersionId）を null にし、AdCandidate の対象からも除外。既発行 URL・CDN キャッシュの失効方針は第10章に記載。
 
 ### 5.3 認証・書き込み用 DTO（API 境界）
 
@@ -116,20 +116,20 @@ PublicStore / AdCandidate の画像は **正式配置のみ** を参照し、`te
 | --- | --- | --- | --- |
 | **StoreCreateRequest** | name: String, address: String, coordinate: Coordinate, businessHours: String, description: String? | `POST /festivals/:festivalId/stores`。id / ownerId は Backend が設定 | 広告主 |
 | **ImageUploadURLRequest** | kind: StoreAdPlacement, contentType: String | `POST /stores/:storeId/images/upload-url` | 所有者 |
-| **ImageUploadURLResponse** | url: String, path: String, expiresAt: Date | 固定一時 S3 パスと署名付き URL を返す。uploadId は不要 | 所有者 |
+| **ImageUploadURLResponse** | url: String, path: String, expiresAt: Date | 固定一時 S3 PUT 用 URL（S3 PUT の応答 ETag を CORS で公開）。uploadId 不要 | 所有者 |
 | **PurchaseClaimRequest** | signedTransactionInfo: String | `POST /stores/:storeId/purchases` | 所有者 |
 | **PurchaseResult** | transactionId: String, creditedAmount: Int, balance: Int | 同 API の購入確定結果 | 所有者 |
 | **PurchaseHistoryItem** | transactionId: String, productId: String, creditedAmount: Int, purchasedAt: Date | `GET /stores/:storeId/purchases` の表示用 | 所有者 |
 | **ImpressionReportRequest** | impressionId: String, impressionToken: String | `POST /advertisements/impressions` | 来場者 |
 | **AdvertisementReportRequest** | storeId: Store.ID, placement: StoreAdPlacement?, reason: String | `POST /advertisements/reports` | 来場者 |
 
-Store 更新は Store Entity 自体を PUT し、更新済み Store を返す。残高 GET も CreditAccount をそのまま返すため、追加のレスポンス型を作らない。Impression や通報の成功は既存の空応答で返す。
+Store 更新は Store Entity 自体を PUT し、更新後の Store を返す。全体置換の **両画像パスには JSON キーを必須**とし、nil は既存の `@NullEncodable` と同様に明示的に `null` で送る。省略は 400。ETag は画像アップロード後にヘッダーで、Store revision は `If-Match` ヘッダーで送る（第7・10章）。残高 GET は CreditAccount をそのまま返し、専用の画像確定 DTO は作らない。
 
 ### 5.4 補助型・索引レコード（ドメイン Entity を増やさない）
 
 | 型・レコード | 内容 | 目的 |
 | --- | --- | --- |
-| **StoreAdPlacement** | banner / interstitial | 画像種別・消費量（1 / 2 Credit） |
+| **StoreAdPlacement** | banner / interstitial | 画像種別・必要 Credit（1 / 2）を表す。既存 AdMob 用 AdPlacement と別型 |
 | **ModerationStatus** | approved / suspended 等 | 運営停止と広告主停止の分離 |
 | **StoreOwnerReference** | ownerId、storeId、festivalId | `USER#{cognitoSub} / STORE#{storeId}` の検索用参照 |
 | **VerifiedPurchase** | 検証済み取引データ | 未検証入力と Credit Repository の境界 |
