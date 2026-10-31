@@ -10,6 +10,8 @@ import Dependencies
 
 // MARK: - Dependencies
 enum AppStatusClientKey: DependencyKey {
+    static let testValue: any AppStatusClientProtocol = TestAppStatusClient()
+
     static let liveValue: any AppStatusClientProtocol = {
         @Dependency(\.values.appStatusUrl) var url
         return AppStatusClient(urlString: url)
