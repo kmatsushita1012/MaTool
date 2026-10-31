@@ -11,6 +11,8 @@ import Shared
 
 //MARK: - Dependencies
 enum HTTPClientKey: DependencyKey {
+    static let testValue: any HTTPClientProtocol = TestHTTPClient()
+
     static let liveValue: any HTTPClientProtocol = {
         @Dependency(\.values.apiBaseUrl) var apiBaseUrl
         return HTTPClient.withDefaultTimeout(
@@ -77,6 +79,73 @@ protocol HTTPClientProtocol: Sendable {
         query: [String: Any],
         accessToken: String?
     ) async throws
+}
+
+// A missing HTTP override in tests must never make a real network request.
+private actor TestHTTPClient: HTTPClientProtocol {
+    func request<Response: Decodable, Body: Encodable>(
+        path: String,
+        method: String,
+        query: [String: Any],
+        body: Body?,
+        accessToken: String?,
+        isCache: Bool
+    ) async throws -> Response {
+        throw URLError(.unsupportedURL)
+    }
+
+    func request<Response: Decodable>(
+        path: String,
+        method: String,
+        query: [String: Any],
+        accessToken: String?,
+        isCache: Bool
+    ) async throws -> Response {
+        throw URLError(.unsupportedURL)
+    }
+
+    func get<Response: Decodable>(
+        path: String,
+        query: [String: Any],
+        accessToken: String?,
+        isCache: Bool
+    ) async throws -> Response {
+        throw URLError(.unsupportedURL)
+    }
+
+    func post<Response: Decodable, Body: Encodable>(
+        path: String,
+        body: Body,
+        query: [String: Any],
+        accessToken: String?
+    ) async throws -> Response {
+        throw URLError(.unsupportedURL)
+    }
+
+    func put<Response: Decodable, Body: Encodable>(
+        path: String,
+        body: Body,
+        query: [String: Any],
+        accessToken: String?
+    ) async throws -> Response {
+        throw URLError(.unsupportedURL)
+    }
+
+    func delete<Response: Decodable>(
+        path: String,
+        query: [String: Any],
+        accessToken: String?
+    ) async throws -> Response {
+        throw URLError(.unsupportedURL)
+    }
+
+    func delete(
+        path: String,
+        query: [String: Any],
+        accessToken: String?
+    ) async throws {
+        throw URLError(.unsupportedURL)
+    }
 }
 
 // MARK: - APIClient
