@@ -11,7 +11,7 @@ import CoreLocation
 // MARK: - Dependencies
 enum BroadcastLocationProviderKey: DependencyKey {
     static let liveValue: BroadcastLocationProviderProtocol = BroadcastLocationProvider()
-    static let testValue: BroadcastLocationProviderProtocol = TestBroadcastLocationProvider()
+    static var testValue: BroadcastLocationProviderProtocol { TestBroadcastLocationProvider() }
 }
 
 private actor TestBroadcastLocationProvider: BroadcastLocationProviderProtocol {
