@@ -22,6 +22,7 @@ struct LastMainScreenUseCaseTests {
         )
 
         withDependencies {
+            $0.installTestSpies()
             $0.userDefaultsClient = client
         } operation: {
             let useCase = LastMainScreenUseCase()
@@ -56,6 +57,7 @@ struct LastMainScreenUseCaseTests {
         )
 
         withDependencies {
+            $0.installTestSpies()
             $0.userDefaultsClient = client
         } operation: {
             #expect(LastMainScreenUseCase().load() == nil)

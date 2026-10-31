@@ -12,6 +12,8 @@ struct LoginFeatureTests {
         initialState.isLoading = true
         let store = TestStore(initialState: initialState) {
             LoginFeature()
+        } withDependencies: {
+            $0.installTestSpies()
         }
 
         await store.send(.received(.success(.signedIn(userRole)))) {

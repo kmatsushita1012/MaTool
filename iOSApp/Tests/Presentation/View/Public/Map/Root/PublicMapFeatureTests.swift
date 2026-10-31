@@ -36,8 +36,8 @@ struct PublicMapFeatureTests {
 
         #expect(state.contents == [
             .locations,
-            .route(firstGroupDistrict.id),
             .route(sameGroupDistrict.id),
+            .route(firstGroupDistrict.id),
             .route(selectedDistrict.id),
             .route(laterGroupDistrict.id)
         ])
@@ -46,8 +46,8 @@ struct PublicMapFeatureTests {
         #expect(state.contents == [
             .locations,
             .route(selectedDistrict.id),
-            .route(firstGroupDistrict.id),
             .route(sameGroupDistrict.id),
+            .route(firstGroupDistrict.id),
             .route(laterGroupDistrict.id)
         ])
     }
@@ -73,8 +73,9 @@ struct PublicMapFeatureTests {
         let store = TestStore(initialState: initialState) {
             PublicMapFeature()
         } withDependencies: {
+            $0.installTestSpies()
             $0[LoadDistrictStateUseCaseKey.self] = loadUseCase
-            $0[PublicMapAdUsecaseKey.self] = NoopPublicMapAdUsecase()
+            $0[PublicMapAdUsecaseKey.self] = PublicMapAdUsecaseSpy()
         }
         store.exhaustivity = .off
 
@@ -139,36 +140,4 @@ private struct PeriodSelectionFixture {
             year: 2026
         ))
     }
-}
-
-private actor DistrictLoadSpy: LoadDistrictStateUseCaseProtocol {
-    private let response: LaunchDistrictPack
-    private var periodId: Period.ID?
-
-    init(response: LaunchDistrictPack) {
-        self.response = response
-    }
-
-    func callAsFunction(
-        districtId: District.ID,
-        periodId: Period.ID?,
-        appState: Shared<AppState?>
-    ) async throws -> LaunchDistrictPack {
-        self.periodId = periodId
-        return response
-    }
-
-    func receivedPeriodId() -> Period.ID? {
-        periodId
-    }
-}
-
-private struct NoopPublicMapAdUsecase: PublicMapAdUsecaseProtocol {
-    func prepareSession() async {}
-
-    func handleDistrictSelectionResult(
-        userRole: UserRole,
-        districtId: District.ID,
-        hasDisplayableContent: Bool
-    ) async {}
 }

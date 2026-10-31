@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import ComposableArchitecture
 import Dependencies
 
 @main
@@ -21,7 +22,10 @@ struct MaToolApp: App {
 
     var body: some Scene {
         WindowGroup {
-            RootSceneView()
+            // Unit tests run inside the host application; avoid starting the live root store.
+            if TestContext.current == nil {
+                RootSceneView()
+            }
         }
     }
 }
