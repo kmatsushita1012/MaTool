@@ -67,7 +67,7 @@
 | R04 | 既存 `GET /festivals/F/launch` | 既存 SceneController に到達する |
 | R05 | `GET /festivals/F/unknown` | ルートがなければ404。FestivalController.get は0回 |
 | R06 | `GET /stores/S` と `PUT /stores/S` | Path が同じでも HTTP Method で別 handler |
-| R07 | POST だけ登録された `/images/upload-url` へ GET | 404。共通 ImageUploadController は0回。POST は共通 Controller のみ1回 |
+| R07 | `GET /images/upload-url` と `POST /images/upload-url` をそれぞれ実行 | GET は404・共通 Controller 0回、POST は共通 Controller のみ1回 |
 | R08 | `GET /festivals/F/stores/extra` | 公開 Store の GET に前方一致せず404 |
 | R09 | `app.use("/")` に加え Bearer token 付きの子ルート | AuthMiddleware が1回、user が後続 handler に渡る |
 | R10 | `app.use("/")`、Bearer 不在 | middleware が guest を渡す（保護 API なら Usecase で拒否） |
@@ -241,7 +241,7 @@ stores/{storeId}/interstitial.jpg
 | 画像フィールド | 意味 |
 | --- | --- |
 | `temporary/stores/{storeId}/{kind}.jpg` | 画像を正式配置へコピー |
-| `stores/{storeId}/{kind}.jpg` | 現在の正式パスなら画像維持 |
+| DB に保存済みの現在の正式公開 URL（`?v=` 付き） | URL が現在値と完全一致する場合は画像維持（コピー不要） |
 | JSON `null` | DB から画像参照を解除（即時 S3 削除なし） |
 | 他の文字列 | 400。特に他人の Store パスを拒否 |
 
