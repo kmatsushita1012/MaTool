@@ -6,13 +6,17 @@ import Testing
 @testable import iOSApp
 
 actor FetchDistrictUseCaseSpy: FetchDistrictUseCaseProtocol {
-    let pack: DistrictPack
+    let pack: DistrictPack?
     private(set) var requestedIDs: [District.ID] = []
 
-    init(pack: DistrictPack) { self.pack = pack }
+    init(pack: DistrictPack? = nil) { self.pack = pack }
 
     func callAsFunction(districtId: District.ID) async throws -> DistrictPack {
         requestedIDs.append(districtId)
+        guard let pack else {
+            Issue.record("Unexpected FetchDistrictUseCaseSpy call: \(districtId)")
+            throw SpyInvocationError.unexpected("FetchDistrictUseCase \(districtId)")
+        }
         return pack
     }
 }

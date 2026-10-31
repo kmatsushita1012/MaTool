@@ -36,8 +36,8 @@ struct PublicMapFeatureTests {
 
         #expect(state.contents == [
             .locations,
-            .route(firstGroupDistrict.id),
             .route(sameGroupDistrict.id),
+            .route(firstGroupDistrict.id),
             .route(selectedDistrict.id),
             .route(laterGroupDistrict.id)
         ])
@@ -46,8 +46,8 @@ struct PublicMapFeatureTests {
         #expect(state.contents == [
             .locations,
             .route(selectedDistrict.id),
-            .route(firstGroupDistrict.id),
             .route(sameGroupDistrict.id),
+            .route(firstGroupDistrict.id),
             .route(laterGroupDistrict.id)
         ])
     }

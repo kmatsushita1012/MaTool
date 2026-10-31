@@ -303,7 +303,21 @@ struct RootFeatureTests {
             ),
             district: fixture.district
         )
-        await store.send(.map(.destination(.presented(.locations(.floatTapped(entry))))))
+        let pack = DistrictPack(district: fixture.district, performances: [])
+        await store.send(.map(.destination(.presented(.locations(.floatTapped(entry)))))) {
+            $0.isIntroductionLoading = true
+        }
+        await store.receive(.introductionPrepared(.success(.district(
+            fixture.festival, pack, entry.floatLocation.timestamp
+        )))) {
+            $0.isIntroductionLoading = false
+            $0.sheet = .district(DistrictIntroductionRootFeature.State(
+                pack,
+                festival: fixture.festival,
+                locationTimestamp: entry.floatLocation.timestamp,
+                appState: appState
+            ))
+        }
 
         #expect(store.state.sheet?.district != nil)
         #expect(store.state.map?.selectedContent == .locations)

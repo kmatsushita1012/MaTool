@@ -11,6 +11,7 @@ extension DependencyValues {
         self[MapLocationProviderKey.self] = MapLocationProviderSpy()
         self[BroadcastLocationProviderKey.self] = BroadcastLocationProviderSpy()
         self[HTTPClientKey.self] = HTTPClientSpy()
+        self[FetchDistrictUseCaseKey.self] = FetchDistrictUseCaseSpy()
         self[UserDefaltsManagerKey.self] = DefaultUserDefaultsSpy()
         self.userDefaultsClient = UserDefaultsClientSpy().client
         self.authProvider = AuthProviderSpy().client
