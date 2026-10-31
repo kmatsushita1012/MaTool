@@ -252,7 +252,7 @@ struct RootFeatureTests {
         await routeStore.send(.map(.delegate(.introductionTapped))) {
             $0.isIntroductionLoading = true
         }
-        await routeStore.receive(.introductionPrepared(.success(.district(fixture.festival, pack)))) {
+        await routeStore.receive(.introductionPrepared(.success(.district(fixture.festival, pack, nil)))) {
             $0.isIntroductionLoading = false
             $0.sheet = .district(DistrictIntroductionRootFeature.State(
                 pack,

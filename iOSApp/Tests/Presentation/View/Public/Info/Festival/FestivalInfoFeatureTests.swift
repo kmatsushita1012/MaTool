@@ -62,7 +62,7 @@ struct FestivalInfoFeatureTests {
             District(id: "a2", name: "い", festivalId: festival.id, group: "A"),
             District(id: "a1", name: "あ", festivalId: festival.id, group: "A")
         ]
-        let appState = Shared(value: AppState(
+        let appState = Shared<AppState?>(value: AppState(
             festivalPack: LaunchFestivalPack(
                 festival: festival,
                 districts: districts,
