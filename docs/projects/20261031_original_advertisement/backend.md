@@ -88,11 +88,11 @@ Shared に置く共通型を使用し、Backend 独自の同一 Entity を増や
 | --- | --- | --- |
 | `Store` | id、festivalId、ownerId、purchaseAccountToken(UUID)、name、address、coordinate、businessHours、description、bannerImagePath、interstitialImagePath、ownerPaused、moderationStatus、createdAt、updatedAt | DynamoDB |
 | `CreditAccount` | storeId、balance、lastPurchasedAt | DynamoDB |
-| `PurchaseRecord` | transactionId、storeId、appAccountToken、productId、creditedAmount、purchasedAt、environment、revocationStatus | DynamoDB |
+| `PurchaseRecord` | transactionId、storeId?、appAccountToken?、productId、creditedAmount、purchasedAt、environment、**creditGranted**、**refundStatus**、**refundDeductedCredits**、**lastRefundEventSignedDate**、refundedAt など | DynamoDB。付与済み・返金済み・未付与の正本。`storeId` の省略は返金先着の未付与レコードに限定 |
 | `ImpressionRecord` | impressionId、storeId、placement、chargedAmount、chargedAt | DynamoDB |
 | `UserRole`（既存変更） | headquarter / district / advertiser(sub) / guest | 認証情報から算出 |
 
-Store 作成時に Backend が **店舗単位の購入用 purchaseAccountToken を1つだけ発行**。画像用 UUID ではない。ownerId・festivalId・purchaseAccountToken・moderationStatus・createdAt は広告主が変更できない。
+Store 作成時に Backend が **店舗単位の購入用 purchaseAccountToken を1つだけ発行**。画像用 UUID ではない。ownerId・festivalId・purchaseAccountToken・moderationStatus・createdAt は広告主が変更できない。返金先着を扱う `PurchaseRecord.creditGranted` / `refundStatus` は第9章で詳細化する。
 
 ### 3.2 API 境界
 
@@ -129,7 +129,7 @@ Store 作成時に Backend が **店舗単位の購入用 purchaseAccountToken �
 - 購入: `PurchaseRecord` を `attribute_not_exists` で作成 + `CreditAccount.content.balance` を加算し最終購入日更新 → **DynamoDB TransactWriteItems**。
 - 表示: `ImpressionRecord` の条件付き新規作成 + 残高 `balance >= cost` を条件とする減算 → **TransactWriteItems**。
 - 既存 `DynamoDBEncoder` の `content` は map のため、UpdateExpression のネスト属性パスに注意して検証する。
-- 購入台帳は二重付与防止のため保持。Impression は token の有効期間と再送可能期間を超えた後 TTL 等で整理。
+- 購入台帳は二重付与防止のため保持。**返金も同じ PURCHASE キーの状態更新と Credit 残高調整を同一 TransactWriteItems で確定**し、未付与で返金が先着した取引は同じキーにマーカーを保存する。Impression は token の有効期間と再送可能期間を超えた後 TTL 等で整理。
 
 Store 初回登録は Store / Owner Reference / Credit0 の保存を行う。途中で失敗しても部分欠損が放置されないよう再実行・整合処理を用意する。既存 DynamoDB Transaction の再利用も可能だが、**画像を含む分散 Transaction は作らない**。Store PUT に revision / If-Match は付けず、Last Write Wins を許容する。
 
@@ -228,16 +228,75 @@ stores/{storeId}/interstitial.jpg
 
 S3 と DB の同一 Transaction は作らず、コピー成功・DB 失敗の一時的な不整合を許容。固定キーの複数端末更新は最後の S3 上書きを採用する。`temporary/` は Lifecycle で整理。正式画像の物理削除は休眠・退会などで更新を停止した Store の整理時に限定。S3 bucket / CDN / IAM / サイズ上限は実装前に確認。
 
-## 9. Apple IAP と Credit 付与
+## 9. Apple IAP・返金通知・Credit 調整
 
-- Store 作成時に **Store ごとの `purchaseAccountToken: UUID`** を生成・保存。
-- iOS は購入開始時に StoreKit `.appAccountToken(store.purchaseAccountToken)` を付ける。
-- Backend `AppStoreClient` は署名済み Transaction の Apple JWS / 証明書、Bundle ID、Environment、Product ID、取引状態、appAccountToken を検証する。**payload をデコードするだけでは検証としない**。
-- `PurchaseUsecase` は所有者と Store、署名済み appAccountToken の一致を必須検証。Product ID → Credit 数は Backend 定義（500円→500、1000円→1000）。
-- PurchaseRecord の条件付き作成と Credit 加算を **TransactWriteItems** で同時確定。transactionId は全店舗で一意。
-- 同じ transactionId の再送は PurchaseRecord の元の Store・商品を照合し、**二重付与せず成功応答**。
+### 9.1 購入確定（既定）
 
-iOS は **Backend で Credit 付与成功を確認するまで `Transaction.finish()` しない**。失敗時は `Transaction.unfinished` / `Transaction.updates` を再処理し、Backend の冪等 API に再送。レスポンスだけ失われた場合にも余計な Credit は付与されない。返金処理・Apple 署名検証の Swift 実装手段は実装前に確定する。
+- Store 作成時に Store ごとの不変な `purchaseAccountToken: UUID` を生成し、iOS は購入時に `.appAccountToken(store.purchaseAccountToken)` を指定。画像用 UUID とは別。
+- `AppStoreClient` は Apple の署名済み Transaction、Bundle ID、Environment、Product ID、取引状態、appAccountToken を検証。**Base64 デコードだけでは検証としない。**
+- `PurchaseUsecase` は Store 所有権と署名済み appAccountToken の一致を必須とする。Product ID → 500 / 1000 Credit は Backend が決める。
+- `PurchaseRecord` の付与済みへの条件付き作成／更新と、`CreditAccount` の加算を同一 DynamoDB `TransactWriteItems` で確定。全 Store で transactionId は一意。付与済み Transaction の再送は二重加算せず成功を返す。
+- **未付与かつ返金済み**の取引に、古い署名済み購入情報だけで Credit を付与しない。返金取消後の未付与取引は、正当な購入 Claim を再検証してから一度だけ付与する。
+- iOS は Backend の付与成功を確認してから `Transaction.finish()` を実行。未完了取引は `Transaction.unfinished` / `Transaction.updates` で冪等に再送。
+
+### 9.2 Apple 通知の入口と既存クラスへの追加
+
+Apple **App Store Server Notifications V2** の HTTPS エンドポイントを App Store Connect に登録する。HTTP リクエストは `{ "signedPayload": "..." }`。Cognito Bearer は付けられないため、**Apple の署名検証を通るまで DB の状態を一切変更しない**。
+
+| 型・構成 | 役割 |
+| --- | --- |
+| `PurchaseRouter`（または既存 Router に追加） | `POST /app-store/notifications` を登録。所有者用 Store API と異なるパス |
+| `PurchaseController.notification` | body decode → Usecase 呼出 → 2xx / 失敗応答。新しい返金専用 Controller は不要 |
+| `AppStoreClient.verifyNotification` | Apple 公式 [App Store Server Swift Library](https://github.com/apple/app-store-server-library-swift) の `SignedDataVerifier` で V2 の `signedPayload` と内包する `signedTransactionInfo` を検証 |
+| `PurchaseUsecase.applyNotification` | 返金状態遷移、最新イベント・未付与の判定、Credit 調整指示 |
+| `PurchaseRepository` / `CreditRepository` | 購入台帳の状態更新と残高更新を **同一 DynamoDB Transaction** で確定 |
+| `PurchaseRecord`（Shared） | `creditGranted: Bool`、`refundStatus: active / refunded`、`refundedAt`、`refundDeductedCredits: Int`、`lastRefundEventSignedDate` を持つ |
+
+**RefundUsecase、RefundRepository、RefundRecord、専用管理画面は作らない。** Bundle ID・環境、Production の Apple App ID、Apple Root CA の設定を管理し、証明書チェーンの検証を自作しない。検証済み Transaction の productId / appAccountToken / transactionId は既存台帳と照合する。
+
+### 9.3 通知フロー
+
+| Apple `notificationType` | Backend |
+| --- | --- |
+| `REFUND` | 返金**成立**。購入状態を refunded にし、付与済みなら残高調整 |
+| `REFUND_REVERSED` | 返金の**取り消し**。前回実際に差し引いた Credit だけ戻す |
+| `CONSUMPTION_REQUEST` | 返金申請に伴う問い合わせ。**まだ返金ではない**ため減算しない（Apple に消費情報を提供するかは別途検討） |
+| `REFUND_DECLINED` | 申請却下。残高変更なし |
+| その他の検証済み通知 | 本機能の対象外なら変更なしで正常受理 |
+
+1. `PurchaseController` が受信し、`AppStoreClient` が通知と取引の署名・Bundle / Environment / Product を検証する。
+2. `PurchaseUsecase` は `notificationType`、`notificationUUID`、`signedDate`、`transactionId`、`appAccountToken`、`revocationDate` 等を検証済み値から取得。
+3. `PURCHASE#{transactionId} / METADATA` を直接参照する。既存レコードがあれば Store・商品・appAccountToken・環境の一致を検証。
+4. 同じ通知・返金状態を再適用しない。**取引単位で保持する `lastRefundEventSignedDate` より古い通知を反映しない**。`notificationUUID` も診断・重複判定に使う。状態遷移は Repository の条件付き書き込みで確定する。
+5. 第9.4節の Credit 調整を含めて DynamoDB で原子的に確定した後、**HTTP 200**。既処理・対象外も200。DB 障害等で確定できなければ **5xx** として再送可能にする。確定前に200を返さない。
+6. Apple の Production には通知再送があるが Sandbox には同じ再送を期待しない。障害で取りこぼした通知は Apple の **Get Notification History** を使って運営が再取得・再処理する。常時ポーリング基盤は初期には作らない。
+
+### 9.4 返金時の残高調整（方針 A・採用）
+
+**現在残高から差し引ける分だけ減算し、残高を0未満にしない。** 購入単位の消費追跡は追加しない。
+
+- 付与済み取引が返金されたときの `deduction = min(purchase.creditedAmount, creditAccount.balance)`。
+- 500 Credit 購入 → 350 消費 → 残高150で返金なら **150だけ差し引いて残高0**。消費済み350を後から請求しない。
+- 購入Bの Credit が残っている場合、購入Aの返金で**購入Bに由来する残高も差し引かれ得る**ことを MVP の割り切りとして許容する。
+- `PurchaseRecord.refundDeductedCredits = deduction` を必ず保存し、`refundStatus = refunded` にする。
+- `REFUND_REVERSED` は **前回の `refundDeductedCredits` だけ加算**し、状態を active に戻す。返金時に回収しなかった消費済み Credit は復元しない。二重加算はしない。
+- 未付与での REFUND / REFUND_REVERSED は **残高を操作しない**。取消後の初回 Credit 加算は、後日正当な購入 Claim があった場合だけ。
+
+**DynamoDB の処理**: PurchaseRecord と CreditAccount を読み `deduction` を計算。同一 `TransactWriteItems` で (1) PurchaseRecord の前状態・`signedDate` に対する条件付き更新、(2) CreditAccount の **読取残高一致条件付き**減算を実行する。Impression や他購入と競合した場合は最新値を取得して再計算・再試行する。残高を負にしない。返金取り消しの再加算も同様に一回限りの原子的更新で行う。
+
+### 9.5 付与前に REFUND が先着する場合
+
+- 購入が先に Apple で返金されたが、通信失敗で **PurchaseRecord も Credit 付与もまだない**ケースを扱う。
+- 検証済み REFUND を受信したら同じ `PURCHASE#{transactionId} / METADATA` キーに **`creditGranted = false / refundStatus = refunded` の未付与マーカーを条件付きで新規保存**する。新しい Refund Entity やテーブルは不要。
+- マーカーには Apple が署名した transactionId・productId・appAccountToken・Environment・signedDate を保持。**付与前は Store の逆引きができないため `storeId` は任意**とし、付与済み状態では必須とする。
+- iOS が後から古い購入情報を送っても、マーカーが `refunded` なら付与を拒否。`REFUND_REVERSED` を受けたら `active` に戻すが**自動付与せず**、iOS の検証済み Claim により初回加算する。
+- Claim と REFUND が同時でも同じ PURCHASE キーの条件付き作成・更新が競合を防止する。
+
+### 9.6 リリース条件
+
+**REFUND の検知・署名検証・残高反映・重複処理・REFUND_REVERSED を動作確認できるまで IAP をリリースしない。** App Store Connect に Sandbox / Production の V2 通知先を設定し、Apple 署名済みテスト通知、再送、DB 障害時の応答、通知履歴による復旧を検証する。
+
+参考：Apple Developer Documentation の App Store Server Notifications V2 / notificationType / signedDate / Responding to App Store Server Notifications、Apple 公式 Swift Library。
 
 ## 10. 広告配信と Impression
 
@@ -277,10 +336,11 @@ Backend/Sources/
 ├── Backend.swift                         [変更: Router 登録]
 ├── Router/
 │   ├── StoreRouter.swift                 [追加]
+│   ├── PurchaseRouter.swift              [追加: Apple通知のHTTP入口]
 │   └── AdvertisementRouter.swift         [追加]
 ├── Controller/
 │   ├── StoreController.swift             [追加]
-│   ├── PurchaseController.swift          [追加]
+│   ├── PurchaseController.swift          [追加: 購入＋通知受付]
 │   └── AdvertisementController.swift     [追加]
 ├── Usecase/
 │   ├── StoreUsecase.swift                [追加]
@@ -299,12 +359,12 @@ Backend/Sources/
 │   │   └── ImpressionRepository.swift    [追加]
 │   └── Client/
 │       ├── StoreImageClient.swift        [追加]
-│       └── AppStoreClient.swift          [追加]
+│       └── AppStoreClient.swift          [追加: 購入＋Apple通知検証]
 ├── Infrastructure/Application.swift      [変更]
 └── Utils/Environment.swift               [変更]
 
 Shared/Sources/Entity/                     [追加・変更]
-Backend/Package.swift                     [必要な SDK 追加]
+Backend/Package.swift                     [S3 SDK＋Apple公式Swift Library]
 ```
 
 分割数は候補。委譲のみの薄い Usecase / Repository は実装時に統合してよい。`AGENTS.md` に従い Swift Testing、テスト対象とテストファイルを1対1、ソースのディレクトリ構成を再現する。
@@ -320,6 +380,7 @@ Backend/Package.swift                     [必要な SDK 追加]
 | Store PUT | 固定一時／正式／明示 null、画像フィールド省略400 |
 | S3 | 他店舗パス拒否、画像形式・サイズ不正、コピー失敗時の DB 未保存、一時画像の整理 |
 | IAP | 署名不正、別 Bundle/Environment/Product、別 Store appAccountToken、二重付与なし |
+| **返金・返金取消** | 未使用500 Credit返金で残高0、使用後は `min(購入 Credit, 残高)`、複数購入・他購入分の残高、REFUND_REVERSEDで実減算額だけ復元、同一通知・古いsignedDateを再適用しない、返金とImpressionの競合時にも負残高なし、未付与REFUND先着→後日Claim拒否、未付与の取消→Claimで一度だけ付与、署名不正、DBエラー時5xx・処理済み200、通知履歴からの再処理 |
 | Consumable | Backend 成功前に finish しない、未完了 Transaction 再試行、応答消失後の冪等復旧 |
 | Credit | 残高不足・同時消費でもマイナスにしない |
 | Impression | token 改ざん／期限切れ、重複、候補発行後の停止・画像削除 |
@@ -331,13 +392,13 @@ Backend/Package.swift                     [必要な SDK 追加]
 
 ## 14. 実装順序と残課題
 
-順序：① Router の完全一致と回帰テスト → ② Shared モデル / Cognito Role → ③ Store CRUD と所有権 → ④ S3 入稿 → ⑤ Credit の原子的更新 → ⑥ Apple 取引検証と Purchase → ⑦ 広告配信 / Impression → ⑧ 運営停止・整理と結合テスト。
+順序：① Router の完全一致と回帰テスト → ② Shared モデル / Cognito Role → ③ Store CRUD と所有権 → ④ S3 入稿 → ⑤ Credit の原子的更新 → ⑥ Apple 取引検証と Purchase → **⑦ Apple V2通知・返金／取消と原子的テスト** → ⑧ 広告配信 / Impression → ⑨ 運営停止・整理と結合テスト。**⑦まで検証するまで IAP リリース不可。**
 
 | 未確定 | 実装前の確認 |
 | --- | --- |
 | Cognito セルフ登録時の Role 付与 | App Client の属性書き込み権限を確認 |
-| Apple 取引 JWS の検証方法 | Swift での証明書・署名検証の実装 |
-| IAP 返金・取消 | Credit の調整ルール |
+| Apple 取引 JWS の検証方法 | Apple 公式 Swift Library を基本とし、証明書・Production / Sandbox 設定を検証 |
+| IAP 返金・取消 | **方針A採用**：現在残高の範囲で減算・返金取消は実減算額だけ復元。残課題は通知先設定と本番／Sandbox 疎通・再送テスト |
 | S3 | 画像上限・公開配信 URL / キャッシュ・署名 URL の期限 |
 | 運営 | Store 数上限、停止・復旧する経路 |
 | 広告 | Viewable 閾値・全画面表示の条件 |
