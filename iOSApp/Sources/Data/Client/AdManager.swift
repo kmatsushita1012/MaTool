@@ -49,6 +49,14 @@ protocol AdManagerProtocol: Sendable {
     func presentInterstitial(for placement: AdPlacement)
 }
 
+private struct TestAdManager: AdManagerProtocol {
+    let isEnabled = false
+
+    @MainActor func configureIfNeeded() {}
+    @MainActor func preloadInterstitial(for placement: AdPlacement) {}
+    @MainActor func presentInterstitial(for placement: AdPlacement) {}
+}
+
 final class AdManager: NSObject, AdManagerProtocol, @unchecked Sendable {
     // 一時的な広告停止用。再掲出時は true に変更する。
     static let isAdvertisementEnabled = false
