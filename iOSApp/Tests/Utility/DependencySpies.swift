@@ -69,6 +69,12 @@ actor BroadcastLocationProviderSpy: BroadcastLocationProviderProtocol {
     var servicesEnabled = false
     private var onAlwaysAuthorizationRequest: (@Sendable () async -> Void)?
 
+    init(authorizationStatus: CLAuthorizationStatus = .notDetermined) {
+        authorization = authorizationStatus
+    }
+
+    var startTrackingCallCount: Int { trackingStarts }
+
     func requestPermission(onAlwaysAuthorizationRequest: @escaping @Sendable () async -> Void) async {
         permissionRequests += 1
         self.onAlwaysAuthorizationRequest = onAlwaysAuthorizationRequest
@@ -218,6 +224,10 @@ final class DefaultUserDefaultsSpy: UserDefalutsManagerProtocol, @unchecked Send
     private var districtId: String?
     private var alwaysPermissionRequested = false
     private var recorded: [String] = []
+
+    init(hasRequestedAlwaysLocationPermission: Bool = false) {
+        alwaysPermissionRequested = hasRequestedAlwaysLocationPermission
+    }
 
     var calls: [String] { lock.withLock { recorded } }
     var defaultFestivalId: String? { lock.withLock { festivalId } }
