@@ -211,25 +211,88 @@ private struct FestivalDistrictListContentView: View {
     let onDistrictSelected: (District.ID) -> Void
 
     var body: some View {
-        List(districts) { district in
-            Button {
-                onDistrictSelected(district.id)
-            } label: {
-                HStack {
-                    Text(district.name)
-                    Spacer()
-                    Image(systemName: "chevron.right")
-                        .foregroundStyle(.secondary)
-                }
-                .contentShape(.rect)
+        InfoScrollView {
+            ForEach(districtGroups) { group in
+                FestivalDistrictGroupContentView(
+                    group: group,
+                    isLoading: isLoading,
+                    selectedDistrictID: selectedDistrictID,
+                    onDistrictSelected: onDistrictSelected
+                )
             }
-            .buttonStyle(.plain)
-            .disabled(isLoading)
-            .listRowBackground(selectedDistrictID == district.id ? Color.info.opacity(0.15) : .clear)
         }
-        .listStyle(.plain)
-        .scrollContentBackground(.hidden)
-        .modifier(HardTopScrollEdgeEffectModifier())
+    }
+
+    private var districtGroups: [FestivalDistrictGroup] {
+        var groups: [FestivalDistrictGroup] = []
+
+        for district in districts {
+            let trimmedGroup = district.group?.trimmingCharacters(in: .whitespacesAndNewlines)
+            let groupName = trimmedGroup?.isEmpty == false ? trimmedGroup : nil
+
+            if !groups.isEmpty, groups[groups.count - 1].name == groupName {
+                groups[groups.count - 1].districts.append(district)
+            } else {
+                groups.append(FestivalDistrictGroup(name: groupName, districts: [district]))
+            }
+        }
+
+        return groups
+    }
+}
+
+private struct FestivalDistrictGroup: Identifiable {
+    let name: String?
+    var districts: [District]
+
+    var id: String { name ?? "" }
+}
+
+private struct FestivalDistrictGroupContentView: View {
+    let group: FestivalDistrictGroup
+    let isLoading: Bool
+    let selectedDistrictID: District.ID?
+    let onDistrictSelected: (District.ID) -> Void
+
+    var body: some View {
+        InfoMaterialContainer {
+            VStack(alignment: .leading, spacing: 0) {
+                if let name = group.name {
+                    Text(name)
+                        .font(.headline)
+                        .foregroundStyle(.secondary)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(.bottom, 8)
+                }
+
+                ForEach(group.districts) { district in
+                    if district.id != group.districts.first?.id {
+                        Divider()
+                    }
+
+                    Button {
+                        onDistrictSelected(district.id)
+                    } label: {
+                        HStack {
+                            Text(district.name)
+                                .foregroundStyle(.primary)
+                            Spacer(minLength: 8)
+                            Image(systemName: "chevron.right")
+                                .foregroundStyle(.secondary)
+                        }
+                        .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
+                        .contentShape(.rect)
+                        .padding(.horizontal, 8)
+                    }
+                    .buttonStyle(.plain)
+                    .disabled(isLoading)
+                    .background(
+                        selectedDistrictID == district.id ? Color.info.opacity(0.15) : .clear,
+                        in: RoundedRectangle(cornerRadius: 8, style: .continuous)
+                    )
+                }
+            }
+        }
     }
 }
 
