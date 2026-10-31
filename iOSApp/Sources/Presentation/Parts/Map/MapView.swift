@@ -74,25 +74,19 @@ struct MapView: View {
                             .stroke(index.isMultiple(of: 2) ? .blue : .green, lineWidth: 4)
                     }
                     ForEach(points.filter(style: style)) { point in
-                        Marker(point.title ?? "", coordinate: point.coordinate.toCL())
-                            .tint(Color.annotation)
+                        PointMapMarker(point: point)
                             .tag(point.id)
                     }
-                    if let floatAnnotation {
-                        Annotation(floatAnnotation.title, coordinate: floatAnnotation.coordinate.toCL()) {
-                            FloatMapLabel(title: floatAnnotation.title) {
-                                if let entry = floatAnnotation.entry { floatTapped(entry) }
-                            }
-                        }
-                        .annotationTitles(.hidden)
-                    } else {
-                        ForEach(floats) { float in
-                            Annotation(float.district.name, coordinate: float.floatLocation.coordinate.toCL()) {
-                                FloatMapLabel(title: float.district.name) { floatTapped(float) }
-                            }
-                            .annotationTitles(.hidden)
-                        }
-                    }
+                }
+                .overlay {
+                    FloatMapOverlay(
+                        proxy: proxy,
+                        position: position,
+                        items: floatAnnotation.map { [$0] } ?? floats.map {
+                            FloatMapItem(title: $0.district.name, coordinate: $0.floatLocation.coordinate, entry: $0)
+                        },
+                        onTap: floatTapped
+                    )
                 }
                 .mapStyle(.standard(pointsOfInterest: style == .public ? .excluding(.excludedForPublic) : .including(.includedForAdmin)))
                 .mapControlVisibility(.hidden)
@@ -144,6 +138,63 @@ struct MapView: View {
         abs(lhs.center.longitude - rhs.center.longitude) <= 0.00001 &&
         abs(lhs.span.latitudeDelta - rhs.span.latitudeDelta) <= 0.00001 &&
         abs(lhs.span.longitudeDelta - rhs.span.longitudeDelta) <= 0.00001
+    }
+}
+
+private struct PointMapMarker: MapContent {
+    let point: PointEntry
+
+    var body: some MapContent {
+        if let anchor = point.anchor {
+            Marker(point.title ?? "", monogram: Text(anchor.glyph), coordinate: point.coordinate.toCL())
+                .annotationTitles(.hidden)
+                .tint(Color.annotation)
+        } else if point.performance != nil {
+            Marker(point.title ?? "", systemImage: "figure.dance", coordinate: point.coordinate.toCL())
+                .tint(Color.annotation)
+        } else if point.checkpoint != nil {
+            Marker(point.title ?? "", systemImage: "arrow.up.and.down.and.arrow.left.and.right", coordinate: point.coordinate.toCL())
+                .tint(Color.annotation)
+        } else {
+            Marker(point.title ?? "", coordinate: point.coordinate.toCL())
+                .tint(Color.annotation)
+        }
+    }
+}
+
+private extension Shared.Anchor {
+    var glyph: String {
+        switch self {
+        case .start: "発"
+        case .end: "着"
+        case .rest: "休"
+        }
+    }
+}
+
+private struct FloatMapOverlay: View {
+    let proxy: MapProxy
+    // カメラ変更時に座標変換を更新するための入力。
+    let position: MapCameraPosition
+    let items: [FloatMapItem]
+    let onTap: (FloatEntry) -> Void
+
+    var body: some View {
+        GeometryReader { _ in
+            ForEach(Array(items.enumerated()), id: \.offset) { _, item in
+                if let point = proxy.convert(item.coordinate.toCL(), to: .local) {
+                    FloatMapLabel(title: item.title) {
+                        if let entry = item.entry { onTap(entry) }
+                    }
+                    .fixedSize()
+                    .frame(width: 120, height: 64)
+                    .offset(x: point.x - 60, y: point.y - 32)
+                    .allowsHitTesting(item.entry != nil)
+                }
+            }
+        }
+        .clipped()
+        .allowsHitTesting(items.contains { $0.entry != nil })
     }
 }
 
