@@ -132,6 +132,7 @@ Store 更新は Store Entity 自体を PUT し、更新後の Store を返す。
 | **StoreAdPlacement** | banner / interstitial | 画像種別・必要 Credit（1 / 2）を表す。既存 AdMob 用 AdPlacement と別型 |
 | **ModerationStatus** | approved / suspended 等 | 運営停止と広告主停止の分離 |
 | **StoreOwnerReference** | ownerId、storeId、festivalId | `USER#{cognitoSub} / STORE#{storeId}` の検索用参照 |
+| **StoreDuplicateReference** | festivalId、normalizedNameAddressHash、storeId | 同一店舗の重複登録を条件付きで抑制する DB 参照 |
 | **VerifiedPurchase** | 検証済み取引データ | 未検証入力と Credit Repository の境界 |
 | **VerifiedImpression** | 検証済み表示データ | 未検証入力と減算処理の境界 |
 
@@ -154,6 +155,7 @@ Store 更新は Store Entity 自体を PUT し、更新後の Store を返す。
 1. Festival の公開店舗一覧: FESTIVAL# 内で STORE# 前方一致。
 2. 広告主の管理店舗一覧: USER# 内で STORE# 前方一致。
 3. 個別 Store の取得: festivalId + storeId の直接キー、または既存 GSI に準じた ID 検索。
+7. 新規店舗の重複抑止: FESTIVAL# 内の STORE_DUP# 正規化キーを条件付き作成する。
 4. Credit: STORE# + CREDIT の直接取得。
 5. 購入の二重付与排除: PURCHASE#transactionId を条件付き作成。
 6. 消費の重複排除: STORE#storeId + IMPRESSION#impressionId を条件付き作成。
@@ -401,35 +403,44 @@ AGENTS.md に従い、原則 Shared / Backend / iOS の PR を分け、Swift Tes
 
 ## 15. 最低限のテスト観点
 
-- Cognito の広告主が region / district 権限に昇格できない。
-- 他人の Store を取得・更新・画像登録・購入対象として操作できない。
-- Store 作成で親データ・所有者参照・Credit の片方だけが保存されない。
-- Apple の同じ transactionId が別店舗を含めて二重付与されない。
-- Apple 取引の検証失敗・環境不一致・商品不一致を拒否する。
-- 同時消費で残高を負にしない。残高 1 の全画面は候補に出ない。
-- impressionId の再送は二重減算しない。トークンの期限切れ・改ざん・別店舗流用を拒否。
-- 表示せず離脱した広告、受理されなかった報告には Credit を請求しない。
-- S3 の一時画像は別人の店舗で確定できない。不正形式・サイズを拒否。固定一時キーの再アップロード後に古い ETag で確定を要求したら 409 とする。
-- Store 更新が競合して 409 になる場合も、S3 コピー済みの **未参照 VersionId が公開されない**。画像削除直後の再アップロードでも古い削除が新バージョンを消さない。
-- 広告主停止・運営停止・画像なし・残高不足が配信候補から除外される。
-- 最終購入から 2 年を超えたリソース整理後も購入済み Credit が残る。
-- Festival 切り替え後、異なる Festival の広告を表示しない。
+| 分野 | 必須テスト |
+| --- | --- |
+| **Router** | `GET /festivals/F` と `GET /festivals/F/stores`・`GET /festivals/F/advertisements/next` が互いに衝突しない。メソッド付きエンドポイントは完全一致、`AuthMiddleware(path: "/")` は全経路へ適用 |
+| **認証・所有権** | 広告主が region / district になれない。他人の Store・画像・Credit・購入を操作できない |
+| **登録悪用** | 同時の同一店舗登録を拒否。店舗数上限・作成頻度・IP 制限が働く。違う店舗を同一住所だけで誤拒否しない |
+| **Store PUT** | 古い revision の全体置換に 409。再取得と編集内容の確認で再送。画像フィールドキー欠落 400、明示 `null` は削除扱い。勝手な ownerId / moderationStatus の変更を拒否 |
+| **購入先** | Apple 署名済み `appAccountToken` と Store token の一致を必須検証。token なし、別 Store、他人の所有 Store、商品 ID 相違を拒否 |
+| **Consumable 復旧** | Backend 成功まで `finish()` しない。未完了取引の起動時処理、サーバー成功後に応答消失した再送、取引の店舗横断の二重付与を検証 |
+| **Credit** | 同時消費でも残高が負にならない。残高1の全画面は配信候補にならない |
+| **広告不正消費** | 偽造・失効・異セッション token、連続発行・連続報告のレート超過、異常消費停止を検証。署名だけで「表示証明」とみなさない |
+| **停止・画像差替** | 候補発行後に広告停止・画像更新・削除・Festival 切替が起きたら、その古い token での課金を拒否 |
+| **公開 DTO** | 運営停止した Store は公開一覧から除外。本人停止時は PublicStore の画像を `null` にする。AdCandidate は停止画像を返さない |
+| **S3 固定キー** | 別人の一時画像を採用できない。再アップロードによる ETag 不一致は 409。S3 コピー成功後に DB CAS が失敗しても、参照中の旧 VersionId の画像を維持 |
+| **画像削除** | 削除直後の新規コピーで、古い削除・GC が新 VersionId を削除しない。公開 URL は VersionId 単位でキャッシュ分離 |
+| **通報・運営** | なりすまし疑いを運営が即時非公開にできる。通報・確認後の復旧は運営のみ許可 |
+| **保持期間** | `lastPurchasedAt == nil` の未購入 Store は createdAt から2年。購入済み Credit は2年経過でも消さない |
+| **Festival** | 切替後に別 Festival の広告・店舗情報を表示しない |
+
+文書のみの PR なので、ここに列挙したものは **実装時に追加すべきテスト**であり、この PR で実行済みという意味ではない。
 
 ## 16. 未確定事項（追加の承認が必要なもの）
+
+**前章で「実装必須」とした安全対策は、この表の未確定項目を理由に省略しない。** 課金や公開の閾値はリリース前に決定する。
 
 | 項目 | 内容 |
 | --- | --- |
 | 全画面表示タイミング | どの操作・頻度で出すか |
-| Viewable 条件 | 可視割合・時間・遮蔽等の判定値 |
-| 地図ピンの課金 | ピン表示・店舗詳細閲覧は従量課金対象か（本書は無課金を仮置き） |
-| 画像仕様 | 最大容量・画素・縦横比・対応画像形式 |
-| 店舗重複防止 | どの条件を「同じ実店舗」とみなすか |
-| 店舗数上限 | 1 アカウントの所有店舗数の具体値 |
-| IAP 返金 | 取消通知と残高調整の確定仕様 |
-| 公開画像配信 | 非公開 S3 の配信方法、キャッシュ、既存基盤との統合 |
+| Viewable 条件 | 可視割合・時間・遮蔽等の課金成立条件 |
+| 地図ピンの課金 | ピン・店舗詳細の閲覧は従量課金対象か（本書は無課金を仮置き） |
+| 画像仕様 | 最大容量・画素・縦横比・対応形式 |
+| 店舗重複防止の調整 | 名前・住所の正規化方法、同じ住所の複数店舗の救済フロー |
+| 店舗数・作成レート上限 | 第12章の初期案をリリース前の運用テストで調整 |
+| Impression の運用閾値 | セッション／IP 制限と異常消費監視の実際の閾値、必要時の App Attest |
+| IAP 返金 | 取消通知と残高調整のルール |
+| 公開画像配信 | S3 VersionId 指定取得・CDN キャッシュと無効化の実装方法 |
 | Google AdMob の再稼働 | 停止フラグと表示優先順位の動作確認 |
-| Android / Web | 広告表示を初期スコープに含むか |
-| 審査ジョブ | AI 簡易チェックの具体的実行環境・頻度 |
+| Android / Web | 広告表示を初期スコープに含めるか |
+| 審査ジョブ | AI チェックの実行環境・頻度 |
 
 ## 17. 実装時に検証する技術的事項
 
@@ -437,9 +448,11 @@ AGENTS.md に従い、原則 Shared / Backend / iOS の PR を分け、Swift Tes
 - iOS Amplify と Backend で Cognito sub の取得が一致しているか。
 - DynamoDB の既存 index-TYPE と新規 Record 型の整合。
 - Apple 署名付き取引情報のサーバー検証、StoreKit 2 の Consumable の復旧動線、App Store Server Notifications。
-- S3 SDK / 署名付き PUT と Lambda 側の画像検証ライブラリ。
+- S3 SDK / 署名付き PUT と Lambda 側の画像検証ライブラリ。広告バケットの Versioning、有効な CopySourceIfMatch、S3 PUT の CORS ETag 公開、正式画像 VersionId での GET を確認。
 - 広告用 GET をキャッシュしない設定、広告取得頻度、S3・DynamoDB のコスト。
 - StoreKit / App Review Guidelines / プライバシー・通報要件をリリース時点で確認。
+- 公開 Store API に停止済み素材が残らないことと、既存 CDN／署名 URL の失効時間を確認。
+- 未購入店舗の整理起点を Store.createdAt とし、残高が残る店舗の台帳を誤って削除しないことを確認。
 
 ## 18. 参照
 
