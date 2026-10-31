@@ -7,7 +7,7 @@
 - 目的: Festival と District の紹介画像を管理者が Light / Dark 別に登録・差し替え・参照解除できるようにする
 - 正本: [独自広告システム設計 §10「S3 画像入稿」](../20261031_original_advertisement/spec.md#10-s3-画像入稿固定パス--store-put)（マージ済み PR #377）
 
-> **設計と実装を区別する。** 2026-10-31 現在、広告画像の S3 入稿はマージ済みの**設計仕様**であり、`main` に共通 S3 画像入稿実装はまだない。広告 Backend 詳細設計 PR #379 は未マージ。本書はその実装を既存機能として仮定しない。本 PR は文書のみ。
+> **設計と実装を区別する。** 2026-10-31 現在、広告画像の S3 入稿はマージ済みの**設計仕様**であり、`main` に共通 S3 画像入稿実装はまだない。広告 Backend 詳細設計 PR #379 は**マージ済み**。旧 API を前提とした[同案件の backend.md](../20261031_original_advertisement/backend.md) も本 PR で共通 API へ修正する。本 PR は文書のみ。
 
 ## 1. 結論と適用範囲
 
@@ -53,7 +53,7 @@ District の `festivalId` は **Backend が既存 District から取得**する�
 - 一時画像は非公開。署名付き PUT URL は短命で、`image/jpeg` と対象キーに限定する。
 - 正式画像も S3 を原則非公開とし、既存環境と広告設計で採用する公開配信手段（CDN 等）を共用する。**バケット名、CDN origin は実装環境で決める**。
 - `ImagePath.light/dark` は現在の閲覧 UI が受け付ける **絶対 URL 文字列**を保存・返却する。成功応答に `temporary/` や非公開の S3 キーをそのまま残さない。
-- 正式 S3 キーは固定だが、**画像を上書きした場合のみ**返却 URL に `?v={backendGeneratedTimestamp}` のようなキャッシュ更新用クエリを付ける（推奨）。通常の文字列 URL として扱い、画像用 revision Entity は追加しない。配信 CDN がクエリをキャッシュキーに含め、旧 URL が新画像と混線しないことを確認する。クエリが無視される環境では配信設定の修正または短いキャッシュ期限が必要。
+- 正式 S3 キーは固定だが、**画像差し替えごとに異なる公開 URL を Backend が永続化して返すことを必須**とする（例: `?v={backendGeneratedEpochMillis}`）。`v` が現在保存済み URL と同値になり得る場合は次の値へ進め、同じ variant の連続差し替えで**必ず異なる値**にする。既存の `ImagePath` 文字列 URL を用い、画像用 revision Entity / UUID は追加しない。**公開 CDN は `v` をキャッシュキーに含める設定を必須**とし、公開 API・Kingfisher・CDN の全経路で新しい画像を取得できることを初回リリース条件とする。短いキャッシュ TTL **だけで代替しない**。
 - 差し替えず保持した URL はそのまま返す。既存の外部 URL は移行せず、**同じ現在値を送り返す限り**保持できる。新規の任意外部 URL への変更は禁止する。
 
 ## 4. API・DTO
@@ -119,8 +119,8 @@ Store の Banner も同じ API に `target: { "type": "store", "id": "store-123"
 1. **署名 URL 発行:** 広告と共通の `POST /images/upload-url` を Router → Controller が処理し、`target.type/id/variant` と `contentType` を解析 → Usecase が対象 Entity を取得・Role/ID 一致を確認 → 画像用 S3 Client が固定一時キーの署名 PUT URL を発行。署名済みヘッダー（Content-Type 等）は応答契約で iOS に伝えるか、値が固定なら仕様で一致させる。
 2. **アップロード:** iOS が JPEG バイト列を S3 へ直接 PUT。HTTP 2xx を確認。アップロードが終わる前に Entity PUT を開始しない。
 3. **既存 PUT:** Festival / District の既存 Controller が Pack をデコード。既存 Usecase がまず認可・ID・子要素の整合性を検査し、保存前に変更対象の画像を処理する。
-4. **画像確定:** Usecase から共通の `S3ImageClient`（名称案）に実体確認・正式パスへのコピーを依頼。Backend は一時キーの完全一致を検証し、`HeadObject` 等で存在・Content-Type・容量、必要なら先頭バイトで JPEG 形式を確認。不正なら **DB は更新せず** 400 等で失敗。
-5. **DB 保存:** 完成した `ImagePath` を既存 Festival/District Entity に組み込み、既存 Repository の `put` を実行する。成功後の Pack / Entity を返す。
+4. **画像確定:** Usecase から共通の `S3ImageClient`（名称案）に実体確認・正式パスへのコピーを依頼。一時キー完全一致・`HeadObject` で存在/Content-Type/容量を確認したうえで、**画像データを読み込み、JPEG SOI/EOI シグネチャ・マーカー構造・解釈できる縦横画素数・サイズ上限をサーバー側で必須検証**する（軽量な JPEG 検証処理でよく、専用サービスや画像管理基盤は不要）。`Content-Type: image/jpeg` だけの非画像、途中で切れた JPEG、サイズ/画素数超過は **CopyObject 前に拒否**し、DB を更新しない。必要な JPEG 構造まで検証できない実装は採用しない。
+5. **DB 保存:** コピー成功時に変更対象の公開 URL を**新しい `v` 付き URL**へ置換する。完成した `ImagePath` を既存 Festival/District Entity に組み込み、既存 Repository の `put` を実行する。成功後の Pack / Entity にも新 URL を返す。変更していない画像は従来 URL を維持する。
 6. **iOS 同期:** `SaveFestivalUseCase` / `SaveDistrictPackUseCase` が**Backend 応答を** AppState に反映。現在の `sessionId` ガードを維持し、祭典・ログインの切り替え後に古い結果を反映しない。
 
 **役割分担:** 共通 `ImageRouter`（名称例）→ `ImageUploadController` → `ImageUploadUsecase` が**1つの署名 URL 発行ルート**を担当し、`target.type` に応じて既存 Repository から Entity を取得・認可。既存 Festival/District/Store の PUT は各 Usecase が画像を確定する。共通 `Data/Client/S3ImageClient` は S3 SDK の署名・検証・コピーのみを実装し、認可は Usecase が担当。画像用 Repository / DynamoDB Entity は作らない。広告実装と二重に API / Client を作らない。
@@ -149,7 +149,7 @@ Festival / District の**既存編集画面**に「紹介画像」セクショ�
 
 - 各枠に現在のサムネイル、写真選択（`PhotosPicker`）、差し替え、参照解除。編集途中はローカル選択のプレビューを優先する。
 - 選択だけでは S3 へ送信しない。画面の「保存」時に初めてアップロードする。キャンセル時は本体の DB 更新なし。
-- TCA の編集 State は `unchanged / replace(localImage) / remove` の3状態を Light・Dark に持つ（実装例としてローカル一時ファイル URL など Equatable / Sendable な参照を保持）。**`AppState` には未保存の画像を置かない**。生の `UIImage` は Reducer の State に持たせない。
+- TCA の編集 State は `unchanged / replace(localImage) / remove` の3状態を Light・Dark に持つ。**`PhotosPickerItem.loadTransferable` による FileRepresentation の元の一時ファイル URL をそのまま保持しない**。選択直後、コールバックが有効な間に**アプリ管理の一時領域へコピー**してその URL を保持する（または所有権の明確な Data 保持方式）。保存まで他項目を編集・時間経過してもアクセスできることを保証し、再選択時は旧ファイルを破棄する。**キャンセル・保存成功・編集画面破棄時は一時ファイルを消す**。保存失敗時は再試行できるよう保持する。`AppState` には未保存の画像を置かず、生の `UIImage` は Reducer の State に持たせない。
 - 保存 Action → 画像選択を JPEG に変換・圧縮 → variant ごと署名 URL 発行 → S3 PUT 完了 → 既存 `FestivalPack` / `DistrictPack` の `image` を「新しい一時キー / 現在の公開 URL / nil」から構築 → 通常の Backend PUT → 応答を AppState へ反映。
 - 保存中は二重タップを抑制し、進捗・失敗を表示する。失敗で画面を閉じず選択内容を保持し、再試行できるようにする。無変更時は画像アップロードを行わない。
 - 通常の更新動線は `FestivalDataFetcher.update` / `DistrictDataFetcher.update` と既存の `SaveFestivalUseCase` / `SaveDistrictPackUseCase` を維持し、アップロード調停のみ Application Usecase に加える。S3 直接 PUT は API 用 `HTTPClient` と分離した Data/Client に閉じ込める。
@@ -157,14 +157,14 @@ Festival / District の**既存編集画面**に「紹介画像」セクショ�
 
 ### キャッシュと表示
 
-現在 `InfoHeaderImageView` / `InfoImageBlurredBackgroundView` は Light/Dark のフォールバックに対応するため、表示ルールは変えない。Kingfisher が URL をキーにするので、差し替え後は**Backend から返した新 URL**でプレビュー・公開画面・preload を再取得する。変更しなかった側は既存 URL を維持する。削除した側はフォールバック先を選び直す。新しい公開 GET レスポンスにも更新後 URL を含めることを確認する。
+現在 `InfoHeaderImageView` / `InfoImageBlurredBackgroundView` は Light/Dark のフォールバックに対応するため、表示ルールは変えない。Kingfisher が URL をキーにするので、**Backend が差し替えごとに新しい URL を返すことが必須**。新 URL でプレビュー・公開画面・preload を再取得する。変更しなかった側は既存 URL を維持し、削除側はフォールバック先を選び直す。**公開 GET（Festival一覧／Pack／District関連レスポンス）から新 URL が返り、実際の CDN GET で新画像が取得できる**ことを結合検証する。
 
 ## 7. AWS・公開配信の前提
 
 - Lambda 実行 Role: 対象 bucket の一時 `PutObject` 署名発行、`HeadObject/GetObject`、一時 → 正式への `CopyObject` 等、必要最小限の権限。クライアントへ AWS 認証情報は渡さない。
 - バケット: 一時オブジェクトを非公開にし、Lifecycle で自動削除。正式画像の閲覧は既存の CDN 等で提供。S3 公開設定を安易に開かない。
 - CORS: iOS ネイティブの直接 PUT には Web の CORS は必須ではない。将来の Web 入稿も対象とするなら、対象 Origin/PUT/Content-Type だけ許可する。
-- 署名 URL の有効期限、許容 Content-Type、最大バイト数、配信 URL のキャッシュキーは広告画像と**共通設定**にする。実装時に AWS 実環境を確認して確定する。
+- 署名 URL の有効期限、許容 Content-Type、最大バイト数は広告画像と**共通設定**にし、実装時に AWS 実環境を確認して確定する。**CDN は `?v=` をキャッシュキーに含める設定が必須**。公開 GET が返す新 URL を CDN へ要求し、新画像の取得と旧 URL のキャッシュ分離を確認するまで初回リリースしない。
 
 ## 8. テスト仕様（Swift Testing）
 
@@ -175,16 +175,16 @@ Festival / District の**既存編集画面**に「紹介画像」セクショ�
 | B03 | 最終 PUT | 署名済み URL 発行済みでも別 Role に切り替えたら確定拒否 |
 | B04 | Festival PUT | Light だけ新規、Dark 保持／削除、逆の組合せが正しく置換される |
 | B05 | District PUT | 同様に片側だけ変更可能。HQ `/core` 経由で画像が変わらない |
-| B06 | S3 確定 | 一時キーの完全一致、JPEG の実体・容量、コピー失敗時に DB PUT しない |
+| B06 | S3 確定 | 一時キーの完全一致。Content-Type だけ JPEG の非画像データ、SOI/EOI またはマーカー構造不正、途中で欠けた JPEG、画素数・容量超過を拒否し CopyObject/DB PUT しない。正常 JPEG のみ許可。コピー失敗時は DB PUT しない |
 | B07 | パス検証 | 他 Entity / variant のキー、任意外部 URL、改ざんされた既存 URL は拒否 |
 | B08 | 互換性 | 変更しない古い外部 URL を現在値として維持、nil の JSON 省略と null を処理 |
 | B09 | 更新・失敗 | DB 失敗後の再アップロード・再試行、S3/DB の非原子的失敗条件を確認 |
 | B10 | ルーティング | 共通の `POST /images/upload-url` と既存 Store/Festival/District GET/PUT・launch・districts の衝突なし（HTTP endpoint 完全一致に追従） |
-| I01 | TCA | 選択・差し替え・解除・キャンセルで AppState を先に変えない |
-| I02 | 保存 | Light/Dark の必要な分だけアップロードし、両 PUT 完了後に Pack PUT |
+| I01 | TCA | 選択・差し替え・解除・キャンセルで AppState を先に変えない。`PhotosPicker` の受取元一時 URL を直接保持せず、選択直後にアプリ管理一時ファイルへコピーし、キャンセル／再選択／成功／画面破棄で掃除する |
+| I02 | 保存 | 写真選択から時間経過・別項目編集後も画像を読める。Light/Dark の必要な分だけアップロードし、両 PUT 完了後に Pack PUT。失敗時の保持・再試行を確認 |
 | I03 | 保存失敗 | S3/Backend エラー時は編集内容保持・アラート、再試行可・重複保存防止 |
 | I04 | 同期 | Backend 応答の正式 URL のみ反映し、sessionId 変更後の古い応答を無視 |
-| I05 | 表示 | Light/Dark 切替・片方のみ・両方なし・差し替え URL の Kingfisher キャッシュ更新 |
+| I05 | 表示・結合 | Light/Dark 切替・片方のみ・両方なし。画像を連続差し替えすると公開 URL が毎回異なり、Kingfisher キャッシュから旧画像が再表示されない。**公開 GET が新 URL を返し、CDN GET が新画像を返す**（クエリをキャッシュキーとする）結合確認 |
 
 テストダブルは `Tests/Utility/` の Spy に置き、Sources にテスト専用実装を混ぜない。Backend は S3 Client/Repository を差し替えて Side Effect と権限を検証。iOS は TCA `TestStore` と Data/Client の Spy で署名取得 → S3 PUT → Pack PUT の順序を検証。実装時には既存 `AGENTS.md` のビルド・実機/シミュレータ・CI の指示に従う。
 
@@ -192,9 +192,9 @@ Festival / District の**既存編集画面**に「紹介画像」セクショ�
 
 **非採用（MVP には過剰）:** Festival/District 専用の署名発行 POST、画像の独立 Entity/Repository、画像 ID/UUID、アップロード確定/削除専用 API、S3 ETag / Versioning / 世代 GC、画像ごとの DynamoDB revision、専用画像審査基盤、既存画像一括移行。
 
-**依存 PR:** 広告 Backend 詳細設計 PR #379 は旧 `/stores/:storeId/images/upload-url` を前提にしているため、マージ前に共通 `/images/upload-url` と `ImageUploadTarget` に変更して整合させる必要がある。このドキュメント PR では別 PR のブランチを変更しない。
+**設計正本の整合:** 広告 Backend 詳細設計 PR #379 は**マージ済み**。本 PR は同案件の [backend.md](../20261031_original_advertisement/backend.md) の旧 `/stores/:storeId/images/upload-url` / `StoreImageUsecase` / R07 / ファイル配置も共通 `/images/upload-url` / `ImageUploadTarget` / `ImageUploadUsecase` / `S3ImageClient` に更新し、上位 [spec.md](../20261031_original_advertisement/spec.md) と整合させる。
 
-**初回実装前に確定するもの:** 広告システムと共通の (1) 画像容量・画素・縦横比、(2) 署名 URL TTL、(3) S3 bucket と公開 CDN/origin、(4) URL の `v` クエリを含む CDN キャッシュ挙動、(5) `ImageUploadURLResponse` が PUT に必要な署名ヘッダーをどう渡すか。未決定でも**画像をアップロード・保存する設計の構造は上記の通り**。
+**初回実装前に確定するもの:** 広告システムと共通の (1) 画像容量・画素・縦横比、(2) 署名 URL TTL、(3) S3 bucket と公開 CDN/origin、(4) `ImageUploadURLResponse` が PUT に必要な署名ヘッダーをどう渡すか。**別途必須のリリース条件:** (a) JPEG の基本構造・画素数を Backend で検証、(b) 差し替えごとに異なる URL の生成・永続化、(c) CDN が `v` をキャッシュキーに含み、公開 GET → CDN GET で画像更新を確認。いずれも画像 ID や独立基盤を追加せず対応する。
 
 ## 10. 参照
 
