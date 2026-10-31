@@ -85,124 +85,108 @@ Store.ownerId は Backend が認証結果から設定し、クライアントの
 
 本部・町の管理者 Role に広告主の編集権限を自動付与しない。運営側の掲載停止は別の運用権限で実行し、広告主自身が強制停止を解除できないようにする。
 
-## 5. Entity と公開 DTO（全型一覧・推奨）
+## 5. Entity と公開 DTO（全型一覧・MVP）
 
-この案件で追加・変更する型を **Entity／未認証公開 DTO／認証・書き込み DTO／内部補助型** に分け、全件を表にまとめる。既存の Festival・District 等は対象外。型名・細部は実装前の案。
+追加・変更する全型を一覧にする。既存の Festival / District 等は対象外。**画像アップロード専用の Entity、画像 UUID、ETag・VersionId、Store revision は持たない。** Apple IAP の購入先照合に使う Store 単位の UUID は、画像識別子とは別の必須情報である。
 
-### 5.1 Entity（正本として保持）
+### 5.1 Entity（永続化対象）
 
-| Entity | フィールド（型の例） | 責務・保存先 | 公開範囲 |
-| --- | --- | --- | --- |
-| **Store** | id: String, festivalId: Festival.ID, ownerId: String, **purchaseAccountToken: UUID**, name: String, address: String, coordinate: Coordinate, businessHours: String, description: String?, bannerImagePath: String?, interstitialImagePath: String?, **bannerImageVersionId: String?**, **interstitialImageVersionId: String?**, ownerPaused: Bool, moderationStatus: ModerationStatus, **revision: Int**, createdAt: Date, updatedAt: Date | 店舗・画像の有効な S3 VersionId・購入先識別・更新競合を管理。FESTIVAL# 配下 | 所有者のみフル Entity を返却 |
-| **CreditAccount** | storeId: Store.ID, balance: Int, lastPurchasedAt: Date? | 店舗ごとに1つの Credit。STORE# 配下 | 所有者のみ |
-| **PurchaseRecord** | transactionId: String, storeId: Store.ID, **appAccountToken: UUID**, productId: String, creditedAmount: Int, purchasedAt: Date, environment: String, revocationStatus: String? | グローバル一意の Apple 取引台帳 | 非公開。広告主には PurchaseHistoryItem |
-| **ImpressionRecord** | impressionId: String, storeId: Store.ID, festivalId: Festival.ID, placement: StoreAdPlacement, **imageVersionId: String**, chargedAmount: Int, chargedAt: Date | 画像世代と請求内容を含む重複防止台帳 | 非公開 |
-| **UserRole（既存変更）** | headquarter(festivalId), district(districtId), advertiser(cognitoSub), guest | 認証・認可の Role | API の認証コンテキストで使用 |
-
-Store の画像パスは **固定一時パス（新画像）・正式パス（維持）・明示 JSON null（削除）**。Store の作成時に Backend が **店舗単位の appAccountToken（UUID）を一度だけ**発行する。画像ごとの UUID ではない。`revision` は Store PUT が成功するごとに条件付きで増やし、古い版の書き込みには 409 を返す。クライアントからの ownerId・festivalId・purchaseAccountToken・moderationStatus 等のサーバー管理値の変更は拒否する。
-
-### 5.2 公開 DTO（未認証の来場者に返却可能）
-
-| DTO | フィールド（型の例） | 使用先 | 含めない情報 |
-| --- | --- | --- | --- |
-| **PublicStore** | id: String, festivalId: Festival.ID, name: String, address: String, coordinate: Coordinate, businessHours: String, description: String?, bannerImagePath: String?, **bannerImageVersionId: String?**, interstitialImagePath: String?, **interstitialImageVersionId: String?** | `GET /festivals/:festivalId/stores`・地図・店舗詳細 | ownerId、Credit、購入・審査台帳を除く。停止・審査 NG の画像は null。運営が店舗を非公開にした場合は一覧から除外 |
-| **AdCandidate** | storeId: Store.ID, festivalId: Festival.ID, placement: StoreAdPlacement, imagePath: String, **imageVersionId: String**, impressionId: String, impressionToken: String | `GET /festivals/:festivalId/advertisements/next` | 現在配信可能な正式画像だけを返す |
-
-PublicStore / AdCandidate の画像は **正式パスと公開中の S3 VersionId を必ずセットで返却**する。配信側は「キーの最新版」を無条件に取得せず、指定 VersionId に一致する内容を返す。停止中・審査 NG・対象画像なしのときは PublicStore の画像フィールド（パス・VersionId）を null にし、AdCandidate の対象からも除外。既発行 URL・CDN キャッシュの失効方針は第10章に記載。
-
-### 5.3 認証・書き込み用 DTO（API 境界）
-
-| DTO | フィールド（型の例） | 用途 | アクセス |
-| --- | --- | --- | --- |
-| **StoreCreateRequest** | name: String, address: String, coordinate: Coordinate, businessHours: String, description: String? | `POST /festivals/:festivalId/stores`。id / ownerId は Backend が設定 | 広告主 |
-| **ImageUploadURLRequest** | kind: StoreAdPlacement, contentType: String | `POST /stores/:storeId/images/upload-url` | 所有者 |
-| **ImageUploadURLResponse** | url: String, path: String, expiresAt: Date | 固定一時 S3 PUT 用 URL（S3 PUT の応答 ETag を CORS で公開）。uploadId 不要 | 所有者 |
-| **PurchaseClaimRequest** | signedTransactionInfo: String | `POST /stores/:storeId/purchases` | 所有者 |
-| **PurchaseResult** | transactionId: String, creditedAmount: Int, balance: Int | 同 API の購入確定結果 | 所有者 |
-| **PurchaseHistoryItem** | transactionId: String, productId: String, creditedAmount: Int, purchasedAt: Date | `GET /stores/:storeId/purchases` の表示用 | 所有者 |
-| **ImpressionReportRequest** | impressionId: String, impressionToken: String | `POST /advertisements/impressions` | 来場者 |
-| **AdvertisementReportRequest** | storeId: Store.ID, placement: StoreAdPlacement?, reason: String | `POST /advertisements/reports` | 来場者 |
-
-Store 更新は Store Entity 自体を PUT し、更新後の Store を返す。全体置換の **両画像パスには JSON キーを必須**とし、nil は既存の `@NullEncodable` と同様に明示的に `null` で送る。省略は 400。ETag は画像アップロード後にヘッダーで、Store revision は `If-Match` ヘッダーで送る（第7・10章）。残高 GET は CreditAccount をそのまま返し、専用の画像確定 DTO は作らない。
-
-### 5.4 補助型・索引レコード（ドメイン Entity を増やさない）
-
-| 型・レコード | 内容 | 目的 |
+| Entity | フィールド（型の例） | 責務・公開範囲 |
 | --- | --- | --- |
-| **StoreAdPlacement** | banner / interstitial | 画像種別・必要 Credit（1 / 2）を表す。既存 AdMob 用 AdPlacement と別型 |
-| **ModerationStatus** | approved / suspended 等 | 運営停止と広告主停止の分離 |
-| **StoreOwnerReference** | ownerId、storeId、festivalId | `USER#{cognitoSub} / STORE#{storeId}` の検索用参照 |
-| **StoreDuplicateReference** | festivalId、normalizedNameAddressHash、storeId | 同一店舗の重複登録を条件付きで抑制する DB 参照 |
-| **VerifiedPurchase** | 検証済み取引データ | 未検証入力と Credit Repository の境界 |
-| **VerifiedImpression** | 検証済み表示データ | 未検証入力と減算処理の境界 |
+| **Store** | id: String、festivalId: Festival.ID、ownerId: String、**purchaseAccountToken: UUID**、name: String、address: String、coordinate: Coordinate、businessHours: String、description: String?、bannerImagePath: String?、interstitialImagePath: String?、ownerPaused: Bool、moderationStatus: ModerationStatus、createdAt: Date、updatedAt: Date | 1店舗の情報と2種類の広告画像。所有者向け管理 API ではフル Entity。年をまたいで維持 |
+| **CreditAccount** | storeId: Store.ID、balance: Int、lastPurchasedAt: Date? | 店舗単位の共通 Credit。所有者のみ |
+| **PurchaseRecord** | transactionId: String、storeId: Store.ID、appAccountToken: UUID、productId: String、creditedAmount: Int、purchasedAt: Date、environment: String、revocationStatus: String? | Apple 取引の店舗横断で一意な購入・付与台帳。内部のみ |
+| **ImpressionRecord** | impressionId: String、storeId: Store.ID、placement: StoreAdPlacement、chargedAmount: Int、chargedAt: Date | 表示実績・重複減算防止。内部のみ |
+| **UserRole（既存型を変更）** | headquarter(festivalId)、district(districtId)、advertiser(cognitoSub)、guest | 既存 Cognito Pool を使った認可の分類 |
 
-**初期には作らない型**: 独立 Advertiser、Advertisement、Campaign、StoreMember、画像ごとの Upload Entity／uploadId／UUID。1店舗につきバナー1枚・全画面1枚の固定パスで十分。
+Store 作成時に Backend が **店舗につき1つの購入用 `purchaseAccountToken`（UUID）**を発行して保存する。画像には UUID を使わない。Store 更新では ownerId・festivalId・purchaseAccountToken・運営停止状態・作成時刻などをサーバーが保護する。
+
+### 5.2 公開 DTO（未認証閲覧者向け）
+
+| DTO | フィールド（型の例） | 用途・公開条件 |
+| --- | --- | --- |
+| **PublicStore** | id、festivalId、name、address、coordinate、businessHours、description、bannerImagePath: String?、interstitialImagePath: String?、**updatedAt: Date** | `GET /festivals/:festivalId/stores`、地図と店舗詳細。広告主停止なら画像パスを null、運営が店舗を非公開にしたら店舗自体を除外。内部情報は含めない |
+| **AdCandidate** | storeId、festivalId、placement: StoreAdPlacement、imagePath: String、**updatedAt: Date**、impressionId、impressionToken | 広告配信 API。配信可能な画像の正式パスと短命の表示 token のみ |
+
+公開 DTO は画像の一時パス、ownerId、Credit、運営停止の理由、購入台帳を含めない。画像更新時のキャッシュ用バージョンは **Store.updatedAt** を流用し、画像ごとの世代を保存しない。停止後の新規公開レスポンスからは画像を除く。既に取得された画像 URL・キャッシュの残存は配信基盤の期限に依存する。
+
+### 5.3 API 境界 DTO（認証・書き込み・応答）
+
+| DTO | フィールド（型の例） | 対応 API・アクセス |
+| --- | --- | --- |
+| **StoreCreateRequest** | name、address、coordinate、businessHours、description? | 店舗作成。id / ownerId / purchaseAccountToken は Backend が採番。広告主のみ |
+| **ImageUploadURLRequest** | kind: StoreAdPlacement、contentType: String | 一時画像アップロード URL 発行。店舗所有者のみ |
+| **ImageUploadURLResponse** | url: String、path: String、expiresAt: Date | 固定一時パスと S3 PUT 署名 URL。店舗所有者のみ |
+| **PurchaseClaimRequest** | signedTransactionInfo: String | Apple の署名済み取引を検証。店舗所有者のみ |
+| **PurchaseResult** | transactionId、creditedAmount、balance | 購入確定結果。店舗所有者のみ |
+| **PurchaseHistoryItem** | transactionId、productId、creditedAmount、purchasedAt | 購入履歴。店舗所有者のみ |
+| **ImpressionReportRequest** | impressionId、impressionToken | 表示報告。一般クライアントから送信 |
+| **AdvertisementReportRequest** | storeId、placement: StoreAdPlacement?、reason | 広告通報。一般クライアントから送信 |
+
+Store PUT は Store Entity 全体を送受信する。画像2フィールドは **必ず JSON キーを含める**。Swift の既存 `@NullEncodable` 等で `nil` を JSON `null` にし、欠落キーは Backend で 400 とする。別途の画像確定・削除 DTO は作らない。
+
+### 5.4 補助型と検索用参照（追加 Entity は不要）
+
+| 型・レコード | 内容 |
+| --- | --- |
+| **StoreAdPlacement** | banner / interstitial（1 / 2 Credit）。既存 AdMob 用型とは分離 |
+| **ModerationStatus** | approved / suspended 等。広告主自身の停止とは分離 |
+| **StoreOwnerReference** | ownerId、storeId、festivalId。`USER#{cognitoSub} / STORE#{storeId}` で所有店舗を引く |
+| **VerifiedPurchase** | Backend が署名と店舗との対応を検証済みの購入情報 |
+| **VerifiedImpression** | Backend が表示 token を検証済みの消費情報 |
+
+**MVP では追加しないもの**: Advertiser、Campaign、独立 Advertisement、StoreMember、アップロード用 Entity／UUID、S3 VersionId モデル、Store revision、重複店舗のハッシュ索引レコード。
 
 ## 6. DynamoDB レコード設計（推奨）
 
-既存 matool テーブルの pk / sk / type / content に合わせる。以下は **論理キー**であり、本番で必要な GSI との整合は実装前に確認する。
+既存 `matool` の `pk` / `sk` / `type` / `content` と既存 GSI の規約に従う。
 
 | PK | SK | 内容 |
 | --- | --- | --- |
 | FESTIVAL#{festivalId} | STORE#{storeId} | Store |
-| USER#{cognitoSub} | STORE#{storeId} | 広告主の所有店舗参照（festivalId を含む） |
-| FESTIVAL#{festivalId} | STORE_DUP#{normalizedNameAddressHash} | 同じ実店舗の重複登録を条件付きで抑制する参照 |
+| USER#{cognitoSub} | STORE#{storeId} | 店舗所有者の検索用参照 |
 | STORE#{storeId} | CREDIT | CreditAccount |
-| PURCHASE#{appleTransactionId} | METADATA | 取引の一意な購入台帳 |
-| STORE#{storeId} | IMPRESSION#{impressionId} | 重複防止・短期表示実績 |
+| PURCHASE#{appleTransactionId} | METADATA | 全店舗で一意の購入記録 |
+| STORE#{storeId} | IMPRESSION#{impressionId} | 二重減算防止用の短期記録 |
 
-アクセスパターン:
-1. Festival の公開店舗一覧: FESTIVAL# 内で STORE# 前方一致。
-2. 広告主の管理店舗一覧: USER# 内で STORE# 前方一致。
-3. 個別 Store の取得: festivalId + storeId の直接キー、または既存 GSI に準じた ID 検索。
-7. 新規店舗の重複抑止: FESTIVAL# 内の STORE_DUP# 正規化キーを条件付き作成する。
-4. Credit: STORE# + CREDIT の直接取得。
-5. 購入の二重付与排除: PURCHASE#transactionId を条件付き作成。
-6. 消費の重複排除: STORE#storeId + IMPRESSION#impressionId を条件付き作成。
+アクセスパターンは Festival 内 Store 一覧、所有者の Store 一覧、Store 個別取得、Credit 直接取得、Apple transactionId の重複照合、impressionId の重複照合とする。
 
-**原子的な処理**:
-- Store 作成: Store / USER 参照 / 重複登録用参照 / CreditAccount 初期値をトランザクションで条件付き保存する。
-- IAP: 取引の条件付き新規作成 + 残高加算を一体として確定。
-- Impression: **現行 Store の停止状態・画像の VersionId に対する ConditionCheck** + impressionId の条件付き新規作成 + Credit 残高の条件付き減算を同一トランザクションで実施する。
-- 同時表示報告で残高を負にしない。残高不足なら表示実績を課金確定させない。
+**原子的な整合性が必要なのは金銭・Credit 処理。** 購入は transactionId の条件付き新規作成と Credit 加算、表示実績は impressionId の条件付き新規作成と残高不足を防ぐ Credit 減算を、DynamoDB の原子的な書き込みで確定する。Store や画像の更新については追加の revision / CAS / 分散トランザクションを導入せず、通常の更新を使用する。Store 初回作成で店舗参照や残高初期化に失敗した際の再実行を可能にする。
 
-実装では DynamoDB の条件付き UpdateItem / TransactWriteItems の追加が必要。型安全なラッパーを DataStore / Repository に置き、Usecase で直接 AWS SDK を呼ばない。
-
-**台帳の保管**: 消費イベントを無期限・無制限に保持するとコストが増える。少なくともトークン有効期限・再送可能期間より長く重複防止記録を保持し、必要に応じて TTL / 集計を設ける。購入の一意性台帳は TTL で消さない。
+Impression の重複防止レコードは、token の有効期間・再送期間を超えたら TTL 等で整理できる。購入の一意性台帳は削除しない。
 
 ## 7. API 設計（推奨）
 
-既存 Router / Controller と同様の形で追加。認証付き GET と署名付き URL は `Cache-Control: no-store`。課金対象広告の候補発行もキャッシュさせない。
-
 | Method | Path | 用途 / 認可 | 型 |
 | --- | --- | --- | --- |
-| — | Cognito SignUp / ConfirmSignUp / SignIn | 広告主登録・ログイン（Amplify） | Cognito 標準 |
+| — | Cognito SignUp / ConfirmSignUp / SignIn | 広告主登録（Amplify） | Cognito 標準 |
 | GET | /advertisers/me/stores | 所有店舗一覧 | [Store] |
-| POST | /festivals/:festivalId/stores | 店舗作成。新規登録制限を必ず判定 | StoreCreateRequest → Store |
-| GET / PUT | /stores/:storeId | 店舗取得・編集・画像確定・画像削除 | Store → Store（PUT は全体置換、revision 条件付き） |
-| POST | /stores/:storeId/images/upload-url | **唯一の画像専用 API**。固定一時キーへの署名付き PUT URL 発行 | ImageUploadURLRequest → ImageUploadURLResponse |
-| GET | /stores/:storeId/credits | Credit 残高 | CreditAccount |
-| POST | /stores/:storeId/purchases | Apple 署名済み取引の検証・付与 | PurchaseClaimRequest → PurchaseResult |
+| POST | /festivals/:festivalId/stores | 店舗作成（店舗数制限あり） | StoreCreateRequest → Store |
+| GET / PUT | /stores/:storeId | 店舗取得・編集・**画像確定／参照削除** | Store → Store |
+| POST | /stores/:storeId/images/upload-url | **唯一の画像専用 API**。固定一時キーへの署名付き URL 発行 | ImageUploadURLRequest → ImageUploadURLResponse |
+| GET | /stores/:storeId/credits | 残高 | CreditAccount |
+| POST | /stores/:storeId/purchases | Apple 署名済み取引の検証・Credit 付与 | PurchaseClaimRequest → PurchaseResult |
 | GET | /stores/:storeId/purchases | 購入履歴 | [PurchaseHistoryItem] |
-| GET | /festivals/:festivalId/stores | 公開店舗（停止と画像公開条件を投影） | [PublicStore] |
-| GET | /festivals/:festivalId/advertisements/next?placement=banner | レート制限付きの候補と表示トークン | AdCandidate? |
-| POST | /advertisements/impressions | 表示検証と原子的 Credit 減算 | ImpressionReportRequest → 空応答 |
+| GET | /festivals/:festivalId/stores | 公開店舗一覧 | [PublicStore] |
+| GET | /festivals/:festivalId/advertisements/next?placement=banner | 次の広告候補と短命 token | AdCandidate? |
+| POST | /advertisements/impressions | 表示報告と原子的減算 | ImpressionReportRequest → 空応答 |
 | POST | /advertisements/reports | 不適切広告の通報 | AdvertisementReportRequest → 空応答 |
 
-### 7.1 既存ルーターとの衝突（実装前の必須修正）
+### 7.1 既存ルーティング衝突（採用した指摘）
 
-現在の `Backend/Sources/Infrastructure/Application.swift` の `match` は `route.count <= pathParts.count` の前方一致になっている。`Backend.swift` の `FestivalRouter()` 内の `GET /festivals/:festivalId` が、`GET /festivals/:festivalId/stores` と `GET /festivals/:festivalId/advertisements/next` を先取りしてしまう。
+現在の `Backend/Sources/Infrastructure/Application.swift` はメソッド付きルートでも前方一致するため、既存 `GET /festivals/:festivalId` が新規の `/stores` や `/advertisements/next` へ先にマッチする。**実装時には HTTP endpoint のパスを完全一致に変更する**。全域の `AuthMiddleware(path: "/")` のような method なし Middleware の前方一致だけは維持し、3つの URL の回帰テストを追加する。この PR は仕様書のみなのでコードは触らない。
 
-**広告 API の追加前に、HTTP method が指定されたエンドポイントはパス要素数も完全一致に変更**する。`AuthMiddleware(path: "/")` 等の `method == nil` なミドルウェアは、従来どおりパスの接頭辞に適用できるよう別条件で処理する。ルーターの登録順のみに依存しない。`GET /festivals/F`、`GET /festivals/F/stores`、`GET /festivals/F/advertisements/next`、全域認証 Middleware のテストを追加する。**この設計書 PR ではコードは変更しない。**
+### 7.2 Store PUT と画像パス
 
-### 7.2 Store PUT の契約
+Store PUT は **全体置換・最後に受理された書き込みを採用**し、Store の revision や `If-Match`、画像の ETag ヘッダーは導入しない。低頻度・単一管理アカウントの編集であることを踏まえ、複数端末による古い上書きは MVP の許容事項とする。ユーザー画面は保存後の **Backend が返す Store を最新状態として反映**する。
 
-- `If-Match: "<revision>"` に設定された **Store.revision** と現在の DB revision が一致するときのみ更新。DB 側は条件付き更新して revision +1。不一致は **409 Conflict**、欠落は **400 Bad Request**（既存の Application.Error に合わせる）。クライアントは 409 で再取得し、編集内容を確認してから再送。無条件の自動上書きは禁止。
-- **全体置換**なので `bannerImagePath`・`interstitialImagePath` は両方とも JSON キー必須。Swift 側は既存の `@NullEncodable` 等で nil を JSON `null` としてエンコードし、Backend はキー省略を 400 とする。
-- 画像パスが **固定一時パス**なら、その kind に限り iOS の S3 PUT 応答 `ETag` を `X-MaTool-Banner-ETag` / `X-MaTool-Interstitial-ETag` ヘッダーで送る。ETag がない／不一致は 409 または 400 とし、黙って最新の一時画像を採用しない。
-- 画像パスが **現在の正式パス**なら画像変更なし。正式パスへの任意書換えやサーバー管理属性の変更は禁止。
-- 画像パスが **明示 null** なら公開参照を解除。正式 S3 オブジェクトの即時削除を伴わず、後の安全な整理処理に任せる（第10章）。
-- Store ID を先に発行してから画像をアップロード。既存の店舗所有者認可を必ず検証する。
+- 固定一時キー（`temporary/stores/{storeId}/{kind}.jpg`）を指定: 所有権・種類・パス一致・画像実体・サイズを確認し、S3 正式キーにコピーして DB に正式パスを保存。
+- 現在の正式パス（`stores/{storeId}/{kind}.jpg`）を指定: 画像変更なし。
+- JSON `null`: DB の画像参照を解除。**物理画像をその場で削除しない**（第10章）。
+- 両画像フィールドを省略せず送る。Swift `@NullEncodable` で null を明示し、欠落した場合は 400。
+- ownerId、festivalId、purchaseAccountToken、運営停止状態等のサーバー管理フィールドをクライアントが改ざんできないよう検証。
+
+署名付き URL は Store が作成されてから発行する。画像確定・削除専用 API は作らない。
 
 ## 8. IAP と Credit
 
