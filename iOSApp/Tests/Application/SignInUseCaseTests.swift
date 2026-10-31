@@ -42,7 +42,7 @@ struct SignInUseCaseTests {
             $0.installTestSpies()
             $0.authProvider = provider
             $0[SceneDataFetcherKey.self] = fetcher
-            $0[UserDefaltsManagerKey.self] = SignInUserDefaultsManager()
+            $0[UserDefaltsManagerKey.self] = DefaultUserDefaultsSpy()
         } operation: {
             SignInUseCase()
         }
@@ -65,7 +65,7 @@ struct SignInUseCaseTests {
         let useCase = withDependencies {
             $0.installTestSpies()
             $0.authProvider = provider
-            $0[UserDefaltsManagerKey.self] = SignInUserDefaultsManager()
+            $0[UserDefaltsManagerKey.self] = DefaultUserDefaultsSpy()
         } operation: {
             SignInUseCase()
         }
