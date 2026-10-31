@@ -169,57 +169,63 @@ Store 更新は Store Entity 自体を PUT し、更新後の Store を返す。
 
 ## 7. API 設計（推奨）
 
-既存 Router / Controller のスタイルに合わせる。認証付き GET と署名付き URL のレスポンスはキャッシュしない。
+既存 Router / Controller と同様の形で追加。認証付き GET と署名付き URL は `Cache-Control: no-store`。課金対象広告の候補発行もキャッシュさせない。
 
 | Method | Path | 用途 / 認可 | 型 |
 | --- | --- | --- | --- |
-| — | Cognito SignUp / ConfirmSignUp / SignIn | 広告主登録（Amplify） | Cognito 標準 |
-| GET | /advertisers/me/stores | 自分が所有する店舗一覧 | [Store] |
-| POST | /festivals/:festivalId/stores | 先に Store を登録・ID 採番 | StoreCreateRequest → Store |
-| GET / PUT | /stores/:storeId | 店舗取得・編集・**画像確定・画像削除** | Store → Store（PUT は全体置換） |
-| POST | /stores/:storeId/images/upload-url | **唯一の画像専用 API**: 固定一時キーへの署名付き PUT URL を発行 | ImageUploadURLRequest → ImageUploadURLResponse |
+| — | Cognito SignUp / ConfirmSignUp / SignIn | 広告主登録・ログイン（Amplify） | Cognito 標準 |
+| GET | /advertisers/me/stores | 所有店舗一覧 | [Store] |
+| POST | /festivals/:festivalId/stores | 店舗作成。新規登録制限を必ず判定 | StoreCreateRequest → Store |
+| GET / PUT | /stores/:storeId | 店舗取得・編集・画像確定・画像削除 | Store → Store（PUT は全体置換、revision 条件付き） |
+| POST | /stores/:storeId/images/upload-url | **唯一の画像専用 API**。固定一時キーへの署名付き PUT URL 発行 | ImageUploadURLRequest → ImageUploadURLResponse |
 | GET | /stores/:storeId/credits | Credit 残高 | CreditAccount |
-| POST | /stores/:storeId/purchases | 購入検証・Credit 付与 | PurchaseClaimRequest → PurchaseResult |
+| POST | /stores/:storeId/purchases | Apple 署名済み取引の検証・付与 | PurchaseClaimRequest → PurchaseResult |
 | GET | /stores/:storeId/purchases | 購入履歴 | [PurchaseHistoryItem] |
-| GET | /festivals/:festivalId/stores | 公開店舗一覧 | [PublicStore] |
-| GET | /festivals/:festivalId/advertisements/next?placement=banner | 表示候補と表示用トークン | AdCandidate? |
-| POST | /advertisements/impressions | 表示実績・Credit 減算 | ImpressionReportRequest → 空応答 |
+| GET | /festivals/:festivalId/stores | 公開店舗（停止と画像公開条件を投影） | [PublicStore] |
+| GET | /festivals/:festivalId/advertisements/next?placement=banner | レート制限付きの候補と表示トークン | AdCandidate? |
+| POST | /advertisements/impressions | 表示検証と原子的 Credit 減算 | ImpressionReportRequest → 空応答 |
 | POST | /advertisements/reports | 不適切広告の通報 | AdvertisementReportRequest → 空応答 |
 
-**画像確定専用・画像削除専用 API は不要。** `PUT /stores/:storeId/images/:kind` と `DELETE /stores/:storeId/images/:kind` は作らない。
+### 7.1 既存ルーターとの衝突（実装前の必須修正）
 
-Store PUT に含める画像パスは次の三値で扱う（全体置換なので両形式を送信する）。
+現在の `Backend/Sources/Infrastructure/Application.swift` の `match` は `route.count <= pathParts.count` の前方一致になっている。`Backend.swift` の `FestivalRouter()` 内の `GET /festivals/:festivalId` が、`GET /festivals/:festivalId/stores` と `GET /festivals/:festivalId/advertisements/next` を先取りしてしまう。
 
-| Store の画像フィールド | Backend の動作 |
-| --- | --- |
-| `temporary/stores/{storeId}/banner.jpg` など一致する固定一時パス | 対象画像を検証 → 正式キーへ S3 Copy → Entity のパスを書き換えて DB 保存 |
-| `stores/{storeId}/banner.jpg` など現在の正式パス | 画像は変更せず、そのまま保存 |
-| `null` | その形式の画像を削除扱い（DB 参照を解除し、正式 S3 画像の削除を行う） |
+**広告 API の追加前に、HTTP method が指定されたエンドポイントはパス要素数も完全一致に変更**する。`AuthMiddleware(path: "/")` 等の `method == nil` なミドルウェアは、従来どおりパスの接頭辞に適用できるよう別条件で処理する。ルーターの登録順のみに依存しない。`GET /festivals/F`、`GET /festivals/F/stores`、`GET /festivals/F/advertisements/next`、全域認証 Middleware のテストを追加する。**この設計書 PR ではコードは変更しない。**
 
-- クライアントの ownerId・festivalId・運営停止状態を信用せず、既存 Store と突き合わせる。
-- 一時パス・正式パスはサーバーが規定する文字列に完全一致するもののみ許可する。
-- Store の作成直後は画像なし。画像アップロードは storeId 確定後に実行する。
-- 公開ストア情報と管理用 Store を分離する。候補発行 API は no-store とする。
-- 運営停止 API / 手動ツールは運営権限を別途決める。
+### 7.2 Store PUT の契約
+
+- `If-Match` で送られる **Store.revision** と現在の DB revision が一致するときのみ更新。DB 側は条件付き更新して revision +1。不一致は **409 Conflict**、欠落は 428 Precondition Required（既存エラーハンドリングで 400 とする場合は統一する）。クライアントは 409 で再取得し、編集内容を確認してから再送。無条件の自動上書きは禁止。
+- **全体置換**なので `bannerImagePath`・`interstitialImagePath` は両方とも JSON キー必須。Swift 側は既存の `@NullEncodable` 等で nil を JSON `null` としてエンコードし、Backend はキー省略を 400 とする。
+- 画像パスが **固定一時パス**なら、その kind に限り iOS の S3 PUT 応答 `ETag` を `X-MaTool-Banner-ETag` / `X-MaTool-Interstitial-ETag` ヘッダーで送る。ETag がない／不一致は 409 または 400 とし、黙って最新の一時画像を採用しない。
+- 画像パスが **現在の正式パス**なら画像変更なし。正式パスへの任意書換えやサーバー管理属性の変更は禁止。
+- 画像パスが **明示 null** なら公開参照を解除。正式 S3 オブジェクトの即時削除を伴わず、後の安全な整理処理に任せる（第10章）。
+- Store ID を先に発行してから画像をアップロード。既存の店舗所有者認可を必ず検証する。
 
 ## 8. IAP と Credit
 
 ### 8.1 商品
 
-StoreKit 2 の Consumable を採用する案。500 円 → 500 Credit、1,000 円 → 1,000 Credit。Product ID は App Store Connect に合わせて後決めし、クライアントの表示価格は StoreKit の Product 情報を使う。
+StoreKit 2 の Consumable。500 円 → 500 Credit、1,000 円 → 1,000 Credit。Product ID は App Store Connect と一致させ、iOS に表示する価格は StoreKit の Product を使用する。
 
-### 8.2 購入・付与
+### 8.2 購入先の厳密な紐付け（必須）
 
-1. iOS が購入対象 Store を選択し、StoreKit 2 で購入する。
-2. 署名付き取引情報を Backend に送る。店舗との結びつきに appAccountToken 等を活用する設計を検討（Store ごとに UUID を発行・保持する方式など）。
-3. Backend が Apple の署名・環境・Bundle ID・Product ID・取引状態と店舗の所有権を検証する。
-4. 検証済み transactionId をグローバルに一意として購入台帳に記録し、同一トランザクションで Credit を加算する。
-5. 同じ取引が再送された場合は追加付与せず、既存の結果を返す。
-6. Backend の一時障害で付与できない購入は、検証可能な取引情報から後続起動で回復できる設計にする。
+Store 作成時、Backend が **Store ごとに固有かつ不変の `purchaseAccountToken: UUID`** を1つ生成し保存する。これは **広告画像の UUID ではない**。広告主が自分の Store を取得するときに返却する。購入開始時は、その Store の token を StoreKit 2 の `.appAccountToken(store.purchaseAccountToken)` として必ず付与する。
 
-**返金**: 取引の取消・返金による差し引きや不足残高の扱い、App Store Server Notifications の導入範囲はリリース前に確定する。返金を検知できないまま課金処理を完成扱いしない。
+購入 API の URL `/stores/:storeId/purchases` と認証ユーザーの所有権に加え、**Apple 署名済み取引の `appAccountToken` が DB 内の対象 Store の token と完全一致することを必須検証**する。token のない取引、別店舗の token、別所有者の取引は付与拒否。`transactionId` の全体一意制約はこの検証の代わりではなく、二重付与防止として別途必要。
 
-**規約上の前提**: 購入済み Credit は有効期限を設けず、2 年ルールで失効させない。公開時点の Apple App Review Guidelines と StoreKit の要求事項を再確認する。
+### 8.3 購入確定・未完了取引の復旧
+
+1. iOS が購入対象 Store と `purchaseAccountToken` を確認して StoreKit 購入を開始する。
+2. StoreKit が検証済み Transaction を返しても、**ただちに `Transaction.finish()` しない**。署名済み取引を Backend の `POST /stores/:storeId/purchases` に送る。
+3. Backend は Apple の署名、Bundle ID、環境、商品 ID、取引状態、`appAccountToken` と所有権を検証する。
+4. `transactionId` をグローバル一意の購入台帳へ条件付き作成し、**Credit 加算を同じ DynamoDB Transaction** で確定。同一取引の再送なら追加付与せず、確定済み結果を返す。
+5. **iOS は Backend の確定成功（または既に処理済みという冪等成功）を確認してから `transaction.finish()`** を呼ぶ。通信失敗・サーバーエラーでは finish せず、未完了のまま残す。
+6. 起動時・ログイン後・通信回復時は `Transaction.unfinished` / `Transaction.updates` を処理し、購入時の token に一致する Store を確認して同じ署名済み取引を再送。Backend が処理済みなのに応答だけ失われた場合も冪等応答で安全に finish できる。
+7. Store が取得不能・所有権変更等により復旧不能なときは取引を安易に finish せず、サポートで照合できるようにする。
+
+**返金・取消**: App Store Server Notifications、購入済み Credit 消費後の返金調整、負残高の回避はリリース前に決める。返金を検知できないまま課金機能を完成扱いしない。
+
+**規約上の前提**: 購入済み Credit に有効期限を設けず、2年ルールで消去しない。公開時点の Apple App Review Guidelines と StoreKit 仕様を再確認する。
 
 ## 9. 配信・Viewable・消費
 
