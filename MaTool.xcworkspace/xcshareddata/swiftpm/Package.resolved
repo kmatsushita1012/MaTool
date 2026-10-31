@@ -1,13 +1,13 @@
 {
-  "originHash" : "9c7e3584094d665045f0948b4b84afa5192758f2e3f4fd018439ac416ec45ffe",
+  "originHash" : "45120e03d1c47459a90f73b0d18304d7ab155d1192555d8e85e8b670205e1485",
   "pins" : [
     {
       "identity" : "amplify-ios",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/aws-amplify/amplify-ios.git",
       "state" : {
-        "revision" : "24b6c264211c0579a62d48e0656d674551334ebb",
-        "version" : "2.62.0"
+        "revision" : "62fa52b217a510ac3ff533b17bfc6e2517f3fc21",
+        "version" : "2.63.0"
       }
     },
     {
@@ -69,8 +69,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/onevcat/Kingfisher.git",
       "state" : {
-        "revision" : "8648fe649c5d62be38721110f835821906e9242a",
-        "version" : "8.13.0"
+        "revision" : "3feb743b5c92c2b443614d10a00e605212a2b4b1",
+        "version" : "8.14.0"
       }
     },
     {
@@ -276,8 +276,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/kmatsushita1012/swift-fallback-macro",
       "state" : {
-        "revision" : "f5eb5a8e1d1453e4c2b274e8942b5fad2f3de320",
-        "version" : "0.1.0"
+        "revision" : "563a07be3fe73de85c55acbd840381729eeef5c1",
+        "version" : "0.2.0"
       }
     },
     {
@@ -402,8 +402,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/googleads/swift-package-manager-google-mobile-ads.git",
       "state" : {
-        "revision" : "12b7af0f844723a86fd3c0089b02f64b1e495605",
-        "version" : "13.10.0"
+        "revision" : "d1fa1f5c1dfe3b43d56c73f4de388ad3316618bc",
+        "version" : "13.11.0"
       }
     },
     {
