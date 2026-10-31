@@ -115,8 +115,8 @@ Store 作成時に Backend が **店舗につき1つの購入用 `purchaseAccoun
 | DTO | フィールド（型の例） | 対応 API・アクセス |
 | --- | --- | --- |
 | **StoreCreateRequest** | name、address、coordinate、businessHours、description? | 店舗作成。id / ownerId / purchaseAccountToken は Backend が採番。広告主のみ |
-| **ImageUploadURLRequest** | kind: StoreAdPlacement、contentType: String | 一時画像アップロード URL 発行。店舗所有者のみ |
-| **ImageUploadURLResponse** | url: String、path: String、expiresAt: Date | 固定一時パスと S3 PUT 署名 URL。店舗所有者のみ |
+| **ImageUploadURLRequest** | target: ImageUploadTarget（type/id/variant）、contentType: String | 1つの共通 URL 発行 API。広告 Store は `type=store`・`variant=banner/interstitial` を指定し、店舗所有者だけが許可。Festival / District の `light/dark` とも共通化 |
+| **ImageUploadURLResponse** | url: String、path: String、expiresAt: Date | 固定一時パスと S3 PUT 署名 URL。target に応じた認可を経たユーザーのみ |
 | **PurchaseClaimRequest** | signedTransactionInfo: String | Apple の署名済み取引を検証。店舗所有者のみ |
 | **PurchaseResult** | transactionId、creditedAmount、balance | 購入確定結果。店舗所有者のみ |
 | **PurchaseHistoryItem** | transactionId、productId、creditedAmount、purchasedAt | 購入履歴。店舗所有者のみ |
@@ -130,6 +130,7 @@ Store PUT は Store Entity 全体を送受信する。画像2フィールドは 
 | 型・レコード | 内容 |
 | --- | --- |
 | **StoreAdPlacement** | banner / interstitial（1 / 2 Credit）。既存 AdMob 用型とは分離 |
+| **ImageUploadTarget（API 境界）** | `type: store/festival/district`、`id: String`、`variant`。store は banner/interstitial、festival/district は light/dark のみ許可。認可や S3 キーの振り分けに使用 |
 | **ModerationStatus** | approved / suspended 等。広告主自身の停止とは分離 |
 | **StoreOwnerReference** | ownerId、storeId、festivalId。`USER#{cognitoSub} / STORE#{storeId}` で所有店舗を引く |
 | **VerifiedPurchase** | Backend が署名と店舗との対応を検証済みの購入情報 |
@@ -163,7 +164,7 @@ Impression の重複防止レコードは、token の有効期間・再送期間
 | GET | /advertisers/me/stores | 所有店舗一覧 | [Store] |
 | POST | /festivals/:festivalId/stores | 店舗作成（店舗数制限あり） | StoreCreateRequest → Store |
 | GET / PUT | /stores/:storeId | 店舗取得・編集・**画像確定／参照削除** | Store → Store |
-| POST | /stores/:storeId/images/upload-url | **唯一の画像専用 API**。固定一時キーへの署名付き URL 発行 | ImageUploadURLRequest → ImageUploadURLResponse |
+| POST | /images/upload-url | **唯一の画像アップロード URL 発行 API**。Store/Festival/District で共通。固定一時キーへの署名付き URL 発行 | ImageUploadURLRequest → ImageUploadURLResponse |
 | GET | /stores/:storeId/credits | 残高 | CreditAccount |
 | POST | /stores/:storeId/purchases | Apple 署名済み取引の検証・Credit 付与 | PurchaseClaimRequest → PurchaseResult |
 | GET | /stores/:storeId/purchases | 購入履歴 | [PurchaseHistoryItem] |
@@ -247,7 +248,7 @@ Store 作成時、Backend が **Store ごとに固有かつ不変の `purchaseAc
 
 ### 10.1 確定した方式
 
-画像は店舗ごとにバナー1枚・全画面1枚。**画像用 UUID、uploadId、専用確定／削除 API は不要**。iOS が署名付き URL で S3 の店舗別一時キーへ直接 PUT し、**Store Entity の画像パスに一時キーを入れ、通常の Store PUT で確定**する。
+画像は店舗ごとにバナー1枚・全画面1枚。**画像用 UUID、uploadId、専用確定／削除 API は不要**。署名付き URL 発行は Festival / District の紹介画像と共用する1つの API で扱う。iOS が署名付き URL で S3 の店舗別一時キーへ直接 PUT し、**Store Entity の画像パスに一時キーを入れ、通常の Store PUT で確定**する。
 
     temporary/stores/{storeId}/banner.jpg
     temporary/stores/{storeId}/interstitial.jpg
@@ -256,9 +257,20 @@ Store 作成時、Backend が **Store ごとに固有かつ不変の `purchaseAc
 
 先に Store を作成して storeId を得る。画像は必要に応じて iOS で JPEG に圧縮。バケット名と CDN 等の配信方法は実装環境で決定する。
 
+**共通署名 URL 発行リクエスト例（Store Banner）**
+
+```json
+{
+  "target": { "type": "store", "id": "store-123", "variant": "banner" },
+  "contentType": "image/jpeg"
+}
+```
+
+`target.type` と `variant` の許容組み合わせは Backend 側で検証する。これまで計画していた `/stores/:storeId/images/upload-url` は実装せず、共通の `/images/upload-url` に置き換える。
+
 ### 10.2 画像の登録・更新・削除
 
-1. `POST /stores/:storeId/images/upload-url` で所有者と kind を確認して短寿命 S3 PUT URL と固定の一時パスを返す。
+1. **共通** `POST /images/upload-url` に `target: {type: "store", id: storeId, variant: "banner" | "interstitial"}` と `contentType` を渡す。Backend は Store を取得し、Cognito sub と ownerId が一致することを確認して短寿命 S3 PUT URL と固定の一時パスを返す。Festival / District の Light / Dark も**同じ1 API**で署名発行し、各対象の本部/町 Role を検証する（[別案件の設計書](../20261031_festival_district_images/spec.md)）。
 2. iOS が `temporary/stores/{storeId}/{kind}.jpg` にアップロード。再アップロード時は同じパスに上書き。
 3. iOS が通常の `PUT /stores/:storeId` で画像パスを一時パスに設定する。
 4. Backend は所有権・店舗 ID と kind に一致する固定パス・画像の存在、形式とサイズを検証し、S3 の `CopyObject` で `stores/{storeId}/{kind}.jpg` へ上書きコピーする。
@@ -335,11 +347,11 @@ S3 の一時画像は Lifecycle、正式画像の整理は **休眠・退会な�
 
 ### Backend（既存レイヤード構成に追加）
 - Router/AdvertisementRouter.swift
-- Controller/StoreController.swift、AdvertisementController.swift、PurchaseController.swift
-- Usecase/StoreUsecase.swift、PurchaseUsecase.swift、AdDeliveryUsecase.swift、ImpressionUsecase.swift
+- Controller/StoreController.swift、AdvertisementController.swift、PurchaseController.swift、ImageUploadController.swift（共通）
+- Usecase/StoreUsecase.swift、PurchaseUsecase.swift、AdDeliveryUsecase.swift、ImpressionUsecase.swift、ImageUploadUsecase.swift（共通）
 - Data/Repository/StoreRepository.swift、CreditRepository.swift、PurchaseRepository.swift
 - Data/Database/DynamoDBStore.swift（条件付き更新・トランザクション拡張）
-- Data/Client/S3ImageClient.swift、AppStoreClient.swift（名称・配置は例）
+- Data/Client/S3ImageClient.swift、AppStoreClient.swift（名称・配置は例）。署名発行 Router は共通 `ImageRouter` の1ルートとし、Store/Festival/District の独立署名 API は作らない
 - Data/Auth/CognitoAuthManager.swift、Infrastructure/Midleware/AuthMiddleware.swift の拡張
 
 ### iOSApp（TCA / Dependencies）
