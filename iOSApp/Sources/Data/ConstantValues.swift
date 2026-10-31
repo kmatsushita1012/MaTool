@@ -95,6 +95,21 @@ extension ConstantValues: DependencyKey {
         return rawValue
     }
 
+    static let testValue = Self(
+        apiBaseUrl: "",
+        appStatusUrl: "",
+        defaultFestivalKey: "region",
+        defaultDistrictKey: "district",
+        loginIdKey: "login",
+        hasLaunchedBeforeKey: "hasLaunchedBefore",
+        userGuideUrl: "",
+        contactURL: "",
+        isLiquidGlassEnabled: false,
+        admobAppId: nil,
+        publicMapInterstitialAdUnitId: nil,
+        publicMapBannerAdUnitId: nil
+    )
+
     static let liveValue = Self(
         apiBaseUrl: value(fromXCConfig: apiBaseUrlKey),
         appStatusUrl: "https://studiomk-app-assets.s3.ap-northeast-1.amazonaws.com/MaTool/app-config.json",
