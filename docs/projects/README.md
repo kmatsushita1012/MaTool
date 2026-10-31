@@ -15,6 +15,7 @@
 | 案件 | 初版 | 内容 |
 | --- | --- | --- |
 | [独自広告システム](20261031_original_advertisement/spec.md) | 2026-10-31 | 店舗登録、広告入稿、IAP Credit、広告配信・表示実績、保存期間 |
+| [Festival / District 紹介画像アップロード](20261031_festival_district_images/spec.md) | 2026-10-31 | Light/Dark の S3 直接 PUT、既存 Pack PUT での画像確定、認可・キャッシュ・テスト |
 
 ## 記載上のルール
 

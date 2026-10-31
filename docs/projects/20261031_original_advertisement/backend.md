@@ -30,7 +30,7 @@
 | 新しい領域 | 主な責務 |
 | --- | --- |
 | StoreRouter / StoreController / StoreUsecase | 登録・公開一覧・所有者 CRUD |
-| StoreImageUsecase / StoreImageClient | presigned PUT 発行、画像チェック、正式配置 |
+| ImageUploadUsecase / S3ImageClient（Store/Festival/District 共通） | 唯一の署名 URL 発行（対象種別の認可）／S3 画像実体検証・正式配置。画像の確定は各 Store/Festival/District の既存 PUT Usecase が呼び出す |
 | PurchaseController / PurchaseUsecase / AppStoreClient | Apple 取引検証と購入先確認 |
 | AdvertisementRouter / AdvertisementController / AdvertisementUsecase | 広告選択・通報 |
 | ImpressionUsecase | 表示 token 検証と Credit 減算 |
@@ -67,7 +67,7 @@
 | R04 | 既存 `GET /festivals/F/launch` | 既存 SceneController に到達する |
 | R05 | `GET /festivals/F/unknown` | ルートがなければ404。FestivalController.get は0回 |
 | R06 | `GET /stores/S` と `PUT /stores/S` | Path が同じでも HTTP Method で別 handler |
-| R07 | POST だけ登録された `/stores/S/images/upload-url` へ GET | 404。POST handler は0回 |
+| R07 | `GET /images/upload-url` と `POST /images/upload-url` をそれぞれ実行 | GET は404・共通 Controller 0回、POST は共通 Controller のみ1回 |
 | R08 | `GET /festivals/F/stores/extra` | 公開 Store の GET に前方一致せず404 |
 | R09 | `app.use("/")` に加え Bearer token 付きの子ルート | AuthMiddleware が1回、user が後続 handler に渡る |
 | R10 | `app.use("/")`、Bearer 不在 | middleware が guest を渡す（保護 API なら Usecase で拒否） |
@@ -102,7 +102,8 @@ Store 作成時に Backend が **店舗単位の購入用 purchaseAccountToken �
 | `StoreCreateRequest` | Store 作成。id / ownerId / token は Backend が決定 |
 | `PublicStore` | 未認証向けの店舗・画像パス（公開可能なもののみ）、`updatedAt` |
 | `AdCandidate` | 配信対象、正式画像パス、`updatedAt`、短命 impressionId / token |
-| `ImageUploadURLRequest` / `ImageUploadURLResponse` | 固定 S3 一時キーへの署名 URL |
+| `ImageUploadURLRequest` / `ImageUploadURLResponse` | 共通 `target: ImageUploadTarget`（type/id/variant）と `contentType` → `url/path/expiresAt`。固定 S3 一時キーへの署名 URL |
+| `ImageUploadTarget`（補助型） | `type: store/festival/district`、`id: String`、`variant`。Store は banner/interstitial、Festival/District は light/dark だけ許可（不正組み合わせ 400） |
 | `PurchaseClaimRequest` / `PurchaseResult` / `PurchaseHistoryItem` | Apple 署名取引・付与結果・履歴 |
 | `ImpressionReportRequest` | impressionId と署名 token |
 | `AdvertisementReportRequest` | Store の通報 |
@@ -171,7 +172,7 @@ Store PUT は所有権を確認後、既存 Store を読み、**変更禁止フ�
 | POST | `/festivals/:festivalId/stores` | Store → StoreUsecase | StoreCreateRequest → Store |
 | GET | `/stores/:storeId` | Store → StoreUsecase | Store |
 | PUT | `/stores/:storeId` | Store → StoreUsecase | Store → Store |
-| POST | `/stores/:storeId/images/upload-url` | Store → StoreImageUsecase | ImageUploadURLRequest → ImageUploadURLResponse |
+| POST | `/images/upload-url` | **ImageUploadController → ImageUploadUsecase（全画像共通）** | ImageUploadURLRequest → ImageUploadURLResponse |
 | GET | `/stores/:storeId/credits` | Purchase → PurchaseUsecase | CreditAccount |
 | POST | `/stores/:storeId/purchases` | Purchase → PurchaseUsecase | PurchaseClaimRequest → PurchaseResult |
 | GET | `/stores/:storeId/purchases` | Purchase → PurchaseUsecase | [PurchaseHistoryItem] |
@@ -198,7 +199,7 @@ Controller は decode / parameter / user / Usecase / encode のみ。使用す�
 
 1. URL の Store ID・所有者を確認し、**ベーステーブルの ConsistentRead** で Store を取得する。
 2. **body の id が URL と不一致、または festivalId / ownerId / purchaseAccountToken / moderationStatus / createdAt が読取時の Store と不一致なら400**。認証 sub が Store.ownerId と異なれば403。編集可能な name / address / coordinate / businessHours / description / ownerPaused / 画像パスだけ採用し、updatedAt は Backend が発行する。
-3. 一時画像パスは `StoreImageUsecase` で S3 正式キーにコピーし、DB 更新対象には正式キーを渡す。
+3. 一時画像パスは StoreUsecase が共通 `S3ImageClient` を通じて内容・対象パスを検証し、正式キーにコピーしてから DB 更新対象の正式公開 URL に置換する。**画像確定専用 endpoint は設けない**。
 4. **`StoreRepository.updateEditableFields`**（名前は案）で、DynamoDB の **`UpdateItem` + `UpdateExpression`** を実行する。`content.name`、`content.address`、`content.coordinate`、`content.business_hours`、`content.description`、`content.owner_paused`、`content.banner_image_path`、`content.interstitial_image_path`、`content.updated_at` など **広告主が更新できる属性だけを `SET` する**。画像 `null` は明示した DynamoDB NULL 属性をセットし、**`content` マップ全体を置換しない**。実際の snake_case 名は Encoder と照合する。
 5. `ConditionExpression` で Store の存在と ownerId 一致を確認し、存在しない Record を `UpdateItem` が新規作成しないようにする。`ReturnValues: ALL_NEW` から**保存後の正しい Store** を返す。
 
@@ -210,7 +211,18 @@ Controller は decode / parameter / user / Usecase / encode のみ。使用す�
 
 ## 8. S3 入稿と画像確定
 
-**画像はバナー1枚・全画面1枚。画像 UUID と専用確定／削除 API は不要。**
+**Store の画像はバナー1枚・全画面1枚。画像 UUID と専用確定／削除 API は不要。** 署名 URL 発行には Store 固有ルートを設けず、Festival/District と**共通の1つの POST**を使う。
+
+**共通リクエスト例:**
+
+```json
+{
+  "target": { "type": "store", "id": "store-123", "variant": "banner" },
+  "contentType": "image/jpeg"
+}
+```
+
+`type=store` は広告主自身の Store（所有参照から強整合読取）、`type=festival` は対象本部管理者、`type=district` は対象町管理者のみ許可。`variant` は store では banner/interstitial、festival/district では light/dark のみ。ID/variant の改ざんや存在しない対象は署名しない。`ImageUploadURLResponse` は共通の `url/path/expiresAt`。
 
 ```text
 temporary/stores/{storeId}/banner.jpg
@@ -220,20 +232,20 @@ stores/{storeId}/banner.jpg
 stores/{storeId}/interstitial.jpg
 ```
 
-1. `POST /stores/:id/images/upload-url` は ownerId と kind を確認し、固定一時キーにだけ直接 PUT 可能な署名 URL とそのキーを返す。
+1. **共通の `POST /images/upload-url`** は `ImageUploadURLRequest` の `target: { type: "store", id: storeId, variant: "banner" | "interstitial" }` と `contentType: "image/jpeg"` を受ける。`ImageUploadUsecase` が Store 所有者の Cognito sub を検証して固定一時キーへ直接 PUT できる短寿命署名 URL とそのキーを返す。**Festival / District の light/dark も同じ1つの POST** を使用し、本部／町の認可を分岐する（[紹介画像の設計書](../20261031_festival_district_images/spec.md)）。
 2. iOS が一時 S3 キーへ画像を PUT。再アップロードは同じキーを上書き。
 3. iOS は **通常の Store PUT** で該当画像パスを一時パスにする。
-4. Backend は期待した storeId / kind に一致するパス・画像実在・サイズ・内容を確認し、`CopyObject` で正式キーへコピー。
-5. Store の画像パスを正式キーに置換して DB 保存。
+4. Backend は期待した storeId / kind に一致するパスと S3 実在・容量・`Content-Type` を照合し、**JPEG ファイルの SOI/EOI、基本マーカー構造、縦横ピクセル数と許容上限をサーバー側で必須検証**する。MIME だけ JPEG の非画像や破損 JPEG は拒否。すべて合格した場合だけ `CopyObject` で正式キーへコピー。
+5. Store の画像パスを正式**公開 URL**に置換して DB 保存。画像差し替え時は URL に新しいキャッシュ版を付け、`Store.updatedAt` と整合させる。CDN は版クエリをキャッシュキーに含める。
 
 | 画像フィールド | 意味 |
 | --- | --- |
 | `temporary/stores/{storeId}/{kind}.jpg` | 画像を正式配置へコピー |
-| `stores/{storeId}/{kind}.jpg` | 現在の正式パスなら画像維持 |
+| DB に保存済みの現在の正式公開 URL（`?v=` 付き） | URL が現在値と完全一致する場合は画像維持（コピー不要） |
 | JSON `null` | DB から画像参照を解除（即時 S3 削除なし） |
 | 他の文字列 | 400。特に他人の Store パスを拒否 |
 
-S3 と DB の同一 Transaction は作らず、コピー成功・DB 失敗の一時的な不整合を許容。固定キーの複数端末更新は最後の S3 上書きを採用する。`temporary/` は Lifecycle で整理。正式画像の物理削除は休眠・退会などで更新を停止した Store の整理時に限定。S3 bucket / CDN / IAM / サイズ上限は実装前に確認。
+S3 と DB の同一 Transaction は作らず、コピー成功・DB 失敗の一時的な不整合を許容。固定キーの複数端末更新は最後の S3 上書きを採用する。`temporary/` は Lifecycle で整理。正式画像の物理削除は休眠・退会などで更新を停止した Store の整理時に限定。S3 bucket / CDN / IAM / サイズ上限は実装前に確認。**同じ URL のまま画像を差し替えない**（紹介画像を含め画像差し替え時はバージョン付き URL が必須）。公開 CDN でクエリごとのキャッシュ分離と新画像取得が実際に成立することをリリース前に確認する。
 
 ## 9. Apple IAP・返金通知・Credit 調整
 
@@ -368,15 +380,17 @@ Backend/Sources/
 ├── Backend.swift                         [変更: Router 登録]
 ├── Router/
 │   ├── StoreRouter.swift                 [追加]
+│   ├── ImageRouter.swift                 [追加: 共通署名 URL POST 1件]
 │   ├── PurchaseRouter.swift              [追加: Apple通知のHTTP入口]
 │   └── AdvertisementRouter.swift         [追加]
 ├── Controller/
 │   ├── StoreController.swift             [追加]
+│   ├── ImageUploadController.swift       [追加: 共通 URL 発行]
 │   ├── PurchaseController.swift          [追加: 購入＋通知受付]
 │   └── AdvertisementController.swift     [追加]
 ├── Usecase/
 │   ├── StoreUsecase.swift                [追加]
-│   ├── StoreImageUsecase.swift           [追加]
+│   ├── ImageUploadUsecase.swift          [追加: 3種の画像で共通の署名発行]
 │   ├── PurchaseUsecase.swift             [追加]
 │   ├── AdvertisementUsecase.swift        [追加]
 │   └── ImpressionUsecase.swift           [追加]
@@ -390,13 +404,13 @@ Backend/Sources/
 │   │   ├── PurchaseRepository.swift      [追加]
 │   │   └── ImpressionRepository.swift    [追加]
 │   └── Client/
-│       ├── StoreImageClient.swift        [追加]
+│       ├── S3ImageClient.swift           [追加: 共通 S3 操作]
 │       ├── AppStoreClient.swift          [追加: 購入＋Apple通知検証]
 │       └── ReportNotificationClient.swift [追加: SNS等の運営通知]
 ├── Infrastructure/Application.swift      [変更]
 └── Utils/Environment.swift               [変更]
 
-Shared/Sources/Entity/                     [追加・変更]
+Shared/Sources/Entity/                     [追加・変更: ImageUploadURLRequest/Response + ImageUploadTarget を共通化]
 Backend/Package.swift                     [S3 / 必要に応じて SNS SDK＋Apple公式Swift Library]
 scripts/moderate-store                    [追加案: IAM権限の運営停止・復旧CLI]
 ```
@@ -415,7 +429,7 @@ scripts/moderate-store                    [追加案: IAM権限の運営停止�
 | 購入履歴 | 同じ Store の複数購入を SK `PURCHASE#{purchasedAtUTC}#{transactionId}` で Query。順序・同時刻の重複・他 Store 混入・未付与返金マーカーが履歴にならないこと・トランザクション失敗で参照だけ残らないこと |
 | Store PUT | ID / festivalId / ownerId / purchaseAccountToken / moderationStatus / createdAt の不一致 400、他人の Store 403。**UpdateItem は編集可能なネスト属性のみ SET**、updatedAt は Backend が設定、ReturnValues ALL_NEW は現在の運営状態を返す。**広告主が approved を読取 → 運営が suspended → 広告主の PUT 完了でも suspended のまま**。管理フィールドを変更する UpdateExpression が生成されないこと |
 | Store PUT | 固定一時／正式／明示 null、画像フィールド省略400 |
-| S3 | 他店舗パス拒否、画像形式・サイズ不正、コピー失敗時の DB 未保存、一時画像の整理 |
+| S3 | 共通署名 API で Store/Festival/District 別の正しい認可とキーを検証。不正な type/variant・他店舗/別町パス拒否、MIME 偽装の非 JPEG・壊れた JPEG・画素数/容量上限超過の拒否、コピー失敗時の DB 未保存、一時画像の整理。公開 GET と CDN の版別 URL から差し替え画像を取得できる結合検証 |
 | IAP | 署名不正、別 Bundle/Environment/Product、別 Store appAccountToken、二重付与なし |
 | **返金・返金取消** | 未使用500 Credit返金で残高0、使用後は `min(購入 Credit, 残高)`、複数購入・他購入分の残高、REFUND_REVERSEDで実減算額だけ復元、同一通知・古いsignedDateを再適用しない、返金とImpressionの競合時にも負残高なし、未付与REFUND先着→後日Claim拒否、未付与の取消→Claimで一度だけ付与。**REFUND_REVERSED(T2)→REFUND(T1<T2) は (a) 付与済みactive、(b) PurchaseRecord未作成の両方で最新時刻を保持し、古い REFUND を無視**。署名不正、DBエラー時5xx・処理済み200、通知履歴からの再処理 |
 | Consumable | Backend 成功前に finish しない、未完了 Transaction 再試行、応答消失後の冪等復旧 |
@@ -438,9 +452,9 @@ scripts/moderate-store                    [追加案: IAM権限の運営停止�
 | Cognito セルフ登録時の Role 付与 | App Client の属性書き込み権限を確認 |
 | Apple 取引 JWS の検証方法 | Apple 公式 Swift Library を基本とし、証明書・Production / Sandbox 設定を検証 |
 | IAP 返金・取消 | **方針A採用**：現在残高の範囲で減算・返金取消は実減算額だけ復元。残課題は通知先設定と本番／Sandbox 疎通・再送テスト |
-| S3 | 画像上限・公開配信 URL / キャッシュ・署名 URL の期限 |
+| S3 | 画像上限・公開配信 URL・署名 URL の期限を共通決定。**差し替えごとの新 URL と CDN のクエリ別キャッシュ分離は初回リリース必須条件**（公開 GET → CDN → 正しい画像を結合確認） |
 | 運営 | Store 数上限と IAM 管理スクリプトの認可・監査設定を確定。**停止・復旧手段は第11.1節で決定済み**。通報通知先の SNS Topic / 運営メール購読を設定し実際の受信を確認。**簡易 AI チェックは別運用タスク**として頻度と実行方法を初期公開前に決める |
 | 広告 | Viewable 閾値・全画面表示の条件 |
 | セキュリティ | token の署名鍵管理と基本レート制限 |
 
-> 本 PR は設計書だけを追加する。コード・AWS リソース・テスト実装は詳細設計のレビュー後に別 PR で実施する。
+> 本文はマージ済みの Backend 詳細設計（PR #379）を紹介画像設計 PR #380 により追補・更新したもの。コード・AWS リソース・テストは別 PR で実装する。
