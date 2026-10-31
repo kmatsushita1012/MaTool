@@ -147,3 +147,39 @@ struct SupersedingRouteDataFetcherSpy: RouteDataFetcherProtocol {
         throw CancellationError()
     }
 }
+
+
+// Default use-case spies record unexpected work without reaching live services.
+actor LaunchSceneUseCaseSpy: LaunchSceneUseCaseProtocol {
+    private(set) var calls = 0
+
+    func callAsFunction(appState: Shared<AppState?>?) async -> (LaunchState, StatusCheckResult?) {
+        calls += 1
+        Issue.record("Unexpected LaunchSceneUseCaseSpy call")
+        return (.loading, nil)
+    }
+}
+
+actor SignOutUseCaseSpy: SignOutUseCaseProtocol {
+    private(set) var calls = 0
+
+    func callAsFunction() async throws {
+        calls += 1
+        Issue.record("Unexpected SignOutUseCaseSpy call")
+        throw SpyInvocationError.unexpected("SignOutUseCase")
+    }
+}
+
+actor UnconfiguredLoadDistrictStateUseCaseSpy: LoadDistrictStateUseCaseProtocol {
+    private(set) var requestedDistrictIDs: [District.ID] = []
+
+    func callAsFunction(
+        districtId: District.ID,
+        periodId: Period.ID?,
+        appState: Shared<AppState?>
+    ) async throws -> LaunchDistrictPack {
+        requestedDistrictIDs.append(districtId)
+        Issue.record("Unexpected LoadDistrictStateUseCaseSpy call: \(districtId)")
+        throw SpyInvocationError.unexpected("LoadDistrictStateUseCase \(districtId)")
+    }
+}

@@ -57,3 +57,24 @@ actor SignInSignOutSpy {
     func record() { calls += 1 }
     func count() -> Int { calls }
 }
+
+
+// Used only when a test needs a safe default; explicit fixture spies replace this.
+actor UnconfiguredSceneDataFetcherSpy: SceneDataFetcherProtocol {
+    private(set) var requests: [String] = []
+
+    func launchFestival(festivalId: Festival.ID) async throws -> LaunchFestivalPack {
+        requests.append("festival: \(festivalId)")
+        throw SpyInvocationError.unexpected("launchFestival")
+    }
+
+    func launchFestival(districtId: District.ID) async throws -> LaunchFestivalPack {
+        requests.append("festival from district: \(districtId)")
+        throw SpyInvocationError.unexpected("launchFestival(districtId:)")
+    }
+
+    func launchDistrict(districtId: District.ID, periodId: Period.ID?) async throws -> LaunchDistrictPack {
+        requests.append("district: \(districtId)")
+        throw SpyInvocationError.unexpected("launchDistrict")
+    }
+}

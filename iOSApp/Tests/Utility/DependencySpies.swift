@@ -12,6 +12,16 @@ extension DependencyValues {
         self[BroadcastLocationProviderKey.self] = BroadcastLocationProviderSpy()
         self[HTTPClientKey.self] = HTTPClientSpy()
         self[FetchDistrictUseCaseKey.self] = FetchDistrictUseCaseSpy()
+        self[FetchFestivalListUseCaseKey.self] = FetchFestivalListUseCaseSpy(festivals: [])
+        self[GetSceneSelectionUseCaseKey.self] = GetSceneSelectionUseCaseSpy(
+            selection: SceneSelection(festivalId: nil, districtId: nil)
+        )
+        self[LastMainScreenUseCaseKey.self] = LastMainScreenUseCaseSpy()
+        self[LaunchSceneUseCaseKey.self] = LaunchSceneUseCaseSpy()
+        self[SignOutUseCaseKey.self] = SignOutUseCaseSpy()
+        self[LoadDistrictStateUseCaseKey.self] = UnconfiguredLoadDistrictStateUseCaseSpy()
+        self[SceneDataFetcherKey.self] = UnconfiguredSceneDataFetcherSpy()
+        self[PublicMapAdUsecaseKey.self] = PublicMapAdUsecaseSpy()
         self[UserDefaltsManagerKey.self] = DefaultUserDefaultsSpy()
         self.userDefaultsClient = UserDefaultsClientSpy().client
         self.authProvider = AuthProviderSpy().client
