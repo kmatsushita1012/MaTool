@@ -11,6 +11,19 @@ import CoreLocation
 // MARK: - Dependencies
 enum BroadcastLocationProviderKey: DependencyKey {
     static let liveValue: BroadcastLocationProviderProtocol = BroadcastLocationProvider()
+    static let testValue: BroadcastLocationProviderProtocol = TestBroadcastLocationProvider()
+}
+
+private actor TestBroadcastLocationProvider: BroadcastLocationProviderProtocol {
+    private(set) var isTracking = false
+
+    func requestPermission(onAlwaysAuthorizationRequest: @escaping @Sendable () async -> Void) async {}
+    func authorizationStatus() async -> CLAuthorizationStatus { .notDetermined }
+    func startTracking(onUpdate: ((AsyncValue<CLLocation>) async -> Void)?) async { isTracking = true }
+    func stopTracking() async { isTracking = false }
+    func getLocation() async -> AsyncValue<CLLocation> { .loading }
+    func isAlwaysAuthorized() async -> Bool { false }
+    func isLocationServicesEnabled() async -> Bool { false }
 }
 
 extension DependencyValues {
