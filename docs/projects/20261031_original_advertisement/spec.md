@@ -197,7 +197,7 @@ Store 更新は Store Entity 自体を PUT し、更新後の Store を返す。
 
 ### 7.2 Store PUT の契約
 
-- `If-Match` で送られる **Store.revision** と現在の DB revision が一致するときのみ更新。DB 側は条件付き更新して revision +1。不一致は **409 Conflict**、欠落は 428 Precondition Required（既存エラーハンドリングで 400 とする場合は統一する）。クライアントは 409 で再取得し、編集内容を確認してから再送。無条件の自動上書きは禁止。
+- `If-Match: "<revision>"` に設定された **Store.revision** と現在の DB revision が一致するときのみ更新。DB 側は条件付き更新して revision +1。不一致は **409 Conflict**、欠落は **400 Bad Request**（既存の Application.Error に合わせる）。クライアントは 409 で再取得し、編集内容を確認してから再送。無条件の自動上書きは禁止。
 - **全体置換**なので `bannerImagePath`・`interstitialImagePath` は両方とも JSON キー必須。Swift 側は既存の `@NullEncodable` 等で nil を JSON `null` としてエンコードし、Backend はキー省略を 400 とする。
 - 画像パスが **固定一時パス**なら、その kind に限り iOS の S3 PUT 応答 `ETag` を `X-MaTool-Banner-ETag` / `X-MaTool-Interstitial-ETag` ヘッダーで送る。ETag がない／不一致は 409 または 400 とし、黙って最新の一時画像を採用しない。
 - 画像パスが **現在の正式パス**なら画像変更なし。正式パスへの任意書換えやサーバー管理属性の変更は禁止。
@@ -295,7 +295,7 @@ Festival 一致・店舗公開可・運営停止なし・広告主停止なし�
 - Store PUT で画像フィールドを **明示 JSON null** にしたら、まず DB の公開参照（正式パス・VersionId）を同一 revision 更新で null にする。**その PUT の直後には正式 S3 キーへ DeleteObject しない。**
 - 後の画像差替は同じ固定正式キーに **新しい S3 バージョン**を作り、DB はその VersionId を参照する。先行削除処理で新しい素材を消す競合を避ける。
 - 定期的な GC は **現在の Store で参照されていない特定の S3 VersionId** だけを削除する。削除対象の VersionId と DB の最新参照を照合してから消す。**キー全体を削除しない。** 正式領域の NoncurrentVersion を無条件で消す Lifecycle は使わない（失敗した S3 コピーで最新でなくなっても、DB が古い VersionId を使用し得るため）。
-- `temporary/` にだけ短期 Lifecycle（例: 1日）を設定する。署名 URL は短命にし、所有権の照合・ファイル検査を必須にする。
+- `temporary/` にだけ短期 Lifecycle（例: 1日）を設定し、Versioning を使うバケットでは **current / noncurrent の両方の一時バージョン**が残留しないようにする。署名 URL は短命にし、所有権の照合・ファイル検査を必須にする。
 - 公開 DTO に `imageVersionId` を含め、画像 URL は S3 バージョンを指定して取得する。CDN の場合は version をキャッシュキーに含める。**運営停止・通報時は新規公開 URL を出さず、既存 CDN キャッシュを無効化する**。既発行の短命 URL は有効期限まで残る可能性があるため短い期限を設ける。
 - 画像なしの形式は広告配信不可。既存 Credit は保持する。S3 の Versioning の追加保存コストは計測し、正式画像の不要バージョンだけ適切に回収する。
 
@@ -303,7 +303,7 @@ Festival 一致・店舗公開可・運営停止なし・広告主停止なし�
 
 ```http
 PUT /stores/store-123
-If-Match: 7
+If-Match: "7"
 X-MaTool-Banner-ETag: "S3-PUT-ETag"
 Content-Type: application/json
 ```
