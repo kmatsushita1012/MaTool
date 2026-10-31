@@ -1,6 +1,7 @@
 import CoreLocation
 import Dependencies
 import Foundation
+import Shared
 import Testing
 @testable import iOSApp
 
