@@ -11,7 +11,7 @@
 
 ## 1. 結論と適用範囲
 
-**広告入稿と同じ「固定一時キーへ署名付き PUT → 既存の Entity/Pack PUT で確定 → S3 CopyObject → 正式パスを保存」方式**を採用する。画像ごとの UUID、確定 API、削除 API、S3 ETag/Versioning、画像用 DynamoDB テーブルは増やさない。
+**広告入稿と同じ「固定一時キーへ署名付き PUT → 既存の Entity/Pack PUT で確定 → S3 CopyObject → 正式パスを保存」方式**を採用する。**Festival / District 用の POST は新設しない。** 広告用に設計されていた署名 URL 発行 API を単一の共通 API（`POST /images/upload-url`）へ一般化し、Store/Festival/District の3種類を扱う。したがって、画像アップロード URL 発行の POST は**全体で1つ**だけ。画像ごとの UUID、確定 API、削除 API、S3 ETag/Versioning、画像用 DynamoDB テーブルは増やさない。
 
 | 対象 | Light | Dark | 更新主体 | 画像がない場合 |
 | --- | --- | --- | --- | --- |
@@ -26,9 +26,9 @@
 | --- | --- |
 | `Shared/Sources/Entity/Others.swift` | `ImagePath { let light: String?; let dark: String? }` は存在。**変更不要**、画像用永続 Entity は追加しない |
 | `Shared/Sources/Entity/Festival.swift` / `District.swift` | 両方 `var image: ImagePath` を保持。既存 JSON 形状を維持 |
-| `Backend/Sources/Router/FestivalRouter.swift` / `DistrictRouter.swift` | 署名 URL 発行用 POST をそれぞれ1ルート追加 |
-| `Backend/Sources/Controller/FestivalController.swift` / `DistrictController.swift` | 新規署名 URL 要求の受け口を追加、既存 PUT の JSON 構造を変更しない |
-| `Backend/Sources/Usecase/FestivalUsecase.swift` / `DistrictUsecase.swift` | 既存の認可を維持し、PUT 内で画像パスを検証・確定してから保存 |
+| `Backend/Sources/Router/FestivalRouter.swift` / `DistrictRouter.swift` | **追加ルートなし**。既存の FestivalPack / DistrictPack PUT をそのまま確定処理に使用 |
+| `Backend/Sources/Controller/FestivalController.swift` / `DistrictController.swift` | **追加メソッドなし**。既存 PUT 内の画像パス検証・確定だけ拡張し、JSON 構造は変更しない |
+| `Backend/Sources/Usecase/FestivalUsecase.swift` / `DistrictUsecase.swift` | 既存の認可を維持し、PUT 内で画像パスを検証・確定してから保存。署名発行側は3種類共通の ImageUploadUsecase で認可とキーを振り分ける |
 | `Backend/Sources/Data/Repository/Festival/FestivalRepository.swift` / `DistrictRepository.swift` | 既存 DynamoDB Record を使用。画像の別レコードは作らない |
 | `iOSApp/Sources/Presentation/View/Admin/Region/Edit/FestivalEditFeature.swift` / `FestivalEditView.swift` | Light/Dark の選択・プレビュー・解除を追加 |
 | `iOSApp/Sources/Presentation/View/Admin/District/Edit/DistrictEditFeature.swift` / `DistrictEditView.swift` | 同上。既存 `DistrictPack` 保存フローを使用 |
@@ -58,20 +58,32 @@ District の `festivalId` は **Backend が既存 District から取得**する�
 
 ## 4. API・DTO
 
-署名 URL 取得 API **のみ新設**。画像の確定・参照解除は既存の FestivalPack / DistrictPack PUT を流用する。
+署名 URL の POST を増設するのではなく、**広告用に予定されていた `POST /stores/:storeId/images/upload-url` を `POST /images/upload-url` に置き換えて共通化する**。Store/Festival/District で合計1つの署名発行 API を使用する。この変更に合わせて[広告の設計書](../20261031_original_advertisement/spec.md)も更新する。画像の確定・参照解除は各 Entity の既存 PUT を流用する。
 
 | Method | Path | 認可 | Body → Response |
 | --- | --- | --- | --- |
-| POST | `/festivals/:festivalId/images/upload-url` | `headquarter(festivalId)` の一致 | `IntroductionImageUploadURLRequest` → `ImageUploadURLResponse` |
-| POST | `/districts/:districtId/images/upload-url` | `district(districtId)` の一致 | 同上 |
+| POST（広告と共用） | `/images/upload-url` | target 別に Store 所有者 / Festival 本部 / District 本人を判定 | `ImageUploadURLRequest` → `ImageUploadURLResponse` |
 | PUT（既存） | `/festivals/:festivalId` | 同一 Festival の本部管理者 | `FestivalPack` → `FestivalPack` |
 | PUT（既存） | `/districts/:districtId` | 同一 District の町管理者 | `DistrictPack` → `DistrictPack` |
+| PUT（広告で設計済み） | `/stores/:storeId` | Store 所有者 | `Store` → `Store` |
 
-- `IntroductionImageUploadURLRequest { appearance: light | dark, contentType: String }`。広告の `StoreAdPlacement`（banner/interstitial）を流用しない。 `appearance` は永続 Entity ではなく API 境界の enum。
-- `ImageUploadURLResponse { url: String, path: String, expiresAt: Date }` は広告入稿と**共通 DTO**にする。`path` は今回の一時 S3 キー、`url` は S3 へ PUT する署名付き URL。Shared で共通化する際に既存広告設計の型名・形を揃える。
+- 共通の `ImageUploadURLRequest { target: ImageUploadTarget, contentType: String }` を使用。`ImageUploadTarget` は `type: store | festival | district`、`id`、`variant` を持つ **API 境界の判別可能な型**とする。
+- `variant` は `type=store` なら `banner | interstitial`、`type=festival/district` なら `light | dark`。これ以外の組み合わせは 400。不正な `type`/`id`/`variant` も 400。
+- `ImageUploadURLResponse { url: String, path: String, expiresAt: Date }` は広告入稿と**完全共通の DTO**。`path` は対象の一時 S3 キー、`url` は S3 へ PUT する署名付き URL。実体へ送る Content-Type 等は署名と一致させる。
 - 通信日付は既存ルール通り Unix 秒。S3 直接 PUT には **Backend の Bearer token を送らない**。
 - Festival / District の通常 PUT body では画像以外の必須項目・関連 Pack も従来通り送る。画像単独更新 API は作らない。
-- 署名 URL は**対象 Entity の存在と認可**を検証した後に発行。不存在は 404、未認証は 401、他人の対象は権限エラーとする。既存 Backend のエラー規約に合わせる。
+- 署名 URL は**対象 Entity の存在と認可**を検証した後に発行。Store は所有者 sub、Festival は `headquarter(id)`、District は `district(id)` をそれぞれ検証。不存在は 404、未認証は 401、他人の対象は権限エラーとする。
+
+**共通 API リクエスト例（Festival の Light）**
+
+```json
+{
+  "target": { "type": "festival", "id": "festival-001", "variant": "light" },
+  "contentType": "image/jpeg"
+}
+```
+
+Store の Banner も同じ API に `target: { "type": "store", "id": "store-123", "variant": "banner" }` を渡す。追加の Festival/District 専用 endpoint は存在しない。
 
 ### 4.1 画像パスの PUT 解釈（light / dark それぞれ独立）
 
@@ -104,14 +116,14 @@ District の `festivalId` は **Backend が既存 District から取得**する�
 
 ## 5. Backend フローと責務
 
-1. **署名 URL 発行:** Router → Controller で `appearance`/`contentType` を解析 → Usecase が Entity を取得・Role/ID 一致を確認 → 画像用 S3 Client が固定一時キーの署名 PUT URL を発行。署名済みヘッダー（Content-Type 等）は応答契約で iOS に伝えるか、値が固定なら仕様で一致させる。
+1. **署名 URL 発行:** 広告と共通の `POST /images/upload-url` を Router → Controller が処理し、`target.type/id/variant` と `contentType` を解析 → Usecase が対象 Entity を取得・Role/ID 一致を確認 → 画像用 S3 Client が固定一時キーの署名 PUT URL を発行。署名済みヘッダー（Content-Type 等）は応答契約で iOS に伝えるか、値が固定なら仕様で一致させる。
 2. **アップロード:** iOS が JPEG バイト列を S3 へ直接 PUT。HTTP 2xx を確認。アップロードが終わる前に Entity PUT を開始しない。
 3. **既存 PUT:** Festival / District の既存 Controller が Pack をデコード。既存 Usecase がまず認可・ID・子要素の整合性を検査し、保存前に変更対象の画像を処理する。
 4. **画像確定:** Usecase から共通の `S3ImageClient`（名称案）に実体確認・正式パスへのコピーを依頼。Backend は一時キーの完全一致を検証し、`HeadObject` 等で存在・Content-Type・容量、必要なら先頭バイトで JPEG 形式を確認。不正なら **DB は更新せず** 400 等で失敗。
 5. **DB 保存:** 完成した `ImagePath` を既存 Festival/District Entity に組み込み、既存 Repository の `put` を実行する。成功後の Pack / Entity を返す。
 6. **iOS 同期:** `SaveFestivalUseCase` / `SaveDistrictPackUseCase` が**Backend 応答を** AppState に反映。現在の `sessionId` ガードを維持し、祭典・ログインの切り替え後に古い結果を反映しない。
 
-**役割分担:** `Router` は経路、`Controller` は入出力、`Usecase` は認可・更新判断・画像確定の調停、`Data/Client` は S3 SDK との通信、`Repository` は DynamoDB 永続化。画像用 Repository / DynamoDB Entity を作らない。広告側の実装時に同じ `S3ImageClient` と署名 URL 応答 DTO を共有し、Festival/District 固有の認可判断は共通 Client に持たせない。
+**役割分担:** 共通 `ImageRouter`（名称例）→ `ImageUploadController` → `ImageUploadUsecase` が**1つの署名 URL 発行ルート**を担当し、`target.type` に応じて既存 Repository から Entity を取得・認可。既存 Festival/District/Store の PUT は各 Usecase が画像を確定する。共通 `Data/Client/S3ImageClient` は S3 SDK の署名・検証・コピーのみを実装し、認可は Usecase が担当。画像用 Repository / DynamoDB Entity は作らない。広告実装と二重に API / Client を作らない。
 
 ### 5.1 認可の維持（重要）
 
@@ -158,8 +170,8 @@ Festival / District の**既存編集画面**に「紹介画像」セクショ�
 
 | ID | 対象 | 必須確認 |
 | --- | --- | --- |
-| B01 | 署名 URL | Festival 本部/町自身のみ成功、guest・別 Festival/町・本部→District は拒否 |
-| B02 | 署名 URL | 存在しない ID、無効 appearance / MIME / ID 埋め込み、署名期限と対象キー |
+| B01 | 共通署名 URL | 1つの POST で Store/Festival/District を扱い、Store 所有者/Festival 本部/町本人のみ成功、guest・別対象・本部→District は拒否 |
+| B02 | 共通署名 URL | 存在しない ID、type と variant の不一致（例: store/light）、無効 MIME / ID 埋め込み、署名期限と対象キー |
 | B03 | 最終 PUT | 署名済み URL 発行済みでも別 Role に切り替えたら確定拒否 |
 | B04 | Festival PUT | Light だけ新規、Dark 保持／削除、逆の組合せが正しく置換される |
 | B05 | District PUT | 同様に片側だけ変更可能。HQ `/core` 経由で画像が変わらない |
@@ -167,7 +179,7 @@ Festival / District の**既存編集画面**に「紹介画像」セクショ�
 | B07 | パス検証 | 他 Entity / variant のキー、任意外部 URL、改ざんされた既存 URL は拒否 |
 | B08 | 互換性 | 変更しない古い外部 URL を現在値として維持、nil の JSON 省略と null を処理 |
 | B09 | 更新・失敗 | DB 失敗後の再アップロード・再試行、S3/DB の非原子的失敗条件を確認 |
-| B10 | ルーティング | 新しい POST と既存 Festival/District GET/PUT・launch・districts の衝突なし（広告設計の完全一致修正に追従） |
+| B10 | ルーティング | 共通の `POST /images/upload-url` と既存 Store/Festival/District GET/PUT・launch・districts の衝突なし（HTTP endpoint 完全一致に追従） |
 | I01 | TCA | 選択・差し替え・解除・キャンセルで AppState を先に変えない |
 | I02 | 保存 | Light/Dark の必要な分だけアップロードし、両 PUT 完了後に Pack PUT |
 | I03 | 保存失敗 | S3/Backend エラー時は編集内容保持・アラート、再試行可・重複保存防止 |
@@ -178,7 +190,9 @@ Festival / District の**既存編集画面**に「紹介画像」セクショ�
 
 ## 9. 非採用・未確定
 
-**非採用（MVP には過剰）:** 画像の独立 Entity/Repository、画像 ID/UUID、アップロード確定/削除専用 API、S3 ETag / Versioning / 世代 GC、画像ごとの DynamoDB revision、専用画像審査基盤、既存画像一括移行。
+**非採用（MVP には過剰）:** Festival/District 専用の署名発行 POST、画像の独立 Entity/Repository、画像 ID/UUID、アップロード確定/削除専用 API、S3 ETag / Versioning / 世代 GC、画像ごとの DynamoDB revision、専用画像審査基盤、既存画像一括移行。
+
+**依存 PR:** 広告 Backend 詳細設計 PR #379 は旧 `/stores/:storeId/images/upload-url` を前提にしているため、マージ前に共通 `/images/upload-url` と `ImageUploadTarget` に変更して整合させる必要がある。このドキュメント PR では別 PR のブランチを変更しない。
 
 **初回実装前に確定するもの:** 広告システムと共通の (1) 画像容量・画素・縦横比、(2) 署名 URL TTL、(3) S3 bucket と公開 CDN/origin、(4) URL の `v` クエリを含む CDN キャッシュ挙動、(5) `ImageUploadURLResponse` が PUT に必要な署名ヘッダーをどう渡すか。未決定でも**画像をアップロード・保存する設計の構造は上記の通り**。
 
