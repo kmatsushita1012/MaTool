@@ -32,6 +32,12 @@ protocol AppStatusClientProtocol {
     static func getCurrentVersion() -> String
 }
 
+private actor TestAppStatusClient: AppStatusClientProtocol {
+    func checkStatus() async -> StatusCheckResult? { nil }
+    func checkStatus(currentVersion: String) async -> StatusCheckResult? { nil }
+    static func getCurrentVersion() -> String { "0.0.0" }
+}
+
 // MARK: - AppStatusClient
 actor AppStatusClient: AppStatusClientProtocol {
     
