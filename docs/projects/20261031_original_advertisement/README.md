@@ -46,7 +46,7 @@ MaTool の Festival に属する加盟店舗が、認証付きの店舗管理画
 | 画像なし・2 年超 | 残高があっても画像がなく、最終購入から 2 年を超えたときは不要なデータを最小化 |
 | 削除・退会 | 直ちにすべて物理削除せず、掲出停止と最低限の記録保持で管理 |
 | 運用責任 | Festival 管理者は広告管理を担当しない |
-| 画像送信 | iOS → S3 一時アップロード。Lambda が検証・正式登録。画像本体は通常の API Gateway リクエストに載せない |
+| 画像送信 | 店舗・広告形式ごとの固定一時 S3 パスに直接 PUT し、通常の Store PUT にそのパスを入れる。Backend が正式配置へコピーして Entity のパスを置換・保存する。画像ごとの UUID と専用確定／削除 API は不要 |
 
 **補足**: 「同一店舗の重複登録をどう判定するか」「地図ピン自体に従量課金するか」などは、確定したものとして扱わず後段に残す。
 
@@ -169,30 +169,38 @@ Store 更新は Store Entity 自体を PUT し、更新済み Store を返す。
 
 ## 7. API 設計（推奨）
 
-既存の Router / Controller 規約に合わせ、URL と body の詳細は実装 PR で確定する。認証付き応答はキャッシュさせない。
+既存 Router / Controller のスタイルに合わせる。認証付き GET と署名付き URL のレスポンスはキャッシュしない。
 
-| Method | Path | 主な責務 / 認可 |
-| --- | --- | --- |
-| — | Cognito SignUp / ConfirmSignUp / SignIn | 広告主登録・ログイン（Amplify） |
-| GET | /advertisers/me/stores | 自分の店舗一覧 |
-| POST | /festivals/:festivalId/stores | 店舗作成 |
-| GET / PUT | /stores/:storeId | 管理用店舗情報取得・編集 |
-| POST | /stores/:storeId/images/upload-url | 一時 S3 PUT 用の署名付き URL 発行 |
-| PUT | /stores/:storeId/images/:kind | 一時画像の検証・正式登録 |
-| DELETE | /stores/:storeId/images/:kind | 画像削除と掲出状態更新 |
-| GET | /stores/:storeId/credits | Credit 残高 |
-| POST | /stores/:storeId/purchases | Apple 取引検証・Credit 付与 |
-| GET | /stores/:storeId/purchases | 購入履歴 |
-| GET | /festivals/:festivalId/stores | 公開店舗一覧 |
-| GET | /festivals/:festivalId/advertisements/next?placement=banner | 該当形式の次の候補と表示トークン取得 |
-| POST | /advertisements/impressions | 表示実績報告・Credit 確定減算 |
-| POST | /advertisements/reports | 不適切広告の報告 |
+| Method | Path | 用途 / 認可 | 型 |
+| --- | --- | --- | --- |
+| — | Cognito SignUp / ConfirmSignUp / SignIn | 広告主登録（Amplify） | Cognito 標準 |
+| GET | /advertisers/me/stores | 自分が所有する店舗一覧 | [Store] |
+| POST | /festivals/:festivalId/stores | 先に Store を登録・ID 採番 | StoreCreateRequest → Store |
+| GET / PUT | /stores/:storeId | 店舗取得・編集・**画像確定・画像削除** | Store → Store（PUT は全体置換） |
+| POST | /stores/:storeId/images/upload-url | **唯一の画像専用 API**: 固定一時キーへの署名付き PUT URL を発行 | ImageUploadURLRequest → ImageUploadURLResponse |
+| GET | /stores/:storeId/credits | Credit 残高 | CreditAccount |
+| POST | /stores/:storeId/purchases | 購入検証・Credit 付与 | PurchaseClaimRequest → PurchaseResult |
+| GET | /stores/:storeId/purchases | 購入履歴 | [PurchaseHistoryItem] |
+| GET | /festivals/:festivalId/stores | 公開店舗一覧 | [PublicStore] |
+| GET | /festivals/:festivalId/advertisements/next?placement=banner | 表示候補と表示用トークン | AdCandidate? |
+| POST | /advertisements/impressions | 表示実績・Credit 減算 | ImpressionReportRequest → 空応答 |
+| POST | /advertisements/reports | 不適切広告の通報 | AdvertisementReportRequest → 空応答 |
 
-- Store の ownerId は常に Backend が決定する。
-- 店舗ごとの管理 API では ownership を照合する。
-- 公開店舗一覧と管理用 Store DTO は分離する。
-- 広告候補 API は表示トークンを発行するので、公開 GET でも通常の URL キャッシュ対象から除く。
-- 強制停止用の運営 API / 運用コマンドは、管理権限と作業経路を確認してから別途定義する。
+**画像確定専用・画像削除専用 API は不要。** `PUT /stores/:storeId/images/:kind` と `DELETE /stores/:storeId/images/:kind` は作らない。
+
+Store PUT に含める画像パスは次の三値で扱う（全体置換なので両形式を送信する）。
+
+| Store の画像フィールド | Backend の動作 |
+| --- | --- |
+| `temporary/stores/{storeId}/banner.jpg` など一致する固定一時パス | 対象画像を検証 → 正式キーへ S3 Copy → Entity のパスを書き換えて DB 保存 |
+| `stores/{storeId}/banner.jpg` など現在の正式パス | 画像は変更せず、そのまま保存 |
+| `null` | その形式の画像を削除扱い（DB 参照を解除し、正式 S3 画像の削除を行う） |
+
+- クライアントの ownerId・festivalId・運営停止状態を信用せず、既存 Store と突き合わせる。
+- 一時パス・正式パスはサーバーが規定する文字列に完全一致するもののみ許可する。
+- Store の作成直後は画像なし。画像アップロードは storeId 確定後に実行する。
+- 公開ストア情報と管理用 Store を分離する。候補発行 API は no-store とする。
+- 運営停止 API / 手動ツールは運営権限を別途決める。
 
 ## 8. IAP と Credit
 
@@ -240,29 +248,53 @@ Festival が一致し、店舗が停止されておらず、その形式の画�
 
 **未確定**: Viewable の閾値（可視割合・最短時間など）。全画面の表示タイミングとともに公開前に確定する。
 
-## 10. S3 画像入稿
+## 10. S3 画像入稿（固定パス + Store PUT）
 
-### 10.1 確定した方式
+### 10.1 決定した方式
 
-iOS が画像を必要に応じて縮小・圧縮し、Lambda から受け取った期限付き署名 URL を使い **一時領域へ直接 PUT** する。アップロード完了後、iOS が uploadId を含む確定 API を呼ぶ。Lambda が検証し S3 内で正式領域へコピーして Store を更新する。画像バイナリを通常の API Gateway JSON リクエストに含めない。
+**画像ごとの UUID / uploadId を発行しない。** 1 店舗につき画像はバナー1枚と全画面1枚だけなので、一時キー・正式キーともに storeId と画像種別による固定パスとする。
 
-**推奨 Prefix 例**:
+    temporary/stores/{storeId}/banner.jpg
+    temporary/stores/{storeId}/interstitial.jpg
+    stores/{storeId}/banner.jpg
+    stores/{storeId}/interstitial.jpg
 
-    temporary/uploads/{uploadId}
-    advertisements/{festivalId}/{storeId}/banner/{imageId}.jpg
-    advertisements/{festivalId}/{storeId}/interstitial/{imageId}.jpg
+画像は必要なら iOS で JPEG に圧縮。署名付き PUT URL により **iOS から一時 S3 パスに直接送信**する。Store Entity の画像フィールドに一時パスを設定して **通常の Store PUT** に含める。Backend はそのパスを検証し、本配置へのコピー、Entity のパス置換、DynamoDB 保存までを Store 更新の処理として行う。画像付きの API Gateway リクエストや画像専用確定 API は設けない。
 
-### 10.2 処理
+### 10.2 具体的な処理
 
-1. POST /stores/:storeId/images/upload-url: 所有権、kind、Content-Type、アップロードサイズ上限等を検証し、uploadId と短寿命 PUT URL を発行。uploadId と所有者・storeId・用途を関連付ける。
-2. iOS → S3: 一時オブジェクトを PUT。S3 認証情報はクライアントに渡さない。
-3. PUT /stores/:storeId/images/:kind: uploadId が本人のものか検証。オブジェクトの存在・サイズ・実データの画像形式・寸法を確認する（Content-Type / HeadObject だけで正当性を判定しない）。
-4. S3 CopyObject で正式保存し、DynamoDB の Store の画像キーを変更。DB 更新に失敗したコピーは後で回収可能にし、旧画像は DB 成功後に削除する。
-5. temporary/ は S3 Lifecycle で一定期間後に削除（例: 1 日）。正式領域には同じ削除設定を付けない。
+1. `POST /festivals/:festivalId/stores` で Store を先に作成し、storeId を得る。
+2. `POST /stores/:storeId/images/upload-url` で所有権・画像種別をチェックし、指定した **固定一時キーにだけ PUT できる**短寿命 URL と一時キーを返す。
+3. iOS → S3: `temporary/stores/{storeId}/{kind}.jpg` に画像を PUT。次回は同じ一時パスを上書きする。
+4. iOS → `PUT /stores/:storeId`: Store の `bannerImagePath` または `interstitialImagePath` に返却済み一時キーを指定。他の Store フィールドも通常どおり送信。
+5. Backend: Store の所有権・パスが当該 storeId と kind に完全一致すること・画像の実体とサイズ等を検証し、S3 CopyObject で `stores/{storeId}/{kind}.jpg` に上書きコピー。
+6. Backend: Store Entity 内の該当フィールドを **正式パスに置換**して DynamoDB に保存し、確定した Store を応答する。画像のない形式は `null`、正式パスが送られた形式は維持と解釈。
+7. 画像削除は画像フィールドを `null` にして同じ Store PUT を実行する。S3 の正式オブジェクトは参照解除後に削除。不要な一時画像は Lifecycle で後日削除（例: 1 日）。
 
-S3 オブジェクトは非公開を原則とし、来場者に表示する画像の配信 URL・キャッシュ方法は既存の配信環境に合わせる。署名 PUT URL のキーの上書き・再利用に備え、キーと発行条件を制限する。
+Store PUT 例（その他の必須フィールドは省略した概念例）:
 
-**未確定**: 正式な容量上限、画素数、縦横比、対応形式、署名 URL の寿命、配信用 CDN の有無。
+```json
+{
+  "id": "store-123",
+  "name": "店舗A",
+  "bannerImagePath": "temporary/stores/store-123/banner.jpg",
+  "interstitialImagePath": "stores/store-123/interstitial.jpg"
+}
+```
+
+成功後、レスポンスの `bannerImagePath` は `stores/store-123/banner.jpg` になる。画像選択のキャンセルや PUT 未実行でも正式な Store は更新されず、一時画像のみが残る。
+
+### 10.3 整合性・セキュリティ（MVP）
+
+**S3 のコピーと DynamoDB の Store 更新を一体のトランザクションにはしない。** コピー成功後に DB 更新が失敗した場合、正式キーの画像だけ更新されてしまう可能性を許容する。Store PUT は再実行でき、一時画像は Lifecycle に任せる。
+
+- 一時・正式パスは勝手な文字列を受け付けず、現在の Store と kind からサーバー側で期待パスを計算する。UUID は不要だが URL の有効期間内は同じ一時キーの上書きが可能。
+- 署名付き URL 発行時・Store PUT 時とも所有権を確認する。S3 オブジェクトが存在するだけで安全とはみなさず、画像の実データ・寸法・容量を検証する。
+- 固定正式パスは上書きされるため、画像キャッシュには Store.updatedAt 等のバージョン値を利用する実装案とする。
+- S3 バケットは原則非公開。正式画像の配信方法は既存環境に合わせて決める。
+- 画像なしの形式は掲出不可だが、Credit は保持。長期未利用画像の削除方針は第12章に従う。
+
+**未確定**: 画像最大サイズ、画素、縦横比、署名 URL の有効期限、公開画像の配信方法。
 
 ## 11. 地図と一般利用者 UI
 
