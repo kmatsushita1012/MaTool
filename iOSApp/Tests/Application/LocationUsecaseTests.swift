@@ -58,7 +58,7 @@ struct LocationUsecaseTests {
 
     private func makeUsecase(
         provider: BroadcastLocationProviderSpy,
-        userDefaults: UserDefaultsManagerSpy
+        userDefaults: DefaultUserDefaultsSpy
     ) -> LocationUsecase {
         withDependencies {
             $0.installTestSpies()
