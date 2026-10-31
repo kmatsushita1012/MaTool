@@ -10,8 +10,6 @@ import Dependencies
 
 // MARK: - Dependencies
 enum AppStatusClientKey: DependencyKey {
-    static let testValue: any AppStatusClientProtocol = TestAppStatusClient()
-
     static let liveValue: any AppStatusClientProtocol = {
         @Dependency(\.values.appStatusUrl) var url
         return AppStatusClient(urlString: url)
@@ -30,12 +28,6 @@ protocol AppStatusClientProtocol {
     func checkStatus() async -> StatusCheckResult?
     func checkStatus(currentVersion: String) async -> StatusCheckResult?
     static func getCurrentVersion() -> String
-}
-
-private actor TestAppStatusClient: AppStatusClientProtocol {
-    func checkStatus() async -> StatusCheckResult? { nil }
-    func checkStatus(currentVersion: String) async -> StatusCheckResult? { nil }
-    static func getCurrentVersion() -> String { "0.0.0" }
 }
 
 // MARK: - AppStatusClient

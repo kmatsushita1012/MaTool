@@ -11,16 +11,6 @@ import CoreLocation
 // MARK: - Dependencies
 enum MapLocationProviderKey: DependencyKey {
     static let liveValue: MapLocationProviderProtocol = MapLocationProvider()
-    static var testValue: MapLocationProviderProtocol { TestMapLocationProvider() }
-}
-
-private actor TestMapLocationProvider: MapLocationProviderProtocol {
-    private(set) var isTracking = false
-
-    func requestPermission() async {}
-    func startTracking() async { isTracking = true }
-    func stopTracking() async { isTracking = false }
-    func getLocation() async -> AsyncValue<CLLocation> { .loading }
 }
 
 extension DependencyValues {

@@ -14,8 +14,6 @@ import GoogleMobileAds
 #endif
 
 enum AdManagerKey: DependencyKey {
-    static let testValue: any AdManagerProtocol = TestAdManager()
-
     static let liveValue: any AdManagerProtocol = {
         @Dependency(\.values) var values
         return AdManager(
@@ -47,14 +45,6 @@ protocol AdManagerProtocol: Sendable {
     func preloadInterstitial(for placement: AdPlacement)
     @MainActor
     func presentInterstitial(for placement: AdPlacement)
-}
-
-private struct TestAdManager: AdManagerProtocol {
-    let isEnabled = false
-
-    @MainActor func configureIfNeeded() {}
-    @MainActor func preloadInterstitial(for placement: AdPlacement) {}
-    @MainActor func presentInterstitial(for placement: AdPlacement) {}
 }
 
 final class AdManager: NSObject, AdManagerProtocol, @unchecked Sendable {

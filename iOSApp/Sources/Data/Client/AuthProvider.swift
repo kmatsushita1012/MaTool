@@ -38,20 +38,6 @@ struct AuthProvider: Sendable {
 
 // MARK: - AuthProvider(AWS)
 extension AuthProvider: DependencyKey {
-    static let testValue = Self(
-        initialize: unimplemented("AuthProvider.initialize"),
-        signIn: unimplemented("AuthProvider.signIn"),
-        confirmSignIn: unimplemented("AuthProvider.confirmSignIn"),
-        getUserRole: unimplemented("AuthProvider.getUserRole"),
-        getTokens: unimplemented("AuthProvider.getTokens"),
-        signOut: unimplemented("AuthProvider.signOut"),
-        changePassword: unimplemented("AuthProvider.changePassword"),
-        resetPassword: unimplemented("AuthProvider.resetPassword"),
-        confirmResetPassword: unimplemented("AuthProvider.confirmResetPassword"),
-        updateEmail: unimplemented("AuthProvider.updateEmail"),
-        confirmUpdateEmail: unimplemented("AuthProvider.confirmUpdateEmail")
-    )
-
     static let liveValue = {
         let timeout: Int = 5
         

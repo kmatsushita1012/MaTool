@@ -22,6 +22,8 @@
 - Swift のテストには必ず Swift Testing（`import Testing`）を使用し、XCTest は使用しない。
 - テスト対象のソースファイルとテストファイルを1対1で対応させる。テストファイルはテストターゲット配下に置き、対象ソースのディレクトリ構造をそのまま再現する。
 
+- テスト用モックは `Sources` に置かず `Tests/Utility/` に Spy として実装し、各テストで明示的に依存を差し替える。
+
 ### iOSApp と Backend を同時に変更する場合
 
 - 最初に `backend/<topic>` ブランチを push する。
