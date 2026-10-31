@@ -10,11 +10,6 @@ import Shared
 @testable import iOSApp
 
 extension AuthProvider {
-    static let testValue = Self.noop
-    static let previewValue = Self.noop
-}
-
-extension AuthProvider {
     static let noop = Self(
         initialize: {
             return
