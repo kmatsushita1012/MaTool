@@ -137,7 +137,7 @@ Store 作成時に Backend が **店舗単位の購入用 purchaseAccountToken �
 - 購入台帳は二重付与防止のため保持。**返金も同じ PURCHASE キーの状態更新と Credit 残高調整を同一 TransactWriteItems で確定**し、未付与で返金が先着した取引は同じキーにマーカーを保存する。Impression は token の有効期間と再送可能期間を超えた後 TTL 等で整理。
 
 **Store の初回登録は Store / Owner Reference / CreditAccount(balance=0) の3レコードを一回の TransactWriteItems で条件付き作成する。** 書込み途中の部分成功・孤立参照を許容しない（S3 は巻き込まない）。Store ID の衝突も条件式で拒否する。
-HTTP 応答をクライアントが受け取れなかった場合、**iOS は POST を自動再送して新しい Store を作らず、まず所有 Store 一覧を一貫性の強い読取りで再取得して作成結果を確認する**。新しい冪等キー専用の台帳は MVP で追加しない。重複を完全には防げない残余リスクと、同時作成時の店舗数上限チェックの競合は許容する。Store PUT に revision / If-Match は付けず、Last Write Wins を許容する。
+HTTP 応答をクライアントが受け取れなかった場合、**iOS は POST を自動再送して新しい Store を作らず、まず所有 Store 一覧を一貫性の強い読取りで再取得して作成結果を確認する**。新しい冪等キー専用の台帳は MVP で追加しない。重複を完全には防げない残余リスクと、同時作成時の店舗数上限チェックの競合は許容する。Store PUT に revision / If-Match は付けず、**広告主の書込みは編集可能な `content` の属性に限定した `UpdateItem`** にする。`moderationStatus` や ownerId 等のサーバー管理属性を書き戻さない。広告主同士の編集は Last Write Wins を許容するが、**運営の停止状態は古い広告主 PUT で解除できない**。
 
 ## 5. 認証・認可（Cognito）
 
@@ -161,7 +161,7 @@ HTTP 応答をクライアントが受け取れなかった場合、**iOS は PO
 | 公開店舗・広告候補・Impression・通報 | 未認証も可能。公開条件や token 検証を別途実施 |
 | 運営による公開停止・解除 | 広告主不可。Festival 管理者にも自動付与しない |
 
-Store PUT は所有権を確認後、既存 Store を読み、**変更禁止フィールドの受信値が現在値と同一であることを検証（不一致 400）**してから許可項目だけ反映する。URL と body の ID 不一致も400、他人の Store は403。**updatedAt は Backend が発行し直す時刻であって revision ではない**。既存 `DistrictUsecase` の権限別 merge に合わせる。
+Store PUT は所有権を確認後、既存 Store を読み、**変更禁止フィールドの受信値が現在値と同一であることを検証（不一致 400）**してから許可項目だけ反映する。URL と body の ID 不一致も400、他人の Store は403。**永続化には `PutItem` の全レコード置換を使わず、編集可能フィールドだけの `UpdateItem`** を使う。`updatedAt` は Backend が発行する時刻であって revision ではない。運営が並行して状態を変更しても、広告主更新で元に戻らないことを保証する。
 
 ## 6. API 一覧
 
@@ -196,12 +196,13 @@ Controller は decode / parameter / user / Usecase / encode のみ。使用す�
 
 ### Store PUT
 
-1. URL の Store ID・所有者を確認し、既存 Store を取得。
-2. **受信 Store.id と URL が不一致、または受信した festivalId / ownerId / purchaseAccountToken / moderationStatus / createdAt が DB の現在値と異なれば 400**。それとは別に、認証 sub と現在の Store.ownerId が不一致なら 403。編集可能な name / address / coordinate / businessHours / description / ownerPaused / 画像パスのみ適用する。**updatedAt は競合制御に使わず Backend が保存時に再設定**する（クライアントからの値は採用しない）。管理属性の改ざんを黙って無視しない。
-3. 画像パスが一時キーなら `StoreImageUsecase` による S3 本配置を実行。
-4. `updatedAt` を更新して DynamoDB 保存し、**保存した Store** を返す。
+1. URL の Store ID・所有者を確認し、**ベーステーブルの ConsistentRead** で Store を取得する。
+2. **body の id が URL と不一致、または festivalId / ownerId / purchaseAccountToken / moderationStatus / createdAt が読取時の Store と不一致なら400**。認証 sub が Store.ownerId と異なれば403。編集可能な name / address / coordinate / businessHours / description / ownerPaused / 画像パスだけ採用し、updatedAt は Backend が発行する。
+3. 一時画像パスは `StoreImageUsecase` で S3 正式キーにコピーし、DB 更新対象には正式キーを渡す。
+4. **`StoreRepository.updateEditableFields`**（名前は案）で、DynamoDB の **`UpdateItem` + `UpdateExpression`** を実行する。`content.name`、`content.address`、`content.coordinate`、`content.business_hours`、`content.description`、`content.owner_paused`、`content.banner_image_path`、`content.interstitial_image_path`、`content.updated_at` など **広告主が更新できる属性だけを `SET` する**。画像 `null` は明示した DynamoDB NULL 属性をセットし、**`content` マップ全体を置換しない**。実際の snake_case 名は Encoder と照合する。
+5. `ConditionExpression` で Store の存在と ownerId 一致を確認し、存在しない Record を `UpdateItem` が新規作成しないようにする。`ReturnValues: ALL_NEW` から**保存後の正しい Store** を返す。
 
-低頻度・単一管理アカウントの前提で Last Write Wins。Store revision と楽観ロックは導入しない。
+**重要な並行操作**: 広告主 PUT が `approved` を読んだ後、運営 CLI が `suspended` を保存し、その後に広告主 PUT が到着しても、広告主の `UpdateExpression` は **`content.moderation_status` / ownerId / festivalId / purchaseAccountToken / createdAt を一切書かない**。したがって運営停止は解除されない。運営 CLI 側も運営管理の属性のみを更新する。広告主同士の編集は Last Write Wins とし、Store revision / 汎用 CAS は導入しない。S3→DB の非原子的なコピーは従来どおりの許容範囲。
 
 ### PublicStore
 
@@ -337,7 +338,7 @@ token の対象は impressionId / storeId / festivalId / placement / expiry。�
 - **公開への反映**: 強制停止は店舗自体を PublicStore の一覧から除外、AdCandidate に出さず、Impression も減算前の状態確認で拒否。復旧は運営判断のみ。既発行の画像 URL の残存は `spec.md` の許容範囲。
 - **停止中の Credit** は保持。広告主自身による `ownerPaused` の変更と、運営の `moderationStatus` は別物として扱う。
 
-**運営停止の実装前テスト**: 認可されていない IAM 主体は更新不可、存在しない Store / Festival 不一致を拒否、停止後の PublicStore / AdCandidate / Impression の動作、広告主の PUT では停止解除できないこと、運営による復旧が可能なこと。停止スクリプトは最小の操作手段として用意し、公開ユーザー向け API は増やさない。
+**運営停止の実装前テスト**: 認可されていない IAM 主体は更新不可、存在しない Store / Festival 不一致を拒否、停止後の PublicStore / AdCandidate / Impression の動作、**広告主 PUT が approved を読取 → 運営 CLI が suspended を更新 → 広告主が UpdateItem を実行する順序でも suspended を保持**、運営による復旧が可能なこと。停止スクリプトは最小の操作手段として用意し、公開ユーザー向け API は増やさない。
 
 ### 11.2 通報を運営に届ける
 
@@ -411,7 +412,7 @@ scripts/moderate-store                    [追加案: IAM権限の運営停止�
 | Store 作成 | Store / Owner Reference / Credit0 を**単一 Transaction** で作成。条件付き書込み失敗時に3件とも未作成。HTTP 応答消失時は POST 自動再送せず強整合な所有 Store 一覧で作成結果を確認。Store ID の一意性と所有店舗数上限 |
 | Store 読取 | 作成直後の所有 Store GET・画像 URL 発行・所有一覧で **GSI を使わず ConsistentRead**。User Reference → Festival Store の直接 Get、認証 sub と Store.ownerId の一致・別人の Store 拒否 |
 | 購入履歴 | 同じ Store の複数購入を SK `PURCHASE#{purchasedAtUTC}#{transactionId}` で Query。順序・同時刻の重複・他 Store 混入・未付与返金マーカーが履歴にならないこと・トランザクション失敗で参照だけ残らないこと |
-| Store PUT | ID / festivalId / ownerId / purchaseAccountToken / moderationStatus / createdAt の不一致 400、他人の Store 403、更新後の Store 返却、updatedAt は Backend が設定 |
+| Store PUT | ID / festivalId / ownerId / purchaseAccountToken / moderationStatus / createdAt の不一致 400、他人の Store 403。**UpdateItem は編集可能なネスト属性のみ SET**、updatedAt は Backend が設定、ReturnValues ALL_NEW は現在の運営状態を返す。**広告主が approved を読取 → 運営が suspended → 広告主の PUT 完了でも suspended のまま**。管理フィールドを変更する UpdateExpression が生成されないこと |
 | Store PUT | 固定一時／正式／明示 null、画像フィールド省略400 |
 | S3 | 他店舗パス拒否、画像形式・サイズ不正、コピー失敗時の DB 未保存、一時画像の整理 |
 | IAP | 署名不正、別 Bundle/Environment/Product、別 Store appAccountToken、二重付与なし |
