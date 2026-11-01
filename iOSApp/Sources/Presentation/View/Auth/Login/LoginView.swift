@@ -64,8 +64,11 @@ struct LoginContentView: View {
                 .modifier(AuthTextFieldModifier())
                 .focused($focusedField, equals: .identifier)
 
-            TextField("パスワード", text: $password)
+            TextField("パスワード", text: $password.asciiPrintable)
                 .textContentType(.password)
+                .keyboardType(.asciiCapable)
+                .textInputAutocapitalization(.never)
+                .autocorrectionDisabled()
                 .modifier(AuthTextFieldModifier())
                 .focused($focusedField, equals: .password)
 
