@@ -1,6 +1,17 @@
 import SwiftUI
 
 enum InfoImageColorScheme {
+    static func effective(
+        systemColorScheme: ColorScheme,
+        selectedColorScheme: ColorScheme?
+    ) -> ColorScheme {
+        selectedColorScheme ?? systemColorScheme
+    }
+
+    static func supportsThemeSwitch(lightPath: String?, darkPath: String?) -> Bool {
+        isAvailable(lightPath) && isAvailable(darkPath)
+    }
+
     static func resolve(
         lightPath: String?,
         darkPath: String?,
@@ -30,6 +41,44 @@ enum InfoImageColorScheme {
             return false
         }
         return true
+    }
+
+    static func preferredColorScheme(
+        lightPath: String?,
+        darkPath: String?,
+        systemColorScheme: ColorScheme,
+        selectedColorScheme: ColorScheme?
+    ) -> ColorScheme {
+        guard supportsThemeSwitch(lightPath: lightPath, darkPath: darkPath) else {
+            return resolve(
+                lightPath: lightPath,
+                darkPath: darkPath,
+                systemColorScheme: systemColorScheme
+            )
+        }
+        return effective(
+            systemColorScheme: systemColorScheme,
+            selectedColorScheme: selectedColorScheme
+        )
+    }
+}
+
+struct InfoImageThemeToggleButton: View {
+    let colorScheme: ColorScheme
+    let action: () -> Void
+
+    private var targetColorScheme: ColorScheme {
+        colorScheme == .dark ? .light : .dark
+    }
+
+    var body: some View {
+        Button(action: action) {
+            // Temporary placeholder until the custom symbol is provided.
+            Image(systemName: "circle.lefthalf.filled")
+        }
+        .accessibilityLabel(
+            targetColorScheme == .dark ? "ダークモードに切り替え" : "ライトモードに切り替え"
+        )
     }
 }
 
