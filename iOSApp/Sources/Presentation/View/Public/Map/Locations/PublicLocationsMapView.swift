@@ -21,11 +21,14 @@ struct PublicLocationsMapView: View {
             }
             .ignoresSafeArea(edges: .bottom)
             .safeAreaInset(edge: .bottom){
-                if isLiquidGlassDisabled {
-                    toolbarLayer
-                } else if #available(iOS 26.0, *) {
-                    toolbarLayerAfterLiquidGlass
+                Group {
+                    if isLiquidGlassDisabled {
+                        toolbarLayer
+                    } else if #available(iOS 26.0, *) {
+                        toolbarLayerAfterLiquidGlass
+                    }
                 }
+                .padding()
             }
             .onAppear {
                 store.send(.onAppear)
