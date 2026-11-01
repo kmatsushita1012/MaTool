@@ -72,9 +72,19 @@ struct InfoImageThemeToggleButton: View {
     }
 
     var body: some View {
+        if colorScheme == .dark {
+            button.tint(.white)
+        } else {
+            button
+        }
+    }
+
+    private var button: some View {
         Button(action: action) {
-            // Temporary placeholder until the custom symbol is provided.
-            Image(systemName: "circle.lefthalf.filled")
+            Image("DarkModeGlyph")
+                .renderingMode(.template)
+                .font(.system(size: 24))
+                .imageScale(.medium)
         }
         .accessibilityLabel(
             targetColorScheme == .dark ? "ダークモードに切り替え" : "ライトモードに切り替え"
