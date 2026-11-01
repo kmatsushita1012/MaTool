@@ -57,39 +57,33 @@ struct UpdateEmailContentView: View {
     }
 
     var body: some View {
-        GeometryReader { geometry in
-            ScrollView {
-                VStack(spacing: 16) {
-                    Text("メールアドレス変更")
-                        .font(.largeTitle)
-                    switch step {
-                    case .enterEmail:
-                        TextField("新しいメールアドレス", text: $email)
-                            .textContentType(.emailAddress)
-                            .textInputAutocapitalization(.never)
-                            .autocorrectionDisabled()
-                            .modifier(AuthTextFieldModifier())
-                            .focused($focusedField, equals: .email)
-                        Button("変更") {
-                            onEmailSubmitTapped()
-                            focusedField = nil
-                        }
-                        .buttonStyle(PrimaryButtonStyle())
-                        .loadingIndicator(isLoading: isLoading)
-                    case .enterCode(let destination):
-                        UpdateEmailCodeContentView(
-                            destination: destination,
-                            code: $code,
-                            isLoading: isLoading,
-                            onSubmitTapped: onCodeSubmitTapped
-                        )
-                    }
+        VStack(spacing: 16) {
+            Text("メールアドレス変更")
+                .font(.largeTitle)
+            switch step {
+            case .enterEmail:
+                TextField("新しいメールアドレス", text: $email)
+                    .textContentType(.emailAddress)
+                    .textInputAutocapitalization(.never)
+                    .autocorrectionDisabled()
+                    .modifier(AuthTextFieldModifier())
+                    .focused($focusedField, equals: .email)
+                Button("変更") {
+                    onEmailSubmitTapped()
+                    focusedField = nil
                 }
-                .padding()
-                .frame(maxWidth: .infinity)
-                .frame(minHeight: geometry.size.height)
+                .buttonStyle(PrimaryButtonStyle())
+                .loadingIndicator(isLoading: isLoading)
+            case .enterCode(let destination):
+                UpdateEmailCodeContentView(
+                    destination: destination,
+                    code: $code,
+                    isLoading: isLoading,
+                    onSubmitTapped: onCodeSubmitTapped
+                )
             }
         }
+        .padding()
         .toolbar {
             ToolbarBackButton(isDisabled: isLoading) {
                 onDismissTapped()

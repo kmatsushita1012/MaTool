@@ -62,51 +62,45 @@ struct ResetPasswordContentView: View {
     }
 
     var body: some View {
-        GeometryReader { geometry in
-            ScrollView {
-                VStack(spacing: 16) {
-                    Text("パスワード変更")
-                        .font(.largeTitle)
-                    switch step {
-                    case .enterUsername:
-                        Text("パスワードをリセットするには、登録済みのメールアドレスに送信された認証コードが必要です。")
-                            .foregroundStyle(.secondary)
-                        TextField("ID（ユーザー名）", text: $username)
-                            .textContentType(.none)
-                            .modifier(AuthTextFieldModifier())
-                            .focused($focusedField, equals: .username)
-                        Button("認証コードを送信") {
-                            onUsernameSubmitTapped()
-                            focusedField = nil
-                        }
-                        .buttonStyle(PrimaryButtonStyle())
-                        .loadingIndicator(isLoading: isLoading)
-                    case .enterCode:
-                        TextField("新しいパスワード", text: $newPassword1)
-                            .textContentType(.password)
-                            .modifier(AuthTextFieldModifier())
-                            .focused($focusedField, equals: .newPassword1)
-                        TextField("新しいパスワード（確認用）", text: $newPassword2)
-                            .textContentType(.password)
-                            .modifier(AuthTextFieldModifier())
-                            .focused($focusedField, equals: .newPassword2)
-                        TextField("認証コード（6桁）", text: $code)
-                            .textContentType(.oneTimeCode)
-                            .modifier(AuthTextFieldModifier())
-                            .focused($focusedField, equals: .code)
-                        Button("パスワードを変更") {
-                            onCodeSubmitTapped()
-                            focusedField = nil
-                        }
-                        .buttonStyle(PrimaryButtonStyle())
-                        .loadingIndicator(isLoading: isLoading)
-                    }
+        VStack(spacing: 16) {
+            Text("パスワード変更")
+                .font(.largeTitle)
+            switch step {
+            case .enterUsername:
+                Text("パスワードをリセットするには、登録済みのメールアドレスに送信された認証コードが必要です。")
+                    .foregroundStyle(.secondary)
+                TextField("ID（ユーザー名）", text: $username)
+                    .textContentType(.none)
+                    .modifier(AuthTextFieldModifier())
+                    .focused($focusedField, equals: .username)
+                Button("認証コードを送信") {
+                    onUsernameSubmitTapped()
+                    focusedField = nil
                 }
-                .padding()
-                .frame(maxWidth: .infinity)
-                .frame(minHeight: geometry.size.height)
+                .buttonStyle(PrimaryButtonStyle())
+                .loadingIndicator(isLoading: isLoading)
+            case .enterCode:
+                TextField("新しいパスワード", text: $newPassword1)
+                    .textContentType(.password)
+                    .modifier(AuthTextFieldModifier())
+                    .focused($focusedField, equals: .newPassword1)
+                TextField("新しいパスワード（確認用）", text: $newPassword2)
+                    .textContentType(.password)
+                    .modifier(AuthTextFieldModifier())
+                    .focused($focusedField, equals: .newPassword2)
+                TextField("認証コード（6桁）", text: $code)
+                    .textContentType(.oneTimeCode)
+                    .modifier(AuthTextFieldModifier())
+                    .focused($focusedField, equals: .code)
+                Button("パスワードを変更") {
+                    onCodeSubmitTapped()
+                    focusedField = nil
+                }
+                .buttonStyle(PrimaryButtonStyle())
+                .loadingIndicator(isLoading: isLoading)
             }
         }
+        .padding()
         .toolbar {
             ToolbarBackButton(isDisabled: isLoading) {
                 onDismissTapped()

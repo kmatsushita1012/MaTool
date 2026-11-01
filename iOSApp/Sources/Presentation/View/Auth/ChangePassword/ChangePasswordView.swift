@@ -48,35 +48,29 @@ struct ChangePasswordContentView: View {
     }
 
     var body: some View {
-        GeometryReader { geometry in
-            ScrollView {
-                VStack(spacing: 16) {
-                    Text("パスワード変更")
-                        .font(.largeTitle)
-                    TextField("現在のパスワード", text: $current)
-                        .textContentType(.password)
-                        .modifier(AuthTextFieldModifier())
-                        .focused($focusedField, equals: .current)
-                    TextField("新しいパスワード", text: $new1)
-                        .textContentType(.password)
-                        .modifier(AuthTextFieldModifier())
-                        .focused($focusedField, equals: .new1)
-                    TextField("新しいパスワード（確認用）", text: $new2)
-                        .textContentType(.password)
-                        .modifier(AuthTextFieldModifier())
-                        .focused($focusedField, equals: .new2)
-                    Button("パスワードを変更") {
-                        onSubmitTapped()
-                        focusedField = nil
-                    }
-                    .buttonStyle(PrimaryButtonStyle())
-                    .loadingIndicator(isLoading: isLoading)
-                }
-                .padding()
-                .frame(maxWidth: .infinity)
-                .frame(minHeight: geometry.size.height)
+        VStack(spacing: 16) {
+            Text("パスワード変更")
+                .font(.largeTitle)
+            TextField("現在のパスワード", text: $current)
+                .textContentType(.password)
+                .modifier(AuthTextFieldModifier())
+                .focused($focusedField, equals: .current)
+            TextField("新しいパスワード", text: $new1)
+                .textContentType(.password)
+                .modifier(AuthTextFieldModifier())
+                .focused($focusedField, equals: .new1)
+            TextField("新しいパスワード（確認用）", text: $new2)
+                .textContentType(.password)
+                .modifier(AuthTextFieldModifier())
+                .focused($focusedField, equals: .new2)
+            Button("パスワードを変更") {
+                onSubmitTapped()
+                focusedField = nil
             }
+            .buttonStyle(PrimaryButtonStyle())
+            .loadingIndicator(isLoading: isLoading)
         }
+        .padding()
         .toolbar {
             ToolbarBackButton(isDisabled: isLoading) {
                 onDismissTapped()
