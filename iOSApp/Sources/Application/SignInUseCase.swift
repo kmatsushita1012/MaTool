@@ -101,7 +101,7 @@ struct SignInUseCase: SignInUseCaseProtocol {
             }
             userDefaults.saveDefaultFestivalId(festivalResponse.festival.id)
             userDefaults.saveDefaultDistrictId(districtId)
-        case .signedIn(.guest):
+        case .signedIn(.guest), .signedIn(.advertiser):
             break
         case .newPasswordRequired:
             break

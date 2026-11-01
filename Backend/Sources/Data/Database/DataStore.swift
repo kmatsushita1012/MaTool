@@ -6,6 +6,25 @@
 //
 
 import Dependencies
+import AWSDynamoDB
+
+typealias DynamoDBAttribute = DynamoDBClientTypes.AttributeValue
+
+enum DynamoDBTransactionOperation: Sendable {
+    case put(
+        item: [String: DynamoDBAttribute],
+        conditionExpression: String?,
+        expressionAttributeNames: [String: String],
+        expressionAttributeValues: [String: DynamoDBAttribute]
+    )
+    case update(
+        keys: [String: DynamoDBAttribute],
+        updateExpression: String,
+        conditionExpression: String?,
+        expressionAttributeNames: [String: String],
+        expressionAttributeValues: [String: DynamoDBAttribute]
+    )
+}
 
 // MARK: - Dependencies
 enum DataStoreFactoryKey: DependencyKey {
@@ -27,6 +46,7 @@ typealias DataStoreFactory = @Sendable (String) -> DataStore
 protocol DataStore: Sendable {
     func put<T: RecordProtocol>(_ item: T) async throws
     func get<T: RecordProtocol>(keys: [String: Codable], as type: T.Type) async throws -> T?
+    func get<T: RecordProtocol>(keys: [String: Codable], consistentRead: Bool, as type: T.Type) async throws -> T?
     func delete(keys: [String: Codable]) async throws
     func scan<T: RecordProtocol>(_ type: T.Type, ignoreDecodeError: Bool) async throws -> [T]
     func query<T: RecordProtocol>(
@@ -37,6 +57,57 @@ protocol DataStore: Sendable {
         ascending: Bool,
         as type: T.Type
     ) async throws -> [T]
+    func query<T: RecordProtocol>(
+        indexName: String?,
+        keyConditions: [QueryCondition],
+        filterConditions: [FilterCondition],
+        limit: Int?,
+        ascending: Bool,
+        consistentRead: Bool,
+        as type: T.Type
+    ) async throws -> [T]
+    func updateItem(
+        keys: [String: DynamoDBAttribute],
+        updateExpression: String,
+        conditionExpression: String?,
+        expressionAttributeNames: [String: String],
+        expressionAttributeValues: [String: DynamoDBAttribute],
+        returnAllNew: Bool
+    ) async throws -> [String: DynamoDBAttribute]?
+    func transactWrite(_ operations: [DynamoDBTransactionOperation]) async throws
+}
+
+extension DataStore {
+    func get<T: RecordProtocol>(keys: [String: Codable], consistentRead: Bool, as type: T.Type) async throws -> T? {
+        try await get(keys: keys, as: type)
+    }
+
+    func query<T: RecordProtocol>(
+        indexName: String?,
+        keyConditions: [QueryCondition],
+        filterConditions: [FilterCondition],
+        limit: Int?,
+        ascending: Bool,
+        consistentRead: Bool,
+        as type: T.Type
+    ) async throws -> [T] {
+        try await query(indexName: indexName, keyConditions: keyConditions, filterConditions: filterConditions, limit: limit, ascending: ascending, as: type)
+    }
+
+    func updateItem(
+        keys: [String: DynamoDBAttribute],
+        updateExpression: String,
+        conditionExpression: String?,
+        expressionAttributeNames: [String: String],
+        expressionAttributeValues: [String: DynamoDBAttribute],
+        returnAllNew: Bool
+    ) async throws -> [String: DynamoDBAttribute]? {
+        throw Application.Error.internalServerError("この DataStore は UpdateItem をサポートしていません。")
+    }
+
+    func transactWrite(_ operations: [DynamoDBTransactionOperation]) async throws {
+        throw Application.Error.internalServerError("この DataStore は DynamoDB Transaction をサポートしていません。")
+    }
 }
 
 // MARK: - QueryCondition
@@ -90,6 +161,11 @@ extension DataStore {
     func get<T: RecordProtocol>(pk: String, sk: String, as type: T.Type) async throws -> T? {
         let keys = [ "pk": pk, "sk": sk ]
         return try await get(keys: keys, as: type)
+    }
+
+    func get<T: RecordProtocol>(pk: String, sk: String, consistentRead: Bool, as type: T.Type) async throws -> T? {
+        let keys = ["pk": pk, "sk": sk]
+        return try await get(keys: keys, consistentRead: consistentRead, as: type)
     }
     
     func delete(pk: String, sk: String) async throws {

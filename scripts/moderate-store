@@ -1,0 +1,76 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+usage() {
+  printf '%s\n' '使い方: scripts/moderate-store <festivalId> <storeId> <suspend|approve> <理由>' >&2
+}
+
+if [[ "$#" -ne 4 ]]; then
+  usage
+  exit 2
+fi
+
+festival_id="$1"
+store_id="$2"
+action="$3"
+reason="$4"
+case "$action" in
+  suspend) status='suspended' ;;
+  approve) status='approved' ;;
+  *) usage; exit 2 ;;
+esac
+if [[ -z "$festival_id" || -z "$store_id" || -z "${reason//[[:space:]]/}" || "${#reason}" -gt 1000 ]]; then
+  usage
+  exit 2
+fi
+
+table_name="${DYNAMODB_TABLE_NAME:-matool}"
+region="${AWS_REGION:-ap-northeast-1}"
+actor="$(aws sts get-caller-identity --query Arn --output text --region "$region")"
+if [[ "$actor" != arn:aws:sts::*:assumed-role/* ]]; then
+  printf '%s\n' '店舗モデレーション専用 IAM ロールを引き受けてから実行してください。' >&2
+  exit 1
+fi
+
+pk="FESTIVAL#${festival_id}"
+sk="STORE#${store_id}"
+item="$(aws dynamodb get-item \
+  --table-name "$table_name" \
+  --key "$(jq -cn --arg pk "$pk" --arg sk "$sk" '{pk:{S:$pk},sk:{S:$sk}}')" \
+  --consistent-read \
+  --region "$region" \
+  --output json)"
+actual_festival="$(jq -r '.Item.content.M.festival_id.S // empty' <<<"$item")"
+previous_status="$(jq -r '.Item.content.M.moderation_status.S // empty' <<<"$item")"
+if [[ "$actual_festival" != "$festival_id" || -z "$previous_status" ]]; then
+  printf '%s\n' '指定した祭典に属する店舗が見つかりません。' >&2
+  exit 1
+fi
+
+timestamp="$(date -u +%s)"
+stored_date="$((timestamp - 978307200))"
+audit_id="$(uuidgen | tr '[:upper:]' '[:lower:]')"
+audit_sk="MODERATION#${timestamp}#${audit_id}"
+transact_items="$(jq -cn \
+  --arg table "$table_name" \
+  --arg pk "$pk" \
+  --arg sk "$sk" \
+  --arg festival "$festival_id" \
+  --arg status "$status" \
+  --arg previous "$previous_status" \
+  --arg reason "$reason" \
+  --arg actor "$actor" \
+  --arg auditSk "$audit_sk" \
+  --argjson occurredAt "$stored_date" \
+  '[
+    {Update:{TableName:$table,Key:{pk:{S:$pk},sk:{S:$sk}},UpdateExpression:"SET #content.#status = :status, #content.#updatedAt = :updatedAt",ConditionExpression:"attribute_exists(#pk) AND #content.#festivalId = :festival",ExpressionAttributeNames:{"#pk":"pk","#content":"content","#festivalId":"festival_id","#status":"moderation_status","#updatedAt":"updated_at"},ExpressionAttributeValues:{":festival":{S:$festival},":status":{S:$status},":updatedAt":{N:($occurredAt|tostring)}}}},
+    {Put:{TableName:$table,Item:{pk:{S:$pk},sk:{S:$auditSk},type:{S:"STORE_MODERATION_EVENT"},content:{M:{festival_id:{S:$festival},store_id:{S:($sk|ltrimstr("STORE#"))},action:{S:$status},previous_status:{S:$previous},reason:{S:$reason},actor:{S:$actor},occurred_at:{N:($occurredAt|tostring)}}}},ConditionExpression:"attribute_not_exists(pk)"}}
+  ]')"
+
+aws dynamodb transact-write-items \
+  --transact-items "$transact_items" \
+  --region "$region" \
+  --output json >/dev/null
+
+jq -cn --arg festivalId "$festival_id" --arg storeId "$store_id" --arg previousStatus "$previous_status" --arg status "$status" --arg actor "$actor" --arg reason "$reason" --arg timestamp "$timestamp" \
+  '{festivalId:$festivalId,storeId:$storeId,previousStatus:$previousStatus,status:$status,actor:$actor,reason:$reason,occurredAtUnixSeconds:($timestamp|tonumber)}'

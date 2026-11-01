@@ -1,0 +1,142 @@
+import AppStoreServerLibrary
+import Dependencies
+import Foundation
+import Shared
+
+enum AppStoreClientKey: DependencyKey {
+    static let liveValue: any AppStoreClientProtocol = AppStoreClient()
+}
+
+extension DependencyValues {
+    var appStoreClient: any AppStoreClientProtocol {
+        get { self[AppStoreClientKey.self] }
+        set { self[AppStoreClientKey.self] = newValue }
+    }
+}
+
+protocol AppStoreClientProtocol: Sendable {
+    func verifyPurchase(signedTransactionInfo: String) async throws -> VerifiedPurchase
+    func verifyNotification(signedPayload: String) async throws -> VerifiedPurchaseNotification
+}
+
+struct VerifiedPurchase: Sendable, Equatable {
+    let transactionId: String
+    let appAccountToken: UUID
+    let productId: String
+    let purchasedAt: Date
+    let environment: String
+    let revocationDate: Date?
+}
+
+enum VerifiedPurchaseNotificationType: Sendable, Equatable {
+    case refund
+    case refundReversed
+    case other
+}
+
+struct VerifiedPurchaseNotification: Sendable, Equatable {
+    let notificationUUID: String?
+    let type: VerifiedPurchaseNotificationType
+    let signedDate: Date
+    let purchase: VerifiedPurchase?
+}
+
+struct AppStoreClient: AppStoreClientProtocol {
+    func verifyPurchase(signedTransactionInfo: String) async throws -> VerifiedPurchase {
+        let verifier = try makeVerifier()
+        let decoded: JWSTransactionDecodedPayload
+        switch await verifier.verifyAndDecodeTransaction(signedTransaction: signedTransactionInfo) {
+        case .valid(let transaction): decoded = transaction
+        case .invalid: throw Error.badRequest("Apple の購入署名を検証できませんでした。")
+        }
+        guard let transactionId = decoded.transactionId, !transactionId.isEmpty,
+              let productId = decoded.productId, !productId.isEmpty,
+              let appAccountToken = decoded.appAccountToken,
+              let purchasedAt = decoded.purchaseDate,
+              decoded.type == .consumable,
+              decoded.quantity == 1,
+              decoded.revocationDate == nil else {
+            throw Error.badRequest("購入取引の内容が不正です。")
+        }
+        return VerifiedPurchase(
+            transactionId: transactionId,
+            appAccountToken: appAccountToken,
+            productId: productId,
+            purchasedAt: purchasedAt,
+            environment: decoded.environment?.rawValue ?? "",
+            revocationDate: decoded.revocationDate
+        )
+    }
+
+    func verifyNotification(signedPayload: String) async throws -> VerifiedPurchaseNotification {
+        let verifier = try makeVerifier()
+        let notification: ResponseBodyV2DecodedPayload
+        switch await verifier.verifyAndDecodeNotification(signedPayload: signedPayload) {
+        case .valid(let decoded): notification = decoded
+        case .invalid: throw Error.badRequest("Apple の通知署名を検証できませんでした。")
+        }
+        guard let signedDate = notification.signedDate,
+              let notificationType = notification.notificationType else {
+            throw Error.badRequest("Apple 通知の内容が不正です。")
+        }
+
+        let type: VerifiedPurchaseNotificationType
+        switch notificationType {
+        case .refund: type = .refund
+        case .refundReversed: type = .refundReversed
+        default: type = .other
+        }
+        guard type != .other else {
+            return VerifiedPurchaseNotification(
+                notificationUUID: notification.notificationUUID,
+                type: .other,
+                signedDate: signedDate,
+                purchase: nil
+            )
+        }
+
+        guard let signedTransaction = notification.data?.signedTransactionInfo else {
+            throw Error.badRequest("Apple 通知に取引情報がありません。")
+        }
+        let purchase: VerifiedPurchase
+        switch await verifier.verifyAndDecodeTransaction(signedTransaction: signedTransaction) {
+        case .valid(let transaction):
+            guard let transactionId = transaction.transactionId, !transactionId.isEmpty,
+                  let productId = transaction.productId, !productId.isEmpty,
+                  let appAccountToken = transaction.appAccountToken,
+                  let purchasedAt = transaction.purchaseDate else {
+                throw Error.badRequest("Apple 通知の取引情報が不完全です。")
+            }
+            purchase = VerifiedPurchase(
+                transactionId: transactionId,
+                appAccountToken: appAccountToken,
+                productId: productId,
+                purchasedAt: purchasedAt,
+                environment: transaction.environment?.rawValue ?? "",
+                revocationDate: transaction.revocationDate
+            )
+        case .invalid:
+            throw Error.badRequest("Apple 通知内の取引署名を検証できませんでした。")
+        }
+        return VerifiedPurchaseNotification(
+            notificationUUID: notification.notificationUUID,
+            type: type,
+            signedDate: signedDate,
+            purchase: purchase
+        )
+    }
+
+    private func makeVerifier() throws -> SignedDataVerifier {
+        let config = AdvertisingEnvironment()
+        guard !config.appStoreBundleId.isEmpty, !config.appleRootCertificates.isEmpty else {
+            throw Error.internalServerError("App Store 検証設定が不足しています。")
+        }
+        return try SignedDataVerifier(
+            rootCertificates: config.appleRootCertificates,
+            bundleId: config.appStoreBundleId,
+            appAppleId: config.appStoreAppId,
+            environment: config.appStoreEnvironment,
+            enableOnlineChecks: true
+        )
+    }
+}

@@ -132,6 +132,16 @@ Debug の広告にはテスト ID を使います。Release の広告 ID を指�
 `Backend/.env` は Package.swift のコピーリソースでもあるため、ビルド時に必要です。
 実環境へアクセスする検証では、その環境に対する AWS 認証・権限も必要です。
 
+独自広告 API は、既存の `IMAGE_UPLOAD_BUCKET` と `IMAGE_PUBLIC_BASE_URL` に加えて次を読み取ります。
+
+- `ADVERTISEMENT_MAX_STORES_PER_OWNER`（省略時10）と `ADVERTISEMENT_IMPRESSION_TOKEN_SECRET`（32 UTF-8 bytes 以上）
+- `APP_STORE_BUNDLE_ID`、`APP_STORE_ENVIRONMENT`（`sandbox` / `production`）、Production 用 `APP_STORE_APP_ID`
+- `APPLE_ROOT_CA_CERTIFICATES_BASE64`（Apple Root CA DER 証明書を Base64 化し、複数はカンマ区切り）
+- App Store Connect の商品 ID に対応する `STORE_CREDIT_PRODUCT_ID_500` と `STORE_CREDIT_PRODUCT_ID_1000`
+- 通報通知先 SNS Topic の `ADVERTISEMENT_REPORT_TOPIC_ARN`
+
+これらは Lambda の環境変数または `Backend/.env` に設定します。広告主が `custom:role` を書き換えられない Cognito App Client 設定、通報先 SNS 購読、API Gateway の基本スロットリングも運用側で設定してください。運営停止・解除は、専用 IAM ロールで `scripts/moderate-store` を実行します。
+
 ## テストと動作確認
 
 通常のテストターゲットは `SharedTests`、`BackendTests`、`iOSAppTests` です。
