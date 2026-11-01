@@ -66,7 +66,7 @@ public struct RootSceneView: View {
                     ), onDismiss: {
                         infoSheetDetent = .medium
                     }) { sheetStore in
-                        NavigationStack {
+                        let introductionSheet = NavigationStack {
                             switch sheetStore.case {
                             case .festival(let infoStore):
                                 FestivalInfoView(store: infoStore, isSheetRoot: true)
@@ -76,6 +76,14 @@ public struct RootSceneView: View {
                         }
                         .presentationDetents([.medium, .large], selection: $infoSheetDetent)
                         .presentationDragIndicator(.visible)
+
+                        if #available(iOS 27.0, *) {
+                            introductionSheet
+                                .presentationPlacement(.trailing)
+                                .presentationSizing(.form)
+                        } else {
+                            introductionSheet
+                        }
                     }
                 } else {
                     LoadingView()

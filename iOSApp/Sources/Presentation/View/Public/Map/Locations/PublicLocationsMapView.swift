@@ -19,7 +19,7 @@ struct PublicLocationsMapView: View {
             ZStack {
                 MapView(style: .public, floats: store.floats, region: $mapRegion, floatTapped: { store.send(.floatTapped($0)) })
             }
-            .ignoresSafeArea(edges: .bottom)
+            .ignoresSafeArea(.all)
             .safeAreaInset(edge: .bottom){
                 Group {
                     if isLiquidGlassDisabled {

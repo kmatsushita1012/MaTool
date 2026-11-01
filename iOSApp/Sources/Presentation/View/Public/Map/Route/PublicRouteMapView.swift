@@ -50,7 +50,7 @@ struct PublicRouteMapView: View {
                     floatTapped: { store.send(.locationTapped($0)) }
                 )
                 .equatable()
-                .ignoresSafeArea(edges: .bottom)
+                .ignoresSafeArea(.all)
             }
             .safeAreaInset(edge: .bottom) {
                 Group {

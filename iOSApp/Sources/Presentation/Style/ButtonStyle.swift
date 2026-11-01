@@ -7,6 +7,19 @@
 
 import SwiftUI
 
+struct AuthTextFieldModifier: ViewModifier {
+    func body(content: Content) -> some View {
+        content
+            .padding()
+            .textFieldStyle(.plain)
+            .background(.regularMaterial, in: .capsule)
+            .overlay {
+                Capsule()
+                    .stroke(.secondary, lineWidth: 1)
+            }
+    }
+}
+
 struct PrimaryButtonStyle: ButtonStyle {
     let backgroundColor: Color
     let foregroundColor: Color

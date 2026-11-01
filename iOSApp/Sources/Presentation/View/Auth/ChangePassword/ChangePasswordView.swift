@@ -48,44 +48,40 @@ struct ChangePasswordContentView: View {
     }
 
     var body: some View {
-        VStack {
-            TitleView(
-                text: "パスワード変更",
-                image: "AdminBackground"
-            ) {
+        VStack(spacing: 16) {
+            Text("パスワード変更")
+                .font(.largeTitle)
+            PasswordTextField(
+                "現在のパスワード",
+                text: $current,
+                focusedField: $focusedField,
+                equals: .current
+            )
+            PasswordTextField(
+                "新しいパスワード",
+                text: $new1,
+                focusedField: $focusedField,
+                equals: .new1
+            )
+            PasswordTextField(
+                "新しいパスワード（確認用）",
+                text: $new2,
+                focusedField: $focusedField,
+                equals: .new2
+            )
+            Button("パスワードを変更") {
+                onSubmitTapped()
+                focusedField = nil
+            }
+            .buttonStyle(PrimaryButtonStyle())
+            .loadingIndicator(isLoading: isLoading)
+        }
+        .padding()
+        .toolbar {
+            ToolbarBackButton(isDisabled: isLoading) {
                 onDismissTapped()
             }
-            .disabled(isLoading)
-            .ignoresSafeArea(edges: .top)
-            Spacer()
-            VStack {
-                TextField("現在のパスワード", text: $current)
-                    .textContentType(.password)
-                    .textFieldStyle(RoundedBorderTextFieldStyle())
-                    .focused($focusedField, equals: .current)
-                    .padding()
-                TextField("新しいパスワード", text: $new1)
-                    .textContentType(.password)
-                    .textFieldStyle(RoundedBorderTextFieldStyle())
-                    .focused($focusedField, equals: .new1)
-                    .padding()
-                TextField("新しいパスワード（確認用）", text: $new2)
-                    .textContentType(.password)
-                    .textFieldStyle(RoundedBorderTextFieldStyle())
-                    .focused($focusedField, equals: .new2)
-                    .padding()
-                Button("パスワードを変更") {
-                    onSubmitTapped()
-                    focusedField = nil
-                }
-                .buttonStyle(PrimaryButtonStyle())
-                .padding()
-                .loadingIndicator(isLoading: isLoading)
-            }
-            .padding()
-            Spacer()
         }
-        .preferredColorScheme(.light)
     }
 }
 
