@@ -5,6 +5,8 @@ import Shared
 
 struct DistrictInfoView: View {
     @SwiftUI.Bindable var store: StoreOf<DistrictInfoFeature>
+    @Environment(\.colorScheme) private var systemColorScheme
+    @State private var selectedColorScheme: ColorScheme?
     let festivalName: String?
     var locationTimestamp: Date? = nil
     var isNavigationLoading = false
@@ -16,6 +18,7 @@ struct DistrictInfoView: View {
             DistrictInfoContentView(
                 district: store.district,
                 performances: store.performances,
+                selectedColorScheme: $selectedColorScheme,
                 region: $store.region,
                 isSheetRoot: isSheetRoot,
                 festivalName: festivalName,
@@ -24,12 +27,21 @@ struct DistrictInfoView: View {
                 onFestivalTapped: onFestivalTapped
             )
         }
+        .preferredColorScheme(
+            InfoImageColorScheme.preferredColorScheme(
+                lightPath: store.district.image.light,
+                darkPath: store.district.image.dark,
+                systemColorScheme: systemColorScheme,
+                selectedColorScheme: selectedColorScheme
+            )
+        )
     }
 }
 
 private struct DistrictInfoContentView: View {
     let district: District
     let performances: [Performance]
+    @Binding var selectedColorScheme: ColorScheme?
     @Binding var region: MKCoordinateRegion?
     let isSheetRoot: Bool
     let festivalName: String?
@@ -38,6 +50,24 @@ private struct DistrictInfoContentView: View {
     let onFestivalTapped: () -> Void
     @State private var isMapMovementLocked = true
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.colorScheme) private var colorScheme
+
+    private var supportsThemeSwitch: Bool {
+        InfoImageColorScheme.supportsThemeSwitch(
+            lightPath: district.image.light,
+            darkPath: district.image.dark
+        )
+    }
+
+    private var themeToggleButton: some View {
+        let effectiveColorScheme = InfoImageColorScheme.effective(
+            systemColorScheme: colorScheme,
+            selectedColorScheme: selectedColorScheme
+        )
+        return InfoImageThemeToggleButton(colorScheme: effectiveColorScheme) {
+            selectedColorScheme = effectiveColorScheme == .dark ? .light : .dark
+        }
+    }
 
     var body: some View {
         InfoScrollView {
@@ -149,7 +179,27 @@ private struct DistrictInfoContentView: View {
                     }
                 }
             }
+            if supportsThemeSwitch {
+                if #available(iOS 26.0, *) {
+                    ToolbarSpacer(.flexible, placement: .bottomBar)
+                    ToolbarItem(placement: .bottomBar) {
+                        themeToggleButton
+                    }
+                } else {
+                    ToolbarItemGroup(placement: .bottomBar) {
+                        Spacer()
+                        themeToggleButton
+                    }
+                }
+            }
         }
+        .environment(
+            \.colorScheme,
+            InfoImageColorScheme.effective(
+                systemColorScheme: colorScheme,
+                selectedColorScheme: selectedColorScheme
+            )
+        )
     }
 }
 

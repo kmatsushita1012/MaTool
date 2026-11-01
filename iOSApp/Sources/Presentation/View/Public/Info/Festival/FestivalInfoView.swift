@@ -7,6 +7,8 @@ import UIKit
 
 struct FestivalInfoView: View {
     @SwiftUI.Bindable var store: StoreOf<FestivalInfoFeature>
+    @Environment(\.colorScheme) private var systemColorScheme
+    @State private var selectedColorScheme: ColorScheme?
     let isSheetRoot: Bool
 
     var body: some View {
@@ -14,6 +16,7 @@ struct FestivalInfoView: View {
             FestivalInfoContentView(
                 festival: store.festival,
                 districts: store.districts,
+                selectedColorScheme: $selectedColorScheme,
                 isSheetRoot: isSheetRoot,
                 displayMode: $store.displayMode,
                 region: $store.region,
@@ -37,6 +40,14 @@ struct FestivalInfoView: View {
             }
             .alert($store.scope(state: \.alert, action: \.alert))
         }
+        .preferredColorScheme(
+            InfoImageColorScheme.preferredColorScheme(
+                lightPath: store.festival.image.light,
+                darkPath: store.festival.image.dark,
+                systemColorScheme: systemColorScheme,
+                selectedColorScheme: selectedColorScheme
+            )
+        )
     }
 }
 
@@ -45,6 +56,7 @@ private struct FestivalInfoContentView: View {
 
     let festival: Festival
     let districts: [District]
+    @Binding var selectedColorScheme: ColorScheme?
     let isSheetRoot: Bool
     @Binding var displayMode: FestivalInfoFeature.DisplayMode
     @Binding var region: MKCoordinateRegion?
@@ -52,6 +64,24 @@ private struct FestivalInfoContentView: View {
     let selectedDistrictID: District.ID?
     let onDistrictSelected: (District.ID) -> Void
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.colorScheme) private var colorScheme
+
+    private var supportsThemeSwitch: Bool {
+        InfoImageColorScheme.supportsThemeSwitch(
+            lightPath: festival.image.light,
+            darkPath: festival.image.dark
+        )
+    }
+
+    private var themeToggleButton: some View {
+        let effectiveColorScheme = InfoImageColorScheme.effective(
+            systemColorScheme: colorScheme,
+            selectedColorScheme: selectedColorScheme
+        )
+        return InfoImageThemeToggleButton(colorScheme: effectiveColorScheme) {
+            selectedColorScheme = effectiveColorScheme == .dark ? .light : .dark
+        }
+    }
 
     var body: some View {
         Group {
@@ -103,7 +133,27 @@ private struct FestivalInfoContentView: View {
                     .fixedSize(horizontal: true, vertical: false)
             }
             .hideSharedBackgroundVisibility()
+            if supportsThemeSwitch {
+                if #available(iOS 26.0, *) {
+                    ToolbarSpacer(.flexible, placement: .bottomBar)
+                    ToolbarItem(placement: .bottomBar) {
+                        themeToggleButton
+                    }
+                } else {
+                    ToolbarItemGroup(placement: .bottomBar) {
+                        Spacer()
+                        themeToggleButton
+                    }
+                }
+            }
         }
+        .environment(
+            \.colorScheme,
+            InfoImageColorScheme.effective(
+                systemColorScheme: colorScheme,
+                selectedColorScheme: selectedColorScheme
+            )
+        )
     }
 
     private var displayModePicker: some View {
