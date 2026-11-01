@@ -48,13 +48,12 @@ struct DistrictEditFeatureTests {
     @Test("District保存後に次の画像アップロードが失敗しても前回の一時パスを再送しない")
     @MainActor
     func failedSecondUploadDoesNotResendPreviousTemporaryPath() async throws {
-        let fixture = DistrictEditFixture()
         let oldImage = ImagePath(
             light: "https://cdn.example/old-light.jpg?v=5",
             dark: "https://cdn.example/old-dark.jpg?v=6"
         )
-        var district = fixture.district
-        district.image = oldImage
+        let fixture = DistrictEditFixture(image: oldImage)
+        let district = fixture.district
         var initialState = try DistrictEditFeature.State(district, appState: fixture.appState)
         let temporaryA = "temporary/festivals/festival/districts/district/light.jpg"
         let jpegA = Data([0xFF, 0xD8, 0xFF, 0xD9, 1])
@@ -203,7 +202,7 @@ private struct DistrictEditFixture {
     let performance: Performance
     let appState: Shared<AppState?>
 
-    init() {
+    init(image: ImagePath = .init()) {
         let festivalBase = Coordinate(latitude: 35, longitude: 139)
         let festival = Festival(
             id: "festival",
@@ -211,7 +210,8 @@ private struct DistrictEditFixture {
             subname: "Festival",
             base: festivalBase
         )
-        let district = District(id: "district", name: "District", festivalId: festival.id)
+        var district = District(id: "district", name: "District", festivalId: festival.id)
+        district.image = image
         let performance = Performance(
             id: "performance",
             name: "Performance",
