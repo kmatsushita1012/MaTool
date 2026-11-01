@@ -73,10 +73,6 @@ struct MapView: View {
                         MapPolyline(coordinates: segment.map { $0.toCL() })
                             .stroke(index.isMultiple(of: 2) ? .blue : .green, lineWidth: 4)
                     }
-                    ForEach(points.filter(style: style)) { point in
-                        PointMapMarker(point: point)
-                            .tag(point.id)
-                    }
                     if let floatAnnotation {
                         Annotation(
                             floatAnnotation.title,
@@ -105,6 +101,10 @@ struct MapView: View {
                             }
                             .annotationTitles(.hidden)
                         }
+                    }
+                    ForEach(points.filter(style: style)) { point in
+                        PointMapMarker(point: point)
+                            .tag(point.id)
                     }
                 }
                 .mapStyle(.standard(pointsOfInterest: style == .public ? .excluding(.excludedForPublic) : .including(.includedForAdmin)))
