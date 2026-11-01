@@ -72,6 +72,53 @@ struct PurchaseRepositoryTest {
         #expect(!committed)
         #expect(dataStore.lastTransaction?.count == 3)
     }
+
+    @Test("返金状態の更新と Credit 減算は一つの条件付き transaction で確定する")
+    func refundNotificationUpdatesPurchaseAndCreditAtomically() async throws {
+        var oldRecord = makeRecord()
+        oldRecord.lastRefundEventSignedDate = Date(timeIntervalSince1970: 1_700_000_050)
+        let refundedAt = Date(timeIntervalSince1970: 1_700_000_100)
+        let newRecord = PurchaseRecord(
+            transactionId: oldRecord.transactionId,
+            storeId: oldRecord.storeId,
+            appAccountToken: oldRecord.appAccountToken,
+            productId: oldRecord.productId,
+            creditedAmount: oldRecord.creditedAmount,
+            purchasedAt: oldRecord.purchasedAt,
+            environment: oldRecord.environment,
+            creditGranted: true,
+            refundStatus: .refunded,
+            refundDeductedCredits: 100,
+            lastRefundEventSignedDate: refundedAt,
+            refundedAt: refundedAt
+        )
+        let credit = CreditAccount(storeId: "store-1", balance: 100)
+        let dataStore = DataStoreMock(transactWriteHandler: { _ in })
+        let credits = CreditRepositorySpy(account: credit)
+
+        let committed = try await withDependencies {
+            $0.dataStoreFactory = { _ in dataStore }
+            $0[CreditRepositoryKey.self] = credits
+        } operation: {
+            try await PurchaseRepository().applyNotification(
+                newRecord,
+                replacing: oldRecord,
+                credit: credit,
+                newBalance: 0
+            )
+        }
+
+        #expect(committed)
+        guard let writes = dataStore.lastTransaction,
+              writes.count == 2,
+              case let .put(_, purchaseCondition, _, _) = writes[0],
+              case let .update(_, _, balanceCondition, _, _) = writes[1] else {
+            Issue.record("返金状態と Credit 更新が同一 transaction にありません。")
+            return
+        }
+        #expect(purchaseCondition?.contains("#content.#lastRefundDate = :lastRefundDate") == true)
+        #expect(balanceCondition?.contains("#content.#balance = :oldBalance") == true)
+    }
 }
 
 private func makeRecord() -> PurchaseRecord {

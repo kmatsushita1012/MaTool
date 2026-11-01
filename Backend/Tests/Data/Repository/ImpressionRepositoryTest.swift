@@ -38,4 +38,36 @@ struct ImpressionRepositoryTest {
         }
         #expect(expiration == Int64(chargedAt.timeIntervalSince1970) + 30 * 24 * 60 * 60)
     }
+
+    @Test("Impression 作成と Credit 減算は条件付き transaction に含まれる")
+    func chargeAtomicallyCreatesImpressionAndDecreasesCredit() async throws {
+        let dataStore = DataStoreMock(
+            getHandler: { _, _ in nil },
+            transactWriteHandler: { _ in }
+        )
+        let credits = CreditRepositorySpy(account: CreditAccount(storeId: "store-1", balance: 10))
+
+        let result = try await withDependencies {
+            $0.dataStoreFactory = { _ in dataStore }
+            $0[CreditRepositoryKey.self] = credits
+        } operation: {
+            try await ImpressionRepository().charge(
+                impressionId: "impression-2",
+                storeId: "store-1",
+                placement: .banner,
+                chargedAt: Date(timeIntervalSince1970: 1_700_000_000)
+            )
+        }
+
+        #expect(result == .charged)
+        guard let transaction = dataStore.lastTransaction,
+              transaction.count == 2,
+              case let .put(_, impressionCondition, _, _) = transaction[0],
+              case let .update(_, _, balanceCondition, _, _) = transaction[1] else {
+            Issue.record("Impression 作成と Credit 更新が同一 transaction にありません。")
+            return
+        }
+        #expect(impressionCondition == "attribute_not_exists(#pk)")
+        #expect(balanceCondition?.contains("#content.#balance = :oldBalance") == true)
+    }
 }

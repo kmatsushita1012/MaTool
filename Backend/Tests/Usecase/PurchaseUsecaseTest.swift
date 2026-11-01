@@ -150,6 +150,52 @@ struct PurchaseUsecaseTest {
         #expect(stored.lastRefundEventSignedDate == reversalDate)
         #expect(await purchases.notificationCalls.count == 1)
     }
+
+    @Test("未付与の REFUND_REVERSED マーカーは古い REFUND を無視し、後続 Claim を一度だけ許可する")
+    func reversalMarkerIgnoresOlderRefundAndAllowsOneClaim() async throws {
+        let store = makeStore()
+        let purchase = makePurchase(store: store)
+        let oldRefundDate = Date(timeIntervalSince1970: 1_000)
+        let reversalDate = Date(timeIntervalSince1970: 2_000)
+        let purchases = PurchaseRepositorySpy()
+        let credits = CreditRepositorySpy(account: CreditAccount(storeId: store.id, balance: 0))
+        let appStore = AppStoreClientSpy(purchase: purchase, notification: .init(
+            notificationUUID: "reversal",
+            type: .refundReversed,
+            signedDate: reversalDate,
+            purchase: purchase
+        ))
+
+        try await withDependencies {
+            $0[AdvertisingEnvironmentKey.self] = makeEnvironment()
+            $0[StoreRepositoryKey.self] = StoreRepositorySpy(store: store)
+            $0[CreditRepositoryKey.self] = credits
+            $0[PurchaseRepositoryKey.self] = purchases
+            $0[AppStoreClientKey.self] = appStore
+        } operation: {
+            let usecase = PurchaseUsecase()
+            try await usecase.applyNotification(signedPayload: "reversal")
+            await appStore.setNotification(.init(
+                notificationUUID: "old-refund",
+                type: .refund,
+                signedDate: oldRefundDate,
+                purchase: purchase
+            ))
+            try await usecase.applyNotification(signedPayload: "old-refund")
+            _ = try await usecase.claim(
+                storeId: store.id,
+                signedTransactionInfo: "reissued-valid-jws",
+                user: .advertiser(store.ownerId)
+            )
+        }
+
+        let stored = try #require(await purchases.get(transactionId: purchase.transactionId))
+        #expect(await purchases.refundMarkerCalls.count == 1)
+        #expect(await purchases.grantCalls.count == 1)
+        #expect(stored.creditGranted)
+        #expect(stored.refundStatus == .active)
+        #expect(stored.lastRefundEventSignedDate == reversalDate)
+    }
 }
 
 private func makeEnvironment() -> AdvertisingEnvironment {
