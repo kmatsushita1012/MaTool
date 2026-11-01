@@ -11,6 +11,7 @@ import ComposableArchitecture
 struct PublicRouteMapView: View {
     @SwiftUI.Bindable var store: StoreOf<PublicRouteFeature>
     @StateObject var replayController: ReplayController
+    @State private var replayAnnotation: FloatMapItem?
     @Namespace private var namespace
     
     init(store: StoreOf<PublicRouteFeature>) {
@@ -27,7 +28,7 @@ struct PublicRouteMapView: View {
     
     var floatAnnotation: FloatMapItem? {
         if store.replay.isRunning {
-            replayController.frame.annotation
+            replayAnnotation
         } else if let float = store.float  {
             FloatMapItem(title: float.district.name, coordinate: float.floatLocation.coordinate, entry: float)
         } else {
@@ -71,7 +72,11 @@ struct PublicRouteMapView: View {
                 updateReplay()
             }
             .onChange(of: store.selected) { _ in updateReplay() }
+            .onChange(of: store.points) { _, _ in updateReplay() }
             .onChange(of: store.replay) { _ in updateReplay() }
+            .onReceive(replayController.$frame) { frame in
+                replayAnnotation = frame.annotation
+            }
         }
     }
     

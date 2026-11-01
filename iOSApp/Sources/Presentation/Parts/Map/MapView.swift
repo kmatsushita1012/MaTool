@@ -77,16 +77,35 @@ struct MapView: View {
                         PointMapMarker(point: point)
                             .tag(point.id)
                     }
-                }
-                .overlay {
-                    FloatMapOverlay(
-                        proxy: proxy,
-                        position: position,
-                        items: floatAnnotation.map { [$0] } ?? floats.map {
-                            FloatMapItem(title: $0.district.name, coordinate: $0.floatLocation.coordinate, entry: $0)
-                        },
-                        onTap: floatTapped
-                    )
+                    if let floatAnnotation {
+                        Annotation(
+                            floatAnnotation.title,
+                            coordinate: floatAnnotation.coordinate.toCL(),
+                            anchor: .center
+                        ) {
+                            FloatMapLabel(title: floatAnnotation.title, isInteractive: floatAnnotation.entry != nil) {
+                                if let entry = floatAnnotation.entry { floatTapped(entry) }
+                            }
+                            .offset(y: 8)
+                            .zIndex(1)
+                        }
+                        .annotationTitles(.hidden)
+                    } else {
+                        ForEach(floats) { float in
+                            Annotation(
+                                float.district.name,
+                                coordinate: float.floatLocation.coordinate.toCL(),
+                                anchor: .center
+                            ) {
+                                FloatMapLabel(title: float.district.name, isInteractive: true) {
+                                    floatTapped(float)
+                                }
+                                .offset(y: 8)
+                                .zIndex(1)
+                            }
+                            .annotationTitles(.hidden)
+                        }
+                    }
                 }
                 .mapStyle(.standard(pointsOfInterest: style == .public ? .excluding(.excludedForPublic) : .including(.includedForAdmin)))
                 .mapControlVisibility(.hidden)
@@ -172,34 +191,9 @@ private extension Shared.Anchor {
     }
 }
 
-private struct FloatMapOverlay: View {
-    let proxy: MapProxy
-    // カメラ変更時に座標変換を更新するための入力。
-    let position: MapCameraPosition
-    let items: [FloatMapItem]
-    let onTap: (FloatEntry) -> Void
-
-    var body: some View {
-        GeometryReader { _ in
-            ForEach(Array(items.enumerated()), id: \.offset) { _, item in
-                if let point = proxy.convert(item.coordinate.toCL(), to: .local) {
-                    FloatMapLabel(title: item.title) {
-                        if let entry = item.entry { onTap(entry) }
-                    }
-                    .fixedSize()
-                    .frame(width: 120, height: 64)
-                    .offset(x: point.x - 60, y: point.y - 32)
-                    .allowsHitTesting(item.entry != nil)
-                }
-            }
-        }
-        .clipped()
-        .allowsHitTesting(items.contains { $0.entry != nil })
-    }
-}
-
 private struct FloatMapLabel: View {
     let title: String
+    let isInteractive: Bool
     let action: () -> Void
 
     var body: some View {
@@ -215,6 +209,8 @@ private struct FloatMapLabel: View {
             .shadow(color: Color(uiColor: .systemBackground), radius: 4, y: 2)
         }
         .buttonStyle(.plain)
+        .disabled(!isInteractive)
+        .allowsHitTesting(isInteractive)
     }
 }
 
@@ -230,9 +226,8 @@ private extension Array where Element == PointEntry {
 
 extension MapView: Equatable {
     static func == (lhs: MapView, rhs: MapView) -> Bool {
-        lhs.style == rhs.style && lhs.points == rhs.points &&
+        lhs.floatAnnotation == rhs.floatAnnotation && lhs.style == rhs.style && lhs.points == rhs.points &&
         lhs.districtAreaOverlays == rhs.districtAreaOverlays && lhs.floats == rhs.floats &&
-        lhs.floatAnnotation == rhs.floatAnnotation &&
         lhs.showsDistrictAreaOverlay == rhs.showsDistrictAreaOverlay && lhs.region == rhs.region
     }
 }
