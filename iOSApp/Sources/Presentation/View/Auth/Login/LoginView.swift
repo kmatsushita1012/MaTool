@@ -58,29 +58,19 @@ struct LoginContentView: View {
             Text("ログイン")
                 .font(.largeTitle)
             TextField("ID", text: $id)
-                .padding()
                 .textContentType(.username)
                 .textInputAutocapitalization(.never)
                 .autocorrectionDisabled()
-                .textFieldStyle(.plain)
-                .background(.regularMaterial, in: .capsule)
-                .overlay {
-                        Capsule()
-                            .stroke(.secondary, lineWidth: 1)
-                    }
+                .modifier(AuthTextFieldModifier())
                 .focused($focusedField, equals: .identifier)
-                
-            TextField("パスワード", text: $password)
-                .padding()
-                .textContentType(.password)
-                .textFieldStyle(.plain)
-                .background(.regularMaterial, in: .capsule)
-                .overlay {
-                        Capsule()
-                            .stroke(.secondary, lineWidth: 1)
-                    }
-                .focused($focusedField, equals: .password)
-            
+
+            PasswordTextField(
+                "パスワード",
+                text: $password,
+                focusedField: $focusedField,
+                equals: .password
+            )
+
             Button("ログイン") {
                 onSignInTapped()
                 focusedField = nil

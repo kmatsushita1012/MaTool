@@ -145,19 +145,26 @@ Store の Banner も同じ API に `target: { "type": "store", "id": "store-123"
 
 ## 6. iOS 編集 UX / 保存順序
 
-Festival / District の**既存編集画面**に「紹介画像」セクションを追加し、Light / Dark をそれぞれ独立して選択できるようにする。
+**[iOS 詳細設計](./ios.md)をこの章の実装仕様とする。** Festival / District の既存編集画面に「画像を変更」ボタンを追加し、`NavigationStack` のシートを表示する。
 
-- 各枠に現在のサムネイル、写真選択（`PhotosPicker`）、差し替え、参照解除。編集途中はローカル選択のプレビューを優先する。
-- 選択だけでは S3 へ送信しない。画面の「保存」時に初めてアップロードする。キャンセル時は本体の DB 更新なし。
-- TCA の編集 State は `unchanged / replace(localImage) / remove` の3状態を Light・Dark に持つ。**`PhotosPickerItem.loadTransferable` による FileRepresentation の元の一時ファイル URL をそのまま保持しない**。選択直後、コールバックが有効な間に**アプリ管理の一時領域へコピー**してその URL を保持する（または所有権の明確な Data 保持方式）。保存まで他項目を編集・時間経過してもアクセスできることを保証し、再選択時は旧ファイルを破棄する。**キャンセル・保存成功・編集画面破棄時は一時ファイルを消す**。保存失敗時は再試行できるよう保持する。`AppState` には未保存の画像を置かず、生の `UIImage` は Reducer の State に持たせない。
-- 保存 Action → 画像選択を JPEG に変換・圧縮 → variant ごと署名 URL 発行 → S3 PUT 完了 → 既存 `FestivalPack` / `DistrictPack` の `image` を「新しい一時キー / 現在の公開 URL / nil」から構築 → 通常の Backend PUT → 応答を AppState へ反映。
-- 保存中は二重タップを抑制し、進捗・失敗を表示する。失敗で画面を閉じず選択内容を保持し、再試行できるようにする。無変更時は画像アップロードを行わない。
-- 通常の更新動線は `FestivalDataFetcher.update` / `DistrictDataFetcher.update` と既存の `SaveFestivalUseCase` / `SaveDistrictPackUseCase` を維持し、アップロード調停のみ Application Usecase に加える。S3 直接 PUT は API 用 `HTTPClient` と分離した Data/Client に閉じ込める。
-- JPEG の圧縮をクライアントで行う。**サイズ・画素数・縦横比の上限は広告設計でも未確定**なので、本件だけで別の強制値を確定しない。初回実装時に共通制約として決定し、iOS の事前検証と Backend の強制検証を揃える。
+- シート上部は既存ルート編集と同じ大きな `segmented Picker` を **「ライト」「ダーク」** の2項目で表示。下に現在画像またはアップロード済みの新画像のプレビューを表示する。
+- 画像がないときは **「画像を追加」**、あるときは **「画像を変更」**を表示する。画像の参照解除も可能。右上 `xmark` はシートを閉じるのみで、アップロード済みの下書きを破棄しない。
+- **画像を PhotosPicker で選択した直後に JPEG へ変換 → 共通署名 URL 発行 API → S3 一時キーへ直接 PUT** する。この時点では Festival/District Pack PUT は行わず、本番表示は変更しない。
+- Light/Dark の下書き・アップロード・再試行は**共通の子 `ImageEditFeature`** に集約し、Festival / District の親 Feature は `Scope` で子 State を保持してシート開閉と最終保存のみ担当する。**シートを閉じても子 State を破棄しない**。関係図と責務は [iOS 詳細設計 §2](./ios.md#2-tca-状態と責務) を参照。
+- 一時 PUT 成功後は子 State にモードごとの一時キーとローカルプレビューを保持する。PhotosPicker の一時 URL をそのまま保持せず、アプリが所有するローカルファイルを利用し、保存成功・元の画面のキャンセル・再選択等で掃除する。
+- **元の Festival / District 編集画面で「保存」を押したときだけ**、各モードの「既存公開 URL / アップロード済み一時キー / nil」を `ImagePath` に反映して**既存 Pack PUT で本番確定**。保存時に画像を再アップロードしない。アップロード失敗・進行中は未確定キーで保存しない。
+- `SaveFestivalUseCase` / `SaveDistrictPackUseCase` の `sessionId` ガードを維持し、Backend 応答の正式公開 URL のみ AppState に反映。保存失敗時は下書きを残して再試行可能にする。
+- 表示は現在の `InfoHeaderImageView` / `InfoImageBlurredBackgroundView` の Light/Dark フォールバックと Kingfisher を維持する。公開 URL が差し替えごとに変わる Backend 契約を使用する。
+- ツールバー・シート UI は ContentView 側に置き、`Tests/Utility/` の Spy と Swift Testing で通信順序・下書き・正式確定・表示を検証する。
 
-### キャッシュと表示
+### iOS の処理タイミング
 
-現在 `InfoHeaderImageView` / `InfoImageBlurredBackgroundView` は Light/Dark のフォールバックに対応するため、表示ルールは変えない。Kingfisher が URL をキーにするので、**Backend が差し替えごとに新しい URL を返すことが必須**。新 URL でプレビュー・公開画面・preload を再取得する。変更しなかった側は既存 URL を維持し、削除側はフォールバック先を選び直す。**公開 GET（Festival一覧／Pack／District関連レスポンス）から新 URL が返り、実際の CDN GET で新画像が取得できる**ことを結合検証する。
+| 操作 | 一時 S3 PUT | 既存 Festival/District Pack PUT |
+| --- | --- | --- |
+| PhotosPicker で画像を選択 | **その場で実行** | しない |
+| シートを `xmark` で閉じる | しない | しない |
+| 元の編集画面の「保存」 | **原則再実行しない** | **ここで初めて実行** |
+| 元の編集画面の「キャンセル」 | しない（S3 一時キーは Lifecycle 整理） | しない |
 
 ## 7. AWS・公開配信の前提
 
@@ -180,11 +187,13 @@ Festival / District の**既存編集画面**に「紹介画像」セクショ�
 | B08 | 互換性 | 変更しない古い外部 URL を現在値として維持、nil の JSON 省略と null を処理 |
 | B09 | 更新・失敗 | DB 失敗後の再アップロード・再試行、S3/DB の非原子的失敗条件を確認 |
 | B10 | ルーティング | 共通の `POST /images/upload-url` と既存 Store/Festival/District GET/PUT・launch・districts の衝突なし（HTTP endpoint 完全一致に追従） |
-| I01 | TCA | 選択・差し替え・解除・キャンセルで AppState を先に変えない。`PhotosPicker` の受取元一時 URL を直接保持せず、選択直後にアプリ管理一時ファイルへコピーし、キャンセル／再選択／成功／画面破棄で掃除する |
-| I02 | 保存 | 写真選択から時間経過・別項目編集後も画像を読める。Light/Dark の必要な分だけアップロードし、両 PUT 完了後に Pack PUT。失敗時の保持・再試行を確認 |
-| I03 | 保存失敗 | S3/Backend エラー時は編集内容保持・アラート、再試行可・重複保存防止 |
-| I04 | 同期 | Backend 応答の正式 URL のみ反映し、sessionId 変更後の古い応答を無視 |
-| I05 | 表示・結合 | Light/Dark 切替・片方のみ・両方なし。画像を連続差し替えすると公開 URL が毎回異なり、Kingfisher キャッシュから旧画像が再表示されない。**公開 GET が新 URL を返し、CDN GET が新画像を返す**（クエリをキャッシュキーとする）結合確認 |
+| I01 | 画像シート | Festival / District 既存編集画面 → 「画像を変更」 → ライト/ダーク segmented Picker、現在/新画像プレビュー、追加/変更、`xmark` |
+| I02 | 選択時アップロード | PhotosPicker 選択で**直ちに S3 一時 PUT**、編集画面保存前は Pack PUT **0回**。ライト/ダーク独立で保留 |
+| I03 | 保留・失敗 | `xmark` は下書き維持、元の編集画面キャンセルは破棄。失敗時は再試行可能で未確定キーを保存しない。PhotosPicker 一時ファイルの寿命と掃除 |
+| I04 | 正式保存・同期 | 元の画面の保存時に**既存 Pack PUT**、S3 再アップロードなし。Backend 正式 URL のみ AppState に反映。sessionId 変更後の古い応答は無視 |
+| I05 | 表示・結合 | Light/Dark 切替・片方のみ・両方なし、変更後の URL の Kingfisher 更新。公開 GET → CDN GET の新画像取得・版クエリを確認 |
+
+iOS の詳細な I01〜I10 ケースは [iOS 詳細設計](./ios.md#5-テスト仕様swift-testing) に定める。
 
 テストダブルは `Tests/Utility/` の Spy に置き、Sources にテスト専用実装を混ぜない。Backend は S3 Client/Repository を差し替えて Side Effect と権限を検証。iOS は TCA `TestStore` と Data/Client の Spy で署名取得 → S3 PUT → Pack PUT の順序を検証。実装時には既存 `AGENTS.md` のビルド・実機/シミュレータ・CI の指示に従う。
 

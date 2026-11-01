@@ -37,28 +37,34 @@ struct ConfirmSignInContentView: View {
     let onSubmitTapped: () -> Void
     let onDismissTapped: () -> Void
 
+    @FocusState private var focusedField: Field?
+
+    private enum Field: Hashable {
+        case password1
+        case password2
+    }
+
     var body: some View {
-        VStack {
+        VStack(spacing: 16) {
             Text("パスワード変更")
                 .font(.largeTitle)
-                .padding()
-            TextField("新しいパスワード", text: $password1)
-                .textFieldStyle(RoundedBorderTextFieldStyle())
-                .padding()
-            TextField("新しいパスワード（確認用）", text: $password2)
-                .textFieldStyle(RoundedBorderTextFieldStyle())
-                .padding()
-            Button(action: {
+            PasswordTextField(
+                "新しいパスワード",
+                text: $password1,
+                focusedField: $focusedField,
+                equals: .password1
+            )
+            PasswordTextField(
+                "新しいパスワード（確認用）",
+                text: $password2,
+                focusedField: $focusedField,
+                equals: .password2
+            )
+            Button("送信") {
                 onSubmitTapped()
-            }) {
-                Text("送信")
-                    .frame(maxWidth: .infinity)
-                    .padding()
-                    .background(Color.blue)
-                    .foregroundColor(.white)
-                    .cornerRadius(10)
+                focusedField = nil
             }
-            .padding()
+            .buttonStyle(PrimaryButtonStyle())
             .loadingIndicator(isLoading: isLoading)
         }
         .padding()
