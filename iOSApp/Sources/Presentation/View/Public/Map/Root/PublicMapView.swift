@@ -186,9 +186,9 @@ struct PublicMapContentView<MapContent: View>: View {
                 }
             } label: {
                 Text(contentTitles[selectedContent] ?? "")
-                    .padding()
             }
             .pickerStyle(.menu)
+            .padding()
             .modifier(MapTopMenuStyle(isLiquidGlassDisabled: isLiquidGlassDisabled))
             .loadingIndicator(isLoading: isLoading)
 
@@ -209,9 +209,9 @@ struct PublicMapContentView<MapContent: View>: View {
                     }
                 } label: {
                     Text(selectedPeriodTitle)
-                        .padding()
                 }
                 .pickerStyle(.menu)
+                .padding()
                 .modifier(MapTopMenuStyle(isLiquidGlassDisabled: isLiquidGlassDisabled))
                 .disabled(isPeriodDisabled || isRouteLoading || routes.isEmpty)
                 .overlay {
