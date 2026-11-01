@@ -237,7 +237,7 @@ struct DistrictUsecaseTest {
             description: "new desc",
             base: .init(latitude: 36, longitude: 140),
             area: [.init(latitude: 36, longitude: 140)],
-            image: .init(light: "new.png", dark: nil),
+            image: current.image,
             visibility: .admin,
             isEditable: true
         )

@@ -78,7 +78,7 @@ struct FestivalUsecaseTest {
 
         var lastCalledFestivalId: String?
         let subject = make(
-            festivalRepository: .init(putHandler: { item in
+            festivalRepository: .init(getHandler: { _ in Festival.mock(id: festival.id) }, putHandler: { item in
                 lastCalledFestivalId = item.id
                 return item
             }),
