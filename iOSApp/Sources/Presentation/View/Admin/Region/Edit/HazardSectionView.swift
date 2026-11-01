@@ -134,52 +134,47 @@ struct HazardSectionView: View {
 }
 
 
-fileprivate struct HazardSectionEditMap: MapViewRepresentable {
+fileprivate struct HazardSectionEditMap: View {
     var coordinates: [Coordinate]
     @Binding var region: MKCoordinateRegion?
     var onMapLongPress: (Coordinate) -> Void
     var onSelect: (Coordinate) -> Void
 
-    func makeCoordinator() -> Coordinator {
-        Coordinator(self)
+    @State private var position: MapCameraPosition
+    @State private var selectedIndex: Int?
+
+    init(coordinates: [Coordinate], region: Binding<MKCoordinateRegion?>, onMapLongPress: @escaping (Coordinate) -> Void, onSelect: @escaping (Coordinate) -> Void) {
+        self.coordinates = coordinates
+        self._region = region
+        self.onMapLongPress = onMapLongPress
+        self.onSelect = onSelect
+        self._position = State(initialValue: region.wrappedValue.map(MapCameraPosition.region) ?? .automatic)
     }
 
-    func makeUIView(context: Context) -> MKMapView {
-        let mapView = MKMapView()
-        mapView.delegate = context.coordinator
-        
-        let longPress = UILongPressGestureRecognizer(target: context.coordinator, action: #selector(Coordinator.handleLongPress(_:)))
-        mapView.addGestureRecognizer(longPress)
-        
-        if let region = region {
-            mapView.setRegion(region, animated: false)
-        }
-        
-        return mapView
-    }
-
-    func updateUIView(_ mapView: MKMapView, context: Context) {
-        update(coordinates: coordinates, in: mapView)
-        mapView.removeOverlays(mapView.overlays)
-        let polyline = PathPolyline(coordinates)
-        mapView.addOverlay(polyline)
-    }
-
-    class Coordinator: MapCoordinator<HazardSectionEditMap> {
-
-        @objc func handleLongPress(_ gesture: UILongPressGestureRecognizer) {
-            guard gesture.state == .began,
-                  let mapView = gesture.view as? MKMapView else { return }
-            let location = gesture.location(in: mapView)
-            let coordinate = mapView.convert(location, toCoordinateFrom: mapView)
-            parent.onMapLongPress(Coordinate.fromCL(coordinate))
-        }
-        
-        
-        override func mapView(_ mapView: MKMapView, didSelect view: MKAnnotationView) {
-            super.mapView(mapView, didSelect: view)
-            guard let coordinate = view.annotation?.coordinate else { return }
-            parent.onSelect(.fromCL(coordinate))
+    var body: some View {
+        MapReader { proxy in
+            Map(position: $position, selection: $selectedIndex) {
+                ForEach(Array(coordinates.enumerated()), id: \.offset) { index, coordinate in
+                    Marker("", coordinate: coordinate.toCL()).tag(index)
+                }
+                MapPolyline(coordinates: coordinates.map { $0.toCL() })
+                    .stroke(.blue, lineWidth: 4)
+            }
+            .onChange(of: selectedIndex) { _, index in
+                guard let index, coordinates.indices.contains(index) else { return }
+                selectedIndex = nil
+                onSelect(coordinates[index])
+            }
+            .onMapCameraChange(frequency: .onEnd) { region = $0.region }
+            .simultaneousGesture(
+                LongPressGesture().sequenced(before: DragGesture(minimumDistance: 0))
+                    .onEnded { value in
+                        if case let .second(true, drag?) = value,
+                           let coordinate = proxy.convert(drag.startLocation, from: .local) {
+                            onMapLongPress(.fromCL(coordinate))
+                        }
+                    }
+            )
         }
     }
 }
