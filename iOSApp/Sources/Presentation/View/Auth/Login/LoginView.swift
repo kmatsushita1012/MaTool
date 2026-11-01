@@ -64,13 +64,12 @@ struct LoginContentView: View {
                 .modifier(AuthTextFieldModifier())
                 .focused($focusedField, equals: .identifier)
 
-            TextField("パスワード", text: $password)
-                .textContentType(.password)
-                .keyboardType(.asciiCapable)
-                .textInputAutocapitalization(.never)
-                .autocorrectionDisabled()
-                .modifier(AuthTextFieldModifier())
-                .focused($focusedField, equals: .password)
+            PasswordTextField(
+                "パスワード",
+                text: $password,
+                focusedField: $focusedField,
+                equals: .password
+            )
 
             Button("ログイン") {
                 onSignInTapped()

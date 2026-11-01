@@ -71,6 +71,8 @@ struct ResetPasswordContentView: View {
                     .foregroundStyle(.secondary)
                 TextField("ID（ユーザー名）", text: $username)
                     .textContentType(.none)
+                    .textInputAutocapitalization(.never)
+                    .autocorrectionDisabled()
                     .modifier(AuthTextFieldModifier())
                     .focused($focusedField, equals: .username)
                 Button("認証コードを送信") {
@@ -80,20 +82,18 @@ struct ResetPasswordContentView: View {
                 .buttonStyle(PrimaryButtonStyle())
                 .loadingIndicator(isLoading: isLoading)
             case .enterCode:
-                TextField("新しいパスワード", text: $newPassword1)
-                    .textContentType(.password)
-                    .keyboardType(.asciiCapable)
-                    .textInputAutocapitalization(.never)
-                    .autocorrectionDisabled()
-                    .modifier(AuthTextFieldModifier())
-                    .focused($focusedField, equals: .newPassword1)
-                TextField("新しいパスワード（確認用）", text: $newPassword2)
-                    .textContentType(.password)
-                    .keyboardType(.asciiCapable)
-                    .textInputAutocapitalization(.never)
-                    .autocorrectionDisabled()
-                    .modifier(AuthTextFieldModifier())
-                    .focused($focusedField, equals: .newPassword2)
+                PasswordTextField(
+                    "新しいパスワード",
+                    text: $newPassword1,
+                    focusedField: $focusedField,
+                    equals: .newPassword1
+                )
+                PasswordTextField(
+                    "新しいパスワード（確認用）",
+                    text: $newPassword2,
+                    focusedField: $focusedField,
+                    equals: .newPassword2
+                )
                 TextField("認証コード（6桁）", text: $code)
                     .textContentType(.oneTimeCode)
                     .modifier(AuthTextFieldModifier())

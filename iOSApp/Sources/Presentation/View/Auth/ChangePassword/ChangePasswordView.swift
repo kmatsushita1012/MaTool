@@ -51,27 +51,24 @@ struct ChangePasswordContentView: View {
         VStack(spacing: 16) {
             Text("パスワード変更")
                 .font(.largeTitle)
-            TextField("現在のパスワード", text: $current)
-                .textContentType(.password)
-                .keyboardType(.asciiCapable)
-                .textInputAutocapitalization(.never)
-                .autocorrectionDisabled()
-                .modifier(AuthTextFieldModifier())
-                .focused($focusedField, equals: .current)
-            TextField("新しいパスワード", text: $new1)
-                .textContentType(.password)
-                .keyboardType(.asciiCapable)
-                .textInputAutocapitalization(.never)
-                .autocorrectionDisabled()
-                .modifier(AuthTextFieldModifier())
-                .focused($focusedField, equals: .new1)
-            TextField("新しいパスワード（確認用）", text: $new2)
-                .textContentType(.password)
-                .keyboardType(.asciiCapable)
-                .textInputAutocapitalization(.never)
-                .autocorrectionDisabled()
-                .modifier(AuthTextFieldModifier())
-                .focused($focusedField, equals: .new2)
+            PasswordTextField(
+                "現在のパスワード",
+                text: $current,
+                focusedField: $focusedField,
+                equals: .current
+            )
+            PasswordTextField(
+                "新しいパスワード",
+                text: $new1,
+                focusedField: $focusedField,
+                equals: .new1
+            )
+            PasswordTextField(
+                "新しいパスワード（確認用）",
+                text: $new2,
+                focusedField: $focusedField,
+                equals: .new2
+            )
             Button("パスワードを変更") {
                 onSubmitTapped()
                 focusedField = nil
