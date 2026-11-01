@@ -170,24 +170,23 @@ struct PublicMapContentView<MapContent: View>: View {
 
     private var topControls: some View {
         HStack(spacing: 16) {
-            Picker(
-                selection: Binding(
-                    get: { selectedContent },
-                    set: onContentSelected
-                )
-            ) {
+            Menu {
                 ForEach(contents, id: \.self) { item in
-                    MapMenuItemLabel(
-                        title: contentTitles[item] ?? "",
-                        systemImage: item.menuSymbol
-                    )
-                    .tag(item)
+                    Button {
+                        guard item != selectedContent else { return }
+                        onContentSelected(item)
+                    } label: {
+                        let title = contentTitles[item] ?? ""
+                        if item == selectedContent {
+                            Label(title, systemImage: "checkmark")
+                        } else {
+                            Text(title)
+                        }
+                    }
                 }
             } label: {
                 Label(contentTitles[selectedContent] ?? "", systemImage: selectedContent.menuSymbol)
-                    .modifier(MapMenuLabelIconWidth())
             }
-            .pickerStyle(.menu)
             .modifier(MapTopMenuStyle(isLiquidGlassDisabled: isLiquidGlassDisabled))
             .loadingIndicator(isLoading: isLoading)
 
@@ -223,18 +222,6 @@ private struct MapMenuItemLabel: View {
 
     var body: some View {
         Label(title, systemImage: systemImage)
-            .modifier(MapMenuLabelIconWidth())
-    }
-}
-
-private struct MapMenuLabelIconWidth: ViewModifier {
-    @ViewBuilder
-    func body(content: Content) -> some View {
-        if #available(iOS 26.0, *) {
-            content.labelReservedIconWidth(44)
-        } else {
-            content
-        }
     }
 }
 
