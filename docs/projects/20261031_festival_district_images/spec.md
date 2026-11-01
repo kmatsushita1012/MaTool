@@ -150,7 +150,8 @@ Store の Banner も同じ API に `target: { "type": "store", "id": "store-123"
 - シート上部は既存ルート編集と同じ大きな `segmented Picker` を **「ライト」「ダーク」** の2項目で表示。下に現在画像またはアップロード済みの新画像のプレビューを表示する。
 - 画像がないときは **「画像を追加」**、あるときは **「画像を変更」**を表示する。画像の参照解除も可能。右上 `xmark` はシートを閉じるのみで、アップロード済みの下書きを破棄しない。
 - **画像を PhotosPicker で選択した直後に JPEG へ変換 → 共通署名 URL 発行 API → S3 一時キーへ直接 PUT** する。この時点では Festival/District Pack PUT は行わず、本番表示は変更しない。
-- 一時 PUT 成功後はモードごとに一時キーとローカルプレビューを編集中の Feature State に保持。シートを閉じて再表示しても保持する。PhotosPicker の一時 URL をそのまま保持せず、アプリが所有するローカルファイルを利用し、保存成功・元の画面のキャンセル・再選択等で掃除する。
+- Light/Dark の下書き・アップロード・再試行は**共通の子 `ImageEditFeature`** に集約し、Festival / District の親 Feature は `Scope` で子 State を保持してシート開閉と最終保存のみ担当する。**シートを閉じても子 State を破棄しない**。関係図と責務は [iOS 詳細設計 §2](./ios.md#2-tca-状態と責務) を参照。
+- 一時 PUT 成功後は子 State にモードごとの一時キーとローカルプレビューを保持する。PhotosPicker の一時 URL をそのまま保持せず、アプリが所有するローカルファイルを利用し、保存成功・元の画面のキャンセル・再選択等で掃除する。
 - **元の Festival / District 編集画面で「保存」を押したときだけ**、各モードの「既存公開 URL / アップロード済み一時キー / nil」を `ImagePath` に反映して**既存 Pack PUT で本番確定**。保存時に画像を再アップロードしない。アップロード失敗・進行中は未確定キーで保存しない。
 - `SaveFestivalUseCase` / `SaveDistrictPackUseCase` の `sessionId` ガードを維持し、Backend 応答の正式公開 URL のみ AppState に反映。保存失敗時は下書きを残して再試行可能にする。
 - 表示は現在の `InfoHeaderImageView` / `InfoImageBlurredBackgroundView` の Light/Dark フォールバックと Kingfisher を維持する。公開 URL が差し替えごとに変わる Backend 契約を使用する。
