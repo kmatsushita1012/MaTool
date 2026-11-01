@@ -201,6 +201,7 @@ private struct FloatMapLabel: View {
             VStack(spacing: 2) {
                 Image(systemName: "circle.circle.fill")
                     .font(.title)
+                    .symbolRenderingMode(.monochrome)
                     .foregroundStyle(.red)
                 Text(title)
                     .font(.system(size: 14, weight: .bold))
@@ -209,7 +210,6 @@ private struct FloatMapLabel: View {
             .shadow(color: Color(uiColor: .systemBackground), radius: 4, y: 2)
         }
         .buttonStyle(.plain)
-        .disabled(!isInteractive)
         .allowsHitTesting(isInteractive)
     }
 }
