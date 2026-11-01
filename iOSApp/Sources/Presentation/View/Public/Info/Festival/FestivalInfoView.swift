@@ -7,6 +7,7 @@ import UIKit
 
 struct FestivalInfoView: View {
     @SwiftUI.Bindable var store: StoreOf<FestivalInfoFeature>
+    @Environment(\.colorScheme) private var systemColorScheme
     let isSheetRoot: Bool
 
     var body: some View {
@@ -37,6 +38,13 @@ struct FestivalInfoView: View {
             }
             .alert($store.scope(state: \.alert, action: \.alert))
         }
+        .preferredColorScheme(
+            InfoImageColorScheme.resolve(
+                lightPath: store.festival.image.light,
+                darkPath: store.festival.image.dark,
+                systemColorScheme: systemColorScheme
+            )
+        )
     }
 }
 
