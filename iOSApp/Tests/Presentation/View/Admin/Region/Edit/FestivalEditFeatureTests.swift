@@ -3,6 +3,7 @@ import Dependencies
 import Foundation
 import PhotosUI
 import Shared
+import SwiftUI
 import Testing
 @testable import iOSApp
 
