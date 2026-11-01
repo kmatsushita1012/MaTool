@@ -25,8 +25,10 @@ struct FestivalEditFeature {
         var base: Coordinate?
         var checkpoints: [Checkpoint]
         var hazardSections: [HazardSection]
+        var imageEdit: ImageEditFeature.State
         @Shared fileprivate var appState: AppState?
         var isLoading: Bool = false
+        var isImageEditPresented = false
         @Presents var destination: Destination.State?
         @Presents var alert: AlertFeature.State?
     }
@@ -36,6 +38,9 @@ struct FestivalEditFeature {
         case binding(BindingAction<State>)
         case saveTapped
         case cancelTapped
+        case imageEditTapped
+        case imageEditDismissTapped
+        case imageEdit(ImageEditFeature.Action)
         case baseTapped
         case putReceived(VoidAppResult)
         case onCheckpointEdit(Checkpoint)
@@ -50,12 +55,20 @@ struct FestivalEditFeature {
     @Dependency(\.dismiss) var dismiss
     
     var body: some ReducerOf<FestivalEditFeature> {
+        Scope(state: \.imageEdit, action: \.imageEdit) {
+            ImageEditFeature()
+        }
         BindingReducer()
         Reduce{ state, action in
             switch action {
             case .binding:
                 return .none
             case .saveTapped:
+                guard !state.isLoading else { return .none }
+                guard let image = state.imageEdit.imagePath(applyingTo: state.festival.image) else {
+                    state.alert = AlertFeature.error("画像のアップロードが完了するまで保存できません。")
+                    return .none
+                }
                 let name = state.festival.name.trimmingCharacters(in: .whitespacesAndNewlines)
                 let subname = state.festival.subname.trimmingCharacters(in: .whitespacesAndNewlines)
                 guard !name.isEmpty else {
@@ -70,21 +83,31 @@ struct FestivalEditFeature {
                     state.alert = AlertFeature.error("本部所在地を設定してください。")
                     return .none
                 }
-                state.festival.name = name
-                state.festival.subname = subname
-                state.festival.base = base
+                var updatedFestival = state.festival
+                updatedFestival.name = name
+                updatedFestival.subname = subname
+                updatedFestival.base = base
+                updatedFestival.image = image
                 state.isLoading = true
-                return .task(Action.putReceived) { [festival = state.festival, checkpoints = state.checkpoints, hazardSections = state.hazardSections, appState = state.$appState] in
+                return .task(Action.putReceived) { [festival = updatedFestival, checkpoints = state.checkpoints, hazardSections = state.hazardSections, appState = state.$appState] in
                     _ = try await saveFestivalUseCase(
                         festival: festival,
                         checkpoints: checkpoints,
                         hazardSections: hazardSections,
                         appState: appState
                     )
-                    await dismiss()
                 }
             case .cancelTapped:
-                return .dismiss
+                state.isImageEditPresented = false
+                return .merge(.send(.imageEdit(.reset)), .dismiss)
+            case .imageEditTapped:
+                guard !state.isLoading else { return .none }
+                state.isImageEditPresented = true
+                return .none
+            case .imageEditDismissTapped:
+                guard !state.imageEdit.isUploading else { return .none }
+                state.isImageEditPresented = false
+                return .none
             case .baseTapped:
                 if let base = state.base {
                     state.destination = .base(DistrictBaseEditFeature.State(base: base))
@@ -96,6 +119,10 @@ struct FestivalEditFeature {
                 state.isLoading = false
                 state.alert = AlertFeature.error("保存に失敗しました。\(error.message)")
                 return .none
+            case .putReceived(.success):
+                state.isLoading = false
+                state.isImageEditPresented = false
+                return .merge(.send(.imageEdit(.reset)), .dismiss)
             case .onCheckpointEdit(let item):
                 state.destination = .checkpoint(
                     CheckpointEditFeature.State(
@@ -171,5 +198,10 @@ extension FestivalEditFeature.State{
         self.base = resolvedFestival.base
         self.checkpoints = festivalState?.checkpoints ?? []
         self.hazardSections = festivalState?.hazardSections ?? []
+        self.imageEdit = ImageEditFeature.State(
+            targetType: .festival,
+            targetID: resolvedFestival.id,
+            image: resolvedFestival.image
+        )
     }
 }

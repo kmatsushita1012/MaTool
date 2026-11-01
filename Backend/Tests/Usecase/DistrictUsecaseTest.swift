@@ -1,3 +1,4 @@
+import Foundation
 import Dependencies
 import Shared
 import Testing
@@ -17,6 +18,125 @@ struct DistrictUsecaseTest {
 
         #expect(result == districts)
         #expect(repository.queryCallCount == 1)
+    }
+
+    @Test("LightまたはDarkの一時画像が不正ならDistrict Repositoryを更新しない")
+    func put_rejectsInvalidVariantBeforeRepositoryWrite() async {
+        let lightKey = "temporary/festivals/festival-1/districts/district-1/light.jpg"
+        let darkKey = "temporary/festivals/festival-1/districts/district-1/dark.jpg"
+        let oldImage = ImagePath(
+            light: "https://cdn.example/old-light.jpg?v=7",
+            dark: "https://cdn.example/old-dark.jpg?v=8"
+        )
+        let current = District(id: "district-1", name: "District", festivalId: "festival-1", image: oldImage)
+        let incoming = DistrictPack(
+            district: District(
+                id: current.id,
+                name: current.name,
+                festivalId: current.festivalId,
+                image: ImagePath(light: lightKey, dark: darkKey)
+            ),
+            performances: []
+        )
+
+        for invalidKey in [lightKey, darkKey] {
+            let repository = DistrictRepositorySpy(districts: [current])
+            let imageStorage = ImageStorageClientSpy(validationFailures: [invalidKey])
+
+            await #expect(throws: Error.self) {
+                try await withDependencies {
+                    $0[DistrictRepositoryKey.self] = repository
+                    $0[ImageStorageClientKey.self] = imageStorage
+                } operation: {
+                    try await DistrictUsecase().put(id: current.id, item: incoming, user: .district(current.id))
+                }
+            }
+
+            #expect(await repository.putItems.isEmpty)
+            #expect(await repository.storedDistrict(id: current.id)?.image == oldImage)
+            #expect(await imageStorage.publishCalls.isEmpty)
+        }
+    }
+
+    @Test("18 byteの不正JPEGならDistrictの公開コピーとRepository更新をしない")
+    func put_rejectsMalformedJPEGWithoutPublishingOrRepositoryWrite() async {
+        let temporaryKey = "temporary/festivals/festival-1/districts/district-1/light.jpg"
+        let malformedJPEG = Data([
+            0xFF, 0xD8, 0xFF, 0xC0, 0x00, 0x08, 0x08, 0x00, 0x01,
+            0x00, 0x01, 0x00, 0xFF, 0xDA, 0x00, 0x02, 0xFF, 0xD9
+        ])
+        let oldImage = ImagePath(
+            light: "https://cdn.example/old-light.jpg?v=7",
+            dark: "https://cdn.example/old-dark.jpg?v=8"
+        )
+        let current = District(id: "district-1", name: "District", festivalId: "festival-1", image: oldImage)
+        let repository = DistrictRepositorySpy(districts: [current])
+        let imageStorage = ImageStorageClientSpy(temporaryImageData: [temporaryKey: malformedJPEG])
+        let pack = DistrictPack(
+            district: District(
+                id: current.id,
+                name: current.name,
+                festivalId: current.festivalId,
+                image: ImagePath(light: temporaryKey, dark: oldImage.dark)
+            ),
+            performances: []
+        )
+
+        #expect(malformedJPEG.count == 18)
+        await #expect(throws: Error.self) {
+            try await withDependencies {
+                $0[DistrictRepositoryKey.self] = repository
+                $0[ImageStorageClientKey.self] = imageStorage
+            } operation: {
+                try await DistrictUsecase().put(id: current.id, item: pack, user: .district(current.id))
+            }
+        }
+
+        #expect(await imageStorage.validationKeys == [temporaryKey])
+        #expect(await imageStorage.publishCalls.isEmpty)
+        #expect(await repository.putItems.isEmpty)
+        #expect(await repository.storedDistrict(id: current.id)?.image == oldImage)
+    }
+
+    @Test("不正なtemporary pathはDistrictを更新せずに拒否する")
+    func put_rejectsUntrustedImagePathsWithoutChangingStoredImage() async {
+        let oldImage = ImagePath(
+            light: "https://cdn.example/old-light.jpg?v=7",
+            dark: "https://cdn.example/old-dark.jpg?v=8"
+        )
+        let current = District(id: "district-1", name: "District", festivalId: "festival-1", image: oldImage)
+
+        for path in [
+            "temporary/festivals/another/districts/district-1/light.jpg",
+            "temporary/festivals/festival-1/districts/district-1/dark.jpg",
+            "https://external.example/image.jpg"
+        ] {
+            let repository = DistrictRepositorySpy(districts: [current])
+            let imageStorage = ImageStorageClientSpy()
+            let incoming = DistrictPack(
+                district: District(
+                    id: current.id,
+                    name: current.name,
+                    festivalId: current.festivalId,
+                    image: ImagePath(light: path, dark: oldImage.dark)
+                ),
+                performances: []
+            )
+
+            await #expect(throws: Error.self) {
+                try await withDependencies {
+                    $0[DistrictRepositoryKey.self] = repository
+                    $0[ImageStorageClientKey.self] = imageStorage
+                } operation: {
+                    try await DistrictUsecase().put(id: current.id, item: incoming, user: .district(current.id))
+                }
+            }
+
+            #expect(await repository.putItems.isEmpty)
+            #expect(await repository.storedDistrict(id: current.id)?.image == oldImage)
+            #expect(await imageStorage.validationKeys.isEmpty)
+            #expect(await imageStorage.publishCalls.isEmpty)
+        }
     }
 
     @Test
@@ -237,7 +357,7 @@ struct DistrictUsecaseTest {
             description: "new desc",
             base: .init(latitude: 36, longitude: 140),
             area: [.init(latitude: 36, longitude: 140)],
-            image: .init(light: "new.png", dark: nil),
+            image: current.image,
             visibility: .admin,
             isEditable: true
         )

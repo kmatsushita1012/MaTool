@@ -23,9 +23,11 @@ struct DistrictEditFeature {
     struct State: Equatable{
         var district: District
         var performances: [Performance]
+        var imageEdit: ImageEditFeature.State
         @Shared fileprivate var appState: AppState?
         
         var isLoading: Bool = false
+        var isImageEditPresented = false
         @Presents var destination: Destination.State?
         @Presents var alert: AlertFeature.State?
     }
@@ -35,6 +37,9 @@ struct DistrictEditFeature {
         case binding(BindingAction<State>)
         case cancelTapped
         case saveTapped
+        case imageEditTapped
+        case imageEditDismissTapped
+        case imageEdit(ImageEditFeature.Action)
         case baseTapped
         case areaTapped
         case performanceAddTapped
@@ -48,23 +53,41 @@ struct DistrictEditFeature {
     @Dependency(\.dismiss) var dismiss
     
     var body: some ReducerOf<DistrictEditFeature>{
+        Scope(state: \.imageEdit, action: \.imageEdit) {
+            ImageEditFeature()
+        }
         BindingReducer()
         Reduce{ state, action in
             switch action {
             case .binding:
                 return .none
             case .cancelTapped:
-                return .dismiss
+                state.isImageEditPresented = false
+                return .merge(.send(.imageEdit(.reset)), .dismiss)
             case .saveTapped:
+                guard !state.isLoading else { return .none }
+                guard let image = state.imageEdit.imagePath(applyingTo: state.district.image) else {
+                    state.alert = AlertFeature.error("画像のアップロードが完了するまで保存できません。")
+                    return .none
+                }
+                var updatedDistrict = state.district
+                updatedDistrict.image = image
                 state.isLoading = true
-                return .task(Action.postReceived) { [district = state.district, performances = state.performances, appState = state.$appState] in
+                return .task(Action.postReceived) { [district = updatedDistrict, performances = state.performances, appState = state.$appState] in
                     _ = try await saveDistrictPackUseCase(
                         district: district,
                         performances: performances,
                         appState: appState
                     )
-                    await dismiss()
                 }
+            case .imageEditTapped:
+                guard !state.isLoading else { return .none }
+                state.isImageEditPresented = true
+                return .none
+            case .imageEditDismissTapped:
+                guard !state.imageEdit.isUploading else { return .none }
+                state.isImageEditPresented = false
+                return .none
             case .baseTapped:
                 if let base = state.district.base{
                     state.destination = .base(DistrictBaseEditFeature.State(base: base))
@@ -98,6 +121,10 @@ struct DistrictEditFeature {
                 state.isLoading = false
                     state.alert = AlertFeature.error("保存に失敗しました。\(error.message)")
                 return .none
+            case .postReceived(.success):
+                state.isLoading = false
+                state.isImageEditPresented = false
+                return .merge(.send(.imageEdit(.reset)), .dismiss)
             case .destination(.presented(let childAction)):
                 switch childAction {
                 case .base(.doneTapped):
@@ -157,6 +184,11 @@ extension DistrictEditFeature.State {
         self._appState = appState
         self.district = currentDistrict
         self.performances = districtState.performances
+        self.imageEdit = ImageEditFeature.State(
+            targetType: .district,
+            targetID: currentDistrict.id,
+            image: currentDistrict.image
+        )
     }
 }
 

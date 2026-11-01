@@ -113,7 +113,14 @@ struct DistrictUsecase: DistrictUsecaseProtocol {
         guard let current = try await repository.get(id: id) else {
             throw Error.notFound("指定された地区が見つかりません")
         }
-        let mergedDistrict = mergeForDistrictRole(current: current, incoming: item.district)
+        var mergedDistrict = mergeForDistrictRole(current: current, incoming: item.district)
+        mergedDistrict.image = try await ImagePathFinalizer().finalize(
+            incoming: item.district.image,
+            current: current.image,
+            type: .district,
+            id: id,
+            festivalId: current.festivalId
+        )
         let district = try await repository.put(id: id, item: mergedDistrict)
         if current.visibility != district.visibility {
             try await applyVisibilityToLatestYearRoutes(

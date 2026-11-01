@@ -31,6 +31,7 @@ struct DistrictEditScreen: View {
             visibilityLabel: { $0.label },
             performances: store.performances,
             isSaving: store.isLoading,
+            onImageEditTapped: { store.send(.imageEditTapped) },
             onBaseTapped: { store.send(.baseTapped) },
             onAreaTapped: { store.send(.areaTapped) },
             onPerformanceEditTapped: { store.send(.performanceEditTapped($0)) },
@@ -38,6 +39,16 @@ struct DistrictEditScreen: View {
             onCancelTapped: { store.send(.cancelTapped) },
             onSaveTapped: { store.send(.saveTapped) }
         )
+        .sheet(isPresented: $store.isImageEditPresented) {
+            NavigationStack {
+                ImageEditContentView(
+                    store: store.scope(state: \.imageEdit, action: \.imageEdit),
+                    onClose: { store.send(.imageEditDismissTapped) }
+                )
+            }
+            .navigationBarTitleDisplayMode(.inline)
+            .interactiveDismissDisabled(store.imageEdit.isUploading)
+        }
         .dismissible(backButton: false, edgeSwipe: false)
         .navigationDestination(item: $store.scope(state: \.destination?.base, action: \.destination.base)) { store in
             DistrictBaseEditView(store: store)
@@ -63,6 +74,7 @@ struct DistrictEditContentView<VisibilityValue: Hashable & CaseIterable>: View {
     let visibilityLabel: (VisibilityValue) -> String
     let performances: [Performance]
     let isSaving: Bool
+    let onImageEditTapped: () -> Void
     let onBaseTapped: () -> Void
     let onAreaTapped: () -> Void
     let onPerformanceEditTapped: (Performance) -> Void
@@ -81,6 +93,10 @@ struct DistrictEditContentView<VisibilityValue: Hashable & CaseIterable>: View {
             Section(header: Text("紹介文")) {
                 TextEditor(text: $description)
                     .frame(height: 120)
+            }
+            Section(header: Text("紹介画像")) {
+                Button("画像を変更", systemImage: "photo", action: onImageEditTapped)
+                    .disabled(isSaving)
             }
             Section(header: Text("会所")) {
                 Button(action: onBaseTapped) {
@@ -137,6 +153,7 @@ struct DistrictEditContentView<VisibilityValue: Hashable & CaseIterable>: View {
         visibilityLabel: { $0.label },
         performances: [],
         isSaving: false,
+        onImageEditTapped: {},
         onBaseTapped: {},
         onAreaTapped: {},
         onPerformanceEditTapped: { _ in },

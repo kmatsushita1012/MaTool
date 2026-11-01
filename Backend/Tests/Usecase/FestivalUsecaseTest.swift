@@ -1,3 +1,4 @@
+import Foundation
 import Dependencies
 import Shared
 import Testing
@@ -78,7 +79,7 @@ struct FestivalUsecaseTest {
 
         var lastCalledFestivalId: String?
         let subject = make(
-            festivalRepository: .init(putHandler: { item in
+            festivalRepository: .init(getHandler: { _ in Festival.mock(id: festival.id) }, putHandler: { item in
                 lastCalledFestivalId = item.id
                 return item
             }),
@@ -92,6 +93,153 @@ struct FestivalUsecaseTest {
         #expect(result.festival == festival)
         #expect(result.checkpoints == [checkpoint])
         #expect(result.hazardSections == [hazard])
+    }
+
+    @Test("LightまたはDarkの一時画像が不正ならFestival Repositoryを更新しない")
+    func put_rejectsInvalidVariantBeforeRepositoryWrite() async {
+        let lightKey = "temporary/festivals/festival-1/light.jpg"
+        let darkKey = "temporary/festivals/festival-1/dark.jpg"
+        let oldImage = ImagePath(
+            light: "https://cdn.example/old-light.jpg?v=7",
+            dark: "https://cdn.example/old-dark.jpg?v=8"
+        )
+        let current = Festival(
+            id: "festival-1",
+            name: "Festival",
+            subname: "Headquarters",
+            base: Coordinate(latitude: 35, longitude: 139),
+            image: oldImage
+        )
+        let pack = FestivalPack(
+            festival: Festival(
+                id: current.id,
+                name: current.name,
+                subname: current.subname,
+                base: current.base,
+                image: ImagePath(light: lightKey, dark: darkKey)
+            ),
+            checkpoints: [],
+            hazardSections: []
+        )
+
+        for invalidKey in [lightKey, darkKey] {
+            let repository = FestivalRepositorySpy(festivals: [current])
+            let imageStorage = ImageStorageClientSpy(validationFailures: [invalidKey])
+
+            await #expect(throws: Error.self) {
+                try await withDependencies {
+                    $0[FestivalRepositoryKey.self] = repository
+                    $0[CheckpointRepositoryKey.self] = CheckpointRepositoryMock(queryHandler: { _ in [] })
+                    $0[HazardSectionRepositoryKey.self] = HazardSectionRepositoryMock(queryHandler: { _ in [] })
+                    $0[ImageStorageClientKey.self] = imageStorage
+                } operation: {
+                    try await FestivalUsecase().put(pack, user: .headquarter(current.id))
+                }
+            }
+
+            #expect(await repository.putItems.isEmpty)
+            #expect(await repository.storedFestival(id: current.id)?.image == oldImage)
+            #expect(await imageStorage.publishCalls.isEmpty)
+        }
+    }
+
+    @Test("18 byteの不正JPEGならFestivalの公開コピーとRepository更新をしない")
+    func put_rejectsMalformedJPEGWithoutPublishingOrRepositoryWrite() async {
+        let temporaryKey = "temporary/festivals/festival-1/light.jpg"
+        let malformedJPEG = Data([
+            0xFF, 0xD8, 0xFF, 0xC0, 0x00, 0x08, 0x08, 0x00, 0x01,
+            0x00, 0x01, 0x00, 0xFF, 0xDA, 0x00, 0x02, 0xFF, 0xD9
+        ])
+        let oldImage = ImagePath(
+            light: "https://cdn.example/old-light.jpg?v=7",
+            dark: "https://cdn.example/old-dark.jpg?v=8"
+        )
+        let current = Festival(
+            id: "festival-1",
+            name: "Festival",
+            subname: "Headquarters",
+            base: Coordinate(latitude: 35, longitude: 139),
+            image: oldImage
+        )
+        let repository = FestivalRepositorySpy(festivals: [current])
+        let imageStorage = ImageStorageClientSpy(temporaryImageData: [temporaryKey: malformedJPEG])
+        let pack = FestivalPack(
+            festival: Festival(
+                id: current.id,
+                name: current.name,
+                subname: current.subname,
+                base: current.base,
+                image: ImagePath(light: temporaryKey, dark: oldImage.dark)
+            ),
+            checkpoints: [],
+            hazardSections: []
+        )
+
+        #expect(malformedJPEG.count == 18)
+        await #expect(throws: Error.self) {
+            try await withDependencies {
+                $0[FestivalRepositoryKey.self] = repository
+                $0[CheckpointRepositoryKey.self] = CheckpointRepositoryMock(queryHandler: { _ in [] })
+                $0[HazardSectionRepositoryKey.self] = HazardSectionRepositoryMock(queryHandler: { _ in [] })
+                $0[ImageStorageClientKey.self] = imageStorage
+            } operation: {
+                try await FestivalUsecase().put(pack, user: .headquarter(current.id))
+            }
+        }
+
+        #expect(await imageStorage.validationKeys == [temporaryKey])
+        #expect(await imageStorage.publishCalls.isEmpty)
+        #expect(await repository.putItems.isEmpty)
+        #expect(await repository.storedFestival(id: current.id)?.image == oldImage)
+    }
+
+    @Test("無関係なtemporary path・別variant・外部URLではFestivalを更新しない")
+    func put_rejectsUntrustedImagePathsWithoutChangingStoredImage() async {
+        let oldImage = ImagePath(
+            light: "https://cdn.example/old-light.jpg?v=7",
+            dark: "https://cdn.example/old-dark.jpg?v=8"
+        )
+        let current = Festival(
+            id: "festival-1",
+            name: "Festival",
+            subname: "Headquarters",
+            base: Coordinate(latitude: 35, longitude: 139),
+            image: oldImage
+        )
+        for imagePath in [
+            "temporary/festivals/another/light.jpg",
+            "temporary/festivals/festival-1/dark.jpg",
+            "https://external.example/image.jpg"
+        ] {
+            let repository = FestivalRepositorySpy(festivals: [current])
+            let imageStorage = ImageStorageClientSpy()
+            let pack = FestivalPack(
+                festival: Festival(
+                    id: current.id,
+                    name: current.name,
+                    subname: current.subname,
+                    base: current.base,
+                    image: ImagePath(light: imagePath, dark: oldImage.dark)
+                ),
+                checkpoints: [],
+                hazardSections: []
+            )
+
+            await #expect(throws: Error.self) {
+                try await withDependencies {
+                    $0[FestivalRepositoryKey.self] = repository
+                    $0[CheckpointRepositoryKey.self] = CheckpointRepositoryMock(queryHandler: { _ in [] })
+                    $0[HazardSectionRepositoryKey.self] = HazardSectionRepositoryMock(queryHandler: { _ in [] })
+                    $0[ImageStorageClientKey.self] = imageStorage
+                } operation: {
+                    try await FestivalUsecase().put(pack, user: .headquarter(current.id))
+                }
+            }
+
+            #expect(await repository.putItems.isEmpty)
+            #expect(await repository.storedFestival(id: current.id)?.image == oldImage)
+            #expect(await imageStorage.publishCalls.isEmpty)
+        }
     }
 
     @Test
