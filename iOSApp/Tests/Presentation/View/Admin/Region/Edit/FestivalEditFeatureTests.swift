@@ -1,6 +1,7 @@
 import ComposableArchitecture
 import Dependencies
 import Foundation
+import PhotosUI
 import Shared
 import Testing
 @testable import iOSApp
