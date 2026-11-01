@@ -1,7 +1,15 @@
 import Dependencies
 import Shared
 
-struct ImageUploadController: Sendable {
+enum ImageUploadControllerKey: DependencyKey {
+    static let liveValue: any ImageUploadControllerProtocol = ImageUploadController()
+}
+
+protocol ImageUploadControllerProtocol: Sendable {
+    func post(_ request: Request, next: Handler) async throws -> Response
+}
+
+struct ImageUploadController: ImageUploadControllerProtocol {
     @Dependency(ImageUploadUsecaseKey.self) var usecase
 
     func post(_ request: Request, next: Handler) async throws -> Response {

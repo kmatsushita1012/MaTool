@@ -36,7 +36,7 @@ struct S3ImageClient: S3ImageClientProtocol {
             throw Error.badRequest("JPEG 画像の構造または画素数が不正です。")
         }
         _ = try await client.copyObject(input: .init(bucket: bucket, contentType: "image/jpeg", copySource: "\(bucket)/\(temporaryKey)", key: permanentKey, metadataDirective: .replace))
-        var components = URLComponents(url: base.appending(path: permanentKey), resolvingAgainstBaseURL: false)
+        let components = URLComponents(url: base.appending(path: permanentKey), resolvingAgainstBaseURL: false)
         let previous = currentURL.flatMap { URLComponents(string: $0)?.queryItems?.first(where: { $0.name == "v" })?.value }.flatMap(UInt64.init) ?? 0
         let version = max(UInt64(Date().timeIntervalSince1970 * 1_000), previous + 1)
         guard var urlComponents = components else { throw Error.internalServerError("画像 URL を構築できません。") }
