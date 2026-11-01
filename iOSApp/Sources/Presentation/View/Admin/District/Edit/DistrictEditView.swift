@@ -46,6 +46,7 @@ struct DistrictEditScreen: View {
                     onClose: { store.send(.imageEditDismissTapped) }
                 )
             }
+            .navigationBarTitleDisplayMode(.inline)
             .interactiveDismissDisabled(store.imageEdit.isUploading)
         }
         .dismissible(backButton: false, edgeSwipe: false)

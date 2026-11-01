@@ -69,9 +69,9 @@ struct ImageEditFeatureTests {
         await store.finish()
     }
 
-    @Test("S3 PUT 失敗は JPEG を保持し、再試行で一時キーを確定する")
+    @Test("新規画像のアップロード失敗は下書きを破棄して空に戻す")
     @MainActor
-    func retriesFailedUploadWithoutSelectingAgain() async {
+    func discardsFailedNewImageAndKeepsEmptyOriginal() async {
         let jpeg = Data([0xFF, 0xD8, 0xFF, 0xD9])
         let useCase = UploadImageUseCaseSpy(
             preparedData: jpeg,
@@ -103,33 +103,67 @@ struct ImageEditFeatureTests {
         await store.receive(.jpegPrepared(id: firstID, mode: .light, data: jpeg)) {
             $0.lightDraft = .uploading(jpeg)
         }
-        await store.receive(.uploadFailed(id: firstID, mode: .light, data: jpeg, message: "S3 unavailable")) {
+        await store.receive(.uploadFailed(id: firstID, mode: .light, message: "S3 unavailable")) {
             $0.activeUploadID = nil
-            $0.lightDraft = .failed(data: jpeg, message: "S3 unavailable")
+            $0.lightDraft = .unchanged
+            $0.failureMessages[.light] = "S3 unavailable"
         }
-        #expect(!store.state.canSave)
+        #expect(store.state.canSave)
+        #expect(store.state.imagePath(applyingTo: ImagePath()) == ImagePath())
+        #expect(store.state.previewData == nil)
+        #expect(!store.state.hasImage)
+        #expect(store.state.failureMessage(for: .light) == "S3 unavailable")
+        #expect(await useCase.uploadCalls.count == 1)
+        await store.finish()
+    }
 
-        await useCase.failUpload(with: nil)
-        let retryID = UUID()
-        await store.send(.retryTapped(id: retryID)) {
-            $0.activeUploadID = retryID
+    @Test("既存画像のアップロード失敗は元の画像に戻す")
+    @MainActor
+    func restoresOriginalImageAfterFailedReplacement() async {
+        let original = ImagePath(light: "https://cdn.example/light.jpg")
+        let jpeg = Data([0xFF, 0xD8, 0xFF, 0xD9])
+        let useCase = UploadImageUseCaseSpy(
+            preparedData: jpeg,
+            path: "temporary/districts/district-1/light.jpg",
+            uploadFailure: "S3 unavailable"
+        )
+        let store = TestStore(
+            initialState: ImageEditFeature.State(
+                targetType: .district,
+                targetID: "district-1",
+                image: original
+            )
+        ) {
+            ImageEditFeature()
+        } withDependencies: {
+            $0.installTestSpies()
+            $0[PhotoLibraryClientKey.self] = PhotoLibraryClientSpy(data: Data([4, 5]))
+            $0[UploadImageUseCaseKey.self] = useCase
+        }
+
+        let id = UUID()
+        await store.send(.photoSelected(id: id, item: PhotosPickerItem(itemIdentifier: "picked"))) {
+            $0.activeUploadID = id
+            $0.lightDraft = .loading
+        }
+        await store.receive(.photoDataReceived(id: id, mode: .light, data: Data([4, 5]))) {
+            $0.lightDraft = .preparing
+        }
+        await store.receive(.jpegPrepared(id: id, mode: .light, data: jpeg)) {
             $0.lightDraft = .uploading(jpeg)
         }
-        await store.receive(.uploadCompleted(
-            id: retryID,
-            mode: .light,
-            data: jpeg,
-            path: "temporary/districts/district-1/light.jpg"
-        )) {
+        await store.receive(.uploadFailed(id: id, mode: .light, message: "S3 unavailable")) {
             $0.activeUploadID = nil
-            $0.lightDraft = .replaced(
-                path: "temporary/districts/district-1/light.jpg",
-                jpegData: jpeg
-            )
+            $0.lightDraft = .unchanged
+            $0.failureMessages[.light] = "S3 unavailable"
         }
 
         #expect(store.state.canSave)
-        #expect(await useCase.uploadCalls.count == 2)
+        #expect(store.state.imagePath(applyingTo: original) == original)
+        #expect(store.state.previewURL == original.light)
+        #expect(store.state.hasImage)
+        #expect(store.state.failureMessage(for: .light) == "S3 unavailable")
+        #expect(await useCase.uploadCalls.count == 1)
         await store.finish()
     }
 }

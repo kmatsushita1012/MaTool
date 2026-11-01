@@ -19,6 +19,17 @@ struct ImageJPEGProcessingClientTests {
         #expect(image?.height == 40)
     }
 
+    @Test("PNG を JPEG に変換する")
+    func convertsPNGToJPEG() throws {
+        let input = try makeImage(width: 80, height: 40, type: .png)
+        let jpeg = try ImageJPEGProcessingClient().makeJPEG(from: input)
+
+        #expect(jpeg.starts(with: [0xFF, 0xD8]))
+        let source = CGImageSourceCreateWithData(jpeg as CFData, nil)
+        let outputType = source.flatMap { CGImageSourceGetType($0) } as String?
+        #expect(outputType == UTType.jpeg.identifier)
+    }
+
     @Test("縦横比が共通上限を超える画像を拒否する")
     func rejectsInvalidAspectRatio() throws {
         let input = try makeJPEG(width: 101, height: 10)
@@ -36,6 +47,10 @@ struct ImageJPEGProcessingClientTests {
     }
 
     private func makeJPEG(width: Int, height: Int) throws -> Data {
+        try makeImage(width: width, height: height, type: .jpeg)
+    }
+
+    private func makeImage(width: Int, height: Int, type: UTType) throws -> Data {
         let colorSpace = CGColorSpaceCreateDeviceRGB()
         guard let context = CGContext(
             data: nil,
@@ -52,7 +67,7 @@ struct ImageJPEGProcessingClientTests {
         let data = NSMutableData()
         guard let destination = CGImageDestinationCreateWithData(
             data,
-            UTType.jpeg.identifier as CFString,
+            type.identifier as CFString,
             1,
             nil
         ) else {

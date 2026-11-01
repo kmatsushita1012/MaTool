@@ -6,7 +6,7 @@ import SwiftUI
 
 @Reducer
 struct ImageEditFeature {
-    enum Mode: Equatable, Sendable {
+    enum Mode: Equatable, Hashable, Sendable {
         case light
         case dark
 
@@ -24,7 +24,6 @@ struct ImageEditFeature {
         case preparing
         case uploading(Data)
         case replaced(path: String, jpegData: Data)
-        case failed(data: Data?, message: String)
         case removed
     }
 
@@ -37,6 +36,7 @@ struct ImageEditFeature {
         var lightDraft: Draft = .unchanged
         var darkDraft: Draft = .unchanged
         var activeUploadID: UUID?
+        var failureMessages: [Mode: String] = [:]
 
         init(targetType: ImageUploadTarget.Kind, targetID: String, image: ImagePath) {
             self.targetType = targetType
@@ -46,32 +46,20 @@ struct ImageEditFeature {
 
         var isUploading: Bool { activeUploadID != nil }
 
-        var canSave: Bool {
-            guard !isUploading else { return false }
-            switch lightDraft {
-            case .failed: return false
-            default: break
-            }
-            switch darkDraft {
-            case .failed: return false
-            default: break
-            }
-            return true
-        }
+        var canSave: Bool { !isUploading }
 
         var previewData: Data? {
             switch draft(for: selectedMode) {
             case .uploading(let data), .replaced(_, let data): data
-            case .failed(let data, _): data
             default: nil
             }
         }
 
         var previewURL: String? {
             switch draft(for: selectedMode) {
-            case .unchanged, .loading, .preparing, .failed(nil, _):
+            case .unchanged, .loading, .preparing:
                 imagePath(for: selectedMode)
-            case .uploading, .replaced, .removed, .failed:
+            case .uploading, .replaced, .removed:
                 nil
             }
         }
@@ -88,6 +76,10 @@ struct ImageEditFeature {
 
         func draft(for mode: Mode) -> Draft {
             mode == .light ? lightDraft : darkDraft
+        }
+
+        func failureMessage(for mode: Mode) -> String? {
+            failureMessages[mode]
         }
 
         mutating func setDraft(_ draft: Draft, for mode: Mode) {
@@ -109,7 +101,7 @@ struct ImageEditFeature {
             case .unchanged: originalPath
             case .replaced(let path, _): path
             case .removed: nil
-            case .loading, .preparing, .uploading, .failed: nil
+            case .loading, .preparing, .uploading: nil
             }
         }
     }
@@ -122,8 +114,7 @@ struct ImageEditFeature {
         case jpegPrepared(id: UUID, mode: Mode, data: Data)
         case jpegPreparationFailed(id: UUID, mode: Mode, message: String)
         case uploadCompleted(id: UUID, mode: Mode, data: Data, path: String)
-        case uploadFailed(id: UUID, mode: Mode, data: Data, message: String)
-        case retryTapped(id: UUID)
+        case uploadFailed(id: UUID, mode: Mode, message: String)
         case removeTapped
         case reset
     }
@@ -144,6 +135,7 @@ struct ImageEditFeature {
             case .photoSelected(let id, let item):
                 guard !state.isUploading else { return .none }
                 let mode = state.selectedMode
+                state.failureMessages[mode] = nil
                 state.activeUploadID = id
                 state.setDraft(.loading, for: mode)
                 let photoLibraryClient = self.photoLibraryClient
@@ -190,7 +182,8 @@ struct ImageEditFeature {
                  .jpegPreparationFailed(let id, let mode, let message):
                 guard state.activeUploadID == id else { return .none }
                 state.activeUploadID = nil
-                state.setDraft(.failed(data: nil, message: message), for: mode)
+                state.setDraft(.unchanged, for: mode)
+                state.failureMessages[mode] = message
                 return .none
 
             case .jpegPrepared(let id, let mode, let data):
@@ -204,24 +197,16 @@ struct ImageEditFeature {
                 state.setDraft(.replaced(path: path, jpegData: data), for: mode)
                 return .none
 
-            case .uploadFailed(let id, let mode, let data, let message):
+            case .uploadFailed(let id, let mode, let message):
                 guard state.activeUploadID == id else { return .none }
                 state.activeUploadID = nil
-                state.setDraft(.failed(data: data, message: message), for: mode)
+                state.setDraft(.unchanged, for: mode)
+                state.failureMessages[mode] = message
                 return .none
-
-            case .retryTapped(let id):
-                guard !state.isUploading,
-                      case .failed(let data?, _) = state.draft(for: state.selectedMode) else {
-                    return .none
-                }
-                let mode = state.selectedMode
-                state.activeUploadID = id
-                state.setDraft(.uploading(data), for: mode)
-                return uploadEffect(id: id, mode: mode, data: data, state: state)
 
             case .removeTapped:
                 guard !state.isUploading else { return .none }
+                state.failureMessages[state.selectedMode] = nil
                 state.setDraft(.removed, for: state.selectedMode)
                 return .none
 
@@ -230,6 +215,7 @@ struct ImageEditFeature {
                 state.lightDraft = .unchanged
                 state.darkDraft = .unchanged
                 state.activeUploadID = nil
+                state.failureMessages = [:]
                 return .cancel(id: UploadTaskID.upload)
             }
         }
@@ -246,7 +232,6 @@ struct ImageEditFeature {
                 await send(.uploadFailed(
                     id: id,
                     mode: mode,
-                    data: data,
                     message: error.localizedDescription
                 ))
             }

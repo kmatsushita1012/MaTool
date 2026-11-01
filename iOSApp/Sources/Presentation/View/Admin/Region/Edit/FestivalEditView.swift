@@ -42,6 +42,7 @@ struct FestivalEditScreen: View {
                         onClose: { store.send(.imageEditDismissTapped) }
                     )
                 }
+                .navigationBarTitleDisplayMode(.inline)
                 .interactiveDismissDisabled(store.imageEdit.isUploading)
             }
             .navigationDestination(
