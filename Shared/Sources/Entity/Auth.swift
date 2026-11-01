@@ -12,6 +12,7 @@ import CasePaths
 public enum UserRole: Entity {
     case headquarter(String)
     case district(String)
+    case advertiser(String)
     case guest
 }
 
@@ -21,6 +22,8 @@ extension UserRole{
         case .headquarter(let id):
             return id
         case .district(let id):
+            return id
+        case .advertiser(let id):
             return id
         case .guest:
             return nil

@@ -135,7 +135,7 @@ final class Application: @unchecked Sendable {
             let layer = layers[index]
             return { req in
                 guard layer.method == nil || layer.method == req.method,
-                      let parameters = self.match(layer.path, req.path)
+                      let parameters = self.matches(layer, req.path)
                 else {
                     return try await makeLayerChain(index + 1)(req)
                 }
@@ -172,6 +172,12 @@ final class Application: @unchecked Sendable {
             }
         }
         return params
+    }
+
+    private func matches(_ layer: Layer, _ path: String) -> [String: String]? {
+        let pathParts = path.split(separator: "/").map(String.init)
+        if layer.method != nil, layer.path.count != pathParts.count { return nil }
+        return match(layer.path, path)
     }
 
 }

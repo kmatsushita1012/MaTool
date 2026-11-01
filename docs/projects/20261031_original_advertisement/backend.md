@@ -123,7 +123,7 @@ Store 作成時に Backend が **店舗単位の購入用 purchaseAccountToken �
 | `STORE#{storeId}` | `PURCHASE#{purchasedAtUTC}#{transactionId}` | **StorePurchaseReference（店舗別購入履歴の検索用参照）** |
 | `STORE#{storeId}` | `IMPRESSION#{impressionId}` | ImpressionRecord |
 
-- Festival 内 Store は FESTIVAL PK + SK beginsWith で Query。公開一覧の結果整合性は許容する。
+- Festival 内 Store は FESTIVAL PK + SK beginsWith でベーステーブル Query。運営停止を直ちに公開・広告配信へ反映するため、公開一覧・広告候補・表示報告では `ConsistentRead: true` を指定する。GSI Query は使わない。
 - **所有者操作（Store GET / PUT・画像 URL・購入・残高）の Store 取得**は GSI を使わず、認証済み Cognito sub から **`USER#{sub} / STORE#{storeId}` をベーステーブルの一貫性の強い GetItem で取得**して festivalId を得て、次に **`FESTIVAL#{festivalId} / STORE#{storeId}` を一貫性の強い GetItem** で読む。所有参照の存在だけに頼らず、取得した Store の ownerId == sub を再確認する。参照不在・不一致なら拒否。Store ID 単独で GSI を Query する処理をこの経路で使わない。
 - **所有 Store 一覧**も `USER#{sub}` PK をベーステーブルの **ConsistentRead 付き Query** で取得し、参照の festivalId から Store 本体を取得する。作成直後の一覧・画像入稿で 404／欠落しないことを保証する。直接 Get / Query で必要な箇所だけ `ConsistentRead: true` を DataStore に渡せるよう最小限拡張する（既存呼出のデフォルトは変更しない）。
 - **店舗別の購入履歴**は `STORE#{storeId}` PK、`PURCHASE#` SK prefix で Query する。SK の日時は UTC の**辞書順に時系列となる固定形式**（例: `2026-10-31T12:30:00.000Z`）とし、transactionId を付けて同時刻の衝突を防ぐ。必要なら降順で返す。全 PurchaseRecord の Scan / Filter は使わない。
@@ -135,7 +135,9 @@ Store 作成時に Backend が **店舗単位の購入用 purchaseAccountToken �
 - **`lastPurchasedAt` は `max(既存値, Apple の署名済み purchasedAt)` として単調増加**させる。購入・未完了取引の到着順は信頼しない。CreditAccount を読み、現在の `lastPurchasedAt`（未設定を含む）との一致を **TransactWriteItems 内の Credit 更新条件**にして、より新しい日時のみ採用する。競合時は再取得して再計算し、正本・参照・残高をすべて原子的に確定する。**単純な GET→PUT や日時の無条件上書きは禁止**。返金では `lastPurchasedAt` を巻き戻さない。
 - 表示: `ImpressionRecord` の条件付き新規作成 + 残高 `balance >= cost` を条件とする減算 → **TransactWriteItems**。
 - DynamoDBEncoder は `.convertToSnakeCase`、Decoder は `.convertFromSnakeCase`。**保存属性は `content.balance` と `content.last_purchased_at`**（後者を `lastPurchasedAt` と書かない）。DynamoDB のネストマップの式を実際にテストし、**購入後の再読込で最終購入日時が正しく復元される**ことを検証する。
-- 購入台帳は二重付与防止のため保持。**返金も同じ PURCHASE キーの状態更新と Credit 残高調整を同一 TransactWriteItems で確定**し、未付与で返金が先着した取引は同じキーにマーカーを保存する。Impression は token の有効期間と再送可能期間を超えた後 TTL 等で整理。
+- 購入台帳は二重付与防止のため保持。**返金も同じ PURCHASE キーの状態更新と Credit 残高調整を同一 TransactWriteItems で確定**し、未付与で返金が先着した取引は同じキーにマーカーを保存する。Impression はトップレベル `expires_at`（Unix epoch秒）を TTL 属性に設定し、token 有効期限・再送期間より十分長い30日後に削除する。
+
+運用環境では既存 `matool` テーブルの DynamoDB TTL を有効にし、属性名を `expires_at` に設定する。
 
 **Store の初回登録は Store / Owner Reference / CreditAccount(balance=0) の3レコードを一回の TransactWriteItems で条件付き作成する。** 書込み途中の部分成功・孤立参照を許容しない（S3 は巻き込まない）。Store ID の衝突も条件式で拒否する。
 HTTP 応答をクライアントが受け取れなかった場合、**iOS は POST を自動再送して新しい Store を作らず、まず所有 Store 一覧を一貫性の強い読取りで再取得して作成結果を確認する**。新しい冪等キー専用の台帳は MVP で追加しない。重複を完全には防げない残余リスクと、同時作成時の店舗数上限チェックの競合は許容する。Store PUT に revision / If-Match は付けず、**広告主の書込みは編集可能な `content` の属性に限定した `UpdateItem`** にする。`moderationStatus` や ownerId 等のサーバー管理属性を書き戻さない。広告主同士の編集は Last Write Wins を許容するが、**運営の停止状態は古い広告主 PUT で解除できない**。
@@ -338,7 +340,7 @@ token の対象は impressionId / storeId / festivalId / placement / expiry。�
 4. 重複 impressionId、残高不足、停止、期限切れは減算しない。
 5. Backend に届かない報告は課金せず後日請求しない。Backend 成功後の応答消失は減算済み。
 
-署名 token は実表示の証明ではない。MVP は短命 token、重複防止、API Gateway 等の基本レート制限に留める。高度なセッション追跡、App Attest、異常消費自動検出は導入しない。Store 停止と消費の厳密な同時 Transaction も要求しない。
+署名 token は実表示の証明ではない。MVP は短命 token、重複防止、API Gateway 等の基本レート制限に留める。**初回公開の必須条件として候補 API と表示報告 API の両方にスロットリングを設定し、開発環境で候補を連続取得して即時報告する濫用試験を行い、429 が返り Credit の減算が上限内に収まることを確認する。**高度なセッション追跡、App Attest、異常消費自動検出は導入しない。Store 停止と消費の厳密な同時 Transaction も要求しない。
 
 ## 11. 運営停止・通報・保持期間
 
@@ -352,6 +354,10 @@ token の対象は impressionId / storeId / festivalId / placement / expiry。�
 - **停止中の Credit** は保持。広告主自身による `ownerPaused` の変更と、運営の `moderationStatus` は別物として扱う。
 
 **運営停止の実装前テスト**: 認可されていない IAM 主体は更新不可、存在しない Store / Festival 不一致を拒否、停止後の PublicStore / AdCandidate / Impression の動作、**広告主 PUT が approved を読取 → 運営 CLI が suspended を更新 → 広告主が UpdateItem を実行する順序でも suspended を保持**、運営による復旧が可能なこと。停止スクリプトは最小の操作手段として用意し、公開ユーザー向け API は増やさない。
+
+Apple 通知の再送が尽きた場合は、`bash scripts/replay-app-store-notifications <開始日時UTC> <終了日時UTC>` を使い、過去180日以内を指定して Apple Get Notification History の失敗履歴を取得し、署名検証後に既存の冪等な `applyNotification` へ再投入する。実行環境には App Store Server API Key と通常の DynamoDB 読書き権限が必要。処理途中で失敗した場合は同じ期間を再実行する。
+
+購入 Claim は受信 JWS の署名検証に加え、付与直前に App Store Server API の Get Transaction Info を呼び、返金状態を含む最新の署名済み取引を再検証する。App Store Connect API Key の `Key ID`、`Issuer ID`、秘密鍵 PEM の Base64 値を Lambda に設定する。Apple API が応答しない場合は fail closed で付与せず、クライアントに再試行させる。
 
 ### 11.2 通報を運営に届ける
 
@@ -430,16 +436,20 @@ scripts/moderate-store                    [追加案: IAM権限の運営停止�
 | Store PUT | ID / festivalId / ownerId / purchaseAccountToken / moderationStatus / createdAt の不一致 400、他人の Store 403。**UpdateItem は編集可能なネスト属性のみ SET**、updatedAt は Backend が設定、ReturnValues ALL_NEW は現在の運営状態を返す。**広告主が approved を読取 → 運営が suspended → 広告主の PUT 完了でも suspended のまま**。管理フィールドを変更する UpdateExpression が生成されないこと |
 | Store PUT | 固定一時／正式／明示 null、画像フィールド省略400 |
 | S3 | 共通署名 API で Store/Festival/District 別の正しい認可とキーを検証。不正な type/variant・他店舗/別町パス拒否、MIME 偽装の非 JPEG・壊れた JPEG・画素数/容量上限超過の拒否、コピー失敗時の DB 未保存、一時画像の整理。公開 GET と CDN の版別 URL から差し替え画像を取得できる結合検証 |
-| IAP | 署名不正、別 Bundle/Environment/Product、別 Store appAccountToken、二重付与なし |
+| IAP | 署名不正、別 Bundle/Environment/Product、別 Store appAccountToken、二重付与なし。Apple で返金後に保存済み購入 JWS を再送しても Get Transaction Info の現在状態で拒否し、API 障害時は付与しない |
 | **返金・返金取消** | 未使用500 Credit返金で残高0、使用後は `min(購入 Credit, 残高)`、複数購入・他購入分の残高、REFUND_REVERSEDで実減算額だけ復元、同一通知・古いsignedDateを再適用しない、返金とImpressionの競合時にも負残高なし、未付与REFUND先着→後日Claim拒否、未付与の取消→Claimで一度だけ付与。**REFUND_REVERSED(T2)→REFUND(T1<T2) は (a) 付与済みactive、(b) PurchaseRecord未作成の両方で最新時刻を保持し、古い REFUND を無視**。署名不正、DBエラー時5xx・処理済み200、通知履歴からの再処理 |
 | Consumable | Backend 成功前に finish しない、未完了 Transaction 再試行、応答消失後の冪等復旧 |
 | Credit と日時 | 残高不足・同時消費で負残高なし。**購入日が新→旧の順に到着しても lastPurchasedAt は逆行しない**、条件付き更新競合時の再取得。**DynamoDBEncoder/Decoder の実属性 `content.last_purchased_at` で更新し、Credit と日時を再取得して round-trip 検証** |
-| Impression | token 改ざん／期限切れ、重複、候補発行後の停止・画像削除 |
+| Impression | token 改ざん／期限切れ、重複、候補発行後の停止・画像削除。重複記録のトップレベル `expires_at` が30日後で、署名 token の有効期限より後に設定される |
 | 公開 DTO | 運営停止で店舗非公開、本人停止で画像 null、ownerId 等の非公開 |
 | 保持期間 | 未購入は createdAt 起点、残高のある店舗の権利保持 |
 | Festival | 異なる Festival への広告混入を拒否 |
 | 運営停止 | IAM 非許可主体の書込み禁止、対象 Festival / Store ID の照合、停止で公開店舗・候補・減算が停止、広告主 PUT による解除拒否、運営スクリプトで復旧 |
 | 通報 | 公開 POST の入力検証・基本レート制限・運営通知の Publish 成功、SNS 送信失敗時 5xx、運営受信内容の確認。簡易 AI チェックは**別運用タスク**に分割して初期公開前に実施方法確定 |
+
+**Apple/DynamoDB 結合試験**は Sandbox 用 App Store Server API Key と隔離した DynamoDB Local テーブルで実行する。Claim transaction の3件原子性、二重 Claim、REFUND 先着、古い refund event、Impression と返金の同時 Credit 更新を検証し、ローカル設定がない場合は本番前チェックとして未完了扱いにする。
+
+**API Gateway 濫用試験（本番公開ゲート）**は使い捨ての開発 Store と Credit だけで実施する。候補 API を並列で連続取得してすぐに各 token を Impression API へ送信し、候補・Impression の両経路で設定した `429` と、対象 Store の残高が試験リクエスト上限を超えて減らないことを確認する。試験の最大許容 Credit 消費量を事前に決める。AWS 設定が未完了なら公開不可とする。
 
 **非採用のテスト**：画像 ETag / S3 VersionId・画像世代 GC、Store revision、App Attest、重複店舗ハッシュ索引。これらは MVP の実装対象ではない。
 

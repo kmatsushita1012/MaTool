@@ -4,6 +4,33 @@ import Testing
 @testable import Backend
 
 struct ImageUploadUsecaseTests {
+    @Test("guestは3種すべての画像署名URLを取得できず401を返す")
+    func rejectsGuestWithUnauthorizedBeforeLookingUpTargets() async {
+        let images = ImageStorageClientSpy()
+        let requests = [
+            request(type: .store, id: "store-1", variant: .banner),
+            request(type: .festival, id: "festival-1", variant: .light),
+            request(type: .district, id: "district-1", variant: .dark)
+        ]
+
+        for request in requests {
+            do {
+                try await withDependencies {
+                    $0[ImageStorageClientKey.self] = images
+                } operation: {
+                    try await ImageUploadUsecase().issue(request, user: .guest)
+                }
+                Issue.record("guestの署名URL発行が成功しました。")
+            } catch let error as Application.Error {
+                #expect(error.statusCode == 401)
+            } catch {
+                Issue.record("予期しないエラー: \(error)")
+            }
+        }
+
+        #expect(await images.presignKeys.isEmpty)
+    }
+
     @Test("Festival本部本人だけがFestivalの署名URLを取得できる")
     func issuesFestivalUploadURLForOwningHeadquarter() async throws {
         let festival = Festival(
