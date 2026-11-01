@@ -21,6 +21,6 @@ Festival・District と将来の Store 画像で共通の設定を使用する�
 - `IMAGE_UPLOAD_BUCKET`: 対象バケット名。
 - `IMAGE_PUBLIC_BASE_URL`: 正式キーを配信する HTTPS のベース URL（末尾スラッシュなし）。
 - `AWS_REGION`: バケットのリージョン。既存の Lambda 環境設定を使用する。
-- 署名期限と画像制約は広告と共通とし、実装時に決定する。クライアントと Backend で同じ値を使用する。
+- 署名 URL の有効期限は 15 分、JPEG は最大 10 MiB、長辺 10,000 ピクセル、総画素数 40,000,000、縦横比 10:1 までとする。広告を含め共通の制約として使用する。
 
 設定後は実環境で署名 PUT → 通常の Pack PUT → 公開 GET → CDN GET を通して確認する。S3 と DynamoDB の更新は原子的ではない。

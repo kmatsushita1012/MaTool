@@ -1,11 +1,11 @@
 import Foundation
 
 public struct ImageUploadTarget: DTO {
-    public enum Kind: String, Codable, Sendable {
+    public enum Kind: String, Codable, Hashable, Sendable {
         case store, festival, district
     }
 
-    public enum Variant: String, Codable, Sendable {
+    public enum Variant: String, Codable, Hashable, Sendable {
         case banner, interstitial, light, dark
     }
 

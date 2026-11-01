@@ -25,6 +25,7 @@ struct FestivalUsecase: FestivalUsecaseProtocol {
     @Dependency(FestivalRepositoryKey.self) var repository
     @Dependency(CheckpointRepositoryKey.self) var checkpointRepository
     @Dependency(HazardSectionRepositoryKey.self) var hazardSectionRepository
+    @Dependency(S3ImageClientKey.self) var imageClient
     
     func scan() async throws -> [Festival] {
         try await repository.scan()
@@ -57,7 +58,17 @@ struct FestivalUsecase: FestivalUsecaseProtocol {
             throw Error.badRequest("祭典と子要素の祭典IDが一致しません。")
         }
         
-        let festival = try await repository.put(pack.festival)
+        guard let current = try await repository.get(id: pack.festival.id) else {
+            throw Error.notFound("指定された祭典が見つかりません。")
+        }
+        var updatedFestival = pack.festival
+        updatedFestival.image = try await ImagePathFinalizer().finalize(
+            incoming: pack.festival.image,
+            current: current.image,
+            type: .festival,
+            id: pack.festival.id
+        )
+        let festival = try await repository.put(updatedFestival)
         
         async let oldCheckpointsTask = checkpointRepository.query(by: pack.festival.id)
         async let oldHazardSectionsTask = hazardSectionRepository.query(by: pack.festival.id)
