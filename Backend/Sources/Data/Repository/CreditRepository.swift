@@ -15,12 +15,10 @@ extension DependencyValues {
 
 protocol CreditRepositoryProtocol: Sendable {
     func get(storeId: Store.ID) async throws -> CreditAccount?
-    func balanceUpdate(storeId: Store.ID, expected: CreditAccount, newBalance: Int, newLastPurchasedAt: Date?) throws -> DynamoDBTransactionOperation
 }
 
 struct CreditRepository: CreditRepositoryProtocol {
     private let store: DataStore
-    private let encoder = DynamoDBEncoder()
 
     init() {
         @Dependency(\.dataStoreFactory) var storeFactory
@@ -31,7 +29,8 @@ struct CreditRepository: CreditRepositoryProtocol {
         try await store.get(pk: "STORE#\(storeId)", sk: "CREDIT", consistentRead: true, as: CreditRecord.self)?.content
     }
 
-    func balanceUpdate(storeId: Store.ID, expected: CreditAccount, newBalance: Int, newLastPurchasedAt: Date? = nil) throws -> DynamoDBTransactionOperation {
+    static func balanceUpdate(storeId: Store.ID, expected: CreditAccount, newBalance: Int, newLastPurchasedAt: Date? = nil) throws -> DynamoDBTransactionOperation {
+        let encoder = DynamoDBEncoder()
         let key = ["pk": try encoder.encodeKey("STORE#\(storeId)"), "sk": try encoder.encodeKey("CREDIT")]
         let names = ["#pk": "pk", "#sk": "sk", "#content": "content", "#balance": "balance", "#lastPurchasedAt": "last_purchased_at"]
         var values: [String: DynamoDBAttribute] = [

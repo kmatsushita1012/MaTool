@@ -22,7 +22,7 @@ protocol PurchaseRepositoryProtocol: Sendable {
 }
 
 struct PurchaseRepository: PurchaseRepositoryProtocol {
-    private let store: DataStore
+    private let store: any DynamoDBTransactionalDataStore
     private let encoder = DynamoDBEncoder()
     @Dependency(CreditRepositoryKey.self) private var credits
 
@@ -65,7 +65,7 @@ struct PurchaseRepository: PurchaseRepositoryProtocol {
         let historyKey = PurchaseHistoryRecord.keys(storeId: storeId, purchasedAt: record.purchasedAt, transactionId: record.transactionId)
         let historyRecord = PurchaseHistoryRecord(pk: historyKey.pk, sk: historyKey.sk, content: history)
         let historyWrite = try putOperation(historyRecord, condition: "attribute_not_exists(#pk)", names: ["#pk": "pk"], values: [:])
-        let balanceWrite = try credits.balanceUpdate(storeId: storeId, expected: credit, newBalance: newBalance, newLastPurchasedAt: newLastPurchasedAt)
+        let balanceWrite = try CreditRepository.balanceUpdate(storeId: storeId, expected: credit, newBalance: newBalance, newLastPurchasedAt: newLastPurchasedAt)
 
         do {
             try await store.transactWrite([purchaseWrite, historyWrite, balanceWrite])
@@ -99,7 +99,7 @@ struct PurchaseRepository: PurchaseRepositoryProtocol {
         let purchaseWrite = try putOperation(PurchaseRecordRecord(record), condition: condition.expression, names: condition.names, values: condition.values)
         var writes = [purchaseWrite]
         if let credit, let newBalance, credit.balance != newBalance {
-            writes.append(try credits.balanceUpdate(storeId: credit.storeId, expected: credit, newBalance: newBalance, newLastPurchasedAt: nil))
+            writes.append(try CreditRepository.balanceUpdate(storeId: credit.storeId, expected: credit, newBalance: newBalance, newLastPurchasedAt: nil))
         }
 
         do {

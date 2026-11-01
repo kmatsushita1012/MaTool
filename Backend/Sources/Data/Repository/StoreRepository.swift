@@ -19,11 +19,11 @@ protocol StoreRepositoryProtocol: Sendable {
     func storesOwned(by ownerId: String) async throws -> [Store]
     func stores(in festivalId: Festival.ID) async throws -> [Store]
     func create(_ store: Store) async throws
-    func updateEditableFields(_ store: Store) async throws -> Store
+    func updateEditableFields(_ store: Store, requireApproved: Bool) async throws -> Store
 }
 
 struct StoreRepository: StoreRepositoryProtocol {
-    private let store: DataStore
+    private let store: any DynamoDBTransactionalDataStore
     private let encoder = DynamoDBEncoder()
     private let decoder = DynamoDBDecoder()
 
@@ -86,6 +86,7 @@ struct StoreRepository: StoreRepositoryProtocol {
             filterConditions: [],
             limit: nil,
             ascending: true,
+            consistentRead: true,
             as: StoreRecord.self
         ).map(\.content)
     }
@@ -100,7 +101,7 @@ struct StoreRepository: StoreRepositoryProtocol {
         ])
     }
 
-    func updateEditableFields(_ item: Store) async throws -> Store {
+    func updateEditableFields(_ item: Store, requireApproved: Bool) async throws -> Store {
         let key = StoreRecord.keys(id: item.id, festivalId: item.festivalId)
         let dynamoKey = ["pk": try encoder.encodeKey(key.pk), "sk": try encoder.encodeKey(key.sk)]
         let names = [
@@ -108,7 +109,8 @@ struct StoreRepository: StoreRepositoryProtocol {
             "#name": "name", "#address": "address", "#coordinate": "coordinate",
             "#businessHours": "business_hours", "#description": "description",
             "#ownerPaused": "owner_paused", "#bannerImagePath": "banner_image_path",
-            "#interstitialImagePath": "interstitial_image_path", "#updatedAt": "updated_at"
+            "#interstitialImagePath": "interstitial_image_path", "#updatedAt": "updated_at",
+            "#moderationStatus": "moderation_status"
         ]
         let values: [String: DynamoDBAttribute] = [
             ":ownerId": try encoder.encodeValue(item.ownerId),
@@ -123,13 +125,18 @@ struct StoreRepository: StoreRepositoryProtocol {
             ":updatedAt": try encoder.encodeValue(item.updatedAt)
         ]
         let update = "SET #content.#name = :name, #content.#address = :address, #content.#coordinate = :coordinate, #content.#businessHours = :businessHours, #content.#description = :description, #content.#ownerPaused = :ownerPaused, #content.#bannerImagePath = :bannerImagePath, #content.#interstitialImagePath = :interstitialImagePath, #content.#updatedAt = :updatedAt"
-        let condition = "attribute_exists(#pk) AND attribute_exists(#sk) AND #content.#ownerId = :ownerId"
+        var condition = "attribute_exists(#pk) AND attribute_exists(#sk) AND #content.#ownerId = :ownerId"
+        var conditionValues = values
+        if requireApproved {
+            condition += " AND #content.#moderationStatus = :approved"
+            conditionValues[":approved"] = try encoder.encodeValue(ModerationStatus.approved)
+        }
         guard let attributes = try await store.updateItem(
             keys: dynamoKey,
             updateExpression: update,
             conditionExpression: condition,
             expressionAttributeNames: names,
-            expressionAttributeValues: values,
+            expressionAttributeValues: conditionValues,
             returnAllNew: true
         ) else { throw Error.internalServerError("Store の更新結果を取得できませんでした。") }
         return try decoder.decode(attributes, as: StoreRecord.self).content

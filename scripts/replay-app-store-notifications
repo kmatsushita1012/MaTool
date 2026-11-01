@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+if [[ "$#" -ne 2 ]]; then
+  printf '%s\n' \
+    'Apple App Store Server Notifications の失敗履歴を取得し、安全に再処理します。' \
+    'APP_STORE_ENVIRONMENT と App Store Server API 認証情報を設定して実行してください。' \
+    '使い方: bash scripts/replay-app-store-notifications <開始日時UTC> <終了日時UTC>' \
+    '例: bash scripts/replay-app-store-notifications 2026-10-30T00:00:00Z 2026-10-31T00:00:00Z' >&2
+  exit 2
+fi
+
+exec swift run --package-path Backend Backend recover-app-store-notifications "$1" "$2"

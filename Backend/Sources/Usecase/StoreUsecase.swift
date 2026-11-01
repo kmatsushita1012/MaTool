@@ -15,6 +15,7 @@ protocol StoreUsecaseProtocol: Sendable {
 }
 
 struct StoreUsecase: StoreUsecaseProtocol {
+    @Dependency(\.advertisingEnvironment) var advertisingEnvironment
     @Dependency(StoreRepositoryKey.self) var stores
     @Dependency(FestivalRepositoryKey.self) var festivals
 
@@ -28,7 +29,7 @@ struct StoreUsecase: StoreUsecaseProtocol {
         guard try await festivals.get(id: festivalId) != nil else { throw Error.notFound("指定された祭典が見つかりません。") }
 
         let current = try await stores.storesOwned(by: ownerId)
-        guard current.count < AdvertisingEnvironment().maximumStoresPerOwner else {
+        guard current.count < advertisingEnvironment.maximumStoresPerOwner else {
             throw Error.conflict("登録できる店舗数の上限に達しています。")
         }
 
@@ -91,6 +92,8 @@ struct StoreUsecase: StoreUsecaseProtocol {
         }
 
         let now = Date()
+        let imagePathsChanged = request.bannerImagePath != current.bannerImagePath
+            || request.interstitialImagePath != current.interstitialImagePath
         let updated = Store(
             id: current.id,
             festivalId: current.festivalId,
@@ -108,7 +111,7 @@ struct StoreUsecase: StoreUsecaseProtocol {
             createdAt: current.createdAt,
             updatedAt: now
         )
-        return try await stores.updateEditableFields(updated)
+        return try await stores.updateEditableFields(updated, requireApproved: imagePathsChanged)
     }
 
     func publicStores(in festivalId: Festival.ID) async throws -> [PublicStore] {

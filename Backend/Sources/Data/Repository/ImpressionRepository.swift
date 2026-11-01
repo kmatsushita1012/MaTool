@@ -24,7 +24,8 @@ protocol ImpressionRepositoryProtocol: Sendable {
 }
 
 struct ImpressionRepository: ImpressionRepositoryProtocol {
-    private let store: DataStore
+    private static let recordRetention: TimeInterval = 30 * 24 * 60 * 60
+    private let store: any DynamoDBTransactionalDataStore
     private let encoder = DynamoDBEncoder()
     @Dependency(CreditRepositoryKey.self) private var credits
 
@@ -47,12 +48,15 @@ struct ImpressionRepository: ImpressionRepositoryProtocol {
                 chargedAt: chargedAt
             )
             let write = DynamoDBTransactionOperation.put(
-                item: try encoder.encode(ImpressionDBRecord(item)),
+                item: try encoder.encode(ImpressionDBRecord(
+                    item,
+                    expiresAt: Int64(chargedAt.addingTimeInterval(Self.recordRetention).timeIntervalSince1970)
+                )),
                 conditionExpression: "attribute_not_exists(#pk)",
                 expressionAttributeNames: ["#pk": "pk"],
                 expressionAttributeValues: [:]
             )
-            let balanceWrite = try credits.balanceUpdate(
+            let balanceWrite = try CreditRepository.balanceUpdate(
                 storeId: storeId,
                 expected: account,
                 newBalance: account.balance - placement.creditCost,
@@ -89,10 +93,23 @@ private struct ImpressionRecord: Entity, Identifiable {
     var id: String { impressionId }
 }
 
-private typealias ImpressionDBRecord = Record<ImpressionRecord>
+private struct ImpressionDBRecord: RecordProtocol {
+    let pk: String
+    let sk: String
+    let type: String
+    let content: ImpressionRecord
+    let expiresAt: Int64
 
-private extension Record where Content == ImpressionRecord {
-    init(_ content: ImpressionRecord) {
-        self.init(pk: "STORE#\(content.storeId)", sk: "IMPRESSION#\(content.impressionId)", content: content)
+    private enum CodingKeys: String, CodingKey {
+        case pk, sk, type, content
+        case expiresAt = "expires_at"
+    }
+
+    init(_ content: ImpressionRecord, expiresAt: Int64) {
+        self.pk = "STORE#\(content.storeId)"
+        self.sk = "IMPRESSION#\(content.impressionId)"
+        self.type = String(describing: ImpressionRecord.self).uppercased()
+        self.content = content
+        self.expiresAt = expiresAt
     }
 }

@@ -1,9 +1,19 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# Suspend or restore a store with an audit record. Run only after assuming the
+# dedicated store-moderation IAM role.
 usage() {
-  printf '%s\n' '使い方: scripts/moderate-store <festivalId> <storeId> <suspend|approve> <理由>' >&2
+  printf '%s\n' \
+    '店舗広告の掲載を停止または再開し、DynamoDB に操作記録を残します。' \
+    '専用の運営 IAM ロールを引き受けたセッションで実行してください。' \
+    '使い方: scripts/moderate-store <festivalId> <storeId> <suspend|approve> <理由>'
 }
+
+if [[ "$#" -eq 1 && "$1" == '--help' ]]; then
+  usage
+  exit 0
+fi
 
 if [[ "$#" -ne 4 ]]; then
   usage

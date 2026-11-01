@@ -1,19 +1,25 @@
 @testable import Backend
 import Foundation
 
-final class DataStoreMock: DataStore, @unchecked Sendable {
+final class DataStoreMock: DynamoDBTransactionalDataStore, @unchecked Sendable {
     init(
         putHandler: ((any Encodable) async throws -> Void)? = nil,
         getHandler: (([String: Codable], Any.Type) async throws -> Data?)? = nil,
         deleteHandler: (([String: Codable]) async throws -> Void)? = nil,
         scanHandler: ((Bool, Any.Type) async throws -> Data)? = nil,
-        queryHandler: ((String?, [QueryCondition], [FilterCondition], Int?, Bool, Any.Type) async throws -> Data)? = nil
+        queryHandler: ((String?, [QueryCondition], [FilterCondition], Int?, Bool, Any.Type) async throws -> Data)? = nil,
+        consistentQueryHandler: ((String?, [QueryCondition], [FilterCondition], Int?, Bool, Bool, Any.Type) async throws -> Data)? = nil,
+        updateItemHandler: (([String: DynamoDBAttribute], String, String?, [String: String], [String: DynamoDBAttribute], Bool) async throws -> [String: DynamoDBAttribute]?)? = nil,
+        transactWriteHandler: (([DynamoDBTransactionOperation]) async throws -> Void)? = nil
     ) {
         self.putHandler = putHandler
         self.getHandler = getHandler
         self.deleteHandler = deleteHandler
         self.scanHandler = scanHandler
         self.queryHandler = queryHandler
+        self.consistentQueryHandler = consistentQueryHandler
+        self.updateItemHandler = updateItemHandler
+        self.transactWriteHandler = transactWriteHandler
     }
 
     nonisolated(unsafe) private(set) var putCallCount = 0
@@ -59,6 +65,13 @@ final class DataStoreMock: DataStore, @unchecked Sendable {
 
     nonisolated(unsafe) private(set) var queryCallCount = 0
     private let queryHandler: ((String?, [QueryCondition], [FilterCondition], Int?, Bool, Any.Type) async throws -> Data)?
+    private let consistentQueryHandler: ((String?, [QueryCondition], [FilterCondition], Int?, Bool, Bool, Any.Type) async throws -> Data)?
+    private(set) var lastQueryConsistentRead: Bool?
+
+    private let updateItemHandler: (([String: DynamoDBAttribute], String, String?, [String: String], [String: DynamoDBAttribute], Bool) async throws -> [String: DynamoDBAttribute]?)?
+    private(set) var lastUpdateConditionExpression: String?
+    private let transactWriteHandler: (([DynamoDBTransactionOperation]) async throws -> Void)?
+    private(set) var lastTransaction: [DynamoDBTransactionOperation]?
 
     func query<T: RecordProtocol>(
         indexName: String?,
@@ -72,5 +85,48 @@ final class DataStoreMock: DataStore, @unchecked Sendable {
         guard let queryHandler else { throw TestError.unimplemented }
         let data = try await queryHandler(indexName, keyConditions, filterConditions, limit, ascending, type)
         return try JSONDecoder().decode([T].self, from: data)
+    }
+
+    func query<T: RecordProtocol>(
+        indexName: String?,
+        keyConditions: [QueryCondition],
+        filterConditions: [FilterCondition],
+        limit: Int?,
+        ascending: Bool,
+        consistentRead: Bool,
+        as type: T.Type
+    ) async throws -> [T] {
+        lastQueryConsistentRead = consistentRead
+        if let consistentQueryHandler {
+            let data = try await consistentQueryHandler(indexName, keyConditions, filterConditions, limit, ascending, consistentRead, type)
+            return try JSONDecoder().decode([T].self, from: data)
+        }
+        return try await query(
+            indexName: indexName,
+            keyConditions: keyConditions,
+            filterConditions: filterConditions,
+            limit: limit,
+            ascending: ascending,
+            as: type
+        )
+    }
+
+    func updateItem(
+        keys: [String: DynamoDBAttribute],
+        updateExpression: String,
+        conditionExpression: String?,
+        expressionAttributeNames: [String: String],
+        expressionAttributeValues: [String: DynamoDBAttribute],
+        returnAllNew: Bool
+    ) async throws -> [String: DynamoDBAttribute]? {
+        lastUpdateConditionExpression = conditionExpression
+        guard let updateItemHandler else { throw TestError.unimplemented }
+        return try await updateItemHandler(keys, updateExpression, conditionExpression, expressionAttributeNames, expressionAttributeValues, returnAllNew)
+    }
+
+    func transactWrite(_ operations: [DynamoDBTransactionOperation]) async throws {
+        lastTransaction = operations
+        guard let transactWriteHandler else { throw TestError.unimplemented }
+        try await transactWriteHandler(operations)
     }
 }

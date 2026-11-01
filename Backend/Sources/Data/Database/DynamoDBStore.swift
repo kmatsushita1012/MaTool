@@ -10,7 +10,7 @@
 fileprivate typealias AttributeValue = DynamoDBClientTypes.AttributeValue
 
 // MARK: - DynamoDBStore
-struct DynamoDBStore: DataStore {
+struct DynamoDBStore: DynamoDBTransactionalDataStore {
     private static let defaultRegion = "ap-northeast-1"
     private static let sharedClient: DynamoDBClient = {
         do {
@@ -25,10 +25,16 @@ struct DynamoDBStore: DataStore {
     private let encoder = DynamoDBEncoder()
     private let decoder = DynamoDBDecoder()
     
-    init(region: String = Self.defaultRegion, tableName: String) throws {
-        self.client = region == Self.defaultRegion
-            ? Self.sharedClient
-            : try DynamoDBClient(region: region)
+    init(region: String = Self.defaultRegion, tableName: String, endpoint: String? = nil) throws {
+        if let endpoint {
+            var config = try DynamoDBClient.DynamoDBClientConfig(region: region)
+            config.endpoint = endpoint
+            self.client = DynamoDBClient(config: config)
+        } else if region == Self.defaultRegion {
+            self.client = Self.sharedClient
+        } else {
+            self.client = try DynamoDBClient(region: region)
+        }
         self.tableName = tableName
     }
     

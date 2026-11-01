@@ -17,6 +17,10 @@ protocol APIGateway: Sendable {
 
 extension APIGateway {
     static func main() async throws {
+        try await runLambda()
+    }
+
+    static func runLambda() async throws {
         let runtime = LambdaRuntime {
             (request: APIGatewayV2Request, context: LambdaContext) in
             try await self.handler(request: request, context: context)

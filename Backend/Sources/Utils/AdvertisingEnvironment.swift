@@ -1,11 +1,26 @@
 import AppStoreServerLibrary
+import Dependencies
 import Foundation
+
+enum AdvertisingEnvironmentKey: DependencyKey {
+    static let liveValue = AdvertisingEnvironment()
+}
+
+extension DependencyValues {
+    var advertisingEnvironment: AdvertisingEnvironment {
+        get { self[AdvertisingEnvironmentKey.self] }
+        set { self[AdvertisingEnvironmentKey.self] = newValue }
+    }
+}
 
 struct AdvertisingEnvironment: Sendable {
     let maximumStoresPerOwner: Int
     let impressionTokenSecret: String
     let appStoreBundleId: String
     let appStoreAppId: Int64?
+    let appStoreAPIKeyId: String
+    let appStoreAPIIssuerId: String
+    let appStoreAPIPrivateKeyBase64: String
     let appStoreEnvironment: AppStoreEnvironment
     let appleRootCertificates: [Data]
     let productCredits: [String: Int]
@@ -33,6 +48,9 @@ struct AdvertisingEnvironment: Sendable {
         impressionTokenSecret = environment["ADVERTISEMENT_IMPRESSION_TOKEN_SECRET"] ?? ""
         appStoreBundleId = environment["APP_STORE_BUNDLE_ID"] ?? ""
         appStoreAppId = environment["APP_STORE_APP_ID"].flatMap(Int64.init)
+        appStoreAPIKeyId = environment["APP_STORE_API_KEY_ID"] ?? ""
+        appStoreAPIIssuerId = environment["APP_STORE_API_ISSUER_ID"] ?? ""
+        appStoreAPIPrivateKeyBase64 = environment["APP_STORE_API_PRIVATE_KEY_BASE64"] ?? ""
         appStoreEnvironment = environment["APP_STORE_ENVIRONMENT"]?.lowercased() == "production" ? .production : .sandbox
         appleRootCertificates = (environment["APPLE_ROOT_CA_CERTIFICATES_BASE64"] ?? "")
             .split(separator: ",")

@@ -16,6 +16,7 @@ extension DependencyValues {
 
 protocol AppStoreClientProtocol: Sendable {
     func verifyPurchase(signedTransactionInfo: String) async throws -> VerifiedPurchase
+    func currentPurchase(transactionId: String, environment: String) async throws -> VerifiedPurchase
     func verifyNotification(signedPayload: String) async throws -> VerifiedPurchaseNotification
 }
 
@@ -26,6 +27,7 @@ struct VerifiedPurchase: Sendable, Equatable {
     let purchasedAt: Date
     let environment: String
     let revocationDate: Date?
+    let isConsumable: Bool
 }
 
 enum VerifiedPurchaseNotificationType: Sendable, Equatable {
@@ -42,6 +44,8 @@ struct VerifiedPurchaseNotification: Sendable, Equatable {
 }
 
 struct AppStoreClient: AppStoreClientProtocol {
+    @Dependency(\.advertisingEnvironment) private var advertisingEnvironment
+
     func verifyPurchase(signedTransactionInfo: String) async throws -> VerifiedPurchase {
         let verifier = try makeVerifier()
         let decoded: JWSTransactionDecodedPayload
@@ -49,23 +53,39 @@ struct AppStoreClient: AppStoreClientProtocol {
         case .valid(let transaction): decoded = transaction
         case .invalid: throw Error.badRequest("Apple の購入署名を検証できませんでした。")
         }
-        guard let transactionId = decoded.transactionId, !transactionId.isEmpty,
-              let productId = decoded.productId, !productId.isEmpty,
-              let appAccountToken = decoded.appAccountToken,
-              let purchasedAt = decoded.purchaseDate,
-              decoded.type == .consumable,
-              decoded.quantity == 1,
-              decoded.revocationDate == nil else {
+        let purchase = try verifiedPurchase(from: decoded)
+        guard purchase.isConsumable, decoded.quantity == 1, purchase.revocationDate == nil else {
             throw Error.badRequest("購入取引の内容が不正です。")
         }
-        return VerifiedPurchase(
-            transactionId: transactionId,
-            appAccountToken: appAccountToken,
-            productId: productId,
-            purchasedAt: purchasedAt,
-            environment: decoded.environment?.rawValue ?? "",
-            revocationDate: decoded.revocationDate
-        )
+        return purchase
+    }
+
+    func currentPurchase(transactionId: String, environment: String) async throws -> VerifiedPurchase {
+        let config = advertisingEnvironment
+        guard environment == config.appStoreEnvironment.rawValue else {
+            throw Error.badRequest("購入取引の環境が一致しません。")
+        }
+        let apiClient = try makeAppStoreServerAPIClient(environment: config.appStoreEnvironment, config: config)
+        let result = await apiClient.getTransactionInfo(transactionId: transactionId)
+        guard case .success(let response) = result,
+              let signedTransactionInfo = response.signedTransactionInfo else {
+            throw Error.internalServerError("Apple から現在の購入状態を取得できませんでした。")
+        }
+
+        let verifier = try makeVerifier()
+        let decoded: JWSTransactionDecodedPayload
+        switch await verifier.verifyAndDecodeTransaction(signedTransaction: signedTransactionInfo) {
+        case .valid(let transaction): decoded = transaction
+        case .invalid: throw Error.internalServerError("Apple の現在の購入情報を検証できませんでした。")
+        }
+        let purchase = try verifiedPurchase(from: decoded)
+        guard purchase.transactionId == transactionId,
+              purchase.environment == environment,
+              purchase.isConsumable,
+              decoded.quantity == 1 else {
+            throw Error.conflict("Apple の現在の取引情報が購入情報と一致しません。")
+        }
+        return purchase
     }
 
     func verifyNotification(signedPayload: String) async throws -> VerifiedPurchaseNotification {
@@ -101,10 +121,22 @@ struct AppStoreClient: AppStoreClientProtocol {
         let purchase: VerifiedPurchase
         switch await verifier.verifyAndDecodeTransaction(signedTransaction: signedTransaction) {
         case .valid(let transaction):
+            let config = advertisingEnvironment
+            guard let productId = transaction.productId,
+                  config.productCredits[productId] != nil,
+                  transaction.type == .consumable,
+                  transaction.quantity == 1 else {
+                return VerifiedPurchaseNotification(
+                    notificationUUID: notification.notificationUUID,
+                    type: .other,
+                    signedDate: signedDate,
+                    purchase: nil
+                )
+            }
             guard let transactionId = transaction.transactionId, !transactionId.isEmpty,
-                  let productId = transaction.productId, !productId.isEmpty,
                   let appAccountToken = transaction.appAccountToken,
-                  let purchasedAt = transaction.purchaseDate else {
+                  let purchasedAt = transaction.purchaseDate,
+                  transaction.environment != nil else {
                 throw Error.badRequest("Apple 通知の取引情報が不完全です。")
             }
             purchase = VerifiedPurchase(
@@ -113,7 +145,8 @@ struct AppStoreClient: AppStoreClientProtocol {
                 productId: productId,
                 purchasedAt: purchasedAt,
                 environment: transaction.environment?.rawValue ?? "",
-                revocationDate: transaction.revocationDate
+                revocationDate: transaction.revocationDate,
+                isConsumable: transaction.type == .consumable && transaction.quantity == 1
             )
         case .invalid:
             throw Error.badRequest("Apple 通知内の取引署名を検証できませんでした。")
@@ -127,7 +160,7 @@ struct AppStoreClient: AppStoreClientProtocol {
     }
 
     private func makeVerifier() throws -> SignedDataVerifier {
-        let config = AdvertisingEnvironment()
+        let config = advertisingEnvironment
         guard !config.appStoreBundleId.isEmpty, !config.appleRootCertificates.isEmpty else {
             throw Error.internalServerError("App Store 検証設定が不足しています。")
         }
@@ -139,4 +172,40 @@ struct AppStoreClient: AppStoreClientProtocol {
             enableOnlineChecks: true
         )
     }
+
+    private func verifiedPurchase(from transaction: JWSTransactionDecodedPayload) throws -> VerifiedPurchase {
+        guard let transactionId = transaction.transactionId, !transactionId.isEmpty,
+              let productId = transaction.productId, !productId.isEmpty,
+              let appAccountToken = transaction.appAccountToken,
+              let purchasedAt = transaction.purchaseDate,
+              let environment = transaction.environment else {
+            throw Error.badRequest("購入取引の内容が不正です。")
+        }
+        return VerifiedPurchase(
+            transactionId: transactionId,
+            appAccountToken: appAccountToken,
+            productId: productId,
+            purchasedAt: purchasedAt,
+            environment: environment.rawValue,
+            revocationDate: transaction.revocationDate,
+            isConsumable: transaction.type == .consumable
+        )
+    }
+}
+
+func makeAppStoreServerAPIClient(environment: AppStoreEnvironment, config: AdvertisingEnvironment) throws -> AppStoreServerAPIClient {
+    guard !config.appStoreAPIKeyId.isEmpty,
+          !config.appStoreAPIIssuerId.isEmpty,
+          let keyData = Data(base64Encoded: config.appStoreAPIPrivateKeyBase64),
+          let privateKey = String(data: keyData, encoding: .utf8),
+          !privateKey.isEmpty else {
+        throw Error.internalServerError("App Store Server API の認証設定が不足しています。")
+    }
+    return try AppStoreServerAPIClient(
+        signingKey: privateKey,
+        keyId: config.appStoreAPIKeyId,
+        issuerId: config.appStoreAPIIssuerId,
+        bundleId: config.appStoreBundleId,
+        environment: environment
+    )
 }

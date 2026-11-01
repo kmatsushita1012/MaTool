@@ -6,25 +6,6 @@
 //
 
 import Dependencies
-import AWSDynamoDB
-
-typealias DynamoDBAttribute = DynamoDBClientTypes.AttributeValue
-
-enum DynamoDBTransactionOperation: Sendable {
-    case put(
-        item: [String: DynamoDBAttribute],
-        conditionExpression: String?,
-        expressionAttributeNames: [String: String],
-        expressionAttributeValues: [String: DynamoDBAttribute]
-    )
-    case update(
-        keys: [String: DynamoDBAttribute],
-        updateExpression: String,
-        conditionExpression: String?,
-        expressionAttributeNames: [String: String],
-        expressionAttributeValues: [String: DynamoDBAttribute]
-    )
-}
 
 // MARK: - Dependencies
 enum DataStoreFactoryKey: DependencyKey {
@@ -40,7 +21,7 @@ extension DependencyValues {
     }
 }
 
-typealias DataStoreFactory = @Sendable (String) -> DataStore
+typealias DataStoreFactory = @Sendable (String) -> any DynamoDBTransactionalDataStore
 
 // MARK: - DataStore
 protocol DataStore: Sendable {
@@ -66,15 +47,6 @@ protocol DataStore: Sendable {
         consistentRead: Bool,
         as type: T.Type
     ) async throws -> [T]
-    func updateItem(
-        keys: [String: DynamoDBAttribute],
-        updateExpression: String,
-        conditionExpression: String?,
-        expressionAttributeNames: [String: String],
-        expressionAttributeValues: [String: DynamoDBAttribute],
-        returnAllNew: Bool
-    ) async throws -> [String: DynamoDBAttribute]?
-    func transactWrite(_ operations: [DynamoDBTransactionOperation]) async throws
 }
 
 extension DataStore {
@@ -94,20 +66,6 @@ extension DataStore {
         try await query(indexName: indexName, keyConditions: keyConditions, filterConditions: filterConditions, limit: limit, ascending: ascending, as: type)
     }
 
-    func updateItem(
-        keys: [String: DynamoDBAttribute],
-        updateExpression: String,
-        conditionExpression: String?,
-        expressionAttributeNames: [String: String],
-        expressionAttributeValues: [String: DynamoDBAttribute],
-        returnAllNew: Bool
-    ) async throws -> [String: DynamoDBAttribute]? {
-        throw Application.Error.internalServerError("この DataStore は UpdateItem をサポートしていません。")
-    }
-
-    func transactWrite(_ operations: [DynamoDBTransactionOperation]) async throws {
-        throw Application.Error.internalServerError("この DataStore は DynamoDB Transaction をサポートしていません。")
-    }
 }
 
 // MARK: - QueryCondition

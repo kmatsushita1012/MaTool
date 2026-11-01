@@ -14,6 +14,7 @@ protocol PurchaseUsecaseProtocol: Sendable {
 }
 
 struct PurchaseUsecase: PurchaseUsecaseProtocol {
+    @Dependency(\.advertisingEnvironment) var advertisingEnvironment
     @Dependency(StoreRepositoryKey.self) var stores
     @Dependency(CreditRepositoryKey.self) var creditsRepository
     @Dependency(PurchaseRepositoryKey.self) var purchases
@@ -39,7 +40,7 @@ struct PurchaseUsecase: PurchaseUsecaseProtocol {
         guard verified.appAccountToken == store.purchaseAccountToken else {
             throw Error.forbidden("購入取引と店舗の購入 token が一致しません。")
         }
-        let config = AdvertisingEnvironment()
+        let config = advertisingEnvironment
         guard verified.environment == config.appStoreEnvironment.rawValue,
               let amount = config.productCredits[verified.productId] else {
             throw Error.badRequest("対象外の商品または環境の取引です。")
@@ -54,6 +55,17 @@ struct PurchaseUsecase: PurchaseUsecaseProtocol {
                     return PurchaseResult(transactionId: old.transactionId, creditedAmount: old.creditedAmount, balance: account.balance)
                 }
                 guard old.refundStatus == .active else { throw Error.conflict("返金済み取引に Credit は付与できません。") }
+            }
+
+            let current = try await appStore.currentPurchase(transactionId: verified.transactionId, environment: verified.environment)
+            guard current.transactionId == verified.transactionId,
+                  current.productId == verified.productId,
+                  current.appAccountToken == verified.appAccountToken,
+                  current.purchasedAt == verified.purchasedAt,
+                  current.environment == verified.environment,
+                  current.isConsumable,
+                  current.revocationDate == nil else {
+                throw Error.conflict("Apple で購入取引が返金済み、または内容が一致しません。")
             }
 
             guard let credit = try await creditsRepository.get(storeId: storeId) else { throw Error.notFound("Credit 残高が見つかりません。") }
@@ -82,8 +94,9 @@ struct PurchaseUsecase: PurchaseUsecaseProtocol {
     func applyNotification(signedPayload: String) async throws {
         let notification = try await appStore.verifyNotification(signedPayload: signedPayload)
         guard notification.type != .other, let verified = notification.purchase else { return }
+        guard verified.isConsumable,
+              let amount = advertisingEnvironment.productCredits[verified.productId] else { return }
         let refundStatus: PurchaseRefundStatus = notification.type == .refund ? .refunded : .active
-        let amount = AdvertisingEnvironment().productCredits[verified.productId] ?? 0
 
         for _ in 0..<5 {
             guard let old = try await purchases.get(transactionId: verified.transactionId) else {
