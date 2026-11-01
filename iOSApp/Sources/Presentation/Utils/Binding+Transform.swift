@@ -31,21 +31,6 @@ extension Binding where Value == String? {
     }
 }
 
-extension Binding where Value == String {
-    /// 印字可能なASCII文字以外を除外する入力用バインディング
-    var asciiPrintable: Binding<String> {
-        Binding(
-            get: { self.wrappedValue },
-            set: { value in
-                let filteredBytes = value.utf8.filter { byte in
-                    (32...126).contains(byte)
-                }
-                self.wrappedValue = String(decoding: filteredBytes, as: UTF8.self)
-            }
-        )
-    }
-}
-
 extension Binding where Value == SimpleTime {
     var fullDate: Binding<Date> {
         Binding<Date>(
