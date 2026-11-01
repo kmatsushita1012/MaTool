@@ -168,7 +168,7 @@ private struct PointMapMarker: MapContent {
             PointMapMarkerLabel(point: point)
                 .zIndex(0)
         }
-        .annotationTitles(.hidden)
+        .annotationTitles(point.anchor == nil ? .visible : .hidden)
     }
 }
 
