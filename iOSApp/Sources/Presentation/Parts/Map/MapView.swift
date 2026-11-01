@@ -87,7 +87,7 @@ struct MapView: View {
                                 if let entry = floatAnnotation.entry { floatTapped(entry) }
                             }
                             .offset(y: 8)
-                            .zIndex(1)
+                            .zIndex(100)
                         }
                         .annotationTitles(.hidden)
                     } else {
@@ -101,7 +101,7 @@ struct MapView: View {
                                     floatTapped(float)
                                 }
                                 .offset(y: 8)
-                                .zIndex(1)
+                                .zIndex(100)
                             }
                             .annotationTitles(.hidden)
                         }
@@ -164,19 +164,55 @@ private struct PointMapMarker: MapContent {
     let point: PointEntry
 
     var body: some MapContent {
-        if let anchor = point.anchor {
-            Marker(point.title ?? "", monogram: Text(anchor.glyph), coordinate: point.coordinate.toCL())
-                .annotationTitles(.hidden)
-                .tint(Color.annotation)
-        } else if point.performance != nil {
-            Marker(point.title ?? "", systemImage: "figure.dance", coordinate: point.coordinate.toCL())
-                .tint(Color.annotation)
-        } else if point.checkpoint != nil {
-            Marker(point.title ?? "", systemImage: "arrow.up.and.down.and.arrow.left.and.right", coordinate: point.coordinate.toCL())
-                .tint(Color.annotation)
-        } else {
-            Marker(point.title ?? "", coordinate: point.coordinate.toCL())
-                .tint(Color.annotation)
+        Annotation(point.title ?? "", coordinate: point.coordinate.toCL(), anchor: .bottom) {
+            PointMapMarkerLabel(point: point)
+                .zIndex(0)
+        }
+        .annotationTitles(.hidden)
+    }
+}
+
+private struct PointMapMarkerLabel: View {
+    let point: PointEntry
+
+    var body: some View {
+        VStack(spacing: -4) {
+            Group {
+                if let anchor = point.anchor {
+                    Text(anchor.glyph)
+                        .font(.system(size: 16, weight: .bold))
+                } else if point.performance != nil {
+                    Image(systemName: "figure.dance")
+                        .font(.system(size: 18, weight: .semibold))
+                } else if point.checkpoint != nil {
+                    Image(systemName: "arrow.up.and.down.and.arrow.left.and.right")
+                        .font(.system(size: 16, weight: .semibold))
+                } else {
+                    Circle()
+                        .fill(.white)
+                        .frame(width: 8, height: 8)
+                }
+            }
+            .foregroundStyle(.white)
+            .frame(width: 32, height: 32)
+            .background(Color.annotation, in: Circle())
+            .overlay(Circle().stroke(.white, lineWidth: 2))
+
+            MapPinTip()
+                .fill(Color.annotation)
+                .frame(width: 12, height: 8)
+        }
+        .shadow(color: Color.primary.opacity(0.25), radius: 2, y: 1)
+    }
+}
+
+private struct MapPinTip: Shape {
+    func path(in rect: CGRect) -> Path {
+        Path { path in
+            path.move(to: CGPoint(x: rect.minX, y: rect.minY))
+            path.addLine(to: CGPoint(x: rect.midX, y: rect.maxY))
+            path.addLine(to: CGPoint(x: rect.maxX, y: rect.minY))
+            path.closeSubpath()
         }
     }
 }
