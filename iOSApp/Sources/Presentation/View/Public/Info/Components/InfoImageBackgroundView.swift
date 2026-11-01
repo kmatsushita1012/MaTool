@@ -1,5 +1,38 @@
 import SwiftUI
 
+enum InfoImageColorScheme {
+    static func resolve(
+        lightPath: String?,
+        darkPath: String?,
+        systemColorScheme: ColorScheme
+    ) -> ColorScheme {
+        switch (isAvailable(lightPath), isAvailable(darkPath)) {
+        case (true, false): .light
+        case (false, true): .dark
+        default: systemColorScheme
+        }
+    }
+
+    static func imagePath(
+        lightPath: String?,
+        darkPath: String?,
+        colorScheme: ColorScheme
+    ) -> String? {
+        let candidates = colorScheme == .dark ? [darkPath, lightPath] : [lightPath, darkPath]
+        return candidates.compactMap { $0 }.first(where: isAvailable)
+    }
+
+    private static func isAvailable(_ path: String?) -> Bool {
+        guard let path,
+              !path.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
+              let url = URL(string: path),
+              url.scheme != nil else {
+            return false
+        }
+        return true
+    }
+}
+
 struct InfoHeaderImageView: View {
     let lightPath: String?
     let darkPath: String?
@@ -7,16 +40,11 @@ struct InfoHeaderImageView: View {
     @Environment(\.colorScheme) private var colorScheme
 
     private var imagePath: String? {
-        let candidates = colorScheme == .dark ? [darkPath, lightPath] : [lightPath, darkPath]
-        return candidates.compactMap { path in
-            guard let path,
-                  !path.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
-                  let url = URL(string: path),
-                  url.scheme != nil else {
-                return nil
-            }
-            return path
-        }.first
+        InfoImageColorScheme.imagePath(
+            lightPath: lightPath,
+            darkPath: darkPath,
+            colorScheme: colorScheme
+        )
     }
 
     var body: some View {
@@ -35,16 +63,11 @@ struct InfoImageBlurredBackgroundView: View {
     @Environment(\.colorScheme) private var colorScheme
 
     private var imagePath: String? {
-        let candidates = colorScheme == .dark ? [darkPath, lightPath] : [lightPath, darkPath]
-        return candidates.compactMap { path in
-            guard let path,
-                  !path.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
-                  let url = URL(string: path),
-                  url.scheme != nil else {
-                return nil
-            }
-            return path
-        }.first
+        InfoImageColorScheme.imagePath(
+            lightPath: lightPath,
+            darkPath: darkPath,
+            colorScheme: colorScheme
+        )
     }
 
     var body: some View {

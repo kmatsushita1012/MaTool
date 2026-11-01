@@ -5,6 +5,7 @@ import Shared
 
 struct DistrictInfoView: View {
     @SwiftUI.Bindable var store: StoreOf<DistrictInfoFeature>
+    @Environment(\.colorScheme) private var systemColorScheme
     let festivalName: String?
     var locationTimestamp: Date? = nil
     var isNavigationLoading = false
@@ -24,6 +25,13 @@ struct DistrictInfoView: View {
                 onFestivalTapped: onFestivalTapped
             )
         }
+        .preferredColorScheme(
+            InfoImageColorScheme.resolve(
+                lightPath: store.district.image.light,
+                darkPath: store.district.image.dark,
+                systemColorScheme: systemColorScheme
+            )
+        )
     }
 }
 
