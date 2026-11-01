@@ -30,7 +30,7 @@ extension FestivalPackScopeRouterTest {
         let hazard = HazardSection.mock(id: "hazard-1", festivalId: festival.id, title: "hazard-original")
         let store = FestivalPackStore(festival: festival, checkpoints: [checkpoint], hazardSections: [hazard])
 
-        let festivalRepository = FestivalRepositoryMock(getHandler: { _ in store.festival }, putHandler: { item in
+        let festivalRepository = FestivalRepositoryMock(getHandler: { _ in store.snapshot().festival }, putHandler: { item in
             store.save(item)
             return item
         })
