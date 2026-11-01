@@ -2,16 +2,16 @@ import AWSS3
 import Dependencies
 import Foundation
 
-enum S3ImageClientKey: DependencyKey {
-    static let liveValue: any S3ImageClientProtocol = S3ImageClient()
+enum ImageStorageClientKey: DependencyKey {
+    static let liveValue: any ImageStorageClientProtocol = S3ImageClient()
 }
 
-protocol S3ImageClientProtocol: Sendable {
+protocol ImageStorageClientProtocol: Sendable {
     func presign(key: String) async throws -> (url: URL, expiresAt: Date)
     func publish(temporaryKey: String, permanentKey: String, currentURL: String?) async throws -> String
 }
 
-struct S3ImageClient: S3ImageClientProtocol {
+struct S3ImageClient: ImageStorageClientProtocol {
     private let bucket = ProcessInfo.processInfo.environment["IMAGE_UPLOAD_BUCKET"] ?? ""
     private let publicBaseURL = ProcessInfo.processInfo.environment["IMAGE_PUBLIC_BASE_URL"] ?? ""
 

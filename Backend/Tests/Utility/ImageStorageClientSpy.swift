@@ -1,7 +1,7 @@
 import Foundation
 @testable import Backend
 
-actor S3ImageClientSpy: S3ImageClientProtocol {
+actor ImageStorageClientSpy: ImageStorageClientProtocol {
     private(set) var presignKeys: [String] = []
     private(set) var publishCalls: [(String, String, String?)] = []
     var publishedURL = "https://cdn.example.test/image.jpg?v=1"

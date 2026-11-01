@@ -25,8 +25,6 @@ struct FestivalUsecase: FestivalUsecaseProtocol {
     @Dependency(FestivalRepositoryKey.self) var repository
     @Dependency(CheckpointRepositoryKey.self) var checkpointRepository
     @Dependency(HazardSectionRepositoryKey.self) var hazardSectionRepository
-    @Dependency(S3ImageClientKey.self) var imageClient
-    
     func scan() async throws -> [Festival] {
         try await repository.scan()
     }

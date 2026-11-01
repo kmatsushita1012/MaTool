@@ -82,13 +82,6 @@ struct ImageEditFeature {
             failureMessages[mode]
         }
 
-        mutating func setDraft(_ draft: Draft, for mode: Mode) {
-            switch mode {
-            case .light: lightDraft = draft
-            case .dark: darkDraft = draft
-            }
-        }
-
         private func imagePath(for mode: Mode) -> String? {
             switch mode {
             case .light: originalImage.light
@@ -137,7 +130,12 @@ struct ImageEditFeature {
                 let mode = state.selectedMode
                 state.failureMessages[mode] = nil
                 state.activeUploadID = id
-                state.setDraft(.loading, for: mode)
+                switch mode {
+                case .light:
+                    state.lightDraft = .loading
+                case .dark:
+                    state.darkDraft = .loading
+                }
                 let photoLibraryClient = self.photoLibraryClient
                 return .run { send in
                     do {
@@ -162,7 +160,12 @@ struct ImageEditFeature {
 
             case .photoDataReceived(let id, let mode, let data):
                 guard state.activeUploadID == id else { return .none }
-                state.setDraft(.preparing, for: mode)
+                switch mode {
+                case .light:
+                    state.lightDraft = .preparing
+                case .dark:
+                    state.darkDraft = .preparing
+                }
                 let uploadImageUseCase = self.uploadImageUseCase
                 return .run { send in
                     do {
@@ -182,32 +185,58 @@ struct ImageEditFeature {
                  .jpegPreparationFailed(let id, let mode, let message):
                 guard state.activeUploadID == id else { return .none }
                 state.activeUploadID = nil
-                state.setDraft(.unchanged, for: mode)
+                switch mode {
+                case .light:
+                    state.lightDraft = .unchanged
+                case .dark:
+                    state.darkDraft = .unchanged
+                }
                 state.failureMessages[mode] = message
                 return .none
 
             case .jpegPrepared(let id, let mode, let data):
                 guard state.activeUploadID == id else { return .none }
-                state.setDraft(.uploading(data), for: mode)
+                switch mode {
+                case .light:
+                    state.lightDraft = .uploading(data)
+                case .dark:
+                    state.darkDraft = .uploading(data)
+                }
                 return uploadEffect(id: id, mode: mode, data: data, state: state)
 
             case .uploadCompleted(let id, let mode, let data, let path):
                 guard state.activeUploadID == id else { return .none }
                 state.activeUploadID = nil
-                state.setDraft(.replaced(path: path, jpegData: data), for: mode)
+                switch mode {
+                case .light:
+                    state.lightDraft = .replaced(path: path, jpegData: data)
+                case .dark:
+                    state.darkDraft = .replaced(path: path, jpegData: data)
+                }
                 return .none
 
             case .uploadFailed(let id, let mode, let message):
                 guard state.activeUploadID == id else { return .none }
                 state.activeUploadID = nil
-                state.setDraft(.unchanged, for: mode)
+                switch mode {
+                case .light:
+                    state.lightDraft = .unchanged
+                case .dark:
+                    state.darkDraft = .unchanged
+                }
                 state.failureMessages[mode] = message
                 return .none
 
             case .removeTapped:
                 guard !state.isUploading else { return .none }
-                state.failureMessages[state.selectedMode] = nil
-                state.setDraft(.removed, for: state.selectedMode)
+                let mode = state.selectedMode
+                state.failureMessages[mode] = nil
+                switch mode {
+                case .light:
+                    state.lightDraft = .removed
+                case .dark:
+                    state.darkDraft = .removed
+                }
                 return .none
 
             case .reset:

@@ -12,7 +12,7 @@ protocol ImageUploadUsecaseProtocol: Sendable {
 struct ImageUploadUsecase: ImageUploadUsecaseProtocol {
     @Dependency(FestivalRepositoryKey.self) var festivals
     @Dependency(DistrictRepositoryKey.self) var districts
-    @Dependency(S3ImageClientKey.self) var images
+    @Dependency(ImageStorageClientKey.self) var images
 
     func issue(_ request: ImageUploadURLRequest, user: UserRole) async throws -> ImageUploadURLResponse {
         guard request.contentType == "image/jpeg" else { throw Error.badRequest("JPEGのみアップロードできます。") }

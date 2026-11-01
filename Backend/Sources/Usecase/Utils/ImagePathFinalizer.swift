@@ -2,7 +2,7 @@ import Dependencies
 import Shared
 
 struct ImagePathFinalizer {
-    @Dependency(S3ImageClientKey.self) var s3
+    @Dependency(ImageStorageClientKey.self) var imageStorage
 
     func finalize(
         incoming: ImagePath,
@@ -17,7 +17,7 @@ struct ImagePathFinalizer {
             let target = ImageUploadTarget(type: type, id: id, variant: variant)
             let keys = try ImageObjectKey(target: target, festivalId: festivalId)
             guard candidate == keys.temporary else { throw Error.badRequest("画像パスが不正です。") }
-            return try await s3.publish(temporaryKey: keys.temporary, permanentKey: keys.permanent, currentURL: existing)
+            return try await imageStorage.publish(temporaryKey: keys.temporary, permanentKey: keys.permanent, currentURL: existing)
         }
         let light = try await value(incoming.light, current.light, .light)
         let dark = try await value(incoming.dark, current.dark, .dark)
