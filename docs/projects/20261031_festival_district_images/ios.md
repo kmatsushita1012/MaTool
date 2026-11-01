@@ -44,7 +44,7 @@
 
 ### 2.1 編集 State が下書きの正本
 
-`FestivalEditFeature.State` / `DistrictEditFeature.State` に、ライトとダークそれぞれの画像変更状態を保有する。**シートの表示状態を消しても下書きは消えない**。
+**共通の `ImageEditFeature.State` が Light / Dark の編集状態と一時アップロードの進行状態を所有**する。`FestivalEditFeature.State` / `DistrictEditFeature.State` はそれぞれ `imageEdit: ImageEditFeature.State` を**通常の子 State として保持**し、親自身にライト／ダーク別の編集ロジックを重複実装しない。**シートの表示状態を消しても子 State を破棄しないため、下書きは残る**。
 
 | 状態（概念） | 意味 | 最終 PUT への変換 |
 | --- | --- | --- |
@@ -54,7 +54,7 @@
 | `failed(localPreview, error)` | アップロードに失敗 | 保存不可。再試行または選択取り消し |
 | `remove` | 当該 variant の参照解除を保留 | `nil` |
 
-これは実装モデルの**概念**であり、同等の Equatable/Sendable な State へ簡潔にまとめてよい。選択モード `light/dark` とシート開閉も Feature で扱う。画像用の永続 Entity や二重の Shared 状態は作らない。
+これは実装モデルの**概念**であり、同等の Equatable/Sendable な State へ簡潔にまとめてよい。`ImageEditFeature` が選択モード `light/dark` と各モードの下書き・アップロード状態を扱う。**シートの表示／非表示だけは親 Feature が管理**する。画像用の永続 Entity や二重の Shared 状態は作らない。
 
 - 既存 `festival.image` / `district.image` は正式保存されるまで変更しない。**未保存の一時キーを `AppState` に書かない**。
 - シートの `PhotosPickerItem` は View 側の一時選択値。生の `UIImage` や PhotosPicker の寿命が短いファイル URL を TCA State に保持しない。
@@ -62,15 +62,53 @@
 - ローカル一時ファイルは選択し直した際の旧画像、画像削除、編集画面キャンセル、保存成功、編集 Feature の破棄時に片付ける。**シートの `xmark` では片付けない**。アップロード失敗中は再試行のため保持する。
 - 同じ variant の連続選択は固定 S3 一時キーを上書きするため、選択・通信を直列化して古い完了が新しい下書きを上書きしないようにする。不要な汎用ジョブ管理は作らない。
 
-### 2.2 Feature / View の配置
+### 2.2 Feature 間の関係
+
+Festival / District に依存しない **`ImageEditFeature` を共通の子 Reducer** とし、TCA の `Scope` で親に組み込む。シートを閉じても子 State は残すため、`@Presents` / `ifLet` のような「シート終了 = 子 State 破棄」の構成にしない。
+
+```mermaid
+flowchart TB
+    F["FestivalEditFeature"]
+    D["DistrictEditFeature"]
+    I["ImageEditFeature<br/>Light / Dark・画像下書き・一時アップロード状態"]
+    V["ImageEditContentView<br/>Segment Picker / PhotosPicker / Preview"]
+    U["UploadImageUseCase"]
+    A["ImageUploadDataFetcher<br/>署名 URL の取得"]
+    S["S3ImageUploadClient<br/>S3 一時 PUT"]
+    SF["SaveFestivalUseCase"]
+    SD["SaveDistrictPackUseCase"]
+    B["Backend<br/>既存 Festival / District PUT"]
+
+    F -->|"Scope: 常時子 State を保持"| I
+    D -->|"Scope: 常時子 State を保持"| I
+    I -->|"Store を渡して表示"| V
+    I -->|"画像選択時"| U
+    U --> A
+    U --> S
+    F -->|"元画面で保存"| SF
+    D -->|"元画面で保存"| SD
+    SF --> B
+    SD --> B
+```
+
+**親 Feature の責務:** 「画像を変更」ボタンによるシート開閉、他の編集項目との整合、元画面の保存／キャンセル、既存 SaveUseCase の呼び出し。子 State が持つ変更結果から `ImagePath` を構築して渡す。親が画像の署名取得・S3 アップロードを直接実装しない。
+
+**`ImageEditFeature` の責務:** Light / Dark の切替、既存画像・プレビューの選択、追加／変更／参照解除、画像選択直後の `UploadImageUseCase` 呼び出し、一時パス・失敗・再試行・ローカルファイル掃除。Festival / District 固有の保存処理は持たない。
+
+**State の寿命:** 親 State の `imageEdit` は画面開始時に対象種別・ID・現在の `ImagePath` から初期化し、`.sheet(isPresented:)` による表示切替でも同じインスタンスを使用する。シートの `xmark` は親の表示フラグを閉じるだけで、子 State を `nil` にしない。元画面の保存成功・キャンセル・画面破棄時に子 Feature の編集リソースを掃除する。古いアップロード完了が後から別の選択を上書きしないようにする。
+
+### 2.3 Feature / View の配置
 
 | ファイル | 変更内容 |
 | --- | --- |
-| `Presentation/View/Admin/Region/Edit/FestivalEditFeature.swift` | 画像下書き、シート表示、画像選択結果、アップロード成功／失敗、保存・キャンセル |
-| `Presentation/View/Admin/Region/Edit/FestivalEditView.swift` | 「画像を変更」ボタン・シート表示を ContentView 側に構成 |
-| `Presentation/View/Admin/District/Edit/DistrictEditFeature.swift` | 同上。現在の `DistrictPack` 保存を継続 |
-| `Presentation/View/Admin/District/Edit/DistrictEditView.swift` | 同上 |
-| 新規の共通 `ImageEditContentView`（名称案） | セグメント Picker、プレビュー、追加／変更／削除、`PhotosPicker`、右上 `xmark`、通信状態。**View は受け取った表示データと Action だけを扱う** |
+| `Presentation/View/Admin/Region/Edit/FestivalEditFeature.swift` | `ImageEditFeature.State` を保持して `Scope`、シート開閉・既存 Festival 保存 |
+| `Presentation/View/Admin/Region/Edit/FestivalEditView.swift` | 「画像を変更」ボタンと、子 Store を渡すシートを ContentView 側に構成 |
+| `Presentation/View/Admin/District/Edit/DistrictEditFeature.swift` | 同じ子 Feature を `Scope`、シート開閉・既存 District 保存 |
+| `Presentation/View/Admin/District/Edit/DistrictEditView.swift` | 同じ共通シートを表示 |
+| 新規 `ImageEditFeature.swift` | **Light / Dark の全編集ロジックと S3 仮アップロード状態を共通化** |
+| 新規 `ImageEditContentView.swift` | セグメント Picker、プレビュー、追加／変更／削除、`PhotosPicker`、右上 `xmark`。子 Store の状態を描画し Action を送る |
+| `Application/UploadImageUseCase.swift`（名称案） | 署名 URL 取得 → S3 一時 PUT の順序を共通化 |
+| `Data/Fetcher/ImageUploadDataFetcher.swift` / `Data/Client/S3ImageUploadClient.swift`（名称案） | API で署名 URL を取得／認証ヘッダーを付けず S3 直接 PUT |
 
 既存ルールに従い、**ツールバーやシートの UI 構成は ContentView 側に置く**。`FestivalEditScreen` / `DistrictEditScreen` は Store を接続する薄いコンテナーとし、画面固有の画像管理ロジックをコピー＆ペーストしない。
 
@@ -96,7 +134,7 @@
 
 既存 `SaveFestivalUseCase` / `SaveDistrictPackUseCase` の `appState.withLock` による `sessionId` ガードと、`saveTapped` 後の二重送信抑止を維持。編集途中のログイン／祭典切替や画面破棄では古い結果を別セッションに反映しない。画像確定のために新しい Backend API を増やさない。
 
-**責務の配置:** 署名 URL の取得は Data/Fetcher または API Client、S3 PUT は Data/Client、画像変換・アップロード調停は Application 層のテスタブルな処理、表示・シート切替は Presentation 層。未変更／差替／削除から `ImagePath` への合成は双方の保存 Usecase で重複させず、小さな共通ヘルパーにまとめる。不要な独立 Repository や汎用アップロードフレームワークは作らない。
+**責務の配置:** 署名 URL の取得は `ImageUploadDataFetcher` 等の Data/Fetcher、S3 PUT は Data/Client、画像変換・アップロード調停は `UploadImageUseCase`、ライト／ダークの編集と下書きから `ImagePath` への合成は **`ImageEditFeature.State` の共通処理**、シート表示と既存の最終保存は親 Feature に置く。両親の SaveUseCase に同じ下書き合成ロジックを重複実装しない。不要な独立 Repository や汎用アップロードフレームワークは作らない。
 
 ## 4. キャッシュと公開画面
 
@@ -120,7 +158,7 @@
 | I09 | セッション | 別祭典・ログイン切替後、旧画像の遅延 PUT／保存応答で別 `AppState` を汚染しない |
 | I10 | 互換・表示 | 無変更なら署名 URL POST / S3 PUT なし。Light/Dark 切替、片方のみ、両方なし、差し替え後の新 URL を Kingfisher が取得。公開 GET → CDN GET の新画像は結合確認 |
 
-- `FestivalEditFeature` / `DistrictEditFeature` の `TestStore` を中心に検証する。画像送信用 Client と保存 Usecase の Spy は **`iOSApp/Tests/Utility/`** に置き、テスト専用 Mock / Spy を Sources に含めない。
+- 共通の `ImageEditFeatureTests` で Light / Dark 切替・選択時 S3 一時 PUT・削除・再試行・通信完了順序・シートを閉じた後の State 保持を集中検証し、親 `FestivalEditFeatureTests` / `DistrictEditFeatureTests` は `Scope`・シート開閉・最終保存への受け渡しを検証する。画像送信用 Client と保存 Usecase の Spy は **`iOSApp/Tests/Utility/`** に置き、テスト専用 Mock / Spy を Sources に含めない。
 - 共通画像処理は追加したソースと1対1で対応する Swift Testing テストを設ける。依存関係の `testValue` 未設定や Live Client の誤呼出を残さない。
 - UI の見た目と遷移は AGENTS.md に従ってシミュレータ上で実際にシート・追加・ライト／ダーク切替・閉じる・保存を操作し、スクリーンショットと画面状態を確認する。実環境の S3/Backend がなければ Spy で画面経路を検証し、実通信未検証を明記する。
 
@@ -128,4 +166,4 @@
 
 Store 広告画像、IAP、Backend の新 API、S3 バケット・CDN 設定、画像 UUID、アップロード確定専用 API、ETag/Versioning、画像の物理削除、公開画面の大規模変更。
 
-**実装順:** 共通アップロード Data Client / Application 処理 → 画像編集シート → Festival / District 編集 Feature 連携 → 既存 SaveUseCase との統合 → テスト・画面動作確認。Backend 側の API と署名付き PUT ヘッダーの契約を事前に確認し、iOS 独自の DTO を増やさない。
+**実装順:** 共通アップロード Data Client / Application 処理 → `ImageEditFeature` + `ImageEditContentView` → Festival / District 親 Feature の `Scope` 連携 → 既存 SaveUseCase との統合 → テスト・画面動作確認。Backend 側の API と署名付き PUT ヘッダーの契約を事前に確認し、iOS 独自の DTO を増やさない。
