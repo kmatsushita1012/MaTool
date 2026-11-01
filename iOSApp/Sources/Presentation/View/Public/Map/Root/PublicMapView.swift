@@ -19,6 +19,7 @@ struct PublicMapView: View {
                 if let routeStore = store.scope(state: \.destination?.route, action: \.destination.route) {
                     mapContent(
                         routes: routeStore.routes,
+                        selectedRouteId: routeStore.selectedRouteId,
                         selectedPeriodTitle: routeStore.selected?.text ?? "日程を選択",
                         isRouteLoading: routeStore.isRouteLoading,
                         isPeriodDisabled: store.isLoading,
@@ -49,6 +50,7 @@ struct PublicMapView: View {
 
     private func mapContent<MapContent: View>(
         routes: [RouteEntry]? = nil,
+        selectedRouteId: RouteEntry.ID? = nil,
         selectedPeriodTitle: String = "日程を選択",
         isRouteLoading: Bool = false,
         isPeriodDisabled: Bool = false,
@@ -64,6 +66,7 @@ struct PublicMapView: View {
             contentTitles: store.contentTitles,
             isLoading: store.isLoading,
             routes: routes,
+            selectedRouteId: selectedRouteId,
             selectedPeriodTitle: selectedPeriodTitle,
             isRouteLoading: isRouteLoading,
             isPeriodDisabled: isPeriodDisabled,
@@ -90,6 +93,7 @@ struct PublicMapContentView<MapContent: View>: View {
     let contentTitles: [PublicMapFeature.Content: String]
     let isLoading: Bool
     let routes: [RouteEntry]?
+    let selectedRouteId: RouteEntry.ID?
     let selectedPeriodTitle: String
     let isRouteLoading: Bool
     let isPeriodDisabled: Bool
@@ -177,30 +181,37 @@ struct PublicMapContentView<MapContent: View>: View {
                 )
             ) {
                 ForEach(contents, id: \.self) { item in
-                    MapMenuItemLabel(
-                        title: contentTitles[item] ?? "",
-                        systemImage: item.menuSymbol
-                    )
-                    .tag(item)
+                    Text(contentTitles[item] ?? "")
+                        .tag(item)
                 }
             } label: {
-                Label(contentTitles[selectedContent] ?? "", systemImage: selectedContent.menuSymbol)
-                    .modifier(MapMenuLabelIconWidth())
+                Text(contentTitles[selectedContent] ?? "")
             }
             .pickerStyle(.menu)
+            .padding()
             .modifier(MapTopMenuStyle(isLiquidGlassDisabled: isLiquidGlassDisabled))
             .loadingIndicator(isLoading: isLoading)
 
             if let routes {
-                Menu {
-                    ForEach(routes) { entry in
-                        Button(entry.text) {
+                Picker(
+                    selection: Binding<RouteEntry.ID?>(
+                        get: { selectedRouteId },
+                        set: { selectedID in
+                            guard let selectedID,
+                                  let entry = routes.first(where: { $0.id == selectedID }) else { return }
                             onPeriodSelected(entry)
                         }
+                    )
+                ) {
+                    ForEach(routes) { entry in
+                        Text(entry.text)
+                            .tag(Optional(entry.id))
                     }
                 } label: {
-                    Label(selectedPeriodTitle, systemImage: "calendar")
+                    Text(selectedPeriodTitle)
                 }
+                .pickerStyle(.menu)
+                .padding()
                 .modifier(MapTopMenuStyle(isLiquidGlassDisabled: isLiquidGlassDisabled))
                 .disabled(isPeriodDisabled || isRouteLoading || routes.isEmpty)
                 .overlay {
@@ -276,6 +287,7 @@ private extension PublicMapFeature.Content {
             contentTitles: [.locations: "現在地一覧"],
             isLoading: false,
             routes: nil,
+            selectedRouteId: nil,
             selectedPeriodTitle: "日程を選択",
             isRouteLoading: false,
             isPeriodDisabled: false,
