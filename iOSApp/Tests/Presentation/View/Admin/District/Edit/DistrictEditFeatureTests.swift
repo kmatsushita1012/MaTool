@@ -1,5 +1,6 @@
 import ComposableArchitecture
 import Foundation
+import PhotosUI
 import Shared
 import Testing
 @testable import iOSApp
@@ -24,7 +25,6 @@ struct DistrictEditFeatureTests {
         }
 
         await store.send(.saveTapped) {
-            $0.district.image = ImagePath(light: nil, dark: temporaryPath)
             $0.isLoading = true
         }
         await store.receive(.postReceived(.success)) {
@@ -41,6 +41,84 @@ struct DistrictEditFeatureTests {
         let calls = await saveSpy.calls
         #expect(calls.count == 1)
         #expect(calls.first?.district.image == ImagePath(light: nil, dark: temporaryPath))
+        await store.finish()
+    }
+
+    @Test("District保存後に次の画像アップロードが失敗しても前回の一時パスを再送しない")
+    @MainActor
+    func failedSecondUploadDoesNotResendPreviousTemporaryPath() async throws {
+        let fixture = DistrictEditFixture()
+        let oldImage = ImagePath(
+            light: "https://cdn.example/old-light.jpg?v=5",
+            dark: "https://cdn.example/old-dark.jpg?v=6"
+        )
+        var district = fixture.district
+        district.image = oldImage
+        var initialState = try DistrictEditFeature.State(district, appState: fixture.appState)
+        let temporaryA = "temporary/festivals/festival/districts/district/light.jpg"
+        let jpegA = Data([0xFF, 0xD8, 0xFF, 0xD9, 1])
+        let jpegB = Data([0xFF, 0xD8, 0xFF, 0xD9, 2])
+        initialState.imageEdit.lightDraft = .replaced(path: temporaryA, jpegData: jpegA)
+
+        let saveSpy = SaveDistrictPackUseCaseSpy(failure: "save failed")
+        let uploadSpy = UploadImageUseCaseSpy(preparedData: jpegB, path: temporaryA)
+        let store = TestStore(initialState: initialState) {
+            DistrictEditFeature()
+        } withDependencies: {
+            $0.installTestSpies()
+            $0[SaveDistrictPackUseCaseKey.self] = saveSpy
+            $0[PhotoLibraryClientKey.self] = PhotoLibraryClientSpy(data: Data([9, 8, 7]))
+            $0[UploadImageUseCaseKey.self] = uploadSpy
+        }
+
+        let saveError = AppError.system(.unexpected("save failed"))
+        await store.send(.saveTapped) {
+            $0.isLoading = true
+        }
+        await store.receive(.postReceived(.failure(saveError))) {
+            $0.isLoading = false
+            $0.alert = AlertFeature.error("保存に失敗しました。\(saveError.message)")
+        }
+        #expect(store.state.district.image == oldImage)
+        await store.send(.alert(.presented(.okTapped))) {
+            $0.alert = nil
+        }
+
+        await uploadSpy.failUpload(with: "offline")
+        let uploadID = UUID()
+        await store.send(.imageEdit(.photoSelected(
+            id: uploadID,
+            item: PhotosPickerItem(itemIdentifier: "picked-b")
+        ))) {
+            $0.imageEdit.activeUploadID = uploadID
+            $0.imageEdit.lightDraft = .loading
+        }
+        await store.receive(.imageEdit(.photoDataReceived(id: uploadID, mode: .light, data: Data([9, 8, 7])))) {
+            $0.imageEdit.lightDraft = .preparing
+        }
+        await store.receive(.imageEdit(.jpegPrepared(id: uploadID, mode: .light, data: jpegB))) {
+            $0.imageEdit.lightDraft = .uploading(jpegB)
+        }
+        await store.receive(.imageEdit(.uploadFailed(id: uploadID, mode: .light, message: "offline"))) {
+            $0.imageEdit.activeUploadID = nil
+            $0.imageEdit.lightDraft = .unchanged
+            $0.imageEdit.failureMessages[.light] = "offline"
+        }
+
+        #expect(store.state.district.image == oldImage)
+        #expect(store.state.imageEdit.imagePath(applyingTo: oldImage) == oldImage)
+        await store.send(.saveTapped) {
+            $0.isLoading = true
+        }
+        await store.receive(.postReceived(.failure(saveError))) {
+            $0.isLoading = false
+            $0.alert = AlertFeature.error("保存に失敗しました。\(saveError.message)")
+        }
+
+        let calls = await saveSpy.calls
+        #expect(calls.count == 2)
+        #expect(calls[0].district.image.light == temporaryA)
+        #expect(calls[1].district.image == oldImage)
         await store.finish()
     }
 

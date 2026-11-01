@@ -83,12 +83,13 @@ struct FestivalEditFeature {
                     state.alert = AlertFeature.error("本部所在地を設定してください。")
                     return .none
                 }
-                state.festival.name = name
-                state.festival.subname = subname
-                state.festival.base = base
-                state.festival.image = image
+                var updatedFestival = state.festival
+                updatedFestival.name = name
+                updatedFestival.subname = subname
+                updatedFestival.base = base
+                updatedFestival.image = image
                 state.isLoading = true
-                return .task(Action.putReceived) { [festival = state.festival, checkpoints = state.checkpoints, hazardSections = state.hazardSections, appState = state.$appState] in
+                return .task(Action.putReceived) { [festival = updatedFestival, checkpoints = state.checkpoints, hazardSections = state.hazardSections, appState = state.$appState] in
                     _ = try await saveFestivalUseCase(
                         festival: festival,
                         checkpoints: checkpoints,

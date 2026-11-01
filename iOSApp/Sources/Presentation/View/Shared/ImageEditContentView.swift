@@ -102,7 +102,7 @@ struct ImageEditContentView: View {
             .padding(.horizontal, 16)
             .padding(.vertical, 16)
 
-            if store.hasImage, store.state.failureMessage(for: store.selectedMode) == nil {
+            if store.hasImage {
                 Divider()
                     .padding(.leading, 48)
 

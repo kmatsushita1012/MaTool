@@ -94,6 +94,103 @@ struct FestivalUsecaseTest {
         #expect(result.hazardSections == [hazard])
     }
 
+    @Test("LightまたはDarkの一時画像が不正ならFestival Repositoryを更新しない")
+    func put_rejectsInvalidVariantBeforeRepositoryWrite() async {
+        let lightKey = "temporary/festivals/festival-1/light.jpg"
+        let darkKey = "temporary/festivals/festival-1/dark.jpg"
+        let oldImage = ImagePath(
+            light: "https://cdn.example/old-light.jpg?v=7",
+            dark: "https://cdn.example/old-dark.jpg?v=8"
+        )
+        let current = Festival(
+            id: "festival-1",
+            name: "Festival",
+            subname: "Headquarters",
+            base: Coordinate(latitude: 35, longitude: 139),
+            image: oldImage
+        )
+        let pack = FestivalPack(
+            festival: Festival(
+                id: current.id,
+                name: current.name,
+                subname: current.subname,
+                base: current.base,
+                image: ImagePath(light: lightKey, dark: darkKey)
+            ),
+            checkpoints: [],
+            hazardSections: []
+        )
+
+        for invalidKey in [lightKey, darkKey] {
+            let repository = FestivalRepositorySpy(festivals: [current])
+            let imageStorage = ImageStorageClientSpy(validationFailures: [invalidKey])
+
+            await #expect(throws: Error.self) {
+                try await withDependencies {
+                    $0[FestivalRepositoryKey.self] = repository
+                    $0[CheckpointRepositoryKey.self] = CheckpointRepositoryMock(queryHandler: { _ in [] })
+                    $0[HazardSectionRepositoryKey.self] = HazardSectionRepositoryMock(queryHandler: { _ in [] })
+                    $0[ImageStorageClientKey.self] = imageStorage
+                } operation: {
+                    try await FestivalUsecase().put(pack, user: .headquarter(current.id))
+                }
+            }
+
+            #expect(await repository.putItems.isEmpty)
+            #expect(await repository.storedFestival(id: current.id)?.image == oldImage)
+            #expect(await imageStorage.publishCalls.isEmpty)
+        }
+    }
+
+    @Test("無関係なtemporary path・別variant・外部URLではFestivalを更新しない")
+    func put_rejectsUntrustedImagePathsWithoutChangingStoredImage() async {
+        let oldImage = ImagePath(
+            light: "https://cdn.example/old-light.jpg?v=7",
+            dark: "https://cdn.example/old-dark.jpg?v=8"
+        )
+        let current = Festival(
+            id: "festival-1",
+            name: "Festival",
+            subname: "Headquarters",
+            base: Coordinate(latitude: 35, longitude: 139),
+            image: oldImage
+        )
+        for imagePath in [
+            "temporary/festivals/another/light.jpg",
+            "temporary/festivals/festival-1/dark.jpg",
+            "https://external.example/image.jpg"
+        ] {
+            let repository = FestivalRepositorySpy(festivals: [current])
+            let imageStorage = ImageStorageClientSpy()
+            let pack = FestivalPack(
+                festival: Festival(
+                    id: current.id,
+                    name: current.name,
+                    subname: current.subname,
+                    base: current.base,
+                    image: ImagePath(light: imagePath, dark: oldImage.dark)
+                ),
+                checkpoints: [],
+                hazardSections: []
+            )
+
+            await #expect(throws: Error.self) {
+                try await withDependencies {
+                    $0[FestivalRepositoryKey.self] = repository
+                    $0[CheckpointRepositoryKey.self] = CheckpointRepositoryMock(queryHandler: { _ in [] })
+                    $0[HazardSectionRepositoryKey.self] = HazardSectionRepositoryMock(queryHandler: { _ in [] })
+                    $0[ImageStorageClientKey.self] = imageStorage
+                } operation: {
+                    try await FestivalUsecase().put(pack, user: .headquarter(current.id))
+                }
+            }
+
+            #expect(await repository.putItems.isEmpty)
+            #expect(await repository.storedFestival(id: current.id)?.image == oldImage)
+            #expect(await imageStorage.publishCalls.isEmpty)
+        }
+    }
+
     @Test
     func get_異常_依存エラーを透過() async {
         let subject = make(festivalRepository: .init(getHandler: { _ in throw TestError.intentional }))

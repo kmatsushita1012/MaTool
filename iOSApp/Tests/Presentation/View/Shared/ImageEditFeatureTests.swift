@@ -163,6 +163,13 @@ struct ImageEditFeatureTests {
         #expect(store.state.previewURL == original.light)
         #expect(store.state.hasImage)
         #expect(store.state.failureMessage(for: .light) == "S3 unavailable")
+
+        await store.send(.removeTapped) {
+            $0.lightDraft = .removed
+            $0.failureMessages[.light] = nil
+        }
+        #expect(store.state.imagePath(applyingTo: original) == ImagePath())
+        #expect(!store.state.hasImage)
         #expect(await useCase.uploadCalls.count == 1)
         await store.finish()
     }

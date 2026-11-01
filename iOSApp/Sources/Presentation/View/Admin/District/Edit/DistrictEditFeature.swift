@@ -70,9 +70,10 @@ struct DistrictEditFeature {
                     state.alert = AlertFeature.error("画像のアップロードが完了するまで保存できません。")
                     return .none
                 }
-                state.district.image = image
+                var updatedDistrict = state.district
+                updatedDistrict.image = image
                 state.isLoading = true
-                return .task(Action.postReceived) { [district = state.district, performances = state.performances, appState = state.$appState] in
+                return .task(Action.postReceived) { [district = updatedDistrict, performances = state.performances, appState = state.$appState] in
                     _ = try await saveDistrictPackUseCase(
                         district: district,
                         performances: performances,
