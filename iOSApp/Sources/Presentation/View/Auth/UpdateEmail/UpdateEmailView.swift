@@ -30,7 +30,6 @@ struct UpdateEmailScreen: View {
             onEmailSubmitTapped: { store.send(.enterEmail(.okTapped)) },
             onCodeSubmitTapped: { store.send(.enterCode(.okTapped)) }
         )
-        .preferredColorScheme(.light)
         .dismissible(backButton: false, edgeSwipe: false)
         .alert($store.scope(state: \.errorAlert, action: \.errorAlert))
         .alert($store.scope(state: \.completeAlert, action: \.completeAlert))
@@ -58,52 +57,45 @@ struct UpdateEmailContentView: View {
     }
 
     var body: some View {
-        VStack{
-            TitleView(
-                text: "メールアドレス変更",
-                image: "AdminBackground",
-                font: .title
-            ) {
+        GeometryReader { geometry in
+            ScrollView {
+                VStack(spacing: 16) {
+                    Text("メールアドレス変更")
+                        .font(.largeTitle)
+                    switch step {
+                    case .enterEmail:
+                        TextField("新しいメールアドレス", text: $email)
+                            .textContentType(.emailAddress)
+                            .textInputAutocapitalization(.never)
+                            .autocorrectionDisabled()
+                            .modifier(AuthTextFieldModifier())
+                            .focused($focusedField, equals: .email)
+                        Button("変更") {
+                            onEmailSubmitTapped()
+                            focusedField = nil
+                        }
+                        .buttonStyle(PrimaryButtonStyle())
+                        .loadingIndicator(isLoading: isLoading)
+                    case .enterCode(let destination):
+                        UpdateEmailCodeContentView(
+                            destination: destination,
+                            code: $code,
+                            isLoading: isLoading,
+                            onSubmitTapped: onCodeSubmitTapped
+                        )
+                    }
+                }
+                .padding()
+                .frame(maxWidth: .infinity)
+                .frame(minHeight: geometry.size.height)
+            }
+        }
+        .toolbar {
+            ToolbarBackButton(isDisabled: isLoading) {
                 onDismissTapped()
             }
-            .disabled(isLoading)
-            .ignoresSafeArea(edges: .top)
-            Spacer()
-            switch step {
-            case .enterEmail:
-                enterEmail
-            case .enterCode(let destination):
-                UpdateEmailCodeContentView(
-                    destination: destination,
-                    code: $code,
-                    isLoading: isLoading,
-                    onSubmitTapped: onCodeSubmitTapped
-                )
-            }
-            Spacer()
-            Spacer()
         }
     }
-    
-    @ViewBuilder
-    var enterEmail: some View {
-        VStack{
-            TextField("新しいメールアドレス", text: $email)
-                .textContentType(.emailAddress)
-                .textFieldStyle(RoundedBorderTextFieldStyle())
-                .focused($focusedField, equals: .email)
-                .padding()
-            Button("変更") {
-                onEmailSubmitTapped()
-                focusedField = nil
-            }
-            .buttonStyle(PrimaryButtonStyle())
-            .padding()
-            .loadingIndicator(isLoading: isLoading)
-        }
-        
-    }
-    
 }
 
 @available(iOS 17.0, *)
@@ -116,24 +108,20 @@ struct UpdateEmailCodeContentView: View {
     @FocusState private var isCodeFieldFocused: Bool
 
     var body: some View {
-        VStack{
+        VStack(spacing: 16) {
             Text("入力されたメールアドレス　\(destination)　に6桁の確認コードを送信しました。次の画面で入力してください。")
-                .foregroundStyle(.gray)
-                .padding()
+                .foregroundStyle(.secondary)
             TextField("認証コード（6桁）", text: $code)
                 .textContentType(.oneTimeCode)
-                .textFieldStyle(RoundedBorderTextFieldStyle())
+                .modifier(AuthTextFieldModifier())
                 .focused($isCodeFieldFocused)
-                .padding()
             Button("認証") {
                 onSubmitTapped()
                 isCodeFieldFocused = false
             }
             .buttonStyle(PrimaryButtonStyle())
-            .padding()
             .loadingIndicator(isLoading: isLoading)
         }
-        .padding()
     }
 }
 

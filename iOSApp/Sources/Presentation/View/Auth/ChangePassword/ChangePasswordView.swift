@@ -48,44 +48,40 @@ struct ChangePasswordContentView: View {
     }
 
     var body: some View {
-        VStack {
-            TitleView(
-                text: "パスワード変更",
-                image: "AdminBackground"
-            ) {
+        GeometryReader { geometry in
+            ScrollView {
+                VStack(spacing: 16) {
+                    Text("パスワード変更")
+                        .font(.largeTitle)
+                    TextField("現在のパスワード", text: $current)
+                        .textContentType(.password)
+                        .modifier(AuthTextFieldModifier())
+                        .focused($focusedField, equals: .current)
+                    TextField("新しいパスワード", text: $new1)
+                        .textContentType(.password)
+                        .modifier(AuthTextFieldModifier())
+                        .focused($focusedField, equals: .new1)
+                    TextField("新しいパスワード（確認用）", text: $new2)
+                        .textContentType(.password)
+                        .modifier(AuthTextFieldModifier())
+                        .focused($focusedField, equals: .new2)
+                    Button("パスワードを変更") {
+                        onSubmitTapped()
+                        focusedField = nil
+                    }
+                    .buttonStyle(PrimaryButtonStyle())
+                    .loadingIndicator(isLoading: isLoading)
+                }
+                .padding()
+                .frame(maxWidth: .infinity)
+                .frame(minHeight: geometry.size.height)
+            }
+        }
+        .toolbar {
+            ToolbarBackButton(isDisabled: isLoading) {
                 onDismissTapped()
             }
-            .disabled(isLoading)
-            .ignoresSafeArea(edges: .top)
-            Spacer()
-            VStack {
-                TextField("現在のパスワード", text: $current)
-                    .textContentType(.password)
-                    .textFieldStyle(RoundedBorderTextFieldStyle())
-                    .focused($focusedField, equals: .current)
-                    .padding()
-                TextField("新しいパスワード", text: $new1)
-                    .textContentType(.password)
-                    .textFieldStyle(RoundedBorderTextFieldStyle())
-                    .focused($focusedField, equals: .new1)
-                    .padding()
-                TextField("新しいパスワード（確認用）", text: $new2)
-                    .textContentType(.password)
-                    .textFieldStyle(RoundedBorderTextFieldStyle())
-                    .focused($focusedField, equals: .new2)
-                    .padding()
-                Button("パスワードを変更") {
-                    onSubmitTapped()
-                    focusedField = nil
-                }
-                .buttonStyle(PrimaryButtonStyle())
-                .padding()
-                .loadingIndicator(isLoading: isLoading)
-            }
-            .padding()
-            Spacer()
         }
-        .preferredColorScheme(.light)
     }
 }
 

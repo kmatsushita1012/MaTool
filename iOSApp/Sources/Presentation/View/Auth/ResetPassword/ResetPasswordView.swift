@@ -62,78 +62,55 @@ struct ResetPasswordContentView: View {
     }
 
     var body: some View {
-        VStack{
-            TitleView(
-                text: "パスワード変更",
-                image: "AdminBackground"
-            ) {
+        GeometryReader { geometry in
+            ScrollView {
+                VStack(spacing: 16) {
+                    Text("パスワード変更")
+                        .font(.largeTitle)
+                    switch step {
+                    case .enterUsername:
+                        Text("パスワードをリセットするには、登録済みのメールアドレスに送信された認証コードが必要です。")
+                            .foregroundStyle(.secondary)
+                        TextField("ID（ユーザー名）", text: $username)
+                            .textContentType(.none)
+                            .modifier(AuthTextFieldModifier())
+                            .focused($focusedField, equals: .username)
+                        Button("認証コードを送信") {
+                            onUsernameSubmitTapped()
+                            focusedField = nil
+                        }
+                        .buttonStyle(PrimaryButtonStyle())
+                        .loadingIndicator(isLoading: isLoading)
+                    case .enterCode:
+                        TextField("新しいパスワード", text: $newPassword1)
+                            .textContentType(.password)
+                            .modifier(AuthTextFieldModifier())
+                            .focused($focusedField, equals: .newPassword1)
+                        TextField("新しいパスワード（確認用）", text: $newPassword2)
+                            .textContentType(.password)
+                            .modifier(AuthTextFieldModifier())
+                            .focused($focusedField, equals: .newPassword2)
+                        TextField("認証コード（6桁）", text: $code)
+                            .textContentType(.oneTimeCode)
+                            .modifier(AuthTextFieldModifier())
+                            .focused($focusedField, equals: .code)
+                        Button("パスワードを変更") {
+                            onCodeSubmitTapped()
+                            focusedField = nil
+                        }
+                        .buttonStyle(PrimaryButtonStyle())
+                        .loadingIndicator(isLoading: isLoading)
+                    }
+                }
+                .padding()
+                .frame(maxWidth: .infinity)
+                .frame(minHeight: geometry.size.height)
+            }
+        }
+        .toolbar {
+            ToolbarBackButton(isDisabled: isLoading) {
                 onDismissTapped()
             }
-            .disabled(isLoading)
-            .ignoresSafeArea(edges: .top)
-            Spacer()
-            switch step {
-            case .enterUsername:
-                enterUsername
-            case .enterCode:
-                enterCode
-            }
-            Spacer()
-        }
-        .preferredColorScheme(.light)
-    }
-    
-    @ViewBuilder
-    var enterUsername: some View {
-        VStack{
-            Text("パスワードをリセットするには、登録済みのメールアドレスに送信された認証コードが必要です。")
-                .foregroundStyle(.gray)
-                .padding()
-            VStack(alignment: .leading, spacing: 4) {
-                Text("ID（ユーザー名）")
-                    .font(.subheadline)
-                    .foregroundColor(.gray)
-                TextField("", text: $username)
-                    .textContentType(.none)
-                    .textFieldStyle(RoundedBorderTextFieldStyle())
-                    .focused($focusedField, equals: .username)
-            }
-            .padding()
-            Button("認証コードを送信") {
-                onUsernameSubmitTapped()
-                focusedField = nil
-            }
-            .buttonStyle(PrimaryButtonStyle())
-            .loadingIndicator(isLoading: isLoading)
-            .padding()
-        }
-    }
-    
-    @ViewBuilder
-    var enterCode: some View {
-        VStack{
-            TextField("新しいパスワード", text: $newPassword1)
-                .textContentType(.password)
-                .textFieldStyle(RoundedBorderTextFieldStyle())
-                .focused($focusedField, equals: .newPassword1)
-                .padding()
-            TextField("新しいパスワード（確認用）", text: $newPassword2)
-                .textContentType(.password)
-                .textFieldStyle(RoundedBorderTextFieldStyle())
-                .focused($focusedField, equals: .newPassword2)
-                .padding()
-            TextField("認証コード（6桁）", text: $code)
-                .textContentType(.oneTimeCode)
-                .textFieldStyle(RoundedBorderTextFieldStyle())
-                .focused($focusedField, equals: .code)
-                .padding()
-            Button("パスワードを変更") {
-                onCodeSubmitTapped()
-                focusedField = nil
-            }
-            .buttonStyle(PrimaryButtonStyle())
-            .loadingIndicator(isLoading: isLoading)
-            .padding()
         }
     }
 }
