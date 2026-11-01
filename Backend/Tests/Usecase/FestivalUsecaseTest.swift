@@ -142,6 +142,56 @@ struct FestivalUsecaseTest {
         }
     }
 
+    @Test("18 byteの不正JPEGならFestivalの公開コピーとRepository更新をしない")
+    func put_rejectsMalformedJPEGWithoutPublishingOrRepositoryWrite() async {
+        let temporaryKey = "temporary/festivals/festival-1/light.jpg"
+        let malformedJPEG = Data([
+            0xFF, 0xD8, 0xFF, 0xC0, 0x00, 0x08, 0x08, 0x00, 0x01,
+            0x00, 0x01, 0x00, 0xFF, 0xDA, 0x00, 0x02, 0xFF, 0xD9
+        ])
+        let oldImage = ImagePath(
+            light: "https://cdn.example/old-light.jpg?v=7",
+            dark: "https://cdn.example/old-dark.jpg?v=8"
+        )
+        let current = Festival(
+            id: "festival-1",
+            name: "Festival",
+            subname: "Headquarters",
+            base: Coordinate(latitude: 35, longitude: 139),
+            image: oldImage
+        )
+        let repository = FestivalRepositorySpy(festivals: [current])
+        let imageStorage = ImageStorageClientSpy(temporaryImageData: [temporaryKey: malformedJPEG])
+        let pack = FestivalPack(
+            festival: Festival(
+                id: current.id,
+                name: current.name,
+                subname: current.subname,
+                base: current.base,
+                image: ImagePath(light: temporaryKey, dark: oldImage.dark)
+            ),
+            checkpoints: [],
+            hazardSections: []
+        )
+
+        #expect(malformedJPEG.count == 18)
+        await #expect(throws: Error.self) {
+            try await withDependencies {
+                $0[FestivalRepositoryKey.self] = repository
+                $0[CheckpointRepositoryKey.self] = CheckpointRepositoryMock(queryHandler: { _ in [] })
+                $0[HazardSectionRepositoryKey.self] = HazardSectionRepositoryMock(queryHandler: { _ in [] })
+                $0[ImageStorageClientKey.self] = imageStorage
+            } operation: {
+                try await FestivalUsecase().put(pack, user: .headquarter(current.id))
+            }
+        }
+
+        #expect(await imageStorage.validationKeys == [temporaryKey])
+        #expect(await imageStorage.publishCalls.isEmpty)
+        #expect(await repository.putItems.isEmpty)
+        #expect(await repository.storedFestival(id: current.id)?.image == oldImage)
+    }
+
     @Test("無関係なtemporary path・別variant・外部URLではFestivalを更新しない")
     func put_rejectsUntrustedImagePathsWithoutChangingStoredImage() async {
         let oldImage = ImagePath(

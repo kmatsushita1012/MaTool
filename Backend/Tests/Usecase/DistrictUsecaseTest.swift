@@ -57,6 +57,46 @@ struct DistrictUsecaseTest {
         }
     }
 
+    @Test("18 byteの不正JPEGならDistrictの公開コピーとRepository更新をしない")
+    func put_rejectsMalformedJPEGWithoutPublishingOrRepositoryWrite() async {
+        let temporaryKey = "temporary/festivals/festival-1/districts/district-1/light.jpg"
+        let malformedJPEG = Data([
+            0xFF, 0xD8, 0xFF, 0xC0, 0x00, 0x08, 0x08, 0x00, 0x01,
+            0x00, 0x01, 0x00, 0xFF, 0xDA, 0x00, 0x02, 0xFF, 0xD9
+        ])
+        let oldImage = ImagePath(
+            light: "https://cdn.example/old-light.jpg?v=7",
+            dark: "https://cdn.example/old-dark.jpg?v=8"
+        )
+        let current = District(id: "district-1", name: "District", festivalId: "festival-1", image: oldImage)
+        let repository = DistrictRepositorySpy(districts: [current])
+        let imageStorage = ImageStorageClientSpy(temporaryImageData: [temporaryKey: malformedJPEG])
+        let pack = DistrictPack(
+            district: District(
+                id: current.id,
+                name: current.name,
+                festivalId: current.festivalId,
+                image: ImagePath(light: temporaryKey, dark: oldImage.dark)
+            ),
+            performances: []
+        )
+
+        #expect(malformedJPEG.count == 18)
+        await #expect(throws: Error.self) {
+            try await withDependencies {
+                $0[DistrictRepositoryKey.self] = repository
+                $0[ImageStorageClientKey.self] = imageStorage
+            } operation: {
+                try await DistrictUsecase().put(id: current.id, item: pack, user: .district(current.id))
+            }
+        }
+
+        #expect(await imageStorage.validationKeys == [temporaryKey])
+        #expect(await imageStorage.publishCalls.isEmpty)
+        #expect(await repository.putItems.isEmpty)
+        #expect(await repository.storedDistrict(id: current.id)?.image == oldImage)
+    }
+
     @Test("不正なtemporary pathはDistrictを更新せずに拒否する")
     func put_rejectsUntrustedImagePathsWithoutChangingStoredImage() async {
         let oldImage = ImagePath(

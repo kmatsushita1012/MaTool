@@ -2,8 +2,9 @@ import Foundation
 @testable import Backend
 
 actor ImageStorageClientSpy: ImageStorageClientProtocol {
-    init(validationFailures: Set<String> = []) {
+    init(validationFailures: Set<String> = [], temporaryImageData: [String: Data] = [:]) {
         self.validationFailures = validationFailures
+        self.temporaryImageData = temporaryImageData
     }
 
     private(set) var presignKeys: [String] = []
@@ -11,6 +12,7 @@ actor ImageStorageClientSpy: ImageStorageClientProtocol {
     private(set) var publishCalls: [(String, String, String?)] = []
     private(set) var events: [String] = []
     private let validationFailures: Set<String>
+    private let temporaryImageData: [String: Data]
     var publishedURL = "https://cdn.example.test/image.jpg?v=1"
 
     func presign(key: String) async throws -> (url: URL, expiresAt: Date) {
@@ -21,7 +23,9 @@ actor ImageStorageClientSpy: ImageStorageClientProtocol {
     func validateTemporaryImage(key: String) async throws {
         validationKeys.append(key)
         events.append("validate:\(key)")
-        if validationFailures.contains(key) {
+        if validationFailures.contains(key) || temporaryImageData[key].map({
+            !UploadedJPEGValidator.isValid(contentType: "image/jpeg", contentLength: $0.count, data: $0)
+        }) == true {
             throw Error.badRequest("テスト用の一時画像検証エラー")
         }
     }
