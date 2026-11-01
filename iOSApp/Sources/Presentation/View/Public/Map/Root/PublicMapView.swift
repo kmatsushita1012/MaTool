@@ -115,7 +115,7 @@ struct PublicMapContentView<MapContent: View>: View {
             mapContent()
                 .ignoresSafeArea(.all)
         }
-        .safeAreaInset(edge: .top, spacing: 0) {
+        .safeAreaInset(edge: .top, spacing: 8) {
             VStack(alignment: .leading, spacing: 16) {
                 topControls
                 if let toast {
@@ -186,7 +186,6 @@ struct PublicMapContentView<MapContent: View>: View {
                 }
             } label: {
                 Text(contentTitles[selectedContent] ?? "")
-                    .padding()
             }
             .pickerStyle(.menu)
             .modifier(MapTopMenuStyle(isLiquidGlassDisabled: isLiquidGlassDisabled))
@@ -209,7 +208,6 @@ struct PublicMapContentView<MapContent: View>: View {
                     }
                 } label: {
                     Text(selectedPeriodTitle)
-                        .padding()
                 }
                 .pickerStyle(.menu)
                 .modifier(MapTopMenuStyle(isLiquidGlassDisabled: isLiquidGlassDisabled))
@@ -259,12 +257,12 @@ private struct MapTopMenuStyle: ViewModifier {
                 .menuStyle(.button)
                 .buttonStyle(.glass)
                 .buttonSizing(.fitted)
-                .controlSize(.large)
+                .controlSize(.extraLarge)
         } else {
             content
                 .menuStyle(.button)
                 .buttonStyle(.bordered)
-                .controlSize(.large)
+                .controlSize(.extraLarge)
         }
     }
 }
