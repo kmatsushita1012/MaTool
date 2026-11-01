@@ -53,11 +53,14 @@ struct PublicRouteMapView: View {
                 .ignoresSafeArea(.all)
             }
             .safeAreaInset(edge: .bottom) {
-                if isLiquidGlassDisabled {
-                    toolbarLayerBeforeLiquidGlass
-                } else if #available(iOS 26.0, *) {
-                    toolbarLayerAfterLiquidGlass
+                Group {
+                    if isLiquidGlassDisabled {
+                        toolbarLayerBeforeLiquidGlass
+                    } else if #available(iOS 26.0, *) {
+                        toolbarLayerAfterLiquidGlass
+                    }
                 }
+                .padding()
             }
             .sheet(item: $store.detail) { detail in
                 switch detail{
