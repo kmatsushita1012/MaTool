@@ -107,7 +107,7 @@ struct PublicMapContentView<MapContent: View>: View {
     var body: some View {
         ZStack {
             mapContent()
-                .ignoresSafeArea(edges: .top)
+                .ignoresSafeArea(.all)
         }
         .safeAreaInset(edge: .top, spacing: 0) {
             VStack(alignment: .leading, spacing: 16) {

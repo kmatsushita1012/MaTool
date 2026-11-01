@@ -165,7 +165,7 @@ extension RouteEditView {
                 info
             } else {
                 map
-                .ignoresSafeArea(.container, edges: [.bottom, .top])
+                .ignoresSafeArea(.all)
             }
         }
         .safeAreaInset(edge: .top) {
