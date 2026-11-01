@@ -1,9 +1,49 @@
 import ComposableArchitecture
+import Foundation
 import Shared
 import Testing
 @testable import iOSApp
 
 struct DistrictEditFeatureTests {
+    @Test("地区画像の下書きを既存 Pack PUT へ渡す")
+    @MainActor
+    func savesDistrictImageThroughExistingPack() async throws {
+        let fixture = DistrictEditFixture()
+        var initialState = try DistrictEditFeature.State(fixture.district, appState: fixture.appState)
+        let temporaryPath = "temporary/districts/district/dark.jpg"
+        initialState.imageEdit.darkDraft = .replaced(
+            path: temporaryPath,
+            jpegData: Data([0xFF, 0xD8, 0xFF, 0xD9])
+        )
+        let saveSpy = SaveDistrictPackUseCaseSpy()
+        let store = TestStore(initialState: initialState) {
+            DistrictEditFeature()
+        } withDependencies: {
+            $0.installTestSpies()
+            $0[SaveDistrictPackUseCaseKey.self] = saveSpy
+        }
+
+        await store.send(.saveTapped) {
+            $0.district.image = ImagePath(light: nil, dark: temporaryPath)
+            $0.isLoading = true
+        }
+        await store.receive(.postReceived(.success)) {
+            $0.isLoading = false
+            $0.isImageEditPresented = false
+        }
+        await store.receive(.imageEdit(.reset)) {
+            $0.imageEdit.selectedMode = .light
+            $0.imageEdit.lightDraft = .unchanged
+            $0.imageEdit.darkDraft = .unchanged
+            $0.imageEdit.activeUploadID = nil
+        }
+
+        let calls = await saveSpy.calls
+        #expect(calls.count == 1)
+        #expect(calls.first?.district.image == ImagePath(light: nil, dark: temporaryPath))
+        await store.finish()
+    }
+
     @Test("地区編集はAppStateのPerformanceと祭典基準座標を使う")
     @MainActor
     func 地区基準が未設定でも祭典基準で地図を開く() async throws {

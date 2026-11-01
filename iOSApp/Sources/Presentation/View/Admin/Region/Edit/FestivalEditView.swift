@@ -26,6 +26,7 @@ struct FestivalEditScreen: View {
                 checkpoints: store.checkpoints,
                 hazardSections: store.hazardSections,
                 isLoading: store.isLoading,
+                onImageEditTapped: { store.send(.imageEditTapped) },
                 onBaseTapped: { store.send(.baseTapped) },
                 onCheckpointEditTapped: { store.send(.onCheckpointEdit($0)) },
                 onCheckpointAddTapped: { store.send(.onCheckpointAdd) },
@@ -34,6 +35,15 @@ struct FestivalEditScreen: View {
                 onCancelTapped: { store.send(.cancelTapped) },
                 onSaveTapped: { store.send(.saveTapped) }
             )
+            .sheet(isPresented: $store.isImageEditPresented) {
+                NavigationStack {
+                    ImageEditContentView(
+                        store: store.scope(state: \.imageEdit, action: \.imageEdit),
+                        onClose: { store.send(.imageEditDismissTapped) }
+                    )
+                }
+                .interactiveDismissDisabled(store.imageEdit.isUploading)
+            }
             .navigationDestination(
                 item: $store.scope(state: \.destination?.base, action: \.destination.base)
             ) { store in
@@ -69,6 +79,7 @@ struct FestivalEditContentView: View {
     let checkpoints: [Checkpoint]
     let hazardSections: [HazardSection]
     let isLoading: Bool
+    let onImageEditTapped: () -> Void
     let onBaseTapped: () -> Void
     let onCheckpointEditTapped: (Checkpoint) -> Void
     let onCheckpointAddTapped: () -> Void
@@ -96,6 +107,10 @@ struct FestivalEditContentView: View {
             Section(header: Text("紹介文")) {
                 TextEditor(text: $description)
                     .frame(height: 120)
+            }
+            Section(header: Text("紹介画像")) {
+                Button("画像を変更", systemImage: "photo", action: onImageEditTapped)
+                    .disabled(isLoading)
             }
             Section(header: Text("都道府県")) {
                 TextField("都道府県を入力", text: $prefecture)
@@ -146,6 +161,7 @@ struct FestivalEditContentView: View {
         checkpoints: [],
         hazardSections: [],
         isLoading: false,
+        onImageEditTapped: {},
         onBaseTapped: {},
         onCheckpointEditTapped: { _ in },
         onCheckpointAddTapped: {},

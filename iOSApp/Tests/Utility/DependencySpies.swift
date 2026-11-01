@@ -26,6 +26,13 @@ extension DependencyValues {
         self.userDefaultsClient = UserDefaultsClientSpy().client
         self.authProvider = AuthProviderSpy().client
         self[ImageCacheClientKey.self] = ImageCacheClientSpy()
+        self[PhotoLibraryClientKey.self] = UnconfiguredPhotoLibraryClientSpy()
+        self[ImageJPEGProcessingClientKey.self] = UnconfiguredImageJPEGProcessingClientSpy()
+        self[ImageUploadDataFetcherKey.self] = UnconfiguredImageUploadDataFetcherSpy()
+        self[S3ImageUploadClientKey.self] = UnconfiguredS3ImageUploadClientSpy()
+        self[UploadImageUseCaseKey.self] = UnconfiguredUploadImageUseCaseSpy()
+        self[SaveFestivalUseCaseKey.self] = UnconfiguredSaveFestivalUseCaseSpy()
+        self[SaveDistrictPackUseCaseKey.self] = UnconfiguredSaveDistrictPackUseCaseSpy()
         self[AppStatusClientKey.self] = AppStatusClientSpy()
         self[AdManagerKey.self] = AdManagerSpy()
         self[SceneSessionCoordinatorKey.self] = SceneSessionCoordinatorSpy()
@@ -110,6 +117,12 @@ actor BroadcastLocationProviderSpy: BroadcastLocationProviderProtocol {
 
 actor HTTPClientSpy: HTTPClientProtocol {
     private(set) var calls: [String] = []
+    private(set) var postCalls: [HTTPPostCall] = []
+    private let responseData: Data?
+
+    init(responseData: Data? = nil) {
+        self.responseData = responseData
+    }
 
     private func unexpected(_ operation: String, path: String) -> SpyInvocationError {
         let call = "\(operation) \(path)"
@@ -141,7 +154,17 @@ actor HTTPClientSpy: HTTPClientProtocol {
     func post<Response: Decodable, Body: Encodable>(
         path: String, body: Body, query: [String: Any], accessToken: String?
     ) async throws -> Response {
-        throw unexpected("POST", path: path)
+        calls.append("POST \(path)")
+        let encoder = JSONEncoder()
+        encoder.dateEncodingStrategy = .secondsSince1970
+        let bodyData = try encoder.encode(body)
+        postCalls.append(HTTPPostCall(path: path, body: bodyData, accessToken: accessToken))
+        guard let responseData else {
+            throw unexpected("POST", path: path)
+        }
+        let decoder = JSONDecoder()
+        decoder.dateDecodingStrategy = .secondsSince1970
+        return try decoder.decode(Response.self, from: responseData)
     }
 
     func put<Response: Decodable, Body: Encodable>(
@@ -159,6 +182,12 @@ actor HTTPClientSpy: HTTPClientProtocol {
     func delete(path: String, query: [String: Any], accessToken: String?) async throws {
         throw unexpected("DELETE", path: path)
     }
+}
+
+struct HTTPPostCall: Equatable, Sendable {
+    let path: String
+    let body: Data
+    let accessToken: String?
 }
 
 actor AuthProviderSpy {
