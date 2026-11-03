@@ -127,7 +127,7 @@ struct PublicMapContentView<MapContent: View>: View {
                                     LinearGradient(
                                         stops: [
                                             .init(color: .primary, location: 0),
-                                            .init(color: .primary, location: 0.8),
+                                            .init(color: .primary, location: 0.9),
                                             .init(color: .clear, location: 1)
                                         ],
                                         startPoint: .top,
@@ -139,7 +139,7 @@ struct PublicMapContentView<MapContent: View>: View {
                                 .accessibilityHidden(true)
                         }
                     }
-                    .padding(.top, 12)
+                    .padding(.top, 8)
                 if let toast {
                     MapToastView(toast: toast, onDismiss: onToastDismissed)
                         .padding(.top, 16)
