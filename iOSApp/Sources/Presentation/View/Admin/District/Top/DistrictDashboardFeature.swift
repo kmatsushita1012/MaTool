@@ -286,8 +286,7 @@ private extension DistrictDashboardFeature {
             let tableSnapshotter = await ActionTableSnapshotter(
                 district: state.district,
                 slots: state.routes,
-                routePacks: routePacks,
-                districts: state.appState?.festivalState.districts ?? []
+                routePacks: routePacks
             )
             let tablePages = await tableSnapshotter.takeAll()
             for page in tablePages {

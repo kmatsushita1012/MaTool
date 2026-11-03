@@ -69,50 +69,8 @@ struct PDFRendererTests {
         let route = Route(id: "route-1", districtId: district.id, periodId: "period-1")
         let passage = RoutePassage(routeId: route.id, districtId: district.id, memo: "中央町を通過")
 
-        let title = ActionTableSnapshotter.passageTitle(
-            passage,
-            routeDistrictId: route.districtId,
-            districts: [district]
-        )
+        let title = ActionTableSnapshotter.passageTitle(passage, routeDistrictId: route.districtId)
         #expect(title == "自町")
-    }
-
-    @Test @MainActor func 行動表は通過先地区名をメモより優先する() {
-        let routeDistrict = District(id: "district-1", name: "中央町", festivalId: "festival-1")
-        let destinationDistrict = District(id: "district-2", name: "東町", festivalId: "festival-1")
-        let passage = RoutePassage(routeId: "route-1", districtId: destinationDistrict.id, memo: "駅前を経由")
-
-        let title = ActionTableSnapshotter.passageTitle(
-            passage,
-            routeDistrictId: routeDistrict.id,
-            districts: [routeDistrict, destinationDistrict]
-        )
-
-        #expect(title == "東町")
-    }
-
-    @Test @MainActor func 行動表は地区が見つからない場合にメモへフォールバックする() {
-        let passage = RoutePassage(routeId: "route-1", districtId: "missing-district", memo: "駅前を経由")
-
-        let title = ActionTableSnapshotter.passageTitle(
-            passage,
-            routeDistrictId: "district-1",
-            districts: []
-        )
-
-        #expect(title == "駅前を経由")
-    }
-
-    @Test @MainActor func 行動表は地区とメモが空なら未設定を表示する() {
-        let passage = RoutePassage(routeId: "route-1", districtId: "missing-district", memo: " \n ")
-
-        let title = ActionTableSnapshotter.passageTitle(
-            passage,
-            routeDistrictId: "district-1",
-            districts: []
-        )
-
-        #expect(title == "(未設定)")
     }
 
     @Test func ルート地図キャプションは赤丸矩形を避ける() {

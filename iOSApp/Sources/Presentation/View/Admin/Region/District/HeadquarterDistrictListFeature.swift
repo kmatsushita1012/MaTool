@@ -176,8 +176,7 @@ struct HeadquarterDistrictListFeature {
                 let tableSnapshotter = await ActionTableSnapshotter(
                     district: district,
                     slots: slots,
-                    routePacks: routePacks,
-                    districts: state.appState?.festivalState.districts ?? []
+                    routePacks: routePacks
                 )
                 let tablePages = await tableSnapshotter.takeAll()
                 for page in tablePages {
