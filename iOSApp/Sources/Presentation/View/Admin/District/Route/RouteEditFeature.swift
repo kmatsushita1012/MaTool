@@ -232,7 +232,17 @@ struct RouteEditFeature{
             case .wholeTapped:
                 state.loadingAction = .export
                 return .task(Action.previewPrepared){ [state] in
-                    let snapshotter = try await RouteSnapshotter(route: state.route, points: state.points)
+                    guard let appState = state.appState else {
+                        throw AppError.export(.notFound("必要な情報の取得に失敗しました。"))
+                    }
+                    let snapshotter = try await RouteSnapshotter(
+                        route: state.route,
+                        points: state.points,
+                        district: state.district,
+                        period: state.period,
+                        checkpoints: appState.festivalState.checkpoints,
+                        hazardSections: appState.festivalState.hazardSections
+                    )
                     let (image, url) = try await snapshotter.take()
                     return ExportedItem(image: image, url: url)
                 }
@@ -243,7 +253,17 @@ struct RouteEditFeature{
                 }
                 state.loadingAction = .export
                 return .task(Action.previewPrepared){ [state] in
-                    let snapshotter = try await RouteSnapshotter(route: state.route, points: state.points)
+                    guard let appState = state.appState else {
+                        throw AppError.export(.notFound("必要な情報の取得に失敗しました。"))
+                    }
+                    let snapshotter = try await RouteSnapshotter(
+                        route: state.route,
+                        points: state.points,
+                        district: state.district,
+                        period: state.period,
+                        checkpoints: appState.festivalState.checkpoints,
+                        hazardSections: appState.festivalState.hazardSections
+                    )
                     let (image, url) = try await snapshotter.take(of: state.region, size: size)
                     return ExportedItem(image: image, url: url)
                 }
