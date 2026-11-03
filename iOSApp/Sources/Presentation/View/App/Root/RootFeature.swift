@@ -197,20 +197,21 @@ struct RootFeature {
                     return .none
                 }
 
-            case .map(.delegate(.settingsOrAdminTapped)):
+            case .map(.delegate(.settingsOrAdminTapped)),
+                 .map(.delegate(.settingsTapped)):
                 guard !state.isDestinationLoading && !state.isIntroductionLoading else { return .none }
                 guard let userRole = currentUserRole(state.launchState) else { return .none }
-                if userRole == .guest {
-                    state.isDestinationLoading = true
-                    return .task(Action.settingsPrepared) {
-                        let festivals = try await fetchFestivalListUseCase()
-                        let selection = getSceneSelectionUseCase()
-                        return SettingsPreparation(festivals: festivals, selection: selection)
-                    }
+                if case .map(.delegate(.settingsOrAdminTapped)) = action, userRole != .guest {
+                    guard setAdminDestination(state: &state, userRole: userRole) else { return .none }
+                    lastMainScreenUseCase.save(.admin)
+                    return .none
                 }
-                guard setAdminDestination(state: &state, userRole: userRole) else { return .none }
-                lastMainScreenUseCase.save(.admin)
-                return .none
+                state.isDestinationLoading = true
+                return .task(Action.settingsPrepared) {
+                    let festivals = try await fetchFestivalListUseCase()
+                    let selection = getSceneSelectionUseCase()
+                    return SettingsPreparation(festivals: festivals, selection: selection)
+                }
 
             case .map(.delegate(.emergencySignOutTapped)):
                 guard !state.isEmergencySignOutLoading else { return .none }

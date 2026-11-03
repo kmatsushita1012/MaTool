@@ -85,6 +85,7 @@ struct PublicMapFeature {
     enum Action: BindableAction, Equatable {
         enum Delegate: Equatable {
             case settingsOrAdminTapped
+            case settingsTapped
             case emergencySignOutTapped
             case introductionTapped
         }
