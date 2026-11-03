@@ -70,7 +70,8 @@ struct PublicMapView: View {
             isAdminLoggedIn: isAdminLoggedIn,
             isNavigationDisabled: isNavigationDisabled,
             toast: toast,
-            onSettingsTapped: { store.send(.delegate(.settingsOrAdminTapped)) },
+            onAdminPageTapped: { store.send(.delegate(.settingsOrAdminTapped)) },
+            onSettingsTapped: { store.send(.delegate(.settingsTapped)) },
             onEmergencySignOutTapped: { store.send(.delegate(.emergencySignOutTapped)) },
             onIntroductionTapped: { store.send(.delegate(.introductionTapped)) },
             onContentSelected: { store.send(.contentSelected($0)) },
@@ -95,6 +96,7 @@ struct PublicMapContentView<MapContent: View>: View {
     let isAdminLoggedIn: Bool
     let isNavigationDisabled: Bool
     let toast: MapToast?
+    let onAdminPageTapped: () -> Void
     let onSettingsTapped: () -> Void
     let onEmergencySignOutTapped: () -> Void
     let onIntroductionTapped: () -> Void
@@ -110,13 +112,32 @@ struct PublicMapContentView<MapContent: View>: View {
                 .ignoresSafeArea(.all)
         }
         .safeAreaInset(edge: .top, spacing: 0) {
-            VStack(alignment: .leading, spacing: 16) {
+            VStack(alignment: .leading, spacing: 0) {
                 topControls
+                    .fixedSize(horizontal: false, vertical: true)
+                    .background {
+                        GeometryReader { geometry in
+                            let controlsFrame = geometry.frame(in: .global)
+
+                            if #available(iOS 26.0, *) {
+                                Color.clear
+                                    .glassEffect(.regular, in: .rect)
+                                    .ignoresSafeArea(edges: [.top, .horizontal])
+                                    .frame(width: geometry.size.width, height: controlsFrame.maxY + 8)
+                                    .offset(y: -controlsFrame.minY)
+                                    .allowsHitTesting(false)
+                                    .accessibilityHidden(true)
+                            }
+                        }
+                    }
+                    .padding(.top, 0)
                 if let toast {
                     MapToastView(toast: toast, onDismiss: onToastDismissed)
+                        .padding(.top, 16)
                         .transition(.opacity)
                 }
             }
+            .frame(maxWidth: .infinity, alignment: .leading)
             .animation(.easeInOut(duration: 0.2), value: toast)
         }
         .toolbar {
@@ -138,12 +159,19 @@ struct PublicMapContentView<MapContent: View>: View {
             ToolbarItem(placement: .topBarTrailing) {
                 if isAdminLoggedIn {
                     Menu {
-                        Button("管理者ページ", action: onSettingsTapped)
-                        Button("ログアウト", role: .destructive, action: onEmergencySignOutTapped)
+                        Button(action: onAdminPageTapped) {
+                            MapMenuItemLabel(title: "管理者ページ", systemImage: "person.crop.circle")
+                        }
+                        Button(action: onSettingsTapped) {
+                            MapMenuItemLabel(title: "設定", systemImage: "gearshape")
+                        }
+                        Button(role: .destructive, action: onEmergencySignOutTapped) {
+                            MapMenuItemLabel(title: "ログアウト", systemImage: "rectangle.portrait.and.arrow.right")
+                        }
                     } label: {
                         Image(systemName: "person.crop.circle")
                     } primaryAction: {
-                        onSettingsTapped()
+                        onAdminPageTapped()
                     }
                     .accessibilityLabel("管理者")
                     .disabled(isNavigationDisabled)
@@ -156,7 +184,7 @@ struct PublicMapContentView<MapContent: View>: View {
                 }
             }
         }
-        .toolbarBackground(.hidden, for: .navigationBar)
+        .toolbarBackgroundVisibility(.hidden, for: .navigationBar)
     }
 
     private var topControls: some View {
@@ -207,6 +235,15 @@ struct PublicMapContentView<MapContent: View>: View {
     }
 }
 
+private struct MapMenuItemLabel: View {
+    let title: String
+    let systemImage: String
+
+    var body: some View {
+        Label(title, systemImage: systemImage)
+    }
+}
+
 private struct MapTopMenuStyle: ViewModifier {
     let isLiquidGlassDisabled: Bool
 
@@ -251,6 +288,7 @@ private extension PublicMapFeature.Content {
             isAdminLoggedIn: false,
             isNavigationDisabled: false,
             toast: nil,
+            onAdminPageTapped: {},
             onSettingsTapped: {},
             onEmergencySignOutTapped: {},
             onIntroductionTapped: {},
