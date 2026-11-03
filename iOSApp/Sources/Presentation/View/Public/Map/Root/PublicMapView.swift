@@ -111,14 +111,17 @@ struct PublicMapContentView<MapContent: View>: View {
             mapContent()
                 .ignoresSafeArea(.all)
         }
-        .safeAreaInset(edge: .top, spacing: 0) {
-            VStack(alignment: .leading, spacing: 16) {
+        .overlay(alignment: .top) {
+            VStack(alignment: .leading, spacing: 0) {
                 topControls
+                    .padding(.top, 12)
                 if let toast {
                     MapToastView(toast: toast, onDismiss: onToastDismissed)
+                        .padding(.top, 16)
                         .transition(.opacity)
                 }
             }
+            .frame(maxWidth: .infinity, alignment: .leading)
             .animation(.easeInOut(duration: 0.2), value: toast)
         }
         .toolbar {
@@ -165,7 +168,7 @@ struct PublicMapContentView<MapContent: View>: View {
                 }
             }
         }
-        .toolbarBackground(.hidden, for: .navigationBar)
+        .toolbarBackgroundVisibility(.hidden, for: .navigationBar)
     }
 
     private var topControls: some View {
