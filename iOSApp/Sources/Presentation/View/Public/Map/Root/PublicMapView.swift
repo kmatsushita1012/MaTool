@@ -111,9 +111,34 @@ struct PublicMapContentView<MapContent: View>: View {
             mapContent()
                 .ignoresSafeArea(.all)
         }
-        .overlay(alignment: .top) {
+        .safeAreaInset(edge: .top, spacing: 0) {
             VStack(alignment: .leading, spacing: 0) {
                 topControls
+                    .fixedSize(horizontal: false, vertical: true)
+                    .background {
+                        GeometryReader { geometry in
+                            let controlsFrame = geometry.frame(in: .global)
+
+                            Rectangle()
+                                .fill(.ultraThinMaterial)
+                                .ignoresSafeArea(edges: .top)
+                                .frame(width: geometry.size.width, height: controlsFrame.maxY)
+                                .mask {
+                                    LinearGradient(
+                                        stops: [
+                                            .init(color: .primary, location: 0),
+                                            .init(color: .primary, location: 0.8),
+                                            .init(color: .clear, location: 1)
+                                        ],
+                                        startPoint: .top,
+                                        endPoint: .bottom
+                                    )
+                                }
+                                .offset(y: -controlsFrame.minY)
+                                .allowsHitTesting(false)
+                                .accessibilityHidden(true)
+                        }
+                    }
                     .padding(.top, 12)
                 if let toast {
                     MapToastView(toast: toast, onDismiss: onToastDismissed)
