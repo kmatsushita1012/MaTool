@@ -135,6 +135,7 @@ struct ActionTableSnapshotter: Sendable {
     }
 
     private let district: District
+    private let districts: [District]
     private let slots: [RouteSlot]
     private let routePacks: [RoutePack]
     private let linesPerPeriod = 5
@@ -147,10 +148,16 @@ struct ActionTableSnapshotter: Sendable {
     private let arrowFontSize: CGFloat = 16
     private let arrowWidth: CGFloat = 20
 
-    init(district: District, slots: [RouteSlot], routePacks: [RoutePack] = []) {
+    init(
+        district: District,
+        slots: [RouteSlot],
+        routePacks: [RoutePack] = [],
+        districts: [District]
+    ) {
         self.district = district
         self.slots = slots
         self.routePacks = routePacks
+        self.districts = districts
     }
 
     func takeAll() -> [UIImage] {
@@ -386,7 +393,9 @@ struct ActionTableSnapshotter: Sendable {
             let entries: [String] = {
                 guard let route = slot.route else { return [] }
                 let passages = routePacks.first { $0.route.id == route.id }?.passages ?? []
-                return passages.prefix(linesPerPeriod * columnsPerLine).map { Self.passageTitle($0, routeDistrictId: route.districtId) }
+                return passages.prefix(linesPerPeriod * columnsPerLine).map {
+                    Self.passageTitle($0, routeDistrictId: route.districtId, districts: districts)
+                }
             }()
             return Row(
                 period: slot.period,
@@ -395,9 +404,18 @@ struct ActionTableSnapshotter: Sendable {
         }
     }
 
-    static func passageTitle(_ passage: RoutePassage, routeDistrictId: District.ID) -> String {
+    static func passageTitle(
+        _ passage: RoutePassage,
+        routeDistrictId: District.ID,
+        districts: [District]
+    ) -> String {
         if passage.districtId == routeDistrictId {
             return "自町"
+        }
+
+        if let districtId = passage.districtId,
+           let district = districts.first(where: { $0.id == districtId }) {
+            return district.name
         }
 
         if let memo = passage.memo?.trimmingCharacters(in: .whitespacesAndNewlines),
