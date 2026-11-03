@@ -121,7 +121,7 @@ struct PublicMapContentView<MapContent: View>: View {
 
                             Rectangle()
                                 .fill(.ultraThinMaterial)
-                                .ignoresSafeArea(edges: .top)
+                                .ignoresSafeArea(edges: [.top, .horizontal])
                                 .frame(width: geometry.size.width, height: controlsFrame.maxY)
                                 .mask {
                                     LinearGradient(
