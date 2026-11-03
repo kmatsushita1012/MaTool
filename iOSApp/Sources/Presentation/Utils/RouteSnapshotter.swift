@@ -280,14 +280,27 @@ struct RouteSnapshotter: Equatable {
     var period: Period
     var points: [Point]
     var district: District
+    var checkpoints: [Checkpoint]
     var hazardSections: [HazardSection]
     
-    init (_ route: Route) throws {
-        throw AppError.export(.notFound("必要な情報の取得に失敗しました。"))
-    }
-    
-    init (route: Route, points: [Point]) throws {
-        throw AppError.export(.notFound("必要な情報の取得に失敗しました。"))
+    init(
+        route: Route,
+        points: [Point],
+        district: District,
+        period: Period,
+        checkpoints: [Checkpoint],
+        hazardSections: [HazardSection]
+    ) throws {
+        guard route.districtId == district.id,
+              route.periodId == period.id else {
+            throw AppError.export(.notFound("必要な情報の取得に失敗しました。"))
+        }
+        self.route = route
+        self.period = period
+        self.points = points.filter { $0.routeId == route.id }
+        self.district = district
+        self.checkpoints = checkpoints
+        self.hazardSections = hazardSections
     }
     
     private var coordinates: [Coordinate] {
@@ -511,7 +524,10 @@ struct RouteSnapshotter: Equatable {
     }
     
     private func makeTitle(_ point: Point) -> String? {
-        if let anchor = point.anchor {
+        if let checkpointId = point.checkpointId,
+           let checkpoint = checkpoints.first(where: { $0.id == checkpointId }) {
+            checkpoint.name
+        } else if let anchor = point.anchor {
             anchor.text
         } else {
             nil

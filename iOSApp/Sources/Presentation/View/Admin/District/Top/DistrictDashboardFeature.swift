@@ -296,8 +296,19 @@ private extension DistrictDashboardFeature {
                 let url = await renderer.finalize()
                 return url
             }
+            let appState = state.appState
             for pack in routePacks {
-                guard let snapshotter = try? await RouteSnapshotter(route: pack.route, points: pack.points),
+                guard let appState,
+                      let district = appState.district(id: pack.route.districtId),
+                      let period = appState.period(id: pack.route.periodId),
+                      let snapshotter = try? await RouteSnapshotter(
+                        route: pack.route,
+                        points: pack.points,
+                        district: district,
+                        period: period,
+                        checkpoints: appState.festivalState.checkpoints,
+                        hazardSections: appState.festivalState.hazardSections
+                      ),
                       let image = try? await snapshotter.take() else { continue }
                 await renderer.addPage(with: image)
             }
