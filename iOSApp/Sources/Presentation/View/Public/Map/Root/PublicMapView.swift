@@ -139,7 +139,7 @@ struct PublicMapContentView<MapContent: View>: View {
                                 .accessibilityHidden(true)
                         }
                     }
-                    .padding(.top, 8)
+                    .padding(.top, 0)
                 if let toast {
                     MapToastView(toast: toast, onDismiss: onToastDismissed)
                         .padding(.top, 16)
