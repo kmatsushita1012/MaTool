@@ -10,6 +10,12 @@ import MapKit
 import SwiftUI
 import Shared
 
+struct FloatMapItem: Equatable {
+    let title: String
+    let coordinate: Coordinate
+    let entry: FloatEntry?
+}
+
 class PointAnnotation: MKPointAnnotation {
     enum Stryle {
         case simple

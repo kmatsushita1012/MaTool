@@ -16,6 +16,11 @@ final class ReplayController: ObservableObject {
         case playing(Double)
         case paused
     }
+
+    struct Frame: Equatable {
+        var annotation: FloatMapItem?
+        var progress: Double
+    }
     
     // MARK: - Properties
     private var timer: Timer?
@@ -26,14 +31,9 @@ final class ReplayController: ObservableObject {
     private var interval: TimeInterval
     private(set) var state: State = .paused
     private var onEnd: (() -> Void)?
-    private var index: Int = 0 {
-        didSet{
-            seekValue = coords.isEmpty ? 0 : Double(index) / Double(coords.count - 1)
-        }
-    }
-    
-    @Published private(set) var annotation: FloatReplayAnnotation?
-    @Published private(set) var seekValue: Double = 0.0
+    private var index: Int = 0
+
+    @Published private(set) var frame = Frame(annotation: nil, progress: 0)
     
     // MARK: - Init
     init(
@@ -63,7 +63,7 @@ final class ReplayController: ObservableObject {
     func start() {
         guard !coords.isEmpty else { return }
         state = .playing(Double(index) / Double(max(coords.count-1,1)))
-        annotation = FloatReplayAnnotation(title: name, coordinate: coords[index])
+        publishFrame()
         startTimer()
     }
     
@@ -76,14 +76,14 @@ final class ReplayController: ObservableObject {
         state = .paused
         stopTimer()
         index = 0
-        annotation = nil
+        frame = Frame(annotation: nil, progress: 0)
     }
     
     func seek(to progress: Double) {
         guard !coords.isEmpty else { return }
         let clamped = max(0, min(1, progress))
         index = Int(Double(coords.count-1) * clamped)
-        annotation?.coordinate = coords[index].toCL()
+        publishFrame()
         state = .playing(clamped)
         if timer == nil {
             startTimer()
@@ -99,8 +99,10 @@ final class ReplayController: ObservableObject {
         }
         
         self.index = 0
-        if let newCoordinate = coords.first{
-            annotation?.coordinate = newCoordinate.toCL()
+        if frame.annotation != nil, !coords.isEmpty {
+            publishFrame()
+        } else {
+            frame = Frame(annotation: nil, progress: 0)
         }
     }
     
@@ -119,14 +121,21 @@ final class ReplayController: ObservableObject {
     }
     
     private func tick() {
-        guard index < coords.count else {
+        guard index + 1 < coords.count else {
             stop()
             onEnd?()
             return
         }
-        annotation?.coordinate = coords[index].toCL()
         index += 1
+        publishFrame()
         state = .playing(Double(index) / Double(max(coords.count-1, 1)))
+    }
+
+    private func publishFrame() {
+        frame = Frame(
+            annotation: FloatMapItem(title: name, coordinate: coords[index], entry: nil),
+            progress: Double(index) / Double(max(coords.count - 1, 1))
+        )
     }
     
     // MARK: - Static interpolation
