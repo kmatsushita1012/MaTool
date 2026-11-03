@@ -112,13 +112,32 @@ struct PublicMapContentView<MapContent: View>: View {
                 .ignoresSafeArea(.all)
         }
         .safeAreaInset(edge: .top, spacing: 0) {
-            VStack(alignment: .leading, spacing: 16) {
+            VStack(alignment: .leading, spacing: 0) {
                 topControls
+                    .fixedSize(horizontal: false, vertical: true)
+                    .background {
+                        GeometryReader { geometry in
+                            let controlsFrame = geometry.frame(in: .global)
+
+                            if #available(iOS 26.0, *) {
+                                Color.clear
+                                    .glassEffect(.regular, in: .rect)
+                                    .ignoresSafeArea(edges: [.top, .horizontal])
+                                    .frame(width: geometry.size.width, height: controlsFrame.maxY + 8)
+                                    .offset(y: -controlsFrame.minY)
+                                    .allowsHitTesting(false)
+                                    .accessibilityHidden(true)
+                            }
+                        }
+                    }
+                    .padding(.top, 0)
                 if let toast {
                     MapToastView(toast: toast, onDismiss: onToastDismissed)
+                        .padding(.top, 16)
                         .transition(.opacity)
                 }
             }
+            .frame(maxWidth: .infinity, alignment: .leading)
             .animation(.easeInOut(duration: 0.2), value: toast)
         }
         .toolbar {
@@ -165,7 +184,7 @@ struct PublicMapContentView<MapContent: View>: View {
                 }
             }
         }
-        .toolbarBackground(.hidden, for: .navigationBar)
+        .toolbarBackgroundVisibility(.hidden, for: .navigationBar)
     }
 
     private var topControls: some View {
