@@ -9,7 +9,11 @@ enum InfoImageColorScheme {
     }
 
     static func supportsThemeSwitch(lightPath: String?, darkPath: String?) -> Bool {
-        isAvailable(lightPath) && isAvailable(darkPath)
+        guard let lightPath = normalizedPath(lightPath),
+              let darkPath = normalizedPath(darkPath) else {
+            return false
+        }
+        return lightPath != darkPath
     }
 
     static func resolve(
@@ -34,13 +38,17 @@ enum InfoImageColorScheme {
     }
 
     private static func isAvailable(_ path: String?) -> Bool {
-        guard let path,
-              !path.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
+        normalizedPath(path) != nil
+    }
+
+    private static func normalizedPath(_ path: String?) -> String? {
+        guard let path = path?.trimmingCharacters(in: .whitespacesAndNewlines),
+              !path.isEmpty,
               let url = URL(string: path),
               url.scheme != nil else {
-            return false
+            return nil
         }
-        return true
+        return path
     }
 
     static func preferredColorScheme(
