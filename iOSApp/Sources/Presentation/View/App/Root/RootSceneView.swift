@@ -4,7 +4,7 @@ import SwiftUI
 
 public struct RootSceneView: View {
     @State private var store: StoreOf<RootFeature>
-    @State private var infoSheetDetent: PresentationDetent = .medium
+    @State private var infoSheetDetent: PresentationDetent = .large
     @Dependency(\.values.isLiquidGlassEnabled) private var isLiquidGlassEnabled
 
     private var errorStatusBinding: Binding<StatusCheckResult?> {
@@ -64,7 +64,7 @@ public struct RootSceneView: View {
                         state: \.sheet,
                         action: \.sheet
                     ), onDismiss: {
-                        infoSheetDetent = .medium
+                        infoSheetDetent = .large
                     }) { sheetStore in
                         let introductionSheet = NavigationStack {
                             switch sheetStore.case {
