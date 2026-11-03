@@ -357,7 +357,7 @@ token の対象は impressionId / storeId / festivalId / placement / expiry。�
 
 Apple 通知の再送が尽きた場合は、`bash scripts/replay-app-store-notifications <開始日時UTC> <終了日時UTC>` を使い、過去180日以内を指定して Apple Get Notification History の失敗履歴を取得し、署名検証後に既存の冪等な `applyNotification` へ再投入する。実行環境には App Store Server API Key と通常の DynamoDB 読書き権限が必要。処理途中で失敗した場合は同じ期間を再実行する。
 
-購入 Claim は受信 JWS の署名検証に加え、付与直前に App Store Server API の Get Transaction Info を呼び、返金状態を含む最新の署名済み取引を再検証する。App Store Connect API Key の `Key ID`、`Issuer ID`、秘密鍵 PEM の Base64 値を Lambda に設定する。Apple API が応答しない場合は fail closed で付与せず、クライアントに再試行させる。
+購入 Claim は受信 JWS の署名検証に加え、付与直前に App Store Server API の Get Transaction Info を呼び、返金状態を含む最新の署名済み取引を再検証する。App Store Connect API Key の `Key ID`、`Issuer ID`、秘密鍵 PEM の Base64 値を Lambda に設定する。`APP_STORE_ENVIRONMENT` はデプロイ Workflow が Lambda バージョン作成前に注入し、`release-backend` は `production`、`main` と `backend/*` は `sandbox` にする。Apple API が応答しない場合は fail closed で付与せず、クライアントに再試行させる。
 
 ### 11.2 通報を運営に届ける
 
