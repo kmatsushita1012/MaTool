@@ -123,7 +123,7 @@ struct PublicMapContentView<MapContent: View>: View {
                                 Color.clear
                                     .glassEffect(.regular, in: .rect)
                                     .ignoresSafeArea(edges: [.top, .horizontal])
-                                    .frame(width: geometry.size.width, height: controlsFrame.maxY + 4)
+                                    .frame(width: geometry.size.width, height: controlsFrame.maxY + 8)
                                     .offset(y: -controlsFrame.minY)
                                     .allowsHitTesting(false)
                                     .accessibilityHidden(true)
