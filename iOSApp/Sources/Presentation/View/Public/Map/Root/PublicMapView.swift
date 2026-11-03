@@ -121,8 +121,7 @@ struct PublicMapContentView<MapContent: View>: View {
 
                             if #available(iOS 26.0, *) {
                                 Color.clear
-                                    .glassEffect(.regular.tint(.red), in: .rect)
-                                    .opacity(0.5)
+                                    .glassEffect(.regular, in: .rect)
                                     .ignoresSafeArea(edges: [.top, .horizontal])
                                     .frame(width: geometry.size.width, height: controlsFrame.maxY + 8)
                                     .offset(y: -controlsFrame.minY)
