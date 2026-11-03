@@ -119,24 +119,15 @@ struct PublicMapContentView<MapContent: View>: View {
                         GeometryReader { geometry in
                             let controlsFrame = geometry.frame(in: .global)
 
-                            Rectangle()
-                                .fill(.ultraThinMaterial)
-                                .ignoresSafeArea(edges: [.top, .horizontal])
-                                .frame(width: geometry.size.width, height: controlsFrame.maxY)
-                                .mask {
-                                    LinearGradient(
-                                        stops: [
-                                            .init(color: .primary, location: 0),
-                                            .init(color: .primary, location: 0.9),
-                                            .init(color: .clear, location: 1)
-                                        ],
-                                        startPoint: .top,
-                                        endPoint: .bottom
-                                    )
-                                }
-                                .offset(y: -controlsFrame.minY)
-                                .allowsHitTesting(false)
-                                .accessibilityHidden(true)
+                            if #available(iOS 26.0, *) {
+                                Color.clear
+                                    .glassEffect(.regular, in: .rect)
+                                    .ignoresSafeArea(edges: [.top, .horizontal])
+                                    .frame(width: geometry.size.width, height: controlsFrame.maxY + 4)
+                                    .offset(y: -controlsFrame.minY)
+                                    .allowsHitTesting(false)
+                                    .accessibilityHidden(true)
+                            }
                         }
                     }
                     .padding(.top, 0)
