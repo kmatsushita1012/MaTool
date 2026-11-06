@@ -90,9 +90,11 @@ struct RouteRepositoryTest {
             }
         )
         let dataStore = DataStoreMock(
-            putHandler: { item in
+            routeTransactionHandler: { item, oldRoute in
+                #expect(oldRoute == nil)
                 lastCalledRecord = try decodeFromEncodable(item, as: RouteRecordPayload.self)
-            }
+            },
+            queryHandler: { _, _, _, _, _, _ in try encodeForDataStore([RouteRecordPayload]()) }
         )
         let subject = make(dataStore: dataStore, periodRepository: periodRepository)
 
@@ -101,7 +103,7 @@ struct RouteRepositoryTest {
         #expect(result == route)
         #expect(periodRepository.getCallCount == 1)
         #expect(lastCalledPeriodId == route.periodId)
-        #expect(dataStore.putCallCount == 1)
+        #expect(dataStore.routeTransactionCallCount == 1)
         #expect(lastCalledRecord?.content == route)
         #expect(lastCalledRecord?.pk == "DISTRICT#\(route.districtId)")
         #expect(lastCalledRecord?.sk == "ROUTE#\(route.id)")
@@ -122,9 +124,11 @@ struct RouteRepositoryTest {
             }
         )
         let dataStore = DataStoreMock(
-            putHandler: { item in
+            routeTransactionHandler: { item, oldRoute in
+                #expect(oldRoute == nil)
                 lastCalledRecord = try decodeFromEncodable(item, as: RouteRecordPayload.self)
-            }
+            },
+            queryHandler: { _, _, _, _, _, _ in try encodeForDataStore([RouteRecordPayload]()) }
         )
         let subject = make(dataStore: dataStore, periodRepository: periodRepository)
 
@@ -133,7 +137,7 @@ struct RouteRepositoryTest {
         #expect(result == route)
         #expect(periodRepository.getCallCount == 1)
         #expect(lastCalledPeriodId == route.periodId)
-        #expect(dataStore.putCallCount == 1)
+        #expect(dataStore.routeTransactionCallCount == 1)
         #expect(lastCalledRecord?.content == route)
         #expect(lastCalledRecord?.pk == "DISTRICT#\(route.districtId)")
         #expect(lastCalledRecord?.sk == "ROUTE#\(route.id)")
@@ -141,14 +145,37 @@ struct RouteRepositoryTest {
     }
 
     @Test
-    func delete_正常_対象ありでpkとskを削除する() async throws {
+    func put_正常_既存Routeの更新時は更新前Routeをtransactionに渡す() async throws {
+        let oldRoute = Route.mock(id: "route-existing", districtId: "district-1", periodId: "period-old")
+        let updatedRoute = Route.mock(id: oldRoute.id, districtId: oldRoute.districtId, periodId: "period-new")
+        let period = Period.mock(id: updatedRoute.periodId, festivalId: "festival-1", date: .init(year: 2026, month: 3, day: 1))
+        var replacedRoute: Route?
+        let dataStore = DataStoreMock(
+            routeTransactionHandler: { _, replacing in replacedRoute = replacing },
+            queryHandler: { indexName, _, _, _, _, _ in
+                guard indexName == nil else {
+                    return try encodeForDataStore([RouteRecordPayload]())
+                }
+                return try encodeForDataStore([RouteRecordPayload(oldRoute, date: .init(year: 2026, month: 2, day: 22))])
+            }
+        )
+        let subject = make(
+            dataStore: dataStore,
+            periodRepository: PeriodRepositoryMock(getHandler: { _ in period })
+        )
+
+        _ = try await subject.put(updatedRoute)
+
+        #expect(replacedRoute == oldRoute)
+        #expect(dataStore.routeTransactionCallCount == 1)
+    }
+
+    @Test
+    func delete_正常_対象ありで一意markerとRouteをtransaction削除する() async throws {
         let route = Route.mock(id: "route-1", districtId: "district-1", periodId: "period-1")
-        var lastCalledDeleteKeys: [String: Codable] = [:]
 
         let dataStore = DataStoreMock(
-            deleteHandler: { keys in
-                lastCalledDeleteKeys = keys
-            },
+            routeDeleteTransactionHandler: { deletedRoute in #expect(deletedRoute == route) },
             queryHandler: { _, _, _, _, _, _ in
                 try encodeForDataStore([RouteRecordPayload(route, date: .init(year: 2026, month: 2, day: 22))])
             }
@@ -158,26 +185,21 @@ struct RouteRepositoryTest {
         try await subject.delete(id: route.id)
 
         #expect(dataStore.queryCallCount == 1)
-        #expect(dataStore.deleteCallCount == 1)
-        #expect((lastCalledDeleteKeys["pk"] as? String) == "DISTRICT#\(route.districtId)")
-        #expect((lastCalledDeleteKeys["sk"] as? String) == "ROUTE#\(route.id)")
+        #expect(dataStore.routeDeleteTransactionCallCount == 1)
     }
 
     @Test
-    func delete_正常_Route指定ではGSIを引かず主キーで削除する() async throws {
+    func delete_正常_Route指定ではGSIを引かずtransaction削除する() async throws {
         let route = Route.mock(id: "route-1", districtId: "district-1")
-        var lastCalledDeleteKeys: [String: Codable] = [:]
         let dataStore = DataStoreMock(
-            deleteHandler: { keys in lastCalledDeleteKeys = keys }
+            routeDeleteTransactionHandler: { deletedRoute in #expect(deletedRoute == route) }
         )
         let subject = make(dataStore: dataStore)
 
         try await subject.delete(route)
 
         #expect(dataStore.queryCallCount == 0)
-        #expect(dataStore.deleteCallCount == 1)
-        #expect((lastCalledDeleteKeys["pk"] as? String) == "DISTRICT#\(route.districtId)")
-        #expect((lastCalledDeleteKeys["sk"] as? String) == "ROUTE#\(route.id)")
+        #expect(dataStore.routeDeleteTransactionCallCount == 1)
     }
 
     @Test
@@ -192,7 +214,7 @@ struct RouteRepositoryTest {
         try await subject.delete(id: "route-1")
 
         #expect(dataStore.queryCallCount == 1)
-        #expect(dataStore.deleteCallCount == 0)
+        #expect(dataStore.routeDeleteTransactionCallCount == 0)
     }
 
     @Test
@@ -213,7 +235,8 @@ struct RouteRepositoryTest {
             getHandler: { _ in .mock(id: "period-1", festivalId: "festival-1", date: .init(year: 2026, month: 2, day: 22)) }
         )
         let dataStore = DataStoreMock(
-            putHandler: { _ in throw TestError.intentional }
+            routeTransactionHandler: { _, _ in throw TestError.intentional },
+            queryHandler: { _, _, _, _, _, _ in try encodeForDataStore([RouteRecordPayload]()) }
         )
         let subject = make(dataStore: dataStore, periodRepository: periodRepository)
 
@@ -233,7 +256,7 @@ struct RouteRepositoryTest {
         await #expect(throws: Error.notFound("指定されたルートに合致する日程が取得できませんでした。")) {
             _ = try await subject.post(.mock(id: "route-1", districtId: "district-1", periodId: "period-1"))
         }
-        #expect(dataStore.putCallCount == 0)
+        #expect(dataStore.routeTransactionCallCount == 0)
     }
 
     @Test
@@ -255,7 +278,7 @@ struct RouteRepositoryTest {
         }
         #expect(periodRepository.getCallCount == 1)
         #expect(districtRepository.queryCallCount == 1)
-        #expect(dataStore.putCallCount == 0)
+        #expect(dataStore.routeTransactionCallCount == 0)
     }
 
     @Test
@@ -277,7 +300,7 @@ struct RouteRepositoryTest {
         }
         #expect(periodRepository.getCallCount == 1)
         #expect(districtRepository.queryCallCount == 1)
-        #expect(dataStore.putCallCount == 0)
+        #expect(dataStore.routeTransactionCallCount == 0)
     }
 
     @Test
@@ -291,7 +314,7 @@ struct RouteRepositoryTest {
             _ = try await subject.put(route)
         }
         #expect(periodRepository.getCallCount == 1)
-        #expect(dataStore.putCallCount == 0)
+        #expect(dataStore.routeTransactionCallCount == 0)
     }
 
     @Test
@@ -313,7 +336,7 @@ struct RouteRepositoryTest {
         await #expect(throws: Error.notFound("指定されたルートに合致する地区が取得できませんでした。")) {
             _ = try await subject.post(route)
         }
-        #expect(dataStore.putCallCount == 0)
+        #expect(dataStore.routeTransactionCallCount == 0)
     }
 
     @Test
