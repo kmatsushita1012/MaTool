@@ -6,6 +6,9 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    concurrency:
+      group: matool-backend-lambda-deploy
+      cancel-in-progress: false
     env:
       AWS_REGION: ${{ secrets.AWS_REGION }}
       LAMBDA_ARN: ${{ secrets.LAMBDA_ARN }}
@@ -71,11 +74,21 @@ jobs:
             STAGE_NAME="dev"
           fi
 
+          if [[ "$STAGE_NAME" == "prod" ]]; then
+            APP_STORE_ENVIRONMENT="production"
+          else
+            APP_STORE_ENVIRONMENT="sandbox"
+          fi
+
           echo "Resolved stage name: $STAGE_NAME"
           echo "stage=$STAGE_NAME" >> $GITHUB_OUTPUT
+          echo "app_store_environment=$APP_STORE_ENVIRONMENT" >> $GITHUB_OUTPUT
 
       - name: Deploy Lambda Function
+        env:
+          APP_STORE_ENVIRONMENT: ${{ steps.set_stage.outputs.app_store_environment }}
         run: |
+          set -euo pipefail
           FUNCTION_NAME="MaToolAPIv2"
           STAGE_NAME=${{ steps.set_stage.outputs.stage }}
 
@@ -84,7 +97,24 @@ jobs:
             --function-name "$FUNCTION_NAME" \
             --zip-file fileb://lambda.zip
 
-          sleep 10
+          aws lambda wait function-updated --function-name "$FUNCTION_NAME"
+
+          CURRENT_ENVIRONMENT=$(aws lambda get-function-configuration \
+            --function-name "$FUNCTION_NAME" \
+            --query 'Environment.Variables' \
+            --output json)
+          ENVIRONMENT_FILE=$(mktemp)
+          trap 'rm -f "$ENVIRONMENT_FILE"' EXIT
+          jq -n \
+            --argjson current "$CURRENT_ENVIRONMENT" \
+            --arg appStoreEnvironment "$APP_STORE_ENVIRONMENT" \
+            '{Variables: (($current // {}) + {APP_STORE_ENVIRONMENT: $appStoreEnvironment})}' \
+            > "$ENVIRONMENT_FILE"
+          aws lambda update-function-configuration \
+            --function-name "$FUNCTION_NAME" \
+            --environment "file://$ENVIRONMENT_FILE" \
+            >/dev/null
+          aws lambda wait function-updated --function-name "$FUNCTION_NAME"
 
           VERSION=$(aws lambda publish-version --function-name "$FUNCTION_NAME" --query 'Version' --output text)
           echo "Published new version: $VERSION"

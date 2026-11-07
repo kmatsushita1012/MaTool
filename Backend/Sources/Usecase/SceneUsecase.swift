@@ -52,7 +52,7 @@ struct SceneUsecase: SceneUsecaseProtocol {
     // MARK: - LaunchFestival
     func fetchLaunchFestivalPack(festivalId: Festival.ID, user: UserRole, now: Date) async throws -> LaunchFestivalPack {
         switch user {
-        case .guest:
+        case .guest, .advertiser:
             return try await fetchUserLaunchPack(festivalId: festivalId, now: now)
         case let .headquarter(userFestivalId):
             guard userFestivalId == festivalId else {
@@ -232,7 +232,7 @@ extension SceneUsecase {
     fileprivate func isVisible(visibility: Visibility, user: UserRole, district: District) -> Bool {
         if visibility == .admin {
             switch user {
-            case .guest:
+            case .guest, .advertiser:
                 return false
             case .district(let id):
                 return id == district.id
@@ -258,7 +258,7 @@ extension SceneUsecase {
 
         let hasAccess: Bool
         switch user {
-        case .guest:
+        case .guest, .advertiser:
             hasAccess = false
         case .district(let id):
             hasAccess = id == district.id

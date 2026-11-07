@@ -453,7 +453,7 @@ struct RootFeature {
             }
             state.destination = .adminDistrict(.init(district, appState: state.$appState))
             return true
-        case .guest:
+        case .guest, .advertiser:
             return false
         }
     }
@@ -466,7 +466,7 @@ struct RootFeature {
             state.$launchState.withLock { $0 = .festival(userRole) }
         case .district:
             state.$launchState.withLock { $0 = .district(userRole, currentRouteId) }
-        case .guest:
+        case .guest, .advertiser:
             state.alert = .error("管理者としてログインできませんでした")
             return false
         }

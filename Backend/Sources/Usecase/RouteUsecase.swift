@@ -140,7 +140,7 @@ struct RouteUsecase: RouteUsecaseProtocol {
         try await routeRepository.delete(id: id)
         async let pointDeletion = pointRepository.delete(by: id)
         async let passageDeletion = passageRepository.delete(by: id)
-        try await (pointDeletion, passageDeletion)
+        _ = try await (pointDeletion, passageDeletion)
         return
     }
 }
@@ -149,7 +149,7 @@ extension RouteUsecase {
     private func isVisible(visibility: Visibility, user: UserRole, district: District) -> Bool {
         if visibility == .admin {
             switch user {
-            case .guest:
+            case .guest, .advertiser:
                 false
             case .district(let id):
                 id == district.id
@@ -199,7 +199,7 @@ extension RouteUsecase {
 
         let hasAccess: Bool
         switch user {
-        case .guest:
+        case .guest, .advertiser:
             hasAccess = false
         case .district(let id):
             hasAccess = id == district.id

@@ -99,13 +99,28 @@ struct CognitoAuthManager: AuthManager {
     }
     
     private func parseUserRole(attributes: [CognitoIdentityProviderClientTypes.AttributeType]?, id: String?) throws -> UserRole {
-        let role = attributes?.first{ $0.name == "custom:role"}?.value
-        guard let id, let role else { throw Error.unauthorized() }
+        let role = attributes?.first { $0.name == "custom:role" }?.value
+        let sub = attributes?.first { $0.name == "sub" }?.value
+        guard let id else { throw Error.unauthorized() }
         switch role {
-        case "district":
+        case .some("district"):
             return .district(id)
-        case "region":
+        case .some("region"):
             return .headquarter(id)
+        case .some("advertiser"):
+            guard let sub, !sub.isEmpty,
+                  attributes?.first(where: { $0.name == "email_verified" })?.value == "true" else {
+                throw Error.unauthorized()
+            }
+            return .advertiser(sub)
+        case nil:
+            // Unclassified, verified Cognito users are advertisers. The app client must not
+            // be allowed to write custom:role so it cannot grant itself an admin role.
+            guard let sub, !sub.isEmpty,
+                  attributes?.first(where: { $0.name == "email_verified" })?.value == "true" else {
+                throw Error.unauthorized()
+            }
+            return .advertiser(sub)
         default:
             throw Error.unauthorized()
         }

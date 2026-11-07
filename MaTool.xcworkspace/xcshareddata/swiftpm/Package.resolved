@@ -1,5 +1,5 @@
 {
-  "originHash" : "45120e03d1c47459a90f73b0d18304d7ab155d1192555d8e85e8b670205e1485",
+  "originHash" : "9b3412941fe8ffa2c6ec409570d6a8dbc1ab34763c4e7e0c4667d93504fb56f4",
   "pins" : [
     {
       "identity" : "amplify-ios",
@@ -17,6 +17,15 @@
       "state" : {
         "revision" : "959eec669ba97c7d923b963c3e66ca8a0b2737f6",
         "version" : "1.1.1"
+      }
+    },
+    {
+      "identity" : "app-store-server-library-swift",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/apple/app-store-server-library-swift.git",
+      "state" : {
+        "revision" : "ac7d41d3ef564265d6e8028357a7f4e5812f54da",
+        "version" : "6.0.0"
       }
     },
     {
@@ -62,6 +71,15 @@
       "state" : {
         "revision" : "3877a5060e85ae33e3b9fe51ab581784f65ec80e",
         "version" : "1.0.3"
+      }
+    },
+    {
+      "identity" : "jwt-kit",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/vapor/jwt-kit.git",
+      "state" : {
+        "revision" : "2033b3e661238dda3d30e36a2d40987499d987de",
+        "version" : "5.2.0"
       }
     },
     {
@@ -240,8 +258,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/apple/swift-crypto.git",
       "state" : {
-        "revision" : "a9d1d5ab8951ada40cafff8c8e2b551dfde4f390",
-        "version" : "5.0.0"
+        "revision" : "95ba0316a9b733e92bb6b071255ff46263bbe7dc",
+        "version" : "3.15.1"
       }
     },
     {

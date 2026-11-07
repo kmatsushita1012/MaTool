@@ -10,7 +10,7 @@
 fileprivate typealias AttributeValue = DynamoDBClientTypes.AttributeValue
 
 // MARK: - DynamoDBStore
-struct DynamoDBStore: DataStore {
+struct DynamoDBStore: DynamoDBTransactionalDataStore {
     private static let defaultRegion = "ap-northeast-1"
     private static let sharedClient: DynamoDBClient = {
         do {
@@ -25,10 +25,16 @@ struct DynamoDBStore: DataStore {
     private let encoder = DynamoDBEncoder()
     private let decoder = DynamoDBDecoder()
     
-    init(region: String = Self.defaultRegion, tableName: String) throws {
-        self.client = region == Self.defaultRegion
-            ? Self.sharedClient
-            : try DynamoDBClient(region: region)
+    init(region: String = Self.defaultRegion, tableName: String, endpoint: String? = nil) throws {
+        if let endpoint {
+            var config = try DynamoDBClient.DynamoDBClientConfig(region: region)
+            config.endpoint = endpoint
+            self.client = DynamoDBClient(config: config)
+        } else if region == Self.defaultRegion {
+            self.client = Self.sharedClient
+        } else {
+            self.client = try DynamoDBClient(region: region)
+        }
         self.tableName = tableName
     }
     
@@ -41,8 +47,13 @@ struct DynamoDBStore: DataStore {
     
     // MARK: get
     func get<T: RecordProtocol>(keys: [String: Codable], as type: T.Type) async throws -> T? {
+        try await get(keys: keys, consistentRead: false, as: type)
+    }
+
+    func get<T: RecordProtocol>(keys: [String: Codable], consistentRead: Bool, as type: T.Type) async throws -> T? {
         let key = try keys.toExpression()
         let input = GetItemInput(
+            consistentRead: consistentRead,
             key: key,
             tableName: tableName
         )
@@ -93,6 +104,29 @@ struct DynamoDBStore: DataStore {
         ascending: Bool = true,
         as type: T.Type
     ) async throws -> [T] {
+        try await query(
+            indexName: indexName,
+            keyConditions: keyConditions,
+            filterConditions: filterConditions,
+            limit: limit,
+            ascending: ascending,
+            consistentRead: false,
+            as: type
+        )
+    }
+
+    func query<T: RecordProtocol>(
+        indexName: String? = nil,
+        keyConditions: [QueryCondition],
+        filterConditions: [FilterCondition] = [],
+        limit: Int? = nil,
+        ascending: Bool = true,
+        consistentRead: Bool,
+        as type: T.Type
+    ) async throws -> [T] {
+        guard indexName == nil || !consistentRead else {
+            throw Error.internalServerError("GSI Query では ConsistentRead を利用できません。")
+        }
         
         precondition(!keyConditions.isEmpty, "KeyCondition must not be empty")
         guard limit != 0 else { return [] }
@@ -138,6 +172,7 @@ struct DynamoDBStore: DataStore {
             )
 
             input.scanIndexForward = ascending
+            input.consistentRead = consistentRead
             if let limit {
                 input.limit = limit - records.count
             }
@@ -153,6 +188,55 @@ struct DynamoDBStore: DataStore {
         } while !(exclusiveStartKey?.isEmpty ?? true)
 
         return records
+    }
+
+    func updateItem(
+        keys: [String: DynamoDBAttribute],
+        updateExpression: String,
+        conditionExpression: String?,
+        expressionAttributeNames: [String: String],
+        expressionAttributeValues: [String: DynamoDBAttribute],
+        returnAllNew: Bool
+    ) async throws -> [String: DynamoDBAttribute]? {
+        let input = UpdateItemInput(
+            conditionExpression: conditionExpression,
+            expressionAttributeNames: expressionAttributeNames,
+            expressionAttributeValues: expressionAttributeValues,
+            key: keys,
+            returnValues: returnAllNew ? .allNew : DynamoDBClientTypes.ReturnValue.none,
+            tableName: tableName,
+            updateExpression: updateExpression
+        )
+        return try await client.updateItem(input: input).attributes
+    }
+
+    func transactWrite(_ operations: [DynamoDBTransactionOperation]) async throws {
+        let items = operations.map { operation -> DynamoDBClientTypes.TransactWriteItem in
+            switch operation {
+            case let .put(item, condition, names, values):
+                var transactionItem = DynamoDBClientTypes.TransactWriteItem()
+                transactionItem.put = .init(
+                    conditionExpression: condition,
+                    expressionAttributeNames: names.isEmpty ? nil : names,
+                    expressionAttributeValues: values.isEmpty ? nil : values,
+                    item: item,
+                    tableName: tableName
+                )
+                return transactionItem
+            case let .update(keys, updateExpression, condition, names, values):
+                var transactionItem = DynamoDBClientTypes.TransactWriteItem()
+                transactionItem.update = .init(
+                    conditionExpression: condition,
+                    expressionAttributeNames: names.isEmpty ? nil : names,
+                    expressionAttributeValues: values.isEmpty ? nil : values,
+                    key: keys,
+                    tableName: tableName,
+                    updateExpression: updateExpression
+                )
+                return transactionItem
+            }
+        }
+        _ = try await client.transactWriteItems(input: .init(transactItems: items))
     }
 
     static func make(tableName: String) -> DynamoDBStore {
