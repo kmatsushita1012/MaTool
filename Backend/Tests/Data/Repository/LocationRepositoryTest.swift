@@ -1,4 +1,5 @@
 import Dependencies
+import Foundation
 import Shared
 import Testing
 @testable import Backend
@@ -42,13 +43,56 @@ struct LocationRepositoryTest {
     @Test
     func put_異常_依存エラーを透過() async {
         let dataStore = DataStoreMock(
-            putHandler: { _ in throw TestError.intentional }
+            putIfNewerHandler: { _, _ in throw TestError.intentional }
         )
         let subject = make(dataStore: dataStore)
 
         await #expect(throws: TestError.intentional) {
             _ = try await subject.put(.mock(id: "loc-1", districtId: "district-1"), festivalId: "festival-1")
         }
+    }
+
+    @Test
+    func put_正常_timestamp条件付きで保存する() async throws {
+        let location = FloatLocation.mock(id: "loc-1", districtId: "district-1")
+        let dataStore = DataStoreMock(putIfNewerHandler: { _, _ in true })
+        let subject = make(dataStore: dataStore)
+
+        let result = try await subject.put(location, festivalId: "festival-1")
+
+        #expect(result == location)
+        #expect(dataStore.putIfNewerCallCount == 1)
+        #expect(dataStore.lastPutIfNewerPath == ["content", "timestamp"])
+    }
+
+    @Test
+    func put_古いtimestampは保存値を返す() async throws {
+        let current = FloatLocation.mock(
+            id: "new",
+            districtId: "district-1",
+            coordinate: .init(latitude: 36, longitude: 140),
+            timestamp: Date(timeIntervalSince1970: 200)
+        )
+        let dataStore = DataStoreMock(
+            putIfNewerHandler: { _, _ in false },
+            getHandler: { _, _ in try JSONEncoder().encode(Record(current)) }
+        )
+        let subject = make(dataStore: dataStore)
+
+        let result = try await subject.put(
+            .mock(
+                id: "old",
+                districtId: "district-1",
+                coordinate: .init(latitude: 35, longitude: 139),
+                timestamp: Date(timeIntervalSince1970: 100)
+            ),
+            festivalId: "festival-1"
+        )
+
+        #expect(result == current)
+        #expect(dataStore.putIfNewerCallCount == 1)
+        #expect(dataStore.getCallCount == 1)
+        #expect(dataStore.putCallCount == 0)
     }
 }
 

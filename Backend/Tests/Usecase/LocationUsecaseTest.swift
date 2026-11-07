@@ -107,7 +107,7 @@ struct LocationUsecaseTest {
         let repository = LocationRepositoryMock(putHandler: { item, festivalId in
             lastCalledFestivalId = festivalId
             return item
-        }, getHandler: { _, _ in nil })
+        })
 
         let subject = make(
             locationRepository: repository,
@@ -119,37 +119,6 @@ struct LocationUsecaseTest {
         #expect(result == location)
         #expect(lastCalledFestivalId == district.festivalId)
         #expect(repository.putCallCount == 1)
-    }
-
-    @Test
-    func put_古いtimestampは保存済み位置を返して上書きしない() async throws {
-        let district = District.mock(id: "district-1", festivalId: "festival-1")
-        let current = FloatLocation.mock(
-            id: "new",
-            districtId: district.id,
-            coordinate: .init(latitude: 36, longitude: 140),
-            timestamp: now
-        )
-        let older = FloatLocation.mock(
-            id: "old",
-            districtId: district.id,
-            coordinate: .init(latitude: 35, longitude: 139),
-            timestamp: now.addingTimeInterval(-1)
-        )
-        let repository = LocationRepositoryMock(
-            getHandler: { _, _ in current },
-            putHandler: { _, _ in older }
-        )
-        let subject = make(
-            locationRepository: repository,
-            districtRepository: .init(getHandler: { _ in district })
-        )
-
-        let result = try await subject.put(older, user: .district(district.id))
-
-        #expect(result == current)
-        #expect(repository.getCallCount == 1)
-        #expect(repository.putCallCount == 0)
     }
 
     @Test

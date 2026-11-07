@@ -38,11 +38,41 @@ struct DynamoDBStore: DataStore {
         let input = PutItemInput(item: attrs, tableName: tableName)
         let _ = try await client.putItem(input: input)
     }
+
+    func putIfNewer<R: RecordProtocol>(_ record: R, at attributePath: [String]) async throws -> Bool {
+        let attrs = try encoder.encode(record)
+        guard !attributePath.isEmpty else {
+            throw DataStoreError.emptyConditionalAttributePath
+        }
+        let candidateTimestamp = try attrs.attributeValue(at: attributePath)
+        let expressionNames = Dictionary(
+            uniqueKeysWithValues: attributePath.enumerated().map { index, name in
+                ("#path\(index)", name)
+            }
+        )
+        let expressionPath = attributePath.indices.map { "#path\($0)" }.joined(separator: ".")
+        let condition = "attribute_not_exists(\(expressionPath)) OR \(expressionPath) < :candidateTimestamp"
+        let input = PutItemInput(
+            conditionExpression: condition,
+            expressionAttributeNames: expressionNames,
+            expressionAttributeValues: [":candidateTimestamp": candidateTimestamp],
+            item: attrs,
+            tableName: tableName
+        )
+
+        do {
+            _ = try await client.putItem(input: input)
+            return true
+        } catch is AWSDynamoDB.ConditionalCheckFailedException {
+            return false
+        }
+    }
     
     // MARK: get
     func get<T: RecordProtocol>(keys: [String: Codable], as type: T.Type) async throws -> T? {
         let key = try keys.toExpression()
         let input = GetItemInput(
+            consistentRead: true,
             key: key,
             tableName: tableName
         )
@@ -160,6 +190,23 @@ struct DynamoDBStore: DataStore {
             fatalError("DynamoDBStore could not be initialized.")
         }
         return store
+    }
+}
+
+private enum DataStoreError: Swift.Error {
+    case emptyConditionalAttributePath
+}
+
+private extension Dictionary where Key == String, Value == AttributeValue {
+    func attributeValue(at path: [String]) throws -> AttributeValue {
+        guard let first = path.first, let value = self[first] else {
+            throw DataStoreError.emptyConditionalAttributePath
+        }
+        guard path.count > 1 else { return value }
+        guard case let .m(nested) = value else {
+            throw DataStoreError.emptyConditionalAttributePath
+        }
+        return try nested.attributeValue(at: Array(path.dropFirst()))
     }
 }
 

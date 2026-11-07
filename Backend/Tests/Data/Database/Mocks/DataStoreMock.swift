@@ -4,12 +4,14 @@ import Foundation
 final class DataStoreMock: DataStore, @unchecked Sendable {
     init(
         putHandler: ((any Encodable) async throws -> Void)? = nil,
+        putIfNewerHandler: ((any Encodable, [String]) async throws -> Bool)? = nil,
         getHandler: (([String: Codable], Any.Type) async throws -> Data?)? = nil,
         deleteHandler: (([String: Codable]) async throws -> Void)? = nil,
         scanHandler: ((Bool, Any.Type) async throws -> Data)? = nil,
         queryHandler: ((String?, [QueryCondition], [FilterCondition], Int?, Bool, Any.Type) async throws -> Data)? = nil
     ) {
         self.putHandler = putHandler
+        self.putIfNewerHandler = putIfNewerHandler
         self.getHandler = getHandler
         self.deleteHandler = deleteHandler
         self.scanHandler = scanHandler
@@ -23,6 +25,17 @@ final class DataStoreMock: DataStore, @unchecked Sendable {
         putCallCount += 1
         guard let putHandler else { throw TestError.unimplemented }
         try await putHandler(item)
+    }
+
+    nonisolated(unsafe) private(set) var putIfNewerCallCount = 0
+    nonisolated(unsafe) private(set) var lastPutIfNewerPath: [String] = []
+    private let putIfNewerHandler: ((any Encodable, [String]) async throws -> Bool)?
+
+    func putIfNewer<T: RecordProtocol>(_ item: T, at attributePath: [String]) async throws -> Bool {
+        putIfNewerCallCount += 1
+        lastPutIfNewerPath = attributePath
+        guard let putIfNewerHandler else { throw TestError.unimplemented }
+        return try await putIfNewerHandler(item, attributePath)
     }
 
     nonisolated(unsafe) private(set) var getCallCount = 0

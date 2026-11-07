@@ -68,12 +68,6 @@ struct LocationUsecase: LocationUsecaseProtocol {
         guard let district = try await districtRepository.get(id: location.districtId) else {
             throw Error.notFound("地区が見つかりません")
         }
-        if let current = try await locationRepository.get(
-            festivalId: district.festivalId,
-            districtId: district.id
-        ), current.timestamp >= location.timestamp {
-            return current
-        }
         return try await locationRepository.put(location, festivalId: district.festivalId)
     }
     

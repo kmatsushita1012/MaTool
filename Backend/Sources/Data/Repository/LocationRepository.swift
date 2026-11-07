@@ -50,7 +50,9 @@ struct LocationRepository: LocationRepositoryProtocol {
 
     func put(_ item: FloatLocation, festivalId: Festival.ID) async throws -> FloatLocation {
         let record = LRecord(item, festivalId: festivalId)
-        try await store.put(record)
+        guard try await store.putIfNewer(record, at: ["content", "timestamp"]) else {
+            return try await get(festivalId: festivalId, districtId: item.districtId) ?? item
+        }
         return item
     }
 

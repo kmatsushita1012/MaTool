@@ -26,6 +26,7 @@ typealias DataStoreFactory = @Sendable (String) -> DataStore
 // MARK: - DataStore
 protocol DataStore: Sendable {
     func put<T: RecordProtocol>(_ item: T) async throws
+    func putIfNewer<T: RecordProtocol>(_ item: T, at attributePath: [String]) async throws -> Bool
     func get<T: RecordProtocol>(keys: [String: Codable], as type: T.Type) async throws -> T?
     func delete(keys: [String: Codable]) async throws
     func scan<T: RecordProtocol>(_ type: T.Type, ignoreDecodeError: Bool) async throws -> [T]
