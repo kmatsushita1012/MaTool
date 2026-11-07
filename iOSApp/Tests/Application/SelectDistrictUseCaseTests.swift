@@ -33,9 +33,16 @@ struct SelectDistrictUseCaseTests {
             periodId: "old-period",
             visibility: .admin
         )
+        let previousPeriod = Period(
+            id: "old-period",
+            festivalId: festival.id,
+            date: SimpleDate(year: 2025, month: 10, day: 3),
+            start: SimpleTime(hour: 9, minute: 0),
+            end: SimpleTime(hour: 17, minute: 0)
+        )
         let point = Point(
             id: "point",
-            routeId: route.id,
+            routeId: oldRoute.id,
             coordinate: Coordinate(latitude: 35, longitude: 139)
         )
         let passage = RoutePassage(
@@ -47,9 +54,10 @@ struct SelectDistrictUseCaseTests {
         let response = LaunchDistrictPack(
             performances: [],
             routes: [route, oldRoute],
+            periods: [currentPeriod, previousPeriod],
             points: [point],
             passages: [passage],
-            currentRouteId: route.id
+            currentRouteId: oldRoute.id
         )
         let appState = Shared<AppState?>(value: AppState(
             festivalPack: LaunchFestivalPack(
@@ -73,11 +81,12 @@ struct SelectDistrictUseCaseTests {
 
         let selectedRouteId = try await useCase(districtId: district.id, appState: appState)
 
-        #expect(selectedRouteId == route.id)
+        #expect(selectedRouteId == oldRoute.id)
         #expect(await dataFetcher.districtLaunchCallCount() == 1)
         #expect(appState.wrappedValue?.districtState?.districtId == district.id)
-        #expect(appState.wrappedValue?.districtState?.routes == [route])
-        #expect(appState.wrappedValue?.routeState?.route == route)
+        #expect(appState.wrappedValue?.districtState?.routes == [route, oldRoute])
+        #expect(appState.wrappedValue?.period(id: previousPeriod.id) == previousPeriod)
+        #expect(appState.wrappedValue?.routeState?.route == oldRoute)
         #expect(appState.wrappedValue?.routeState?.points == [point])
         #expect(appState.wrappedValue?.routeState?.passages == [passage])
     }
