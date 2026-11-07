@@ -63,13 +63,13 @@ struct RouteEditFeatureTests {
         let festivalState = FestivalState(
             LaunchFestivalPack(
                 festival: festival,
+                year: 2026,
                 districts: [district],
                 periods: [currentPeriod],
                 locations: [],
                 checkpoints: [],
                 hazardSections: []
-            ),
-            year: 2026
+            )
         )
         let districtState = DistrictState(
             districtId: district.id,
@@ -79,8 +79,7 @@ struct RouteEditFeatureTests {
                 points: [],
                 passages: [],
                 currentRouteId: editedRoute.id
-            ),
-            currentPeriodIds: [currentPeriod.id]
+            )
         )
         let appState = Shared<AppState?>(value: AppState(
             festivalState: festivalState,

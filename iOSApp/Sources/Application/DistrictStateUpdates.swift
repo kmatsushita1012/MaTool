@@ -38,10 +38,6 @@ func applyDistrictStateResponse(
             requestId: context.requestId,
             pack: response
         )
-        for period in response.periods where updated.period(id: period.id) == nil {
-            updated.festivalState.periods.append(period)
-        }
-        updated.festivalState.periods.sort()
         if let routeId = response.currentRouteId,
            let route = updated.districtState?.route(id: routeId) {
             updated.routeState = RouteState(route: route, points: response.points, passages: response.passages)

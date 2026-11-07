@@ -10,8 +10,8 @@ struct FestivalState: Equatable, Sendable {
     var hazardSections: [HazardSection]
     var floatLocations: [FloatLocation]
 
-    init(_ pack: LaunchFestivalPack, year: Int) {
-        self.year = year
+    init(_ pack: LaunchFestivalPack) {
+        year = pack.year
         festival = pack.festival
         districts = pack.districts
         periods = pack.periods
@@ -92,16 +92,9 @@ struct AppState: Equatable, Sendable {
         festivalPack: LaunchFestivalPack,
         districtPack: LaunchDistrictPack? = nil,
         districtId: District.ID? = nil,
-        year: Int? = nil,
         sessionId: UUID = UUID()
     ) {
-        var festivalState = FestivalState(festivalPack, year: year ?? festivalPack.year)
-        if let districtPack {
-            for period in districtPack.periods where !festivalState.periods.contains(where: { $0.id == period.id }) {
-                festivalState.periods.append(period)
-            }
-            festivalState.periods.sort()
-        }
+        let festivalState = FestivalState(festivalPack)
         let districtState: DistrictState? = districtPack.flatMap { pack in
             guard let districtId else { return nil }
             return DistrictState(

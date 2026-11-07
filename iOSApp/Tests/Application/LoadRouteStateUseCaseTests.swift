@@ -111,8 +111,7 @@ private struct RouteLoadingFixture {
                 passages: [],
                 currentRouteId: route.id
             ),
-            districtId: district.id,
-            year: 2026
+            districtId: district.id
         ))
     }
 }

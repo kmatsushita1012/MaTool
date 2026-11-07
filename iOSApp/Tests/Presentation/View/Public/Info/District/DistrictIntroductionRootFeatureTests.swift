@@ -17,13 +17,13 @@ struct DistrictIntroductionRootFeatureTests {
         let appState = Shared<AppState?>(value: AppState(
             festivalPack: LaunchFestivalPack(
                 festival: festival,
+                year: 2026,
                 districts: [district],
                 periods: [],
                 locations: [],
                 checkpoints: [],
                 hazardSections: []
             ),
-            year: 2026
         ))
         let pack = DistrictPack(district: district, performances: [])
         let initialState = DistrictIntroductionRootFeature.State(
