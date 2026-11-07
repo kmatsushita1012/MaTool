@@ -47,7 +47,7 @@ struct SelectDistrictUseCaseTests {
         )
         let passage = RoutePassage(
             id: "passage",
-            routeId: route.id,
+            routeId: oldRoute.id,
             districtId: district.id,
             order: 0
         )
