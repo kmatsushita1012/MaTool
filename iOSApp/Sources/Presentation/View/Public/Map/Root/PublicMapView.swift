@@ -26,7 +26,10 @@ struct PublicMapView: View {
                         onPeriodSelected: { routeStore.send(.selected($0)) },
                         onToastDismissed: { routeStore.send(.toastDismissed) }
                     ) {
-                        PublicRouteMapView(store: routeStore)
+                        PublicRouteMapView(
+                            store: routeStore,
+                            adBannerStore: store.scope(state: \.adBanner, action: \.adBanner)
+                        )
                             .id(routeStore.district.id)
                     }
                 } else if let locationsStore = store.scope(
@@ -37,13 +40,17 @@ struct PublicMapView: View {
                         toast: locationsStore.toast,
                         onToastDismissed: { locationsStore.send(.toastDismissed) }
                     ) {
-                        PublicLocationsMapView(store: locationsStore)
+                        PublicLocationsMapView(
+                            store: locationsStore,
+                            adBannerStore: store.scope(state: \.adBanner, action: \.adBanner)
+                        )
                     }
                 } else {
                     Spacer()
                 }
             }
             .onAppear { store.send(.onAppear) }
+            .onDisappear { store.send(.adBanner(.disappeared)) }
         }
     }
 

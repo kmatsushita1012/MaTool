@@ -167,6 +167,19 @@ actor HTTPClientSpy: HTTPClientProtocol {
         return try decoder.decode(Response.self, from: responseData)
     }
 
+    func post<Body: Encodable>(
+        path: String, body: Body, query: [String: Any], accessToken: String?
+    ) async throws {
+        calls.append("POST \(path)")
+        let encoder = JSONEncoder()
+        encoder.dateEncodingStrategy = .secondsSince1970
+        postCalls.append(HTTPPostCall(
+            path: path,
+            body: try encoder.encode(body),
+            accessToken: accessToken
+        ))
+    }
+
     func put<Response: Decodable, Body: Encodable>(
         path: String, body: Body, query: [String: Any], accessToken: String?
     ) async throws -> Response {

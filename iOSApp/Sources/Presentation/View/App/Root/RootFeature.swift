@@ -16,6 +16,7 @@ struct RootFeature {
         case settings(SettingsFeature)
         case adminDistrict(DistrictDashboardFeature)
         case adminFestival(FestivalDashboardFeature)
+        case advertiserDashboard(AdvertiserDashboardFeature)
     }
 
     @Reducer
@@ -30,6 +31,7 @@ struct RootFeature {
             case loading
             case map
             case onboarding
+            case advertiser
             case error(String)
         }
 
@@ -50,6 +52,8 @@ struct RootFeature {
             switch launchState {
             case .district, .festival:
                 .map
+            case .advertiser:
+                .advertiser
             case .onboarding:
                 .onboarding
             case .loading:
@@ -63,7 +67,7 @@ struct RootFeature {
             switch launchState {
             case .district(let userRole, _), .festival(let userRole):
                 userRole != .guest
-            case .onboarding, .loading, .error:
+            case .advertiser, .onboarding, .loading, .error:
                 false
             }
         }
@@ -190,6 +194,11 @@ struct RootFeature {
                     state.destination = nil
                     state.onboarding = state.makeOnboardingState()
                     return .send(.onboarding(.onAppear))
+                case .advertiser:
+                    state.map = nil
+                    state.onboarding = nil
+                    state.destination = .advertiserDashboard(AdvertiserDashboardFeature.State())
+                    return .none
                 case .loading, .error:
                     state.map = nil
                     state.destination = nil
@@ -333,6 +342,12 @@ struct RootFeature {
                  .destination(.presented(.adminDistrict(.destination(.presented(.settings(let settingsAction)))))),
                  .destination(.presented(.adminFestival(.destination(.presented(.settings(let settingsAction)))))):
                 switch settingsAction {
+                case .destination(.presented(.advertiserAuth(.received(.success(.signedIn(let userRole)))))):
+                    guard activateAdvertiserSession(state: &state, userRole: userRole) else {
+                        state.alert = .error("広告主としてログインできませんでした")
+                        return .none
+                    }
+                    return .none
                 case .destination(.presented(.login(.received(.success(.signedIn(let userRole)))))),
                      .destination(.presented(.login(.destination(.presented(.confirmSignIn(.received(.success(let userRole)))))))):
                     rootFeatureLogger.info("login success action reached RootFeature")
@@ -347,6 +362,17 @@ struct RootFeature {
                 default:
                     return .none
                 }
+
+            case .destination(.presented(.advertiserDashboard(.signOutReceived(.success)))):
+                if state.appState != nil {
+                    finishSignOut(state: &state)
+                    return .none
+                }
+                state.map = nil
+                state.destination = nil
+                state.$launchState.withLock { $0 = .onboarding }
+                state.onboarding = state.makeOnboardingState()
+                return .send(.onboarding(.onAppear))
 
             case .destination(.dismiss):
                 if let userRole = currentUserRole(state.launchState), userRole != .guest {
@@ -399,9 +425,20 @@ struct RootFeature {
         switch launchState {
         case .district(let userRole, _), .festival(let userRole):
             userRole
-        case .onboarding, .loading, .error:
+        case .advertiser, .onboarding, .loading, .error:
             nil
         }
+    }
+
+    @discardableResult
+    private func activateAdvertiserSession(state: inout State, userRole: UserRole) -> Bool {
+        guard case .advertiser = userRole else { return false }
+        state.$launchState.withLock { $0 = .advertiser }
+        state.map = nil
+        state.onboarding = nil
+        state.sheet = nil
+        state.destination = .advertiserDashboard(AdvertiserDashboardFeature.State())
+        return true
     }
 
     private func prepareIntroduction(

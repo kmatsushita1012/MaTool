@@ -14,13 +14,16 @@ struct DistrictBaseEditFeature {
     
     @ObservableState
     struct State: Equatable {
+        var title: String
         var coordinate: Coordinate?
         var region: MKCoordinateRegion?
-        init(base: Coordinate){
+        init(base: Coordinate, title: String = "会所位置"){
+            self.title = title
             self.coordinate = base
             self.region = makeRegion(origin: base, spanDelta: spanDelta)
         }
-        init(origin: Coordinate){
+        init(origin: Coordinate, title: String = "会所位置"){
+            self.title = title
             self.region = makeRegion(origin: origin, spanDelta: spanDelta)
         }
     }

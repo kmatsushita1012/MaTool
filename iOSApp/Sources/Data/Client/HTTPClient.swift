@@ -59,6 +59,13 @@ protocol HTTPClientProtocol: Sendable {
         accessToken: String?
     ) async throws -> Response
 
+    func post<Body: Encodable>(
+        path: String,
+        body: Body,
+        query: [String: Any],
+        accessToken: String?
+    ) async throws
+
     func put<Response: Decodable, Body: Encodable>(
         path: String,
         body: Body,
@@ -165,6 +172,10 @@ actor HTTPClient: HTTPClientProtocol {
         try await request(path: path, method: "POST", query: query, body: body, accessToken: accessToken, isCache: false)
     }
 
+    func post<Body: Encodable>(path: String, body: Body, query: [String: Any] = [:], accessToken: String? = nil) async throws {
+        try await sendWithoutResponse(path: path, method: "POST", query: query, body: body, accessToken: accessToken)
+    }
+
     func put<Response: Decodable, Body: Encodable>(path: String, body: Body, query: [String: Any] = [:], accessToken: String? = nil) async throws -> Response {
         try await request(path: path, method: "PUT", query: query, body: body, accessToken: accessToken, isCache: false)
     }
@@ -174,14 +185,39 @@ actor HTTPClient: HTTPClientProtocol {
     }
 
     func delete(path: String, query: [String: Any] = [:], accessToken: String? = nil) async throws {
-        let _: EmptyResponse = try await request(
-            path: path,
-            method: "DELETE",
-            query: query,
-            body: Optional<EmptyBody>.none,
+        try await sendWithoutResponse(path: path, method: "DELETE", query: query, body: Optional<EmptyBody>.none, accessToken: accessToken)
+    }
+
+    private func sendWithoutResponse<Body: Encodable>(
+        path: String,
+        method: String,
+        query: [String: Any],
+        body: Body?,
+        accessToken: String?
+    ) async throws {
+        let url = try makeURL(path: path, query: query)
+        let bodyData = try await encodeBody(body)
+        let urlRequest = makeRequest(
+            url: url,
+            method: method,
+            bodyData: bodyData,
             accessToken: accessToken,
             isCache: false
         )
+        let (data, http): (Data, HTTPURLResponse?)
+        do {
+            (data, http) = try await execute(request: urlRequest)
+        } catch {
+            throw AppError(statusCode: nil, message: "実行中にエラーが発生しました。インターネット接続を確認してください。")
+        }
+        guard let http, (200...299).contains(http.statusCode) else {
+            if let http,
+               let response: ErrorResponse = try? await decodeResponse(from: data) {
+                throw AppError(statusCode: http.statusCode, message: response.localizedDescription)
+            }
+            throw AppError(statusCode: http?.statusCode, message: "サーバーから有効な応答を受け取れませんでした。")
+        }
+        invalidateCache()
     }
 
     private func makeURL(path: String, query: [String: Any]) throws -> URL {
@@ -339,6 +375,15 @@ extension HTTPClientProtocol {
             query: query,
             accessToken: accessToken
         )
+    }
+
+    func post<Body: Encodable>(
+        path: String,
+        body: Body,
+        query: [String: Any] = [:],
+        accessToken: String? = nil
+    ) async throws {
+        try await self.post(path: path, body: body, query: query, accessToken: accessToken)
     }
 
     func delete(

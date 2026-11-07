@@ -10,6 +10,7 @@ import Shared
 enum LaunchState: Entity {
     case district(UserRole, Route.ID?)
     case festival(UserRole)
+    case advertiser
     case onboarding
     case loading
     case error(String)

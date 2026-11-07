@@ -31,6 +31,7 @@ struct PublicMapFeature {
     struct State: Equatable{
         let userRole: UserRole
         @Shared fileprivate var appState: AppState?
+        var adBanner: StoreAdBannerFeature.State
 
         var contents: [Content] {
             let selectedDistrictId: District.ID?
@@ -75,6 +76,9 @@ struct PublicMapFeature {
         ) {
             self.userRole = userRole
             self.selectedContent = selectedContent
+            self.adBanner = StoreAdBannerFeature.State(
+                festivalId: appState.wrappedValue?.festivalState.festival.id ?? ""
+            )
             self._appState = appState
             self._mapRegion = mapRegion
             self._toast = toast
@@ -96,6 +100,7 @@ struct PublicMapFeature {
         case districtContentEvaluated(District, Bool)
         case districtLaunchReceived(AppResult<DistrictLaunchResult>)
         case errorCaught(AppError)
+        case adBanner(StoreAdBannerFeature.Action)
         case delegate(Delegate)
         case destination(PresentationAction<Destination.Action>)
     }
@@ -105,6 +110,9 @@ struct PublicMapFeature {
     @Dependency(\.publicMapAdUsecase) var publicMapAdUsecase
     
     var body: some ReducerOf<PublicMapFeature> {
+        Scope(state: \.adBanner, action: \.adBanner) {
+            StoreAdBannerFeature()
+        }
         Reduce{ state, action in
             switch action {
             case .onAppear:
@@ -116,11 +124,12 @@ struct PublicMapFeature {
                 guard case .route(let districtId) = state.selectedContent,
                       let district = state.appState?.district(id: districtId),
                       state.appState?.districtState?.districtId != districtId else {
-                    return permissionEffect
+                    return .merge(permissionEffect, .send(.adBanner(.load)))
                 }
                 state.isLoading = true
                 return .merge(
                     permissionEffect,
+                    .send(.adBanner(.load)),
                     districtLaunchEffect(district: district, periodId: state.currentPeriodId, appState: state.$appState)
                 )
             case .binding:
@@ -143,16 +152,19 @@ struct PublicMapFeature {
                             toast: state.$toast
                         )
                     )
-                    return .none
+                    return .send(.adBanner(.load))
                 case .route(let districtId):
                     guard let district = state.appState?.district(id: districtId) else {
                         return .none
                     }
                     state.isLoading = true
-                    return districtLaunchEffect(
-                        district: district,
-                        periodId: selectedPeriodId,
-                        appState: state.$appState
+                    return .merge(
+                        districtLaunchEffect(
+                            district: district,
+                            periodId: selectedPeriodId,
+                            appState: state.$appState
+                        ),
+                        .send(.adBanner(.load))
                     )
                 }
             case .districtLaunchReceived(.success(let result)):
@@ -190,6 +202,8 @@ struct PublicMapFeature {
                 state.$toast.withLock { $0 = .error(error, title: "地図を表示できませんでした") }
                 return .none
             case .destination:
+                return .none
+            case .adBanner:
                 return .none
             }
         }

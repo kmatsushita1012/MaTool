@@ -95,6 +95,17 @@ public struct RootSceneView: View {
                 } else {
                     LoadingView()
                 }
+            case .advertiser:
+                if let advertiserStore = store.scope(
+                    state: \.destination?.advertiserDashboard,
+                    action: \.destination.advertiserDashboard
+                ) {
+                    NavigationStack {
+                        AdvertiserDashboardScreen(store: advertiserStore)
+                    }
+                } else {
+                    LoadingView()
+                }
             case .loading:
                 LoadingView()
                     .preferredColorScheme(.light)

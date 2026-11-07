@@ -40,7 +40,7 @@ struct DistrictBaseEditView:View {
                 Spacer()
             }
         }
-        .navigationTitle("会所位置")
+        .navigationTitle(store.title)
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarCancelButton {

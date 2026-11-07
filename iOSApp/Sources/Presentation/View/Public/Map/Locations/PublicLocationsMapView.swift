@@ -10,6 +10,7 @@ import ComposableArchitecture
 
 struct PublicLocationsMapView: View {
     @SwiftUI.Bindable var store: StoreOf<PublicLocationsFeature>
+    let adBannerStore: StoreOf<StoreAdBannerFeature>
     @Environment(\.isLiquidGlassDisabled) var isLiquidGlassDisabled
     @Namespace private var namespace
     
@@ -74,6 +75,20 @@ struct PublicLocationsMapView: View {
                 .fill(Color(uiColor: .systemBackground))
                 .shadow(radius: 8)
         )
+                    .overlay(alignment: .topTrailing) {
+                        adBannerView
+                            .alignmentGuide(.top) { $0[.bottom] + 8 }
+                    }
+    }
+
+    private var adBannerView: some View {
+        StoreAdBannerContentView(
+            candidate: adBannerStore.candidate,
+            isVisible: adBannerStore.isVisible,
+            onImageLoaded: { adBannerStore.send(.imageLoaded($0)) },
+            onImageFailed: { adBannerStore.send(.imageFailed($0)) },
+            onDismiss: { adBannerStore.send(.dismissTapped) }
+        )
     }
 
     @available(iOS 26.0, *)
@@ -108,6 +123,10 @@ struct PublicLocationsMapView: View {
                         store.send(.reloadTapped)
                     }
                     .glassEffectUnion(id: "bottombar", namespace: namespace)
+                }
+                .overlay(alignment: .topTrailing) {
+                    adBannerView
+                        .alignmentGuide(.top) { $0[.bottom] + 8 }
                 }
             }
 

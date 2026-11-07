@@ -8,6 +8,7 @@ struct SettingsFeature {
     @Reducer
     enum Destination {
         case login(LoginFeature)
+        case advertiserAuth(AdvertiserAuthFeature)
     }
 
     enum Delegate: Equatable {
@@ -79,6 +80,7 @@ struct SettingsFeature {
     enum Action: Equatable, BindableAction {
         case binding(BindingAction<State>)
         case loginTapped
+        case advertiserLoginTapped
         case signOutTapped
         case signOutReceived(VoidAppResult)
         case festivalSelectReceived(AppResult<FestivalSelectionResult>)
@@ -130,6 +132,9 @@ struct SettingsFeature {
                 return .none
             case .loginTapped:
                 state.destination = .login(LoginFeature.State(appState: state.$appState))
+                return .none
+            case .advertiserLoginTapped:
+                state.destination = .advertiserAuth(AdvertiserAuthFeature.State())
                 return .none
             case .signOutTapped:
                 state.isSignOutLoading = true
