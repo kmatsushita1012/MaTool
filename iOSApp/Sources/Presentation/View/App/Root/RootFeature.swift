@@ -216,8 +216,9 @@ struct RootFeature {
             case .map(.delegate(.emergencySignOutTapped)):
                 guard !state.isEmergencySignOutLoading else { return .none }
                 state.isEmergencySignOutLoading = true
+                let appState = state.$appState
                 return .task(Action.emergencySignOutReceived) {
-                    try await signOutUseCase(appState: state.$appState)
+                    try await signOutUseCase(appState: appState)
                 }
 
             case .emergencySignOutReceived(.failure(let error)):
