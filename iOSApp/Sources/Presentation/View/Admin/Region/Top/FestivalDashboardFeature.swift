@@ -60,7 +60,7 @@ struct FestivalDashboardFeature {
         case settingsTapped
         case settingsPrepared(AppResult<SettingsPreparation>)
         case signOutTapped
-        case signOutReceived(VoidAppResult)
+        case signOutReceived(AppResult<LaunchState>)
         case periodsPrepared(AppResult<[Period]>)
         case destination(PresentationAction<Destination.Action>)
         case alert(PresentationAction<AlertFeature.Action>)
@@ -139,7 +139,7 @@ struct FestivalDashboardFeature {
                 state.isAuthLoading = false
                 state.alert = AlertFeature.error("ログアウトに失敗しました　\(error.message)")
                 return .none
-            case .signOutReceived(.success):
+            case .signOutReceived(.success(_)):
                 state.isAuthLoading = false
                 return .none
             case .destination(.presented(.edit(.putReceived(.success)))):

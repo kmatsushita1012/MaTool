@@ -6,95 +6,192 @@ import Testing
 @testable import iOSApp
 
 struct SignOutUseCaseTests {
-    @Test("ログアウト成功時に管理者向け地区・経路状態を破棄する")
-    func clearsAdminStateAfterSuccessfulAuthenticationRemoval() async throws {
+    @Test("ログアウト成功時は保存済み選択からBE情報を再取得して新しいAppStateを構築する")
+    func rebuildsAppStateFromSelectedFestivalAndDistrict() async throws {
         let fixture = SignOutFixture()
-        let appState = Shared<AppState?>(value: fixture.appState)
+        let appState = Shared<AppState?>(value: fixture.oldAppState)
+        let userDefaults = DefaultUserDefaultsSpy(
+            festivalId: fixture.festival.id,
+            districtId: fixture.district.id
+        )
+        let dataFetcher = SignOutSceneDataFetcherSpy(
+            festivalPack: fixture.festivalPack,
+            districtPack: fixture.districtPack
+        )
+        let sessionCoordinator = SceneSessionCoordinatorSpy()
         var authProvider = AuthProviderSpy().client
+        authProvider.initialize = {}
+        authProvider.getUserRole = { .guest }
         authProvider.signOut = {}
-        let useCase = withDependencies {
+        let launchState = try await withDependencies {
             $0.installTestSpies()
             $0.authProvider = authProvider
+            $0[UserDefaltsManagerKey.self] = userDefaults
+            $0[SceneDataFetcherKey.self] = dataFetcher
+            $0[SceneSessionCoordinatorKey.self] = sessionCoordinator
+            $0[LaunchSceneUseCaseKey.self] = LaunchSceneUseCase()
         } operation: {
-            SignOutUseCase()
+            try await SignOutUseCase()(appState: appState)
         }
 
-        try await useCase(appState: appState)
-
-        let clearedState = try #require(appState.wrappedValue)
-        #expect(clearedState.festivalState.festival == fixture.appState.festivalState.festival)
-        #expect(clearedState.festivalState.districts == fixture.appState.festivalState.districts)
-        #expect(clearedState.festivalState.periods == fixture.appState.festivalState.periods)
-        #expect(clearedState.festivalState.floatLocations == fixture.appState.festivalState.floatLocations)
-        #expect(clearedState.festivalState.checkpoints.isEmpty)
-        #expect(clearedState.festivalState.hazardSections.isEmpty)
-        #expect(clearedState.districtState == nil)
-        #expect(clearedState.routeState == nil)
-        #expect(clearedState.districtLoadRequestId != fixture.appState.districtLoadRequestId)
-        #expect(clearedState.routeLoadRequestId != fixture.appState.routeLoadRequestId)
+        let rebuiltState = try #require(appState.wrappedValue)
+        let expectedYear = Calendar.current.component(.year, from: .now)
+        #expect(launchState == .district(.guest, fixture.route.id))
+        #expect(await dataFetcher.requests == [
+            "festival:\(fixture.festival.id)",
+            "district:\(fixture.district.id):period:nil"
+        ])
+        #expect(await sessionCoordinator.sessionStarts == 1)
+        #expect(rebuiltState.sessionId != fixture.oldAppState.sessionId)
+        #expect(rebuiltState.districtLoadRequestId != fixture.oldAppState.districtLoadRequestId)
+        #expect(rebuiltState.routeLoadRequestId != fixture.oldAppState.routeLoadRequestId)
+        #expect(rebuiltState.festivalState == FestivalState(fixture.festivalPack, year: expectedYear))
+        #expect(rebuiltState.districtState?.districtId == fixture.district.id)
+        #expect(rebuiltState.districtState?.routes == [fixture.route])
+        #expect(rebuiltState.routeState?.route == fixture.route)
+        #expect(rebuiltState.routeState?.points == [fixture.point])
+        #expect(rebuiltState.festivalState.festival.name == "取得し直した祭典")
+        #expect(rebuiltState.festivalState.checkpoints == fixture.festivalPack.checkpoints)
+        #expect(rebuiltState.festivalState.hazardSections == fixture.festivalPack.hazardSections)
     }
 
-    @Test("ログアウト失敗時はAppStateを変更しない")
-    func preservesAppStateWhenAuthenticationRemovalFails() async throws {
+    @Test("BE設定取得失敗時は旧AppStateを残さずエラー画面状態を返す")
+    func clearsOldAppStateWhenLaunchDataFetchFails() async throws {
         let fixture = SignOutFixture()
-        let appState = Shared<AppState?>(value: fixture.appState)
+        let appState = Shared<AppState?>(value: fixture.oldAppState)
+        let userDefaults = DefaultUserDefaultsSpy(
+            festivalId: fixture.festival.id,
+            districtId: fixture.district.id
+        )
+        let dataFetcher = SignOutSceneDataFetcherSpy(
+            festivalPack: fixture.festivalPack,
+            districtPack: fixture.districtPack,
+            failsDistrictLaunch: true
+        )
         var authProvider = AuthProviderSpy().client
-        authProvider.signOut = { throw SignOutFixtureError.failed }
-        let useCase = withDependencies {
+        authProvider.initialize = {}
+        authProvider.getUserRole = { .guest }
+        authProvider.signOut = {}
+        let launchState = try await withDependencies {
             $0.installTestSpies()
             $0.authProvider = authProvider
+            $0[UserDefaltsManagerKey.self] = userDefaults
+            $0[SceneDataFetcherKey.self] = dataFetcher
+            $0[LaunchSceneUseCaseKey.self] = LaunchSceneUseCase()
         } operation: {
-            SignOutUseCase()
+            try await SignOutUseCase()(appState: appState)
         }
 
+        #expect(isError(launchState))
+        #expect(appState.wrappedValue == nil)
+        #expect(await dataFetcher.requests == [
+            "festival:\(fixture.festival.id)",
+            "district:\(fixture.district.id):period:nil"
+        ])
+    }
+
+    @Test("認証ログアウト失敗時はAppStateを変更せずBEを呼ばない")
+    func preservesAppStateWhenAuthenticationRemovalFails() async throws {
+        let fixture = SignOutFixture()
+        let appState = Shared<AppState?>(value: fixture.oldAppState)
+        let dataFetcher = SignOutSceneDataFetcherSpy(
+            festivalPack: fixture.festivalPack,
+            districtPack: fixture.districtPack
+        )
+        var authProvider = AuthProviderSpy().client
+        authProvider.signOut = { throw SignOutFixtureError.failed }
         await #expect(throws: SignOutFixtureError.failed) {
-            try await useCase(appState: appState)
+            try await withDependencies {
+            $0.installTestSpies()
+            $0.authProvider = authProvider
+            $0[SceneDataFetcherKey.self] = dataFetcher
+            $0[LaunchSceneUseCaseKey.self] = LaunchSceneUseCase()
+            } operation: {
+                try await SignOutUseCase()(appState: appState)
+            }
         }
 
-        #expect(appState.wrappedValue == fixture.appState)
+        #expect(appState.wrappedValue == fixture.oldAppState)
+        #expect(await dataFetcher.requests.isEmpty)
+    }
+
+    private func isError(_ launchState: LaunchState) -> Bool {
+        if case .error = launchState { return true }
+        return false
     }
 }
 
 private struct SignOutFixture {
-    let appState: AppState
+    let festival: Festival
+    let district: District
+    let route: Route
+    let point: Point
+    let festivalPack: LaunchFestivalPack
+    let districtPack: LaunchDistrictPack
+    let oldAppState: AppState
 
     init() {
-        let festival = Festival(
-            id: "festival",
-            name: "Festival",
-            subname: "Festival",
-            base: Coordinate(latitude: 35, longitude: 139)
+        festival = Festival(
+            id: "selected-festival",
+            name: "取得し直した祭典",
+            subname: "Fresh Festival",
+            base: Coordinate(latitude: 35.1, longitude: 139.1)
         )
-        let district = District(id: "district", name: "District", festivalId: festival.id)
-        let period = Period(id: "period", festivalId: festival.id, date: .now)
-        let route = Route(id: "route", districtId: district.id, periodId: period.id)
-        let point = Point(id: "point", routeId: route.id, coordinate: festival.base)
-        let festivalState = FestivalState(
+        district = District(id: "selected-district", name: "取得し直した町", festivalId: festival.id)
+        let period = Period(id: "selected-period", festivalId: festival.id, date: .now)
+        route = Route(id: "new-route", districtId: district.id, periodId: period.id)
+        point = Point(id: "new-point", routeId: route.id, coordinate: festival.base)
+        festivalPack = LaunchFestivalPack(
+            festival: festival,
+            districts: [district],
+            periods: [period],
+            locations: [],
+            checkpoints: [],
+            hazardSections: []
+        )
+        districtPack = LaunchDistrictPack(
+            performances: [],
+            routes: [route],
+            points: [point],
+            passages: [],
+            currentRouteId: route.id
+        )
+
+        let staleFestival = Festival(
+            id: "old-festival",
+            name: "古い祭典",
+            subname: "Old Festival",
+            base: Coordinate(latitude: 36, longitude: 140)
+        )
+        let staleDistrict = District(id: "old-district", name: "古い町", festivalId: staleFestival.id)
+        let stalePeriod = Period(id: "old-period", festivalId: staleFestival.id, date: .now)
+        let staleRoute = Route(id: "old-route", districtId: staleDistrict.id, periodId: stalePeriod.id)
+        let stalePoint = Point(id: "old-point", routeId: staleRoute.id, coordinate: staleFestival.base)
+        let staleFestivalState = FestivalState(
             LaunchFestivalPack(
-                festival: festival,
-                districts: [district],
-                periods: [period],
+                festival: staleFestival,
+                districts: [staleDistrict],
+                periods: [stalePeriod],
                 locations: [],
                 checkpoints: [],
                 hazardSections: []
             ),
             year: Calendar.current.component(.year, from: .now)
         )
-        let districtState = DistrictState(
-            districtId: district.id,
-            pack: LaunchDistrictPack(
-                performances: [],
-                routes: [route],
-                points: [point],
-                passages: [],
-                currentRouteId: route.id
+        oldAppState = AppState(
+            festivalState: staleFestivalState,
+            districtState: DistrictState(
+                districtId: staleDistrict.id,
+                pack: LaunchDistrictPack(
+                    performances: [],
+                    routes: [staleRoute],
+                    points: [stalePoint],
+                    passages: [],
+                    currentRouteId: staleRoute.id
+                ),
+                currentPeriodIds: Set(staleFestivalState.periods.map(\.id))
             ),
-            currentPeriodIds: Set(festivalState.periods.map(\.id))
-        )
-        appState = AppState(
-            festivalState: festivalState,
-            districtState: districtState,
-            routeState: RouteState(route: route, points: [point], passages: [])
+            routeState: RouteState(route: staleRoute, points: [stalePoint], passages: [])
         )
     }
 }

@@ -121,7 +121,7 @@ struct RootFeature {
         case settingsPrepared(AppResult<SettingsPreparation>)
         case introductionPrepared(AppResult<IntroSheetPreparation>)
         case alert(PresentationAction<AlertFeature.Action>)
-        case emergencySignOutReceived(VoidAppResult)
+        case emergencySignOutReceived(AppResult<LaunchState>)
     }
 
     @Dependency(LaunchSceneUseCaseKey.self) private var launchSceneUseCase
@@ -226,9 +226,9 @@ struct RootFeature {
                 state.alert = .error("ログアウトに失敗しました。 \(error.message)")
                 return .none
 
-            case .emergencySignOutReceived(.success):
+            case .emergencySignOutReceived(.success(let launchState)):
                 state.isEmergencySignOutLoading = false
-                finishSignOut(state: &state)
+                finishSignOut(state: &state, launchState: launchState)
                 return .none
 
             case .map(.delegate(.introductionTapped)):
@@ -304,12 +304,24 @@ struct RootFeature {
                 state.alert = .error(error.message)
                 return .none
 
-            case .destination(.presented(.settings(.signOutReceived(.success)))),
-                 .destination(.presented(.adminDistrict(.signOutReceived(.success)))),
-                 .destination(.presented(.adminFestival(.signOutReceived(.success)))),
-                 .destination(.presented(.adminDistrict(.destination(.presented(.settings(.signOutReceived(.success))))))),
-                 .destination(.presented(.adminFestival(.destination(.presented(.settings(.signOutReceived(.success))))))):
-                finishSignOut(state: &state)
+            case .destination(.presented(.settings(.signOutReceived(.success(let launchState))))):
+                finishSignOut(state: &state, launchState: launchState)
+                return .none
+
+            case .destination(.presented(.adminDistrict(.signOutReceived(.success(let launchState))))):
+                finishSignOut(state: &state, launchState: launchState)
+                return .none
+
+            case .destination(.presented(.adminFestival(.signOutReceived(.success(let launchState))))):
+                finishSignOut(state: &state, launchState: launchState)
+                return .none
+
+            case .destination(.presented(.adminDistrict(.destination(.presented(.settings(.signOutReceived(.success(let launchState)))))))):
+                finishSignOut(state: &state, launchState: launchState)
+                return .none
+
+            case .destination(.presented(.adminFestival(.destination(.presented(.settings(.signOutReceived(.success(let launchState)))))))):
+                finishSignOut(state: &state, launchState: launchState)
                 return .none
 
             case .destination(.presented(.settings(.delegate(.sceneSelectionChanged(let userRole, let routeId))))),
@@ -506,9 +518,22 @@ struct RootFeature {
         }
     }
 
-    private func finishSignOut(state: inout State) {
-        state.$launchState.withLock { $0 = .festival(.guest) }
-        state.map = state.makeMapState(userRole: .guest)
+    private func finishSignOut(state: inout State, launchState: LaunchState) {
+        state.$launchState.withLock { $0 = launchState }
+        switch launchState {
+        case .district(let userRole, let routeId):
+            state.map = state.makeMapState(userRole: userRole, currentRouteId: routeId)
+            state.onboarding = nil
+        case .festival(let userRole):
+            state.map = state.makeMapState(userRole: userRole)
+            state.onboarding = nil
+        case .onboarding:
+            state.map = nil
+            state.onboarding = state.makeOnboardingState()
+        case .loading, .error:
+            state.map = nil
+            state.onboarding = nil
+        }
         state.destination = nil
         state.sheet = nil
         lastMainScreenUseCase.save(nil)

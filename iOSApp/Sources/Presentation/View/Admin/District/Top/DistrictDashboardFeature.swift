@@ -81,7 +81,7 @@ struct DistrictDashboardFeature {
         case exportReceived(AppResult<URL>)
         case destination(PresentationAction<Destination.Action>)
         case signOutTapped
-        case signOutReceived(VoidAppResult)
+        case signOutReceived(AppResult<LaunchState>)
         case dismissTapped
         case alert(PresentationAction<AlertFeature.Action>)
     }
@@ -235,7 +235,7 @@ struct DistrictDashboardFeature {
                 state.isAWSLoading = false
                 state.alert = .error("ログアウトに失敗しました。 \(error.message)")
                 return .none
-            case .signOutReceived(.success):
+            case .signOutReceived(.success(_)):
                 state.isAWSLoading = false
                 return .none
             case .dismissTapped:

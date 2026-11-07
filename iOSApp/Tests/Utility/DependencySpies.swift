@@ -266,7 +266,13 @@ final class DefaultUserDefaultsSpy: UserDefalutsManagerProtocol, @unchecked Send
     private var alwaysPermissionRequested = false
     private var recorded: [String] = []
 
-    init(hasRequestedAlwaysLocationPermission: Bool = false) {
+    init(
+        festivalId: String? = nil,
+        districtId: String? = nil,
+        hasRequestedAlwaysLocationPermission: Bool = false
+    ) {
+        self.festivalId = festivalId
+        self.districtId = districtId
         alwaysPermissionRequested = hasRequestedAlwaysLocationPermission
     }
 

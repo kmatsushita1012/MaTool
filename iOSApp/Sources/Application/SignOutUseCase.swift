@@ -2,22 +2,17 @@ import ComposableArchitecture
 import Dependencies
 
 protocol SignOutUseCaseProtocol: Sendable {
-    func callAsFunction(appState: Shared<AppState?>) async throws
+    func callAsFunction(appState: Shared<AppState?>) async throws -> LaunchState
 }
 
 struct SignOutUseCase: SignOutUseCaseProtocol {
-    @Dependency(SceneSessionCoordinatorKey.self) private var sessionCoordinator
     @Dependency(\.authProvider) private var authProvider
+    @Dependency(LaunchSceneUseCaseKey.self) private var launchSceneUseCase
 
-    func callAsFunction(appState: Shared<AppState?>) async throws {
+    func callAsFunction(appState: Shared<AppState?>) async throws -> LaunchState {
         try await authProvider.signOut()
-        let sessionId = await sessionCoordinator.beginSession()
-        appState.withLock { current in
-            guard var festivalState = current?.festivalState else { return }
-            festivalState.checkpoints = []
-            festivalState.hazardSections = []
-            current = AppState(festivalState: festivalState, sessionId: sessionId)
-        }
+        let (launchState, _) = await launchSceneUseCase(appState: appState)
+        return launchState
     }
 }
 
