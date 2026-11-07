@@ -121,6 +121,7 @@ struct SceneUsecase: SceneUsecaseProtocol {
 
         return LaunchFestivalPack(
             festival: festival,
+            year: SimpleDate.from(now).year,
             districts: districts,
             periods: periods,
             locations: locations,
@@ -159,6 +160,7 @@ struct SceneUsecase: SceneUsecaseProtocol {
 
         return LaunchFestivalPack(
             festival: festival,
+            year: SimpleDate.from(now).year,
             districts: districts,
             periods: periods,
             locations: locations,
@@ -220,6 +222,7 @@ struct SceneUsecase: SceneUsecaseProtocol {
         return .init(
             performances: try await performances,
             routes: filteredRoutes,
+            periods: periods.filter { period in filteredRoutes.contains(where: { $0.periodId == period.id }) },
             points: sanitizedPoints,
             passages: passages,
             currentRouteId: currentRoute?.id

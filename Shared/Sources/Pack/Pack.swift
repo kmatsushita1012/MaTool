@@ -62,14 +62,16 @@ public struct RoutePack: Pack {
 // Default-Festival基準
 public struct LaunchFestivalPack: Pack {
     public let festival: Festival
+    public let year: Int
     public let districts: [District]
     public let periods: [Period] // Adminなら全期間 Publicならlatest
     public let locations: [FloatLocation]
     public let checkpoints: [Checkpoint] // Adminのみ
     public let hazardSections: [HazardSection] // Adminのみ
     
-    public init(festival: Festival, districts: [District], periods: [Period], locations: [FloatLocation], checkpoints: [Checkpoint], hazardSections: [HazardSection]) {
+    public init(festival: Festival, year: Int? = nil, districts: [District], periods: [Period], locations: [FloatLocation], checkpoints: [Checkpoint], hazardSections: [HazardSection]) {
         self.festival = festival
+        self.year = year ?? periods.first?.date.year ?? 0
         self.districts = districts
         self.periods = periods
         self.locations = locations
@@ -84,13 +86,15 @@ public struct LaunchFestivalPack: Pack {
 public struct LaunchDistrictPack: Pack {
     public let performances: [Performance]
     public let routes: [Route]
+    public let periods: [Period]
     public let points: [Point]
     public let passages: [RoutePassage]
     public let currentRouteId: Route.ID?
     
-    public init(performances: [Performance], routes: [Route], points: [Point], passages: [RoutePassage], currentRouteId: Route.ID?) {
+    public init(performances: [Performance], routes: [Route], periods: [Period] = [], points: [Point], passages: [RoutePassage], currentRouteId: Route.ID?) {
         self.performances = performances
         self.routes = routes
+        self.periods = periods
         self.points = points
         self.passages = passages
         self.currentRouteId = currentRouteId
