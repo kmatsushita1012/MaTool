@@ -227,7 +227,7 @@ struct DistrictDashboardFeature {
             case .signOutTapped:
                 state.isAWSLoading = true
                 return .task(Action.signOutReceived) {
-                    try await signOutUseCase()
+                    try await signOutUseCase(appState: state.$appState)
                 }
                 .cancellable(id: SceneSessionCancellationID.active, cancelInFlight: true)
             case .signOutReceived(.failure(let error)):

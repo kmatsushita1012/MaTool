@@ -134,7 +134,7 @@ struct SettingsFeature {
             case .signOutTapped:
                 state.isSignOutLoading = true
                 return .task(Action.signOutReceived) {
-                    try await signOutUseCase()
+                    try await signOutUseCase(appState: state.$appState)
                 }
                 .cancellable(id: SceneSessionCancellationID.active, cancelInFlight: true)
             case .signOutReceived(.failure(let error)):
@@ -207,7 +207,7 @@ struct SettingsFeature {
                 return .run { [appState = state.$appState] send in
                     var didSignOut = false
                     do {
-                        try await signOutUseCase()
+                        try await signOutUseCase(appState: appState)
                         didSignOut = true
                         switch pendingChange {
                         case .festival(let festivalId):
