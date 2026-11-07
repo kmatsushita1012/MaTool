@@ -62,14 +62,16 @@ public struct RoutePack: Pack {
 // Default-Festival基準
 public struct LaunchFestivalPack: Pack {
     public let festival: Festival
+    public let year: Int
     public let districts: [District]
     public let periods: [Period] // Adminなら全期間 Publicならlatest
     public let locations: [FloatLocation]
     public let checkpoints: [Checkpoint] // Adminのみ
     public let hazardSections: [HazardSection] // Adminのみ
     
-    public init(festival: Festival, districts: [District], periods: [Period], locations: [FloatLocation], checkpoints: [Checkpoint], hazardSections: [HazardSection]) {
+    public init(festival: Festival, year: Int? = nil, districts: [District], periods: [Period], locations: [FloatLocation], checkpoints: [Checkpoint], hazardSections: [HazardSection]) {
         self.festival = festival
+        self.year = year ?? periods.first?.date.year ?? 0
         self.districts = districts
         self.periods = periods
         self.locations = locations
