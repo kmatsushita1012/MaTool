@@ -130,8 +130,9 @@ struct FestivalDashboardFeature {
                 return .none
             case .signOutTapped:
                 state.isAuthLoading = true
+                let appState = state.$appState
                 return .task(Action.signOutReceived) {
-                    try await signOutUseCase()
+                    try await signOutUseCase(appState: appState)
                 }
                 .cancellable(id: SceneSessionCancellationID.active, cancelInFlight: true)
             case .signOutReceived(.failure(let error)):

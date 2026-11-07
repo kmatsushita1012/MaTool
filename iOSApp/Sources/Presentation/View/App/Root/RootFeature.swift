@@ -216,8 +216,9 @@ struct RootFeature {
             case .map(.delegate(.emergencySignOutTapped)):
                 guard !state.isEmergencySignOutLoading else { return .none }
                 state.isEmergencySignOutLoading = true
+                let appState = state.$appState
                 return .task(Action.emergencySignOutReceived) {
-                    try await signOutUseCase()
+                    try await signOutUseCase(appState: appState)
                 }
 
             case .emergencySignOutReceived(.failure(let error)):
@@ -506,12 +507,8 @@ struct RootFeature {
     }
 
     private func finishSignOut(state: inout State) {
-        let currentRouteId = state.appState?.routeState?.route.id
-        let hasSelectedDistrict = state.appState?.selectedDistrict != nil
-        state.$launchState.withLock {
-            $0 = hasSelectedDistrict ? .district(.guest, currentRouteId) : .festival(.guest)
-        }
-        state.map = state.makeMapState(userRole: .guest, currentRouteId: currentRouteId)
+        state.$launchState.withLock { $0 = .festival(.guest) }
+        state.map = state.makeMapState(userRole: .guest)
         state.destination = nil
         state.sheet = nil
         lastMainScreenUseCase.save(nil)
