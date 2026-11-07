@@ -51,6 +51,29 @@ actor SignInSceneDataFetcherSpy: SceneDataFetcherProtocol {
     func requestedResources() -> [String] { requests }
 }
 
+actor SelectFestivalDataFetcherSpy: SceneDataFetcherProtocol {
+    private let responses: [Result<LaunchFestivalPack, Error>]
+    private(set) var festivalRequests: [Festival.ID] = []
+
+    init(responses: [Result<LaunchFestivalPack, Error>]) {
+        self.responses = responses
+    }
+
+    func launchFestival(festivalId: Festival.ID) async throws -> LaunchFestivalPack {
+        festivalRequests.append(festivalId)
+        let response = responses[min(festivalRequests.count - 1, responses.count - 1)]
+        return try response.get()
+    }
+
+    func launchFestival(districtId: District.ID) async throws -> LaunchFestivalPack {
+        throw SpyInvocationError.unexpected("launchFestival(districtId:)")
+    }
+
+    func launchDistrict(districtId: District.ID, periodId: Period.ID?) async throws -> LaunchDistrictPack {
+        throw SpyInvocationError.unexpected("launchDistrict")
+    }
+}
+
 actor SignInSignOutSpy {
     private var calls = 0
 
