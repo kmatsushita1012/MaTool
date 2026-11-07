@@ -46,7 +46,7 @@ struct SceneUsecaseTest {
         let subject = make(
             festivalRepository: festivalRepository,
             districtRepository: districtRepository,
-            periodRepository: .init(queryByYearHandler: { _, _ in [period] }),
+            periodRepository: .init(queryByYearHandler: { _, year in year == 2026 ? [period] : [] }),
             locationRepository: .init(queryHandler: { _ in [location] }),
             checkpointRepository: .init(queryHandler: { _ in [checkpoint] }),
             hazardRepository: .init(queryHandler: { _ in [hazard] })
@@ -60,6 +60,48 @@ struct SceneUsecaseTest {
         #expect(result.hazardSections == [hazard])
         #expect(festivalRepository.getCallCount == 1)
         #expect(districtRepository.queryCallCount == 1)
+    }
+
+    @Test
+    func fetchLaunchFestivalPack_正常_翌年を優先し今年の期間も返す() async throws {
+        let now = makeDate(year: 2026, month: 2, day: 22, hour: 12)
+        let festival = Festival.mock(id: "festival-1")
+        let currentPeriod = Period.mock(id: "current", festivalId: festival.id, date: .init(year: 2026, month: 2, day: 22))
+        let nextPeriod = Period.mock(id: "next", festivalId: festival.id, date: .init(year: 2027, month: 2, day: 22))
+        let subject = make(
+            festivalRepository: .init(getHandler: { _ in festival }),
+            districtRepository: .init(queryHandler: { _ in [] }),
+            periodRepository: .init(queryByYearHandler: { _, year in
+                switch year {
+                case 2027: return [nextPeriod]
+                case 2026: return [currentPeriod]
+                default: return []
+                }
+            }),
+            locationRepository: .init(queryHandler: { _ in [] })
+        )
+
+        let result = try await subject.fetchLaunchFestivalPack(festivalId: festival.id, user: .guest, now: now)
+
+        #expect(result.year == 2027)
+        #expect(result.periods == [nextPeriod, currentPeriod])
+    }
+
+    @Test
+    func fetchLaunchFestivalPack_正常_今年が空なら前年fallback期間を返す() async throws {
+        let now = makeDate(year: 2026, month: 2, day: 22, hour: 12)
+        let festival = Festival.mock(id: "festival-1")
+        let previousPeriod = Period.mock(id: "previous", festivalId: festival.id, date: .init(year: 2025, month: 2, day: 22))
+        let subject = make(
+            festivalRepository: .init(getHandler: { _ in festival }),
+            districtRepository: .init(queryHandler: { _ in [] }),
+            periodRepository: .init(queryByYearHandler: { _, year in year == 2025 ? [previousPeriod] : [] })
+        )
+
+        let result = try await subject.fetchLaunchFestivalPack(festivalId: festival.id, user: .guest, now: now)
+
+        #expect(result.year == 2025)
+        #expect(result.periods == [previousPeriod])
     }
 
     @Test
@@ -232,7 +274,6 @@ struct SceneUsecaseTest {
         let result = try await subject.fetchLaunchDistrictPack(districtId: district.id, user: .district(district.id), now: now)
 
         #expect(result.routes == [route])
-        #expect(result.periods == [nextYearPeriod])
         #expect(result.currentRouteId == route.id)
         #expect(result.points == [point])
         #expect(result.passages == [passage])
@@ -240,7 +281,7 @@ struct SceneUsecaseTest {
     }
 
     @Test
-    func fetchLaunchDistrictPack_正常_前年fallback期間を経路と一緒に返す() async throws {
+    func fetchLaunchDistrictPack_正常_前年fallback経路をPackで解決する() async throws {
         let now = makeDate(year: 2026, month: 2, day: 22, hour: 12)
         let district = District.mock(id: "district-1", festivalId: "festival-1")
         let currentPeriod = Period.mock(
@@ -281,7 +322,6 @@ struct SceneUsecaseTest {
         )
 
         #expect(result.routes == [route])
-        #expect(result.periods == [previousPeriod])
         #expect(result.currentRouteId == route.id)
     }
 
