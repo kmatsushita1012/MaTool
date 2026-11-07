@@ -203,7 +203,7 @@ extension FestivalState {
         for district in districts {
             guard let candidate = latestByDistrict[district.id] else { continue }
             if let existing = floatLocations.first(where: { $0.districtId == district.id }),
-               existing.timestamp > candidate.timestamp {
+               existing.timestamp >= candidate.timestamp {
                 latestByDistrict[district.id] = existing
             }
         }
