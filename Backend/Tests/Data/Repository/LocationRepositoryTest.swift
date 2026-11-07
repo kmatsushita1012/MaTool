@@ -7,12 +7,11 @@ struct LocationRepositoryTest {
     @Test
     func get_正常_祭典と地区の完全一致で取得する() async throws {
         let location = FloatLocation.mock(id: "loc-1", districtId: "district-1")
-        var lastCalledKeyConditions: [QueryCondition] = []
-
         let dataStore = DataStoreMock(
-            queryHandler: { _, keyConditions, _, _, _, _ in
-                lastCalledKeyConditions = keyConditions
-                return try encodeForDataStore([Record(location)])
+            getHandler: { keys, _ in
+                #expect((keys["pk"] as? String) == "FESTIVAL#festival-1")
+                #expect((keys["sk"] as? String) == "LOCATION#DISTRICT#district-1")
+                return try JSONEncoder().encode(Record(location))
             }
         )
         let subject = make(dataStore: dataStore)
@@ -20,8 +19,7 @@ struct LocationRepositoryTest {
         let result = try await subject.get(festivalId: "festival-1", districtId: "district-1")
 
         #expect(result == location)
-        #expect(dataStore.queryCallCount == 1)
-        #expect(lastCalledKeyConditions.count == 2)
+        #expect(dataStore.getCallCount == 1)
     }
 
     @Test

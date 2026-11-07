@@ -32,9 +32,8 @@ struct LocationRepository: LocationRepositoryProtocol {
     }
 
     func get(festivalId: String, districtId: String) async throws -> FloatLocation? {
-        let keys = LRecord.makeKeysForQuery(festivalId: festivalId, districtId: districtId)
-        let records = try await store.query(queryConditions: [ keys.pk, keys.sk ], as: LRecord.self)
-        return records.first?.content
+        let keys = LRecord.makeKeys(festivalId: festivalId, districtId: districtId)
+        return try await store.get(pk: keys.pk, sk: keys.sk, as: LRecord.self)?.content
     }
 
     func query(by festivalId: String) async throws -> [FloatLocation] {
