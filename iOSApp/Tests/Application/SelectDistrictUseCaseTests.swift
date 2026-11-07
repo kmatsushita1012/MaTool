@@ -62,13 +62,13 @@ struct SelectDistrictUseCaseTests {
         let appState = Shared<AppState?>(value: AppState(
             festivalPack: LaunchFestivalPack(
                 festival: festival,
+                year: 2024,
                 districts: [district],
                 periods: [currentPeriod],
                 locations: [],
                 checkpoints: [],
                 hazardSections: []
-            ),
-            year: 2026
+            )
         ))
         let dataFetcher = SceneDataFetcherSpy(response: response)
         let useCase = withDependencies {
@@ -85,6 +85,7 @@ struct SelectDistrictUseCaseTests {
         #expect(await dataFetcher.districtLaunchCallCount() == 1)
         #expect(appState.wrappedValue?.districtState?.districtId == district.id)
         #expect(appState.wrappedValue?.districtState?.routes == [route, oldRoute])
+        #expect(appState.wrappedValue?.festivalState.year == 2024)
         #expect(appState.wrappedValue?.period(id: previousPeriod.id) == previousPeriod)
         #expect(appState.wrappedValue?.routeState?.route == oldRoute)
         #expect(appState.wrappedValue?.routeState?.points == [point])
