@@ -179,6 +179,10 @@ extension FestivalState {
     }
 
     mutating func upsertFloatLocation(_ location: FloatLocation) {
+        if let existing = floatLocations.first(where: { $0.districtId == location.districtId }),
+           existing.timestamp >= location.timestamp {
+            return
+        }
         floatLocations.removeAll { $0.districtId == location.districtId }
         floatLocations.append(location)
     }
@@ -195,6 +199,13 @@ extension FestivalState {
                 continue
             }
             latestByDistrict[location.districtId] = location
+        }
+        for district in districts {
+            guard let candidate = latestByDistrict[district.id] else { continue }
+            if let existing = floatLocations.first(where: { $0.districtId == district.id }),
+               existing.timestamp > candidate.timestamp {
+                latestByDistrict[district.id] = existing
+            }
         }
         floatLocations = districts.compactMap { latestByDistrict[$0.id] }
     }
