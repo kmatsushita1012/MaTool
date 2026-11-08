@@ -23,4 +23,6 @@ protocol AuthManager: Sendable {
     func delete(username: String) async throws
     func get(accessToken: String) async throws -> UserRole
     func get(username: String) async throws -> UserRole
+    func signUp(email: String, password: String) async throws
+    func confirmSignUp(email: String, confirmationCode: String) async throws
 }

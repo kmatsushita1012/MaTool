@@ -54,6 +54,14 @@ final class AuthManagerMock: AuthManager, @unchecked Sendable {
         guard let getUserNameHandler else { throw TestError.unimplemented }
         return try getUserNameHandler(username)
     }
+
+    func signUp(email: String, password: String) async throws {
+        throw TestError.unimplemented
+    }
+
+    func confirmSignUp(email: String, confirmationCode: String) async throws {
+        throw TestError.unimplemented
+    }
     
     
 }
