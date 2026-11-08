@@ -41,16 +41,24 @@ RUN swift package resolve
 
 WORKDIR /workspace
 
-# 依存解決後にソースをコピーする。
+# Backendの実装変更時にAWS SDK等を再コンパイルしないよう、依存を先にビルドする。
 COPY Shared/Sources ./Shared/Sources
-COPY Backend/Sources ./Backend/Sources
-COPY Backend/scripts/bootstrap ./Backend/scripts/bootstrap
-RUN mkdir -p Backend/Tests Backend/Bootstrap && touch Backend/.env
+RUN mkdir -p Backend/Sources Backend/Tests Backend/Bootstrap && \
+    touch Backend/.env && \
+    printf '@main struct DependencyPrebuild { static func main() {} }\n' \
+        > Backend/Sources/__DependencyPrebuild.swift
 
 WORKDIR /workspace/Backend
-
-# Swift build（静的ライブラリ込み）
+# Package.swiftが宣言する依存一式を、変更頻度の低いDockerレイヤーで事前ビルド。
 RUN swift build -c release --static-swift-stdlib
+
+# Backendのソース変更ではここから先だけが無効化される。
+WORKDIR /workspace
+COPY Backend/Sources ./Backend/Sources
+COPY Backend/scripts/bootstrap ./Backend/scripts/bootstrap
+WORKDIR /workspace/Backend
+RUN rm Sources/__DependencyPrebuild.swift && \
+    swift build -c release --static-swift-stdlib
 
 RUN ls -lh .build/release/Backend
 # デバッグシンボルを削除してサイズ圧縮
