@@ -318,7 +318,7 @@ private struct FestivalDistrictGroupContentView: View {
 
     var body: some View {
         InfoMaterialContainer(verticalSpacing: 8) {
-            VStack(alignment: .leading) {
+            VStack(alignment: .leading, spacing: 0) {
                 if let name = group.name {
                     Text(name)
                         .font(.headline)
@@ -327,7 +327,7 @@ private struct FestivalDistrictGroupContentView: View {
                         .padding(.vertical, 8)
                 }
 
-                VStack {
+                VStack(spacing: 0) {
                     ForEach(group.districts) { district in
                         Button {
                             onDistrictSelected(district.id)
