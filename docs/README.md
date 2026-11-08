@@ -128,8 +128,7 @@ Debug の広告にはテスト ID を使います。Release の広告 ID を指�
 
 ### Backend
 
-`COGNITO_USER_POOL_ID` と `COGNITO_TEST_EMAIL` はプロセスの環境変数、または `Backend/.env` から読み取ります。
-`Backend/.env` は Package.swift のコピーリソースでもあるため、ビルド時に必要です。
+`COGNITO_USER_POOL_ID` と `COGNITO_TEST_EMAIL` はプロセスの環境変数、またはローカル開発時の `Backend/.env` から読み取ります。Lambda では関数に設定した環境変数だけを使い、`.env` は成果物へ含めません。
 実環境へアクセスする検証では、その環境に対する AWS 認証・権限も必要です。
 
 独自広告 API は、既存の `IMAGE_UPLOAD_BUCKET` と `IMAGE_PUBLIC_BASE_URL` に加えて次を読み取ります。

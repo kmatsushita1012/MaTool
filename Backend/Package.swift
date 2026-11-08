@@ -37,10 +37,7 @@ let package = Package(
                 .product(name: "AWSLambdaEvents", package: "swift-aws-lambda-events"),
                 .product(name: "ServiceLifecycle", package: "swift-service-lifecycle"),
             ],
-            path: "Sources",
-            resources: [
-                .copy("../.env")
-            ]
+            path: "Sources"
         ),
         .testTarget(
             name: "BackendTests",

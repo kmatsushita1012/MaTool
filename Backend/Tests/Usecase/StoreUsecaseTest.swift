@@ -5,7 +5,7 @@ import Testing
 @testable import Backend
 
 struct StoreUsecaseTest {
-    @Test("店舗作成 API は位置情報キーの省略を受け入れ、nullを含むStoreを返して保存する")
+    @Test("店舗作成 API は住所と座標のnullを受け入れ、所有店舗APIから読み戻せる")
     func createEndpointRoundTripsMissingLocation() async throws {
         let repository = StoreRepositorySpy()
         let festival = Festival(
@@ -15,9 +15,9 @@ struct StoreUsecaseTest {
             base: Coordinate(latitude: 35, longitude: 139)
         )
         let festivalRepository = FestivalRepositorySpy(festivals: [festival])
-        let requestBody = #"{"name":"Cafe","businessHours":""}"#
+        let requestBody = #"{"name":"Cafe","address":null,"coordinate":null,"businessHours":""}"#
 
-        let response = await withDependencies {
+        let (response, ownedStoresResponse) = await withDependencies {
             $0[StoreControllerKey.self] = StoreController()
             $0[StoreUsecaseKey.self] = StoreUsecase()
             $0[StoreRepositoryKey.self] = repository
@@ -31,7 +31,15 @@ struct StoreUsecaseTest {
                 body: requestBody
             )
             request.user = .advertiser("owner-1")
-            return await app.handle(request)
+            let createdResponse = await app.handle(request)
+
+            var ownedRequest = Application.Request.make(
+                method: .get,
+                path: "/advertisers/me/stores"
+            )
+            ownedRequest.user = .advertiser("owner-1")
+            let ownedStoresResponse = await app.handle(ownedRequest)
+            return (createdResponse, ownedStoresResponse)
         }
 
         #expect(response.statusCode == 200)
@@ -42,10 +50,45 @@ struct StoreUsecaseTest {
         let responseStore = try decodeStoreResponse(response.body)
         #expect(responseStore.address == nil)
         #expect(responseStore.coordinate == nil)
+        #expect(ownedStoresResponse.statusCode == 200)
+        let ownedStores = try decodeStoresResponse(ownedStoresResponse.body)
+        #expect(ownedStores.count == 1)
+        #expect(ownedStores.first?.id == responseStore.id)
+        #expect(ownedStores.first?.address == nil)
+        #expect(ownedStores.first?.coordinate == nil)
         let storedStore = try #require(await repository.snapshot())
         #expect(storedStore.id == responseStore.id)
         #expect(storedStore.address == nil)
         #expect(storedStore.coordinate == nil)
+    }
+
+    @Test("店舗作成 API の通常エラーは Shared ErrorResponse 形式で返す")
+    func createEndpointReturnsSharedErrorResponse() async throws {
+        let repository = StoreRepositorySpy()
+        let festivalRepository = FestivalRepositorySpy()
+        let response = await withDependencies {
+            $0[StoreControllerKey.self] = StoreController()
+            $0[StoreUsecaseKey.self] = StoreUsecase()
+            $0[StoreRepositoryKey.self] = repository
+            $0[FestivalRepositoryKey.self] = festivalRepository
+            $0[AdvertisingEnvironmentKey.self] = AdvertisingEnvironment(environment: [:])
+        } operation: {
+            let app = Application { StoreRouter() }
+            var request = Application.Request.make(
+                method: .post,
+                path: "/festivals/missing-festival/stores",
+                body: #"{"name":"Cafe","address":null,"coordinate":null,"businessHours":""}"#
+            )
+            request.user = .advertiser("owner-1")
+            return await app.handle(request)
+        }
+
+        #expect(response.statusCode == 404)
+        #expect(response.headers["Content-Type"] == "application/json")
+        let error = try JSONDecoder().decode(ErrorResponse.self, from: Data(response.body.utf8))
+        #expect(error.message == "指定された祭典が見つかりません。")
+        #expect(error.localizedDescription == "指定された祭典が見つかりません。")
+        #expect(await repository.snapshot() == nil)
     }
 
     @Test("店舗更新 API は欠落した住所・座標をnilとして保存して返す")
@@ -102,5 +145,11 @@ struct StoreUsecaseTest {
         let decoder = JSONDecoder()
         decoder.dateDecodingStrategy = .secondsSince1970
         return try decoder.decode(Store.self, from: Data(body.utf8))
+    }
+
+    private func decodeStoresResponse(_ body: String) throws -> [Store] {
+        let decoder = JSONDecoder()
+        decoder.dateDecodingStrategy = .secondsSince1970
+        return try decoder.decode([Store].self, from: Data(body.utf8))
     }
 }

@@ -45,7 +45,7 @@ WORKDIR /workspace
 COPY Shared/Sources ./Shared/Sources
 COPY Backend/Sources ./Backend/Sources
 COPY Backend/scripts/bootstrap ./Backend/scripts/bootstrap
-RUN mkdir -p Backend/Tests Backend/Bootstrap && touch Backend/.env
+RUN mkdir -p Backend/Tests Backend/Bootstrap
 
 WORKDIR /workspace/Backend
 
