@@ -24,16 +24,18 @@ struct AdvertiserAuthUsecase: AdvertiserAuthUsecaseProtocol {
     @Dependency(\.advertiserAuthDataFetcher) private var dataFetcher
 
     func signUp(email: String, password: String) async throws -> AdvertiserSignUpResult {
-        try await dataFetcher.signUp(email: email, password: password)
+        try await dataFetcher.signUp(email: normalizedEmail(email), password: password)
         return .confirmationRequired
     }
 
     func confirmSignUp(email: String, password: String, code: String) async throws -> UserRole {
+        let email = normalizedEmail(email)
         try await dataFetcher.confirmSignUp(email: email, code: code)
         return try await signIn(email: email, password: password)
     }
 
     func signIn(email: String, password: String) async throws -> UserRole {
+        let email = normalizedEmail(email)
         switch try await authProvider.signIn(email, password) {
         case .newPasswordRequired:
             throw AppError.auth(.unauthorized("広告主アカウントでログインしてください。"))
@@ -51,6 +53,10 @@ struct AdvertiserAuthUsecase: AdvertiserAuthUsecaseProtocol {
             }
             return role
         }
+    }
+
+    private func normalizedEmail(_ email: String) -> String {
+        email.trimmingCharacters(in: .whitespacesAndNewlines)
     }
 }
 

@@ -140,10 +140,8 @@ actor HTTPClient: HTTPClientProtocol {
             throw AppError(statusCode: nil, message: "実行中にエラーが発生しました。インターネット接続を確認してください。")
         }
 
-        // If we have HTTP response, check status code
-        if let http = http, !(200...299).contains(http.statusCode),
-           let response: ErrorResponse = try await decodeResponse(from: data){
-            throw AppError(statusCode: http.statusCode, message: response.localizedDescription)
+        if let http, !(200...299).contains(http.statusCode) {
+            throw makeHTTPError(statusCode: http.statusCode, data: data)
         }
 
         if let http, (200...399).contains(http.statusCode), method != "GET", method != "HEAD" {
@@ -211,13 +209,38 @@ actor HTTPClient: HTTPClientProtocol {
             throw AppError(statusCode: nil, message: "実行中にエラーが発生しました。インターネット接続を確認してください。")
         }
         guard let http, (200...299).contains(http.statusCode) else {
-            if let http,
-               let response: ErrorResponse = try? await decodeResponse(from: data) {
-                throw AppError(statusCode: http.statusCode, message: response.localizedDescription)
-            }
-            throw AppError(statusCode: http?.statusCode, message: "サーバーから有効な応答を受け取れませんでした。")
+            throw makeHTTPError(
+                statusCode: http?.statusCode,
+                data: data
+            )
         }
         invalidateCache()
+    }
+
+    private func makeHTTPError(statusCode: Int?, data: Data) -> AppError {
+        let commonResponse = try? jsonDecoder.decode(ErrorResponse.self, from: data)
+        let message = commonResponse?.localizedDescription
+            ?? Self.messageFromErrorResponse(data)
+            ?? "サーバーからエラー応答を受け取りました。"
+        return AppError(statusCode: statusCode, message: message)
+    }
+
+    private static func messageFromErrorResponse(_ data: Data) -> String? {
+        if let object = try? JSONSerialization.jsonObject(with: data) as? [String: Any] {
+            for key in ["localizedDescription", "message", "detail", "error"] {
+                if let value = object[key] as? String {
+                    let message = value.trimmingCharacters(in: .whitespacesAndNewlines)
+                    if !message.isEmpty { return message }
+                }
+            }
+        }
+
+        guard let body = String(data: data, encoding: .utf8)?
+            .trimmingCharacters(in: .whitespacesAndNewlines),
+              !body.isEmpty else {
+            return nil
+        }
+        return String(body.prefix(500))
     }
 
     private func makeURL(path: String, query: [String: Any]) throws -> URL {
@@ -278,7 +301,30 @@ actor HTTPClient: HTTPClientProtocol {
                 try jsonDecoder.decode(Response.self, from: data)
             }.value
         } catch {
-            throw AppError.system(.decoding(error.localizedDescription))
+            throw AppError.system(.decoding(Self.decodingFailureMessage(error)))
+        }
+    }
+
+    private static func decodingFailureMessage(_ error: Error) -> String {
+        func path(_ codingPath: [any CodingKey]) -> String {
+            codingPath.map(\.stringValue).joined(separator: ".")
+        }
+
+        switch error {
+        case let DecodingError.keyNotFound(key, context):
+            let fieldPath = path(context.codingPath + [key])
+            return "応答に必須項目「\(fieldPath)」がありません。"
+        case let DecodingError.valueNotFound(type, context):
+            let fieldPath = path(context.codingPath)
+            return "応答の「\(fieldPath)」が空です（\(type)）。"
+        case let DecodingError.typeMismatch(type, context):
+            let fieldPath = path(context.codingPath)
+            return "応答の「\(fieldPath)」の型が一致しません（\(type)）。"
+        case let DecodingError.dataCorrupted(context):
+            let fieldPath = path(context.codingPath)
+            return "応答の「\(fieldPath)」を読み取れませんでした。"
+        default:
+            return error.localizedDescription
         }
     }
 

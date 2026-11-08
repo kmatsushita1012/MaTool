@@ -435,6 +435,13 @@ struct RootFeature {
     @discardableResult
     private func activateAdvertiserSession(state: inout State, userRole: UserRole) -> Bool {
         guard case .advertiser = userRole else { return false }
+        let currentRouteId = state.appState?.routeState?.route.id
+        if state.appState?.selectedDistrict != nil {
+            state.$launchState.withLock { $0 = .district(userRole, currentRouteId) }
+        } else {
+            state.$launchState.withLock { $0 = .festival(userRole) }
+        }
+        state.map = state.makeMapState(userRole: userRole, currentRouteId: currentRouteId)
         state.sheet = nil
         state.destination = .advertiserDashboard(AdvertiserDashboardFeature.State(
             userRole: userRole,
