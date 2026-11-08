@@ -80,7 +80,7 @@ struct SettingsFeature {
         case binding(BindingAction<State>)
         case loginTapped
         case signOutTapped
-        case signOutReceived(VoidAppResult)
+        case signOutReceived(AppResult<LaunchState>)
         case festivalSelectReceived(AppResult<FestivalSelectionResult>)
         case districtSelectReceived(AppResult<Route.ID?>)
         case participationChangeReceived(ParticipationChangeCompletion)
@@ -133,15 +133,16 @@ struct SettingsFeature {
                 return .none
             case .signOutTapped:
                 state.isSignOutLoading = true
+                let appState = state.$appState
                 return .task(Action.signOutReceived) {
-                    try await signOutUseCase()
+                    try await signOutUseCase(appState: appState)
                 }
                 .cancellable(id: SceneSessionCancellationID.active, cancelInFlight: true)
             case .signOutReceived(.failure(let error)):
                 state.isSignOutLoading = false
                 state.alert = AlertFeature.error("情報の取得に失敗しました \(error.message)")
                 return .none
-            case .signOutReceived(.success):
+            case .signOutReceived(.success(_)):
                 state.isSignOutLoading = false
                 return .none
             case .festivalSelectReceived(.success(let result)):
@@ -207,7 +208,7 @@ struct SettingsFeature {
                 return .run { [appState = state.$appState] send in
                     var didSignOut = false
                     do {
-                        try await signOutUseCase()
+                        try await signOutUseCase(appState: appState)
                         didSignOut = true
                         switch pendingChange {
                         case .festival(let festivalId):
