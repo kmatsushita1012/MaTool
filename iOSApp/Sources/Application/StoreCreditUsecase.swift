@@ -25,7 +25,6 @@ protocol StoreCreditUsecaseProtocol: Sendable {
 struct StoreCreditUsecase: StoreCreditUsecaseProtocol {
     @Dependency(CreditDataFetcherKey.self) private var dataFetcher
     @Dependency(\.storeKitClient) private var storeKitClient
-    @Dependency(\.storeCreditTransactionRecovery) private var storeCreditTransactionRecovery
 
     func loadProducts() async throws -> [StoreCreditProduct] {
         try await storeKitClient.products()
@@ -56,7 +55,11 @@ struct StoreCreditUsecase: StoreCreditUsecaseProtocol {
     }
 
     func recoverUnfinishedPurchases(for stores: [Store]) async {
-        await storeCreditTransactionRecovery.recoverUnfinishedPurchases(for: stores)
+        await recoverUnfinishedStoreCreditPurchases(
+            for: stores,
+            storeKitClient: storeKitClient,
+            creditDataFetcher: dataFetcher
+        )
     }
 }
 

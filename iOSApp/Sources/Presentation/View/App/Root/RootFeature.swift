@@ -60,20 +60,6 @@ struct RootFeature {
             }
         }
 
-        var isAdminLoggedIn: Bool {
-            switch launchState {
-            case .district(let userRole, _), .festival(let userRole):
-                switch userRole {
-                case .district, .headquarter:
-                    true
-                case .advertiser, .guest:
-                    false
-                }
-            case .onboarding, .loading, .error:
-                false
-            }
-        }
-
         var errorStatus: StatusCheckResult? {
             if case .error = launchState { status } else { nil }
         }
@@ -207,7 +193,10 @@ struct RootFeature {
                 guard !state.isDestinationLoading && !state.isIntroductionLoading else { return .none }
                 guard let userRole = currentUserRole(state.launchState) else { return .none }
                 if case .advertiser = userRole {
-                    state.destination = .advertiserDashboard(AdvertiserDashboardFeature.State())
+                    state.destination = .advertiserDashboard(AdvertiserDashboardFeature.State(
+                        userRole: userRole,
+                        appState: state.$appState
+                    ))
                     return .none
                 }
                 if userRole == .guest {
@@ -315,18 +304,21 @@ struct RootFeature {
             case .destination(.presented(.settings(.signOutReceived(.success)))),
                  .destination(.presented(.adminDistrict(.signOutReceived(.success)))),
                  .destination(.presented(.adminFestival(.signOutReceived(.success)))),
+                 .destination(.presented(.advertiserDashboard(.destination(.presented(.settings(.signOutReceived(.success))))))),
                  .destination(.presented(.adminDistrict(.destination(.presented(.settings(.signOutReceived(.success))))))),
                  .destination(.presented(.adminFestival(.destination(.presented(.settings(.signOutReceived(.success))))))):
                 finishSignOut(state: &state)
                 return .none
 
             case .destination(.presented(.settings(.delegate(.sceneSelectionChanged(let userRole, let routeId))))),
+                 .destination(.presented(.advertiserDashboard(.destination(.presented(.settings(.delegate(.sceneSelectionChanged(let userRole, let routeId)))))))),
                  .destination(.presented(.adminDistrict(.destination(.presented(.settings(.delegate(.sceneSelectionChanged(let userRole, let routeId)))))))),
                  .destination(.presented(.adminFestival(.destination(.presented(.settings(.delegate(.sceneSelectionChanged(let userRole, let routeId)))))))):
                 updateMapForSceneSelection(state: &state, userRole: userRole, currentRouteId: routeId)
                 return .none
 
             case .destination(.presented(.settings(.delegate(.participationChanged(let preparation))))),
+                 .destination(.presented(.advertiserDashboard(.destination(.presented(.settings(.delegate(.participationChanged(let preparation)))))))),
                  .destination(.presented(.adminDistrict(.destination(.presented(.settings(.delegate(.participationChanged(let preparation)))))))),
                  .destination(.presented(.adminFestival(.destination(.presented(.settings(.delegate(.participationChanged(let preparation)))))))):
                 let routeId = state.appState?.routeState?.route.id
@@ -340,6 +332,7 @@ struct RootFeature {
                 return .none
 
             case .destination(.presented(.settings(let settingsAction))),
+                 .destination(.presented(.advertiserDashboard(.destination(.presented(.settings(let settingsAction)))))),
                  .destination(.presented(.adminDistrict(.destination(.presented(.settings(let settingsAction)))))),
                  .destination(.presented(.adminFestival(.destination(.presented(.settings(let settingsAction)))))):
                 switch settingsAction {
@@ -443,7 +436,10 @@ struct RootFeature {
     private func activateAdvertiserSession(state: inout State, userRole: UserRole) -> Bool {
         guard case .advertiser = userRole else { return false }
         state.sheet = nil
-        state.destination = .advertiserDashboard(AdvertiserDashboardFeature.State())
+        state.destination = .advertiserDashboard(AdvertiserDashboardFeature.State(
+            userRole: userRole,
+            appState: state.$appState
+        ))
         return true
     }
 

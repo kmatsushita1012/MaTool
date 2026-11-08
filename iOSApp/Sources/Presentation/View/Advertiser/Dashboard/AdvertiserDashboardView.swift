@@ -10,18 +10,50 @@ struct AdvertiserDashboardScreen: View {
                 stores: store.stores,
                 isLoading: store.isLoading,
                 isSigningOut: store.isSigningOut,
+                isSettingsLoading: store.isSettingsLoading,
                 onStoreTapped: { store.send(.storeTapped($0)) },
                 onAddStoreTapped: { store.send(.addStoreTapped) },
+                onChangePasswordTapped: { store.send(.changePasswordTapped) },
+                onUpdateEmailTapped: { store.send(.updateEmailTapped) },
+                onSettingsTapped: { store.send(.settingsTapped) },
                 onSignOutTapped: { store.send(.signOutTapped) }
             )
-            .navigationDestination(
-                item: $store.scope(state: \.destination?.storeEdit, action: \.destination.storeEdit)
-            ) { store in
-                StoreEditScreen(store: store)
-            }
+            .modifier(AdvertiserDashboardDestinations(store: store))
             .alert($store.scope(state: \.alert, action: \.alert))
             .task { store.send(.onAppear) }
         }
+    }
+}
+
+private struct AdvertiserDashboardDestinations: ViewModifier {
+    @SwiftUI.Bindable var store: StoreOf<AdvertiserDashboardFeature>
+
+    func body(content: Content) -> some View {
+        content
+            .navigationDestination(item: $store.scope(
+                state: \.destination?.storeEdit,
+                action: \.destination.storeEdit
+            )) { store in
+                StoreEditScreen(store: store)
+            }
+            .navigationDestination(item: $store.scope(
+                state: \.destination?.changePassword,
+                action: \.destination.changePassword
+            )) { store in
+                ChangePasswordView(store: store)
+            }
+            .navigationDestination(item: $store.scope(
+                state: \.destination?.updateEmail,
+                action: \.destination.updateEmail
+            )) { store in
+                UpdateEmailView(store: store)
+            }
+            .navigationDestination(item: $store.scope(
+                state: \.destination?.settings,
+                action: \.destination.settings
+            )) { store in
+                SettingsView(store: store)
+            }
     }
 }
 
@@ -29,9 +61,17 @@ struct AdvertiserDashboardContentView: View {
     let stores: [AdvertiserStore]
     let isLoading: Bool
     let isSigningOut: Bool
+    let isSettingsLoading: Bool
     let onStoreTapped: (AdvertiserStore) -> Void
     let onAddStoreTapped: () -> Void
+    let onChangePasswordTapped: () -> Void
+    let onUpdateEmailTapped: () -> Void
+    let onSettingsTapped: () -> Void
     let onSignOutTapped: () -> Void
+
+    private var isNavigationDisabled: Bool {
+        isLoading || isSigningOut || isSettingsLoading
+    }
 
     var body: some View {
         List {
@@ -63,15 +103,25 @@ struct AdvertiserDashboardContentView: View {
                 }
 
                 Button("店舗を追加", systemImage: "plus", action: onAddStoreTapped)
-                    .disabled(isLoading)
+                    .disabled(isNavigationDisabled)
             }
 
             Section("アカウント") {
+                Button("パスワード変更", action: onChangePasswordTapped)
+                    .disabled(isNavigationDisabled)
+                Button("メールアドレス変更", action: onUpdateEmailTapped)
+                    .disabled(isNavigationDisabled)
                 Button("ログアウト", role: .destructive, action: onSignOutTapped)
                     .loadingIndicator(isLoading: isSigningOut)
             }
         }
         .navigationTitle("店舗管理")
+        .toolbar {
+            ToolbarItem(placement: .navigationBarTrailing) {
+                Button("設定", systemImage: "gearshape", action: onSettingsTapped)
+                    .disabled(isNavigationDisabled)
+            }
+        }
     }
 
     private func statusText(for store: AdvertiserStore) -> String {
@@ -86,8 +136,12 @@ struct AdvertiserDashboardContentView: View {
             stores: [],
             isLoading: false,
             isSigningOut: false,
+            isSettingsLoading: false,
             onStoreTapped: { _ in },
             onAddStoreTapped: {},
+            onChangePasswordTapped: {},
+            onUpdateEmailTapped: {},
+            onSettingsTapped: {},
             onSignOutTapped: {}
         )
     }

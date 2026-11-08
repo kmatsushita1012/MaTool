@@ -13,7 +13,8 @@ protocol AdvertiserDashboardUsecaseProtocol: Sendable {
 struct AdvertiserDashboardUsecase: AdvertiserDashboardUsecaseProtocol {
     @Dependency(StoreDataFetcherKey.self) private var storeDataFetcher
     @Dependency(FestivalDataFetcherKey.self) private var festivalDataFetcher
-    @Dependency(\.storeCreditTransactionRecovery) private var storeCreditTransactionRecovery
+    @Dependency(\.storeKitClient) private var storeKitClient
+    @Dependency(CreditDataFetcherKey.self) private var creditDataFetcher
 
     func callAsFunction() async -> AdvertiserDashboardPreparation {
         async let storesTask: AppResult<[Store]> = task {
@@ -25,7 +26,11 @@ struct AdvertiserDashboardUsecase: AdvertiserDashboardUsecaseProtocol {
         let (stores, festivals) = await (storesTask, festivalsTask)
 
         if case .success(let stores) = stores {
-            await storeCreditTransactionRecovery.recoverUnfinishedPurchases(for: stores)
+            await recoverUnfinishedStoreCreditPurchases(
+                for: stores,
+                storeKitClient: storeKitClient,
+                creditDataFetcher: creditDataFetcher
+            )
         }
 
         return AdvertiserDashboardPreparation(stores: stores, festivals: festivals)

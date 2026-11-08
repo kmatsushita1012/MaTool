@@ -11,7 +11,6 @@ import Shared
 
 struct PublicMapView: View {
     @SwiftUI.Bindable var store: StoreOf<PublicMapFeature>
-    var isAdminLoggedIn = false
     var isNavigationDisabled = false
     
     var body: some View {
@@ -73,7 +72,7 @@ struct PublicMapView: View {
             selectedPeriodTitle: selectedPeriodTitle,
             isRouteLoading: isRouteLoading,
             isPeriodDisabled: isPeriodDisabled,
-            isAdminLoggedIn: isAdminLoggedIn,
+            userRole: store.userRole,
             isNavigationDisabled: isNavigationDisabled,
             toast: toast,
             adBannerCandidate: store.adBanner?.candidate,
@@ -102,7 +101,7 @@ struct PublicMapContentView<MapContent: View>: View {
     let selectedPeriodTitle: String
     let isRouteLoading: Bool
     let isPeriodDisabled: Bool
-    let isAdminLoggedIn: Bool
+    let userRole: UserRole
     let isNavigationDisabled: Bool
     let toast: MapToast?
     let adBannerCandidate: AdCandidate?
@@ -162,7 +161,8 @@ struct PublicMapContentView<MapContent: View>: View {
                 ToolbarSpacer(.fixed, placement: .topBarTrailing)
             }
             ToolbarItem(placement: .topBarTrailing) {
-                if isAdminLoggedIn {
+                switch userRole {
+                case .district, .headquarter:
                     Menu {
                         Button("管理者ページ", action: onSettingsTapped)
                         Button("ログアウト", role: .destructive, action: onEmergencySignOutTapped)
@@ -173,7 +173,18 @@ struct PublicMapContentView<MapContent: View>: View {
                     }
                     .accessibilityLabel("管理者")
                     .disabled(isNavigationDisabled)
-                } else {
+                case .advertiser:
+                    Menu {
+                        Button("広告主ページ", action: onSettingsTapped)
+                        Button("ログアウト", role: .destructive, action: onEmergencySignOutTapped)
+                    } label: {
+                        Image(systemName: "storefront")
+                    } primaryAction: {
+                        onSettingsTapped()
+                    }
+                    .accessibilityLabel("広告主")
+                    .disabled(isNavigationDisabled)
+                case .guest:
                     Button(action: onSettingsTapped) {
                         Image(systemName: "gearshape")
                     }
@@ -274,7 +285,7 @@ private extension PublicMapFeature.Content {
             selectedPeriodTitle: "日程を選択",
             isRouteLoading: false,
             isPeriodDisabled: false,
-            isAdminLoggedIn: false,
+            userRole: .guest,
             isNavigationDisabled: false,
             toast: nil,
             adBannerCandidate: nil,

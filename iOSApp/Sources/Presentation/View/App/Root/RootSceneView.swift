@@ -36,7 +36,6 @@ public struct RootSceneView: View {
                     if let mapStore = store.scope(state: \.map, action: \.map) {
                         PublicMapView(
                             store: mapStore,
-                            isAdminLoggedIn: store.isAdminLoggedIn,
                             isNavigationDisabled: store.isDestinationLoading
                                 || store.isIntroductionLoading
                                 || store.isEmergencySignOutLoading

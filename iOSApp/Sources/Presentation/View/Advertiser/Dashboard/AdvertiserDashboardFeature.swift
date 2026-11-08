@@ -7,17 +7,28 @@ struct AdvertiserDashboardFeature {
     @Reducer
     enum Destination {
         case storeEdit(StoreEditFeature)
+        case changePassword(ChangePasswordFeature)
+        case updateEmail(UpdateEmailFeature)
+        case settings(SettingsFeature)
     }
 
     @ObservableState
     struct State: Equatable {
+        @Shared fileprivate var appState: AppState?
+        let userRole: UserRole
         var stores: [AdvertiserStore] = []
         var festivals: [Festival] = []
         var isLoading = false
         var isSigningOut = false
+        var isSettingsLoading = false
         var festivalLoadErrorMessage: String?
         @Presents var destination: Destination.State?
         @Presents var alert: AlertFeature.State?
+
+        init(userRole: UserRole, appState: Shared<AppState?>) {
+            self._appState = appState
+            self.userRole = userRole
+        }
     }
 
     @CasePathable
@@ -26,6 +37,10 @@ struct AdvertiserDashboardFeature {
         case loadReceived(AdvertiserDashboardPreparation)
         case addStoreTapped
         case storeTapped(AdvertiserStore)
+        case changePasswordTapped
+        case updateEmailTapped
+        case settingsTapped
+        case settingsPrepared(AppResult<SettingsPreparation>)
         case signOutTapped
         case signOutReceived(VoidAppResult)
         case destination(PresentationAction<Destination.Action>)
@@ -34,6 +49,8 @@ struct AdvertiserDashboardFeature {
 
     @Dependency(\.advertiserDashboardUsecase) private var dashboardUsecase
     @Dependency(SignOutUseCaseKey.self) private var signOutUseCase
+    @Dependency(FetchFestivalListUseCaseKey.self) private var fetchFestivalListUseCase
+    @Dependency(GetSceneSelectionUseCaseKey.self) private var getSceneSelectionUseCase
 
     var body: some ReducerOf<Self> {
         Reduce { state, action in
@@ -80,6 +97,38 @@ struct AdvertiserDashboardFeature {
                 state.destination = .storeEdit(StoreEditFeature.State(store: store, festivals: state.festivals))
                 return .none
 
+            case .changePasswordTapped:
+                state.destination = .changePassword(ChangePasswordFeature.State())
+                return .none
+
+            case .updateEmailTapped:
+                state.destination = .updateEmail(UpdateEmailFeature.State())
+                return .none
+
+            case .settingsTapped:
+                guard !state.isSettingsLoading else { return .none }
+                state.isSettingsLoading = true
+                return .task(Action.settingsPrepared) {
+                    let festivals = try await fetchFestivalListUseCase()
+                    let selection = getSceneSelectionUseCase()
+                    return SettingsPreparation(festivals: festivals, selection: selection)
+                }
+
+            case .settingsPrepared(.success(let preparation)):
+                state.isSettingsLoading = false
+                state.destination = .settings(SettingsFeature.State(
+                    selection: preparation.selection,
+                    festivals: preparation.festivals,
+                    userRole: state.userRole,
+                    appState: state.$appState
+                ))
+                return .none
+
+            case .settingsPrepared(.failure(let error)):
+                state.isSettingsLoading = false
+                state.alert = .error("設定画面の準備に失敗しました。\n\(error.message)")
+                return .none
+
             case .destination(.presented(.storeEdit(.saveReceived(.success(let result))))):
                 let store: AdvertiserStore
                 switch result {
@@ -87,6 +136,11 @@ struct AdvertiserDashboardFeature {
                     store = savedStore
                 }
                 state.stores.upsert(store)
+                return .none
+
+            case .destination(.presented(.changePassword(.received(.success)))):
+                state.destination = nil
+                state.alert = .success("パスワードが変更されました")
                 return .none
 
             case .signOutTapped:
