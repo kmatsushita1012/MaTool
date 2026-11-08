@@ -19,13 +19,12 @@ protocol StoreRepositoryProtocol: Sendable {
     func storesOwned(by ownerId: String) async throws -> [Store]
     func stores(in festivalId: Festival.ID) async throws -> [Store]
     func create(_ store: Store) async throws
-    func updateEditableFields(_ store: Store, requireApproved: Bool) async throws -> Store
+    func update(_ store: Store) async throws -> Store
 }
 
 struct StoreRepository: StoreRepositoryProtocol {
     private let store: any DynamoDBTransactionalDataStore
     private let encoder = DynamoDBEncoder()
-    private let decoder = DynamoDBDecoder()
 
     init() {
         @Dependency(\.dataStoreFactory) var storeFactory
@@ -101,50 +100,9 @@ struct StoreRepository: StoreRepositoryProtocol {
         ])
     }
 
-    func updateEditableFields(_ item: Store, requireApproved: Bool) async throws -> Store {
-        let key = StoreRecord.keys(id: item.id, festivalId: item.festivalId)
-        let dynamoKey = ["pk": try encoder.encodeKey(key.pk), "sk": try encoder.encodeKey(key.sk)]
-        let names = [
-            "#pk": "pk", "#sk": "sk", "#content": "content", "#ownerId": "owner_id",
-            "#name": "name", "#address": "address", "#coordinate": "coordinate",
-            "#businessHours": "business_hours", "#description": "description",
-            "#ownerPaused": "owner_paused", "#bannerImagePath": "banner_image_path",
-            "#interstitialImagePath": "interstitial_image_path", "#updatedAt": "updated_at",
-            "#moderationStatus": "moderation_status"
-        ]
-        let values: [String: DynamoDBAttribute] = [
-            ":ownerId": try encoder.encodeValue(item.ownerId),
-            ":name": try encoder.encodeValue(item.name),
-            ":address": try optionalValue(item.address),
-            ":coordinate": try optionalValue(item.coordinate),
-            ":businessHours": try encoder.encodeValue(item.businessHours),
-            ":description": try optionalValue(item.description),
-            ":ownerPaused": try encoder.encodeValue(item.ownerPaused),
-            ":bannerImagePath": try optionalValue(item.bannerImagePath),
-            ":interstitialImagePath": try optionalValue(item.interstitialImagePath),
-            ":updatedAt": try encoder.encodeValue(item.updatedAt)
-        ]
-        let update = "SET #content.#name = :name, #content.#address = :address, #content.#coordinate = :coordinate, #content.#businessHours = :businessHours, #content.#description = :description, #content.#ownerPaused = :ownerPaused, #content.#bannerImagePath = :bannerImagePath, #content.#interstitialImagePath = :interstitialImagePath, #content.#updatedAt = :updatedAt"
-        var condition = "attribute_exists(#pk) AND attribute_exists(#sk) AND #content.#ownerId = :ownerId"
-        var conditionValues = values
-        if requireApproved {
-            condition += " AND #content.#moderationStatus = :approved"
-            conditionValues[":approved"] = try encoder.encodeValue(ModerationStatus.approved)
-        }
-        guard let attributes = try await store.updateItem(
-            keys: dynamoKey,
-            updateExpression: update,
-            conditionExpression: condition,
-            expressionAttributeNames: names,
-            expressionAttributeValues: conditionValues,
-            returnAllNew: true
-        ) else { throw Error.internalServerError("Store の更新結果を取得できませんでした。") }
-        return try decoder.decode(attributes, as: StoreRecord.self).content
-    }
-
-    private func optionalValue<T: Encodable>(_ value: T?) throws -> DynamoDBAttribute {
-        guard let value else { return .null(true) }
-        return try encoder.encodeValue(value)
+    func update(_ item: Store) async throws -> Store {
+        try await store.put(StoreRecord(item))
+        return item
     }
 }
 

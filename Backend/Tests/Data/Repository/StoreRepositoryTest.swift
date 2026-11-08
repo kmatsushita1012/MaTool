@@ -24,39 +24,42 @@ struct StoreRepositoryTest {
         #expect(dataStore.lastQueryConsistentRead == true)
     }
 
-    @Test("画像変更の更新は moderation_status が approved の場合だけ成功する条件を付ける")
-    func imageUpdateRequiresApprovedStatusInConditionExpression() async throws {
+    @Test("Store 更新は DataStore の put に委譲する")
+    func updateUsesDataStorePut() async throws {
         let updated = makeStore(bannerImagePath: "https://cdn.example/new.jpg")
-        let encoded = try DynamoDBEncoder().encode(Record(pk: "FESTIVAL#festival-1", sk: "STORE#store-1", content: updated))
-        let dataStore = DataStoreMock(updateItemHandler: { _, _, _, names, _, _ in
-            #expect(names["#moderationStatus"] == "moderation_status")
-            return encoded
-        })
+        let dataStore = DataStoreMock(putHandler: { _ in })
 
         let result = try await withDependencies {
             $0.dataStoreFactory = { _ in dataStore }
         } operation: {
-            try await StoreRepository().updateEditableFields(updated, requireApproved: true)
+            try await StoreRepository().update(updated)
         }
 
         #expect(result == updated)
-        #expect(dataStore.lastUpdateConditionExpression?.contains("#content.#moderationStatus = :approved") == true)
+        #expect(dataStore.putCallCount == 1)
     }
 
-    @Test("DynamoDB の Store location attributes は nil を NULL として保存する")
-    func updateStoresNullableLocationAsNull() async throws {
+    @Test("Store 更新は nullable な location を含めて DataStore の put に渡す")
+    func updatePassesNullableLocationToDataStore() async throws {
         let updated = makeStore(address: nil, coordinate: nil)
-        let encoded = try DynamoDBEncoder().encode(Record(pk: "FESTIVAL#festival-1", sk: "STORE#store-1", content: updated))
-        let dataStore = DataStoreMock(updateItemHandler: { _, _, _, _, values, _ in
-            if case .null(true) = values[":address"] {} else { Issue.record("address must be DynamoDB NULL") }
-            if case .null(true) = values[":coordinate"] {} else { Issue.record("coordinate must be DynamoDB NULL") }
-            return encoded
+        let dataStore = DataStoreMock(putHandler: { item in
+            guard let record = item as? Record<Store> else {
+                Issue.record("StoreRecord expected")
+                return
+            }
+            let attributes = try DynamoDBEncoder().encode(record)
+            guard case .m(let content)? = attributes["content"] else {
+                Issue.record("Store content map was missing")
+                return
+            }
+            if case .null(true)? = content["address"] {} else { Issue.record("address must be DynamoDB NULL") }
+            if case .null(true)? = content["coordinate"] {} else { Issue.record("coordinate must be DynamoDB NULL") }
         })
 
         let result = try await withDependencies {
             $0.dataStoreFactory = { _ in dataStore }
         } operation: {
-            try await StoreRepository().updateEditableFields(updated, requireApproved: false)
+            try await StoreRepository().update(updated)
         }
 
         #expect(result.address == nil)

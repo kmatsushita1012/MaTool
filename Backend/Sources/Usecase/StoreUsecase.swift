@@ -92,8 +92,6 @@ struct StoreUsecase: StoreUsecaseProtocol {
         }
 
         let now = Date()
-        let imagePathsChanged = request.bannerImagePath != current.bannerImagePath
-            || request.interstitialImagePath != current.interstitialImagePath
         let updated = Store(
             id: current.id,
             festivalId: current.festivalId,
@@ -111,7 +109,7 @@ struct StoreUsecase: StoreUsecaseProtocol {
             createdAt: current.createdAt,
             updatedAt: now
         )
-        return try await stores.updateEditableFields(updated, requireApproved: imagePathsChanged)
+        return try await stores.update(updated)
     }
 
     func publicStores(in festivalId: Festival.ID) async throws -> [PublicStore] {
