@@ -4,6 +4,7 @@
 - **対象**: `iOSApp`（SwiftUI / TCA / swift-dependencies / StoreKit 2）
 - **参照**: [独自広告仕様](./spec.md) / [Backend 設計](./backend.md) / [Backend 実装 PR #390](https://github.com/kmatsushita1012/MaTool/pull/390)
 - **続編**: [第二段階の設計（店舗地図・店舗詳細・全画面広告）](./ios-phase2.md)
+- **採用済み店舗管理UX**: [店舗別 Dashboard B案](./store-dashboard-ux.md)（このファイル中の旧ワイヤーフレームに優先。**店舗選択→店舗別Dashboard／新規保存後→新しい店舗のDashboard**）
 - **既存実装の確認基準**: `main` の [`faf56f5`](https://github.com/kmatsushita1012/MaTool/commit/faf56f5662162cf8ffcfde23ce1a87a85be2f8c7)
 - **由来**: 合意済み HTML ワイヤーフレーム v0.4 を GitHub 上でレビューできる Markdown／Mermaid に移植
 - **注意**: 以下の「新規」は**設計案**であり、Swift 実装済みではない
@@ -65,10 +66,12 @@
 └─────────────────────────────────────┘
 ```
 
-- 所有店舗ごとに編集へ push。Credit 購入／残高は**その店舗に紐付く**画面からアクセスする。
+- 所有店舗ごとに**店舗別 Dashboard**へ push。Credit 購入／残高や広告画像、店舗情報編集は店舗別 Dashboard からアクセスする。
 - Dashboard はナビゲーションのハブ。Festival／District 既存 Dashboard と同様に TCA `Destination` を持つ。
 
-#### B. 店舗作成・編集 — `StoreEditView`
+#### B. 店舗作成・基本情報編集 — `StoreEditView`
+
+新規作成時と、店舗別 Dashboard から「基本情報を編集」を押したときに使用する。広告画像、クレジット、一時停止の操作は**店舗別 Dashboard からそれぞれ独立した画面へ**遷移する（[採用済みB案](./store-dashboard-ux.md)）。
 
 ```text
 ┌─────────────────────────────────────┐
@@ -78,23 +81,19 @@
 │   店名           ○○商店             │
 │   住所           静岡県掛川市…      │
 │   営業時間       10:00〜19:00       │
-│   説明           テキストを編集  ›  │
+│   説明           テキストを編集     │
 │                                     │
 │ ［位置］                            │
 │   地図で指定                    ›   │
-│                                     │
-│ ［広告］                            │
-│   バナー画像      写真を選択        │
-│   広告配信を一時停止         [ON/OFF]│
 │                                     │
 │            ［保存］                 │
 └─────────────────────────────────────┘
 ```
 
-- 新規: `POST /festivals/:festivalId/stores` → 返された Store を表示／編集の正本にする。
-- 編集: `PUT /stores/:storeId`。`bannerImagePath` は一時パス・正式 URL・明示 `null` を適切に送る。
-- **全画面画像の行は表示しない。** Backend の Store PUT は全体を受けるため、**変更していない `interstitialImagePath` は既存値を維持して送信**する。
-- Save 成功時に**Backend レスポンスの Store**を採用。画面で推測した正式画像 URL や状態を採用しない。
+- 新規作成：`POST /festivals/:festivalId/stores` 成功後に親 `AdvertiserDashboardFeature` が **作成用 Destination を店舗別 Dashboard に置換**する。戻る先は所有店舗一覧。
+- 基本情報編集：`PUT /stores/:storeId` 成功後に **店舗別 Dashboard に戻る**。保存結果を正本として反映する。
+- 画像フィールドはこの画面で編集しない。Store 更新に画像パスが必要な場合は、**変更していない両画像フィールドを保持**する（明示的な `null` とキー省略を混同しない）。
+
 
 #### C. Credit — `CreditPurchaseView`
 
@@ -289,7 +288,8 @@ flowchart TB
   Settings["SettingsFeature / SettingsView<br/>既存 Form"]
   Auth["AdvertiserAuthFeature<br/>登録・ログイン・確認コード"]
   Dashboard["AdvertiserDashboardFeature / View<br/>最初の広告主画面"]
-  Edit["StoreEditFeature / View<br/>店舗登録・バナー入稿"]
+  StoreDashboard["StoreDashboardFeature / View<br/>店舗別Dashboard（B案）"]
+  Edit["StoreEditFeature / View<br/>新規登録・基本情報編集"]
   Credit["CreditPurchaseFeature / View<br/>店舗別残高・購入"]
   History["PurchaseHistoryFeature / View"]
   Festival["FestivalDashboardFeature<br/>既存"]
@@ -304,8 +304,10 @@ flowchart TB
   Root -->|"既存 push"| Settings
   Settings -->|"新規：広告主導線"| Auth
   Auth -->|"広告主認証成功"| Dashboard
-  Dashboard -->|"店舗を選択／作成"| Edit
-  Edit -->|"対象店舗"| Credit
+  Dashboard -->|"店舗選択"| StoreDashboard
+  Dashboard -->|"新規作成（保存後は店舗別Dashboardへ）"| Edit
+  StoreDashboard -->|"基本情報を編集"| Edit
+  StoreDashboard -->|"残高・購入"| Credit
   Credit -->|"購入履歴"| History
   Root -->|"管理者は既存 push"| Festival
   Root -->|"管理者は既存 push"| District
@@ -313,7 +315,7 @@ flowchart TB
   classDef existing fill:#edf3f7,stroke:#526b7e,color:#233849
   classDef added fill:#e6f2ff,stroke:#2b6faa,color:#153957
   class Root,Map,Loc,Route,Settings,Festival,District,Intro existing
-  class Banner,Auth,Dashboard,Edit,Credit,History added
+  class Banner,Auth,Dashboard,StoreDashboard,Edit,Credit,History added
 ```
 
 **ロールに関する実装上の注意**

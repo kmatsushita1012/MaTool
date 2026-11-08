@@ -23,6 +23,7 @@ jobs:
           apt-get install -y --no-install-recommends \
             build-essential \
             cmake \
+            python3 \
             libssl-dev \
             libxml2-dev \
             libcurl4-openssl-dev
@@ -31,22 +32,14 @@ jobs:
       - name: Create empty .env
         run: touch Backend/.env
 
-      - name: Cache SwiftPM artifacts
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.cache/org.swift.swiftpm/
-            Backend/.build
-          key: ${{ runner.os }}-spm-Backend-swift-6.3.3-${{ github.ref_name }}-${{ hashFiles('Backend/Package.swift', 'Backend/Package.resolved', 'Shared/Package.swift', 'Shared/Package.resolved') }}
-          restore-keys: |
-            ${{ runner.os }}-spm-Backend-swift-6.3.3-${{ github.ref_name }}-
-            ${{ runner.os }}-spm-Backend-swift-6.3.3-
-
+      # .buildはAWS SDK等の成果物が数GBになるため、Actionsキャッシュには保存しない。
+      # このジョブは毎回ビルドし、容量は頻繁なBackendデプロイ用キャッシュに優先配分する。
       - name: Resolve Backend package dependencies
         run: swift package resolve
         working-directory: Backend
 
       - name: Build & Test
+        id: test
         run: |
           set -o pipefail
           mkdir -p build/reports
@@ -59,6 +52,7 @@ jobs:
             --skip RouteMigrator \
             --no-parallel \
             --enable-code-coverage \
+            --xunit-output="$(pwd)/build/reports/backend-test-results.xml" \
             | tee build/reports/backend-test.log
 
       - name: Upload Test Results
@@ -71,9 +65,10 @@ jobs:
       - name: Print Test Summary
         if: always()
         run: |
-          echo "===== Backend Swift Package Test Summary ====="
-          if [ -f build/reports/backend-test.log ]; then
-            tail -n 80 build/reports/backend-test.log
-          else
-            echo "Backend test log was not created."
-          fi
+          python3 .github/scripts/print_test_summary.py \
+            --xunit "$(pwd)/build/reports/backend-test-results.xml" \
+            --title Backend \
+            --platform Linux \
+            --device "GitHub Actions Runner" \
+            --os-version "Ubuntu 24.04 / Swift 6.3.3" \
+            --test-outcome "${{ steps.test.outcome }}"
