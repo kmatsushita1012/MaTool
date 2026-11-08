@@ -24,16 +24,38 @@ jobs:
       - name: Setup Docker Buildx
         uses: docker/setup-buildx-action@v3
 
+      - name: Check if Backend dependency cache differs from main
+        id: dependency-cache
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ "$GITHUB_REF" == "refs/heads/main" ]]; then
+            echo "write=true" >> "$GITHUB_OUTPUT"
+          elif git diff --quiet origin/main HEAD -- \
+              Backend/Package.swift Backend/Package.resolved \
+              Shared/Package.swift Shared/Package.resolved Shared/Sources \
+              Backend/Dockerfile; then
+            # mainのキャッシュを使う。ブランチごとの重複保存を避ける。
+            echo "write=false" >> "$GITHUB_OUTPUT"
+          else
+            # BackendのPR用デプロイも重要。依存やSharedに差分があれば
+            # そのブランチ用キャッシュを作り、次回のpushで再利用する。
+            echo "write=true" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Warm/cache Backend dependencies
         uses: docker/build-push-action@v6
         with:
           context: .
           file: Backend/Dockerfile
           target: dependencies
-          # mainが作った依存レイヤーをbackend/*のデプロイでも再利用する。
-          # ビルドのたびに変わるBackend本体をキャッシュへ保存しない。
+          # mainのキャッシュはbackend/*からも読み取れる。ブランチ独自の
+          # 依存キャッシュを作った場合は同じscope名でもブランチ単位で隔離される。
           cache-from: type=gha,scope=matool-backend-dependencies-v1
-          cache-to: ${{ github.ref == 'refs/heads/main' && 'type=gha,scope=matool-backend-dependencies-v1,mode=max' || '' }}
+          # 主対象はBackend PRの動作確認。mainにない依存/Shared変更は
+          # backend/*でも保存する。一方で依存が同一なら読み取りのみ。
+          # mode=minで依存ステージの完成イメージに必要なレイヤーだけ保存。
+          cache-to: ${{ steps.dependency-cache.outputs.write == 'true' && 'type=gha,scope=matool-backend-dependencies-v1,mode=min,ignore-error=true' || '' }}
 
       - name: Build Lambda image
         uses: docker/build-push-action@v6
