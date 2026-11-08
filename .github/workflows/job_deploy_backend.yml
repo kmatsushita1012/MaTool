@@ -43,6 +43,11 @@ jobs:
             echo "write=true" >> "$GITHUB_OUTPUT"
           fi
 
+      - name: Mark Backend dependency build start
+        id: dependency-clock
+        shell: bash
+        run: echo "started_at=$(date +%s)" >> "$GITHUB_OUTPUT"
+
       - name: Warm/cache Backend dependencies
         uses: docker/build-push-action@v6
         with:
@@ -57,6 +62,17 @@ jobs:
           # mode=minで依存ステージの完成イメージに必要なレイヤーだけ保存。
           cache-to: ${{ steps.dependency-cache.outputs.write == 'true' && 'type=gha,scope=matool-backend-dependencies-v1,mode=min,ignore-error=true' || '' }}
 
+      - name: Record Backend dependency build duration
+        id: dependency-elapsed
+        if: always()
+        shell: bash
+        env:
+          STARTED_AT: ${{ steps.dependency-clock.outputs.started_at }}
+        run: |
+          if [[ "$STARTED_AT" =~ ^[0-9]+$ ]]; then
+            echo "seconds=$(( $(date +%s) - STARTED_AT ))" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Build Lambda image
         uses: docker/build-push-action@v6
         with:
@@ -65,6 +81,25 @@ jobs:
           load: true
           tags: matoolapi:latest
           # 同じBuildx builder上で前段の依存ビルドキャッシュを再利用する。
+
+      - name: Summarize Backend dependency cache verification
+        if: always()
+        shell: bash
+        env:
+          CACHE_WRITE: ${{ steps.dependency-cache.outputs.write }}
+          DEPENDENCY_SECONDS: ${{ steps.dependency-elapsed.outputs.seconds }}
+        run: |
+          {
+            echo "### Backend dependency cache verification"
+            echo ""
+            echo "| Metric | Result |"
+            echo "| --- | --- |"
+            echo "| Branch | \`${GITHUB_REF_NAME}\` |"
+            echo "| Cache export enabled | \`${CACHE_WRITE:-unknown}\` |"
+            echo "| Dependency build elapsed | \`${DEPENDENCY_SECONDS:-unknown}s\` |"
+            echo ""
+            echo "Check the **Warm/cache Backend dependencies** BuildKit log for \`importing cache manifest\` and \`CACHED\` to confirm actual cache reuse."
+          } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Extract Lambda package
         run: |
