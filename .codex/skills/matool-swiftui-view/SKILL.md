@@ -47,6 +47,8 @@ description: MaTool の SwiftUI 画面と TCA Presentation Feature を実装・�
 - `var` の `@ViewBuilder` は小さな表示分岐に使ってよい。肥大化する場合は別 View に分ける。`func` の `@ViewBuilder` は作らない。
 - `#Preview` は原則として `XXXContentView` に付ける。Featureや本番外部依存に結び付けず、表示用の値とクロージャでプレビューできるようにする。再利用部品も確認価値がある場合はPreviewを付ける。
 - Empty State やエラーには SwiftUI 標準の表示手段を優先する。エラーは必要に応じて `alert`、Empty State は標準の仕組みを使う。
+- ボタンを起点とする非同期処理では、共通の `LoadingIndicator` を起点ボタンの `.overlay` に表示する。TCA Feature の Loading State から表示を導出し、View に状態を複製しない。
+- 処理中に実行させたくない操作のボタンは `.disabled(isLoading)` などで無効化する。再実行を許可しない場合は起点ボタンも無効化し、処理と競合しないボタンまで画面全体で一律に無効化しない。
 - コンテンツ量が少ない場合は `VStack`、多くなる場合は `LazyVStack` を選ぶ。暗黙のアニメーションを漫然と付けず、ユーザー体験上必要な箇所だけ明示する。
 
 ## 画面変更後の確認
