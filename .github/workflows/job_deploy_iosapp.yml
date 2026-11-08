@@ -24,24 +24,21 @@ jobs:
         run: |
           echo "$AMPLIFYCONFIGURATION_JSON_B64" | base64 --decode > iOSApp/amplifyconfiguration.json
 
-      - name: Ensure SPM Cache Dir Exists
-        run: mkdir -p iOSApp/Caches/org.swift.swiftpm
-
-      - name: Cache SPM
-        uses: actions/cache@v3
+      - name: Cache SPM checkouts
+        uses: actions/cache@v4
         with:
-          path: iOSApp/Caches/org.swift.swiftpm
-          key: ${{ runner.os }}-spm-iOSApp-${{ hashFiles('iOSApp/Package.resolved') }}
+          path: iOSApp/.sourcePackages
+          key: ${{ runner.os }}-spm-iOSApp-xcode26.6-${{ hashFiles('MaTool.xcworkspace/xcshareddata/swiftpm/Package.resolved', 'iOSApp/MaTool.xcodeproj/project.pbxproj', 'Shared/Package.swift') }}
           restore-keys: |
-            ${{ runner.os }}-spm-iOSApp-
+            ${{ runner.os }}-spm-iOSApp-xcode26.6-
 
-      - name: Cache DerivedData
-        uses: actions/cache@v3
+      - name: Cache Release build artifacts
+        uses: actions/cache@v4
         with:
-          path: iOSApp/.derivedData
-          key: ${{ runner.os }}-derived-${{ hashFiles('iOSApp/MaTool.xcodeproj/project.pbxproj', '**/*.swift', '**/*.h') }}
+          path: iOSApp/.derivedData/Build
+          key: ${{ runner.os }}-derived-iOSApp-xcode26.6-release-${{ hashFiles('MaTool.xcworkspace/xcshareddata/swiftpm/Package.resolved', 'iOSApp/MaTool.xcodeproj/project.pbxproj', 'Shared/Package.swift') }}
           restore-keys: |
-            ${{ runner.os }}-derived-
+            ${{ runner.os }}-derived-iOSApp-xcode26.6-release-
 
       - name: Create iOS config files
         env:
@@ -70,6 +67,7 @@ jobs:
             -configuration Release \
             -destination 'generic/platform=iOS' \
             -derivedDataPath iOSApp/.derivedData \
+            -clonedSourcePackagesDirPath iOSApp/.sourcePackages \
             -skipMacroValidation \
             -skipPackagePluginValidation \
             CURRENT_PROJECT_VERSION="$IOS_BUILD_NUMBER" \
