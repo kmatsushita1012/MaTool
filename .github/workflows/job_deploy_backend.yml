@@ -80,7 +80,9 @@ jobs:
           file: Backend/Dockerfile
           load: true
           tags: matoolapi:latest
-          # 同じBuildx builder上で前段の依存ビルドキャッシュを再利用する。
+          # Buildx actionは呼び出しごとに独立したビルド。依存ステージの
+          # GHAキャッシュを最終イメージ側でも明示的に読み込む。
+          cache-from: type=gha,scope=matool-backend-dependencies-v1
 
       - name: Summarize Backend dependency cache verification
         if: always()
