@@ -13,28 +13,17 @@ struct AdvertiserDashboardFeature {
     struct State: Equatable {
         var stores: [AdvertiserStore] = []
         var festivals: [Festival] = []
-        var isLoadingStores = false
-        var isLoadingFestivals = false
+        var isLoading = false
         var isSigningOut = false
-        var isRootDestination: Bool
         var festivalLoadErrorMessage: String?
         @Presents var destination: Destination.State?
         @Presents var alert: AlertFeature.State?
-
-        var isLoading: Bool {
-            isLoadingStores || isLoadingFestivals
-        }
-
-        init(isRootDestination: Bool = false) {
-            self.isRootDestination = isRootDestination
-        }
     }
 
     @CasePathable
     enum Action: Equatable {
         case onAppear
-        case storesLoaded(AppResult<[AdvertiserStore]>)
-        case festivalsLoaded(AppResult<[Festival]>)
+        case loadReceived(AdvertiserDashboardPreparation)
         case addStoreTapped
         case storeTapped(AdvertiserStore)
         case signOutTapped
@@ -43,9 +32,7 @@ struct AdvertiserDashboardFeature {
         case alert(PresentationAction<AlertFeature.Action>)
     }
 
-    @Dependency(\.advertiserStoreUsecase) private var storeUsecase
-    @Dependency(FetchFestivalListUseCaseKey.self) private var fetchFestivalListUseCase
-    @Dependency(\.storeCreditUsecase) private var storeCreditUsecase
+    @Dependency(\.advertiserDashboardUsecase) private var dashboardUsecase
     @Dependency(SignOutUseCaseKey.self) private var signOutUseCase
 
     var body: some ReducerOf<Self> {
@@ -53,38 +40,28 @@ struct AdvertiserDashboardFeature {
             switch action {
             case .onAppear:
                 guard !state.isLoading else { return .none }
-                state.isLoadingStores = true
-                state.isLoadingFestivals = true
-                return .merge(
-                    .task(Action.storesLoaded) {
-                        let stores = try await storeUsecase.loadOwnedStores()
-                        await storeCreditUsecase.recoverUnfinishedPurchases(for: stores)
-                        return stores
-                    },
-                    .task(Action.festivalsLoaded) {
-                        try await fetchFestivalListUseCase()
-                    }
-                )
+                state.isLoading = true
+                let dashboardUsecase = self.dashboardUsecase
+                return .run { send in
+                    let preparation = await dashboardUsecase()
+                    await send(.loadReceived(preparation))
+                }
 
-            case .storesLoaded(.success(let stores)):
-                state.isLoadingStores = false
-                state.stores = stores.sorted { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending }
-                return .none
-
-            case .storesLoaded(.failure(let error)):
-                state.isLoadingStores = false
-                state.alert = .error("店舗情報を取得できませんでした。\n\(error.message)")
-                return .none
-
-            case .festivalsLoaded(.success(let festivals)):
-                state.isLoadingFestivals = false
-                state.festivals = festivals
-                state.festivalLoadErrorMessage = nil
-                return .none
-
-            case .festivalsLoaded(.failure(let error)):
-                state.isLoadingFestivals = false
-                state.festivalLoadErrorMessage = error.message
+            case .loadReceived(let preparation):
+                state.isLoading = false
+                switch preparation.stores {
+                case .success(let stores):
+                    state.stores = stores.sorted { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending }
+                case .failure(let error):
+                    state.alert = .error("店舗情報を取得できませんでした。\n\(error.message)")
+                }
+                switch preparation.festivals {
+                case .success(let festivals):
+                    state.festivals = festivals
+                    state.festivalLoadErrorMessage = nil
+                case .failure(let error):
+                    state.festivalLoadErrorMessage = error.message
+                }
                 return .none
 
             case .addStoreTapped:

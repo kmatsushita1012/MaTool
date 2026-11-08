@@ -31,7 +31,6 @@ struct RootFeature {
             case loading
             case map
             case onboarding
-            case advertiser
             case error(String)
         }
 
@@ -52,8 +51,6 @@ struct RootFeature {
             switch launchState {
             case .district, .festival:
                 .map
-            case .advertiser:
-                .advertiser
             case .onboarding:
                 .onboarding
             case .loading:
@@ -66,8 +63,13 @@ struct RootFeature {
         var isAdminLoggedIn: Bool {
             switch launchState {
             case .district(let userRole, _), .festival(let userRole):
-                userRole != .guest
-            case .advertiser, .onboarding, .loading, .error:
+                switch userRole {
+                case .district, .headquarter:
+                    true
+                case .advertiser, .guest:
+                    false
+                }
+            case .onboarding, .loading, .error:
                 false
             }
         }
@@ -194,11 +196,6 @@ struct RootFeature {
                     state.destination = nil
                     state.onboarding = state.makeOnboardingState()
                     return .send(.onboarding(.onAppear))
-                case .advertiser:
-                    state.map = nil
-                    state.onboarding = nil
-                    state.destination = .advertiserDashboard(AdvertiserDashboardFeature.State(isRootDestination: true))
-                    return .none
                 case .loading, .error:
                     state.map = nil
                     state.destination = nil
@@ -209,6 +206,10 @@ struct RootFeature {
             case .map(.delegate(.settingsOrAdminTapped)):
                 guard !state.isDestinationLoading && !state.isIntroductionLoading else { return .none }
                 guard let userRole = currentUserRole(state.launchState) else { return .none }
+                if case .advertiser = userRole {
+                    state.destination = .advertiserDashboard(AdvertiserDashboardFeature.State())
+                    return .none
+                }
                 if userRole == .guest {
                     state.isDestinationLoading = true
                     return .task(Action.settingsPrepared) {
@@ -433,7 +434,7 @@ struct RootFeature {
         switch launchState {
         case .district(let userRole, _), .festival(let userRole):
             userRole
-        case .advertiser, .onboarding, .loading, .error:
+        case .onboarding, .loading, .error:
             nil
         }
     }

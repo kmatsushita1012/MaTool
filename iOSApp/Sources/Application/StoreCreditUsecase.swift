@@ -25,6 +25,7 @@ protocol StoreCreditUsecaseProtocol: Sendable {
 struct StoreCreditUsecase: StoreCreditUsecaseProtocol {
     @Dependency(CreditDataFetcherKey.self) private var dataFetcher
     @Dependency(\.storeKitClient) private var storeKitClient
+    @Dependency(\.storeCreditTransactionRecovery) private var storeCreditTransactionRecovery
 
     func loadProducts() async throws -> [StoreCreditProduct] {
         try await storeKitClient.products()
@@ -55,22 +56,7 @@ struct StoreCreditUsecase: StoreCreditUsecaseProtocol {
     }
 
     func recoverUnfinishedPurchases(for stores: [Store]) async {
-        let transactions = await storeKitClient.unfinishedTransactions()
-        for transaction in transactions {
-            guard let appAccountToken = transaction.appAccountToken,
-                  let store = stores.first(where: { $0.purchaseAccountToken == appAccountToken }) else {
-                continue
-            }
-            do {
-                _ = try await dataFetcher.claim(
-                    storeId: store.id,
-                    signedTransactionInfo: transaction.signedTransactionInfo
-                )
-                await storeKitClient.finish(transactionId: transaction.transactionId)
-            } catch {
-                // Keep the StoreKit transaction unfinished so a later app session can retry it.
-            }
-        }
+        await storeCreditTransactionRecovery.recoverUnfinishedPurchases(for: stores)
     }
 }
 

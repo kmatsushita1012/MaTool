@@ -27,9 +27,6 @@ struct LaunchSceneUseCase: LaunchSceneUseCaseProtocol {
                 try? await authProvider.signOut()
                 userRole = .guest
             }
-            if case .advertiser = userRole {
-                return (.advertiser, await appStatusTask)
-            }
             guard let festivalId = userDefaults.defaultFestivalId else {
                 return (.onboarding, await appStatusTask)
             }

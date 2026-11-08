@@ -59,6 +59,12 @@ public struct RootSceneView: View {
                         )) { adminStore in
                             FestivalDashboardView(store: adminStore)
                         }
+                        .navigationDestination(item: $store.scope(
+                            state: \.destination?.advertiserDashboard,
+                            action: \.destination.advertiserDashboard
+                        )) { advertiserStore in
+                            AdvertiserDashboardScreen(store: advertiserStore)
+                        }
                         .sheet(item: $store.scope(
                             state: \.sheet,
                             action: \.sheet
@@ -94,20 +100,12 @@ public struct RootSceneView: View {
                     } else {
                         LoadingView()
                     }
-                case .advertiser:
-                    LoadingView()
                 case .loading:
                     LoadingView()
                         .preferredColorScheme(.light)
                 case .error(let message):
                     errorView(message)
                 }
-            }
-            .navigationDestination(item: $store.scope(
-                state: \.destination?.advertiserDashboard,
-                action: \.destination.advertiserDashboard
-            )) { advertiserStore in
-                AdvertiserDashboardScreen(store: advertiserStore)
             }
         }
         .modifier(AppScrollEdgeEffectModifier(isEnabled: isLiquidGlassEnabled))
