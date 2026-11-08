@@ -337,7 +337,6 @@ private struct FestivalDistrictGroupContentView: View {
                     } label: {
                         HStack {
                             Text(district.name)
-                                .foregroundStyle(.primary)
                             Spacer(minLength: 8)
                             Image(systemName: "chevron.right")
                                 .foregroundStyle(.secondary)
@@ -346,6 +345,7 @@ private struct FestivalDistrictGroupContentView: View {
                         .contentShape(.rect)
                         .padding(.horizontal, 8)
                     }
+                    .tint(.primary)
                     .disabled(isLoading)
                 }
             }
