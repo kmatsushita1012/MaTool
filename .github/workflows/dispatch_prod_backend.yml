@@ -3,6 +3,11 @@ on:
   push:
     branches:
       - 'release-backend'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
     deploy_backend:
         name: Deploy Backend API
