@@ -37,7 +37,6 @@ struct FestivalInfoFeatureTests {
         }
 
         await store.send(.districtSelected(fixture.district.id)) {
-            $0.selectedDistrictID = fixture.district.id
             $0.isLoading = true
         }
         await store.receive(.districtReceived(.success(pack))) {

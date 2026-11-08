@@ -35,7 +35,6 @@ struct FestivalInfoFeature {
         }
         var displayMode: DisplayMode = .festival
         var colorTheme: ColorScheme?
-        var selectedDistrictID: District.ID?
         var region: MKCoordinateRegion?
         var isLoading = false
         @Presents var destination: Destination.State?
@@ -86,7 +85,6 @@ struct FestivalInfoFeature {
                     state.alert = .error("町の紹介を表示できませんでした")
                     return .none
                 }
-                state.selectedDistrictID = districtID
                 state.isLoading = true
                 let fetchDistrictUseCase = self.fetchDistrictUseCase
                 let imageCacheClient = self.imageCacheClient
@@ -115,7 +113,6 @@ struct FestivalInfoFeature {
 
             case .districtReceived(.failure(let error)):
                 state.isLoading = false
-                state.selectedDistrictID = nil
                 state.alert = .error(error.message)
                 return .none
 

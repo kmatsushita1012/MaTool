@@ -22,7 +22,6 @@ struct FestivalInfoView: View {
                 displayMode: $store.displayMode,
                 region: $store.region,
                 isLoading: store.isLoading,
-                selectedDistrictID: store.selectedDistrictID,
                 onDistrictSelected: { store.send(.districtSelected($0)) },
                 onColorThemeSelected: { store.send(.colorThemeSelected($0)) },
                 onCurrentLocationTapped: onCurrentLocationTapped
@@ -72,7 +71,6 @@ private struct FestivalInfoContentView: View {
     @Binding var displayMode: FestivalInfoFeature.DisplayMode
     @Binding var region: MKCoordinateRegion?
     let isLoading: Bool
-    let selectedDistrictID: District.ID?
     let onDistrictSelected: (District.ID) -> Void
     let onColorThemeSelected: (ColorScheme) -> Void
     let onCurrentLocationTapped: () -> Void
@@ -194,7 +192,6 @@ private struct FestivalInfoContentView: View {
                 FestivalDistrictListContentView(
                     districts: districts,
                     isLoading: isLoading,
-                    selectedDistrictID: selectedDistrictID,
                     onDistrictSelected: onDistrictSelected
                 )
             }
@@ -275,7 +272,6 @@ private struct FestivalOverviewContentView: View {
 private struct FestivalDistrictListContentView: View {
     let districts: [District]
     let isLoading: Bool
-    let selectedDistrictID: District.ID?
     let onDistrictSelected: (District.ID) -> Void
 
     var body: some View {
@@ -284,7 +280,6 @@ private struct FestivalDistrictListContentView: View {
                 FestivalDistrictGroupContentView(
                     group: group,
                     isLoading: isLoading,
-                    selectedDistrictID: selectedDistrictID,
                     onDistrictSelected: onDistrictSelected
                 )
             }
@@ -319,7 +314,6 @@ private struct FestivalDistrictGroup: Identifiable {
 private struct FestivalDistrictGroupContentView: View {
     let group: FestivalDistrictGroup
     let isLoading: Bool
-    let selectedDistrictID: District.ID?
     let onDistrictSelected: (District.ID) -> Void
 
     var body: some View {
@@ -352,12 +346,7 @@ private struct FestivalDistrictGroupContentView: View {
                         .contentShape(.rect)
                         .padding(.horizontal, 8)
                     }
-                    .buttonStyle(.plain)
                     .disabled(isLoading)
-                    .background(
-                        selectedDistrictID == district.id ? Color.info.opacity(0.15) : .clear,
-                        in: RoundedRectangle(cornerRadius: 8, style: .continuous)
-                    )
                 }
             }
         }
