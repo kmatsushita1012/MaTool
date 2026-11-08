@@ -22,6 +22,7 @@ description: MaTool の SwiftUI 画面と TCA Presentation Feature を実装・�
 
 - 管理画面で特別にリッチな表示が求められていない箇所は `Form`、`List`、`Section`、`LabeledContent`、`Picker`、`Toggle` など SwiftUI 標準 UI を使う。標準の整列や操作方法を維持する。
 - まず標準コンポーネントの見た目、配置、インタラクションに任せる。`Button(title, systemImage:)` や SF Symbols など、意図に合う標準 API を優先する。
+- 同じ結果をより簡潔に表せる SwiftUI 標準 API や共通 UI がある場合はそちらを使い、不要な modifier・View・コンテナの組み合わせで再構成しない。例えば全辺に同じ標準余白を付けるために軸ごとの `padding` を重ねず、`.padding()` のような等価な簡潔形を使う。
 - 画面固有の装飾、カード化、独自の情報配置など、標準 UI を越える独自レイアウトは、ユーザーから明示的な要件または許可がある場合だけ追加する。標準コンポーネントを組み合わせるために必要な `VStack` / `HStack` は独自デザインに含めない。
 - 数値を指定する `padding` と `spacing` は状況に応じて `8` または `16` を使う。それ以外の数値を新たに導入しない。システム標準の余白はそのまま使ってよい。
 - フォントサイズやボタンなど操作 UI の大きさに数値を指定しない。`.font(.title)`、`.controlSize(.large)` のような SwiftUI の標準 enum/API を使う。
