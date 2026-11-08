@@ -10,7 +10,7 @@ extension DependencyValues {
 
 protocol AdvertiserStoreUsecaseProtocol: Sendable {
     func loadOwnedStores() async throws -> [Store]
-    func create(festivalId: Festival.ID, name: String, address: String, coordinate: Coordinate, businessHours: String, description: String?) async throws -> Store
+    func create(festivalId: Festival.ID, name: String, address: String?, coordinate: Coordinate?, businessHours: String, description: String?) async throws -> Store
     func save(_ store: Store) async throws -> Store
 }
 
@@ -24,8 +24,8 @@ struct AdvertiserStoreUsecase: AdvertiserStoreUsecaseProtocol {
     func create(
         festivalId: Festival.ID,
         name: String,
-        address: String,
-        coordinate: Coordinate,
+        address: String?,
+        coordinate: Coordinate?,
         businessHours: String,
         description: String?
     ) async throws -> Store {

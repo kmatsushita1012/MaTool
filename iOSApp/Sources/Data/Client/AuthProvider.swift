@@ -25,8 +25,6 @@ extension DependencyValues {
 struct AuthProvider: Sendable {
     nonisolated var initialize: @Sendable () throws -> Void
     var signIn: @Sendable (_ username: String, _ password: String) async throws -> SignInResponse
-    var signUp: @Sendable (_ email: String, _ password: String) async throws -> Bool = { _, _ in false }
-    var confirmSignUp: @Sendable (_ email: String, _ code: String) async throws -> Bool = { _, _ in false }
     var confirmSignIn: @Sendable (_ newPassword: String) async throws -> Void
     var getUserRole: @Sendable () async throws -> UserRole
     var getTokens: @Sendable () async throws -> String
@@ -72,33 +70,6 @@ extension AuthProvider: DependencyKey {
                     try Self.rethrowAsAuthErrorIfNeeded(error, operation: "signIn")
                 }
             },
-            signUp: { email, password in
-                do {
-                    let options = AuthSignUpRequest.Options(
-                        userAttributes: [AuthUserAttribute(.email, value: email)]
-                    )
-                    let result = try await withTimeout(seconds: timeout) {
-                        try await Amplify.Auth.signUp(username: email, password: password, options: options)
-                    }
-                    if case .confirmUser = result.nextStep {
-                        return true
-                    }
-                    return false
-                } catch {
-                    try Self.rethrowAsAuthErrorIfNeeded(error, operation: "signUp")
-                }
-            },
-            confirmSignUp: { email, code in
-                do {
-                    let result = try await withTimeout(seconds: timeout) {
-                        try await Amplify.Auth.confirmSignUp(for: email, confirmationCode: code)
-                    }
-                    return result.isSignUpComplete
-                } catch {
-                    try Self.rethrowAsAuthErrorIfNeeded(error, operation: "confirmSignUp")
-                }
-            },
-            
             confirmSignIn: { newPassword in
                 do {
                     let result = try await withTimeout(seconds: timeout) {
@@ -126,7 +97,7 @@ extension AuthProvider: DependencyKey {
                     case "district":
                         authProviderLogger.info("getUserRole: completed as district")
                         return .district(user.username)
-                    case "advertiser", nil:
+                    case "advertiser":
                         guard let sub = attributes.first(where: { $0.key.rawValue == "sub" })?.value,
                               !sub.isEmpty,
                               attributes.first(where: { $0.key.rawValue == "email_verified" })?.value == "true" else {

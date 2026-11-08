@@ -20,7 +20,7 @@ struct StoreEditFeature {
         var address: String
         var businessHours: String
         var description: String
-        var coordinate: Coordinate
+        var coordinate: Coordinate?
         var ownerPaused: Bool
         var bannerImagePath: String?
         var bannerPreviewData: Data?
@@ -32,16 +32,12 @@ struct StoreEditFeature {
 
         var isNew: Bool { store == nil }
         var festival: Festival? { festivals.first { $0.id == selectedFestivalId } }
-        var coordinateText: String {
-            String(format: "%.5f, %.5f", coordinate.latitude, coordinate.longitude)
-        }
 
         init(store: AdvertiserStore? = nil, festivals: [Festival]) {
             self.store = store
             self.festivals = festivals
             self.selectedFestivalId = store?.festivalId ?? festivals.first?.id
-            let defaultCoordinate = festivals.first?.base ?? Coordinate(latitude: 0, longitude: 0)
-            self.coordinate = store?.coordinate ?? defaultCoordinate
+            self.coordinate = store?.coordinate
             self.name = store?.name ?? ""
             self.address = store?.address ?? ""
             self.businessHours = store?.businessHours ?? ""
@@ -78,12 +74,6 @@ struct StoreEditFeature {
         BindingReducer()
         Reduce { state, action in
             switch action {
-            case .binding(\.selectedFestivalId):
-                if state.isNew, let festival = state.festival {
-                    state.coordinate = festival.base
-                }
-                return .none
-
             case .binding:
                 return .none
 
@@ -91,8 +81,8 @@ struct StoreEditFeature {
                 guard !state.isLoading, !state.isUploading else { return .none }
                 let name = state.name.trimmingCharacters(in: .whitespacesAndNewlines)
                 let address = state.address.trimmingCharacters(in: .whitespacesAndNewlines)
-                guard !name.isEmpty, !address.isEmpty else {
-                    state.alert = .error("店名と住所を入力してください。")
+                guard !name.isEmpty else {
+                    state.alert = .error("店名を入力してください。")
                     return .none
                 }
 
@@ -104,7 +94,7 @@ struct StoreEditFeature {
                 if let current = state.store {
                     var updated = current
                     updated.name = name
-                    updated.address = address
+                    updated.address = address.isEmpty ? nil : address
                     updated.coordinate = coordinate
                     updated.businessHours = businessHours.trimmingCharacters(in: .whitespacesAndNewlines)
                     updated.description = description
@@ -125,7 +115,7 @@ struct StoreEditFeature {
                     .created(try await storeUsecase.create(
                         festivalId: festivalId,
                         name: name,
-                        address: address,
+                        address: address.isEmpty ? nil : address,
                         coordinate: coordinate,
                         businessHours: businessHours.trimmingCharacters(in: .whitespacesAndNewlines),
                         description: description
@@ -143,7 +133,7 @@ struct StoreEditFeature {
                 state.store = savedStore
                 state.selectedFestivalId = savedStore.festivalId
                 state.name = savedStore.name
-                state.address = savedStore.address
+                state.address = savedStore.address ?? ""
                 state.businessHours = savedStore.businessHours
                 state.description = savedStore.description ?? ""
                 state.coordinate = savedStore.coordinate
@@ -161,7 +151,7 @@ struct StoreEditFeature {
                 state.destination = .coordinate(
                     MapCoordinatePickerFeature.State(
                         coordinate: state.coordinate,
-                        regionOrigin: state.coordinate,
+                        regionOrigin: state.coordinate ?? state.festival?.base ?? Coordinate(latitude: 0, longitude: 0),
                         title: "店舗位置"
                     )
                 )

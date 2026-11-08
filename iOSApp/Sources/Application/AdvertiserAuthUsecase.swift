@@ -21,19 +21,15 @@ protocol AdvertiserAuthUsecaseProtocol: Sendable {
 
 struct AdvertiserAuthUsecase: AdvertiserAuthUsecaseProtocol {
     @Dependency(\.authProvider) private var authProvider
+    @Dependency(\.advertiserAuthDataFetcher) private var dataFetcher
 
     func signUp(email: String, password: String) async throws -> AdvertiserSignUpResult {
-        let requiresConfirmation = try await authProvider.signUp(email, password)
-        if requiresConfirmation {
-            return .confirmationRequired
-        }
-        return .signedIn(try await signIn(email: email, password: password))
+        try await dataFetcher.signUp(email: email, password: password)
+        return .confirmationRequired
     }
 
     func confirmSignUp(email: String, password: String, code: String) async throws -> UserRole {
-        guard try await authProvider.confirmSignUp(email, code) else {
-            throw AppError.auth(.badRequest("確認コードを完了できませんでした。"))
-        }
+        try await dataFetcher.confirmSignUp(email: email, code: code)
         return try await signIn(email: email, password: password)
     }
 

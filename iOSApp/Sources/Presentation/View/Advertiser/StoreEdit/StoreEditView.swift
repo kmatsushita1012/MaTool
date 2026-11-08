@@ -18,7 +18,7 @@ struct StoreEditScreen: View {
                 address: $store.address,
                 businessHours: $store.businessHours,
                 description: $store.description,
-                coordinateText: store.coordinateText,
+                hasCoordinate: store.coordinate != nil,
                 hasStore: store.store != nil,
                 bannerImagePath: store.bannerImagePath,
                 bannerPreviewData: store.bannerPreviewData,
@@ -61,7 +61,7 @@ struct StoreEditContentView: View {
     @Binding var address: String
     @Binding var businessHours: String
     @Binding var description: String
-    let coordinateText: String
+    let hasCoordinate: Bool
     let hasStore: Bool
     let bannerImagePath: String?
     let bannerPreviewData: Data?
@@ -91,14 +91,25 @@ struct StoreEditContentView: View {
                     .textInputAutocapitalization(.words)
                 TextField("住所", text: $address)
                     .textContentType(.fullStreetAddress)
-                TextField("営業時間", text: $businessHours)
+                TextEditor(text: $businessHours)
+                    .frame(minHeight: 80)
+                    .overlay(alignment: .topLeading) {
+                        if businessHours.isEmpty {
+                            Text("営業時間").foregroundStyle(.tertiary).padding(.top, 8).padding(.leading, 5)
+                        }
+                    }
                 TextEditor(text: $description)
                     .frame(minHeight: 100)
+                    .overlay(alignment: .topLeading) {
+                        if description.isEmpty {
+                            Text("説明").foregroundStyle(.tertiary).padding(.top, 8).padding(.leading, 5)
+                        }
+                    }
             }
 
             Section("位置") {
                 Button(action: onCoordinateTapped) {
-                    LabeledContent("地図で指定", value: coordinateText)
+                    Label("地図で指定", systemImage: hasCoordinate ? "mappin.and.ellipse" : "map")
                 }
             }
 
@@ -141,11 +152,7 @@ struct StoreEditContentView: View {
         .navigationTitle(isNew ? "店舗登録" : "店舗編集")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
-            ToolbarItem(placement: .topBarTrailing) {
-                Button("保存", action: onSaveTapped)
-                    .disabled(isLoading || isUploading)
-                    .loadingIndicator(isLoading: isLoading)
-            }
+            ToolbarSaveButton(isDisabled: isUploading, isLoading: isLoading, action: onSaveTapped)
         }
     }
 
@@ -175,7 +182,7 @@ struct StoreBannerPhotoSelection: Equatable {
             address: .constant(""),
             businessHours: .constant(""),
             description: .constant(""),
-            coordinateText: "",
+            hasCoordinate: false,
             hasStore: false,
             bannerImagePath: nil,
             bannerPreviewData: nil,
