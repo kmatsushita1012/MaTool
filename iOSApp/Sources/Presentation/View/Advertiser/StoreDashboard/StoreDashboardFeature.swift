@@ -17,7 +17,6 @@ struct StoreDashboardFeature {
         var balance: CreditAccount?
         var isBalanceLoading = false
         var isPauseUpdating = false
-        var isAdImageSaving = false
         var ownerPausedBeforeUpdate: Bool?
         @Presents var destination: Destination.State?
         @Presents var alert: AlertFeature.State?
@@ -61,7 +60,6 @@ struct StoreDashboardFeature {
         case editTapped
         case ownerPausedChanged(Bool)
         case pauseReceived(AppResult<AdvertiserStore>)
-        case saveAdImagesTapped
         case adImagesSaveReceived(AppResult<AdvertiserStore>)
         case destination(PresentationAction<Destination.Action>)
         case alert(PresentationAction<AlertFeature.Action>)
@@ -148,9 +146,9 @@ struct StoreDashboardFeature {
                 state.alert = .error("広告配信状態を更新できませんでした。\n\(error.message)")
                 return .none
 
-            case .saveAdImagesTapped:
-                guard !state.isAdImageSaving,
-                      let imageEditor = state.destination?.storeAdImage else {
+            case .destination(.presented(.storeAdImage(.saveTapped))):
+                guard let imageEditor = state.destination?.storeAdImage,
+                      !imageEditor.isSaving else {
                     return .none
                 }
                 let originalImage = ImagePath(
@@ -164,20 +162,26 @@ struct StoreDashboardFeature {
                 var updatedStore = state.store
                 updatedStore.bannerImagePath = image.light
                 updatedStore.interstitialImagePath = image.dark
-                state.isAdImageSaving = true
+                var savingImageEditor = imageEditor
+                savingImageEditor.isSaving = true
+                state.destination = .storeAdImage(savingImageEditor)
                 return .task(Action.adImagesSaveReceived) {
                     try await storeUsecase.save(updatedStore)
                 }
 
             case .adImagesSaveReceived(.success(let store)):
-                state.isAdImageSaving = false
                 state.store = store
                 state.destination = nil
                 return .none
 
             case .adImagesSaveReceived(.failure(let error)):
-                state.isAdImageSaving = false
-                state.alert = .error("画像の保存に失敗しました。\n\(error.message)")
+                if var imageEditor = state.destination?.storeAdImage {
+                    imageEditor.isSaving = false
+                    imageEditor.alert = .error("画像の保存に失敗しました。\n\(error.message)")
+                    state.destination = .storeAdImage(imageEditor)
+                } else {
+                    state.alert = .error("画像の保存に失敗しました。\n\(error.message)")
+                }
                 return .none
 
             case .destination(.presented(.storeEdit(.saveReceived(.success(.updated(let store)))))):

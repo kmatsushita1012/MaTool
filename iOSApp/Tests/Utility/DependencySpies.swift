@@ -53,7 +53,9 @@ extension ConstantValues {
         isLiquidGlassEnabled: false,
         admobAppId: nil,
         publicMapInterstitialAdUnitId: nil,
-        publicMapBannerAdUnitId: nil
+        publicMapBannerAdUnitId: nil,
+        storeCreditProductId500: nil,
+        storeCreditProductId1000: nil
     )
 }
 

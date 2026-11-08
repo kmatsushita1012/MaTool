@@ -36,10 +36,10 @@ struct FestivalEditFeatureTests {
         await store.send(.imageEditTapped) {
             $0.isImageEditPresented = true
         }
-        await store.send(.imageEdit(.modeSelected(.dark))) {
+        await store.send(.imageEdit(.binding(.set(\.selectedMode, .dark)))) {
             $0.imageEdit.selectedMode = .dark
         }
-        await store.send(.imageEditDismissTapped) {
+        await store.send(.imageEdit(.closeTapped)) {
             $0.isImageEditPresented = false
         }
         #expect(store.state.imageEdit.lightDraft == initialState.imageEdit.lightDraft)

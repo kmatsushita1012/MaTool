@@ -4,36 +4,38 @@ import PhotosUI
 import Shared
 import SwiftUI
 
-@Reducer
-struct ImageEditFeature {
-    enum Mode: Equatable, Hashable, Sendable {
-        case light
-        case dark
-        case banner
-        case interstitial
+enum ImageEditMode: Equatable, Hashable, Sendable {
+    case light
+    case dark
+    case banner
+    case interstitial
 
-        func uploadVariant(for targetType: ImageUploadTarget.Kind) -> ImageUploadTarget.Variant {
-            switch (targetType, self) {
-            case (.store, .banner), (.store, .light): .banner
-            case (.store, .interstitial), (.store, .dark): .interstitial
-            case (.festival, .light), (.district, .light), (.festival, .banner), (.district, .banner): .light
-            case (.festival, .dark), (.district, .dark), (.festival, .interstitial), (.district, .interstitial): .dark
-            }
-        }
-
-        func title(for targetType: ImageUploadTarget.Kind) -> String {
-            if targetType == .store {
-                return switch self {
-                case .banner, .light: "バナー"
-                case .interstitial, .dark: "全画面"
-                }
-            }
-            return switch self {
-            case .light, .banner: "ライト"
-            case .dark, .interstitial: "ダーク"
-            }
+    func uploadVariant(for targetType: ImageUploadTarget.Kind) -> ImageUploadTarget.Variant {
+        switch (targetType, self) {
+        case (.store, .banner), (.store, .light): .banner
+        case (.store, .interstitial), (.store, .dark): .interstitial
+        case (.festival, .light), (.district, .light), (.festival, .banner), (.district, .banner): .light
+        case (.festival, .dark), (.district, .dark), (.festival, .interstitial), (.district, .interstitial): .dark
         }
     }
+
+    func title(for targetType: ImageUploadTarget.Kind) -> String {
+        if targetType == .store {
+            return switch self {
+            case .banner, .light: "バナー"
+            case .interstitial, .dark: "全画面"
+            }
+        }
+        return switch self {
+        case .light, .banner: "ライト"
+        case .dark, .interstitial: "ダーク"
+        }
+    }
+}
+
+@Reducer
+struct ImageEditFeature {
+    typealias Mode = ImageEditMode
 
     enum Draft: Equatable {
         case unchanged
@@ -51,6 +53,8 @@ struct ImageEditFeature {
         let originalImage: ImagePath
         var selectedMode: Mode
         var drafts: [Mode: Draft]
+        var selectedPhotoItem: PhotosPickerItem?
+        var isSaving = false
         var lightDraft: Draft {
             get { drafts[.light] ?? .unchanged }
             set { drafts[.light] = newValue }
@@ -61,6 +65,7 @@ struct ImageEditFeature {
         }
         var activeUploadID: UUID?
         var failureMessages: [Mode: String] = [:]
+        @Presents var alert: AlertFeature.State?
 
         init(
             targetType: ImageUploadTarget.Kind,
@@ -82,7 +87,7 @@ struct ImageEditFeature {
 
         var isUploading: Bool { activeUploadID != nil }
 
-        var canSave: Bool { !isUploading }
+        var canSave: Bool { !isUploading && !isSaving }
 
         var previewData: Data? {
             switch draft(for: selectedMode) {
@@ -141,8 +146,8 @@ struct ImageEditFeature {
         }
     }
 
-    enum Action: Equatable {
-        case modeSelected(Mode)
+    enum Action: Equatable, BindableAction {
+        case binding(BindingAction<State>)
         case photoSelected(id: UUID, item: PhotosPickerItem)
         case photoDataReceived(id: UUID, mode: Mode, data: Data)
         case photoDataFailed(id: UUID, mode: Mode, message: String)
@@ -151,7 +156,10 @@ struct ImageEditFeature {
         case uploadCompleted(id: UUID, mode: Mode, data: Data, path: String)
         case uploadFailed(id: UUID, mode: Mode, message: String)
         case removeTapped
+        case saveTapped
+        case closeTapped
         case reset
+        case alert(PresentationAction<AlertFeature.Action>)
     }
 
     @Dependency(PhotoLibraryClientKey.self) var photoLibraryClient
@@ -160,11 +168,18 @@ struct ImageEditFeature {
     private enum UploadTaskID: Hashable { case upload }
 
     var body: some ReducerOf<Self> {
+        BindingReducer()
         Reduce { state, action in
             switch action {
-            case .modeSelected(let mode):
-                guard !state.isUploading else { return .none }
-                state.selectedMode = mode
+            case .binding(\.selectedPhotoItem):
+                guard let item = state.selectedPhotoItem else { return .none }
+                state.selectedPhotoItem = nil
+                return .send(.photoSelected(id: UUID(), item: item))
+
+            case .binding(\.selectedMode):
+                return .none
+
+            case .binding:
                 return .none
 
             case .photoSelected(let id, let item):
@@ -246,6 +261,9 @@ struct ImageEditFeature {
                 state.drafts[mode] = .removed
                 return .none
 
+            case .saveTapped, .closeTapped:
+                return .none
+
             case .reset:
                 state.selectedMode = state.targetType == .store ? .banner : .light
                 state.drafts = [
@@ -255,10 +273,21 @@ struct ImageEditFeature {
                     .interstitial: .unchanged
                 ]
                 state.activeUploadID = nil
+                state.selectedPhotoItem = nil
+                state.isSaving = false
                 state.failureMessages = [:]
                 return .cancel(id: UploadTaskID.upload)
+
+            case .alert(.presented(.okTapped)):
+                state.alert = nil
+                return .none
+
+            case .alert:
+                state.alert = nil
+                return .none
             }
         }
+        .ifLet(\.$alert, action: \.alert)
     }
 
     private func uploadEffect(id: UUID, mode: Mode, data: Data, state: State) -> Effect<Action> {

@@ -76,6 +76,7 @@ struct PublicMapFeatureTests {
             $0.installTestSpies()
             $0[LoadDistrictStateUseCaseKey.self] = loadUseCase
             $0[PublicMapAdUsecaseKey.self] = PublicMapAdUsecaseSpy()
+            $0[StoreAdBannerUsecaseKey.self] = StoreAdBannerUsecaseSpy()
         }
         store.exhaustivity = .off
 

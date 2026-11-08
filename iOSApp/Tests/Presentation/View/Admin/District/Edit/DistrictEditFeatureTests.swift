@@ -139,7 +139,11 @@ struct DistrictEditFeatureTests {
         #expect(store.state.performances == [fixture.performance])
 
         await store.send(.baseTapped) {
-            $0.destination = .base(.init(origin: fixture.festivalBase))
+            $0.destination = .base(.init(
+                coordinate: nil,
+                regionOrigin: fixture.festivalBase,
+                title: "会所位置"
+            ))
         }
         #expect(store.state.destination?.base?.region?.center.latitude == fixture.festivalBase.latitude)
         #expect(store.state.destination?.base?.region?.center.longitude == fixture.festivalBase.longitude)

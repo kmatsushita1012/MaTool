@@ -39,7 +39,6 @@ struct FestivalEditFeature {
         case saveTapped
         case cancelTapped
         case imageEditTapped
-        case imageEditDismissTapped
         case imageEdit(ImageEditFeature.Action)
         case baseTapped
         case putReceived(VoidAppResult)
@@ -104,7 +103,7 @@ struct FestivalEditFeature {
                 guard !state.isLoading else { return .none }
                 state.isImageEditPresented = true
                 return .none
-            case .imageEditDismissTapped:
+            case .imageEdit(.closeTapped):
                 guard !state.imageEdit.isUploading else { return .none }
                 state.isImageEditPresented = false
                 return .none

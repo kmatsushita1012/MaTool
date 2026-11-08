@@ -41,10 +41,7 @@ struct DistrictEditScreen: View {
         )
         .sheet(isPresented: $store.isImageEditPresented) {
             NavigationStack {
-                ImageEditContentView(
-                    store: store.scope(state: \.imageEdit, action: \.imageEdit),
-                    onClose: { store.send(.imageEditDismissTapped) }
-                )
+                ImageEditScreen(store: store.scope(state: \.imageEdit, action: \.imageEdit))
             }
             .navigationBarTitleDisplayMode(.inline)
             .interactiveDismissDisabled(store.imageEdit.isUploading)

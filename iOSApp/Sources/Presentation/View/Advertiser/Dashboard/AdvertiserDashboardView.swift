@@ -5,23 +5,21 @@ struct AdvertiserDashboardScreen: View {
     @SwiftUI.Bindable var store: StoreOf<AdvertiserDashboardFeature>
 
     var body: some View {
-        WithPerceptionTracking {
-            AdvertiserDashboardContentView(
-                stores: store.stores,
-                isLoading: store.isLoading,
-                isSigningOut: store.isSigningOut,
-                isSettingsLoading: store.isSettingsLoading,
-                onStoreTapped: { store.send(.storeTapped($0)) },
-                onAddStoreTapped: { store.send(.addStoreTapped) },
-                onChangePasswordTapped: { store.send(.changePasswordTapped) },
-                onUpdateEmailTapped: { store.send(.updateEmailTapped) },
-                onSettingsTapped: { store.send(.settingsTapped) },
-                onSignOutTapped: { store.send(.signOutTapped) }
-            )
-            .modifier(AdvertiserDashboardDestinations(store: store))
-            .alert($store.scope(state: \.alert, action: \.alert))
-            .task { store.send(.onAppear) }
-        }
+        AdvertiserDashboardContentView(
+            stores: store.stores,
+            isLoading: store.isLoading,
+            isSigningOut: store.isSigningOut,
+            isSettingsLoading: store.isSettingsLoading,
+            onStoreTapped: { store.send(.storeTapped($0)) },
+            onAddStoreTapped: { store.send(.addStoreTapped) },
+            onChangePasswordTapped: { store.send(.changePasswordTapped) },
+            onUpdateEmailTapped: { store.send(.updateEmailTapped) },
+            onSettingsTapped: { store.send(.settingsTapped) },
+            onSignOutTapped: { store.send(.signOutTapped) }
+        )
+        .modifier(AdvertiserDashboardDestinations(store: store))
+        .alert($store.scope(state: \.alert, action: \.alert))
+        .task { store.send(.onAppear) }
     }
 }
 
@@ -33,8 +31,8 @@ private struct AdvertiserDashboardDestinations: ViewModifier {
             .navigationDestination(item: $store.scope(
                 state: \.destination?.storeCreate,
                 action: \.destination.storeCreate
-            )) { store in
-                StoreEditScreen(store: store)
+            )) { createStore in
+                StoreEditScreen(store: createStore)
             }
             .navigationDestination(item: $store.scope(
                 state: \.destination?.storeDashboard,
@@ -80,57 +78,36 @@ struct AdvertiserDashboardContentView: View {
     }
 
     var body: some View {
-        AdvertiserGroupedPage {
-            AdvertiserSection(title: "所有店舗") {
+        List {
+            Section("所有店舗") {
                 if isLoading && stores.isEmpty {
                     ProgressView()
-                        .frame(maxWidth: .infinity, minHeight: 54)
                 } else if stores.isEmpty {
                     Text("店舗がありません")
-                        .foregroundStyle(Color(uiColor: .secondaryLabel))
-                        .frame(maxWidth: .infinity, minHeight: 54)
-                        .padding(.horizontal, 18)
+                        .foregroundStyle(.secondary)
                 } else {
-                    ForEach(stores.indices, id: \.self) { index in
-                        if index > 0 {
-                            AdvertiserRowSeparator()
-                        }
-                        AdvertiserNavigationRow(
-                            title: stores[index].name,
-                            subtitle: statusText(for: stores[index]),
-                            action: { onStoreTapped(stores[index]) }
+                    ForEach(stores) { store in
+                        NavigationItemView(
+                            title: store.name,
+                            status: statusText(for: store),
+                            onTap: { onStoreTapped(store) }
                         )
+                        .disabled(isNavigationDisabled)
                     }
                 }
 
-                AdvertiserRowSeparator()
-                AdvertiserNavigationRow(
-                    title: "店舗を追加",
-                    systemImage: "plus",
-                    isEnabled: !isNavigationDisabled,
-                    action: onAddStoreTapped
-                )
+                Button("店舗を追加", systemImage: "plus", action: onAddStoreTapped)
+                .disabled(isNavigationDisabled)
             }
 
-            AdvertiserSection(title: "アカウント") {
-                AdvertiserNavigationRow(
-                    title: "パスワード変更",
-                    isEnabled: !isNavigationDisabled,
-                    action: onChangePasswordTapped
-                )
-                AdvertiserRowSeparator()
-                AdvertiserNavigationRow(
-                    title: "メールアドレス変更",
-                    isEnabled: !isNavigationDisabled,
-                    action: onUpdateEmailTapped
-                )
-                AdvertiserRowSeparator()
-                AdvertiserNavigationRow(
-                    title: isSigningOut ? "ログアウト中" : "ログアウト",
-                    isDestructive: true,
-                    isEnabled: !isSigningOut,
-                    action: onSignOutTapped
-                )
+            Section("アカウント") {
+                Button("パスワード変更", action: onChangePasswordTapped)
+                    .disabled(isNavigationDisabled)
+                Button("メールアドレス変更", action: onUpdateEmailTapped)
+                    .disabled(isNavigationDisabled)
+                Button("ログアウト", action: onSignOutTapped)
+                    .foregroundStyle(.red)
+                    .loadingIndicator(isLoading: isSigningOut)
             }
         }
         .navigationTitle("店舗管理")

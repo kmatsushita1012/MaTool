@@ -1,33 +1,31 @@
 import ComposableArchitecture
-import SwiftUI
 import Shared
+import SwiftUI
 
 struct StoreEditScreen: View {
     @SwiftUI.Bindable var store: StoreOf<StoreEditFeature>
 
     var body: some View {
-        WithPerceptionTracking {
-            StoreEditContentView(
-                festivals: store.festivals,
-                selectedFestivalId: $store.selectedFestivalId,
-                selectedFestival: store.festival,
-                isNew: store.isNew,
-                name: $store.name,
-                address: $store.address,
-                businessHours: $store.businessHours,
-                description: $store.description,
-                hasCoordinate: store.coordinate != nil,
-                isLoading: store.isLoading,
-                onCoordinateTapped: { store.send(.coordinateTapped) },
-                onSaveTapped: { store.send(.saveTapped) }
-            )
-            .navigationDestination(
-                item: $store.scope(state: \.destination?.coordinate, action: \.destination.coordinate)
-            ) { coordinateStore in
-                MapCoordinatePickerScreen(store: coordinateStore)
-            }
-            .alert($store.scope(state: \.alert, action: \.alert))
+        StoreEditContentView(
+            festivals: store.festivals,
+            selectedFestivalId: $store.selectedFestivalId,
+            selectedFestival: store.festival,
+            isNew: store.isNew,
+            name: $store.name,
+            address: $store.address,
+            businessHours: $store.businessHours,
+            description: $store.description,
+            hasCoordinate: store.coordinate != nil,
+            isLoading: store.isLoading,
+            onCoordinateTapped: { store.send(.coordinateTapped) },
+            onSaveTapped: { store.send(.saveTapped) }
+        )
+        .navigationDestination(
+            item: $store.scope(state: \.destination?.coordinate, action: \.destination.coordinate)
+        ) { coordinateStore in
+            MapCoordinatePickerScreen(store: coordinateStore)
         }
+        .alert($store.scope(state: \.alert, action: \.alert))
     }
 }
 
@@ -46,109 +44,65 @@ struct StoreEditContentView: View {
     let onSaveTapped: () -> Void
 
     var body: some View {
-        AdvertiserGroupedPage {
-            AdvertiserSection(title: "基本情報") {
+        List {
+            Section("基本情報") {
                 if isNew {
-                    HStack(spacing: 12) {
-                        Text("祭典")
-                            .font(.subheadline)
-                            .foregroundStyle(Color(uiColor: .label))
-                            .frame(width: 85, alignment: .leading)
-                        Spacer(minLength: 0)
-                        Picker("祭典", selection: $selectedFestivalId) {
-                            ForEach(festivals) { festival in
-                                Text(festival.name).tag(Optional(festival.id))
-                            }
+                    Picker("祭典", selection: $selectedFestivalId) {
+                        ForEach(festivals) { festival in
+                            Text(festival.name).tag(Optional(festival.id))
                         }
-                        .labelsHidden()
-                        .pickerStyle(.menu)
                     }
-                    .frame(minHeight: 54)
-                    .padding(.horizontal, 18)
                 } else if let selectedFestival {
-                    HStack {
-                        Text("祭典")
-                            .font(.subheadline)
-                        Spacer()
-                        Text(selectedFestival.name)
-                            .font(.subheadline)
-                            .foregroundStyle(Color(uiColor: .secondaryLabel))
-                    }
-                    .frame(minHeight: 54)
-                    .padding(.horizontal, 18)
+                    LabeledContent("祭典", value: selectedFestival.name)
                 }
 
-                AdvertiserRowSeparator()
+                TextField("店舗名", text: $name)
+                    .textInputAutocapitalization(.words)
+                TextField("住所", text: $address)
+                    .textContentType(.fullStreetAddress)
+            }
 
-                HStack(spacing: 12) {
-                    Text("店舗名")
-                        .font(.subheadline)
-                        .frame(width: 85, alignment: .leading)
-                    TextField("店舗名", text: $name)
-                        .textInputAutocapitalization(.words)
-                }
-                .padding(.horizontal, 18)
-                .frame(minHeight: 54)
-
-                AdvertiserRowSeparator()
-
-                HStack(spacing: 12) {
-                    Text("住所")
-                        .font(.subheadline)
-                        .frame(width: 85, alignment: .leading)
-                    TextField("住所", text: $address)
-                        .textContentType(.fullStreetAddress)
-                }
-                .padding(.horizontal, 18)
-                .frame(minHeight: 54)
-
-                AdvertiserRowSeparator()
-
+            Section("営業時間") {
                 TextEditor(text: $businessHours)
-                    .scrollContentBackground(.hidden)
                     .frame(minHeight: 80)
+                    .scrollContentBackground(.hidden)
                     .overlay(alignment: .topLeading) {
                         if businessHours.isEmpty {
                             Text("営業時間")
-                                .foregroundStyle(Color(uiColor: .tertiaryLabel))
-                                .padding(.top, 8)
-                                .padding(.leading, 5)
+                                .foregroundStyle(.tertiary)
+                                .padding(8)
                                 .allowsHitTesting(false)
                         }
                     }
-                    .padding(.horizontal, 18)
-                    .padding(.vertical, 6)
+            }
 
-                AdvertiserRowSeparator()
-
+            Section("説明") {
                 TextEditor(text: $description)
+                    .frame(minHeight: 80)
                     .scrollContentBackground(.hidden)
-                    .frame(minHeight: 100)
                     .overlay(alignment: .topLeading) {
                         if description.isEmpty {
                             Text("説明")
-                                .foregroundStyle(Color(uiColor: .tertiaryLabel))
-                                .padding(.top, 8)
-                                .padding(.leading, 5)
+                                .foregroundStyle(.tertiary)
+                                .padding(8)
                                 .allowsHitTesting(false)
                         }
                     }
-                    .padding(.horizontal, 18)
-                    .padding(.vertical, 6)
             }
 
-            AdvertiserSection(title: "位置") {
-                AdvertiserNavigationRow(
+            Section("位置") {
+                NavigationItemView(
                     title: "地図で指定",
-                    value: hasCoordinate ? "設定済み" : nil,
-                    action: onCoordinateTapped
+                    status: hasCoordinate ? "設定済み" : "未設定",
+                    onTap: onCoordinateTapped
                 )
+                .disabled(isLoading)
             }
         }
         .navigationTitle(isNew ? "店舗を追加" : "基本情報を編集")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
-            ToolbarSaveButton(isDisabled: false, isLoading: isLoading, action: onSaveTapped)
+            ToolbarSaveButton(isLoading: isLoading, action: onSaveTapped)
         }
     }
 }

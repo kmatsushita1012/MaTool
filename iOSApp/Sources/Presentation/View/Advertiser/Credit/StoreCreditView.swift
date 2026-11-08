@@ -6,25 +6,24 @@ struct StoreCreditScreen: View {
     @SwiftUI.Bindable var store: StoreOf<StoreCreditFeature>
 
     var body: some View {
-        WithPerceptionTracking {
-            StoreCreditContentView(
-                balance: store.balance,
-                products: store.products,
-                productErrorMessage: store.productErrorMessage,
-                isLoading: store.isLoading,
-                isPurchasing: store.isPurchasing,
-                isHistoryLoading: store.isHistoryLoading,
-                onPurchaseTapped: { store.send(.purchaseTapped($0)) },
-                onHistoryTapped: { store.send(.historyTapped) }
-            )
-            .navigationDestination(
-                item: $store.scope(state: \.destination?.history, action: \.destination.history)
-            ) { historyStore in
-                PurchaseHistoryScreen(store: historyStore)
-            }
-            .alert($store.scope(state: \.alert, action: \.alert))
-            .task { store.send(.onAppear) }
+        StoreCreditContentView(
+            balance: store.balance,
+            products: store.products,
+            productErrorMessage: store.productErrorMessage,
+            isLoading: store.isLoading,
+            isPurchasing: store.isPurchasing,
+            purchasingProductID: store.purchasingProductID,
+            isHistoryLoading: store.isHistoryLoading,
+            onPurchaseTapped: { store.send(.purchaseTapped($0)) },
+            onHistoryTapped: { store.send(.historyTapped) }
+        )
+        .navigationDestination(
+            item: $store.scope(state: \.destination?.history, action: \.destination.history)
+        ) { historyStore in
+            PurchaseHistoryScreen(store: historyStore)
         }
+        .alert($store.scope(state: \.alert, action: \.alert))
+        .task { store.send(.onAppear) }
     }
 }
 
@@ -34,70 +33,54 @@ struct StoreCreditContentView: View {
     let productErrorMessage: String?
     let isLoading: Bool
     let isPurchasing: Bool
+    let purchasingProductID: String?
     let isHistoryLoading: Bool
     let onPurchaseTapped: (String) -> Void
     let onHistoryTapped: () -> Void
 
     var body: some View {
-        AdvertiserGroupedPage {
-            AdvertiserSection(title: "残高") {
+        List {
+            Section("残高") {
                 if let balance {
-                    HStack {
-                        Text("利用可能")
-                            .font(.subheadline)
-                        Spacer()
-                        Text("\(balance.balance)pt")
-                            .font(.system(size: 20, weight: .semibold))
-                    }
-                    .frame(minHeight: 66)
-                    .padding(.horizontal, 18)
+                    LabeledContent("利用可能", value: "\(balance.balance)pt")
                 } else if isLoading {
                     ProgressView()
-                        .frame(maxWidth: .infinity, minHeight: 66)
                 }
             }
 
-            AdvertiserSection(title: "クレジット購入") {
+            Section("クレジット購入") {
                 if products.isEmpty {
                     if let productErrorMessage {
                         Text(productErrorMessage)
-                            .font(.subheadline)
-                            .foregroundStyle(Color(uiColor: .secondaryLabel))
-                            .padding(18)
+                            .foregroundStyle(.secondary)
                     } else if isLoading {
                         ProgressView()
-                            .frame(maxWidth: .infinity, minHeight: 54)
                     }
-                }
-                ForEach(products.indices, id: \.self) { index in
-                    if index > 0 || productErrorMessage != nil {
-                        AdvertiserRowSeparator()
+                } else {
+                    ForEach(products) { product in
+                        Button {
+                            onPurchaseTapped(product.id)
+                        } label: {
+                            LabeledContent(product.displayName, value: product.displayPrice)
+                                .overlay(alignment: .trailing) {
+                                    if purchasingProductID == product.id {
+                                        ProgressView()
+                                            .controlSize(.small)
+                                    }
+                                }
+                        }
+                        .buttonStyle(.plain)
+                        .disabled(isPurchasing || isLoading)
                     }
-                    AdvertiserNavigationRow(
-                        title: products[index].displayName,
-                        value: products[index].displayPrice,
-                        isEnabled: !isPurchasing && !isLoading,
-                        action: { onPurchaseTapped(products[index].id) }
-                    )
-                }
-                if isPurchasing {
-                    AdvertiserRowSeparator()
-                    ProgressView()
-                        .frame(maxWidth: .infinity, minHeight: 54)
                 }
             }
 
-            AdvertiserSection(title: "購入情報") {
-                AdvertiserNavigationRow(
+            Section("購入情報") {
+                NavigationItemView(
                     title: "購入履歴",
-                    isEnabled: !isHistoryLoading,
-                    action: onHistoryTapped
+                    onTap: onHistoryTapped
                 )
-                if isHistoryLoading {
-                    AdvertiserRowSeparator()
-                    ProgressView()
-                        .frame(maxWidth: .infinity, minHeight: 54)
-                }
+                .disabled(isHistoryLoading || isPurchasing)
             }
         }
         .navigationTitle("クレジット")
@@ -113,6 +96,7 @@ struct StoreCreditContentView: View {
             productErrorMessage: nil,
             isLoading: false,
             isPurchasing: false,
+            purchasingProductID: nil,
             isHistoryLoading: false,
             onPurchaseTapped: { _ in },
             onHistoryTapped: {}

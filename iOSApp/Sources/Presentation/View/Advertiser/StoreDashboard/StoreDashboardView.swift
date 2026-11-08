@@ -6,24 +6,37 @@ struct StoreDashboardScreen: View {
     @SwiftUI.Bindable var store: StoreOf<StoreDashboardFeature>
 
     var body: some View {
-        WithPerceptionTracking {
-            StoreDashboardContentView(
-                store: store.store,
-                balance: store.balance,
-                nextAction: store.nextAction,
-                isBalanceLoading: store.isBalanceLoading,
-                isPauseUpdating: store.isPauseUpdating,
-                onNextActionTapped: { store.send(.nextActionTapped) },
-                onBannerTapped: { store.send(.bannerTapped) },
-                onInterstitialTapped: { store.send(.interstitialTapped) },
-                onCreditTapped: { store.send(.creditTapped) },
-                onEditTapped: { store.send(.editTapped) },
-                onOwnerPausedChanged: { store.send(.ownerPausedChanged($0)) }
-            )
-            .modifier(StoreDashboardDestinations(store: store))
-            .alert($store.scope(state: \.alert, action: \.alert))
-            .task { store.send(.onAppear) }
-        }
+        StoreDashboardContentView(
+            storeName: store.store.name,
+            deliveryStatus: deliveryStatus,
+            creditBalance: store.balance?.balance,
+            isBalanceLoading: store.isBalanceLoading,
+            navigationSubtitle: navigationSubtitle,
+            nextStepTitle: store.nextAction?.title,
+            isOwnerPaused: Binding(
+                get: { store.store.ownerPaused },
+                set: { store.send(.ownerPausedChanged($0)) }
+            ),
+            isPauseUpdating: store.isPauseUpdating,
+            onNextActionTapped: { store.send(.nextActionTapped) },
+            onBannerTapped: { store.send(.bannerTapped) },
+            onInterstitialTapped: { store.send(.interstitialTapped) },
+            onCreditTapped: { store.send(.creditTapped) },
+            onEditTapped: { store.send(.editTapped) }
+        )
+        .modifier(StoreDashboardDestinations(store: store))
+        .alert($store.scope(state: \.alert, action: \.alert))
+        .task { store.send(.onAppear) }
+    }
+
+    private var deliveryStatus: String {
+        if store.store.moderationStatus == .suspended { return "掲載停止中" }
+        return store.store.ownerPaused ? "掲載停止中" : "公開中"
+    }
+
+    private var navigationSubtitle: String {
+        guard let balance = store.balance?.balance else { return deliveryStatus }
+        return "\(deliveryStatus)・\(balance)pt"
     }
 }
 
@@ -42,12 +55,7 @@ private struct StoreDashboardDestinations: ViewModifier {
                 state: \.destination?.storeAdImage,
                 action: \.destination.storeAdImage
             )) { imageStore in
-                ImageEditContentView(
-                    store: imageStore,
-                    onClose: {},
-                    onSaveTapped: { store.send(.saveAdImagesTapped) },
-                    isSaving: store.isAdImageSaving
-                )
+                ImageEditScreen(store: imageStore)
             }
             .navigationDestination(item: $store.scope(
                 state: \.destination?.credit,
@@ -59,159 +67,130 @@ private struct StoreDashboardDestinations: ViewModifier {
 }
 
 struct StoreDashboardContentView: View {
-    let store: AdvertiserStore
-    let balance: CreditAccount?
-    let nextAction: StoreDashboardFeature.NextAction?
+    let storeName: String
+    let deliveryStatus: String
+    let creditBalance: Int?
     let isBalanceLoading: Bool
+    let navigationSubtitle: String
+    let nextStepTitle: String?
+    @Binding var isOwnerPaused: Bool
     let isPauseUpdating: Bool
     let onNextActionTapped: () -> Void
     let onBannerTapped: () -> Void
     let onInterstitialTapped: () -> Void
     let onCreditTapped: () -> Void
     let onEditTapped: () -> Void
-    let onOwnerPausedChanged: (Bool) -> Void
-
-    private var deliveryStatus: String {
-        if store.moderationStatus == .suspended { return "掲載停止中" }
-        return store.ownerPaused ? "掲載停止中" : "公開中"
-    }
 
     var body: some View {
-        AdvertiserGroupedPage {
-            Text(store.name)
-                .font(.largeTitle)
-                .foregroundStyle(Color(uiColor: .label))
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(.horizontal, 18)
-                .padding(.top, 6)
-
-            HStack {
-                Text(deliveryStatus)
-                    .font(.subheadline)
-                    .foregroundStyle(Color(uiColor: .secondaryLabel))
-
-                Spacer()
-
-                if let balance {
-                    Text("残高 \(balance.balance)pt")
-                        .font(.subheadline)
-                        .foregroundStyle(Color(uiColor: .secondaryLabel))
-                } else if isBalanceLoading {
-                    ProgressView()
-                        .controlSize(.small)
-                }
-            }
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(.horizontal, 18)
-                .padding(.top, 2)
-                .padding(.bottom, 17)
-
-            if let nextAction {
-                Button(action: onNextActionTapped) {
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text("次のステップ")
-                            .font(.caption.weight(.semibold))
-                            .foregroundStyle(Color(uiColor: .secondaryLabel))
-
-                        HStack(spacing: 12) {
-                            Text(nextAction.title)
-                                .font(.system(size: 18, weight: .semibold))
-                                .foregroundStyle(Color(uiColor: .label))
-                            Spacer(minLength: 0)
-                            Image(systemName: "chevron.right")
-                                .font(.title3.weight(.light))
-                                .foregroundStyle(Color(uiColor: .label))
-                        }
-                    }
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(18)
-                    .background(Color(uiColor: .secondarySystemGroupedBackground))
-                    .clipShape(RoundedRectangle(cornerRadius: 19, style: .continuous))
-                }
-                .buttonStyle(.plain)
-                .disabled(isPauseUpdating)
-                .padding(.bottom, 25)
-            }
-
-            AdvertiserSection(title: "広告") {
-                AdvertiserNavigationRow(
-                    title: "バナー広告",
-                    isEnabled: !isPauseUpdating,
-                    action: onBannerTapped
-                )
-                AdvertiserRowSeparator()
-                AdvertiserNavigationRow(
-                    title: "全画面広告",
-                    isEnabled: !isPauseUpdating,
-                    action: onInterstitialTapped
-                )
-                AdvertiserRowSeparator()
-                Toggle(
-                    "広告配信を一時停止",
-                    isOn: Binding(
-                        get: { store.ownerPaused },
-                        set: onOwnerPausedChanged
-                    )
-                )
-                .tint(Color(uiColor: .systemGreen))
-                .padding(.horizontal, 18)
-                .frame(minHeight: 58)
-                .disabled(isPauseUpdating)
-            }
-
-            AdvertiserSection(title: "クレジット") {
-                if balance != nil {
-                    AdvertiserNavigationRow(
-                        title: "残高・購入",
-                        isEnabled: !isBalanceLoading && !isPauseUpdating,
-                        action: onCreditTapped
-                    )
-                } else if isBalanceLoading {
-                    ProgressView()
-                        .frame(maxWidth: .infinity, minHeight: 54)
-                } else {
-                    AdvertiserNavigationRow(
-                        title: "残高・購入",
-                        isEnabled: !isPauseUpdating,
-                        action: onCreditTapped
-                    )
+        Form {
+            if let nextStepTitle {
+                Section {
+                    StoreDashboardNextStepButton(title: nextStepTitle, action: onNextActionTapped)
+                        .disabled(isPauseUpdating)
+                        .listRowInsets(EdgeInsets(top: 8, leading: 0, bottom: 8, trailing: 0))
+                        .listRowBackground(Color.clear)
+                        .listRowSeparator(.hidden)
                 }
             }
 
-            AdvertiserSection(title: "店舗情報") {
-                AdvertiserNavigationRow(
-                    title: "基本情報を編集",
-                    isEnabled: !isPauseUpdating,
-                    action: onEditTapped
+            if #unavailable(iOS 26.0) {
+                Section("配信状況") {
+                    LabeledContent("配信状態", value: deliveryStatus)
+                }
+            }
+
+            Section("広告") {
+                NavigationItemView(title: "バナー広告", onTap: onBannerTapped)
+                    .disabled(isPauseUpdating)
+                NavigationItemView(title: "全画面広告", onTap: onInterstitialTapped)
+                    .disabled(isPauseUpdating)
+                Toggle("広告配信を一時停止", isOn: $isOwnerPaused)
+                    .disabled(isPauseUpdating)
+            }
+
+            Section("ポイント残高") {
+                NavigationItemView(
+                    title: "残高・購入",
+                    status: creditBalance.map { "\($0)pt" },
+                    onTap: onCreditTapped
                 )
+                .disabled(isBalanceLoading || isPauseUpdating)
+            }
+
+            Section("店舗情報") {
+                NavigationItemView(title: "基本情報を編集", onTap: onEditTapped)
+                    .disabled(isPauseUpdating)
             }
         }
-        .navigationTitle("店舗ダッシュボード")
-        .navigationBarTitleDisplayMode(.inline)
+        .navigationTitle(storeName)
+        .navigationBarTitleDisplayMode(.large)
+        .modifier(StoreDashboardSubtitle(subtitle: navigationSubtitle))
+    }
+}
+
+private struct StoreDashboardNextStepButton: View {
+    let title: String
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            HStack(spacing: 16) {
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("次のステップ")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+
+                    Text(title)
+                        .font(.headline)
+                        .foregroundStyle(.primary)
+                }
+
+                Spacer(minLength: 0)
+
+                Image(systemName: "chevron.right")
+                    .font(.headline)
+                    .foregroundStyle(Color.accentColor)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(16)
+            .background(
+                Color(uiColor: .secondarySystemGroupedBackground),
+                in: RoundedRectangle(cornerRadius: 16)
+            )
+        }
+        .buttonStyle(.plain)
+    }
+}
+
+private struct StoreDashboardSubtitle: ViewModifier {
+    let subtitle: String
+
+    @ViewBuilder
+    func body(content: Content) -> some View {
+        if #available(iOS 26.0, *) {
+            content.navigationSubtitle(Text(verbatim: subtitle))
+        } else {
+            content
+        }
     }
 }
 
 #Preview {
     NavigationStack {
         StoreDashboardContentView(
-            store: Store(
-                id: "store",
-                festivalId: "festival",
-                ownerId: "owner",
-                purchaseAccountToken: UUID(),
-                name: "テスト店舗",
-                businessHours: ""
-            ),
-            balance: CreditAccount(storeId: "store", balance: 0),
-            nextAction: .banner,
+            storeName: "テスト店舗",
+            deliveryStatus: "公開中",
+            creditBalance: 0,
             isBalanceLoading: false,
+            navigationSubtitle: "公開中・0pt",
+            nextStepTitle: "バナー画像を設定",
+            isOwnerPaused: .constant(false),
             isPauseUpdating: false,
             onNextActionTapped: {},
             onBannerTapped: {},
             onInterstitialTapped: {},
             onCreditTapped: {},
-            onEditTapped: {},
-            onOwnerPausedChanged: { _ in }
+            onEditTapped: {}
         )
     }
 }

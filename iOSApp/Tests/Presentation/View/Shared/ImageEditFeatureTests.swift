@@ -56,7 +56,7 @@ struct ImageEditFeatureTests {
         ))
         #expect(await useCase.uploadCalls.count == 1)
 
-        await store.send(.modeSelected(.dark)) {
+        await store.send(.binding(.set(\.selectedMode, .dark))) {
             $0.selectedMode = .dark
         }
         await store.send(.removeTapped) {

@@ -135,9 +135,7 @@ struct StoreEditFeature {
                 return .none
 
             case .destination(.presented(.coordinate(.doneTapped))):
-                if let coordinate = state.destination?.coordinate?.coordinate {
-                    state.coordinate = coordinate
-                }
+                state.coordinate = state.destination?.coordinate?.coordinate
                 state.destination = nil
                 return .none
 

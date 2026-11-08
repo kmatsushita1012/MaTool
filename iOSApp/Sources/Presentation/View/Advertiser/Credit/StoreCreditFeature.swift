@@ -16,6 +16,7 @@ struct StoreCreditFeature {
         var productErrorMessage: String?
         var isLoading = false
         var isPurchasing = false
+        var purchasingProductID: String?
         var isHistoryLoading = false
         @Presents var destination: Destination.State?
         @Presents var alert: AlertFeature.State?
@@ -80,6 +81,7 @@ struct StoreCreditFeature {
             case .purchaseTapped(let productId):
                 guard !state.isPurchasing else { return .none }
                 state.isPurchasing = true
+                state.purchasingProductID = productId
                 let store = state.store
                 return .task(Action.purchaseReceived) {
                     let result = try await storeCreditUsecase.purchase(store: store, productId: productId)
@@ -89,6 +91,7 @@ struct StoreCreditFeature {
 
             case .purchaseReceived(.success(let completion)):
                 state.isPurchasing = false
+                state.purchasingProductID = nil
                 if let balance = completion.balance {
                     state.balance = balance
                 }
@@ -105,6 +108,7 @@ struct StoreCreditFeature {
 
             case .purchaseReceived(.failure(let error)):
                 state.isPurchasing = false
+                state.purchasingProductID = nil
                 state.alert = .error("購入を確定できませんでした。\n\(error.message)")
                 return .none
 

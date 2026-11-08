@@ -100,6 +100,20 @@ actor PublicMapAdUsecaseSpy: PublicMapAdUsecaseProtocol {
     }
 }
 
+actor StoreAdBannerUsecaseSpy: StoreAdBannerUsecaseProtocol {
+    private(set) var requestedFestivalIDs: [Festival.ID] = []
+    private(set) var reportedImpressions: [AdCandidate] = []
+
+    func nextBanner(festivalId: Festival.ID) async throws -> AdCandidate? {
+        requestedFestivalIDs.append(festivalId)
+        return nil
+    }
+
+    func reportImpression(_ candidate: AdCandidate) async throws {
+        reportedImpressions.append(candidate)
+    }
+}
+
 actor DistrictLoadSpy: LoadDistrictStateUseCaseProtocol {
     private let response: LaunchDistrictPack
     private var periodId: Period.ID?

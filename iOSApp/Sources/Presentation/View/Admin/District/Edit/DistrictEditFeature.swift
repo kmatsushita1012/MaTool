@@ -38,7 +38,6 @@ struct DistrictEditFeature {
         case cancelTapped
         case saveTapped
         case imageEditTapped
-        case imageEditDismissTapped
         case imageEdit(ImageEditFeature.Action)
         case baseTapped
         case areaTapped
@@ -84,7 +83,7 @@ struct DistrictEditFeature {
                 guard !state.isLoading else { return .none }
                 state.isImageEditPresented = true
                 return .none
-            case .imageEditDismissTapped:
+            case .imageEdit(.closeTapped):
                 guard !state.imageEdit.isUploading else { return .none }
                 state.isImageEditPresented = false
                 return .none
