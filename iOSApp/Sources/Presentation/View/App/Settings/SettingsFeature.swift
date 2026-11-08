@@ -189,8 +189,13 @@ struct SettingsFeature {
                     state.alert = .error("情報の取得に失敗しました \(error.message)")
                 }
                 return .send(.delegate(.participationChanged(preparation)))
-            case .festivalSelectReceived(.failure(let error)),
-                 .districtSelectReceived(.failure(let error)):
+            case .festivalSelectReceived(.failure(let error)):
+                state.isParticipationLoading = false
+                state.selectedFestival = state.confirmedFestival
+                state.selectedDistrict = state.confirmedDistrict
+                state.alert = AlertFeature.error("情報の取得に失敗しました \(error.message)")
+                return .none
+            case .districtSelectReceived(.failure(let error)):
                 state.isParticipationLoading = false
                 state.alert = AlertFeature.error("情報の取得に失敗しました \(error.message)")
                 return .none
@@ -208,16 +213,17 @@ struct SettingsFeature {
                 return .run { [appState = state.$appState] send in
                     var didSignOut = false
                     do {
-                        try await signOutUseCase(appState: appState)
-                        didSignOut = true
                         switch pendingChange {
                         case .festival(let festivalId):
                             _ = try await selectFestivalUseCase(
                                 festivalId: festivalId,
                                 appState: appState,
-                                signOutCurrentUser: false
+                                signOutCurrentUser: true
                             )
+                            didSignOut = true
                         case .district(let districtId):
+                            _ = try await signOutUseCase(appState: appState)
+                            didSignOut = true
                             _ = try await selectDistrictUseCase(
                                 districtId: districtId,
                                 appState: appState
