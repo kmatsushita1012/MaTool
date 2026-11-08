@@ -385,13 +385,13 @@ private struct RootFeatureFixture {
         appState = AppState(
             festivalPack: LaunchFestivalPack(
                 festival: festival,
+                year: 2026,
                 districts: [district],
                 periods: [],
                 locations: [],
                 checkpoints: [],
                 hazardSections: []
             ),
-            year: 2026
         )
     }
 }

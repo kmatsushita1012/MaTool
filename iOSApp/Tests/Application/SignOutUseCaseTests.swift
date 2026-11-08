@@ -34,7 +34,6 @@ struct SignOutUseCaseTests {
         }
 
         let rebuiltState = try #require(appState.wrappedValue)
-        let expectedYear = Calendar.current.component(.year, from: .now)
         #expect(launchState == .district(.guest, fixture.route.id))
         #expect(initializeSpy.callCount == 0)
         #expect(Set(await dataFetcher.requests) == Set([
@@ -45,7 +44,7 @@ struct SignOutUseCaseTests {
         #expect(rebuiltState.sessionId != fixture.oldAppState.sessionId)
         #expect(rebuiltState.districtLoadRequestId != fixture.oldAppState.districtLoadRequestId)
         #expect(rebuiltState.routeLoadRequestId != fixture.oldAppState.routeLoadRequestId)
-        #expect(rebuiltState.festivalState == FestivalState(fixture.festivalPack, year: expectedYear))
+        #expect(rebuiltState.festivalState == FestivalState(fixture.festivalPack))
         #expect(rebuiltState.districtState?.districtId == fixture.district.id)
         #expect(rebuiltState.districtState?.routes == [fixture.route])
         #expect(rebuiltState.routeState?.route == fixture.route)
@@ -178,7 +177,6 @@ private struct SignOutFixture {
                 checkpoints: [],
                 hazardSections: []
             ),
-            year: Calendar.current.component(.year, from: .now)
         )
         oldAppState = AppState(
             festivalState: staleFestivalState,
@@ -190,8 +188,7 @@ private struct SignOutFixture {
                     points: [stalePoint],
                     passages: [],
                     currentRouteId: staleRoute.id
-                ),
-                currentPeriodIds: Set(staleFestivalState.periods.map(\.id))
+                )
             ),
             routeState: RouteState(route: staleRoute, points: [stalePoint], passages: [])
         )
