@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>MaTool｜店舗ダッシュボード B案</title>
+<style>
+/* iOS semantic palette approximations:
+   UIColor.systemGroupedBackground -> --grouped
+   UIColor.secondarySystemGroupedBackground -> --surface
+   UIColor.label -> --label
+   UIColor.secondaryLabel -> --secondary
+   UIColor.separator -> --separator
+   UIColor.systemBlue -> --blue
+   UIColor.systemRed -> --red
+   The SwiftUI implementation should use UIColor, not these fixed HTML preview values.
+*/
+:root { color-scheme: light; --grouped:#f2f2f7; --surface:#fff; --label:#000;
+  --secondary:#8e8e93; --separator:rgba(60,60,67,.20); --blue:#007aff;
+  --red:#ff3b30; --outline:rgba(60,60,67,.18); --preview:#eaf3ff;
+  --outside:#f7f7f9; --outside-ink:#22252e; --home:#161619; }
+:root[data-theme="dark"] { color-scheme:dark; --grouped:#000; --surface:#1c1c1e;
+  --label:#fff; --secondary:#98989f; --separator:rgba(84,84,88,.55);
+  --blue:#0a84ff; --red:#ff453a; --outline:rgba(115,115,128,.50);
+  --preview:#102a48; --outside:#151517; --outside-ink:#f3f3f6; --home:#fff; }
+* { box-sizing:border-box; }
+body { margin:0; background:var(--outside); color:var(--outside-ink);
+  font-family:-apple-system,BlinkMacSystemFont,"Helvetica Neue",sans-serif; }
+button,input,textarea,select { font:inherit; }
+button { cursor:pointer; }
+button:focus-visible, input:focus-visible, textarea:focus-visible {outline:3px solid var(--blue); outline-offset:2px;}
+.page { max-width:1080px; margin:0 auto; padding:24px 22px 70px; }
+.site-head { max-width:810px; margin:0 auto 24px; }
+.site-head h1 {font-size:clamp(22px,4vw,30px); margin:0 0 10px; letter-spacing:-.03em;}
+.site-head p {font-size:15px; color:var(--secondary); line-height:1.7; margin:0 0 14px;}
+.controls {display:flex; gap:8px; flex-wrap:wrap;}
+.outside-btn {background:transparent; border:1px solid var(--outline);border-radius:12px;
+  padding:9px 13px;color:var(--outside-ink);font-size:13px;}
+.showcase {display:flex;align-items:flex-start; justify-content:center;gap:32px;}
+.phone {width:395px;height:785px;max-width:100%;background:var(--grouped);border:1px solid var(--outline);
+  border-radius:46px;overflow:hidden;box-shadow:0 18px 60px rgba(0,0,0,.15);
+  display:flex;flex-direction:column;position:relative;color:var(--label);flex-shrink:0;}
+.statusbar {height:44px;display:flex;align-items:center;justify-content:space-between;
+  padding:14px 33px 0 36px;font-size:15px;font-weight:700;flex-shrink:0;}
+.status-icons {letter-spacing:2px;font-size:13px;}
+.topbar {height:71px;display:flex;align-items:center;justify-content:center;position:relative;flex-shrink:0;
+  padding:0 61px;z-index:3;}
+.topbar-title {font-size:17px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.round-button {position:absolute;top:11px;display:flex;align-items:center;justify-content:center;
+  border-radius:50%;width:49px;height:49px;border:1px solid var(--outline);
+  background:var(--surface);color:var(--label);font-size:26px;}
+.round-button.left {left:17px;}
+.round-button.right {right:17px;font-size:23px;}
+.save-button {position:absolute;right:17px;top:14px;border:0;border-radius:26px;
+  background:var(--blue);color:white;font-weight:700;padding:11px 16px;}
+.viewport {flex:1;min-height:0;overflow:auto;scrollbar-width:thin;padding:10px 16px 42px;overscroll-behavior:contain;}
+.home-area {height:24px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.home-area:after {content:"";width:128px;height:5px;background:var(--home);border-radius:7px;}
+.section {margin:0 0 24px;}
+.section-label {font-size:13px;font-weight:600;color:var(--secondary);margin:0 18px 9px;}
+.group {background:var(--surface);border-radius:18px;overflow:hidden;}
+.cell {display:flex;align-items:center;min-height:54px;padding:14px 18px;gap:10px;width:100%;
+  border:0;background:transparent;text-align:left;color:var(--label);}
+.cell.primary {color:var(--blue);}
+.cell.destructive {color:var(--red);}
+.cell + .cell, .cell + .toggle-row, .toggle-row + .cell, .cell + .text-row, .text-row + .cell,
+.text-row + .text-row {border-top:1px solid var(--separator);}
+.cell-title {font-size:16px;line-height:1.25;flex:1;min-width:0;}
+.cell-value {font-size:15px;color:var(--secondary);white-space:nowrap;}
+.chevron {color:var(--secondary);opacity:.65;font-size:25px;line-height:1;font-weight:300;}
+.row-meta {display:flex; flex-direction:column;gap:4px; flex:1;min-width:0;}
+.row-meta small {font-size:12px;color:var(--secondary);}
+.store-title {font-weight:600;font-size:23px;padding:6px 18px 17px;line-height:1.2;letter-spacing:-.02em;}
+.prep-card {display:block;width:100%;border:0;border-radius:19px;text-align:left;background:var(--surface);
+  box-shadow:0 2px 16px rgba(0,0,0,.03);padding:17px 18px; margin:0 0 25px; color:var(--label);}
+.prep-caption {display:block;font-size:12px;font-weight:600;color:var(--secondary);margin-bottom:8px;}
+.prep-main {display:flex;align-items:center;justify-content:space-between;gap:12px;font-weight:650;font-size:18px;}
+.prep-main .chevron {color:var(--blue);font-size:26px;opacity:1;}
+.toggle-row {padding:14px 18px;display:flex;justify-content:space-between;align-items:center;gap:12px;min-height:58px;}
+.toggle-row span {font-size:16px;}
+.switch {appearance:none;width:50px;height:30px;flex-shrink:0;position:relative;border-radius:25px;
+  border:0;background:#e5e5ea;transition:background .15s;}
+.switch:checked {background:#34c759;}
+.switch:after {content:"";position:absolute;top:2px;left:2px;width:26px;height:26px;
+  border-radius:50%;background:#fff;box-shadow:0 1px 3px #0002;transition:transform .15s;}
+.switch:checked:after {transform:translateX(20px);}
+.big-balance {padding:20px 18px;display:flex;align-items:center;justify-content:space-between;gap:10px;}
+.big-balance strong {font-size:20px;letter-spacing:-.03em;}
+.text-row {padding:12px 18px;display:flex;align-items:center;gap:12px;}
+.text-row label {width:85px;flex-shrink:0;font-size:14px;}
+.text-row input,.text-row select {flex:1;width:100%;min-width:0;background:transparent;border:0;color:var(--label);outline:0;padding:7px 0;font-size:16px;}
+.form-textarea {border:0;background:transparent;color:var(--label);width:100%;min-height:110px;
+  padding:15px 18px;font-size:16px;resize:vertical;outline:0;}
+.form-textarea::placeholder,.text-row input::placeholder {color:var(--secondary);}
+.photo-preview {min-height:155px;display:flex;align-items:center;justify-content:center;
+  border-radius:14px;margin:14px;background:var(--grouped);overflow:hidden;
+  text-align:center;font-weight:650;color:var(--secondary);}
+.photo-preview.banner {min-height:125px;}
+.photo-preview.full {min-height:250px;}
+.photo-preview.ready {background:linear-gradient(135deg,#4a79b6,#1b395c);color:white;}
+.photo-preview.ready.full {background:linear-gradient(150deg,#d99d54,#7e4e34 55%,#382c43);}
+.photo-preview .art {display:flex;flex-direction:column;align-items:center;gap:7px;padding:18px;}
+.photo-preview .art b {font-size:27px;letter-spacing:.1em;}
+.photo-preview .art em {font-style:normal;font-size:14px;letter-spacing:.1em;}
+.map {height:250px;display:flex;justify-content:center;align-items:center;background:var(--preview);
+  border-radius:16px;margin:0 0 16px;color:var(--blue);position:relative;overflow:hidden;}
+.map:before,.map:after {content:"";position:absolute;width:150%;height:2px;background:rgba(60,110,140,.18);transform:rotate(-20deg);}
+.map:after {transform:rotate(30deg);}
+.map-pin {z-index:1;background:var(--blue);color:#fff;border-radius:50%;width:47px;height:47px;
+  display:flex;align-items:center;justify-content:center;box-shadow:0 3px 12px #0002;}
+.full-button {display:block;width:100%;padding:14px;border:0;border-radius:14px;background:var(--blue);
+  color:white;font-weight:650;text-align:center;margin:16px 0;}
+.empty {font-size:14px;color:var(--secondary);text-align:center;padding:22px;}
+.side {max-width:320px;padding:16px 0;color:var(--outside-ink);}
+.side h2 {font-size:18px;margin:0 0 15px;}
+.side p {font-size:14px;line-height:1.75;color:var(--secondary);margin:0 0 18px;}
+.flow {border:1px solid var(--outline);border-radius:16px;padding:16px;font-size:13px;line-height:1.8;}
+.flow strong {font-size:14px;}
+.flow span {display:block;padding-left:14px;}
+.flow .arrow {color:var(--blue);padding-left:23px;}
+@media(max-width:800px) {
+ .page{padding:18px 10px 30px}
+ .site-head{padding:0 9px}
+ .showcase{flex-direction:column;align-items:center;gap:18px}
+ .phone{width:min(395px,100%);height:min(785px,80svh);min-height:600px;border-radius:35px}
+ .side{width:100%;max-width:395px;padding:0 9px}
+}
+</style>
+</head>
+<body>
+<div class="page">
+  <header class="site-head">
+    <h1>店舗 Dashboard — B案</h1>
+    <p>店舗を選んだら、まず管理画面へ。必要な設定だけを上部に案内し、すべて揃ったら案内は消えます。各行を押して画面遷移を試せます。</p>
+    <div class="controls">
+      <button class="outside-btn" id="theme">ダークモード</button>
+      <button class="outside-btn" id="reset">最初から見る</button>
+    </div>
+  </header>
+  <div class="showcase">
+    <div class="phone" aria-label="iPhone 画面の操作プレビュー">
+      <div class="statusbar"><span>21:26</span><span class="status-icons">●●● ◕ ▰</span></div>
+      <nav class="topbar">
+        <button class="round-button left" id="back" aria-label="戻る">‹</button>
+        <div class="topbar-title" id="title">店舗管理</div>
+        <div id="right"></div>
+      </nav>
+      <div class="viewport" id="screen"></div>
+      <div class="home-area"></div>
+    </div>
+    <aside class="side">
+      <h2>画面の流れ</h2>
+      <div class="flow">
+        <strong>所有店舗一覧</strong>
+        <span class="arrow">↓ 店舗を選択</span>
+        <strong>店舗別 Dashboard</strong>
+        <span class="arrow">↓ 目的に応じて選択</span>
+        <span>バナー広告・全画面広告</span>
+        <span>残高・購入 → 購入履歴</span>
+        <span>基本情報を編集 → 位置を指定</span>
+        <span class="arrow">↑ 編集・購入後は Dashboard へ</span>
+        <strong>新規店舗の保存後も Dashboard へ</strong>
+      </div>
+    </aside>
+  </div>
+</div>
+<script>
+(function(){
+  "use strict";
+  const $ = function(id){return document.getElementById(id);};
+  const esc = function(s){return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");};
+  const makeStore = function(id,name){return {
+    id:id,name:name,festival:"テスト祭典",address:"静岡県",hours:"",description:"",
+    hasLocation:false,paused:false,banner:false,interstitial:false,balance:0,purchases:[]
+  };};
+  const fresh = function(){return {view:"stores",stack:[],storeId:"s1",
+    stores:[makeStore("s1","CodexTest")],draft:null,isCreate:false,seq:1};};
+  let state=fresh();
+  const store = function(){return state.stores.find(function(s){return s.id===state.storeId;})||state.stores[0];};
+  const section = function(title,html){return '<section class="section"><h3 class="section-label">'+esc(title)+'</h3><div class="group">'+html+'</div></section>';};
+  const cell = function(title,target,opts){
+    opts=opts||{};
+    return '<button class="cell '+(opts.blue?'primary ':'')+(opts.red?'destructive':'')+'" data-go="'+esc(target)+'">'+
+      '<span class="cell-title">'+esc(title)+'</span>'+
+      (opts.value?'<span class="cell-value">'+esc(opts.value)+'</span>':'')+
+      '<span class="chevron" aria-hidden="true">›</span></button>';
+  };
+  function step(s) {
+    if(!s.banner)return {title:"バナー画像を設定",target:"banner"};
+    if(!s.interstitial)return {title:"全画面画像を設定",target:"interstitial"};
+    if(s.balance<2)return {title:"クレジットを購入",target:"credit"};
+    return null;
+  }
+  function storesScreen(){
+    const rows=state.stores.map(function(s){
+      return '<button class="cell" data-select="'+esc(s.id)+'"><span class="row-meta"><span class="cell-title">'+esc(s.name)+
+        '</span><small>公開中</small></span><span class="chevron">›</span></button>';
+    }).join('');
+    return section("所有店舗",rows+'<button class="cell primary" data-action="add"><span class="cell-title">＋　店舗を追加</span></button>')+
+      section("アカウント",cell("パスワード変更","account")+cell("メールアドレス変更","account")+
+      '<button class="cell destructive" data-action="logout"><span class="cell-title">ログアウト</span></button>');
+  }
+  function dashboardScreen(){
+    const s=store(),next=step(s);
+    const prompt=next?'<button class="prep-card" data-go="'+next.target+'">'+
+      '<span class="prep-caption">広告の準備</span><span class="prep-main">'+esc(next.title)+
+      '<span class="chevron">›</span></span></button>':'';
+    return '<div class="store-title">'+esc(s.name)+'</div>'+prompt+
+      section("広告",cell("バナー広告","banner")+cell("全画面広告","interstitial")+
+      '<label class="toggle-row"><span>広告配信を一時停止</span><input class="switch" id="pause" type="checkbox" '+
+      (s.paused?'checked':'')+' aria-label="広告配信を一時停止"></label>')+
+      section("クレジット",cell("残高・購入","credit",{value:s.balance.toLocaleString()+"pt"}))+
+      section("店舗情報",cell("基本情報を編集","edit"));
+  }
+  function editScreen(){
+    const s=state.draft;
+    if(!s)return "";
+    return section("基本情報",
+      (state.isCreate?'<div class="text-row"><label for="festival">祭典</label><select id="festival"><option>テスト祭典</option></select></div>':'')+
+      '<div class="text-row"><label for="storeName">店舗名</label><input id="storeName" value="'+esc(s.name)+'" placeholder="店舗名"></div>'+
+      '<div class="text-row"><label for="storeAddress">住所</label><input id="storeAddress" value="'+esc(s.address)+'" placeholder="住所"></div>'+
+      '<div class="text-row"><label for="storeHours">営業時間</label><input id="storeHours" value="'+esc(s.hours)+'" placeholder="営業時間"></div>'+
+      '<textarea class="form-textarea" id="storeDescription" placeholder="説明">'+esc(s.description)+'</textarea>')+
+      section("位置",cell("地図で指定","location",{value:s.hasLocation?"設定済み":""}));
+  }
+  function photoScreen(kind){
+    const s=store(),ready=s[kind],name=kind==="banner"?"バナー広告":"全画面広告";
+    const preview='<div class="photo-preview '+(kind==="banner"?'banner':'full')+(ready?' ready':'')+'">'+
+      (ready?'<span class="art"><b>'+ (kind==="banner"?'MaTool':'SHOP')+'</b><em>'+esc(s.name)+'</em></span>':
+      '<span>画像を選択してください</span>')+'</div>';
+    return section("広告画像",preview+
+      '<button class="cell primary" data-action="set-photo"><span class="cell-title">'+
+      (ready?"画像を変更":"画像を選択")+'</span><span class="chevron">›</span></button>'+
+      (ready?'<button class="cell destructive" data-action="delete-photo"><span class="cell-title">画像を削除</span></button>':''));
+  }
+  function creditScreen(){
+    const s=store();
+    return section("残高",'<div class="big-balance"><span>利用可能</span><strong>'+s.balance.toLocaleString()+'pt</strong></div>')+
+      section("クレジット購入",
+        '<button class="cell primary" data-buy="500"><span class="cell-title">広告クレジット 500pt</span><span class="cell-value">¥500</span><span class="chevron">›</span></button>'+
+        '<button class="cell primary" data-buy="1000"><span class="cell-title">広告クレジット 1,000pt</span><span class="cell-value">¥1,000</span><span class="chevron">›</span></button>')+
+      section("購入情報",cell("購入履歴","history"));
+  }
+  function historyScreen(){
+    const items=store().purchases;
+    return section("購入履歴",items.length?items.map(function(x){
+      return '<div class="cell"><span class="cell-title">広告クレジット '+x+'pt</span><span class="cell-value">+'+x+'pt</span></div>';
+    }).join(''):'<div class="empty">購入履歴はありません</div>');
+  }
+  function locationScreen(){
+    return '<div class="map"><div class="map-pin">⌖</div></div>'+
+      '<button class="full-button" data-action="location-confirm">この位置で確定</button>';
+  }
+  function accountScreen(){
+    return section("アカウント",cell("パスワード変更","account")+
+      cell("メールアドレス変更","account")+'<button class="cell destructive" data-action="logout"><span class="cell-title">ログアウト</span></button>');
+  }
+  const titles={stores:"店舗管理",dashboard:"店舗ダッシュボード",edit:"店舗編集",
+    banner:"バナー広告",interstitial:"全画面広告",credit:"クレジット",history:"購入履歴",
+    location:"位置を指定",account:"アカウント"};
+  const screens={stores:storesScreen,dashboard:dashboardScreen,edit:editScreen,
+    banner:function(){return photoScreen("banner");},interstitial:function(){return photoScreen("interstitial");},
+    credit:creditScreen,history:historyScreen,location:locationScreen,account:accountScreen};
+  function render(){
+    $("title").textContent=state.view==="edit"&&state.isCreate?"店舗を追加":titles[state.view];
+    $("back").style.visibility=state.view==="stores"?"hidden":"visible";
+    $("right").innerHTML=state.view==="edit"?
+      '<button class="save-button" data-action="save">保存</button>':
+      state.view==="stores"?'<button class="round-button right" data-go="account" aria-label="設定">⚙</button>':'';
+    $("screen").innerHTML=screens[state.view]();
+    $("screen").scrollTop=0;
+  }
+  function push(view){if(view==="edit"){state.draft=Object.assign({},store());state.isCreate=false;}
+    if(view===state.view)return;
+    state.stack.push(state.view);state.view=view;render();}
+  function pop(){if(state.stack.length){state.view=state.stack.pop();}else{state.view="stores";}
+    if(state.view!=="edit")state.draft=null;render();}
+  function saveDraft(){
+    if(state.view!=="edit"||!state.draft)return;
+    const n=$("storeName");if(!n)return;
+    state.draft.name=n.value.trim();state.draft.address=$("storeAddress").value;
+    state.draft.hours=$("storeHours").value;state.draft.description=$("storeDescription").value;
+  }
+  function saveStore(){
+    saveDraft();if(!state.draft)return;
+    if(!state.draft.name){$("storeName").focus();return;}
+    if(state.isCreate){
+      state.stores.push(state.draft);state.storeId=state.draft.id;
+    }else{
+      const original=store();Object.assign(original,state.draft);
+    }
+    // Both create and edit replace their own screen with the store Dashboard.
+    state.draft=null;state.isCreate=false;state.view="dashboard";state.stack=["stores"];render();
+  }
+  document.addEventListener("click",function(e){
+    const item=e.target.closest("[data-select]");
+    if(item){state.storeId=item.dataset.select;push("dashboard");return;}
+    const buy=e.target.closest("[data-buy]");
+    if(buy){const amount=Number(buy.dataset.buy);store().balance+=amount;store().purchases.unshift(amount);render();return;}
+    const action=e.target.closest("[data-action]");
+    if(action){
+      switch(action.dataset.action){
+        case "add":
+          state.seq++;state.draft=makeStore("s"+state.seq,"");state.isCreate=true;
+          state.stack.push(state.view);state.view="edit";render();return;
+        case "save":saveStore();return;
+        case "set-photo":
+          store()[state.view==="interstitial"?"interstitial":"banner"]=true;render();return;
+        case "delete-photo":
+          store()[state.view==="interstitial"?"interstitial":"banner"]=false;render();return;
+        case "location-confirm":
+          if(state.draft)state.draft.hasLocation=true;
+          pop();return;
+        case "logout":
+          state.view="stores";state.stack=[];state.draft=null;render();return;
+      }
+    }
+    const link=e.target.closest("[data-go]");
+    if(link){if(state.view==="edit")saveDraft();push(link.dataset.go);return;}
+  });
+  document.addEventListener("change",function(e){if(e.target.id==="pause"){store().paused=e.target.checked;}});
+  $("back").addEventListener("click",function(){if(state.view==="edit")saveDraft();pop();});
+  $("theme").addEventListener("click",function(){
+    const dark=document.documentElement.dataset.theme!=="dark";
+    document.documentElement.dataset.theme=dark?"dark":"light";
+    $("theme").textContent=dark?"ライトモード":"ダークモード";
+  });
+  $("reset").addEventListener("click",function(){state=fresh();render();});
+  render();
+})();
+</script>
+</body>
+</html>
