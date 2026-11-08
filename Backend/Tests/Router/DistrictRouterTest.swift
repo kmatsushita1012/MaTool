@@ -87,12 +87,7 @@ struct DistrictRouterTest {
         )
         var persisted = saved
         let dataStore = DataStoreMock(
-            putIfNewerHandler: { encodedRecord, path in
-                #expect(path == ["content", "timestamp"])
-                let record = try JSONDecoder().decode(
-                    Record<FloatLocation>.self,
-                    from: JSONEncoder().encode(encodedRecord)
-                )
+            putLocationIfNewerHandler: { record in
                 guard record.content.timestamp > persisted.timestamp else { return false }
                 persisted = record.content
                 return true
@@ -136,7 +131,7 @@ struct DistrictRouterTest {
                         #expect(staleResponse.statusCode == 200)
                         #expect(stalePayload == saved)
                         #expect(persisted == saved)
-                        #expect(dataStore.putIfNewerCallCount == 1)
+                        #expect(dataStore.putLocationIfNewerCallCount == 1)
                         #expect(dataStore.getCallCount == 1)
 
                         var newerRequest = Application.Request.make(
@@ -151,7 +146,7 @@ struct DistrictRouterTest {
                         #expect(newerResponse.statusCode == 200)
                         #expect(newerPayload == newer)
                         #expect(persisted == newer)
-                        #expect(dataStore.putIfNewerCallCount == 2)
+                        #expect(dataStore.putLocationIfNewerCallCount == 2)
                         #expect(dataStore.getCallCount == 1)
                     }
                 }
