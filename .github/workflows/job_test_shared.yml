@@ -17,17 +17,8 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Cache SwiftPM artifacts
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.cache/org.swift.swiftpm/
-            Shared/.build
-          key: ${{ runner.os }}-spm-Shared-swift-6.3.3-${{ github.ref_name }}-${{ hashFiles('Shared/Package.swift', 'Shared/Package.resolved') }}
-          restore-keys: |
-            ${{ runner.os }}-spm-Shared-swift-6.3.3-${{ github.ref_name }}-
-            ${{ runner.os }}-spm-Shared-swift-6.3.3-
-
+      # .buildはAWS SDK等の成果物が数GBになるため、Actionsキャッシュには保存しない。
+      # このジョブは毎回ビルドし、容量は頻繁なBackendデプロイ用キャッシュに優先配分する。
       - name: Resolve Shared package dependencies
         run: swift package resolve
         working-directory: Shared
