@@ -26,18 +26,11 @@ jobs:
       - name: Cache SPM checkouts
         uses: actions/cache@v4
         with:
-          path: iOSApp/.sourcePackages
+          # Git cloneの再取得を避け、生成可能なcheckoutsやビルド成果物は保存しない。
+          path: iOSApp/.sourcePackages/repositories
           key: ${{ runner.os }}-spm-iOSApp-xcode27-${{ hashFiles('MaTool.xcworkspace/xcshareddata/swiftpm/Package.resolved', 'iOSApp/MaTool.xcodeproj/project.pbxproj', 'Shared/Package.swift') }}
           restore-keys: |
             ${{ runner.os }}-spm-iOSApp-xcode27-
-
-      - name: Cache Debug build artifacts
-        uses: actions/cache@v4
-        with:
-          path: iOSApp/.derivedData/Build
-          key: ${{ runner.os }}-derived-iOSApp-xcode27-debug-${{ hashFiles('MaTool.xcworkspace/xcshareddata/swiftpm/Package.resolved', 'iOSApp/MaTool.xcodeproj/project.pbxproj', 'Shared/Package.swift') }}
-          restore-keys: |
-            ${{ runner.os }}-derived-iOSApp-xcode27-debug-
 
       - name: Resolve packages
         env:
