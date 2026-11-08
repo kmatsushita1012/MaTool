@@ -1,20 +1,15 @@
 @testable import Backend
 import Foundation
-import Shared
 
-final class DataStoreMock: DataStore, LocationTimestampStore, @unchecked Sendable {
+final class DataStoreMock: DataStore, @unchecked Sendable {
     init(
         putHandler: ((any Encodable) async throws -> Void)? = nil,
-        putLocationIfNewerHandler: ((LRecord) async throws -> Bool)? = nil,
-        getCurrentLocationHandler: ((String, String) async throws -> FloatLocation?)? = nil,
         getHandler: (([String: Codable], Any.Type) async throws -> Data?)? = nil,
         deleteHandler: (([String: Codable]) async throws -> Void)? = nil,
         scanHandler: ((Bool, Any.Type) async throws -> Data)? = nil,
         queryHandler: ((String?, [QueryCondition], [FilterCondition], Int?, Bool, Any.Type) async throws -> Data)? = nil
     ) {
         self.putHandler = putHandler
-        self.putLocationIfNewerHandler = putLocationIfNewerHandler
-        self.getCurrentLocationHandler = getCurrentLocationHandler
         self.getHandler = getHandler
         self.deleteHandler = deleteHandler
         self.scanHandler = scanHandler
@@ -28,24 +23,6 @@ final class DataStoreMock: DataStore, LocationTimestampStore, @unchecked Sendabl
         putCallCount += 1
         guard let putHandler else { throw TestError.unimplemented }
         try await putHandler(item)
-    }
-
-    nonisolated(unsafe) private(set) var putLocationIfNewerCallCount = 0
-    private let putLocationIfNewerHandler: ((LRecord) async throws -> Bool)?
-
-    func putLocationIfNewer(_ record: LRecord) async throws -> Bool {
-        putLocationIfNewerCallCount += 1
-        guard let putLocationIfNewerHandler else { throw TestError.unimplemented }
-        return try await putLocationIfNewerHandler(record)
-    }
-
-    private let getCurrentLocationHandler: ((String, String) async throws -> FloatLocation?)?
-
-    func getCurrentLocation(pk: String, sk: String) async throws -> FloatLocation? {
-        if let getCurrentLocationHandler {
-            return try await getCurrentLocationHandler(pk, sk)
-        }
-        return try await get(pk: pk, sk: sk, as: LRecord.self)?.content
     }
 
     nonisolated(unsafe) private(set) var getCallCount = 0

@@ -23,26 +23,12 @@ protocol LocationRepositoryProtocol: Sendable {
     func delete(festivalId: String, districtId: String) async throws
 }
 
-protocol LocationTimestampStore: Sendable {
-    func putLocationIfNewer(_ record: LRecord) async throws -> Bool
-    func getCurrentLocation(pk: String, sk: String) async throws -> FloatLocation?
-}
-
-extension DynamoDBStore: LocationTimestampStore {}
-
 struct LocationRepository: LocationRepositoryProtocol {
     private let store: DataStore
-    private let timestampStore: (any LocationTimestampStore)?
 
     init() {
         @Dependency(\.dataStoreFactory) var storeFactory
-        let store = storeFactory("matool")
-        self.init(store: store, timestampStore: store as? any LocationTimestampStore)
-    }
-
-    init(store: DataStore, timestampStore: (any LocationTimestampStore)?) {
-        self.store = store
-        self.timestampStore = timestampStore
+        self.store = storeFactory("matool")
     }
 
     func get(festivalId: String, districtId: String) async throws -> FloatLocation? {
@@ -64,14 +50,12 @@ struct LocationRepository: LocationRepositoryProtocol {
     }
 
     func put(_ item: FloatLocation, festivalId: Festival.ID) async throws -> FloatLocation {
+        if let existing = try await get(festivalId: festivalId, districtId: item.districtId),
+           existing.timestamp > item.timestamp {
+            return existing
+        }
         let record = LRecord(item, festivalId: festivalId)
-        guard let timestampStore else {
-            throw LocationRepositoryError.timestampConditionalWritesUnavailable
-        }
-        guard try await timestampStore.putLocationIfNewer(record) else {
-            let keys = LRecord.makeKeys(festivalId: festivalId, districtId: item.districtId)
-            return try await timestampStore.getCurrentLocation(pk: keys.pk, sk: keys.sk) ?? item
-        }
+        try await store.put(record)
         return item
     }
 
@@ -79,10 +63,6 @@ struct LocationRepository: LocationRepositoryProtocol {
         let keys = LRecord.makeKeys(festivalId: festivalId, districtId: districtId)
         try await store.delete(pk: keys.pk, sk: keys.sk)
     }
-}
-
-enum LocationRepositoryError: Swift.Error, Equatable {
-    case timestampConditionalWritesUnavailable
 }
 
 extension LRecord {

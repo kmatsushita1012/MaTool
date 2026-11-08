@@ -42,7 +42,8 @@ struct LocationRepositoryTest {
     @Test
     func put_異常_依存エラーを透過() async {
         let dataStore = DataStoreMock(
-            putLocationIfNewerHandler: { _ in throw TestError.intentional }
+            putHandler: { _ in throw TestError.intentional },
+            queryHandler: { _, _, _, _, _, _ in try encodeForDataStore([LRecord]()) }
         )
         let subject = make(dataStore: dataStore)
 
@@ -52,27 +53,19 @@ struct LocationRepositoryTest {
     }
 
     @Test
-    func put_正常_timestamp条件付きで保存する() async throws {
+    func put_正常_既存位置がない場合は保存する() async throws {
         let location = FloatLocation.mock(id: "loc-1", districtId: "district-1")
-        let dataStore = DataStoreMock(putLocationIfNewerHandler: { _ in true })
+        let dataStore = DataStoreMock(
+            putHandler: { _ in },
+            queryHandler: { _, _, _, _, _, _ in try encodeForDataStore([LRecord]()) }
+        )
         let subject = make(dataStore: dataStore)
 
         let result = try await subject.put(location, festivalId: "festival-1")
 
         #expect(result == location)
-        #expect(dataStore.putLocationIfNewerCallCount == 1)
-    }
-
-    @Test
-    func put_条件付き書込み能力がない場合は失敗し無条件保存しない() async {
-        let dataStore = DataStoreMock()
-        let subject = LocationRepository(store: dataStore, timestampStore: nil)
-
-        await #expect(throws: LocationRepositoryError.timestampConditionalWritesUnavailable) {
-            _ = try await subject.put(.mock(id: "loc-1", districtId: "district-1"), festivalId: "festival-1")
-        }
-        #expect(dataStore.putCallCount == 0)
-        #expect(dataStore.putLocationIfNewerCallCount == 0)
+        #expect(dataStore.queryCallCount == 1)
+        #expect(dataStore.putCallCount == 1)
     }
 
     @Test
@@ -83,10 +76,9 @@ struct LocationRepositoryTest {
             coordinate: .init(latitude: 36, longitude: 140),
             timestamp: Date(timeIntervalSince1970: 200)
         )
-        let dataStore = DataStoreMock(
-            putLocationIfNewerHandler: { _ in false },
-            getHandler: { _, _ in try JSONEncoder().encode(Record(current)) }
-        )
+        let dataStore = DataStoreMock(queryHandler: { _, _, _, _, _, _ in
+            try encodeForDataStore([Record(current)])
+        })
         let subject = make(dataStore: dataStore)
 
         let result = try await subject.put(
@@ -100,8 +92,7 @@ struct LocationRepositoryTest {
         )
 
         #expect(result == current)
-        #expect(dataStore.putLocationIfNewerCallCount == 1)
-        #expect(dataStore.getCallCount == 1)
+        #expect(dataStore.queryCallCount == 1)
         #expect(dataStore.putCallCount == 0)
     }
 }

@@ -79,23 +79,15 @@ struct DistrictRouterTest {
             coordinate: .init(latitude: 35, longitude: 139),
             timestamp: Date(timeIntervalSince1970: 100)
         )
-        let newer = FloatLocation.mock(
-            id: "newest",
-            districtId: district.id,
-            coordinate: .init(latitude: 37, longitude: 141),
-            timestamp: Date(timeIntervalSince1970: 300)
-        )
         var persisted = saved
         let dataStore = DataStoreMock(
-            putLocationIfNewerHandler: { record in
-                guard record.content.timestamp > persisted.timestamp else { return false }
+            putHandler: { record in
+                guard let record = record as? LRecord else { Issue.record("Expected location record"); return }
                 persisted = record.content
-                return true
             },
-            getHandler: { keys, _ in
-                #expect((keys["pk"] as? String) == "FESTIVAL#festival-1")
-                #expect((keys["sk"] as? String) == "LOCATION#DISTRICT#district-1")
-                return try JSONEncoder().encode(Record(persisted))
+            queryHandler: { _, keyConditions, _, _, _, _ in
+                #expect(keyConditions.count == 2)
+                return try encodeForDataStore([Record(persisted)])
             }
         )
         try await withDependencies {
@@ -131,23 +123,8 @@ struct DistrictRouterTest {
                         #expect(staleResponse.statusCode == 200)
                         #expect(stalePayload == saved)
                         #expect(persisted == saved)
-                        #expect(dataStore.putLocationIfNewerCallCount == 1)
-                        #expect(dataStore.getCallCount == 1)
-
-                        var newerRequest = Application.Request.make(
-                            method: .put,
-                            path: "/districts/\(district.id)/locations",
-                            body: try newer.toString()
-                        )
-                        newerRequest.user = .district(district.id)
-                        let newerResponse = await app.handle(newerRequest)
-                        let newerPayload = try FloatLocation.from(newerResponse.body)
-
-                        #expect(newerResponse.statusCode == 200)
-                        #expect(newerPayload == newer)
-                        #expect(persisted == newer)
-                        #expect(dataStore.putLocationIfNewerCallCount == 2)
-                        #expect(dataStore.getCallCount == 1)
+                        #expect(dataStore.queryCallCount == 1)
+                        #expect(dataStore.putCallCount == 0)
                     }
                 }
             }

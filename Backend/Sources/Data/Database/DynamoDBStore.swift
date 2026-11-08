@@ -6,7 +6,6 @@
 //
 
 @preconcurrency import AWSDynamoDB
-import Shared
 
 fileprivate typealias AttributeValue = DynamoDBClientTypes.AttributeValue
 
@@ -40,36 +39,6 @@ struct DynamoDBStore: DataStore {
         let _ = try await client.putItem(input: input)
     }
 
-    func putLocationIfNewer(_ record: LRecord) async throws -> Bool {
-        let attrs = try encoder.encode(record)
-        guard case let .m(contentAttributes)? = attrs["content"],
-              let candidateTimestamp = contentAttributes["timestamp"] else {
-            throw DataStoreError.missingLocationTimestamp
-        }
-        let input = PutItemInput(
-            conditionExpression: "attribute_not_exists(#content.#timestamp) OR #content.#timestamp < :candidateTimestamp",
-            expressionAttributeNames: ["#content": "content", "#timestamp": "timestamp"],
-            expressionAttributeValues: [":candidateTimestamp": candidateTimestamp],
-            item: attrs,
-            tableName: tableName
-        )
-
-        do {
-            _ = try await client.putItem(input: input)
-            return true
-        } catch is AWSDynamoDB.ConditionalCheckFailedException {
-            return false
-        }
-    }
-
-    func getCurrentLocation(pk: String, sk: String) async throws -> FloatLocation? {
-        let key = try ["pk": pk, "sk": sk].toExpression()
-        let input = GetItemInput(consistentRead: true, key: key, tableName: tableName)
-        let output = try await client.getItem(input: input)
-        guard let item = output.item else { return nil }
-        return try decoder.decode(item, as: LRecord.self).content
-    }
-    
     // MARK: get
     func get<T: RecordProtocol>(keys: [String: Codable], as type: T.Type) async throws -> T? {
         let key = try keys.toExpression()
@@ -190,11 +159,6 @@ struct DynamoDBStore: DataStore {
         return store
     }
 }
-
-private enum DataStoreError: Swift.Error {
-    case missingLocationTimestamp
-}
-
 
 // MARK: - QueryCondition +
 fileprivate extension QueryCondition {
