@@ -35,6 +35,8 @@ jobs:
             backend:
               - '.github/workflows/dispatch_pull_request.yml'
               - '.github/workflows/job_test_backend.yml'
+              - '.github/workflows/job_deploy_backend.yml'
+              - 'Backend/Dockerfile'
               - 'Backend/Sources/**'
               - 'Backend/Tests/**'
               - 'Backend/Package.swift'
