@@ -342,7 +342,15 @@ struct RootFeature {
                  .destination(.presented(.adminDistrict(.destination(.presented(.settings(let settingsAction)))))),
                  .destination(.presented(.adminFestival(.destination(.presented(.settings(let settingsAction)))))):
                 switch settingsAction {
-                case .destination(.presented(.advertiserAuth(.received(.success(.signedIn(let userRole)))))):
+                case .destination(.presented(.advertiserAuth(let advertiserAuthAction))):
+                    let userRole: UserRole
+                    switch advertiserAuthAction {
+                    case .received(.success(let role)),
+                         .destination(.presented(.signUp(.received(.success(.signedIn(let role)))))):
+                        userRole = role
+                    default:
+                        return .none
+                    }
                     guard activateAdvertiserSession(state: &state, userRole: userRole) else {
                         state.alert = .error("広告主としてログインできませんでした")
                         return .none

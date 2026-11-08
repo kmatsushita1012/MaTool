@@ -3,14 +3,19 @@ import Shared
 
 @Reducer
 struct AdvertiserAuthFeature {
+    @Reducer
+    enum Destination {
+        case signUp(AdvertiserSignUpFeature)
+        case resetPassword(ResetPasswordFeature)
+    }
+
     @ObservableState
     struct State: Equatable {
         var email = ""
         var password = ""
-        var confirmationCode = ""
-        var isAwaitingConfirmation = false
         var isLoading = false
         var errorMessage: String?
+        @Presents var destination: Destination.State?
     }
 
     @CasePathable
@@ -18,8 +23,9 @@ struct AdvertiserAuthFeature {
         case binding(BindingAction<State>)
         case signInTapped
         case signUpTapped
-        case confirmationTapped
-        case received(AppResult<AdvertiserAuthResult>)
+        case resetPasswordTapped
+        case received(AppResult<UserRole>)
+        case destination(PresentationAction<Destination.Action>)
     }
 
     @Dependency(\.advertiserAuthUsecase) private var advertiserAuthUsecase
@@ -39,46 +45,20 @@ struct AdvertiserAuthFeature {
                 let email = state.email
                 let password = state.password
                 return .task(Action.received) {
-                    .signedIn(try await advertiserAuthUsecase.signIn(email: email, password: password))
+                    try await advertiserAuthUsecase.signIn(email: email, password: password)
                 }
 
             case .signUpTapped:
-                guard !state.isLoading else { return .none }
-                state.isLoading = true
-                state.errorMessage = nil
-                let email = state.email
-                let password = state.password
-                return .task(Action.received) {
-                    switch try await advertiserAuthUsecase.signUp(email: email, password: password) {
-                    case .confirmationRequired:
-                        .confirmationRequired
-                    case .signedIn(let role):
-                        .signedIn(role)
-                    }
-                }
-
-            case .confirmationTapped:
-                guard !state.isLoading else { return .none }
-                state.isLoading = true
-                state.errorMessage = nil
-                let email = state.email
-                let password = state.password
-                let code = state.confirmationCode
-                return .task(Action.received) {
-                    .signedIn(try await advertiserAuthUsecase.confirmSignUp(
-                        email: email,
-                        password: password,
-                        code: code
-                    ))
-                }
-
-            case .received(.success(.confirmationRequired)):
-                state.isLoading = false
-                state.isAwaitingConfirmation = true
+                state.destination = .signUp(AdvertiserSignUpFeature.State())
                 return .none
 
-            case .received(.success(.signedIn)):
+            case .resetPasswordTapped:
+                state.destination = .resetPassword(ResetPasswordFeature.State(username: state.email))
+                return .none
+
+            case .received(.success):
                 state.isLoading = false
+                state.errorMessage = nil
                 return .none
 
             case .received(.failure(let error)):
@@ -86,8 +66,15 @@ struct AdvertiserAuthFeature {
                 state.errorMessage = error.message
                 return .none
 
+            case .destination(.presented(.resetPassword(.confirmResetReceived(.success)))):
+                state.destination = nil
+                return .none
+
+            case .destination:
+                return .none
             }
         }
+        .ifLet(\.$destination, action: \.destination)
     }
 }
 
@@ -95,3 +82,6 @@ enum AdvertiserAuthResult: Equatable {
     case confirmationRequired
     case signedIn(UserRole)
 }
+
+extension AdvertiserAuthFeature.Destination.State: Equatable {}
+extension AdvertiserAuthFeature.Destination.Action: Equatable {}
