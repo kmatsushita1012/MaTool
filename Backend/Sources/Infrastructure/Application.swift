@@ -44,6 +44,7 @@ final class Application: @unchecked Sendable {
         case internalServerError(String?)
         case unauthorized(String?)
         case conflict(String?)
+        case tooManyRequests(String?)
         case encodingError(String?)
         case decodingError(String?)
     }
