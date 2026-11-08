@@ -227,11 +227,11 @@ Controller は decode / parameter / user / Usecase / encode のみ。使用す�
 `type=store` は広告主自身の Store（所有参照から強整合読取）、`type=festival` は対象本部管理者、`type=district` は対象町管理者のみ許可。`variant` は store では banner/interstitial、festival/district では light/dark のみ。ID/variant の改ざんや存在しない対象は署名しない。`ImageUploadURLResponse` は共通の `url/path/expiresAt`。
 
 ```text
-temporary/stores/{storeId}/banner.jpg
-temporary/stores/{storeId}/interstitial.jpg
+temporary/festivals/{festivalId}/stores/{storeId}/banner.jpg
+temporary/festivals/{festivalId}/stores/{storeId}/interstitial.jpg
 
-stores/{storeId}/banner.jpg
-stores/{storeId}/interstitial.jpg
+festivals/{festivalId}/stores/{storeId}/banner.jpg
+festivals/{festivalId}/stores/{storeId}/interstitial.jpg
 ```
 
 1. **共通の `POST /images/upload-url`** は `ImageUploadURLRequest` の `target: { type: "store", id: storeId, variant: "banner" | "interstitial" }` と `contentType: "image/jpeg"` を受ける。`ImageUploadUsecase` が Store 所有者の Cognito sub を検証して固定一時キーへ直接 PUT できる短寿命署名 URL とそのキーを返す。**Festival / District の light/dark も同じ1つの POST** を使用し、本部／町の認可を分岐する（[紹介画像の設計書](../20261031_festival_district_images/spec.md)）。
@@ -242,7 +242,7 @@ stores/{storeId}/interstitial.jpg
 
 | 画像フィールド | 意味 |
 | --- | --- |
-| `temporary/stores/{storeId}/{kind}.jpg` | 画像を正式配置へコピー |
+| `temporary/festivals/{festivalId}/stores/{storeId}/{kind}.jpg` | 画像を正式配置へコピー |
 | DB に保存済みの現在の正式公開 URL（`?v=` 付き） | URL が現在値と完全一致する場合は画像維持（コピー不要） |
 | JSON `null` | DB から画像参照を解除（即時 S3 削除なし） |
 | 他の文字列 | 400。特に他人の Store パスを拒否 |

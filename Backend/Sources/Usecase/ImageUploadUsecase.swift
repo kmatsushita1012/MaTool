@@ -19,7 +19,12 @@ struct ImageUploadUsecase: ImageUploadUsecaseProtocol {
         guard request.contentType == "image/jpeg" else { throw Error.badRequest("JPEGのみアップロードできます。") }
         let target = request.target
         // Validate the type and variant before looking up the target.
-        if target.type != .district { _ = try ImageObjectKey(target: target) }
+        if target.type == .festival { _ = try ImageObjectKey(target: target) }
+        if target.type == .store {
+            guard (target.variant == .banner || target.variant == .interstitial), !target.id.isEmpty else {
+                throw Error.badRequest("画像の対象と種類が一致しません。")
+            }
+        }
         let key: ImageObjectKey
         switch target.type {
         case .festival:
@@ -42,7 +47,7 @@ struct ImageUploadUsecase: ImageUploadUsecaseProtocol {
                 throw Error.notFound("指定された店舗が見つかりません。")
             }
             guard store.moderationStatus == .approved else { throw Error.forbidden() }
-            key = try ImageObjectKey(target: target)
+            key = try ImageObjectKey(target: target, festivalId: store.festivalId)
         }
         let result = try await images.presign(key: key.temporary)
         return .init(url: result.url.absoluteString, path: key.temporary, expiresAt: result.expiresAt)
