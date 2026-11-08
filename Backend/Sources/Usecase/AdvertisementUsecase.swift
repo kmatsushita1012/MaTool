@@ -12,6 +12,7 @@ protocol AdvertisementUsecaseProtocol: Sendable {
 }
 
 struct AdvertisementUsecase: AdvertisementUsecaseProtocol {
+    @Dependency(\.advertisingEnvironment) var advertisingEnvironment
     @Dependency(StoreRepositoryKey.self) var stores
     @Dependency(CreditRepositoryKey.self) var credits
     @Dependency(FestivalRepositoryKey.self) var festivals
@@ -43,7 +44,7 @@ struct AdvertisementUsecase: AdvertisementUsecaseProtocol {
             placement: placement,
             expiresAt: now.addingTimeInterval(120)
         )
-        let token = try ImpressionToken().sign(payload)
+        let token = try ImpressionToken(secret: advertisingEnvironment.impressionTokenSecret).sign(payload)
         return AdCandidate(
             storeId: selected.id,
             festivalId: selected.festivalId,

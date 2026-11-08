@@ -4,8 +4,8 @@ public struct PublicStore: DTO, Identifiable {
     public let id: Store.ID
     public let festivalId: Festival.ID
     public let name: String
-    public let address: String
-    public let coordinate: Coordinate
+    @NullEncodable public var address: String?
+    @NullEncodable public var coordinate: Coordinate?
     public let businessHours: String
     @NullEncodable public var description: String?
     @NullEncodable public var bannerImagePath: String?

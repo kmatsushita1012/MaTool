@@ -86,7 +86,7 @@ Shared に置く共通型を使用し、Backend 独自の同一 Entity を増や
 
 | Entity | 主要フィールド | 正本 |
 | --- | --- | --- |
-| `Store` | id、festivalId、ownerId、purchaseAccountToken(UUID)、name、address、coordinate、businessHours、description、bannerImagePath、interstitialImagePath、ownerPaused、moderationStatus、createdAt、updatedAt | DynamoDB |
+| `Store` | id、festivalId、ownerId、purchaseAccountToken(UUID)、name、address?、coordinate?、businessHours、description、bannerImagePath、interstitialImagePath、ownerPaused、moderationStatus、createdAt、updatedAt | DynamoDB。住所・座標なしで保存可能 |
 | `CreditAccount` | storeId、balance、lastPurchasedAt | DynamoDB |
 | `PurchaseRecord` | transactionId、storeId?、appAccountToken?、productId、creditedAmount、purchasedAt、environment、**creditGranted**、**refundStatus**、**refundDeductedCredits**、**lastRefundEventSignedDate**、refundedAt など | DynamoDB。付与済み・返金済み・未付与の正本。`storeId` の省略は返金先着の未付与レコードに限定 |
 | **StorePurchaseReference（検索用 Record）** | storeId、transactionId、productId、creditedAmount、purchasedAt | 店舗別購入履歴の Query 専用参照。**独立したドメイン Entity ではない**。Credit を付与した取引だけを作成し、`PurchaseHistoryItem` に変換 |
@@ -108,7 +108,7 @@ Store 作成時に Backend が **店舗単位の購入用 purchaseAccountToken �
 | `ImpressionReportRequest` | impressionId と署名 token |
 | `AdvertisementReportRequest` | Store の通報 |
 
-管理用 Store GET/PUT は `Store`、残高 GET は `CreditAccount` をそのまま返す。別の画像確定 DTO は作らない。PUT の両画像パスは **JSON キー必須、nil は `@NullEncodable` 等で JSON null、省略は400**。
+管理用 Store GET/PUT は `Store`、残高 GET は `CreditAccount` をそのまま返す。別の画像確定 DTO は作らない。`NullEncodable` のキー省略は nil として復元し、保存時は NULL とする。Store の address / coordinate も同じ扱いとする。
 
 ## 4. DynamoDB
 
@@ -434,7 +434,7 @@ scripts/moderate-store                    [追加案: IAM権限の運営停止�
 | Store 読取 | 作成直後の所有 Store GET・画像 URL 発行・所有一覧で **GSI を使わず ConsistentRead**。User Reference → Festival Store の直接 Get、認証 sub と Store.ownerId の一致・別人の Store 拒否 |
 | 購入履歴 | 同じ Store の複数購入を SK `PURCHASE#{purchasedAtUTC}#{transactionId}` で Query。順序・同時刻の重複・他 Store 混入・未付与返金マーカーが履歴にならないこと・トランザクション失敗で参照だけ残らないこと |
 | Store PUT | ID / festivalId / ownerId / purchaseAccountToken / moderationStatus / createdAt の不一致 400、他人の Store 403。**UpdateItem は編集可能なネスト属性のみ SET**、updatedAt は Backend が設定、ReturnValues ALL_NEW は現在の運営状態を返す。**広告主が approved を読取 → 運営が suspended → 広告主の PUT 完了でも suspended のまま**。管理フィールドを変更する UpdateExpression が生成されないこと |
-| Store PUT | 固定一時／正式／明示 null、画像フィールド省略400 |
+| Store PUT | 固定一時／正式／明示 null／nullableキー省略時の nil 復元 |
 | S3 | 共通署名 API で Store/Festival/District 別の正しい認可とキーを検証。不正な type/variant・他店舗/別町パス拒否、MIME 偽装の非 JPEG・壊れた JPEG・画素数/容量上限超過の拒否、コピー失敗時の DB 未保存、一時画像の整理。公開 GET と CDN の版別 URL から差し替え画像を取得できる結合検証 |
 | IAP | 署名不正、別 Bundle/Environment/Product、別 Store appAccountToken、二重付与なし。Apple で返金後に保存済み購入 JWS を再送しても Get Transaction Info の現在状態で拒否し、API 障害時は付与しない |
 | **返金・返金取消** | 未使用500 Credit返金で残高0、使用後は `min(購入 Credit, 残高)`、複数購入・他購入分の残高、REFUND_REVERSEDで実減算額だけ復元、同一通知・古いsignedDateを再適用しない、返金とImpressionの競合時にも負残高なし、未付与REFUND先着→後日Claim拒否、未付与の取消→Claimで一度だけ付与。**REFUND_REVERSED(T2)→REFUND(T1<T2) は (a) 付与済みactive、(b) PurchaseRecord未作成の両方で最新時刻を保持し、古い REFUND を無視**。署名不正、DBエラー時5xx・処理済み200、通知履歴からの再処理 |

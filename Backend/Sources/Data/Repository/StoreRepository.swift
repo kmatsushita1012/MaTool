@@ -115,8 +115,8 @@ struct StoreRepository: StoreRepositoryProtocol {
         let values: [String: DynamoDBAttribute] = [
             ":ownerId": try encoder.encodeValue(item.ownerId),
             ":name": try encoder.encodeValue(item.name),
-            ":address": try encoder.encodeValue(item.address),
-            ":coordinate": try encoder.encodeValue(item.coordinate),
+            ":address": try optionalValue(item.address),
+            ":coordinate": try optionalValue(item.coordinate),
             ":businessHours": try encoder.encodeValue(item.businessHours),
             ":description": try optionalValue(item.description),
             ":ownerPaused": try encoder.encodeValue(item.ownerPaused),

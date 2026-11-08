@@ -39,6 +39,10 @@ actor StoreRepositorySpy: StoreRepositoryProtocol {
         storedStore = store
         return store
     }
+
+    func snapshot() -> Store? {
+        storedStore
+    }
 }
 
 actor CreditRepositorySpy: CreditRepositoryProtocol {

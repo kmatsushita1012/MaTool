@@ -93,7 +93,7 @@ Store.ownerId は Backend が認証結果から設定し、クライアントの
 
 | Entity | フィールド（型の例） | 責務・公開範囲 |
 | --- | --- | --- |
-| **Store** | id: String、festivalId: Festival.ID、ownerId: String、**purchaseAccountToken: UUID**、name: String、address: String、coordinate: Coordinate、businessHours: String、description: String?、bannerImagePath: String?、interstitialImagePath: String?、ownerPaused: Bool、moderationStatus: ModerationStatus、createdAt: Date、updatedAt: Date | 1店舗の情報と2種類の広告画像。所有者向け管理 API ではフル Entity。年をまたいで維持 |
+| **Store** | id: String、festivalId: Festival.ID、ownerId: String、**purchaseAccountToken: UUID**、name: String、address: String?、coordinate: Coordinate?、businessHours: String、description: String?、bannerImagePath: String?、interstitialImagePath: String?、ownerPaused: Bool、moderationStatus: ModerationStatus、createdAt: Date、updatedAt: Date | 住所・座標が未設定でも登録可能な店舗情報と2種類の広告画像。所有者向け管理 API ではフル Entity。年をまたいで維持 |
 | **CreditAccount** | storeId: Store.ID、balance: Int、lastPurchasedAt: Date? | 店舗単位の共通 Credit。所有者のみ |
 | **PurchaseRecord** | transactionId: String、storeId: Store.ID、appAccountToken: UUID、productId: String、creditedAmount: Int、purchasedAt: Date、environment: String、revocationStatus: String? | Apple 取引の店舗横断で一意な購入・付与台帳。内部のみ |
 | **ImpressionRecord** | impressionId: String、storeId: Store.ID、placement: StoreAdPlacement、chargedAmount: Int、chargedAt: Date | 表示実績・重複減算防止。内部のみ |
@@ -105,7 +105,7 @@ Store 作成時に Backend が **店舗につき1つの購入用 `purchaseAccoun
 
 | DTO | フィールド（型の例） | 用途・公開条件 |
 | --- | --- | --- |
-| **PublicStore** | id、festivalId、name、address、coordinate、businessHours、description、bannerImagePath: String?、interstitialImagePath: String?、**updatedAt: Date** | `GET /festivals/:festivalId/stores`、地図と店舗詳細。広告主停止なら画像パスを null、運営が店舗を非公開にしたら店舗自体を除外。内部情報は含めない |
+| **PublicStore** | id、festivalId、name、address: String?、coordinate: Coordinate?、businessHours、description、bannerImagePath: String?、interstitialImagePath: String?、**updatedAt: Date** | `GET /festivals/:festivalId/stores`、地図と店舗詳細。住所・座標が未設定でも一覧に含める。広告主停止なら画像パスを null、運営が店舗を非公開にしたら店舗自体を除外。内部情報は含めない |
 | **AdCandidate** | storeId、festivalId、placement: StoreAdPlacement、imagePath: String、**updatedAt: Date**、impressionId、impressionToken | 広告配信 API。配信可能な画像の正式パスと短命の表示 token のみ |
 
 公開 DTO は画像の一時パス、ownerId、Credit、運営停止の理由、購入台帳を含めない。画像更新時のキャッシュ用バージョンは **Store.updatedAt** を流用し、画像ごとの世代を保存しない。停止後の新規公開レスポンスからは画像を除く。既に取得された画像 URL・キャッシュの残存は配信基盤の期限に依存する。
@@ -114,7 +114,7 @@ Store 作成時に Backend が **店舗につき1つの購入用 `purchaseAccoun
 
 | DTO | フィールド（型の例） | 対応 API・アクセス |
 | --- | --- | --- |
-| **StoreCreateRequest** | name、address、coordinate、businessHours、description? | 店舗作成。id / ownerId / purchaseAccountToken は Backend が採番。広告主のみ |
+| **StoreCreateRequest** | name、address: String?、coordinate: Coordinate?、businessHours、description? | 店舗作成。住所・座標は任意。id / ownerId / purchaseAccountToken は Backend が採番。広告主のみ |
 | **ImageUploadURLRequest** | target: ImageUploadTarget（type/id/variant）、contentType: String | 1つの共通 URL 発行 API。広告 Store は `type=store`・`variant=banner/interstitial` を指定し、店舗所有者だけが許可。Festival / District の `light/dark` とも共通化 |
 | **ImageUploadURLResponse** | url: String、path: String、expiresAt: Date | 固定一時パスと S3 PUT 署名 URL。target に応じた認可を経たユーザーのみ |
 | **PurchaseClaimRequest** | signedTransactionInfo: String | Apple の署名済み取引を検証。店舗所有者のみ |
@@ -123,7 +123,7 @@ Store 作成時に Backend が **店舗につき1つの購入用 `purchaseAccoun
 | **ImpressionReportRequest** | impressionId、impressionToken | 表示報告。一般クライアントから送信 |
 | **AdvertisementReportRequest** | storeId、placement: StoreAdPlacement?、reason | 広告通報。一般クライアントから送信 |
 
-Store PUT は Store Entity 全体を送受信する。画像2フィールドは **必ず JSON キーを含める**。Swift の既存 `@NullEncodable` 等で `nil` を JSON `null` にし、欠落キーは Backend で 400 とする。別途の画像確定・削除 DTO は作らない。
+Store PUT は Store Entity 全体を送受信する。`@NullEncodable` フィールドはキーが欠落していても `nil` として読み、保存時は DynamoDB の NULL、JSON 応答では `null` として保持する。住所・座標も nullable とし、どちらか、または両方がなくても店舗を登録・更新・公開できる。別途の画像確定・削除 DTO は作らない。
 
 ### 5.4 補助型と検索用参照（追加 Entity は不要）
 

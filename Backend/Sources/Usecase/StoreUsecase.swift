@@ -40,7 +40,7 @@ struct StoreUsecase: StoreUsecaseProtocol {
             ownerId: ownerId,
             purchaseAccountToken: UUID(),
             name: request.name.trimmingCharacters(in: .whitespacesAndNewlines),
-            address: request.address.trimmingCharacters(in: .whitespacesAndNewlines),
+            address: trimmedOptional(request.address),
             coordinate: request.coordinate,
             businessHours: request.businessHours.trimmingCharacters(in: .whitespacesAndNewlines),
             description: trimmedOptional(request.description),
@@ -100,7 +100,7 @@ struct StoreUsecase: StoreUsecaseProtocol {
             ownerId: current.ownerId,
             purchaseAccountToken: current.purchaseAccountToken,
             name: request.name.trimmingCharacters(in: .whitespacesAndNewlines),
-            address: request.address.trimmingCharacters(in: .whitespacesAndNewlines),
+            address: trimmedOptional(request.address),
             coordinate: request.coordinate,
             businessHours: request.businessHours.trimmingCharacters(in: .whitespacesAndNewlines),
             description: trimmedOptional(request.description),
@@ -132,15 +132,15 @@ struct StoreUsecase: StoreUsecaseProtocol {
         }
     }
 
-    private func validate(name: String, address: String, businessHours: String, description: String?, coordinate: Coordinate) throws {
+    private func validate(name: String, address: String?, businessHours: String, description: String?, coordinate: Coordinate?) throws {
         let name = name.trimmingCharacters(in: .whitespacesAndNewlines)
-        let address = address.trimmingCharacters(in: .whitespacesAndNewlines)
+        let address = address?.trimmingCharacters(in: .whitespacesAndNewlines)
         let hours = businessHours.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !name.isEmpty, name.count <= 120,
-              !address.isEmpty, address.count <= 300,
+              address.map({ !$0.isEmpty && $0.count <= 300 }) ?? true,
               hours.count <= 300,
               (description?.count ?? 0) <= 2_000,
-              (-90...90).contains(coordinate.latitude), (-180...180).contains(coordinate.longitude) else {
+              coordinate.map({ (-90...90).contains($0.latitude) && (-180...180).contains($0.longitude) }) ?? true else {
             throw Error.badRequest("店舗情報が不正です。")
         }
     }
