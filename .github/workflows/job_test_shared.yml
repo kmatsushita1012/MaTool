@@ -23,7 +23,14 @@ jobs:
         run: swift package resolve
         working-directory: Shared
 
+      - name: Install Python for Test Summary
+        run: |
+          apt-get update
+          apt-get install -y --no-install-recommends python3
+          rm -rf /var/lib/apt/lists/*
+
       - name: Build & Test
+        id: test
         run: |
           set -o pipefail
           mkdir -p build/reports
@@ -31,6 +38,7 @@ jobs:
             --package-path Shared \
             --filter '^SharedTests\.' \
             --enable-code-coverage \
+            --xunit-output="$(pwd)/build/reports/shared-test-results.xml" \
             | tee build/reports/shared-test.log
 
       - name: Upload Test Results
@@ -43,9 +51,10 @@ jobs:
       - name: Print Test Summary
         if: always()
         run: |
-          echo "===== Shared Swift Package Test Summary ====="
-          if [ -f build/reports/shared-test.log ]; then
-            tail -n 80 build/reports/shared-test.log
-          else
-            echo "Shared test log was not created."
-          fi
+          python3 .github/scripts/print_test_summary.py \
+            --xunit "$(pwd)/build/reports/shared-test-results.xml" \
+            --title Shared \
+            --platform Linux \
+            --device "GitHub Actions Runner" \
+            --os-version "Ubuntu 24.04 / Swift 6.3.3" \
+            --test-outcome "${{ steps.test.outcome }}"
