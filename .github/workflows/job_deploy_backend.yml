@@ -24,17 +24,25 @@ jobs:
       - name: Setup Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Build Lambda image (cached)
+      - name: Warm/cache Backend dependencies
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: Backend/Dockerfile
+          target: dependencies
+          # mainが作った依存レイヤーをbackend/*のデプロイでも再利用する。
+          # ビルドのたびに変わるBackend本体をキャッシュへ保存しない。
+          cache-from: type=gha,scope=matool-backend-dependencies-v1
+          cache-to: ${{ github.ref == 'refs/heads/main' && 'type=gha,scope=matool-backend-dependencies-v1,mode=max' || '' }}
+
+      - name: Build Lambda image
         uses: docker/build-push-action@v6
         with:
           context: .
           file: Backend/Dockerfile
           load: true
           tags: matoolapi:latest
-          # mainが作ったキャッシュをbackend/*のデプロイでも再利用する。
-          # ブランチごとの大容量キャッシュ複製は避ける。
-          cache-from: type=gha,scope=matool-backend-release-v1
-          cache-to: ${{ github.ref == 'refs/heads/main' && 'type=gha,scope=matool-backend-release-v1,mode=max' || '' }}
+          # 同じBuildx builder上で前段の依存ビルドキャッシュを再利用する。
 
       - name: Extract Lambda package
         run: |
