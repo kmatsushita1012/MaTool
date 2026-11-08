@@ -24,22 +24,6 @@ jobs:
         run: |
           echo "$AMPLIFYCONFIGURATION_JSON_B64" | base64 --decode > iOSApp/amplifyconfiguration.json
 
-      - name: Cache SPM checkouts
-        uses: actions/cache@v4
-        with:
-          path: iOSApp/.sourcePackages
-          key: ${{ runner.os }}-spm-iOSApp-xcode26.6-${{ hashFiles('MaTool.xcworkspace/xcshareddata/swiftpm/Package.resolved', 'iOSApp/MaTool.xcodeproj/project.pbxproj', 'Shared/Package.swift') }}
-          restore-keys: |
-            ${{ runner.os }}-spm-iOSApp-xcode26.6-
-
-      - name: Cache Release build artifacts
-        uses: actions/cache@v4
-        with:
-          path: iOSApp/.derivedData/Build
-          key: ${{ runner.os }}-derived-iOSApp-xcode26.6-release-${{ hashFiles('MaTool.xcworkspace/xcshareddata/swiftpm/Package.resolved', 'iOSApp/MaTool.xcodeproj/project.pbxproj', 'Shared/Package.swift') }}
-          restore-keys: |
-            ${{ runner.os }}-derived-iOSApp-xcode26.6-release-
-
       - name: Create iOS config files
         env:
           MATOOL_API_BASE_URL: ${{ secrets.MATOOL_API_BASE_URL }}
@@ -67,7 +51,6 @@ jobs:
             -configuration Release \
             -destination 'generic/platform=iOS' \
             -derivedDataPath iOSApp/.derivedData \
-            -clonedSourcePackagesDirPath iOSApp/.sourcePackages \
             -skipMacroValidation \
             -skipPackagePluginValidation \
             CURRENT_PROJECT_VERSION="$IOS_BUILD_NUMBER" \
