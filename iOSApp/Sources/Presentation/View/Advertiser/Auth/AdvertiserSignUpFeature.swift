@@ -7,6 +7,7 @@ struct AdvertiserSignUpFeature {
     struct State: Equatable {
         var email = ""
         var password = ""
+        var passwordConfirmation = ""
         var confirmationCode = ""
         var isAwaitingConfirmation = false
         var isLoading = false
@@ -33,6 +34,10 @@ struct AdvertiserSignUpFeature {
 
             case .signUpTapped:
                 guard !state.isLoading else { return .none }
+                guard state.password == state.passwordConfirmation else {
+                    state.errorMessage = "パスワードが一致しません"
+                    return .none
+                }
                 state.isLoading = true
                 state.errorMessage = nil
                 let email = state.email
@@ -64,6 +69,7 @@ struct AdvertiserSignUpFeature {
             case .received(.success(.confirmationRequired)):
                 state.isLoading = false
                 state.isAwaitingConfirmation = true
+                state.passwordConfirmation = ""
                 return .none
 
             case .received(.success(.signedIn)):

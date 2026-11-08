@@ -10,6 +10,7 @@ struct AdvertiserSignUpScreen: View {
             AdvertiserSignUpContentView(
                 email: $store.email,
                 password: $store.password,
+                passwordConfirmation: $store.passwordConfirmation,
                 confirmationCode: $store.confirmationCode,
                 isAwaitingConfirmation: store.isAwaitingConfirmation,
                 isLoading: store.isLoading,
@@ -25,6 +26,7 @@ struct AdvertiserSignUpScreen: View {
 struct AdvertiserSignUpContentView: View {
     @Binding var email: String
     @Binding var password: String
+    @Binding var passwordConfirmation: String
     @Binding var confirmationCode: String
     let isAwaitingConfirmation: Bool
     let isLoading: Bool
@@ -37,6 +39,7 @@ struct AdvertiserSignUpContentView: View {
     private enum Field: Hashable {
         case email
         case password
+        case passwordConfirmation
         case confirmationCode
     }
 
@@ -75,13 +78,20 @@ struct AdvertiserSignUpContentView: View {
                     equals: .password
                 )
 
+                PasswordTextField(
+                    "パスワード（確認用）",
+                    text: $passwordConfirmation,
+                    focusedField: $focusedField,
+                    equals: .passwordConfirmation
+                )
+
                 Button("アカウントを作成") {
                     onSignUpTapped()
                     focusedField = nil
                 }
                 .buttonStyle(PrimaryButtonStyle())
                 .loadingIndicator(isLoading: isLoading)
-                .disabled(isLoading || email.isEmpty || password.isEmpty)
+                .disabled(isLoading || email.isEmpty || password.isEmpty || passwordConfirmation.isEmpty)
             }
 
             Text(errorMessage ?? " ")
@@ -99,6 +109,7 @@ struct AdvertiserSignUpContentView: View {
         AdvertiserSignUpContentView(
             email: .constant(""),
             password: .constant(""),
+            passwordConfirmation: .constant(""),
             confirmationCode: .constant(""),
             isAwaitingConfirmation: false,
             isLoading: false,
