@@ -74,6 +74,41 @@ actor SelectFestivalDataFetcherSpy: SceneDataFetcherProtocol {
     }
 }
 
+actor SignOutSceneDataFetcherSpy: SceneDataFetcherProtocol {
+    private let festivalPack: LaunchFestivalPack
+    private let districtPack: LaunchDistrictPack
+    private let failsDistrictLaunch: Bool
+    private(set) var requests: [String] = []
+
+    init(
+        festivalPack: LaunchFestivalPack,
+        districtPack: LaunchDistrictPack,
+        failsDistrictLaunch: Bool = false
+    ) {
+        self.festivalPack = festivalPack
+        self.districtPack = districtPack
+        self.failsDistrictLaunch = failsDistrictLaunch
+    }
+
+    func launchFestival(festivalId: Festival.ID) async throws -> LaunchFestivalPack {
+        requests.append("festival:\(festivalId)")
+        return festivalPack
+    }
+
+    func launchFestival(districtId: District.ID) async throws -> LaunchFestivalPack {
+        requests.append("festivalFromDistrict:\(districtId)")
+        return festivalPack
+    }
+
+    func launchDistrict(districtId: District.ID, periodId: Period.ID?) async throws -> LaunchDistrictPack {
+        requests.append("district:\(districtId):period:\(periodId ?? "nil")")
+        if failsDistrictLaunch {
+            throw AppError.be(.network("offline"))
+        }
+        return districtPack
+    }
+}
+
 actor SignInSignOutSpy {
     private var calls = 0
 

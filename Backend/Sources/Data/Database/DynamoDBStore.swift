@@ -38,14 +38,11 @@ struct DynamoDBStore: DataStore {
         let input = PutItemInput(item: attrs, tableName: tableName)
         let _ = try await client.putItem(input: input)
     }
-    
+
     // MARK: get
     func get<T: RecordProtocol>(keys: [String: Codable], as type: T.Type) async throws -> T? {
         let key = try keys.toExpression()
-        let input = GetItemInput(
-            key: key,
-            tableName: tableName
-        )
+        let input = GetItemInput(key: key, tableName: tableName)
         
         let output = try await client.getItem(input: input)
         guard let item = output.item else { return nil }
@@ -162,7 +159,6 @@ struct DynamoDBStore: DataStore {
         return store
     }
 }
-
 
 // MARK: - QueryCondition +
 fileprivate extension QueryCondition {
