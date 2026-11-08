@@ -163,7 +163,7 @@ actor LaunchSceneUseCaseSpy: LaunchSceneUseCaseProtocol {
 actor SignOutUseCaseSpy: SignOutUseCaseProtocol {
     private(set) var calls = 0
 
-    func callAsFunction() async throws {
+    func callAsFunction(appState: Shared<AppState?>) async throws -> LaunchState {
         calls += 1
         Issue.record("Unexpected SignOutUseCaseSpy call")
         throw SpyInvocationError.unexpected("SignOutUseCase")

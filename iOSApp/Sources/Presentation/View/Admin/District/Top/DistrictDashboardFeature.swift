@@ -81,7 +81,7 @@ struct DistrictDashboardFeature {
         case exportReceived(AppResult<URL>)
         case destination(PresentationAction<Destination.Action>)
         case signOutTapped
-        case signOutReceived(VoidAppResult)
+        case signOutReceived(AppResult<LaunchState>)
         case dismissTapped
         case alert(PresentationAction<AlertFeature.Action>)
     }
@@ -226,15 +226,16 @@ struct DistrictDashboardFeature {
                 return .none
             case .signOutTapped:
                 state.isAWSLoading = true
+                let appState = state.$appState
                 return .task(Action.signOutReceived) {
-                    try await signOutUseCase()
+                    try await signOutUseCase(appState: appState)
                 }
                 .cancellable(id: SceneSessionCancellationID.active, cancelInFlight: true)
             case .signOutReceived(.failure(let error)):
                 state.isAWSLoading = false
                 state.alert = .error("ログアウトに失敗しました。 \(error.message)")
                 return .none
-            case .signOutReceived(.success):
+            case .signOutReceived(.success(_)):
                 state.isAWSLoading = false
                 return .none
             case .dismissTapped:

@@ -152,7 +152,12 @@ HTTP 応答をクライアントが受け取れなかった場合、**iOS は PO
 | Bearer なし | `.guest` | なし |
 | 不明・権限不正 | 401 | — |
 
-広告主は自由サインアップ・メール確認。Cognito の App Client が `custom:role = region/district` を書き換えられない構成を必須とする。広告主の role 付与は、Cognito 設定を確認して「role なし通常ユーザーを advertiser と解釈」か Cognito 側で固定付与を選択する。**GetUserOutput.username を広告主 ID に流用しない**。
+**決定：広告主登録は Backend 経由。** iOS から Cognito を直接 SignUp させず、未認証の `POST /advertisers/signup` → Backend 専用 Cognito App Client による `SignUp`（`custom:role=advertiser` をサーバー固定）→ メール確認 → 未認証の `POST /advertisers/confirm-signup` → Cognito `ConfirmSignUp` とする。iOS は**メール確認完了後のみ**既存の Amplify `SignIn` を行う。
+
+- **登録 API は role・sub・ownerId をリクエストから受け取らない**。ユーザー入力は email と password。Role は Backend 固定。Backend 専用 App Client では `custom:role` 属性の書込みを許可し、Client Secret と `SECRET_HASH` は Backend の Secret／環境設定のみで扱い、**iOS の通常 App Client は custom:role 読み取りのみ（書込み禁止）**。
+- Cognito User Pool を既存管理者と共用。region／district の既存 AdminCreateUser 経路は維持し、広告主の SignUp／ConfirmSignUp と混ぜない。専用クライアントの ClientId・Secret はデプロイ設定として追加し、App Client のサインアップ・メール検証・属性権限をインフラで確認する。
+- `CognitoAuthManager.parseUserRole` は**role=advertiser かつ email_verified=true かつ sub が存在する場合のみ** `.advertiser(sub)` を返す。**role=nil を advertiser と扱う既存のフォールバックは削除**（既存 role 未設定アカウントの移行は別途判断）。`GetUserOutput.username` を広告主 ID に使わない。
+- 登録エンドポイントは未認証のため API Gateway レート制限を設定。重複登録、期限切れコード、確認コード誤り・再送、途中通信失敗を扱い、パスワードと確認コードをログに出さない。確認前・role 不正時は店舗 API を拒否する。
 
 | 操作 | 認可 |
 | --- | --- |
@@ -168,6 +173,8 @@ Store PUT は所有権を確認後、既存 Store を読み、**変更禁止フ�
 
 | Method | Path | Controller → Usecase | Req / Res |
 | --- | --- | --- | --- |
+| POST | `/advertisers/signup` | **AdvertiserAuthController → AdvertiserAuthUsecase**（Backend → Cognito SignUp、role 固定） | email・password → 登録受付 |
+| POST | `/advertisers/confirm-signup` | **AdvertiserAuthController → AdvertiserAuthUsecase**（Backend → Cognito ConfirmSignUp） | 登録識別子・確認コード → 登録完了 |
 | GET | `/advertisers/me/stores` | Store → StoreUsecase | [Store] |
 | POST | `/festivals/:festivalId/stores` | Store → StoreUsecase | StoreCreateRequest → Store |
 | GET | `/stores/:storeId` | Store → StoreUsecase | Store |
@@ -423,7 +430,7 @@ scripts/moderate-store                    [追加案: IAM権限の運営停止�
 
 | 対象 | ケース |
 | --- | --- |
-| Cognito / 認可 | sub 取得、広告主 Role、管理者への不正昇格拒否、他人の Store を拒否 |
+| Cognito / 認可 | **Backend 経由 SignUp・ConfirmSignUp**、role がサーバー固定 advertiser、iOS App Client から custom:role 変更不可、role=nil／未確認メールの拒否、sub 取得、既存管理者への不正昇格拒否、他人の Store を拒否。重複登録・確認コード期限切れ・再送・パスワード／コード非ログ出力を検証 |
 | Store 作成 | Store / Owner Reference / Credit0 を**単一 Transaction** で作成。条件付き書込み失敗時に3件とも未作成。HTTP 応答消失時は POST 自動再送せず強整合な所有 Store 一覧で作成結果を確認。Store ID の一意性と所有店舗数上限 |
 | Store 読取 | 作成直後の所有 Store GET・画像 URL 発行・所有一覧で **GSI を使わず ConsistentRead**。User Reference → Festival Store の直接 Get、認証 sub と Store.ownerId の一致・別人の Store 拒否 |
 | 購入履歴 | 同じ Store の複数購入を SK `PURCHASE#{purchasedAtUTC}#{transactionId}` で Query。順序・同時刻の重複・他 Store 混入・未付与返金マーカーが履歴にならないこと・トランザクション失敗で参照だけ残らないこと |
@@ -449,7 +456,7 @@ scripts/moderate-store                    [追加案: IAM権限の運営停止�
 
 | 未確定 | 実装前の確認 |
 | --- | --- |
-| Cognito セルフ登録時の Role 付与 | App Client の属性書き込み権限を確認 |
+| Backend 経由の広告主登録 | **Backend 専用 Cognito App Client** の ClientId・Secret／SECRET_HASH、`custom:role=advertiser` 固定、iOS App Client の role 書込禁止、User Pool の登録・メール検証設定。role=nil を advertiser とみなす処理の削除・既存アカウント移行を確認 |
 | Apple 取引 JWS の検証方法 | Apple 公式 Swift Library を基本とし、証明書・Production / Sandbox 設定を検証 |
 | IAP 返金・取消 | **方針A採用**：現在残高の範囲で減算・返金取消は実減算額だけ復元。残課題は通知先設定と本番／Sandbox 疎通・再送テスト |
 | S3 | 画像上限・公開配信 URL・署名 URL の期限を共通決定。**差し替えごとの新 URL と CDN のクエリ別キャッシュ分離は初回リリース必須条件**（公開 GET → CDN → 正しい画像を結合確認） |

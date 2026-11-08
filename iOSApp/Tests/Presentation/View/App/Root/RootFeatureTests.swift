@@ -126,7 +126,7 @@ struct RootFeatureTests {
         }
         store.exhaustivity = .off
 
-        await store.send(.destination(.presented(.adminFestival(.signOutReceived(.success)))))
+        await store.send(.destination(.presented(.adminFestival(.signOutReceived(.success(.festival(.guest)))))))
 
         #expect(store.state.launchState == .festival(.guest))
         #expect(store.state.map?.userRole == .guest)
