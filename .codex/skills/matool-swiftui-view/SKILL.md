@@ -12,6 +12,12 @@ description: MaTool の SwiftUI 画面と TCA Presentation Feature を実装・�
 - View から API、DB、永続化、OS/SDK 操作を直接実行しない。必要な処理は Feature から Usecase など適切な境界を通す。
 - アプリ全体で共有する実行時状態は `AppState` を可能な限り唯一の情報源（SSOT）にする。Feature 内の状態は画面固有の状態に限る。
 
+## UI詳細が未指定の場合
+
+- UIの詳細が指示されていない場合、実装に着手する前に、既存画面から役割が対応するものを必ず探して実装を読む。Domainが異なっていても、一覧・編集・選択・確認など画面が担う抽象的な機能が同じものを対応画面とみなす。
+- 対応画面のSwiftUI構成とTCA Featureとの接続を確認し、`/Presentation/View/Components/**` などの共通UIがどう使われているかも調べる。
+- 既存実装とSwiftUI標準UIの使い方を踏まえて画面構成・部品の再利用方法を決めてから実装する。対応する既存画面が見つからない場合は、近い役割の画面と共通UIを調べ、標準UIを基準に方針を定める。
+
 ## 標準 UI とレイアウト
 
 - 管理画面で特別にリッチな表示が求められていない箇所は `Form`、`List`、`Section`、`LabeledContent`、`Picker`、`Toggle` など SwiftUI 標準 UI を使う。標準の整列や操作方法を維持する。
