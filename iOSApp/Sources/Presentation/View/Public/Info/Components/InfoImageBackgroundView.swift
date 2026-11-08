@@ -57,17 +57,16 @@ enum InfoImageColorScheme {
         systemColorScheme: ColorScheme,
         selectedColorScheme: ColorScheme?
     ) -> ColorScheme {
-        guard supportsThemeSwitch(lightPath: lightPath, darkPath: darkPath) else {
+        switch (isAvailable(lightPath), isAvailable(darkPath)) {
+        case (true, false), (false, true), (false, false):
             return resolve(
                 lightPath: lightPath,
                 darkPath: darkPath,
                 systemColorScheme: systemColorScheme
             )
+        case (true, true):
+            return selectedColorScheme ?? systemColorScheme
         }
-        return effective(
-            systemColorScheme: systemColorScheme,
-            selectedColorScheme: selectedColorScheme
-        )
     }
 }
 

@@ -4,6 +4,7 @@
 
 - 原則として [$swift-app-architecture](/Users/matsushitakazuya/.homesick/repos/dotfiles/home/.agents/skills/swift-app-architecture/SKILL.md) に従い、クリーンアーキテクチャを目指す。
 - ViewModel の代わりに TCA（The Composable Architecture）を使用する。スキルの ViewModel に関する方針より、このルールを優先する。
+- TCA の `Delegate` Action は使用しない。親 Feature への通知が必要な場合は、具体的なイベント名の Action を直接送る。
 - AppState を可能な限り状態の唯一の情報源（SSOT）にする。
 - Usecase から別の Usecase を呼び出さない。責務やライフサイクルが異なる処理は必要な重複を許容し、共通化は同じ責務を持つ処理に限る。
 - `authProvider.initialize()` はアプリの初回起動時にのみ呼び出し、サインアウトや起動データ再取得では呼び出さない。

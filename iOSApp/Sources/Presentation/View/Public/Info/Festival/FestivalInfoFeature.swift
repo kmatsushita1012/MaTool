@@ -1,6 +1,7 @@
 import ComposableArchitecture
 import MapKit
 import Shared
+import SwiftUI
 
 @Reducer
 struct FestivalInfoFeature {
@@ -33,6 +34,7 @@ struct FestivalInfoFeature {
                 }
         }
         var displayMode: DisplayMode = .festival
+        var colorTheme: ColorScheme?
         var selectedDistrictID: District.ID?
         var region: MKCoordinateRegion?
         var isLoading = false
@@ -52,6 +54,8 @@ struct FestivalInfoFeature {
     @CasePathable
     enum Action: Equatable, BindableAction {
         case binding(BindingAction<State>)
+        case colorThemeResolved(ColorScheme)
+        case colorThemeSelected(ColorScheme)
         case districtSelected(District.ID)
         case districtReceived(AppResult<DistrictPack>)
         case destination(PresentationAction<Destination.Action>)
@@ -66,6 +70,15 @@ struct FestivalInfoFeature {
         Reduce { state, action in
             switch action {
             case .binding:
+                return .none
+
+            case .colorThemeResolved(let colorTheme):
+                guard state.colorTheme == nil else { return .none }
+                state.colorTheme = colorTheme
+                return .none
+
+            case .colorThemeSelected(let colorTheme):
+                state.colorTheme = colorTheme
                 return .none
 
             case .districtSelected(let districtID):

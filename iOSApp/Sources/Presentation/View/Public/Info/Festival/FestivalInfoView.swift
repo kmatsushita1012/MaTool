@@ -8,21 +8,24 @@ import UIKit
 struct FestivalInfoView: View {
     @SwiftUI.Bindable var store: StoreOf<FestivalInfoFeature>
     @Environment(\.colorScheme) private var systemColorScheme
-    @State private var selectedColorScheme: ColorScheme?
     let isSheetRoot: Bool
+    var onCurrentLocationTapped: () -> Void = {}
+    var onRouteTapped: (District.ID) -> Void = { _ in }
 
     var body: some View {
         WithPerceptionTracking {
             FestivalInfoContentView(
                 festival: store.festival,
                 districts: store.districts,
-                selectedColorScheme: $selectedColorScheme,
+                colorTheme: store.colorTheme,
                 isSheetRoot: isSheetRoot,
                 displayMode: $store.displayMode,
                 region: $store.region,
                 isLoading: store.isLoading,
                 selectedDistrictID: store.selectedDistrictID,
-                onDistrictSelected: { store.send(.districtSelected($0)) }
+                onDistrictSelected: { store.send(.districtSelected($0)) },
+                onColorThemeSelected: { store.send(.colorThemeSelected($0)) },
+                onCurrentLocationTapped: onCurrentLocationTapped
             )
             .navigationDestination(item: $store.scope(
                 state: \.destination,
@@ -34,18 +37,26 @@ struct FestivalInfoView: View {
                         store: districtStore,
                         festivalName: nil,
                         onFestivalTapped: {},
+                        onRouteTapped: onRouteTapped,
                         isSheetRoot: false
                     )
                 }
             }
             .alert($store.scope(state: \.alert, action: \.alert))
         }
+        .onAppear {
+            store.send(.colorThemeResolved(InfoImageColorScheme.resolve(
+                lightPath: store.festival.image.light,
+                darkPath: store.festival.image.dark,
+                systemColorScheme: systemColorScheme
+            )))
+        }
         .preferredColorScheme(
             InfoImageColorScheme.preferredColorScheme(
                 lightPath: store.festival.image.light,
                 darkPath: store.festival.image.dark,
                 systemColorScheme: systemColorScheme,
-                selectedColorScheme: selectedColorScheme
+                selectedColorScheme: store.colorTheme
             )
         )
     }
@@ -56,13 +67,15 @@ private struct FestivalInfoContentView: View {
 
     let festival: Festival
     let districts: [District]
-    @Binding var selectedColorScheme: ColorScheme?
+    let colorTheme: ColorScheme?
     let isSheetRoot: Bool
     @Binding var displayMode: FestivalInfoFeature.DisplayMode
     @Binding var region: MKCoordinateRegion?
     let isLoading: Bool
     let selectedDistrictID: District.ID?
     let onDistrictSelected: (District.ID) -> Void
+    let onColorThemeSelected: (ColorScheme) -> Void
+    let onCurrentLocationTapped: () -> Void
     @Environment(\.dismiss) private var dismiss
     @Environment(\.colorScheme) private var colorScheme
 
@@ -76,10 +89,10 @@ private struct FestivalInfoContentView: View {
     private var themeToggleButton: some View {
         let effectiveColorScheme = InfoImageColorScheme.effective(
             systemColorScheme: colorScheme,
-            selectedColorScheme: selectedColorScheme
+            selectedColorScheme: colorTheme
         )
         return InfoImageThemeToggleButton(colorScheme: effectiveColorScheme) {
-            selectedColorScheme = effectiveColorScheme == .dark ? .light : .dark
+            onColorThemeSelected(effectiveColorScheme == .dark ? .light : .dark)
         }
     }
 
@@ -111,6 +124,11 @@ private struct FestivalInfoContentView: View {
         }
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
+            if isSheetRoot {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button("現在地", action: onCurrentLocationTapped)
+                }
+            }
             if isSheetRoot {
                 ToolbarItem(placement: .topBarLeading) {
                     Button {
@@ -151,7 +169,7 @@ private struct FestivalInfoContentView: View {
             \.colorScheme,
             InfoImageColorScheme.effective(
                 systemColorScheme: colorScheme,
-                selectedColorScheme: selectedColorScheme
+            selectedColorScheme: colorTheme
             )
         )
     }
