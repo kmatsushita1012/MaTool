@@ -66,10 +66,12 @@
 └─────────────────────────────────────┘
 ```
 
-- 所有店舗ごとに編集へ push。Credit 購入／残高は**その店舗に紐付く**画面からアクセスする。
+- 所有店舗ごとに**店舗別 Dashboard**へ push。Credit 購入／残高や広告画像、店舗情報編集は店舗別 Dashboard からアクセスする。
 - Dashboard はナビゲーションのハブ。Festival／District 既存 Dashboard と同様に TCA `Destination` を持つ。
 
-#### B. 店舗作成・編集 — `StoreEditView`
+#### B. 店舗作成・基本情報編集 — `StoreEditView`
+
+新規作成時と、店舗別 Dashboard から「基本情報を編集」を押したときに使用する。広告画像、クレジット、一時停止の操作は**店舗別 Dashboard からそれぞれ独立した画面へ**遷移する（[採用済みB案](./store-dashboard-ux.md)）。
 
 ```text
 ┌─────────────────────────────────────┐
@@ -79,23 +81,19 @@
 │   店名           ○○商店             │
 │   住所           静岡県掛川市…      │
 │   営業時間       10:00〜19:00       │
-│   説明           テキストを編集  ›  │
+│   説明           テキストを編集     │
 │                                     │
 │ ［位置］                            │
 │   地図で指定                    ›   │
-│                                     │
-│ ［広告］                            │
-│   バナー画像      写真を選択        │
-│   広告配信を一時停止         [ON/OFF]│
 │                                     │
 │            ［保存］                 │
 └─────────────────────────────────────┘
 ```
 
-- 新規: `POST /festivals/:festivalId/stores` → 返された Store を表示／編集の正本にする。
-- 編集: `PUT /stores/:storeId`。`bannerImagePath` は一時パス・正式 URL・明示 `null` を適切に送る。
-- **全画面画像の行は表示しない。** Backend の Store PUT は全体を受けるため、**変更していない `interstitialImagePath` は既存値を維持して送信**する。
-- Save 成功時に**Backend レスポンスの Store**を採用。画面で推測した正式画像 URL や状態を採用しない。
+- 新規作成：`POST /festivals/:festivalId/stores` 成功後に親 `AdvertiserDashboardFeature` が **作成用 Destination を店舗別 Dashboard に置換**する。戻る先は所有店舗一覧。
+- 基本情報編集：`PUT /stores/:storeId` 成功後に **店舗別 Dashboard に戻る**。保存結果を正本として反映する。
+- 画像フィールドはこの画面で編集しない。Store 更新に画像パスが必要な場合は、**変更していない両画像フィールドを保持**する（明示的な `null` とキー省略を混同しない）。
+
 
 #### C. Credit — `CreditPurchaseView`
 
@@ -310,7 +308,6 @@ flowchart TB
   Dashboard -->|"新規作成（保存後は店舗別Dashboardへ）"| Edit
   StoreDashboard -->|"基本情報を編集"| Edit
   StoreDashboard -->|"残高・購入"| Credit
-  Edit -->|"対象店舗"| Credit
   Credit -->|"購入履歴"| History
   Root -->|"管理者は既存 push"| Festival
   Root -->|"管理者は既存 push"| District
@@ -318,7 +315,7 @@ flowchart TB
   classDef existing fill:#edf3f7,stroke:#526b7e,color:#233849
   classDef added fill:#e6f2ff,stroke:#2b6faa,color:#153957
   class Root,Map,Loc,Route,Settings,Festival,District,Intro existing
-  class Banner,Auth,Dashboard,Edit,Credit,History added
+  class Banner,Auth,Dashboard,StoreDashboard,Edit,Credit,History added
 ```
 
 **ロールに関する実装上の注意**
