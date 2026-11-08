@@ -61,7 +61,7 @@ jobs:
             --skip RouteMigrator \
             --no-parallel \
             --enable-code-coverage \
-            --xunit-output=build/reports/backend-test-results.xml \
+            --xunit-output="$(pwd)/build/reports/backend-test-results.xml" \
             | tee build/reports/backend-test.log
 
       - name: Upload Test Results
@@ -75,7 +75,7 @@ jobs:
         if: always()
         run: |
           python3 .github/scripts/print_test_summary.py \
-            --xunit build/reports/backend-test-results.xml \
+            --xunit "$(pwd)/build/reports/backend-test-results.xml" \
             --title Backend \
             --platform Linux \
             --device "GitHub Actions Runner" \

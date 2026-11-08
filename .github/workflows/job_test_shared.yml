@@ -47,7 +47,7 @@ jobs:
             --package-path Shared \
             --filter '^SharedTests\.' \
             --enable-code-coverage \
-            --xunit-output=build/reports/shared-test-results.xml \
+            --xunit-output="$(pwd)/build/reports/shared-test-results.xml" \
             | tee build/reports/shared-test.log
 
       - name: Upload Test Results
@@ -61,7 +61,7 @@ jobs:
         if: always()
         run: |
           python3 .github/scripts/print_test_summary.py \
-            --xunit build/reports/shared-test-results.xml \
+            --xunit "$(pwd)/build/reports/shared-test-results.xml" \
             --title Shared \
             --platform Linux \
             --device "GitHub Actions Runner" \
