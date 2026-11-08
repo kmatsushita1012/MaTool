@@ -71,7 +71,6 @@ struct SignInUseCase: SignInUseCaseProtocol {
                 appState.withLock {
                     $0 = AppState(
                         festivalPack: response,
-                        year: Calendar.current.component(.year, from: .now),
                         sessionId: requestId
                     )
                 }
@@ -94,7 +93,6 @@ struct SignInUseCase: SignInUseCaseProtocol {
                         festivalPack: festivalResponse,
                         districtPack: districtResponse,
                         districtId: districtId,
-                        year: Calendar.current.component(.year, from: .now),
                         sessionId: requestId
                     )
                 }

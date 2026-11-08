@@ -10,11 +10,11 @@ struct FestivalState: Equatable, Sendable {
     var hazardSections: [HazardSection]
     var floatLocations: [FloatLocation]
 
-    init(_ pack: LaunchFestivalPack, year: Int) {
-        self.year = year
+    init(_ pack: LaunchFestivalPack) {
+        year = pack.year
         festival = pack.festival
         districts = pack.districts
-        periods = pack.periods.filter { $0.date.year == year }
+        periods = pack.periods
         checkpoints = pack.checkpoints
         hazardSections = pack.hazardSections
 
@@ -55,13 +55,12 @@ struct DistrictState: Equatable, Sendable {
     init(
         districtId: District.ID,
         requestId: UUID = UUID(),
-        pack: LaunchDistrictPack,
-        currentPeriodIds: Set<Period.ID>
+        pack: LaunchDistrictPack
     ) {
         self.districtId = districtId
         self.requestId = requestId
         performances = pack.performances
-        routes = pack.routes.filter { currentPeriodIds.contains($0.periodId) }
+        routes = pack.routes
     }
 }
 
@@ -93,16 +92,14 @@ struct AppState: Equatable, Sendable {
         festivalPack: LaunchFestivalPack,
         districtPack: LaunchDistrictPack? = nil,
         districtId: District.ID? = nil,
-        year: Int = Calendar.current.component(.year, from: .now),
         sessionId: UUID = UUID()
     ) {
-        let festivalState = FestivalState(festivalPack, year: year)
+        let festivalState = FestivalState(festivalPack)
         let districtState: DistrictState? = districtPack.flatMap { pack in
             guard let districtId else { return nil }
             return DistrictState(
                 districtId: districtId,
-                pack: pack,
-                currentPeriodIds: Set(festivalState.periods.map(\.id))
+                pack: pack
             )
         }
         let routeState: RouteState? = districtPack.flatMap { pack in
