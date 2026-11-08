@@ -14,7 +14,7 @@
 
 | 機能 | 第一段階 | 説明 |
 | --- | --- | --- |
-| 広告主登録・ログイン／メール確認 | **実装する** | Cognito の広告主アカウント。既存の祭典／町管理者ロールとは分離 |
+| 広告主登録・ログイン／メール確認 | **実装する** | **登録・メール確認は Backend API 経由**。ログインは既存 Amplify / Cognito を利用。Role は Backend が固定付与 |
 | `AdvertiserDashboard` | **実装する** | 広告主向けの最初の管理画面 |
 | 所有店舗一覧・店舗作成／編集 | **実装する** | 住所、営業時間、説明、位置座標、広告配信の一時停止 |
 | **バナー**画像の選択／入稿 | **実装する** | `PhotosPicker` → S3 → Store PUT |
@@ -154,8 +154,40 @@
 └─────────────────────────────────────┘
 ```
 
-- Cognito `SignUp` → `ConfirmSignUp` → `SignIn`。登録はメール確認を必須とする。
+- **広告主登録は iOS → Backend → Cognito**。iOS は `POST /advertisers/signup` にメール／パスワードを送信し、続く `POST /advertisers/confirm-signup` に確認コードを送信する。iOS から Cognito `SignUp` / `ConfirmSignUp` を直接呼ばない。
+- Backend はサーバー専用（秘密鍵付き）Cognito App Client の `SignUp` で **`custom:role=advertiser` を固定指定**。この登録 API はユーザーから role を受け取らない。Cognito の通常ユーザー向け App Client は `custom:role` の**読み取りのみ可・書き込み不可**。
+- メール確認後に iOS の**既存 Amplify `SignIn`**へ進み、Backend は Access Token を検証して `.advertiser(sub)` と解釈する。
 - 既存の町／祭典管理者の Login UI・権限を流用して変更しない。認証依存の共有はよいが、**画面遷移とロールの判定を混同しない**。
+
+## 2.2 広告主の登録経路と権限制御（Backend 経由を必須とする）
+
+```mermaid
+sequenceDiagram
+  participant User as 広告主 iOS
+  participant BE as Backend（新規 AdvertiserAuthRouter）
+  participant Cognito as Cognito User Pool
+  User->>BE: POST /advertisers/signup（メール・パスワード）
+  BE->>Cognito: SignUp（サーバー専用 App Client、role=advertiser 固定）
+  Cognito-->>User: メール確認コードを送信
+  User->>BE: POST /advertisers/confirm-signup（登録識別子・確認コード）
+  BE->>Cognito: ConfirmSignUp
+  Cognito-->>BE: 確認完了
+  BE-->>User: 登録完了
+  User->>Cognito: Amplify Auth.signIn（既存 iOS App Client）
+  Cognito-->>User: Access Token
+  User->>BE: 店舗 API + Access Token
+  BE->>Cognito: GetUser・role・email_verified・sub を照合
+  BE-->>User: advertiser として所有店舗のみ操作許可
+```
+
+1. 新規 Backend API：`POST /advertisers/signup`（未認証）。**クライアント入力はメールアドレス・パスワードのみ**。Backend 側で検証し、専用 Cognito App Client の `SignUp` に `custom:role=advertiser` を固定して送る。ユーザーが指定した role / sub / ownerId は一切受理しない。
+2. 同 `POST /advertisers/confirm-signup`（未認証）で確認コードを Cognito `ConfirmSignUp` に渡す。登録の確認先は Cognito 標準メール検証。登録用アプリクライアントは**Backend 専用・Client Secret あり**とし、Secret と SECRET_HASH を iOS に渡さない。
+3. Cognito の iOS 通常 App Client は `custom:role` の**Read は許可、Write は禁止**。Backend 専用登録 App Client だけが SignUp 時に書き込み可能。User Pool のメールサインイン／Username 設定がこの方式に対応するかインフラ構成を確認する。
+4. ログイン／トークン更新は既存の `Amplify.Auth.signIn` / `fetchAuthSession` を使用し、Backend が `email_verified=true`、`custom:role=advertiser`、`sub` の存在を検証。**role 未設定を自動で広告主とみなさない**。既存の未設定ユーザーがいる場合は移行対象を確認する。
+5. Backend 登録 API は公開エンドポイントなので**レート制限、Cognito エラー／重複登録／コード期限切れ、ログにパスワードを残さない設定**を受入条件とする。ログイン前に Festival／District の管理 API を操作できないこと。
+6. 店舗作成時の `ownerId` は**Backend が検証済み Cognito sub から決める**。端末が送った role 等で管理者に昇格しないことをテストする。
+
+**Backend #390 の現状**：上記の登録・確認 API はまだない。現行 `CognitoAuthManager.parseUserRole` は `custom:role` が `nil` でメール確認済みなら advertiser と解釈するため、実装時には明示 role のみに変更する必要がある。第一段階を実装する前の **Backend 側の追加作業**として扱う。既存管理者の `AdminCreateUser`（一時パスワード通知）を流用せず、通常のメール確認付きセルフ登録を維持する。
 
 ## 3. 地図バナーのレイアウト
 
@@ -315,7 +347,8 @@ flowchart TB
     HTTP["HTTPClient（既存）"]
     S3["S3ImageUploadClient（既存）"]
     SK["StoreKitClient（新規）"]
-    Cognito["AuthProvider（既存／登録機能拡張）"]
+    Cognito["AuthProvider（既存／ログイン・token）"]
+    SignupFetch["AdvertiserRegistrationDataFetcher（新規／登録・確認）"]
   end
   subgraph External["External"]
     Backend["Backend PR #390<br/>Store・Advertisement・Purchase APIs"]
@@ -333,12 +366,13 @@ flowchart TB
   Forms --> PUC --> SK --> Apple
   PUC --> StoreFetch
   Auth --> Cognito
+  Auth --> SignupFetch --> HTTP
   PM -.-> AdMob
   HTTP --> Backend
   classDef existing fill:#edf3f7,stroke:#526b7e,color:#233849
   classDef added fill:#e6f2ff,stroke:#2b6faa,color:#153957
   class Root,PM,HTTP,S3,Cognito,AdMob existing
-  class Banner,Dash,Forms,Auth,BUC,SUC,UUC,PUC,AdFetch,StoreFetch,SK added
+  class Banner,Dash,Forms,Auth,BUC,SUC,UUC,PUC,AdFetch,StoreFetch,SK,SignupFetch added
 ```
 
 | 状態 | 所有者／正本 | 方針 |
