@@ -19,9 +19,9 @@ struct SignOutUseCaseTests {
             districtPack: fixture.districtPack
         )
         let sessionCoordinator = SceneSessionCoordinatorSpy()
+        let initializeSpy = AuthProviderInitializeSpy()
         var authProvider = AuthProviderSpy().client
-        authProvider.initialize = {}
-        authProvider.getUserRole = { .guest }
+        authProvider.initialize = { initializeSpy.record() }
         authProvider.signOut = {}
         let launchState = try await withDependencies {
             $0.installTestSpies()
@@ -29,7 +29,6 @@ struct SignOutUseCaseTests {
             $0[UserDefaltsManagerKey.self] = userDefaults
             $0[SceneDataFetcherKey.self] = dataFetcher
             $0[SceneSessionCoordinatorKey.self] = sessionCoordinator
-            $0[LaunchSceneUseCaseKey.self] = LaunchSceneUseCase()
         } operation: {
             try await SignOutUseCase()(appState: appState)
         }
@@ -37,10 +36,11 @@ struct SignOutUseCaseTests {
         let rebuiltState = try #require(appState.wrappedValue)
         let expectedYear = Calendar.current.component(.year, from: .now)
         #expect(launchState == .district(.guest, fixture.route.id))
-        #expect(await dataFetcher.requests == [
+        #expect(initializeSpy.callCount == 0)
+        #expect(Set(await dataFetcher.requests) == Set([
             "festival:\(fixture.festival.id)",
             "district:\(fixture.district.id):period:nil"
-        ])
+        ]))
         #expect(await sessionCoordinator.sessionStarts == 1)
         #expect(rebuiltState.sessionId != fixture.oldAppState.sessionId)
         #expect(rebuiltState.districtLoadRequestId != fixture.oldAppState.districtLoadRequestId)
@@ -68,26 +68,26 @@ struct SignOutUseCaseTests {
             districtPack: fixture.districtPack,
             failsDistrictLaunch: true
         )
+        let initializeSpy = AuthProviderInitializeSpy()
         var authProvider = AuthProviderSpy().client
-        authProvider.initialize = {}
-        authProvider.getUserRole = { .guest }
+        authProvider.initialize = { initializeSpy.record() }
         authProvider.signOut = {}
         let launchState = try await withDependencies {
             $0.installTestSpies()
             $0.authProvider = authProvider
             $0[UserDefaltsManagerKey.self] = userDefaults
             $0[SceneDataFetcherKey.self] = dataFetcher
-            $0[LaunchSceneUseCaseKey.self] = LaunchSceneUseCase()
         } operation: {
             try await SignOutUseCase()(appState: appState)
         }
 
         #expect(isError(launchState))
+        #expect(initializeSpy.callCount == 0)
         #expect(appState.wrappedValue == nil)
-        #expect(await dataFetcher.requests == [
+        #expect(Set(await dataFetcher.requests) == Set([
             "festival:\(fixture.festival.id)",
             "district:\(fixture.district.id):period:nil"
-        ])
+        ]))
     }
 
     @Test("認証ログアウト失敗時はAppStateを変更せずBEを呼ばない")
@@ -98,20 +98,22 @@ struct SignOutUseCaseTests {
             festivalPack: fixture.festivalPack,
             districtPack: fixture.districtPack
         )
+        let initializeSpy = AuthProviderInitializeSpy()
         var authProvider = AuthProviderSpy().client
+        authProvider.initialize = { initializeSpy.record() }
         authProvider.signOut = { throw SignOutFixtureError.failed }
         await #expect(throws: SignOutFixtureError.failed) {
             try await withDependencies {
             $0.installTestSpies()
             $0.authProvider = authProvider
             $0[SceneDataFetcherKey.self] = dataFetcher
-            $0[LaunchSceneUseCaseKey.self] = LaunchSceneUseCase()
             } operation: {
                 try await SignOutUseCase()(appState: appState)
             }
         }
 
         #expect(appState.wrappedValue == fixture.oldAppState)
+        #expect(initializeSpy.callCount == 0)
         #expect(await dataFetcher.requests.isEmpty)
     }
 

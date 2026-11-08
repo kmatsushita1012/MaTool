@@ -304,23 +304,11 @@ struct RootFeature {
                 state.alert = .error(error.message)
                 return .none
 
-            case .destination(.presented(.settings(.signOutReceived(.success(let launchState))))):
-                finishSignOut(state: &state, launchState: launchState)
-                return .none
-
-            case .destination(.presented(.adminDistrict(.signOutReceived(.success(let launchState))))):
-                finishSignOut(state: &state, launchState: launchState)
-                return .none
-
-            case .destination(.presented(.adminFestival(.signOutReceived(.success(let launchState))))):
-                finishSignOut(state: &state, launchState: launchState)
-                return .none
-
-            case .destination(.presented(.adminDistrict(.destination(.presented(.settings(.signOutReceived(.success(let launchState)))))))):
-                finishSignOut(state: &state, launchState: launchState)
-                return .none
-
-            case .destination(.presented(.adminFestival(.destination(.presented(.settings(.signOutReceived(.success(let launchState)))))))):
+            case .destination(.presented(.settings(.signOutReceived(.success(let launchState))))),
+                 .destination(.presented(.adminDistrict(.signOutReceived(.success(let launchState))))),
+                 .destination(.presented(.adminFestival(.signOutReceived(.success(let launchState))))),
+                 .destination(.presented(.adminDistrict(.destination(.presented(.settings(.signOutReceived(.success(let launchState)))))))),
+                 .destination(.presented(.adminFestival(.destination(.presented(.settings(.signOutReceived(.success(let launchState)))))))):
                 finishSignOut(state: &state, launchState: launchState)
                 return .none
 
