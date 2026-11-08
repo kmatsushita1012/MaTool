@@ -1,7 +1,7 @@
 # ============================
 # Stage 1: Build Swift Lambda binary (AL2023)
 # ============================
-FROM swift:6.3.3-amazonlinux2023 AS build
+FROM swift:6.3.3-amazonlinux2023 AS dependencies
 
 # 必要なツールとライブラリをインストール
 RUN dnf update -y && \
@@ -51,6 +51,9 @@ RUN mkdir -p Backend/Sources Backend/Tests Backend/Bootstrap && \
 WORKDIR /workspace/Backend
 # Package.swiftが宣言する依存一式を、変更頻度の低いDockerレイヤーで事前ビルド。
 RUN swift build -c release --static-swift-stdlib
+
+# キャッシュには依存のビルドまでを保存し、頻繁に変わるBackend本体は含めない。
+FROM dependencies AS build
 
 # Backendのソース変更ではここから先だけが無効化される。
 WORKDIR /workspace
