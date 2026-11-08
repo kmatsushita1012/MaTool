@@ -26,7 +26,7 @@ description: MaTool の SwiftUI 画面と TCA Presentation Feature を実装・�
 
 - Feature は `State`、ユーザー意図を表す `Action`、状態遷移と副作用を扱う Reducer で構成する。View は State を表示し、ユーザー操作に対応する Action を送る。
 - 一時的なフォーカスなど SwiftUI 固有の状態を除き、画面状態を View の `@State` に複製しない。入力値、ロード状態、選択状態、アラートや画面遷移は Feature State で管理する。
-- `delegate` Action を機械的に増やさない。Feature 内で完結する操作はそこで処理し、子 Feature から親に伝える必要のある意味のある結果がある場合に限って Delegate を使う。単なる UI イベントの中継や、親が必要としない通知のために Delegate enum / case を作らない。
+- TCA の `Delegate` Action は使わない。子 Feature から親への通知が必要なら、親 Feature が子 Action を直接扱うか、具体的なイベント名の Action を直接送る。単なる中継用 Action や Delegate enum / case を増やさない。
 - Navigation は TCA の child state と tree 構造を基本にし、遷移先ごとの Boolean を増やさない。stack navigation は要件上 tree で扱いにくい場合に使う。
 - 画面遷移やモーダルは TCA の Presentation State と SwiftUI 標準の navigation / sheet / dialog を組み合わせる。メニューや選択肢には `confirmationDialog` や `popover` を使い、内容量のある編集画面には `sheet` を検討する。
 - Domain Logic を View や Feature に重複実装しない。Feature は Usecase などを呼び出して状態を更新し、ドメイン判断そのものは適切なレイヤーに置く。
