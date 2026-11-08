@@ -31,8 +31,10 @@ jobs:
           file: Backend/Dockerfile
           load: true
           tags: matoolapi:latest
+          # mainが作ったキャッシュをbackend/*のデプロイでも再利用する。
+          # ブランチごとの大容量キャッシュ複製は避ける。
           cache-from: type=gha,scope=matool-backend-release-v1
-          cache-to: type=gha,scope=matool-backend-release-v1,mode=max
+          cache-to: ${{ github.ref == 'refs/heads/main' && 'type=gha,scope=matool-backend-release-v1,mode=max' || '' }}
 
       - name: Extract Lambda package
         run: |
