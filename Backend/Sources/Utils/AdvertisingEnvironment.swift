@@ -27,23 +27,7 @@ struct AdvertisingEnvironment: Sendable {
     let reportTopicARN: String
 
     init(environment supplied: [String: String]? = nil) {
-        var environment = supplied ?? ProcessInfo.processInfo.environment
-        if supplied == nil,
-           let url = Bundle.module.url(forResource: ".env", withExtension: nil),
-           let contents = try? String(contentsOf: url, encoding: .utf8) {
-            for line in contents.split(whereSeparator: \.isNewline) {
-                let value = line.trimmingCharacters(in: .whitespaces)
-                guard !value.isEmpty, !value.hasPrefix("#"), let separator = value.firstIndex(of: "=") else { continue }
-                let key = String(value[..<separator]).trimmingCharacters(in: .whitespaces)
-                var setting = String(value[value.index(after: separator)...]).trimmingCharacters(in: .whitespaces)
-                if setting.count >= 2,
-                   (setting.first == "\"" && setting.last == "\"") || (setting.first == "'" && setting.last == "'") {
-                    setting.removeFirst()
-                    setting.removeLast()
-                }
-                if environment[key] == nil { environment[key] = setting }
-            }
-        }
+        let environment = supplied ?? Environment.resolvedVariables()
         maximumStoresPerOwner = max(1, Int(environment["ADVERTISEMENT_MAX_STORES_PER_OWNER"] ?? "10") ?? 10)
         impressionTokenSecret = environment["ADVERTISEMENT_IMPRESSION_TOKEN_SECRET"] ?? ""
         appStoreBundleId = environment["APP_STORE_BUNDLE_ID"] ?? ""
