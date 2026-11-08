@@ -6,16 +6,27 @@ on:
 jobs:
   test-backend:
     name: Run Backend Tests
-    runs-on: macos-26
+    runs-on: ubuntu-24.04
+    container:
+      image: swift:6.3.3-noble
+    defaults:
+      run:
+        shell: bash
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup Xcode 26.6
-        uses: maxim-lobanov/setup-xcode@v1
-        with:
-          xcode-version: "26.6"
+      - name: Install Backend build dependencies
+        run: |
+          apt-get update
+          apt-get install -y --no-install-recommends \
+            build-essential \
+            cmake \
+            libssl-dev \
+            libxml2-dev \
+            libcurl4-openssl-dev
+          rm -rf /var/lib/apt/lists/*
 
       - name: Create empty .env
         run: touch Backend/.env
@@ -24,12 +35,12 @@ jobs:
         uses: actions/cache@v4
         with:
           path: |
-            ~/Library/Caches/org.swift.swiftpm/
+            ~/.cache/org.swift.swiftpm/
             Backend/.build
-          key: ${{ runner.os }}-spm-Backend-xcode-26.6-${{ github.ref_name }}-${{ hashFiles('Backend/Package.swift', 'Backend/Package.resolved', 'Shared/Package.swift', 'Shared/Package.resolved') }}
+          key: ${{ runner.os }}-spm-Backend-swift-6.3.3-${{ github.ref_name }}-${{ hashFiles('Backend/Package.swift', 'Backend/Package.resolved', 'Shared/Package.swift', 'Shared/Package.resolved') }}
           restore-keys: |
-            ${{ runner.os }}-spm-Backend-xcode-26.6-${{ github.ref_name }}-
-            ${{ runner.os }}-spm-Backend-xcode-26.6-
+            ${{ runner.os }}-spm-Backend-swift-6.3.3-${{ github.ref_name }}-
+            ${{ runner.os }}-spm-Backend-swift-6.3.3-
 
       - name: Resolve Backend package dependencies
         run: swift package resolve
