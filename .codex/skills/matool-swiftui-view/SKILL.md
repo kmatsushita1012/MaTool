@@ -34,9 +34,12 @@ description: MaTool の SwiftUI 画面と TCA Presentation Feature を実装・�
 ## 構成と表示パターン
 
 - 画面固有の View と Feature は対象画面の Presentation 配下にまとめる。複数画面から使う View は `/Presentation/View/Components/**` に置く。
-- 入口となる View は Store と画面遷移を扱い、表示専用 View は値とイベントを受け取る形に分ける。読みやすさを損なうほど一つの View に責務を詰め込まない。
+- 画面の入口は `XXXScreen`、表示専用の View は `XXXContentView` とする。分割は表示と画面接続の責務を分ける効果がある画面で行い、機械的にファイルや型を増やさない。
+- `XXXScreen` は `StoreOf<Feature>` を受け取り、TCA State と Action を View に接続する。`navigationDestination`、`sheet` などの遷移先や Presentation State の組み立てもここで扱う。表示の細部は `XXXContentView` に委譲する。
+- `XXXContentView` は Store や Feature に依存せず、表示に必要な値とイベントを受け取る。読み取り値は `let`、ユーザー操作はクロージャで表す。入力コントロールでは自然な場合に限り `Binding` を使い、その更新はTCAのAction経由で行う。
+- `navigationTitle` や toolbar など表示上の指定は `XXXContentView` に置く。遷移や副作用を伴う操作は `XXXScreen` がクロージャを Action に結び付け、ContentViewからFeatureを直接操作させない。
 - `var` の `@ViewBuilder` は小さな表示分岐に使ってよい。肥大化する場合は別 View に分ける。`func` の `@ViewBuilder` は作らない。
-- Preview は表示確認に役立つ画面・部品に付ける。Preview は Feature の状態やテスト用依存値で構成し、本番の外部依存を必要としない形にする。
+- `#Preview` は原則として `XXXContentView` に付ける。Featureや本番外部依存に結び付けず、表示用の値とクロージャでプレビューできるようにする。再利用部品も確認価値がある場合はPreviewを付ける。
 - Empty State やエラーには SwiftUI 標準の表示手段を優先する。エラーは必要に応じて `alert`、Empty State は標準の仕組みを使う。
 - コンテンツ量が少ない場合は `VStack`、多くなる場合は `LazyVStack` を選ぶ。暗黙のアニメーションを漫然と付けず、ユーザー体験上必要な箇所だけ明示する。
 
