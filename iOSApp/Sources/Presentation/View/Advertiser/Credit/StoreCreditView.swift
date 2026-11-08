@@ -20,7 +20,7 @@ struct StoreCreditScreen: View {
             .navigationDestination(
                 item: $store.scope(state: \.destination?.history, action: \.destination.history)
             ) { historyStore in
-                PurchaseHistoryContentView(items: historyStore.items)
+                PurchaseHistoryScreen(store: historyStore)
             }
             .alert($store.scope(state: \.alert, action: \.alert))
             .task { store.send(.onAppear) }
@@ -87,50 +87,6 @@ struct StoreCreditContentView: View {
             }
         }
         .navigationTitle("クレジット")
-        .navigationBarTitleDisplayMode(.inline)
-    }
-}
-
-struct PurchaseHistoryFeature: Reducer {
-    @ObservableState
-    struct State: Equatable {
-        let items: [PurchaseHistoryItem]
-
-        init(items: [PurchaseHistoryItem]) {
-            self.items = items
-        }
-    }
-
-    enum Action: Equatable {}
-
-    var body: some ReducerOf<Self> {
-        EmptyReducer()
-    }
-}
-
-struct PurchaseHistoryContentView: View {
-    let items: [PurchaseHistoryItem]
-
-    var body: some View {
-        List {
-            if items.isEmpty {
-                ContentUnavailableView("購入履歴がありません", systemImage: "clock.arrow.circlepath")
-            } else {
-                ForEach(items) { item in
-                    LabeledContent {
-                        Text("\(item.creditedAmount)pt")
-                    } label: {
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text(item.purchasedAt.formatted(date: .numeric, time: .shortened))
-                            Text(item.productId)
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                        }
-                    }
-                }
-            }
-        }
-        .navigationTitle("購入履歴")
         .navigationBarTitleDisplayMode(.inline)
     }
 }

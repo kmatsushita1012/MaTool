@@ -14,7 +14,7 @@ struct DistrictEditFeature {
     
     @Reducer
     enum Destination {
-        case base(DistrictBaseEditFeature)
+        case base(MapCoordinatePickerFeature)
         case area(DistrictAreaEditFeature)
         case performance(PerformanceEditFeature)
     }
@@ -90,13 +90,25 @@ struct DistrictEditFeature {
                 return .none
             case .baseTapped:
                 if let base = state.district.base{
-                    state.destination = .base(DistrictBaseEditFeature.State(base: base))
+                    state.destination = .base(
+                        MapCoordinatePickerFeature.State(
+                            coordinate: base,
+                            regionOrigin: base,
+                            title: "会所位置"
+                        )
+                    )
                 } else {
                     guard let origin = state.appState?.festivalState.festival.base else {
                         state.alert = AlertFeature.error("情報の取得に失敗しました")
                         return .none
                     }
-                    state.destination = .base(DistrictBaseEditFeature.State(origin: origin))
+                    state.destination = .base(
+                        MapCoordinatePickerFeature.State(
+                            coordinate: nil,
+                            regionOrigin: origin,
+                            title: "会所位置"
+                        )
+                    )
                 }
                 return .none
             case .areaTapped:

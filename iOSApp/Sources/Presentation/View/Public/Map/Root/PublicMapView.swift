@@ -7,6 +7,7 @@
 
 import ComposableArchitecture
 import SwiftUI
+import Shared
 
 struct PublicMapView: View {
     @SwiftUI.Bindable var store: StoreOf<PublicMapFeature>
@@ -27,8 +28,7 @@ struct PublicMapView: View {
                         onToastDismissed: { routeStore.send(.toastDismissed) }
                     ) {
                         PublicRouteMapView(
-                            store: routeStore,
-                            adBannerStore: store.scope(state: \.adBanner, action: \.adBanner)
+                            store: routeStore
                         )
                             .id(routeStore.district.id)
                     }
@@ -41,8 +41,7 @@ struct PublicMapView: View {
                         onToastDismissed: { locationsStore.send(.toastDismissed) }
                     ) {
                         PublicLocationsMapView(
-                            store: locationsStore,
-                            adBannerStore: store.scope(state: \.adBanner, action: \.adBanner)
+                            store: locationsStore
                         )
                     }
                 } else {
@@ -77,6 +76,10 @@ struct PublicMapView: View {
             isAdminLoggedIn: isAdminLoggedIn,
             isNavigationDisabled: isNavigationDisabled,
             toast: toast,
+            adBannerCandidate: store.adBanner?.candidate,
+            onAdBannerImageLoaded: { store.send(.adBanner(.imageLoaded($0))) },
+            onAdBannerImageFailed: { store.send(.adBanner(.imageFailed($0))) },
+            onAdBannerDismissed: { store.send(.adBanner(.dismissTapped($0))) },
             onSettingsTapped: { store.send(.delegate(.settingsOrAdminTapped)) },
             onEmergencySignOutTapped: { store.send(.delegate(.emergencySignOutTapped)) },
             onIntroductionTapped: { store.send(.delegate(.introductionTapped)) },
@@ -102,6 +105,10 @@ struct PublicMapContentView<MapContent: View>: View {
     let isAdminLoggedIn: Bool
     let isNavigationDisabled: Bool
     let toast: MapToast?
+    let adBannerCandidate: AdCandidate?
+    let onAdBannerImageLoaded: (String) -> Void
+    let onAdBannerImageFailed: (String) -> Void
+    let onAdBannerDismissed: (String) -> Void
     let onSettingsTapped: () -> Void
     let onEmergencySignOutTapped: () -> Void
     let onIntroductionTapped: () -> Void
@@ -119,6 +126,18 @@ struct PublicMapContentView<MapContent: View>: View {
         .safeAreaInset(edge: .top, spacing: 0) {
             VStack(alignment: .leading, spacing: 16) {
                 topControls
+                if let adBannerCandidate {
+                    HStack {
+                        Spacer()
+                        StoreAdBannerScreen(
+                            candidate: adBannerCandidate,
+                            onImageLoaded: onAdBannerImageLoaded,
+                            onImageFailed: onAdBannerImageFailed,
+                            onDismiss: onAdBannerDismissed
+                        )
+                    }
+                    .padding(.horizontal, 16)
+                }
                 if let toast {
                     MapToastView(toast: toast, onDismiss: onToastDismissed)
                         .transition(.opacity)
@@ -258,6 +277,10 @@ private extension PublicMapFeature.Content {
             isAdminLoggedIn: false,
             isNavigationDisabled: false,
             toast: nil,
+            adBannerCandidate: nil,
+            onAdBannerImageLoaded: { _ in },
+            onAdBannerImageFailed: { _ in },
+            onAdBannerDismissed: { _ in },
             onSettingsTapped: {},
             onEmergencySignOutTapped: {},
             onIntroductionTapped: {},

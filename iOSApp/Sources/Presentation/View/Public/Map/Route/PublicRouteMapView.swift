@@ -10,13 +10,11 @@ import ComposableArchitecture
 
 struct PublicRouteMapView: View {
     @SwiftUI.Bindable var store: StoreOf<PublicRouteFeature>
-    let adBannerStore: StoreOf<StoreAdBannerFeature>
     @StateObject var replayController: ReplayController
     @Namespace private var namespace
     
-    init(store: StoreOf<PublicRouteFeature>, adBannerStore: StoreOf<StoreAdBannerFeature>) {
+    init(store: StoreOf<PublicRouteFeature>) {
         self.store = store
-        self.adBannerStore = adBannerStore
         _replayController = StateObject(
             wrappedValue: ReplayController(
                 name: store.district.name,
@@ -131,10 +129,6 @@ extension PublicRouteMapView {
                 .fill(Color(uiColor: .systemBackground))
                 .shadow(radius: 8)
         )
-        .overlay(alignment: .topTrailing) {
-            adBannerView
-                .alignmentGuide(.top) { $0[.bottom] + 8 }
-        }
     }
     
     @ViewBuilder
@@ -156,16 +150,6 @@ extension PublicRouteMapView {
 }
 
 extension PublicRouteMapView {
-
-    var adBannerView: some View {
-        StoreAdBannerContentView(
-            candidate: adBannerStore.candidate,
-            isVisible: adBannerStore.isVisible,
-            onImageLoaded: { adBannerStore.send(.imageLoaded($0)) },
-            onImageFailed: { adBannerStore.send(.imageFailed($0)) },
-            onDismiss: { adBannerStore.send(.dismissTapped) }
-        )
-    }
     @available(iOS 26.0, *)
     @ViewBuilder
     var toolbarLayerAfterLiquidGlass: some View {
@@ -204,10 +188,6 @@ extension PublicRouteMapView {
                     }
                     .glassEffectUnion(id: "bottombar", namespace: namespace)
                     .disabled(!store.isReplayEnable)
-                }
-                .overlay(alignment: .topTrailing) {
-                    adBannerView
-                        .alignmentGuide(.top) { $0[.bottom] + 8 }
                 }
             }
         }

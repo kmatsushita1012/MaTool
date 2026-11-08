@@ -1,5 +1,5 @@
 //
-//  DistrictBaseEditFeature.swift
+//  MapCoordinatePickerFeature.swift
 //  MaTool
 //
 //  Created by 松下和也 on 2025/04/16.
@@ -10,21 +10,17 @@ import MapKit
 import Shared
 
 @Reducer
-struct DistrictBaseEditFeature {
+struct MapCoordinatePickerFeature {
     
     @ObservableState
     struct State: Equatable {
-        var title: String
+        let title: String
         var coordinate: Coordinate?
         var region: MKCoordinateRegion?
-        init(base: Coordinate, title: String = "会所位置"){
+        init(coordinate: Coordinate?, regionOrigin: Coordinate, title: String) {
             self.title = title
-            self.coordinate = base
-            self.region = makeRegion(origin: base, spanDelta: spanDelta)
-        }
-        init(origin: Coordinate, title: String = "会所位置"){
-            self.title = title
-            self.region = makeRegion(origin: origin, spanDelta: spanDelta)
+            self.coordinate = coordinate
+            self.region = makeRegion(origin: regionOrigin, spanDelta: spanDelta)
         }
     }
     @CasePathable
@@ -38,7 +34,7 @@ struct DistrictBaseEditFeature {
     
     @Dependency(\.dismiss) var dismiss
     
-    var body: some ReducerOf<DistrictBaseEditFeature>{
+    var body: some ReducerOf<MapCoordinatePickerFeature> {
         BindingReducer()
         Reduce { state, action in
             switch(action){

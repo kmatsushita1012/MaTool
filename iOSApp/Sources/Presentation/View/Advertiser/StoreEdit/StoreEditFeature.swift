@@ -7,7 +7,7 @@ import Shared
 struct StoreEditFeature {
     @Reducer
     enum Destination {
-        case coordinate(DistrictBaseEditFeature)
+        case coordinate(MapCoordinatePickerFeature)
         case credit(StoreCreditFeature)
     }
 
@@ -158,7 +158,13 @@ struct StoreEditFeature {
                 return .none
 
             case .coordinateTapped:
-                state.destination = .coordinate(.init(base: state.coordinate, title: "店舗位置"))
+                state.destination = .coordinate(
+                    MapCoordinatePickerFeature.State(
+                        coordinate: state.coordinate,
+                        regionOrigin: state.coordinate,
+                        title: "店舗位置"
+                    )
+                )
                 return .none
 
             case .destination(.presented(.coordinate(.doneTapped))):

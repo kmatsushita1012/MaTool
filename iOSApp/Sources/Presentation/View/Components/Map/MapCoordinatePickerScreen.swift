@@ -1,5 +1,5 @@
 //
-//  DistrictBaseEditView.swift
+//  MapCoordinatePickerScreen.swift
 //  MaTool
 //
 //  Created by 松下和也 on 2025/04/16.
@@ -10,8 +10,8 @@ import ComposableArchitecture
 import NavigationSwipeControl
 
 @available(iOS 17.0, *)
-struct DistrictBaseEditView:View {
-    @SwiftUI.Bindable var store: StoreOf<DistrictBaseEditFeature>
+struct MapCoordinatePickerScreen: View {
+    @SwiftUI.Bindable var store: StoreOf<MapCoordinatePickerFeature>
     
     var body: some View {
         ZStack {

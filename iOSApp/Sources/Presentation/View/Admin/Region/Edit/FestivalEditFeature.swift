@@ -14,7 +14,7 @@ struct FestivalEditFeature {
     
     @Reducer
     enum Destination {
-        case base(DistrictBaseEditFeature)
+        case base(MapCoordinatePickerFeature)
         case checkpoint(CheckpointEditFeature)
         case hazard(HazardSectionFeature)
     }
@@ -110,9 +110,21 @@ struct FestivalEditFeature {
                 return .none
             case .baseTapped:
                 if let base = state.base {
-                    state.destination = .base(DistrictBaseEditFeature.State(base: base))
+                    state.destination = .base(
+                        MapCoordinatePickerFeature.State(
+                            coordinate: base,
+                            regionOrigin: base,
+                            title: "本部所在地"
+                        )
+                    )
                 } else {
-                    state.destination = .base(DistrictBaseEditFeature.State(origin: state.festival.base))
+                    state.destination = .base(
+                        MapCoordinatePickerFeature.State(
+                            coordinate: nil,
+                            regionOrigin: state.festival.base,
+                            title: "本部所在地"
+                        )
+                    )
                 }
                 return .none
             case .putReceived(.failure(let error)):

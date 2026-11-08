@@ -6,7 +6,6 @@ import Shared
 
 struct StoreEditScreen: View {
     @SwiftUI.Bindable var store: StoreOf<StoreEditFeature>
-    @State private var selectedPhotoItem: PhotosPickerItem?
 
     var body: some View {
         WithPerceptionTracking {
@@ -26,7 +25,13 @@ struct StoreEditScreen: View {
                 isUploading: store.isUploading,
                 isLoading: store.isLoading,
                 ownerPaused: $store.ownerPaused,
-                selectedPhotoItem: $selectedPhotoItem,
+                selectedPhotoItem: Binding(
+                    get: { nil },
+                    set: { item in
+                        guard let item else { return }
+                        store.send(.bannerPhotoSelected(StoreBannerPhotoSelection(id: UUID(), item: item)))
+                    }
+                ),
                 onCoordinateTapped: { store.send(.coordinateTapped) },
                 onBannerRemoveTapped: { store.send(.bannerRemoveTapped) },
                 onCreditTapped: { store.send(.creditTapped) },
@@ -35,7 +40,7 @@ struct StoreEditScreen: View {
             .navigationDestination(
                 item: $store.scope(state: \.destination?.coordinate, action: \.destination.coordinate)
             ) { coordinateStore in
-                DistrictBaseEditView(store: coordinateStore)
+                MapCoordinatePickerScreen(store: coordinateStore)
             }
             .navigationDestination(
                 item: $store.scope(state: \.destination?.credit, action: \.destination.credit)
@@ -43,11 +48,6 @@ struct StoreEditScreen: View {
                 StoreCreditScreen(store: creditStore)
             }
             .alert($store.scope(state: \.alert, action: \.alert))
-            .onChange(of: selectedPhotoItem) { _, item in
-                guard let item else { return }
-                store.send(.bannerPhotoSelected(StoreBannerPhotoSelection(id: UUID(), item: item)))
-                selectedPhotoItem = nil
-            }
         }
     }
 }

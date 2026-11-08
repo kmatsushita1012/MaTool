@@ -51,7 +51,7 @@ struct DistrictEditScreen: View {
         }
         .dismissible(backButton: false, edgeSwipe: false)
         .navigationDestination(item: $store.scope(state: \.destination?.base, action: \.destination.base)) { store in
-            DistrictBaseEditView(store: store)
+            MapCoordinatePickerScreen(store: store)
         }
         .navigationDestination(item: $store.scope(state: \.destination?.area, action: \.destination.area)) { store in
             DistrictAreaEditView(store: store)

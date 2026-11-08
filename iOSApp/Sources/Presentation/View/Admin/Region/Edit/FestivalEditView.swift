@@ -48,7 +48,7 @@ struct FestivalEditScreen: View {
             .navigationDestination(
                 item: $store.scope(state: \.destination?.base, action: \.destination.base)
             ) { store in
-                DistrictBaseEditView(store: store)
+                MapCoordinatePickerScreen(store: store)
             }
             .navigationDestination(
                 item: $store.scope(state: \.destination?.checkpoint, action: \.destination.checkpoint)
