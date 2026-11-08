@@ -23,27 +23,14 @@ jobs:
         run: |
           echo "$AMPLIFYCONFIGURATION_JSON_B64" | base64 --decode > iOSApp/amplifyconfiguration.json
 
-      - name: Ensure SPM Cache Dir Exists
-        run: mkdir -p iOSApp/Caches/org.swift.swiftpm
-      
-      - name: Cache SPM
-        uses: actions/cache@v3
+      - name: Cache SPM checkouts
+        uses: actions/cache@v4
         with:
-          path: |
-            ~/Library/Caches/org.swift.swiftpm/
-          key: ${{ runner.os }}-spm-iOSApp-27-${{ github.ref_name }}-${{ hashFiles('iOSApp/MaTool.xcodeproj/project.pbxproj', 'Shared/Package.swift', 'Shared/Package.resolved') }}
+          # Git cloneの再取得を避け、生成可能なcheckoutsやビルド成果物は保存しない。
+          path: iOSApp/.sourcePackages/repositories
+          key: ${{ runner.os }}-spm-iOSApp-xcode27-${{ hashFiles('MaTool.xcworkspace/xcshareddata/swiftpm/Package.resolved', 'Shared/Package.swift') }}
           restore-keys: |
-            ${{ runner.os }}-spm-iOSApp-27-${{ github.ref_name }}-
-            ${{ runner.os }}-spm-iOSApp-27-
-
-      - name: Cache DerivedData
-        uses: actions/cache@v3
-        with:
-          path: iOSApp/.derivedData
-          key: ${{ runner.os }}-derived-iOSApp-27-${{ github.ref_name }}-${{ hashFiles('iOSApp/MaTool.xcodeproj/project.pbxproj', 'Shared/Package.swift', 'Shared/Package.resolved') }}
-          restore-keys: |
-            ${{ runner.os }}-derived-iOSApp-27-${{ github.ref_name }}-
-            ${{ runner.os }}-derived-iOSApp-27-
+            ${{ runner.os }}-spm-iOSApp-xcode27-
 
       - name: Resolve packages
         env:
@@ -56,6 +43,7 @@ jobs:
           xcodebuild \
             -project iOSApp/MaTool.xcodeproj \
             -scheme iOSApp \
+            -clonedSourcePackagesDirPath iOSApp/.sourcePackages \
             -skipPackagePluginValidation \
             -resolvePackageDependencies
 
@@ -69,6 +57,7 @@ jobs:
             xcodebuild \
               -project iOSApp/MaTool.xcodeproj \
               -scheme iOSApp \
+              -clonedSourcePackagesDirPath iOSApp/.sourcePackages \
               -showdestinations \
               -skipMacroValidation \
               -skipPackagePluginValidation
@@ -108,6 +97,7 @@ jobs:
             -destination "id=${{ steps.sim.outputs.DESTINATION_ID }}" \
             -configuration Debug \
             -derivedDataPath iOSApp/.derivedData \
+            -clonedSourcePackagesDirPath iOSApp/.sourcePackages \
             -enableCodeCoverage YES \
             -skipMacroValidation \
             -skipPackagePluginValidation \
