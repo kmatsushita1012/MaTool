@@ -1,4 +1,5 @@
 import Dependencies
+import Shared
 
 extension DependencyValues {
     var advertiserAuthDataFetcher: any AdvertiserAuthDataFetcherProtocol {
@@ -18,26 +19,16 @@ struct AdvertiserAuthDataFetcher: AdvertiserAuthDataFetcherProtocol {
     func signUp(email: String, password: String) async throws {
         try await client.post(
             path: "/advertisers/signup",
-            body: SignUpRequest(email: email, password: password)
+            body: AdvertiserSignUpRequest(email: email, password: password)
         )
     }
 
     func confirmSignUp(email: String, code: String) async throws {
         try await client.post(
             path: "/advertisers/confirm-signup",
-            body: ConfirmSignUpRequest(email: email, confirmationCode: code)
+            body: AdvertiserConfirmSignUpRequest(email: email, confirmationCode: code)
         )
     }
-}
-
-private struct SignUpRequest: Encodable {
-    let email: String
-    let password: String
-}
-
-private struct ConfirmSignUpRequest: Encodable {
-    let email: String
-    let confirmationCode: String
 }
 
 enum AdvertiserAuthDataFetcherKey: DependencyKey {
