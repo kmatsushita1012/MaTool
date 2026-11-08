@@ -14,7 +14,7 @@
 
 | 機能 | 第一段階 | 説明 |
 | --- | --- | --- |
-| 広告主登録・ログイン／メール確認 | **実装する** | Cognito の広告主アカウント。既存の祭典／町管理者ロールとは分離 |
+| 広告主登録・ログイン／メール確認 | **実装する** | **登録・メール確認は Backend API 経由**。ログインは既存 Amplify / Cognito を利用。Role は Backend が固定付与 |
 | `AdvertiserDashboard` | **実装する** | 広告主向けの最初の管理画面 |
 | 所有店舗一覧・店舗作成／編集 | **実装する** | 住所、営業時間、説明、位置座標、広告配信の一時停止 |
 | **バナー**画像の選択／入稿 | **実装する** | `PhotosPicker` → S3 → Store PUT |
@@ -35,7 +35,7 @@
 
 ## 2. 広告主管理画面はシステム標準 Form を優先
 
-**新規の最初の管理画面の名前は `AdvertiserDashboardFeature` / `AdvertiserDashboardView` とする。** 既存の `FestivalDashboardFeature/View`、`DistrictDashboardFeature/View` と命名を揃える。
+**最初の画面は `AdvertiserDashboardFeature` / `AdvertiserDashboardView` とする。** 既存の `FestivalDashboardFeature/View`、`DistrictDashboardFeature/View` と**命名・TCA Reducer／State／Destination／Screen と ContentView の構成を合わせる**。独立したルート `NavigationStack` を作らず、Root の既存ナビゲーションに統合する。
 
 表示内容は原則 `Form` / `Section` / `List` / `TextField` / `TextEditor` / `Toggle` / `PhotosPicker` / `NavigationLink` / `Button` で組む。独自カード、装飾的ダッシュボード、独自フォームコンポーネントは作らない。
 
@@ -154,8 +154,40 @@
 └─────────────────────────────────────┘
 ```
 
-- Cognito `SignUp` → `ConfirmSignUp` → `SignIn`。登録はメール確認を必須とする。
+- **広告主登録は iOS → Backend → Cognito**。iOS は `POST /advertisers/signup` にメール／パスワードを送信し、続く `POST /advertisers/confirm-signup` に確認コードを送信する。iOS から Cognito `SignUp` / `ConfirmSignUp` を直接呼ばない。
+- Backend はサーバー専用（秘密鍵付き）Cognito App Client の `SignUp` で **`custom:role=advertiser` を固定指定**。この登録 API はユーザーから role を受け取らない。Cognito の通常ユーザー向け App Client は `custom:role` の**読み取りのみ可・書き込み不可**。
+- メール確認後に iOS の**既存 Amplify `SignIn`**へ進み、Backend は Access Token を検証して `.advertiser(sub)` と解釈する。
 - 既存の町／祭典管理者の Login UI・権限を流用して変更しない。認証依存の共有はよいが、**画面遷移とロールの判定を混同しない**。
+
+## 2.2 広告主の登録経路と権限制御（Backend 経由を必須とする）
+
+```mermaid
+sequenceDiagram
+  participant User as 広告主 iOS
+  participant BE as Backend（新規 AdvertiserAuthRouter）
+  participant Cognito as Cognito User Pool
+  User->>BE: POST /advertisers/signup（メール・パスワード）
+  BE->>Cognito: SignUp（サーバー専用 App Client、role=advertiser 固定）
+  Cognito-->>User: メール確認コードを送信
+  User->>BE: POST /advertisers/confirm-signup（登録識別子・確認コード）
+  BE->>Cognito: ConfirmSignUp
+  Cognito-->>BE: 確認完了
+  BE-->>User: 登録完了
+  User->>Cognito: Amplify Auth.signIn（既存 iOS App Client）
+  Cognito-->>User: Access Token
+  User->>BE: 店舗 API + Access Token
+  BE->>Cognito: GetUser・role・email_verified・sub を照合
+  BE-->>User: advertiser として所有店舗のみ操作許可
+```
+
+1. 新規 Backend API：`POST /advertisers/signup`（未認証）。**クライアント入力はメールアドレス・パスワードのみ**。Backend 側で検証し、専用 Cognito App Client の `SignUp` に `custom:role=advertiser` を固定して送る。ユーザーが指定した role / sub / ownerId は一切受理しない。
+2. 同 `POST /advertisers/confirm-signup`（未認証）で確認コードを Cognito `ConfirmSignUp` に渡す。登録の確認先は Cognito 標準メール検証。登録用アプリクライアントは**Backend 専用・Client Secret あり**とし、Secret と SECRET_HASH を iOS に渡さない。
+3. Cognito の iOS 通常 App Client は `custom:role` の**Read は許可、Write は禁止**。Backend 専用登録 App Client だけが SignUp 時に書き込み可能。User Pool のメールサインイン／Username 設定がこの方式に対応するかインフラ構成を確認する。
+4. ログイン／トークン更新は既存の `Amplify.Auth.signIn` / `fetchAuthSession` を使用し、Backend が `email_verified=true`、`custom:role=advertiser`、`sub` の存在を検証。**role 未設定を自動で広告主とみなさない**。既存の未設定ユーザーがいる場合は移行対象を確認する。
+5. Backend 登録 API は公開エンドポイントなので**レート制限、Cognito エラー／重複登録／コード期限切れ、ログにパスワードを残さない設定**を受入条件とする。ログイン前に Festival／District の管理 API を操作できないこと。
+6. 店舗作成時の `ownerId` は**Backend が検証済み Cognito sub から決める**。端末が送った role 等で管理者に昇格しないことをテストする。
+
+**Backend #390 の現状**：上記の登録・確認 API はまだない。現行 `CognitoAuthManager.parseUserRole` は `custom:role` が `nil` でメール確認済みなら advertiser と解釈するため、実装時には明示 role のみに変更する必要がある。第一段階を実装する前の **Backend 側の追加作業**として扱う。既存管理者の `AdminCreateUser`（一時パスワード通知）を流用せず、通常のメール確認付きセルフ登録を維持する。
 
 ## 3. 地図バナーのレイアウト
 
@@ -288,6 +320,54 @@ flowchart TB
 
 現行 `RootFeature.isAdminLoggedIn` は `userRole != .guest`、`setAdminDestination` は `.headquarter`／`.district`／`.guest` を処理する。`.advertiser` を追加するなら、**「ログイン済み」と「祭典／町管理者」を分離した分岐**が必要。広告主を既存 Admin Dashboard に入れない。起動済みユーザー、ログイン直後、ログアウト時のいずれも適切な画面へ遷移し、既存管理者の動作を保つ。
 
+### 4.1 既存管理者と同じ Navigation Tree 再構築を必須とする
+
+**広告主 Dashboard は既存の Festival／District Dashboard と同じ Root のナビゲーションツリーに属する。** ログイン後に別の `NavigationStack` を重ねたり、View 側の状態フラグだけで画面を差し替えたりしない。**Root Reducer がログイン成功・認証済み起動・ログアウト・祭典／町切替で Navigation Tree を組み直す**設計とする。
+
+```mermaid
+flowchart TB
+  Root["RootSceneView / RootFeature<br/>既存 NavigationStack"]
+  Map["PublicMapFeature（既存地図起点）"]
+  Dest{"RootFeature.Destination"}
+  F["adminFestival(FestivalDashboardFeature)（既存）"]
+  D["adminDistrict(DistrictDashboardFeature)（既存）"]
+  A["advertiser(AdvertiserDashboardFeature)（新規）"]
+  S["settings(SettingsFeature)（既存）"]
+  Child["StoreEdit / CreditPurchase / PurchaseHistory<br/>AdvertiserDashboard.Destination"]
+  Root --> Map
+  Root --> Dest
+  Dest --> F
+  Dest --> D
+  Dest --> A
+  Dest --> S
+  A --> Child
+  classDef existing fill:#edf3f7,stroke:#526b7e,color:#233849
+  classDef new fill:#e6f2ff,stroke:#2b6faa,color:#153957
+  class Root,Map,Dest,F,D,S existing
+  class A,Child new
+```
+
+| 契機 | Root の State 再構築 | 受入条件 |
+| --- | --- | --- |
+| **広告主ログイン成功** | `Settings → LoginFeature → RootFeature` の既存成功 Action 経路で `.advertiser(sub)` を受け、`launchState`・`map` を再生成。旧 Settings / Login を破棄して `destination=.advertiser(AdvertiserDashboardFeature.State(...))` を構築 | 古いログイン階層に Dashboard を積み重ねない |
+| **Festival／District 管理者のログイン成功** | 従来どおり `adminFestival` / `adminDistrict` へ遷移 | 既存 Dashboard を変えない |
+| **アプリ再起動・認証復元** | `launchSceneUseCase` → `RootFeature.launchFinished` で Role と `lastMainScreenUseCase` の記録を照合し、前回 Dashboard なら広告主 Destination を新規生成。前回 Map なら地図に戻る | View の `onAppear` から ad hoc に push しない |
+| **Dashboard の戻る操作** | 既存 Dashboard と同様 `destination=nil`、前回画面を `.map` に保存 | ログインセッションを保持 |
+| **広告主ログアウト成功** | `finishSignOut` と同様、ゲスト用 `launchState` と `map` を作成し、`destination`・`sheet`・Dashboard 子 Feature・前回画面記録をクリア | StoreEdit／Credit などがナビゲーションに残らない |
+| **祭典／町変更** | `updateMapForSceneSelection` の既存流儀で `map` を再構築し、古い祭典に依存する Dashboard 子 State を破棄／必要に応じ再取得 | Credit／所有店舗は年度 `AppState` に混ぜない |
+| **未認証・認証失敗** | 既存 Map／Onboarding のみ | 広告主 Dashboard を生成しない |
+
+**具体的なコード設計の指示**
+
+1. `RootFeature.Destination` に `case advertiser(AdvertiserDashboardFeature)` を加え、`RootSceneView` の**既存** `NavigationStack` の `navigationDestination` へ追加する。既存の `adminFestival`／`adminDistrict` は維持。
+2. `setAdminDestination` は従来の Festival／District 管理者用に残し、Role ごとに Root が正しい Dashboard を選ぶ分岐へ統合。`launchFinished` と Login 成功の両方が**同じツリー構築規約**を使うようにする。
+3. 現行 `RootFeature.isAdminLoggedIn = userRole != .guest` は、広告主も管理者と判定するため**修正必須**。管理者と広告主を区別し、地図の管理者導線から広告主が Festival／District Dashboard に入らないこと。
+4. `lastMainScreenUseCase` の既存保存値との互換性を保ち、広告主 Dashboard の復元は Root で行う。保存形式を増やすか既存 `.admin` を「Role に応じた Dashboard」として解釈するかは実装で確認する。深い子画面を勝手に復元しない。
+5. **Backend による `confirm-signup` 完了はログイン完了ではない**。その後 Amplify `SignIn` 成功 Action を Root へ伝播させてツリーを切り替える。
+6. `AdvertiserDashboardFeature` も `@Reducer`、`@ObservableState`、`@Presents Destination`、`@Presents alert` を持つ。`AdvertiserDashboardScreen` と `AdvertiserDashboardContentView` を分離し、子画面へ `navigationDestination` で push。`Form`・`Section`・`List` を主とする。
+
+**Swift Testing の受入条件**: 広告主 SignIn→Dashboard、新規起動時復元、Dashboard を閉じた後の Map 復帰、ログアウト時の子 State 全破棄、町／祭典変更時の古い State の破棄、既存管理者の回帰、広告主の権限誤昇格拒否。Simulator で既存 Festival／District Dashboard と同じ戻る・ツリー再構築を確認する。
+
 ## 5. クラス相関／状態の正本
 
 以下は**新規クラスの提案名**。既存コードへ寄せ、同じ責務の新規インフラを無駄に作らない。
@@ -315,7 +395,8 @@ flowchart TB
     HTTP["HTTPClient（既存）"]
     S3["S3ImageUploadClient（既存）"]
     SK["StoreKitClient（新規）"]
-    Cognito["AuthProvider（既存／登録機能拡張）"]
+    Cognito["AuthProvider（既存／ログイン・token）"]
+    SignupFetch["AdvertiserRegistrationDataFetcher（新規／登録・確認）"]
   end
   subgraph External["External"]
     Backend["Backend PR #390<br/>Store・Advertisement・Purchase APIs"]
@@ -333,12 +414,13 @@ flowchart TB
   Forms --> PUC --> SK --> Apple
   PUC --> StoreFetch
   Auth --> Cognito
+  Auth --> SignupFetch --> HTTP
   PM -.-> AdMob
   HTTP --> Backend
   classDef existing fill:#edf3f7,stroke:#526b7e,color:#233849
   classDef added fill:#e6f2ff,stroke:#2b6faa,color:#153957
   class Root,PM,HTTP,S3,Cognito,AdMob existing
-  class Banner,Dash,Forms,Auth,BUC,SUC,UUC,PUC,AdFetch,StoreFetch,SK added
+  class Banner,Dash,Forms,Auth,BUC,SUC,UUC,PUC,AdFetch,StoreFetch,SK,SignupFetch added
 ```
 
 | 状態 | 所有者／正本 | 方針 |
