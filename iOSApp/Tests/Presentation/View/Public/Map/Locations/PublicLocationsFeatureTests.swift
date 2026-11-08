@@ -82,13 +82,13 @@ private struct LocationMapFixture {
         appState = Shared(value: AppState(
             festivalPack: LaunchFestivalPack(
                 festival: festival,
+                year: 2026,
                 districts: districts,
                 periods: [],
                 locations: locations,
                 checkpoints: [],
                 hazardSections: []
-            ),
-            year: 2026
+            )
         ))
     }
 
