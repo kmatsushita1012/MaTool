@@ -31,3 +31,9 @@ public struct NullEncodable<T: Codable>: Codable{
 extension NullEncodable: Equatable where T: Equatable {}
 extension NullEncodable: Hashable where T: Hashable {}
 extension NullEncodable: Sendable where T: Sendable {}
+
+extension KeyedDecodingContainer {
+    func decode<T>(_ type: NullEncodable<T>.Type, forKey key: Key) throws -> NullEncodable<T> where T: Codable {
+        try decodeIfPresent(type, forKey: key) ?? NullEncodable(wrappedValue: nil)
+    }
+}

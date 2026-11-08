@@ -6,8 +6,8 @@ public struct Store: Entity, Identifiable {
     public let ownerId: String
     public let purchaseAccountToken: UUID
     public var name: String
-    public var address: String
-    public var coordinate: Coordinate
+    @NullEncodable public var address: String?
+    @NullEncodable public var coordinate: Coordinate?
     public var businessHours: String
     @NullEncodable public var description: String?
     @NullEncodable public var bannerImagePath: String?
@@ -23,8 +23,8 @@ public struct Store: Entity, Identifiable {
         ownerId: String,
         purchaseAccountToken: UUID,
         name: String,
-        address: String,
-        coordinate: Coordinate,
+        address: String? = nil,
+        coordinate: Coordinate? = nil,
         businessHours: String,
         description: String? = nil,
         bannerImagePath: String? = nil,

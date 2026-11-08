@@ -24,35 +24,82 @@ struct StoreRepositoryTest {
         #expect(dataStore.lastQueryConsistentRead == true)
     }
 
-    @Test("画像変更の更新は moderation_status が approved の場合だけ成功する条件を付ける")
-    func imageUpdateRequiresApprovedStatusInConditionExpression() async throws {
+    @Test("Store 更新は DataStore の put に委譲する")
+    func updateUsesDataStorePut() async throws {
         let updated = makeStore(bannerImagePath: "https://cdn.example/new.jpg")
-        let encoded = try DynamoDBEncoder().encode(Record(pk: "FESTIVAL#festival-1", sk: "STORE#store-1", content: updated))
-        let dataStore = DataStoreMock(updateItemHandler: { _, _, _, names, _, _ in
-            #expect(names["#moderationStatus"] == "moderation_status")
-            return encoded
+        let dataStore = DataStoreMock(putHandler: { _ in })
+
+        let result = try await withDependencies {
+            $0.dataStoreFactory = { _ in dataStore }
+        } operation: {
+            try await StoreRepository().update(updated)
+        }
+
+        #expect(result == updated)
+        #expect(dataStore.putCallCount == 1)
+    }
+
+    @Test("Store 更新は nullable な location を含めて DataStore の put に渡す")
+    func updatePassesNullableLocationToDataStore() async throws {
+        let updated = makeStore(address: nil, coordinate: nil)
+        let dataStore = DataStoreMock(putHandler: { item in
+            guard let record = item as? Record<Store> else {
+                Issue.record("StoreRecord expected")
+                return
+            }
+            let attributes = try DynamoDBEncoder().encode(record)
+            guard case .m(let content)? = attributes["content"] else {
+                Issue.record("Store content map was missing")
+                return
+            }
+            if case .null(true)? = content["address"] {} else { Issue.record("address must be DynamoDB NULL") }
+            if case .null(true)? = content["coordinate"] {} else { Issue.record("coordinate must be DynamoDB NULL") }
         })
 
         let result = try await withDependencies {
             $0.dataStoreFactory = { _ in dataStore }
         } operation: {
-            try await StoreRepository().updateEditableFields(updated, requireApproved: true)
+            try await StoreRepository().update(updated)
         }
 
-        #expect(result == updated)
-        #expect(dataStore.lastUpdateConditionExpression?.contains("#content.#moderationStatus = :approved") == true)
+        #expect(result.address == nil)
+        #expect(result.coordinate == nil)
+    }
+
+    @Test("旧 DynamoDB Store で欠落した location attributes は nil として復元する")
+    func decodesLegacyStoreWithoutLocationAttributes() throws {
+        let store = makeStore()
+        var attributes = try DynamoDBEncoder().encode(
+            Record(pk: "FESTIVAL#festival-1", sk: "STORE#store-1", content: store)
+        )
+        guard case .m(var content)? = attributes["content"] else {
+            Issue.record("encoded Store content map was missing")
+            return
+        }
+        content.removeValue(forKey: "address")
+        content.removeValue(forKey: "coordinate")
+        attributes["content"] = .m(content)
+
+        let record = try DynamoDBDecoder().decode(attributes, as: Record<Store>.self)
+
+        #expect(record.content.address == nil)
+        #expect(record.content.coordinate == nil)
     }
 }
 
-private func makeStore(bannerImagePath: String? = "https://cdn.example/old.jpg") -> Store {
+private func makeStore(
+    address: String? = "Address",
+    coordinate: Coordinate? = Coordinate(latitude: 35, longitude: 139),
+    bannerImagePath: String? = "https://cdn.example/old.jpg"
+) -> Store {
     Store(
         id: "store-1",
         festivalId: "festival-1",
         ownerId: "owner-1",
         purchaseAccountToken: UUID(uuidString: "00000000-0000-0000-0000-000000000001")!,
         name: "Store",
-        address: "Address",
-        coordinate: Coordinate(latitude: 35, longitude: 139),
+        address: address,
+        coordinate: coordinate,
         businessHours: "",
         bannerImagePath: bannerImagePath
     )

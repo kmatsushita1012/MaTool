@@ -35,9 +35,13 @@ actor StoreRepositorySpy: StoreRepositoryProtocol {
         storedStore = store
     }
 
-    func updateEditableFields(_ store: Store, requireApproved: Bool) async throws -> Store {
+    func update(_ store: Store) async throws -> Store {
         storedStore = store
         return store
+    }
+
+    func snapshot() -> Store? {
+        storedStore
     }
 }
 
