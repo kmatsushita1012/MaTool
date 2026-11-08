@@ -317,36 +317,37 @@ private struct FestivalDistrictGroupContentView: View {
     let onDistrictSelected: (District.ID) -> Void
 
     var body: some View {
-        InfoMaterialContainer {
-            VStack(alignment: .leading, spacing: 0) {
+        InfoMaterialContainer(padding: 8) {
+            VStack(alignment: .leading, spacing: 8) {
                 if let name = group.name {
                     Text(name)
                         .font(.headline)
                         .foregroundStyle(.secondary)
                         .frame(maxWidth: .infinity, alignment: .leading)
-                        .padding(.bottom, 8)
                 }
 
-                ForEach(group.districts) { district in
-                    if district.id != group.districts.first?.id {
-                        Divider()
-                    }
-
-                    Button {
-                        onDistrictSelected(district.id)
-                    } label: {
-                        HStack {
-                            Text(district.name)
-                            Spacer(minLength: 8)
-                            Image(systemName: "chevron.right")
-                                .foregroundStyle(.secondary)
+                VStack(spacing: 0) {
+                    ForEach(group.districts) { district in
+                        Button {
+                            onDistrictSelected(district.id)
+                        } label: {
+                            HStack {
+                                Text(district.name)
+                                Spacer(minLength: 8)
+                                Image(systemName: "chevron.right")
+                                    .foregroundStyle(.secondary)
+                            }
+                            .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
+                            .contentShape(.rect)
+                            .padding(.horizontal, 8)
                         }
-                        .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
-                        .contentShape(.rect)
-                        .padding(.horizontal, 8)
+                        .tint(.primary)
+                        .disabled(isLoading)
+
+                        if district.id != group.districts.last?.id {
+                            Divider()
+                        }
                     }
-                    .tint(.primary)
-                    .disabled(isLoading)
                 }
             }
         }
