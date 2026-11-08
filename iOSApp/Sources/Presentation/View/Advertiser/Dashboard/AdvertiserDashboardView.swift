@@ -19,6 +19,7 @@ struct AdvertiserDashboardScreen: View {
             ) { store in
                 StoreEditScreen(store: store)
             }
+            .navigationBarBackButtonHidden(store.isRootDestination)
             .alert($store.scope(state: \.alert, action: \.alert))
             .task { store.send(.onAppear) }
         }

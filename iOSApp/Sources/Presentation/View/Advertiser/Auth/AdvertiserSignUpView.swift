@@ -91,7 +91,6 @@ struct AdvertiserSignUpContentView: View {
                 }
                 .buttonStyle(PrimaryButtonStyle())
                 .loadingIndicator(isLoading: isLoading)
-                .disabled(isLoading || email.isEmpty || password.isEmpty || passwordConfirmation.isEmpty)
             }
 
             Text(errorMessage ?? " ")

@@ -18,19 +18,19 @@ struct StoreDataFetcher: StoreDataFetcherProtocol {
     @Dependency(HTTPClientKey.self) private var client
 
     func fetchOwnedStores() async throws -> [Store] {
-        try await client.get(path: "/advertisers/me/stores", accessToken: await getToken(), isCache: false)
+        try await client.get(path: "/advertisers/me/stores", accessToken: try await getRequiredToken(), isCache: false)
     }
 
     func create(festivalId: Festival.ID, request: StoreCreateRequest) async throws -> Store {
         try await client.post(
             path: "/festivals/\(festivalId)/stores",
             body: request,
-            accessToken: await getToken()
+            accessToken: try await getRequiredToken()
         )
     }
 
     func update(_ store: Store) async throws -> Store {
-        try await client.put(path: "/stores/\(store.id)", body: store, accessToken: await getToken())
+        try await client.put(path: "/stores/\(store.id)", body: store, accessToken: try await getRequiredToken())
     }
 }
 

@@ -1,4 +1,5 @@
 import ComposableArchitecture
+import Foundation
 import Shared
 
 @Reducer
@@ -34,6 +35,18 @@ struct AdvertiserSignUpFeature {
 
             case .signUpTapped:
                 guard !state.isLoading else { return .none }
+                guard !state.email.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+                    state.errorMessage = "メールアドレスを入力してください。"
+                    return .none
+                }
+                guard !state.password.isEmpty else {
+                    state.errorMessage = "パスワードを入力してください。"
+                    return .none
+                }
+                guard !state.passwordConfirmation.isEmpty else {
+                    state.errorMessage = "パスワード（確認用）を入力してください。"
+                    return .none
+                }
                 guard state.password == state.passwordConfirmation else {
                     state.errorMessage = "パスワードが一致しません"
                     return .none
@@ -78,7 +91,10 @@ struct AdvertiserSignUpFeature {
 
             case .received(.failure(let error)):
                 state.isLoading = false
-                state.errorMessage = error.message
+                let message = error.message.trimmingCharacters(in: .whitespacesAndNewlines)
+                state.errorMessage = message.isEmpty
+                    ? "アカウントを作成できませんでした。入力内容を確認してください。"
+                    : message
                 return .none
             }
         }

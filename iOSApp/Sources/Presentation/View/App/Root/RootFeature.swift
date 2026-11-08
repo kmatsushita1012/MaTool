@@ -197,7 +197,7 @@ struct RootFeature {
                 case .advertiser:
                     state.map = nil
                     state.onboarding = nil
-                    state.destination = .advertiserDashboard(AdvertiserDashboardFeature.State())
+                    state.destination = .advertiserDashboard(AdvertiserDashboardFeature.State(isRootDestination: true))
                     return .none
                 case .loading, .error:
                     state.map = nil
@@ -441,9 +441,6 @@ struct RootFeature {
     @discardableResult
     private func activateAdvertiserSession(state: inout State, userRole: UserRole) -> Bool {
         guard case .advertiser = userRole else { return false }
-        state.$launchState.withLock { $0 = .advertiser }
-        state.map = nil
-        state.onboarding = nil
         state.sheet = nil
         state.destination = .advertiserDashboard(AdvertiserDashboardFeature.State())
         return true

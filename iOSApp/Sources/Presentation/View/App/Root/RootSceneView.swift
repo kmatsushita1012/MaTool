@@ -95,20 +95,19 @@ public struct RootSceneView: View {
                         LoadingView()
                     }
                 case .advertiser:
-                    if let advertiserStore = store.scope(
-                        state: \.destination?.advertiserDashboard,
-                        action: \.destination.advertiserDashboard
-                    ) {
-                        AdvertiserDashboardScreen(store: advertiserStore)
-                    } else {
-                        LoadingView()
-                    }
+                    LoadingView()
                 case .loading:
                     LoadingView()
                         .preferredColorScheme(.light)
                 case .error(let message):
                     errorView(message)
                 }
+            }
+            .navigationDestination(item: $store.scope(
+                state: \.destination?.advertiserDashboard,
+                action: \.destination.advertiserDashboard
+            )) { advertiserStore in
+                AdvertiserDashboardScreen(store: advertiserStore)
             }
         }
         .modifier(AppScrollEdgeEffectModifier(isEnabled: isLiquidGlassEnabled))

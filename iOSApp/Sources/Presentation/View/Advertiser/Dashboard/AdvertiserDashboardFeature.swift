@@ -13,16 +13,28 @@ struct AdvertiserDashboardFeature {
     struct State: Equatable {
         var stores: [AdvertiserStore] = []
         var festivals: [Festival] = []
-        var isLoading = false
+        var isLoadingStores = false
+        var isLoadingFestivals = false
         var isSigningOut = false
+        var isRootDestination: Bool
+        var festivalLoadErrorMessage: String?
         @Presents var destination: Destination.State?
         @Presents var alert: AlertFeature.State?
+
+        var isLoading: Bool {
+            isLoadingStores || isLoadingFestivals
+        }
+
+        init(isRootDestination: Bool = false) {
+            self.isRootDestination = isRootDestination
+        }
     }
 
     @CasePathable
     enum Action: Equatable {
         case onAppear
-        case loadReceived(AppResult<AdvertiserDashboardData>)
+        case storesLoaded(AppResult<[AdvertiserStore]>)
+        case festivalsLoaded(AppResult<[Festival]>)
         case addStoreTapped
         case storeTapped(AdvertiserStore)
         case signOutTapped
@@ -41,27 +53,45 @@ struct AdvertiserDashboardFeature {
             switch action {
             case .onAppear:
                 guard !state.isLoading else { return .none }
-                state.isLoading = true
-                return .task(Action.loadReceived) {
-                    async let stores = storeUsecase.loadOwnedStores()
-                    async let festivals = fetchFestivalListUseCase()
-                    let result = try await AdvertiserDashboardData(stores: stores, festivals: festivals)
-                    await storeCreditUsecase.recoverUnfinishedPurchases(for: result.stores)
-                    return result
-                }
+                state.isLoadingStores = true
+                state.isLoadingFestivals = true
+                return .merge(
+                    .task(Action.storesLoaded) {
+                        let stores = try await storeUsecase.loadOwnedStores()
+                        await storeCreditUsecase.recoverUnfinishedPurchases(for: stores)
+                        return stores
+                    },
+                    .task(Action.festivalsLoaded) {
+                        try await fetchFestivalListUseCase()
+                    }
+                )
 
-            case .loadReceived(.success(let data)):
-                state.isLoading = false
-                state.stores = data.stores.sorted { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending }
-                state.festivals = data.festivals
+            case .storesLoaded(.success(let stores)):
+                state.isLoadingStores = false
+                state.stores = stores.sorted { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending }
                 return .none
 
-            case .loadReceived(.failure(let error)):
-                state.isLoading = false
+            case .storesLoaded(.failure(let error)):
+                state.isLoadingStores = false
                 state.alert = .error("店舗情報を取得できませんでした。\n\(error.message)")
                 return .none
 
+            case .festivalsLoaded(.success(let festivals)):
+                state.isLoadingFestivals = false
+                state.festivals = festivals
+                state.festivalLoadErrorMessage = nil
+                return .none
+
+            case .festivalsLoaded(.failure(let error)):
+                state.isLoadingFestivals = false
+                state.festivalLoadErrorMessage = error.message
+                return .none
+
             case .addStoreTapped:
+                if let errorMessage = state.festivalLoadErrorMessage {
+                    state.alert = .error("祭典情報を取得できませんでした。\n\(errorMessage)")
+                    return .none
+                }
                 guard !state.festivals.isEmpty else {
                     state.alert = .error("店舗を登録できる祭典がありません。")
                     return .none
@@ -113,11 +143,6 @@ struct AdvertiserDashboardFeature {
         .ifLet(\.$destination, action: \.destination)
         .ifLet(\.$alert, action: \.alert)
     }
-}
-
-struct AdvertiserDashboardData: Equatable {
-    let stores: [AdvertiserStore]
-    let festivals: [Festival]
 }
 
 extension AdvertiserDashboardFeature.Destination.State: Equatable {}
