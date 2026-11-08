@@ -21,12 +21,21 @@ jobs:
           mkdir -p Backend
           touch Backend/.env
 
-      - name: Build Lambda binary with Dockerfile
-        # build context はリポジトリルート（Shared を含める）
-        run: |
-          # Backend/Dockerfile を使ってルートをコンテキストにビルド
-          docker build -t matoolapi -f Backend/Dockerfile .
+      - name: Setup Docker Buildx
+        uses: docker/setup-buildx-action@v3
 
+      - name: Build Lambda image (cached)
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: Backend/Dockerfile
+          load: true
+          tags: matoolapi:latest
+          cache-from: type=gha,scope=matool-backend-release-v1
+          cache-to: type=gha,scope=matool-backend-release-v1,mode=max
+
+      - name: Extract Lambda package
+        run: |
           # イメージから Lambda 配布物一式を抽出
           docker create --name extract matoolapi
           mkdir -p lambda-dist
