@@ -1,7 +1,5 @@
 import ComposableArchitecture
-import PhotosUI
 import SwiftUI
-import UIKit
 import Shared
 
 struct StoreEditScreen: View {
@@ -19,33 +17,14 @@ struct StoreEditScreen: View {
                 businessHours: $store.businessHours,
                 description: $store.description,
                 hasCoordinate: store.coordinate != nil,
-                hasStore: store.store != nil,
-                bannerImagePath: store.bannerImagePath,
-                bannerPreviewData: store.bannerPreviewData,
-                isUploading: store.isUploading,
                 isLoading: store.isLoading,
-                ownerPaused: $store.ownerPaused,
-                selectedPhotoItem: Binding(
-                    get: { nil },
-                    set: { item in
-                        guard let item else { return }
-                        store.send(.bannerPhotoSelected(StoreBannerPhotoSelection(id: UUID(), item: item)))
-                    }
-                ),
                 onCoordinateTapped: { store.send(.coordinateTapped) },
-                onBannerRemoveTapped: { store.send(.bannerRemoveTapped) },
-                onCreditTapped: { store.send(.creditTapped) },
                 onSaveTapped: { store.send(.saveTapped) }
             )
             .navigationDestination(
                 item: $store.scope(state: \.destination?.coordinate, action: \.destination.coordinate)
             ) { coordinateStore in
                 MapCoordinatePickerScreen(store: coordinateStore)
-            }
-            .navigationDestination(
-                item: $store.scope(state: \.destination?.credit, action: \.destination.credit)
-            ) { creditStore in
-                StoreCreditScreen(store: creditStore)
             }
             .alert($store.scope(state: \.alert, action: \.alert))
         }
@@ -62,112 +41,115 @@ struct StoreEditContentView: View {
     @Binding var businessHours: String
     @Binding var description: String
     let hasCoordinate: Bool
-    let hasStore: Bool
-    let bannerImagePath: String?
-    let bannerPreviewData: Data?
-    let isUploading: Bool
     let isLoading: Bool
-    @Binding var ownerPaused: Bool
-    @Binding var selectedPhotoItem: PhotosPickerItem?
     let onCoordinateTapped: () -> Void
-    let onBannerRemoveTapped: () -> Void
-    let onCreditTapped: () -> Void
     let onSaveTapped: () -> Void
 
     var body: some View {
-        Form {
-            Section("基本情報") {
+        AdvertiserGroupedPage {
+            AdvertiserSection(title: "基本情報") {
                 if isNew {
-                    Picker("祭典", selection: $selectedFestivalId) {
-                        ForEach(festivals) { festival in
-                            Text(festival.name).tag(Optional(festival.id))
+                    HStack(spacing: 12) {
+                        Text("祭典")
+                            .font(.subheadline)
+                            .foregroundStyle(Color(uiColor: .label))
+                            .frame(width: 85, alignment: .leading)
+                        Spacer(minLength: 0)
+                        Picker("祭典", selection: $selectedFestivalId) {
+                            ForEach(festivals) { festival in
+                                Text(festival.name).tag(Optional(festival.id))
+                            }
                         }
+                        .labelsHidden()
+                        .pickerStyle(.menu)
                     }
+                    .frame(minHeight: 54)
+                    .padding(.horizontal, 18)
                 } else if let selectedFestival {
-                    LabeledContent("祭典", value: selectedFestival.name)
+                    HStack {
+                        Text("祭典")
+                            .font(.subheadline)
+                        Spacer()
+                        Text(selectedFestival.name)
+                            .font(.subheadline)
+                            .foregroundStyle(Color(uiColor: .secondaryLabel))
+                    }
+                    .frame(minHeight: 54)
+                    .padding(.horizontal, 18)
                 }
 
-                TextField("店名", text: $name)
-                    .textInputAutocapitalization(.words)
-                TextField("住所", text: $address)
-                    .textContentType(.fullStreetAddress)
+                AdvertiserRowSeparator()
+
+                HStack(spacing: 12) {
+                    Text("店舗名")
+                        .font(.subheadline)
+                        .frame(width: 85, alignment: .leading)
+                    TextField("店舗名", text: $name)
+                        .textInputAutocapitalization(.words)
+                }
+                .padding(.horizontal, 18)
+                .frame(minHeight: 54)
+
+                AdvertiserRowSeparator()
+
+                HStack(spacing: 12) {
+                    Text("住所")
+                        .font(.subheadline)
+                        .frame(width: 85, alignment: .leading)
+                    TextField("住所", text: $address)
+                        .textContentType(.fullStreetAddress)
+                }
+                .padding(.horizontal, 18)
+                .frame(minHeight: 54)
+
+                AdvertiserRowSeparator()
+
                 TextEditor(text: $businessHours)
+                    .scrollContentBackground(.hidden)
                     .frame(minHeight: 80)
                     .overlay(alignment: .topLeading) {
                         if businessHours.isEmpty {
-                            Text("営業時間").foregroundStyle(.tertiary).padding(.top, 8).padding(.leading, 5)
+                            Text("営業時間")
+                                .foregroundStyle(Color(uiColor: .tertiaryLabel))
+                                .padding(.top, 8)
+                                .padding(.leading, 5)
+                                .allowsHitTesting(false)
                         }
                     }
+                    .padding(.horizontal, 18)
+                    .padding(.vertical, 6)
+
+                AdvertiserRowSeparator()
+
                 TextEditor(text: $description)
+                    .scrollContentBackground(.hidden)
                     .frame(minHeight: 100)
                     .overlay(alignment: .topLeading) {
                         if description.isEmpty {
-                            Text("説明").foregroundStyle(.tertiary).padding(.top, 8).padding(.leading, 5)
+                            Text("説明")
+                                .foregroundStyle(Color(uiColor: .tertiaryLabel))
+                                .padding(.top, 8)
+                                .padding(.leading, 5)
+                                .allowsHitTesting(false)
                         }
                     }
+                    .padding(.horizontal, 18)
+                    .padding(.vertical, 6)
             }
 
-            Section("位置") {
-                Button(action: onCoordinateTapped) {
-                    Label("地図で指定", systemImage: hasCoordinate ? "mappin.and.ellipse" : "map")
-                }
-            }
-
-            if hasStore {
-                Section("広告") {
-                    PhotosPicker(selection: $selectedPhotoItem, matching: .images) {
-                        Label(bannerImagePath == nil ? "バナー画像を選択" : "バナー画像を変更", systemImage: "photo")
-                    }
-                    .disabled(isUploading || isLoading)
-
-                    if isUploading {
-                        ProgressView("画像をアップロード中")
-                    } else if let image = previewImage {
-                        image
-                            .resizable()
-                            .scaledToFit()
-                            .frame(maxWidth: .infinity)
-                            .frame(maxHeight: 150)
-                    } else if let bannerImagePath {
-                        WebImageView(imagePath: bannerImagePath, contentMode: .fit)
-                            .frame(maxWidth: .infinity)
-                            .frame(maxHeight: 150)
-                    }
-
-                    if bannerImagePath != nil {
-                        Button("バナー画像を削除", role: .destructive, action: onBannerRemoveTapped)
-                            .disabled(isUploading || isLoading)
-                    }
-
-                    Toggle("広告配信を一時停止", isOn: $ownerPaused)
-                        .disabled(isLoading)
-                }
-
-                Section("クレジット") {
-                    Button("残高・購入", action: onCreditTapped)
-                        .disabled(isLoading || isUploading)
-                }
+            AdvertiserSection(title: "位置") {
+                AdvertiserNavigationRow(
+                    title: "地図で指定",
+                    value: hasCoordinate ? "設定済み" : nil,
+                    action: onCoordinateTapped
+                )
             }
         }
-        .navigationTitle(isNew ? "店舗登録" : "店舗編集")
+        .navigationTitle(isNew ? "店舗を追加" : "基本情報を編集")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
-            ToolbarSaveButton(isDisabled: isUploading, isLoading: isLoading, action: onSaveTapped)
+            ToolbarSaveButton(isDisabled: false, isLoading: isLoading, action: onSaveTapped)
         }
-    }
-
-    private var previewImage: Image? {
-        guard let bannerPreviewData, let image = UIImage(data: bannerPreviewData) else { return nil }
-        return Image(uiImage: image)
-    }
-}
-
-struct StoreBannerPhotoSelection: Equatable {
-    let id: UUID
-    let item: PhotosPickerItem
-
-    static func == (lhs: Self, rhs: Self) -> Bool {
-        lhs.id == rhs.id
     }
 }
 
@@ -183,16 +165,8 @@ struct StoreBannerPhotoSelection: Equatable {
             businessHours: .constant(""),
             description: .constant(""),
             hasCoordinate: false,
-            hasStore: false,
-            bannerImagePath: nil,
-            bannerPreviewData: nil,
-            isUploading: false,
             isLoading: false,
-            ownerPaused: .constant(false),
-            selectedPhotoItem: .constant(nil),
             onCoordinateTapped: {},
-            onBannerRemoveTapped: {},
-            onCreditTapped: {},
             onSaveTapped: {}
         )
     }

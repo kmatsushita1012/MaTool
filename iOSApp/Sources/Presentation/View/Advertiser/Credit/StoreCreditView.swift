@@ -39,51 +39,65 @@ struct StoreCreditContentView: View {
     let onHistoryTapped: () -> Void
 
     var body: some View {
-        Form {
-            Section("残高") {
+        AdvertiserGroupedPage {
+            AdvertiserSection(title: "残高") {
                 if let balance {
-                    LabeledContent("利用可能", value: "\(balance.balance)pt")
+                    HStack {
+                        Text("利用可能")
+                            .font(.subheadline)
+                        Spacer()
+                        Text("\(balance.balance)pt")
+                            .font(.system(size: 20, weight: .semibold))
+                    }
+                    .frame(minHeight: 66)
+                    .padding(.horizontal, 18)
                 } else if isLoading {
                     ProgressView()
+                        .frame(maxWidth: .infinity, minHeight: 66)
                 }
             }
 
-            Section("クレジット購入") {
+            AdvertiserSection(title: "クレジット購入") {
                 if products.isEmpty {
                     if let productErrorMessage {
                         Text(productErrorMessage)
-                            .foregroundStyle(.secondary)
+                            .font(.subheadline)
+                            .foregroundStyle(Color(uiColor: .secondaryLabel))
+                            .padding(18)
                     } else if isLoading {
                         ProgressView()
+                            .frame(maxWidth: .infinity, minHeight: 54)
                     }
                 }
-                ForEach(products) { product in
-                    Button { onPurchaseTapped(product.id) } label: {
-                        VStack(alignment: .leading, spacing: 4) {
-                            LabeledContent(product.displayName, value: product.displayPrice)
-                            if !product.description.isEmpty {
-                                Text(product.description)
-                                    .font(.caption)
-                                    .foregroundStyle(.secondary)
-                            }
-                        }
+                ForEach(products.indices, id: \.self) { index in
+                    if index > 0 || productErrorMessage != nil {
+                        AdvertiserRowSeparator()
                     }
-                    .disabled(isPurchasing || isLoading)
+                    AdvertiserNavigationRow(
+                        title: products[index].displayName,
+                        value: products[index].displayPrice,
+                        isEnabled: !isPurchasing && !isLoading,
+                        action: { onPurchaseTapped(products[index].id) }
+                    )
                 }
                 if isPurchasing {
-                    ProgressView("購入を処理中")
+                    AdvertiserRowSeparator()
+                    ProgressView()
+                        .frame(maxWidth: .infinity, minHeight: 54)
                 }
             }
 
-            Section("購入情報") {
-                Button("購入履歴", action: onHistoryTapped)
-                    .disabled(isHistoryLoading)
-                    .loadingIndicator(isLoading: isHistoryLoading)
-            }
-
-            Section {
-                Text("バナー表示：1pt消費")
-                    .foregroundStyle(.secondary)
+            AdvertiserSection(title: "購入情報") {
+                AdvertiserNavigationRow(
+                    title: "購入履歴",
+                    isEnabled: !isHistoryLoading,
+                    action: onHistoryTapped
+                )
+                if isHistoryLoading {
+                    AdvertiserRowSeparator()
+                    ProgressView()
+                        .frame(maxWidth: .infinity, minHeight: 54)
+                }
             }
         }
         .navigationTitle("クレジット")

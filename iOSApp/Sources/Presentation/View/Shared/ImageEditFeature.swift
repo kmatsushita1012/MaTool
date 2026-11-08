@@ -9,11 +9,28 @@ struct ImageEditFeature {
     enum Mode: Equatable, Hashable, Sendable {
         case light
         case dark
+        case banner
+        case interstitial
 
-        var uploadVariant: ImageUploadTarget.Variant {
-            switch self {
-            case .light: .light
-            case .dark: .dark
+        func uploadVariant(for targetType: ImageUploadTarget.Kind) -> ImageUploadTarget.Variant {
+            switch (targetType, self) {
+            case (.store, .banner), (.store, .light): .banner
+            case (.store, .interstitial), (.store, .dark): .interstitial
+            case (.festival, .light), (.district, .light), (.festival, .banner), (.district, .banner): .light
+            case (.festival, .dark), (.district, .dark), (.festival, .interstitial), (.district, .interstitial): .dark
+            }
+        }
+
+        func title(for targetType: ImageUploadTarget.Kind) -> String {
+            if targetType == .store {
+                return switch self {
+                case .banner, .light: "バナー"
+                case .interstitial, .dark: "全画面"
+                }
+            }
+            return switch self {
+            case .light, .banner: "ライト"
+            case .dark, .interstitial: "ダーク"
             }
         }
     }
@@ -32,16 +49,35 @@ struct ImageEditFeature {
         let targetType: ImageUploadTarget.Kind
         let targetID: String
         let originalImage: ImagePath
-        var selectedMode: Mode = .light
-        var lightDraft: Draft = .unchanged
-        var darkDraft: Draft = .unchanged
+        var selectedMode: Mode
+        var drafts: [Mode: Draft]
+        var lightDraft: Draft {
+            get { drafts[.light] ?? .unchanged }
+            set { drafts[.light] = newValue }
+        }
+        var darkDraft: Draft {
+            get { drafts[.dark] ?? .unchanged }
+            set { drafts[.dark] = newValue }
+        }
         var activeUploadID: UUID?
         var failureMessages: [Mode: String] = [:]
 
-        init(targetType: ImageUploadTarget.Kind, targetID: String, image: ImagePath) {
+        init(
+            targetType: ImageUploadTarget.Kind,
+            targetID: String,
+            image: ImagePath,
+            selectedMode: Mode? = nil
+        ) {
             self.targetType = targetType
             self.targetID = targetID
             self.originalImage = image
+            self.selectedMode = selectedMode ?? (targetType == .store ? .banner : .light)
+            self.drafts = [
+                .light: .unchanged,
+                .dark: .unchanged,
+                .banner: .unchanged,
+                .interstitial: .unchanged
+            ]
         }
 
         var isUploading: Bool { activeUploadID != nil }
@@ -69,13 +105,19 @@ struct ImageEditFeature {
         func imagePath(applyingTo image: ImagePath) -> ImagePath? {
             guard canSave else { return nil }
             return ImagePath(
-                light: path(for: lightDraft, originalPath: image.light),
-                dark: path(for: darkDraft, originalPath: image.dark)
+                light: path(
+                    for: draft(for: targetType == .store ? .banner : .light),
+                    originalPath: image.light
+                ),
+                dark: path(
+                    for: draft(for: targetType == .store ? .interstitial : .dark),
+                    originalPath: image.dark
+                )
             )
         }
 
         func draft(for mode: Mode) -> Draft {
-            mode == .light ? lightDraft : darkDraft
+            drafts[mode] ?? .unchanged
         }
 
         func failureMessage(for mode: Mode) -> String? {
@@ -84,8 +126,8 @@ struct ImageEditFeature {
 
         private func imagePath(for mode: Mode) -> String? {
             switch mode {
-            case .light: originalImage.light
-            case .dark: originalImage.dark
+            case .light, .banner: originalImage.light
+            case .dark, .interstitial: originalImage.dark
             }
         }
 
@@ -130,12 +172,7 @@ struct ImageEditFeature {
                 let mode = state.selectedMode
                 state.failureMessages[mode] = nil
                 state.activeUploadID = id
-                switch mode {
-                case .light:
-                    state.lightDraft = .loading
-                case .dark:
-                    state.darkDraft = .loading
-                }
+                state.drafts[mode] = .loading
                 let photoLibraryClient = self.photoLibraryClient
                 return .run { send in
                     do {
@@ -160,12 +197,7 @@ struct ImageEditFeature {
 
             case .photoDataReceived(let id, let mode, let data):
                 guard state.activeUploadID == id else { return .none }
-                switch mode {
-                case .light:
-                    state.lightDraft = .preparing
-                case .dark:
-                    state.darkDraft = .preparing
-                }
+                state.drafts[mode] = .preparing
                 let uploadImageUseCase = self.uploadImageUseCase
                 return .run { send in
                     do {
@@ -185,45 +217,25 @@ struct ImageEditFeature {
                  .jpegPreparationFailed(let id, let mode, let message):
                 guard state.activeUploadID == id else { return .none }
                 state.activeUploadID = nil
-                switch mode {
-                case .light:
-                    state.lightDraft = .unchanged
-                case .dark:
-                    state.darkDraft = .unchanged
-                }
+                state.drafts[mode] = .unchanged
                 state.failureMessages[mode] = message
                 return .none
 
             case .jpegPrepared(let id, let mode, let data):
                 guard state.activeUploadID == id else { return .none }
-                switch mode {
-                case .light:
-                    state.lightDraft = .uploading(data)
-                case .dark:
-                    state.darkDraft = .uploading(data)
-                }
+                state.drafts[mode] = .uploading(data)
                 return uploadEffect(id: id, mode: mode, data: data, state: state)
 
             case .uploadCompleted(let id, let mode, let data, let path):
                 guard state.activeUploadID == id else { return .none }
                 state.activeUploadID = nil
-                switch mode {
-                case .light:
-                    state.lightDraft = .replaced(path: path, jpegData: data)
-                case .dark:
-                    state.darkDraft = .replaced(path: path, jpegData: data)
-                }
+                state.drafts[mode] = .replaced(path: path, jpegData: data)
                 return .none
 
             case .uploadFailed(let id, let mode, let message):
                 guard state.activeUploadID == id else { return .none }
                 state.activeUploadID = nil
-                switch mode {
-                case .light:
-                    state.lightDraft = .unchanged
-                case .dark:
-                    state.darkDraft = .unchanged
-                }
+                state.drafts[mode] = .unchanged
                 state.failureMessages[mode] = message
                 return .none
 
@@ -231,18 +243,17 @@ struct ImageEditFeature {
                 guard !state.isUploading else { return .none }
                 let mode = state.selectedMode
                 state.failureMessages[mode] = nil
-                switch mode {
-                case .light:
-                    state.lightDraft = .removed
-                case .dark:
-                    state.darkDraft = .removed
-                }
+                state.drafts[mode] = .removed
                 return .none
 
             case .reset:
-                state.selectedMode = .light
-                state.lightDraft = .unchanged
-                state.darkDraft = .unchanged
+                state.selectedMode = state.targetType == .store ? .banner : .light
+                state.drafts = [
+                    .light: .unchanged,
+                    .dark: .unchanged,
+                    .banner: .unchanged,
+                    .interstitial: .unchanged
+                ]
                 state.activeUploadID = nil
                 state.failureMessages = [:]
                 return .cancel(id: UploadTaskID.upload)
@@ -252,7 +263,11 @@ struct ImageEditFeature {
 
     private func uploadEffect(id: UUID, mode: Mode, data: Data, state: State) -> Effect<Action> {
         let useCase = uploadImageUseCase
-        let target = ImageUploadTarget(type: state.targetType, id: state.targetID, variant: mode.uploadVariant)
+        let target = ImageUploadTarget(
+            type: state.targetType,
+            id: state.targetID,
+            variant: mode.uploadVariant(for: state.targetType)
+        )
         return .run { send in
             do {
                 let path = try await useCase.upload(target: target, jpegData: data)

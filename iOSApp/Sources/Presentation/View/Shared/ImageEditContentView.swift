@@ -8,6 +8,8 @@ import UIKit
 struct ImageEditContentView: View {
     @SwiftUI.Bindable var store: StoreOf<ImageEditFeature>
     let onClose: () -> Void
+    var onSaveTapped: (() -> Void)? = nil
+    var isSaving = false
     @State private var selectedItem: PhotosPickerItem?
 
     var body: some View {
@@ -38,12 +40,20 @@ struct ImageEditContentView: View {
                     .padding(.vertical, 8)
             }
         }
-        .navigationTitle("紹介画像")
+        .navigationTitle(navigationTitle)
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
-            ToolbarItem(placement: .topBarTrailing) {
-                Button("完了", action: onClose)
-                    .disabled(store.isUploading)
+            if let onSaveTapped {
+                ToolbarSaveButton(
+                    isDisabled: store.isUploading,
+                    isLoading: isSaving,
+                    action: onSaveTapped
+                )
+            } else {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button("完了", action: onClose)
+                        .disabled(store.isUploading)
+                }
             }
         }
         .onChange(of: selectedItem) { _, item in
@@ -61,8 +71,10 @@ struct ImageEditContentView: View {
                 set: { store.send(.modeSelected($0)) }
             )
         ) {
-            Text("ライト").tag(ImageEditFeature.Mode.light)
-            Text("ダーク").tag(ImageEditFeature.Mode.dark)
+            Text(ImageEditFeature.Mode.light.title(for: store.targetType))
+                .tag(store.targetType == .store ? ImageEditFeature.Mode.banner : .light)
+            Text(ImageEditFeature.Mode.dark.title(for: store.targetType))
+                .tag(store.targetType == .store ? ImageEditFeature.Mode.interstitial : .dark)
         }
         .labelsHidden()
         .modifier(ImageEditSegmentPickerStyleModifier())
@@ -85,6 +97,11 @@ struct ImageEditContentView: View {
         .padding(.horizontal, 16)
         .padding(.top, 12)
         .padding(.bottom, 8)
+    }
+
+    private var navigationTitle: String {
+        guard store.targetType == .store else { return "紹介画像" }
+        return "\(store.selectedMode.title(for: .store))広告"
     }
 
     private var actionsCard: some View {

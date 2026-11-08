@@ -31,10 +31,16 @@ private struct AdvertiserDashboardDestinations: ViewModifier {
     func body(content: Content) -> some View {
         content
             .navigationDestination(item: $store.scope(
-                state: \.destination?.storeEdit,
-                action: \.destination.storeEdit
+                state: \.destination?.storeCreate,
+                action: \.destination.storeCreate
             )) { store in
                 StoreEditScreen(store: store)
+            }
+            .navigationDestination(item: $store.scope(
+                state: \.destination?.storeDashboard,
+                action: \.destination.storeDashboard
+            )) { store in
+                StoreDashboardScreen(store: store)
             }
             .navigationDestination(item: $store.scope(
                 state: \.destination?.changePassword,
@@ -74,45 +80,57 @@ struct AdvertiserDashboardContentView: View {
     }
 
     var body: some View {
-        List {
-            Section("所有店舗") {
+        AdvertiserGroupedPage {
+            AdvertiserSection(title: "所有店舗") {
                 if isLoading && stores.isEmpty {
                     ProgressView()
+                        .frame(maxWidth: .infinity, minHeight: 54)
                 } else if stores.isEmpty {
-                    ContentUnavailableView("店舗がありません", systemImage: "storefront")
+                    Text("店舗がありません")
+                        .foregroundStyle(Color(uiColor: .secondaryLabel))
+                        .frame(maxWidth: .infinity, minHeight: 54)
+                        .padding(.horizontal, 18)
                 } else {
-                    ForEach(stores) { item in
-                        Button { onStoreTapped(item) } label: {
-                            HStack {
-                                VStack(alignment: .leading, spacing: 4) {
-                                    Text(item.name)
-                                        .foregroundStyle(.primary)
-                                Text(statusText(for: item))
-                                        .font(.caption)
-                                        .foregroundStyle(.secondary)
-                                }
-                                Spacer()
-                                Image(systemName: "chevron.right")
-                                    .font(.caption.weight(.semibold))
-                                    .foregroundStyle(.tertiary)
-                            }
-                            .contentShape(Rectangle())
+                    ForEach(stores.indices, id: \.self) { index in
+                        if index > 0 {
+                            AdvertiserRowSeparator()
                         }
-                        .buttonStyle(.plain)
+                        AdvertiserNavigationRow(
+                            title: stores[index].name,
+                            subtitle: statusText(for: stores[index]),
+                            action: { onStoreTapped(stores[index]) }
+                        )
                     }
                 }
 
-                Button("店舗を追加", systemImage: "plus", action: onAddStoreTapped)
-                    .disabled(isNavigationDisabled)
+                AdvertiserRowSeparator()
+                AdvertiserNavigationRow(
+                    title: "店舗を追加",
+                    systemImage: "plus",
+                    isEnabled: !isNavigationDisabled,
+                    action: onAddStoreTapped
+                )
             }
 
-            Section("アカウント") {
-                Button("パスワード変更", action: onChangePasswordTapped)
-                    .disabled(isNavigationDisabled)
-                Button("メールアドレス変更", action: onUpdateEmailTapped)
-                    .disabled(isNavigationDisabled)
-                Button("ログアウト", role: .destructive, action: onSignOutTapped)
-                    .loadingIndicator(isLoading: isSigningOut)
+            AdvertiserSection(title: "アカウント") {
+                AdvertiserNavigationRow(
+                    title: "パスワード変更",
+                    isEnabled: !isNavigationDisabled,
+                    action: onChangePasswordTapped
+                )
+                AdvertiserRowSeparator()
+                AdvertiserNavigationRow(
+                    title: "メールアドレス変更",
+                    isEnabled: !isNavigationDisabled,
+                    action: onUpdateEmailTapped
+                )
+                AdvertiserRowSeparator()
+                AdvertiserNavigationRow(
+                    title: isSigningOut ? "ログアウト中" : "ログアウト",
+                    isDestructive: true,
+                    isEnabled: !isSigningOut,
+                    action: onSignOutTapped
+                )
             }
         }
         .navigationTitle("店舗管理")

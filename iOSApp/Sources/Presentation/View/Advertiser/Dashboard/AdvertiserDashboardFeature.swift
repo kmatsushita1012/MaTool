@@ -6,7 +6,8 @@ import Shared
 struct AdvertiserDashboardFeature {
     @Reducer
     enum Destination {
-        case storeEdit(StoreEditFeature)
+        case storeCreate(StoreEditFeature)
+        case storeDashboard(StoreDashboardFeature)
         case changePassword(ChangePasswordFeature)
         case updateEmail(UpdateEmailFeature)
         case settings(SettingsFeature)
@@ -90,11 +91,14 @@ struct AdvertiserDashboardFeature {
                     state.alert = .error("店舗を登録できる祭典がありません。")
                     return .none
                 }
-                state.destination = .storeEdit(StoreEditFeature.State(festivals: state.festivals))
+                state.destination = .storeCreate(StoreEditFeature.State(festivals: state.festivals))
                 return .none
 
             case .storeTapped(let store):
-                state.destination = .storeEdit(StoreEditFeature.State(store: store, festivals: state.festivals))
+                state.destination = .storeDashboard(StoreDashboardFeature.State(
+                    store: store,
+                    festivals: state.festivals
+                ))
                 return .none
 
             case .changePasswordTapped:
@@ -129,13 +133,23 @@ struct AdvertiserDashboardFeature {
                 state.alert = .error("設定画面の準備に失敗しました。\n\(error.message)")
                 return .none
 
-            case .destination(.presented(.storeEdit(.saveReceived(.success(let result))))):
-                let store: AdvertiserStore
-                switch result {
-                case .created(let savedStore), .updated(let savedStore):
-                    store = savedStore
-                }
+            case .destination(.presented(.storeCreate(.saveReceived(.success(.created(let store)))))):
                 state.stores.upsert(store)
+                state.destination = .storeDashboard(StoreDashboardFeature.State(
+                    store: store,
+                    festivals: state.festivals
+                ))
+                return .none
+
+            case .destination(.presented(.storeDashboard(let childAction))):
+                switch childAction {
+                case .pauseReceived(.success(let store)),
+                     .destination(.presented(.storeEdit(.saveReceived(.success(.updated(let store)))))),
+                     .adImagesSaveReceived(.success(let store)):
+                    state.stores.upsert(store)
+                default:
+                    break
+                }
                 return .none
 
             case .destination(.presented(.changePassword(.received(.success)))):
