@@ -23,7 +23,7 @@ struct SelectFestivalUseCaseTests {
             festival: nextFestival, districts: [], periods: [], locations: [],
             checkpoints: [], hazardSections: []
         )
-        let appState = Shared<AppState?>(value: AppState(festivalPack: currentPack, year: 2026))
+        let appState = Shared<AppState?>(value: AppState(festivalPack: currentPack))
         let originalAppState = appState.wrappedValue
         let dataFetcher = SelectFestivalDataFetcherSpy(responses: [
             .failure(SelectFestivalTestError.fetch), .success(nextPack)

@@ -38,7 +38,6 @@ struct SignOutUseCase: SignOutUseCaseProtocol {
                         festivalPack: festivalPack,
                         districtPack: districtPack,
                         districtId: districtId,
-                        year: Calendar.current.component(.year, from: .now),
                         sessionId: requestId
                     )
                 }
@@ -53,7 +52,6 @@ struct SignOutUseCase: SignOutUseCaseProtocol {
             appState.withLock {
                 $0 = AppState(
                     festivalPack: festivalPack,
-                    year: Calendar.current.component(.year, from: .now),
                     sessionId: requestId
                 )
             }
