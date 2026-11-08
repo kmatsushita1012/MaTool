@@ -1,11 +1,11 @@
 import SwiftUI
 
 struct InfoMaterialContainer<Content: View>: View {
-    private let padding: CGFloat
+    private let verticalSpacing: CGFloat
     private let content: () -> Content
 
-    init(padding: CGFloat = 16, @ViewBuilder content: @escaping () -> Content) {
-        self.padding = padding
+    init(verticalSpacing: CGFloat = 16, @ViewBuilder content: @escaping () -> Content) {
+        self.verticalSpacing = verticalSpacing
         self.content = content
     }
 
@@ -13,7 +13,7 @@ struct InfoMaterialContainer<Content: View>: View {
         content()
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(.horizontal, 16)
-            .padding(.vertical, padding)
+            .padding(.vertical, verticalSpacing)
             .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 20, style: .continuous))
             .overlay {
                 RoundedRectangle(cornerRadius: 20, style: .continuous)

@@ -317,16 +317,17 @@ private struct FestivalDistrictGroupContentView: View {
     let onDistrictSelected: (District.ID) -> Void
 
     var body: some View {
-        InfoMaterialContainer(padding: 8) {
-            VStack(alignment: .leading, spacing: 8) {
+        InfoMaterialContainer(verticalSpacing: 8) {
+            VStack(alignment: .leading) {
                 if let name = group.name {
                     Text(name)
                         .font(.headline)
                         .foregroundStyle(.secondary)
                         .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(.vertical, 8)
                 }
 
-                VStack(spacing: 0) {
+                VStack {
                     ForEach(group.districts) { district in
                         Button {
                             onDistrictSelected(district.id)
