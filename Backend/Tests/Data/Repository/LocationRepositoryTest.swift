@@ -1,4 +1,5 @@
 import Dependencies
+import Foundation
 import Shared
 import Testing
 @testable import Backend
@@ -7,11 +8,9 @@ struct LocationRepositoryTest {
     @Test
     func get_正常_祭典と地区の完全一致で取得する() async throws {
         let location = FloatLocation.mock(id: "loc-1", districtId: "district-1")
-        var lastCalledKeyConditions: [QueryCondition] = []
-
         let dataStore = DataStoreMock(
             queryHandler: { _, keyConditions, _, _, _, _ in
-                lastCalledKeyConditions = keyConditions
+                #expect(keyConditions.count == 2)
                 return try encodeForDataStore([Record(location)])
             }
         )
@@ -21,7 +20,6 @@ struct LocationRepositoryTest {
 
         #expect(result == location)
         #expect(dataStore.queryCallCount == 1)
-        #expect(lastCalledKeyConditions.count == 2)
     }
 
     @Test
@@ -44,13 +42,58 @@ struct LocationRepositoryTest {
     @Test
     func put_異常_依存エラーを透過() async {
         let dataStore = DataStoreMock(
-            putHandler: { _ in throw TestError.intentional }
+            putHandler: { _ in throw TestError.intentional },
+            queryHandler: { _, _, _, _, _, _ in try encodeForDataStore([LRecord]()) }
         )
         let subject = make(dataStore: dataStore)
 
         await #expect(throws: TestError.intentional) {
             _ = try await subject.put(.mock(id: "loc-1", districtId: "district-1"), festivalId: "festival-1")
         }
+    }
+
+    @Test
+    func put_正常_既存位置がない場合は保存する() async throws {
+        let location = FloatLocation.mock(id: "loc-1", districtId: "district-1")
+        let dataStore = DataStoreMock(
+            putHandler: { _ in },
+            queryHandler: { _, _, _, _, _, _ in try encodeForDataStore([LRecord]()) }
+        )
+        let subject = make(dataStore: dataStore)
+
+        let result = try await subject.put(location, festivalId: "festival-1")
+
+        #expect(result == location)
+        #expect(dataStore.queryCallCount == 1)
+        #expect(dataStore.putCallCount == 1)
+    }
+
+    @Test
+    func put_古いtimestampは保存値を返す() async throws {
+        let current = FloatLocation.mock(
+            id: "new",
+            districtId: "district-1",
+            coordinate: .init(latitude: 36, longitude: 140),
+            timestamp: Date(timeIntervalSince1970: 200)
+        )
+        let dataStore = DataStoreMock(queryHandler: { _, _, _, _, _, _ in
+            try encodeForDataStore([Record(current)])
+        })
+        let subject = make(dataStore: dataStore)
+
+        let result = try await subject.put(
+            .mock(
+                id: "old",
+                districtId: "district-1",
+                coordinate: .init(latitude: 35, longitude: 139),
+                timestamp: Date(timeIntervalSince1970: 100)
+            ),
+            festivalId: "festival-1"
+        )
+
+        #expect(result == current)
+        #expect(dataStore.queryCallCount == 1)
+        #expect(dataStore.putCallCount == 0)
     }
 }
 
