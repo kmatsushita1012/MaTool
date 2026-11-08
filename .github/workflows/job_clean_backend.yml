@@ -7,7 +7,7 @@ on:
 jobs:
   cleanup:
     if: github.event.pull_request.merged == true  # マージされた場合のみ実行
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
 
     env:
       AWS_REGION: ${{ secrets.AWS_REGION }}
