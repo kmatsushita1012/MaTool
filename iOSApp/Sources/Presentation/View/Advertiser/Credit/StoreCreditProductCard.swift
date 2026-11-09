@@ -15,8 +15,8 @@ struct StoreCreditProductCard: View {
                 Button(action: onSelect) {
                     VStack(alignment: .leading, spacing: 16) {
                         Text(product.displayName)
-                            .font(.title3.weight(.semibold))
-                            .foregroundStyle(isSelected ? Color.accentColor : Color.primary)
+                            .font(.headline)
+                            .foregroundStyle(.secondary)
 
                         Text(product.description)
                             .font(.subheadline)
