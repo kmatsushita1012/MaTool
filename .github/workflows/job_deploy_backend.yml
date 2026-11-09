@@ -43,6 +43,12 @@ jobs:
             echo "write=true" >> "$GITHUB_OUTPUT"
           fi
 
+      # 再実行でもDockerfile/Packageのレイヤーキーを変えず、温まったGHAキャッシュを検証する。
+      - name: Mark Backend dependency build start
+        id: dependency-clock
+        shell: bash
+        run: echo "started_at=$(date +%s)" >> "$GITHUB_OUTPUT"
+
       - name: Warm/cache Backend dependencies
         uses: docker/build-push-action@v6
         with:
@@ -57,6 +63,22 @@ jobs:
           # mode=minで依存ステージの完成イメージに必要なレイヤーだけ保存。
           cache-to: ${{ steps.dependency-cache.outputs.write == 'true' && 'type=gha,scope=matool-backend-dependencies-v1,mode=min,ignore-error=true' || '' }}
 
+      - name: Record Backend dependency build duration
+        id: dependency-elapsed
+        if: always()
+        shell: bash
+        env:
+          STARTED_AT: ${{ steps.dependency-clock.outputs.started_at }}
+        run: |
+          if [[ "$STARTED_AT" =~ ^[0-9]+$ ]]; then
+            echo "seconds=$(( $(date +%s) - STARTED_AT ))" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Mark Lambda image build start
+        id: lambda-clock
+        shell: bash
+        run: echo "started_at=$(date +%s)" >> "$GITHUB_OUTPUT"
+
       - name: Build Lambda image
         uses: docker/build-push-action@v6
         with:
@@ -64,7 +86,41 @@ jobs:
           file: Backend/Dockerfile
           load: true
           tags: matoolapi:latest
-          # 同じBuildx builder上で前段の依存ビルドキャッシュを再利用する。
+          # Buildx actionは呼び出しごとに独立したビルド。依存ステージの
+          # GHAキャッシュを最終イメージ側でも明示的に読み込む。
+          cache-from: type=gha,scope=matool-backend-dependencies-v1
+
+      - name: Record Lambda image build duration
+        id: lambda-elapsed
+        if: always()
+        shell: bash
+        env:
+          STARTED_AT: ${{ steps.lambda-clock.outputs.started_at }}
+        run: |
+          if [[ "$STARTED_AT" =~ ^[0-9]+$ ]]; then
+            echo "seconds=$(( $(date +%s) - STARTED_AT ))" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Summarize Backend dependency cache verification
+        if: always()
+        shell: bash
+        env:
+          CACHE_WRITE: ${{ steps.dependency-cache.outputs.write }}
+          DEPENDENCY_SECONDS: ${{ steps.dependency-elapsed.outputs.seconds }}
+          LAMBDA_SECONDS: ${{ steps.lambda-elapsed.outputs.seconds }}
+        run: |
+          {
+            echo "### Backend dependency cache verification"
+            echo ""
+            echo "| Metric | Result |"
+            echo "| --- | --- |"
+            echo "| Branch | \`${GITHUB_REF_NAME}\` |"
+            echo "| Cache export enabled | \`${CACHE_WRITE:-unknown}\` |"
+            echo "| Dependency build elapsed | \`${DEPENDENCY_SECONDS:-unknown}s\` |"
+            echo "| Final Lambda image build elapsed | \`${LAMBDA_SECONDS:-unknown}s\` |"
+            echo ""
+            echo "Check **both** BuildKit logs for \`importing cache manifest\` and \`CACHED\`. Verify the dependency-stage \`swift build\` is cached on the next push and that the final build does not recompile AWS SDK modules."
+          } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Extract Lambda package
         run: |
