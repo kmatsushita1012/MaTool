@@ -31,6 +31,7 @@ extension DependencyValues {
 protocol StoreKitClientProtocol: Sendable {
     func products() async throws -> [StoreCreditProduct]
     func purchase(productId: String, appAccountToken: UUID) async throws -> StoreKitPurchaseOutcome
+    func synchronizePurchases() async throws -> Bool
     func unfinishedTransactions() async -> [StoreKitTransactionInfo]
     func finish(transactionId: String) async
 }
@@ -81,6 +82,27 @@ actor StoreKitClient: StoreKitClientProtocol {
             return .cancelled
         @unknown default:
             throw AppError.system(.unexpected("購入状態を確認できませんでした。"))
+        }
+    }
+
+    func synchronizePurchases() async throws -> Bool {
+        do {
+            try await AppStore.sync()
+            return true
+        } catch is CancellationError {
+            return false
+        } catch let error as StoreKitError {
+            if case .userCancelled = error {
+                return false
+            }
+            throw error
+        } catch {
+            let nsError = error as NSError
+            if nsError.domain == NSURLErrorDomain,
+               nsError.code == NSURLErrorCancelled || nsError.code == NSURLErrorUserCancelledAuthentication {
+                return false
+            }
+            throw error
         }
     }
 

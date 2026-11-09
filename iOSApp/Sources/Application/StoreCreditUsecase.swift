@@ -14,11 +14,19 @@ enum StoreCreditPurchaseResult: Equatable, Sendable {
     case cancelled
 }
 
+struct StoreCreditProductCatalog: Equatable, Sendable {
+    var products: [StoreCreditProduct] = []
+    var errorMessage: String?
+    var isLoading = false
+    var hasAttemptedLoad = false
+}
+
 protocol StoreCreditUsecaseProtocol: Sendable {
     func loadProducts() async throws -> [StoreCreditProduct]
     func loadBalance(storeId: Store.ID) async throws -> CreditAccount
     func loadHistory(storeId: Store.ID) async throws -> [PurchaseHistoryItem]
     func purchase(store: Store, productId: String) async throws -> StoreCreditPurchaseResult
+    func restorePurchases(for store: Store) async throws -> Bool
     func recoverUnfinishedPurchases(for stores: [Store]) async
 }
 
@@ -52,6 +60,16 @@ struct StoreCreditUsecase: StoreCreditUsecaseProtocol {
             await storeKitClient.finish(transactionId: transaction.transactionId)
             return .completed(result)
         }
+    }
+
+    func restorePurchases(for store: Store) async throws -> Bool {
+        guard try await storeKitClient.synchronizePurchases() else { return false }
+        await recoverUnfinishedStoreCreditPurchases(
+            for: [store],
+            storeKitClient: storeKitClient,
+            creditDataFetcher: dataFetcher
+        )
+        return true
     }
 
     func recoverUnfinishedPurchases(for stores: [Store]) async {

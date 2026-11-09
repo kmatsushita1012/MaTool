@@ -16,6 +16,7 @@ struct AdvertiserDashboardFeature {
     @ObservableState
     struct State: Equatable {
         @Shared fileprivate var appState: AppState?
+        @Shared var storeCreditCatalog: StoreCreditProductCatalog
         let userRole: UserRole
         var stores: [AdvertiserStore] = []
         var festivals: [Festival] = []
@@ -26,8 +27,13 @@ struct AdvertiserDashboardFeature {
         @Presents var destination: Destination.State?
         @Presents var alert: AlertFeature.State?
 
-        init(userRole: UserRole, appState: Shared<AppState?>) {
+        init(
+            userRole: UserRole,
+            appState: Shared<AppState?>,
+            storeCreditCatalog: Shared<StoreCreditProductCatalog> = Shared(value: StoreCreditProductCatalog())
+        ) {
             self._appState = appState
+            self._storeCreditCatalog = storeCreditCatalog
             self.userRole = userRole
         }
     }
@@ -97,7 +103,8 @@ struct AdvertiserDashboardFeature {
             case .storeTapped(let store):
                 state.destination = .storeDashboard(StoreDashboardFeature.State(
                     store: store,
-                    festivals: state.festivals
+                    festivals: state.festivals,
+                    storeCreditCatalog: state.$storeCreditCatalog
                 ))
                 return .none
 
@@ -137,7 +144,8 @@ struct AdvertiserDashboardFeature {
                 state.stores.upsert(store)
                 state.destination = .storeDashboard(StoreDashboardFeature.State(
                     store: store,
-                    festivals: state.festivals
+                    festivals: state.festivals,
+                    storeCreditCatalog: state.$storeCreditCatalog
                 ))
                 return .none
 

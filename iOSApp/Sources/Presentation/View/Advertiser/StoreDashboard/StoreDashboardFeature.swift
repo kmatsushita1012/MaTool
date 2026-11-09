@@ -14,6 +14,7 @@ struct StoreDashboardFeature {
     struct State: Equatable {
         var store: AdvertiserStore
         let festivals: [Festival]
+        @Shared var storeCreditCatalog: StoreCreditProductCatalog
         var balance: CreditAccount?
         var isBalanceLoading = false
         var isPauseUpdating = false
@@ -29,9 +30,14 @@ struct StoreDashboardFeature {
             return nil
         }
 
-        init(store: AdvertiserStore, festivals: [Festival]) {
+        init(
+            store: AdvertiserStore,
+            festivals: [Festival],
+            storeCreditCatalog: Shared<StoreCreditProductCatalog> = Shared(value: StoreCreditProductCatalog())
+        ) {
             self.store = store
             self.festivals = festivals
+            self._storeCreditCatalog = storeCreditCatalog
         }
     }
 
@@ -97,7 +103,12 @@ struct StoreDashboardFeature {
                 case .interstitial:
                     state.destination = .storeAdImage(makeImageEditState(store: state.store, mode: .interstitial))
                 case .credit:
-                    state.destination = .credit(StoreCreditFeature.State(store: state.store))
+                    guard let balance = state.balance else { return .none }
+                    state.destination = .credit(StoreCreditFeature.State(
+                        store: state.store,
+                        balance: balance,
+                        storeCreditCatalog: state.$storeCreditCatalog
+                    ))
                 }
                 return .none
 
@@ -110,7 +121,12 @@ struct StoreDashboardFeature {
                 return .none
 
             case .creditTapped:
-                state.destination = .credit(StoreCreditFeature.State(store: state.store))
+                guard let balance = state.balance else { return .none }
+                state.destination = .credit(StoreCreditFeature.State(
+                    store: state.store,
+                    balance: balance,
+                    storeCreditCatalog: state.$storeCreditCatalog
+                ))
                 return .none
 
             case .editTapped:
@@ -189,15 +205,17 @@ struct StoreDashboardFeature {
                 state.destination = nil
                 return .none
 
-            case .destination(.presented(.credit(.loadReceived(.success(let preparation))))):
-                state.balance = preparation.balance
-                return .none
-
             case .destination(.presented(.credit(.purchaseReceived(.success(let completion))))):
                 if let balance = completion.balance {
                     state.balance = balance
                 } else if case .completed(let result) = completion.result {
                     state.balance = CreditAccount(storeId: state.store.id, balance: result.balance)
+                }
+                return .none
+
+            case .destination(.presented(.credit(.restoreReceived(.success(.restored(let completion)))))):
+                if let balance = completion.balance {
+                    state.balance = balance
                 }
                 return .none
 

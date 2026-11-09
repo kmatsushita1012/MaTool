@@ -114,7 +114,7 @@ struct StoreDashboardContentView: View {
                     status: creditBalance.map { "\($0)pt" },
                     onTap: onCreditTapped
                 )
-                .disabled(isBalanceLoading || isPauseUpdating)
+                .disabled(isBalanceLoading || isPauseUpdating || creditBalance == nil)
             }
 
             Section("店舗情報") {

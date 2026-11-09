@@ -36,6 +36,7 @@ struct RootFeature {
 
         @Shared fileprivate var appState: AppState?
         @Shared var launchState: LaunchState
+        @Shared var storeCreditCatalog: StoreCreditProductCatalog
         var status: StatusCheckResult?
         var didLaunch = false
         var map: PublicMapFeature.State?
@@ -71,11 +72,13 @@ struct RootFeature {
         init() {
             self._appState = Shared(value: nil)
             self._launchState = Shared(value: .loading)
+            self._storeCreditCatalog = Shared(value: StoreCreditProductCatalog())
         }
 
         init(appState: Shared<AppState?>) {
             self._appState = appState
             self._launchState = Shared(value: .loading)
+            self._storeCreditCatalog = Shared(value: StoreCreditProductCatalog())
         }
 
         func makeMapState(userRole: UserRole, currentRouteId: Route.ID? = nil) -> PublicMapFeature.State? {
@@ -105,6 +108,7 @@ struct RootFeature {
     enum Action: Equatable {
         case launch
         case launchFinished(LaunchState, StatusCheckResult?)
+        case storeCreditProductsReceived(AppResult<[StoreCreditProduct]>)
         case statusDismissed
         case map(PublicMapFeature.Action)
         case onboarding(OnboardingFeature.Action)
@@ -123,6 +127,7 @@ struct RootFeature {
     @Dependency(LastMainScreenUseCaseKey.self) private var lastMainScreenUseCase
     @Dependency(SignOutUseCaseKey.self) private var signOutUseCase
     @Dependency(\.imageCacheClient) private var imageCacheClient
+    @Dependency(\.storeCreditUsecase) private var storeCreditUsecase
 
     var body: some ReducerOf<Self> {
         Reduce { state, action in
@@ -135,11 +140,39 @@ struct RootFeature {
                 state.destination = nil
                 state.sheet = nil
                 state.$launchState.withLock { $0 = .loading }
-                return .run { [appState = state.$appState] send in
+                let launchEffect = Effect<Action>.run { [appState = state.$appState] send in
                     let (launchState, status) = await launchSceneUseCase(appState: appState)
                     await send(.launchFinished(launchState, status))
                 }
                 .cancellable(id: SceneSessionCancellationID.active, cancelInFlight: true)
+                let productEffect: Effect<Action>
+                if state.storeCreditCatalog.hasAttemptedLoad {
+                    productEffect = .none
+                } else {
+                    state.$storeCreditCatalog.withLock {
+                        $0.hasAttemptedLoad = true
+                        $0.isLoading = true
+                    }
+                    productEffect = .task(Action.storeCreditProductsReceived) {
+                        try await storeCreditUsecase.loadProducts()
+                    }
+                }
+                return .merge(launchEffect, productEffect)
+
+            case .storeCreditProductsReceived(.success(let products)):
+                state.$storeCreditCatalog.withLock {
+                    $0.products = products
+                    $0.errorMessage = products.isEmpty ? "購入できる商品がありません。" : nil
+                    $0.isLoading = false
+                }
+                return .none
+
+            case .storeCreditProductsReceived(.failure(let error)):
+                state.$storeCreditCatalog.withLock {
+                    $0.errorMessage = error.message
+                    $0.isLoading = false
+                }
+                return .none
 
             case .launchFinished(let launchState, let status):
                 state.$launchState.withLock { $0 = launchState }
@@ -195,7 +228,8 @@ struct RootFeature {
                 if case .advertiser = userRole {
                     state.destination = .advertiserDashboard(AdvertiserDashboardFeature.State(
                         userRole: userRole,
-                        appState: state.$appState
+                        appState: state.$appState,
+                        storeCreditCatalog: state.$storeCreditCatalog
                     ))
                     return .none
                 }
@@ -445,7 +479,8 @@ struct RootFeature {
         state.sheet = nil
         state.destination = .advertiserDashboard(AdvertiserDashboardFeature.State(
             userRole: userRole,
-            appState: state.$appState
+            appState: state.$appState,
+            storeCreditCatalog: state.$storeCreditCatalog
         ))
         return true
     }
