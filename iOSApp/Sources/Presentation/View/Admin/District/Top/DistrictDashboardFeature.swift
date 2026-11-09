@@ -81,7 +81,7 @@ struct DistrictDashboardFeature {
         case exportReceived(AppResult<URL>)
         case destination(PresentationAction<Destination.Action>)
         case signOutTapped
-        case signOutReceived(VoidAppResult)
+        case signOutReceived(AppResult<LaunchState>)
         case dismissTapped
         case alert(PresentationAction<AlertFeature.Action>)
     }
@@ -226,15 +226,16 @@ struct DistrictDashboardFeature {
                 return .none
             case .signOutTapped:
                 state.isAWSLoading = true
+                let appState = state.$appState
                 return .task(Action.signOutReceived) {
-                    try await signOutUseCase()
+                    try await signOutUseCase(appState: appState)
                 }
                 .cancellable(id: SceneSessionCancellationID.active, cancelInFlight: true)
             case .signOutReceived(.failure(let error)):
                 state.isAWSLoading = false
                 state.alert = .error("ログアウトに失敗しました。 \(error.message)")
                 return .none
-            case .signOutReceived(.success):
+            case .signOutReceived(.success(_)):
                 state.isAWSLoading = false
                 return .none
             case .dismissTapped:
@@ -286,7 +287,8 @@ private extension DistrictDashboardFeature {
             let tableSnapshotter = await ActionTableSnapshotter(
                 district: state.district,
                 slots: state.routes,
-                routePacks: routePacks
+                routePacks: routePacks,
+                districts: state.appState?.festivalState.districts ?? []
             )
             let tablePages = await tableSnapshotter.takeAll()
             for page in tablePages {
@@ -296,8 +298,19 @@ private extension DistrictDashboardFeature {
                 let url = await renderer.finalize()
                 return url
             }
+            let appState = state.appState
             for pack in routePacks {
-                guard let snapshotter = try? await RouteSnapshotter(route: pack.route, points: pack.points),
+                guard let appState,
+                      let district = appState.district(id: pack.route.districtId),
+                      let period = appState.period(id: pack.route.periodId),
+                      let snapshotter = try? await RouteSnapshotter(
+                        route: pack.route,
+                        points: pack.points,
+                        district: district,
+                        period: period,
+                        checkpoints: appState.festivalState.checkpoints,
+                        hazardSections: appState.festivalState.hazardSections
+                      ),
                       let image = try? await snapshotter.take() else { continue }
                 await renderer.addPage(with: image)
             }

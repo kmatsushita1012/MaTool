@@ -89,6 +89,7 @@ struct PublicLocationsFeature {
                 state.$toast.withLock { $0 = .error(error, title: "現在地一覧を更新できませんでした") }
                 return toastDismissEffect()
             case .reloadReceived(.success):
+                fitMapToFloatLocations(state: state)
                 return .none
             case .userLocationFailed(let message):
                 state.$toast.withLock { $0 = .error(message, title: "現在地を取得できませんでした") }
@@ -109,6 +110,18 @@ struct PublicLocationsFeature {
         }
         .cancellable(id: CancelID.toastDismissal, cancelInFlight: true)
     }
+
+    private func fitMapToFloatLocations(state: State) {
+        guard let appState = state.appState else { return }
+        state.$mapRegion.withLock { $0 = makePublicLocationsRegion(appState: appState) }
+    }
+}
+
+private func makePublicLocationsRegion(appState: AppState) -> MKCoordinateRegion {
+    makeRegion(
+        locations: appState.festivalState.floatLocations,
+        origin: appState.festivalState.festival.base
+    )
 }
 
 extension PublicLocationsFeature.State {
@@ -124,6 +137,9 @@ extension PublicLocationsFeature.State {
         self._festival = festival
         self._mapRegion = mapRegion
         self._toast = toast
+        if let appState = appState.wrappedValue {
+            self.$mapRegion.withLock { $0 = makePublicLocationsRegion(appState: appState) }
+        }
         if appState.wrappedValue?.festivalState.floatLocations.isEmpty ?? true {
             self.$toast.withLock { $0 = .notice("現在、配信中の情報はありません。") }
         }

@@ -63,6 +63,73 @@ struct DistrictRouterTest {
 
         #expect(response.statusCode == 500)
     }
+
+    @Test
+    func locationPUT_古いpayloadは永続位置を巻き戻さない() async throws {
+        let district = District.mock(id: "district-1", festivalId: "festival-1")
+        let saved = FloatLocation.mock(
+            id: "new",
+            districtId: district.id,
+            coordinate: .init(latitude: 36, longitude: 140),
+            timestamp: Date(timeIntervalSince1970: 200)
+        )
+        let stale = FloatLocation.mock(
+            id: "old",
+            districtId: district.id,
+            coordinate: .init(latitude: 35, longitude: 139),
+            timestamp: Date(timeIntervalSince1970: 100)
+        )
+        var persisted = saved
+        let dataStore = DataStoreMock(
+            putHandler: { record in
+                guard let record = record as? LRecord else { Issue.record("Expected location record"); return }
+                persisted = record.content
+            },
+            queryHandler: { _, keyConditions, _, _, _, _ in
+                #expect(keyConditions.count == 2)
+                return try encodeForDataStore([Record(persisted)])
+            }
+        )
+        try await withDependencies {
+            $0[DataStoreFactoryKey.self] = { _ in dataStore }
+            $0[DistrictRepositoryKey.self] = DistrictRepositoryMock(getHandler: { _ in district })
+        } operation: {
+            let locationRepository = LocationRepository()
+            try await withDependencies {
+                $0[LocationRepositoryKey.self] = locationRepository
+                $0[DistrictControllerKey.self] = DistrictControllerMock()
+                $0[RouteControllerKey.self] = RouteControllerMock()
+                $0[SceneControllerKey.self] = SceneControllerMock()
+            } operation: {
+                let locationUsecase = LocationUsecase()
+                try await withDependencies {
+                    $0[LocationUsecaseKey.self] = locationUsecase
+                } operation: {
+                    let locationController = LocationController()
+                    try await withDependencies {
+                        $0[LocationControllerKey.self] = locationController
+                    } operation: {
+                        let app = Application { DistrictRouter() }
+
+                        var staleRequest = Application.Request.make(
+                            method: .put,
+                            path: "/districts/\(district.id)/locations",
+                            body: try stale.toString()
+                        )
+                        staleRequest.user = .district(district.id)
+                        let staleResponse = await app.handle(staleRequest)
+                        let stalePayload = try FloatLocation.from(staleResponse.body)
+
+                        #expect(staleResponse.statusCode == 200)
+                        #expect(stalePayload == saved)
+                        #expect(persisted == saved)
+                        #expect(dataStore.queryCallCount == 1)
+                        #expect(dataStore.putCallCount == 0)
+                    }
+                }
+            }
+        }
+    }
 }
 
 private extension DistrictRouterTest {

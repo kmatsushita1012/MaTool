@@ -231,6 +231,17 @@ actor AuthProviderSpy {
     }
 }
 
+final class AuthProviderInitializeSpy: @unchecked Sendable {
+    private let lock = NSLock()
+    private var count = 0
+
+    var callCount: Int { lock.withLock { count } }
+
+    func record() {
+        lock.withLock { count += 1 }
+    }
+}
+
 final class UserDefaultsClientSpy: @unchecked Sendable {
     private let lock = NSLock()
     private var strings: [String: String] = [:]
@@ -281,7 +292,13 @@ final class DefaultUserDefaultsSpy: UserDefalutsManagerProtocol, @unchecked Send
     private var alwaysPermissionRequested = false
     private var recorded: [String] = []
 
-    init(hasRequestedAlwaysLocationPermission: Bool = false) {
+    init(
+        festivalId: String? = nil,
+        districtId: String? = nil,
+        hasRequestedAlwaysLocationPermission: Bool = false
+    ) {
+        self.festivalId = festivalId
+        self.districtId = districtId
         alwaysPermissionRequested = hasRequestedAlwaysLocationPermission
     }
 

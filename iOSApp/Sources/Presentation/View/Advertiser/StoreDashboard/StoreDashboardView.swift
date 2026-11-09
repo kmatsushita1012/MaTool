@@ -134,29 +134,27 @@ private struct StoreDashboardNextStepButton: View {
 
     var body: some View {
         Button(action: action) {
-            HStack(spacing: 16) {
-                VStack(alignment: .leading, spacing: 8) {
-                    Text("次のステップ")
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
+            GroupedSurface {
+                HStack(spacing: 16) {
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("次のステップ")
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
 
-                    Text(title)
+                        Text(title)
+                            .font(.headline)
+                            .foregroundStyle(.primary)
+                    }
+
+                    Spacer(minLength: 0)
+
+                    Image(systemName: "chevron.right")
                         .font(.headline)
-                        .foregroundStyle(.primary)
+                        .foregroundStyle(Color.accentColor)
                 }
-
-                Spacer(minLength: 0)
-
-                Image(systemName: "chevron.right")
-                    .font(.headline)
-                    .foregroundStyle(Color.accentColor)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(16)
             }
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(16)
-            .background(
-                Color(uiColor: .secondarySystemGroupedBackground),
-                in: RoundedRectangle(cornerRadius: 16)
-            )
         }
         .buttonStyle(.plain)
     }

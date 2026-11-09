@@ -32,7 +32,6 @@ struct ConfirmSignInUseCase: ConfirmSignInUseCaseProtocol {
                 appState.withLock {
                     $0 = AppState(
                         festivalPack: response,
-                        year: Calendar.current.component(.year, from: .now),
                         sessionId: requestId
                     )
                 }
@@ -50,7 +49,6 @@ struct ConfirmSignInUseCase: ConfirmSignInUseCaseProtocol {
                         festivalPack: festivalResponse,
                         districtPack: districtResponse,
                         districtId: districtId,
-                        year: Calendar.current.component(.year, from: .now),
                         sessionId: requestId
                     )
                 }

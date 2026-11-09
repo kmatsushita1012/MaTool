@@ -81,7 +81,7 @@ struct MapView: UIViewRepresentable {
     }
 
     func makeUIView(context: Context) -> MKMapView {
-        let mapView = MKMapView()
+        let mapView: MKMapView = style == .public ? PublicMapKitView() : MKMapView()
         mapView.delegate = context.coordinator
         mapView.setRegion(region, animated: false)
         mapView.showsUserLocation = true
@@ -279,6 +279,27 @@ struct MapView: UIViewRepresentable {
                 && lonDiff <= centerEpsilon
                 && latSpanDiff <= spanEpsilon
                 && lonSpanDiff <= spanEpsilon
+        }
+    }
+}
+
+private final class PublicMapKitView: MKMapView {
+    override func layoutSubviews() {
+        super.layoutSubviews()
+        guard #available(iOS 26.0, *) else { return }
+        hideTopEdgeEffect(in: self)
+    }
+
+    private func hideTopEdgeEffect(in view: UIView) {
+        for subview in view.subviews {
+            let typeName = String(reflecting: type(of: subview))
+            if typeName.contains("ScrollEdgeEffectView"), !typeName.contains("BackdropView") {
+                // MKMapView has no public property for this UIKit-owned top edge effect.
+                subview.isHidden = true
+                subview.alpha = 0
+            } else {
+                hideTopEdgeEffect(in: subview)
+            }
         }
     }
 }

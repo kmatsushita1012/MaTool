@@ -4,7 +4,7 @@ import SwiftUI
 
 public struct RootSceneView: View {
     @State private var store: StoreOf<RootFeature>
-    @State private var infoSheetDetent: PresentationDetent = .medium
+    @State private var infoSheetDetent: PresentationDetent = .large
     @Dependency(\.values.isLiquidGlassEnabled) private var isLiquidGlassEnabled
 
     private var errorStatusBinding: Binding<StatusCheckResult?> {
@@ -29,82 +29,82 @@ public struct RootSceneView: View {
     }
 
     public var body: some View {
-        NavigationStack {
-            Group {
-                switch store.scene {
-                case .map:
-                    if let mapStore = store.scope(state: \.map, action: \.map) {
+        Group {
+            switch store.scene {
+            case .map:
+                if let mapStore = store.scope(state: \.map, action: \.map) {
+                    NavigationStack {
                         PublicMapView(
                             store: mapStore,
                             isNavigationDisabled: store.isDestinationLoading
                                 || store.isIntroductionLoading
                                 || store.isEmergencySignOutLoading
                         )
-                        .navigationDestination(item: $store.scope(
-                            state: \.destination?.settings,
-                            action: \.destination.settings
-                        )) { settingsStore in
-                            SettingsView(store: settingsStore)
-                        }
-                        .navigationDestination(item: $store.scope(
-                            state: \.destination?.adminDistrict,
-                            action: \.destination.adminDistrict
-                        )) { adminStore in
-                            DistrictDashboardView(store: adminStore)
-                        }
-                        .navigationDestination(item: $store.scope(
-                            state: \.destination?.adminFestival,
-                            action: \.destination.adminFestival
-                        )) { adminStore in
-                            FestivalDashboardView(store: adminStore)
-                        }
-                        .navigationDestination(item: $store.scope(
-                            state: \.destination?.advertiserDashboard,
-                            action: \.destination.advertiserDashboard
-                        )) { advertiserStore in
-                            AdvertiserDashboardScreen(store: advertiserStore)
-                        }
-                        .sheet(item: $store.scope(
-                            state: \.sheet,
-                            action: \.sheet
-                        ), onDismiss: {
-                            infoSheetDetent = .medium
-                        }) { sheetStore in
-                            let introductionSheet = NavigationStack {
-                                switch sheetStore.case {
-                                case .festival(let infoStore):
-                                    FestivalInfoView(store: infoStore, isSheetRoot: true)
-                                case .district(let districtStore):
-                                    DistrictIntroductionRootView(store: districtStore)
-                                }
+                            .navigationDestination(item: $store.scope(
+                                state: \.destination?.settings,
+                                action: \.destination.settings
+                            )) { settingsStore in
+                                SettingsView(store: settingsStore)
                             }
-                            .presentationDetents([.medium, .large], selection: $infoSheetDetent)
-                            .presentationDragIndicator(.visible)
+                            .navigationDestination(item: $store.scope(
+                                state: \.destination?.adminDistrict,
+                                action: \.destination.adminDistrict
+                            )) { adminStore in
+                                DistrictDashboardView(store: adminStore)
+                            }
+                            .navigationDestination(item: $store.scope(
+                                state: \.destination?.adminFestival,
+                                action: \.destination.adminFestival
+                            )) { adminStore in
+                                FestivalDashboardView(store: adminStore)
+                            }
+                            .navigationDestination(item: $store.scope(
+                                state: \.destination?.advertiserDashboard,
+                                action: \.destination.advertiserDashboard
+                            )) { advertiserStore in
+                                AdvertiserDashboardScreen(store: advertiserStore)
+                            }
+                    }
+                    .sheet(item: $store.scope(
+                        state: \.sheet,
+                        action: \.sheet
+                    ), onDismiss: {
+                        infoSheetDetent = .large
+                    }) { sheetStore in
+                        let introductionSheet = NavigationStack {
+                            switch sheetStore.case {
+                            case .festival(let infoStore):
+                                FestivalInfoView(store: infoStore, isSheetRoot: true)
+                            case .district(let districtStore):
+                                DistrictIntroductionRootView(store: districtStore)
+                            }
+                        }
+                        .presentationDetents([.medium, .large], selection: $infoSheetDetent)
+                        .presentationDragIndicator(.visible)
 
-                            if #available(iOS 27.0, *) {
-                                introductionSheet
-                                    .presentationPlacement(.trailing)
-                                    .presentationSizing(.form)
-                            } else {
-                                introductionSheet
-                            }
+                        if #available(iOS 27.0, *) {
+                            introductionSheet
+                                .presentationPlacement(.trailing)
+                                .presentationSizing(.form)
+                        } else {
+                            introductionSheet
                         }
-                    } else {
-                        LoadingView()
                     }
-                case .onboarding:
-                    if let onboardingStore = store.scope(state: \.onboarding, action: \.onboarding) {
-                        OnboardingView(store: onboardingStore)
-                            .preferredColorScheme(.light)
-                    } else {
-                        LoadingView()
-                    }
-                case .loading:
+                } else {
                     LoadingView()
-                        .preferredColorScheme(.light)
-                case .error(let message):
-                    errorView(message)
                 }
+            case .onboarding:
+                if let onboardingStore = store.scope(state: \.onboarding, action: \.onboarding) {
+                    OnboardingView(store: onboardingStore)
+                        .preferredColorScheme(.light)
+                } else {
+                    LoadingView()
+                }
+            case .loading:
+                LoadingView()
+                    .preferredColorScheme(.light)
+            case .error(let message):
+                errorView(message)
             }
         }
         .modifier(AppScrollEdgeEffectModifier(isEnabled: isLiquidGlassEnabled))

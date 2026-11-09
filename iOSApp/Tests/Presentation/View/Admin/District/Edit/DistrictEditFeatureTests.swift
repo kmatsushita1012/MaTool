@@ -179,8 +179,7 @@ struct DistrictEditFeatureTests {
     func 地区詳細未ロード時に編集状態を作らない() async {
         let fixture = DistrictEditFixture()
         let appState = Shared<AppState?>(value: AppState(
-            festivalPack: fixture.festivalPack,
-            year: 2026
+            festivalPack: fixture.festivalPack
         ))
         let store = TestStore(
             initialState: DistrictDashboardFeature.State(fixture.district, appState: appState)
@@ -223,6 +222,7 @@ private struct DistrictEditFixture {
         )
         let festivalPack = LaunchFestivalPack(
             festival: festival,
+            year: 2026,
             districts: [district],
             periods: [],
             locations: [],
@@ -244,7 +244,6 @@ private struct DistrictEditFixture {
                 currentRouteId: nil
             ),
             districtId: district.id,
-            year: 2026
         ))
     }
 }

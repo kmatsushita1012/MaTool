@@ -49,7 +49,7 @@ struct AdvertiserDashboardFeature {
         case settingsTapped
         case settingsPrepared(AppResult<SettingsPreparation>)
         case signOutTapped
-        case signOutReceived(VoidAppResult)
+        case signOutReceived(AppResult<LaunchState>)
         case destination(PresentationAction<Destination.Action>)
         case alert(PresentationAction<AlertFeature.Action>)
     }
@@ -168,8 +168,9 @@ struct AdvertiserDashboardFeature {
             case .signOutTapped:
                 guard !state.isSigningOut else { return .none }
                 state.isSigningOut = true
+                let appState = state.$appState
                 return .task(Action.signOutReceived) {
-                    try await signOutUseCase()
+                    try await signOutUseCase(appState: appState)
                 }
 
             case .signOutReceived(.failure(let error)):
@@ -177,7 +178,7 @@ struct AdvertiserDashboardFeature {
                 state.alert = .error("ログアウトに失敗しました。\n\(error.message)")
                 return .none
 
-            case .signOutReceived(.success):
+            case .signOutReceived(.success(_)):
                 state.isSigningOut = false
                 return .none
 

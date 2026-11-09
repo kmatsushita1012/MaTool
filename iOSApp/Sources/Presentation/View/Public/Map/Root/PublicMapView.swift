@@ -79,7 +79,8 @@ struct PublicMapView: View {
             onAdBannerImageLoaded: { store.send(.adBanner(.imageLoaded($0))) },
             onAdBannerImageFailed: { store.send(.adBanner(.imageFailed($0))) },
             onAdBannerDismissed: { store.send(.adBanner(.dismissTapped($0))) },
-            onSettingsTapped: { store.send(.delegate(.settingsOrAdminTapped)) },
+            onAdminPageTapped: { store.send(.delegate(.settingsOrAdminTapped)) },
+            onSettingsTapped: { store.send(.delegate(.settingsTapped)) },
             onEmergencySignOutTapped: { store.send(.delegate(.emergencySignOutTapped)) },
             onIntroductionTapped: { store.send(.delegate(.introductionTapped)) },
             onContentSelected: { store.send(.contentSelected($0)) },
@@ -108,6 +109,7 @@ struct PublicMapContentView<MapContent: View>: View {
     let onAdBannerImageLoaded: (String) -> Void
     let onAdBannerImageFailed: (String) -> Void
     let onAdBannerDismissed: (String) -> Void
+    let onAdminPageTapped: () -> Void
     let onSettingsTapped: () -> Void
     let onEmergencySignOutTapped: () -> Void
     let onIntroductionTapped: () -> Void
@@ -125,6 +127,22 @@ struct PublicMapContentView<MapContent: View>: View {
         .safeAreaInset(edge: .top, spacing: 0) {
             VStack(alignment: .leading, spacing: 16) {
                 topControls
+                    .fixedSize(horizontal: false, vertical: true)
+                    .background {
+                        GeometryReader { geometry in
+                            let controlsFrame = geometry.frame(in: .global)
+
+                            if #available(iOS 26.0, *) {
+                                Color.clear
+                                    .glassEffect(.regular, in: .rect)
+                                    .ignoresSafeArea(edges: [.top, .horizontal])
+                                    .frame(width: geometry.size.width, height: controlsFrame.maxY + 8)
+                                    .offset(y: -controlsFrame.minY)
+                                    .allowsHitTesting(false)
+                                    .accessibilityHidden(true)
+                            }
+                        }
+                    }
                 if let adBannerCandidate {
                     HStack {
                         Spacer()
@@ -164,23 +182,25 @@ struct PublicMapContentView<MapContent: View>: View {
                 switch userRole {
                 case .district, .headquarter:
                     Menu {
-                        Button("管理者ページ", action: onSettingsTapped)
+                        Button("管理者ページ", action: onAdminPageTapped)
+                        Button("設定", action: onSettingsTapped)
                         Button("ログアウト", role: .destructive, action: onEmergencySignOutTapped)
                     } label: {
                         Image(systemName: "person.crop.circle")
                     } primaryAction: {
-                        onSettingsTapped()
+                        onAdminPageTapped()
                     }
                     .accessibilityLabel("管理者")
                     .disabled(isNavigationDisabled)
                 case .advertiser:
                     Menu {
-                        Button("広告主ページ", action: onSettingsTapped)
+                        Button("広告主ページ", action: onAdminPageTapped)
+                        Button("設定", action: onSettingsTapped)
                         Button("ログアウト", role: .destructive, action: onEmergencySignOutTapped)
                     } label: {
                         Image(systemName: "storefront")
                     } primaryAction: {
-                        onSettingsTapped()
+                        onAdminPageTapped()
                     }
                     .accessibilityLabel("広告主")
                     .disabled(isNavigationDisabled)
@@ -292,6 +312,7 @@ private extension PublicMapFeature.Content {
             onAdBannerImageLoaded: { _ in },
             onAdBannerImageFailed: { _ in },
             onAdBannerDismissed: { _ in },
+            onAdminPageTapped: {},
             onSettingsTapped: {},
             onEmergencySignOutTapped: {},
             onIntroductionTapped: {},

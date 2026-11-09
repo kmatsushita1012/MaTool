@@ -20,13 +20,13 @@ struct PublicMapFeatureTests {
         let appState = Shared<AppState?>(value: AppState(
             festivalPack: LaunchFestivalPack(
                 festival: festival,
+                year: 2026,
                 districts: [laterGroupDistrict, selectedDistrict, sameGroupDistrict, firstGroupDistrict],
                 periods: [],
                 locations: [],
                 checkpoints: [],
                 hazardSections: []
             ),
-            year: 2026
         ))
         var state = PublicMapFeature.State(
             festival: festival,
@@ -138,7 +138,6 @@ private struct PeriodSelectionFixture {
                 currentRouteId: currentRoute.id
             ),
             districtId: currentDistrict.id,
-            year: 2026
         ))
     }
 }

@@ -37,13 +37,13 @@ struct SettingsFeatureTests {
         let appState = Shared<AppState?>(value: AppState(
             festivalPack: LaunchFestivalPack(
                 festival: festival,
+                year: 2026,
                 districts: [laterDistrict, firstDistrict, middleDistrict],
                 periods: [],
                 locations: [],
                 checkpoints: [],
                 hazardSections: []
             ),
-            year: 2026
         ))
 
         let state = withDependencies {

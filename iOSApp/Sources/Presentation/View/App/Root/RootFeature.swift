@@ -117,7 +117,7 @@ struct RootFeature {
         case settingsPrepared(AppResult<SettingsPreparation>)
         case introductionPrepared(AppResult<IntroSheetPreparation>)
         case alert(PresentationAction<AlertFeature.Action>)
-        case emergencySignOutReceived(VoidAppResult)
+        case emergencySignOutReceived(AppResult<LaunchState>)
     }
 
     @Dependency(LaunchSceneUseCaseKey.self) private var launchSceneUseCase
@@ -222,34 +222,40 @@ struct RootFeature {
                     return .none
                 }
 
-            case .map(.delegate(.settingsOrAdminTapped)):
+            case .map(.delegate(.settingsOrAdminTapped)),
+                 .map(.delegate(.settingsTapped)):
                 guard !state.isDestinationLoading && !state.isIntroductionLoading else { return .none }
                 guard let userRole = currentUserRole(state.launchState) else { return .none }
-                if case .advertiser = userRole {
-                    state.destination = .advertiserDashboard(AdvertiserDashboardFeature.State(
-                        userRole: userRole,
-                        appState: state.$appState,
-                        storeCreditCatalog: state.$storeCreditCatalog
-                    ))
-                    return .none
-                }
-                if userRole == .guest {
-                    state.isDestinationLoading = true
-                    return .task(Action.settingsPrepared) {
-                        let festivals = try await fetchFestivalListUseCase()
-                        let selection = getSceneSelectionUseCase()
-                        return SettingsPreparation(festivals: festivals, selection: selection)
+
+                if case .map(.delegate(.settingsOrAdminTapped)) = action {
+                    if case .advertiser = userRole {
+                        state.destination = .advertiserDashboard(AdvertiserDashboardFeature.State(
+                            userRole: userRole,
+                            appState: state.$appState,
+                            storeCreditCatalog: state.$storeCreditCatalog
+                        ))
+                        return .none
+                    }
+                    if userRole != .guest {
+                        guard setAdminDestination(state: &state, userRole: userRole) else { return .none }
+                        lastMainScreenUseCase.save(.admin)
+                        return .none
                     }
                 }
-                guard setAdminDestination(state: &state, userRole: userRole) else { return .none }
-                lastMainScreenUseCase.save(.admin)
-                return .none
+
+                state.isDestinationLoading = true
+                return .task(Action.settingsPrepared) {
+                    let festivals = try await fetchFestivalListUseCase()
+                    let selection = getSceneSelectionUseCase()
+                    return SettingsPreparation(festivals: festivals, selection: selection)
+                }
 
             case .map(.delegate(.emergencySignOutTapped)):
                 guard !state.isEmergencySignOutLoading else { return .none }
                 state.isEmergencySignOutLoading = true
+                let appState = state.$appState
                 return .task(Action.emergencySignOutReceived) {
-                    try await signOutUseCase()
+                    try await signOutUseCase(appState: appState)
                 }
 
             case .emergencySignOutReceived(.failure(let error)):
@@ -257,9 +263,9 @@ struct RootFeature {
                 state.alert = .error("ログアウトに失敗しました。 \(error.message)")
                 return .none
 
-            case .emergencySignOutReceived(.success):
+            case .emergencySignOutReceived(.success(let launchState)):
                 state.isEmergencySignOutLoading = false
-                finishSignOut(state: &state)
+                finishSignOut(state: &state, launchState: launchState)
                 return .none
 
             case .map(.delegate(.introductionTapped)):
@@ -335,15 +341,6 @@ struct RootFeature {
                 state.alert = .error(error.message)
                 return .none
 
-            case .destination(.presented(.settings(.signOutReceived(.success)))),
-                 .destination(.presented(.adminDistrict(.signOutReceived(.success)))),
-                 .destination(.presented(.adminFestival(.signOutReceived(.success)))),
-                 .destination(.presented(.advertiserDashboard(.destination(.presented(.settings(.signOutReceived(.success))))))),
-                 .destination(.presented(.adminDistrict(.destination(.presented(.settings(.signOutReceived(.success))))))),
-                 .destination(.presented(.adminFestival(.destination(.presented(.settings(.signOutReceived(.success))))))):
-                finishSignOut(state: &state)
-                return .none
-
             case .destination(.presented(.settings(.delegate(.sceneSelectionChanged(let userRole, let routeId))))),
                  .destination(.presented(.advertiserDashboard(.destination(.presented(.settings(.delegate(.sceneSelectionChanged(let userRole, let routeId)))))))),
                  .destination(.presented(.adminDistrict(.destination(.presented(.settings(.delegate(.sceneSelectionChanged(let userRole, let routeId)))))))),
@@ -370,6 +367,9 @@ struct RootFeature {
                  .destination(.presented(.adminDistrict(.destination(.presented(.settings(let settingsAction)))))),
                  .destination(.presented(.adminFestival(.destination(.presented(.settings(let settingsAction)))))):
                 switch settingsAction {
+                case .signOutReceived(.success(let launchState)):
+                    finishSignOut(state: &state, launchState: launchState)
+                    return .none
                 case .destination(.presented(.advertiserAuth(let advertiserAuthAction))):
                     let userRole: UserRole
                     switch advertiserAuthAction {
@@ -399,16 +399,10 @@ struct RootFeature {
                     return .none
                 }
 
-            case .destination(.presented(.advertiserDashboard(.signOutReceived(.success)))):
-                if state.appState != nil {
-                    finishSignOut(state: &state)
-                    return .none
-                }
-                state.map = nil
-                state.destination = nil
-                state.$launchState.withLock { $0 = .onboarding }
-                state.onboarding = state.makeOnboardingState()
-                return .send(.onboarding(.onAppear))
+            case .destination(.presented(let destinationAction)):
+                guard let launchState = destinationAction.signOutLaunchState else { return .none }
+                finishSignOut(state: &state, launchState: launchState)
+                return .none
 
             case .destination(.dismiss):
                 if let userRole = currentUserRole(state.launchState), userRole != .guest {
@@ -585,16 +579,43 @@ struct RootFeature {
         }
     }
 
-    private func finishSignOut(state: inout State) {
-        let currentRouteId = state.appState?.routeState?.route.id
-        let hasSelectedDistrict = state.appState?.selectedDistrict != nil
-        state.$launchState.withLock {
-            $0 = hasSelectedDistrict ? .district(.guest, currentRouteId) : .festival(.guest)
+    private func finishSignOut(state: inout State, launchState: LaunchState) {
+        state.$launchState.withLock { $0 = launchState }
+        switch launchState {
+        case .district(let userRole, let routeId):
+            state.map = state.makeMapState(userRole: userRole, currentRouteId: routeId)
+            state.onboarding = nil
+        case .festival(let userRole):
+            state.map = state.makeMapState(userRole: userRole)
+            state.onboarding = nil
+        case .onboarding:
+            state.map = nil
+            state.onboarding = state.makeOnboardingState()
+        case .loading, .error:
+            state.map = nil
+            state.onboarding = nil
         }
-        state.map = state.makeMapState(userRole: .guest, currentRouteId: currentRouteId)
         state.destination = nil
         state.sheet = nil
         lastMainScreenUseCase.save(nil)
+    }
+
+}
+
+private extension RootFeature.Destination.Action {
+    var signOutLaunchState: LaunchState? {
+        switch self {
+        case .adminDistrict(.signOutReceived(.success(let launchState))),
+             .adminFestival(.signOutReceived(.success(let launchState))),
+             .advertiserDashboard(.signOutReceived(.success(let launchState))):
+            launchState
+        case .adminDistrict(.destination(.presented(.settings(.signOutReceived(.success(let launchState)))))),
+             .adminFestival(.destination(.presented(.settings(.signOutReceived(.success(let launchState)))))),
+             .advertiserDashboard(.destination(.presented(.settings(.signOutReceived(.success(let launchState)))))):
+            launchState
+        default:
+            nil
+        }
     }
 }
 

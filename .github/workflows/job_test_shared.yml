@@ -6,33 +6,31 @@ on:
 jobs:
   test-shared:
     name: Run Shared Tests
-    runs-on: macos-26
+    runs-on: ubuntu-24.04
+    container:
+      image: swift:6.3.3-noble
+    defaults:
+      run:
+        shell: bash
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup Xcode 26.6
-        uses: maxim-lobanov/setup-xcode@v1
-        with:
-          xcode-version: "26.6"
-
-      - name: Cache SwiftPM artifacts
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/Library/Caches/org.swift.swiftpm/
-            Shared/.build
-          key: ${{ runner.os }}-spm-Shared-xcode-26.6-${{ github.ref_name }}-${{ hashFiles('Shared/Package.swift', 'Shared/Package.resolved') }}
-          restore-keys: |
-            ${{ runner.os }}-spm-Shared-xcode-26.6-${{ github.ref_name }}-
-            ${{ runner.os }}-spm-Shared-xcode-26.6-
-
+      # .buildはAWS SDK等の成果物が数GBになるため、Actionsキャッシュには保存しない。
+      # このジョブは毎回ビルドし、容量は頻繁なBackendデプロイ用キャッシュに優先配分する。
       - name: Resolve Shared package dependencies
         run: swift package resolve
         working-directory: Shared
 
+      - name: Install Python for Test Summary
+        run: |
+          apt-get update
+          apt-get install -y --no-install-recommends python3
+          rm -rf /var/lib/apt/lists/*
+
       - name: Build & Test
+        id: test
         run: |
           set -o pipefail
           mkdir -p build/reports
@@ -40,6 +38,7 @@ jobs:
             --package-path Shared \
             --filter '^SharedTests\.' \
             --enable-code-coverage \
+            --xunit-output="$(pwd)/build/reports/shared-test-results.xml" \
             | tee build/reports/shared-test.log
 
       - name: Upload Test Results
@@ -52,9 +51,10 @@ jobs:
       - name: Print Test Summary
         if: always()
         run: |
-          echo "===== Shared Swift Package Test Summary ====="
-          if [ -f build/reports/shared-test.log ]; then
-            tail -n 80 build/reports/shared-test.log
-          else
-            echo "Shared test log was not created."
-          fi
+          python3 .github/scripts/print_test_summary.py \
+            --xunit "$(pwd)/build/reports/shared-test-results.xml" \
+            --title Shared \
+            --platform Linux \
+            --device "GitHub Actions Runner" \
+            --os-version "Ubuntu 24.04 / Swift 6.3.3" \
+            --test-outcome "${{ steps.test.outcome }}"

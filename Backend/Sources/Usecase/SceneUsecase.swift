@@ -95,7 +95,11 @@ struct SceneUsecase: SceneUsecaseProtocol {
         async let festivalTask = festivalRepository.get(id: festivalId)
         async let checkpointsTask = checkpointRepository.query(by: festivalId)
         async let hazardSectionsTask = hazardRepository.query(by: festivalId)
-        async let periodsTask = periodRepository.query(by: festivalId, year: SimpleDate.from(now).year)
+        async let periodsTask = LatestPeriodRouteResolver.fetchLatestPeriods(
+            festivalId: festivalId,
+            nowYear: SimpleDate.from(now).year,
+            periodRepository: periodRepository
+        )
 
         let districts: [District]
         if let prefetchedDistricts {
@@ -108,7 +112,6 @@ struct SceneUsecase: SceneUsecaseProtocol {
             throw Error.notFound("Festival \(festivalId) が見つかりません")
         }
         let periods = try await periodsTask
-
         let locations: [FloatLocation]
         if LocationPublicAccess.isPublic(now: now, periods: periods) {
             locations = try await floatLocationRepository.query(by: festival.id)
@@ -121,6 +124,7 @@ struct SceneUsecase: SceneUsecaseProtocol {
 
         return LaunchFestivalPack(
             festival: festival,
+            year: periods.first?.date.year ?? SimpleDate.from(now).year,
             districts: districts,
             periods: periods,
             locations: locations,
@@ -136,7 +140,11 @@ struct SceneUsecase: SceneUsecaseProtocol {
         prefetchedDistricts: [District]? = nil
     ) async throws -> LaunchFestivalPack {
         async let festivalTask = festivalRepository.get(id: festivalId)
-        async let periodsTask = periodRepository.query(by: festivalId, year: SimpleDate.from(now).year)
+        async let periodsTask = LatestPeriodRouteResolver.fetchLatestPeriods(
+            festivalId: festivalId,
+            nowYear: SimpleDate.from(now).year,
+            periodRepository: periodRepository
+        )
 
         let districts: [District]
         if let prefetchedDistricts {
@@ -149,7 +157,6 @@ struct SceneUsecase: SceneUsecaseProtocol {
             throw Error.notFound("Festival \(festivalId) が見つかりません")
         }
         let periods = try await periodsTask
-
         let locations: [FloatLocation]
         if LocationPublicAccess.isPublic(now: now, periods: periods) {
             locations = try await floatLocationRepository.query(by: festival.id)
@@ -159,6 +166,7 @@ struct SceneUsecase: SceneUsecaseProtocol {
 
         return LaunchFestivalPack(
             festival: festival,
+            year: periods.first?.date.year ?? SimpleDate.from(now).year,
             districts: districts,
             periods: periods,
             locations: locations,

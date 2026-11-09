@@ -61,7 +61,7 @@ MaTool の Festival に属する加盟店舗が、認証付きの店舗管理画
 | [Backend/Sources/Data/Repository/Festival/FestivalRepository.swift](../../../Backend/Sources/Data/Repository/Festival/FestivalRepository.swift) | matool テーブルの Record(pk, sk, type, content) 形式と index-TYPE を参照 |
 | [Backend/Sources/Data/Repository/DistrictRepository.swift](../../../Backend/Sources/Data/Repository/DistrictRepository.swift) | FESTIVAL# 配下の子レコード設計を参考にする |
 | [Backend/Sources/Router/FestivalRouter.swift](../../../Backend/Sources/Router/FestivalRouter.swift) | 既存の Router → Controller → Usecase → Repository 方式に追加する |
-| [iOSApp/Sources/Data/Client/AuthProvider.swift](../../../iOSApp/Sources/Data/Client/AuthProvider.swift) | Amplify の SignUp・メール確認を追加。advertiser の identity は Cognito sub から取得 |
+| [iOSApp/Sources/Data/Client/AuthProvider.swift](../../../iOSApp/Sources/Data/Client/AuthProvider.swift) | **広告主の新規登録・メール確認は Backend API 経由**。既存 Amplify は確認後の SignIn・Access Token 取得に使う。advertiser の identity は Cognito sub |
 | [iOSApp/Sources/Application/PublicMapAdUsecase.swift](../../../iOSApp/Sources/Application/PublicMapAdUsecase.swift) | 既存 AdMob 表示制御。店舗広告の配信・消費とは分離 |
 | [iOSApp/Sources/Data/Client/AdManager.swift](../../../iOSApp/Sources/Data/Client/AdManager.swift) | AdMob は現状無効化フラグあり。フォールバック稼働時に調整。既存の AdPlacement と区別し、店舗広告の種類は StoreAdPlacement とする |
 | [AGENTS.md](../../../AGENTS.md) | レイヤード Backend / TCA iOS / Swift Testing / PR ブランチ方針を遵守 |
@@ -72,12 +72,16 @@ MaTool の Festival に属する加盟店舗が、認証付きの店舗管理画
 
 ### 4.1 アカウント
 
-**推奨**: 新規広告主は既存 Cognito User Pool のセルフサインアップを使う。既存の region / district は現在のサーバー側管理者作成フローを維持する。広告主の認証識別子は変更されない Cognito sub を採用する（メールアドレスや username を ownerId としない）。
+**決定**: 新規広告主の登録・メール確認は **iOS → Backend → Cognito** に統一する。iOS から Cognito `SignUp` / `ConfirmSignUp` を直接呼ばず、登録時の `custom:role` は **Backend が固定値 `advertiser` として設定**する。既存の region / district は従来のサーバー側管理者作成フローを維持する。広告主 ID は変更されない Cognito **sub**（email / username ではない）。
 
-- iOS: 登録 → メール確認 → ログイン → Festival 選択 → Store 作成。
-- Backend: access token を検証し、「認証ユーザー」「役割」「sub」を取得する。
-- Cognito の custom:role は広告主が任意に region / district を設定・更新できない構成にする。セルフサインアップが許可されているか、App Client の属性書込権限・Pre Sign-up 等の設定を先に点検する。
-- **実装案**: 新規ユーザーを advertiser として確実に分類する。custom:role を明示設定するか、role 未設定の通常認証済みユーザーを広告主として分類するかは Cognito 設定の確認後に決める。guest（未認証）と混同しない。
+1. iOS の広告主登録画面から `POST /advertisers/signup`（メールアドレス・パスワード）を呼ぶ。Backend が入力検証後、**Backend 専用 Cognito App Client** の `SignUp` を呼び、`custom:role=advertiser` を固定して作成する。クライアントから role / sub / ownerId を受け付けない。
+2. Cognito の確認コードをメールで受信し、iOS から `POST /advertisers/confirm-signup`（登録識別子・確認コード）を送る。Backend が同じ専用 App Client で `ConfirmSignUp` を呼ぶ。これは**登録確認でありログイン成功ではない**。
+3. メール確認後のログインとトークン更新のみ、既存 iOS `Amplify.Auth.signIn` / `fetchAuthSession` を利用する。Backend は受信した Access Token を Cognito で検証し、`custom:role=advertiser`・`email_verified=true`・`sub` を照合する。
+4. iOS 用の通常 Cognito App Client には `custom:role` の**書き込みを許可しない**。登録用 App Client は Backend のみが扱い、**Client Secret / SECRET_HASH を iOS に渡さない**。Cognito App Client の属性権限・ユーザープールのサインアップ設定をインフラ手順で確認する。
+5. **role が未設定・不明な認証ユーザーを自動的に広告主と分類しない**。現行 Backend #390 の role 未設定フォールバックは削除対象とする。既存ユーザーがいる場合は移行要否を判断する。
+6. Backend の新規登録 API は未認証で呼べるため、API Gateway のレート制限、重複登録・確認コード期限切れ・メール再送・通信失敗時のエラー扱いを実装する。パスワードや確認コードをログに出さない。
+
+登録が完了した後は `iOS Amplify SignIn → RootFeature が Navigation Tree 再構築 → AdvertiserDashboard` の順序。Dashboard 構成・起動時復元・ログアウトは [iOS 第一段階設計](./ios-phase1.md) に従う。
 
 ### 4.2 店舗操作権限
 
@@ -160,7 +164,9 @@ Impression の重複防止レコードは、token の有効期間・再送期間
 
 | Method | Path | 用途 / 認可 | 型 |
 | --- | --- | --- | --- |
-| — | Cognito SignUp / ConfirmSignUp / SignIn | 広告主登録（Amplify） | Cognito 標準 |
+| POST | /advertisers/signup | **広告主登録（Backend → Cognito SignUp）**。未認証・role は Backend 固定 | メール・パスワード → 登録受付 |
+| POST | /advertisers/confirm-signup | **メール確認（Backend → Cognito ConfirmSignUp）**。未認証 | 登録識別子・確認コード → 完了 |
+| — | Amplify / Cognito SignIn | **登録確認後のログインのみ iOS から直接** | Cognito 標準 |
 | GET | /advertisers/me/stores | 所有店舗一覧 | [Store] |
 | POST | /festivals/:festivalId/stores | 店舗作成（店舗数制限あり） | StoreCreateRequest → Store |
 | GET / PUT | /stores/:storeId | 店舗取得・編集・**画像確定／参照削除** | Store → Store |
@@ -414,7 +420,7 @@ AGENTS.md に従い、原則 Shared / Backend / iOS の PR を分け、Swift Tes
 
 ## 17. 実装時に検証する技術的事項
 
-- Cognito Pool の新規登録・カスタム Role 属性の安全性、Cognito sub の取得。
+- Backend 経由の広告主 SignUp・ConfirmSignUp、Backend 固定の `custom:role=advertiser`、iOS App Client の属性書き込み禁止、role 未設定ユーザーの権限拒否、Cognito sub の取得。
 - 既存の `Application.match` と認証 middleware の区別、ルーティングテスト。
 - DynamoDB の既存 `index-TYPE` と新規 Record 型、Credit 加算・減算の条件付き原子的書き込み。
 - StoreKit 2 の署名済み appAccountToken の検証と未完了 Consumable の復旧。
