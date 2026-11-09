@@ -102,8 +102,11 @@ struct InfoImageThemeToggleButton: View {
 struct InfoHeaderImageView: View {
     let lightPath: String?
     let darkPath: String?
+    let title: String
 
     @Environment(\.colorScheme) private var colorScheme
+    @State private var imageSize: CGSize?
+    @State private var loadedImagePath: String?
 
     private var imagePath: String? {
         InfoImageColorScheme.imagePath(
@@ -115,10 +118,59 @@ struct InfoHeaderImageView: View {
 
     var body: some View {
         if let imagePath {
-            WebImageView(imagePath: imagePath, contentMode: .fit)
+            WebImageView(imagePath: imagePath, contentMode: .fit) { size in
+                imageSize = size
+                loadedImagePath = imagePath
+            }
                 .frame(maxWidth: .infinity)
+                .overlay(alignment: .bottomTrailing) {
+                    if loadedImagePath == imagePath, let imageSize {
+                        InfoImageTitleOverlay(
+                            title: title,
+                            isVertical: imageSize.height > imageSize.width
+                        )
+                        .padding(16)
+                    }
+                }
                 .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
         }
+    }
+}
+
+private struct InfoImageTitleOverlay: View {
+    let title: String
+    let isVertical: Bool
+
+    @Environment(\.colorScheme) private var colorScheme
+
+    private var titleFont: Font {
+        .custom("YujiBoku-Regular", size: 72, relativeTo: .largeTitle)
+    }
+
+    var body: some View {
+        Group {
+            if isVertical {
+                VStack(spacing: 0) {
+                    ForEach(Array(title.enumerated()), id: \.offset) { character in
+                        Text(String(character.element))
+                    }
+                }
+            } else {
+                Text(title)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.6)
+            }
+        }
+        .font(titleFont)
+        .foregroundStyle(.primary)
+        .shadow(
+            color: colorScheme == .light ? .white : .black,
+            radius: 24,
+            x: 0,
+            y: 0
+        )
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(title)
     }
 }
 

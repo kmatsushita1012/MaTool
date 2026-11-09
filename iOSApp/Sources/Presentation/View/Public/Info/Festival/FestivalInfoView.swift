@@ -228,7 +228,8 @@ private struct FestivalOverviewContentView: View {
         InfoScrollView {
             InfoHeaderImageView(
                 lightPath: festival.image.light,
-                darkPath: festival.image.dark
+                darkPath: festival.image.dark,
+                title: festival.name
             )
 
             if !festival.prefecture.isEmpty || !festival.city.isEmpty {
