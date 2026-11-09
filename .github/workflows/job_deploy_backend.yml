@@ -73,6 +73,11 @@ jobs:
             echo "seconds=$(( $(date +%s) - STARTED_AT ))" >> "$GITHUB_OUTPUT"
           fi
 
+      - name: Mark Lambda image build start
+        id: lambda-clock
+        shell: bash
+        run: echo "started_at=$(date +%s)" >> "$GITHUB_OUTPUT"
+
       - name: Build Lambda image
         uses: docker/build-push-action@v6
         with:
@@ -84,12 +89,24 @@ jobs:
           # GHAキャッシュを最終イメージ側でも明示的に読み込む。
           cache-from: type=gha,scope=matool-backend-dependencies-v1
 
+      - name: Record Lambda image build duration
+        id: lambda-elapsed
+        if: always()
+        shell: bash
+        env:
+          STARTED_AT: ${{ steps.lambda-clock.outputs.started_at }}
+        run: |
+          if [[ "$STARTED_AT" =~ ^[0-9]+$ ]]; then
+            echo "seconds=$(( $(date +%s) - STARTED_AT ))" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Summarize Backend dependency cache verification
         if: always()
         shell: bash
         env:
           CACHE_WRITE: ${{ steps.dependency-cache.outputs.write }}
           DEPENDENCY_SECONDS: ${{ steps.dependency-elapsed.outputs.seconds }}
+          LAMBDA_SECONDS: ${{ steps.lambda-elapsed.outputs.seconds }}
         run: |
           {
             echo "### Backend dependency cache verification"
@@ -99,6 +116,7 @@ jobs:
             echo "| Branch | \`${GITHUB_REF_NAME}\` |"
             echo "| Cache export enabled | \`${CACHE_WRITE:-unknown}\` |"
             echo "| Dependency build elapsed | \`${DEPENDENCY_SECONDS:-unknown}s\` |"
+            echo "| Final Lambda image build elapsed | \`${LAMBDA_SECONDS:-unknown}s\` |"
             echo ""
             echo "Check the **Warm/cache Backend dependencies** BuildKit log for \`importing cache manifest\` and \`CACHED\` to confirm actual cache reuse."
           } >> "$GITHUB_STEP_SUMMARY"
