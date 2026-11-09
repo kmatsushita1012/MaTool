@@ -158,6 +158,10 @@ private struct InfoImageTitleOverlay: View {
         colorScheme == .light ? .white : .black
     }
 
+    private var directionalShadowColor: Color {
+        colorScheme == .light ? .black.opacity(0.72) : .white.opacity(0.72)
+    }
+
     private var titleFont: Font {
         .custom("YujiBoku-Regular", size: 64, relativeTo: .largeTitle)
     }
@@ -183,7 +187,8 @@ private struct InfoImageTitleOverlay: View {
         ZStack {
             titleContent
                 .foregroundStyle(outlineColor)
-                .shadow(color: outlineColor, radius: 40, x: 0, y: 0)
+                .shadow(color: outlineColor.opacity(0.65), radius: 4, x: -2, y: -2)
+                .shadow(color: directionalShadowColor, radius: 8, x: 4, y: 6)
 
             ForEach(Array(outlineOffsets.enumerated()), id: \.offset) { item in
                 titleContent
