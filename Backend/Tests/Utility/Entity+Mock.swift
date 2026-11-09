@@ -132,6 +132,7 @@ extension RoutePassage {
 extension FestivalPack {
     static func mock(
         festival: Festival = .mock(),
+        year: Int? = nil,
         checkpoints: [Checkpoint] = [],
         hazardSections: [HazardSection] = []
     ) -> Self {
@@ -161,6 +162,7 @@ extension RoutePack {
 extension LaunchFestivalPack {
     static func mock(
         festival: Festival = .mock(),
+        year: Int? = nil,
         districts: [District] = [],
         periods: [Period] = [],
         locations: [FloatLocation] = [],
@@ -169,6 +171,7 @@ extension LaunchFestivalPack {
     ) -> Self {
         .init(
             festival: festival,
+            year: year,
             districts: districts,
             periods: periods,
             locations: locations,

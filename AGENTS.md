@@ -2,12 +2,9 @@
 
 ## iOS
 
-- 原則として [$swift-app-architecture](/Users/matsushitakazuya/.homesick/repos/dotfiles/home/.agents/skills/swift-app-architecture/SKILL.md) に従い、クリーンアーキテクチャを目指す。
-- ViewModel の代わりに TCA（The Composable Architecture）を使用する。スキルの ViewModel に関する方針より、このルールを優先する。
-- AppState を可能な限り状態の唯一の情報源（SSOT）にする。
-- iOS の実装後は必ず XcodeBuildMCP を用いて iPhone シミュレータで iOSApp を起動し、動作確認を行う。
-- [$sim-use](/Users/matsushitakazuya/.codex/skills/sim-use/SKILL.md) に従って実際に画面操作を行い、実装・変更した画面に到達したことを確認する。起動確認だけで完了としない。
-- 対象画面で必要なタップ・入力・スクロールなどを行い、動作と UI を必ず目視で確認する。最終状態のスクリーンショットと UI 情報を取得し、要件と照合する。
+- View と Presentation Feature は [matool-swiftui-view](.codex/skills/matool-swiftui-view/SKILL.md) に従う。View 以外のレイヤー設計は [$swift-app-architecture](/Users/matsushitakazuya/.homesick/repos/dotfiles/home/.agents/skills/swift-app-architecture/SKILL.md) に従い、クリーンアーキテクチャを目指す。
+- Usecase から別の Usecase を呼び出さない。責務やライフサイクルが異なる処理は必要な重複を許容し、共通化は同じ責務を持つ処理に限る。
+- `authProvider.initialize()` はアプリの初回起動時にのみ呼び出し、サインアウトや起動データ再取得では呼び出さない。
 
 ## Backend
 

@@ -44,9 +44,7 @@ struct UpdatePeriodUseCase: UpdatePeriodUseCaseProtocol {
                   updated.sessionId == context.sessionId,
                   updated.districtState?.districtId == context.districtId,
                   updated.districtState?.requestId == context.districtRequestId else { return }
-            let currentPeriodIds = Set(updated.festivalState.periods.map(\.id))
-            let currentRoutes = routes.filter { currentPeriodIds.contains($0.periodId) }
-            updated.districtState?.routes = currentRoutes
+            updated.districtState?.routes = routes
             updated.routeLoadRequestId = UUID()
             if let routeState = updated.routeState,
                updated.districtState?.route(id: routeState.route.id) == nil {

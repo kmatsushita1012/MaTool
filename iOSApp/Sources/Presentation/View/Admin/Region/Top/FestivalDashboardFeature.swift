@@ -60,7 +60,7 @@ struct FestivalDashboardFeature {
         case settingsTapped
         case settingsPrepared(AppResult<SettingsPreparation>)
         case signOutTapped
-        case signOutReceived(VoidAppResult)
+        case signOutReceived(AppResult<LaunchState>)
         case periodsPrepared(AppResult<[Period]>)
         case destination(PresentationAction<Destination.Action>)
         case alert(PresentationAction<AlertFeature.Action>)
@@ -130,15 +130,16 @@ struct FestivalDashboardFeature {
                 return .none
             case .signOutTapped:
                 state.isAuthLoading = true
+                let appState = state.$appState
                 return .task(Action.signOutReceived) {
-                    try await signOutUseCase()
+                    try await signOutUseCase(appState: appState)
                 }
                 .cancellable(id: SceneSessionCancellationID.active, cancelInFlight: true)
             case .signOutReceived(.failure(let error)):
                 state.isAuthLoading = false
                 state.alert = AlertFeature.error("ログアウトに失敗しました　\(error.message)")
                 return .none
-            case .signOutReceived(.success):
+            case .signOutReceived(.success(_)):
                 state.isAuthLoading = false
                 return .none
             case .destination(.presented(.edit(.putReceived(.success)))):

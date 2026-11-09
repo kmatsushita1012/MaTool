@@ -68,13 +68,13 @@ struct FestivalInfoFeatureTests {
         let appState = Shared<AppState?>(value: AppState(
             festivalPack: LaunchFestivalPack(
                 festival: festival,
+                year: 2026,
                 districts: districts,
                 periods: [],
                 locations: [],
                 checkpoints: [],
                 hazardSections: []
             ),
-            year: 2026
         ))
         let state = FestivalInfoFeature.State(festival, appState: appState)
 
@@ -98,13 +98,13 @@ private struct FestivalInfoFixture {
         appState = Shared(value: AppState(
             festivalPack: LaunchFestivalPack(
                 festival: festival,
+                year: 2026,
                 districts: [district],
                 periods: [],
                 locations: [],
                 checkpoints: [],
                 hazardSections: []
             ),
-            year: 2026
         ))
     }
 

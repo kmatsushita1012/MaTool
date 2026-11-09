@@ -4,6 +4,10 @@ on:
     branches:
       - release-ios
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   deploy_iosapp:
     name: Deploy iOS App

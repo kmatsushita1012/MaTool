@@ -126,7 +126,7 @@ struct RootFeatureTests {
         }
         store.exhaustivity = .off
 
-        await store.send(.destination(.presented(.adminFestival(.signOutReceived(.success)))))
+        await store.send(.destination(.presented(.adminFestival(.signOutReceived(.success(.festival(.guest)))))))
 
         #expect(store.state.launchState == .festival(.guest))
         #expect(store.state.map?.userRole == .guest)
@@ -385,13 +385,13 @@ private struct RootFeatureFixture {
         appState = AppState(
             festivalPack: LaunchFestivalPack(
                 festival: festival,
+                year: 2026,
                 districts: [district],
                 periods: [],
                 locations: [],
                 checkpoints: [],
                 hazardSections: []
             ),
-            year: 2026
         )
     }
 }

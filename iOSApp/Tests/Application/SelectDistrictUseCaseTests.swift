@@ -33,14 +33,21 @@ struct SelectDistrictUseCaseTests {
             periodId: "old-period",
             visibility: .admin
         )
+        let previousPeriod = Period(
+            id: "old-period",
+            festivalId: festival.id,
+            date: SimpleDate(year: 2025, month: 10, day: 3),
+            start: SimpleTime(hour: 9, minute: 0),
+            end: SimpleTime(hour: 17, minute: 0)
+        )
         let point = Point(
             id: "point",
-            routeId: route.id,
+            routeId: oldRoute.id,
             coordinate: Coordinate(latitude: 35, longitude: 139)
         )
         let passage = RoutePassage(
             id: "passage",
-            routeId: route.id,
+            routeId: oldRoute.id,
             districtId: district.id,
             order: 0
         )
@@ -49,18 +56,18 @@ struct SelectDistrictUseCaseTests {
             routes: [route, oldRoute],
             points: [point],
             passages: [passage],
-            currentRouteId: route.id
+            currentRouteId: oldRoute.id
         )
         let appState = Shared<AppState?>(value: AppState(
             festivalPack: LaunchFestivalPack(
                 festival: festival,
+                year: 2026,
                 districts: [district],
-                periods: [currentPeriod],
+                periods: [currentPeriod, previousPeriod],
                 locations: [],
                 checkpoints: [],
                 hazardSections: []
-            ),
-            year: 2026
+            )
         ))
         let dataFetcher = SceneDataFetcherSpy(response: response)
         let useCase = withDependencies {
@@ -73,11 +80,13 @@ struct SelectDistrictUseCaseTests {
 
         let selectedRouteId = try await useCase(districtId: district.id, appState: appState)
 
-        #expect(selectedRouteId == route.id)
+        #expect(selectedRouteId == oldRoute.id)
         #expect(await dataFetcher.districtLaunchCallCount() == 1)
         #expect(appState.wrappedValue?.districtState?.districtId == district.id)
-        #expect(appState.wrappedValue?.districtState?.routes == [route])
-        #expect(appState.wrappedValue?.routeState?.route == route)
+        #expect(appState.wrappedValue?.districtState?.routes == [route, oldRoute])
+        #expect(appState.wrappedValue?.festivalState.year == 2026)
+        #expect(appState.wrappedValue?.period(id: previousPeriod.id) == previousPeriod)
+        #expect(appState.wrappedValue?.routeState?.route == oldRoute)
         #expect(appState.wrappedValue?.routeState?.points == [point])
         #expect(appState.wrappedValue?.routeState?.passages == [passage])
     }

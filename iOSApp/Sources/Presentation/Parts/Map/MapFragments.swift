@@ -23,9 +23,9 @@ class PointAnnotation: MKPointAnnotation {
         self.coordinate = entry.coordinate.toCL()
         switch style {
         case .simple:
-            self.title = entry.title
+            self.title = entry.anchor == nil ? entry.title : nil
         case .time(let index):
-            let title = entry.title
+            let title = entry.anchor == nil ? entry.title : nil
             let hasSuffix = (title?.isEmpty == false) || (entry.time != nil)
             let titleText = [title, entry.time?.text]
                 .compactMap { $0 }
@@ -47,13 +47,30 @@ extension PointAnnotation{
 final class PointAnnotationView: MKMarkerAnnotationView {
     override var annotation: MKAnnotation? {
         willSet {
-            guard let _ = newValue as? PointAnnotation else { return }
+            guard let pointAnnotation = newValue as? PointAnnotation else { return }
             displayPriority = .required
             if #available(iOS 11.0, *) {
                 clusteringIdentifier = nil
             }
             markerTintColor = UIColor(.annotation)
             zPriority = .defaultUnselected
+
+            glyphText = nil
+            glyphImage = nil
+            if let anchor = pointAnnotation.entry.anchor {
+                switch anchor {
+                case .start:
+                    glyphText = "発"
+                case .end:
+                    glyphText = "着"
+                case .rest:
+                    glyphText = "休"
+                }
+            } else if pointAnnotation.entry.performance != nil {
+                glyphImage = UIImage(systemName: "figure.dance")
+            } else if pointAnnotation.entry.checkpoint != nil {
+                glyphImage = UIImage(systemName: "arrow.up.and.down.and.arrow.left.and.right")
+            }
         }
     }
 }

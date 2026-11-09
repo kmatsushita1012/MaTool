@@ -24,25 +24,6 @@ jobs:
         run: |
           echo "$AMPLIFYCONFIGURATION_JSON_B64" | base64 --decode > iOSApp/amplifyconfiguration.json
 
-      - name: Ensure SPM Cache Dir Exists
-        run: mkdir -p iOSApp/Caches/org.swift.swiftpm
-
-      - name: Cache SPM
-        uses: actions/cache@v3
-        with:
-          path: iOSApp/Caches/org.swift.swiftpm
-          key: ${{ runner.os }}-spm-iOSApp-${{ hashFiles('iOSApp/Package.resolved') }}
-          restore-keys: |
-            ${{ runner.os }}-spm-iOSApp-
-
-      - name: Cache DerivedData
-        uses: actions/cache@v3
-        with:
-          path: iOSApp/.derivedData
-          key: ${{ runner.os }}-derived-${{ hashFiles('iOSApp/MaTool.xcodeproj/project.pbxproj', '**/*.swift', '**/*.h') }}
-          restore-keys: |
-            ${{ runner.os }}-derived-
-
       - name: Create iOS config files
         env:
           MATOOL_API_BASE_URL: ${{ secrets.MATOOL_API_BASE_URL }}

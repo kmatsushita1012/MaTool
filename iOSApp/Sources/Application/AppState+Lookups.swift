@@ -169,7 +169,6 @@ extension FestivalState {
 
     mutating func upsertPeriod(_ period: Period) {
         periods.removeAll { $0.id == period.id }
-        guard period.date.year == year else { return }
         periods.append(period)
         periods.sort()
     }

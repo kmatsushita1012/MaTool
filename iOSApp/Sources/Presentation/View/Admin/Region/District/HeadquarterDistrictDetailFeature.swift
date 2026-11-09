@@ -174,7 +174,8 @@ struct HeadquarterDistrictDetailFeature {
             let tableSnapshotter = await ActionTableSnapshotter(
                 district: state.district,
                 slots: state.routes,
-                routePacks: routePacks
+                routePacks: routePacks,
+                districts: state.appState?.festivalState.districts ?? []
             )
             let tablePages = await tableSnapshotter.takeAll()
             for page in tablePages {
@@ -184,9 +185,19 @@ struct HeadquarterDistrictDetailFeature {
                 let url = await renderer.finalize()
                 return url
             }
+            let appState = state.appState
             for route in routes {
                 guard let pack = routePacks.first(where: { $0.route.id == route.id }),
-                      let snapshotter = try? await RouteSnapshotter(route: pack.route, points: pack.points),
+                      let appState,
+                      let period = appState.period(id: pack.route.periodId),
+                      let snapshotter = try? await RouteSnapshotter(
+                        route: pack.route,
+                        points: pack.points,
+                        district: state.district,
+                        period: period,
+                        checkpoints: appState.festivalState.checkpoints,
+                        hazardSections: appState.festivalState.hazardSections
+                      ),
                       let image = try? await snapshotter.take() else { continue }
                 await renderer.addPage(with: image)
             }

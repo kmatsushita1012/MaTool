@@ -24,6 +24,8 @@ xcuserdata/
 ## Xcode project
 project.xcworkspace/
 DerivedData/
+/iOSApp/.derivedData/
+/iOSApp/.sourcePackages/
 build/
 *.xccheckout
 *.xcodeproj/*.xcuserdatad

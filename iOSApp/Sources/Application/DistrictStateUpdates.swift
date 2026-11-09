@@ -36,8 +36,7 @@ func applyDistrictStateResponse(
         updated.districtState = DistrictState(
             districtId: districtId,
             requestId: context.requestId,
-            pack: response,
-            currentPeriodIds: Set(updated.festivalState.periods.map(\.id))
+            pack: response
         )
         if let routeId = response.currentRouteId,
            let route = updated.districtState?.route(id: routeId) {
