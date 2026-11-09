@@ -9,7 +9,8 @@ struct ImagePathFinalizer {
         currentBanner: String?,
         incomingInterstitial: String?,
         currentInterstitial: String?,
-        storeId: Store.ID
+        storeId: Store.ID,
+        festivalId: Festival.ID
     ) async throws -> (banner: String?, interstitial: String?) {
         struct PendingImage {
             let placement: StoreAdPlacement
@@ -28,7 +29,10 @@ struct ImagePathFinalizer {
             case .banner: .banner
             case .interstitial: .interstitial
             }
-            let key = try ImageObjectKey(target: .init(type: .store, id: storeId, variant: variant))
+            let key = try ImageObjectKey(
+                target: .init(type: .store, id: storeId, variant: variant),
+                festivalId: festivalId
+            )
             guard incoming == key.temporary else { throw Error.badRequest("画像パスが不正です。") }
             pending.append(PendingImage(
                 placement: placement,

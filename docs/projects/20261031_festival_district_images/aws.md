@@ -1,13 +1,13 @@
 # 画像アップロードの AWS 設定要件
 
-Festival・District と将来の Store 画像で共通の設定を使用する。実際のバケット名や配信ドメインは環境ごとに設定する。
+Festival・District・Store 画像で共通の設定を使用する。実際のバケット名や配信ドメインは環境ごとに設定する。
 
 ## ストレージ
 
 - 画像専用 S3 バケットを用意し、パブリックアクセスをブロックする。`temporary/` を含むオブジェクトに匿名アクセスを許可しない。
 - `temporary/` 配下は短期の Lifecycle 有効期限で削除する（目安は 1 日）。正式画像にはこのルールを適用しない。
 - キーは `temporary/festivals/{festivalId}/{light|dark}.jpg`、`temporary/festivals/{festivalId}/districts/{districtId}/{light|dark}.jpg` を使用する。正式キーは先頭の `temporary/` を除いたもの。ID はパス区切りを含まないよう UTF-8 のパーセント表記に変換する。
-- 将来の Store 画像は同様に `temporary/stores/{storeId}/{banner|interstitial}.jpg` と `stores/{storeId}/{banner|interstitial}.jpg` を使用する。
+- Store 画像は所属する祭典の配下に `temporary/festivals/{festivalId}/stores/{storeId}/{banner|interstitial}.jpg` と `festivals/{festivalId}/stores/{storeId}/{banner|interstitial}.jpg` を使用する。
 
 ## 配信
 
@@ -17,7 +17,7 @@ Festival・District と将来の Store 画像で共通の設定を使用する�
 
 ## Backend の権限と設定
 
-- Lambda 実行ロールに対象バケットの `temporary/` への `s3:PutObject` と `s3:GetObject`、正式キーへの `s3:PutObject` を付与する。署名付き PUT はこのロールの権限を使用する。必要に応じて KMS 鍵の権限も付与する。
+- Lambda 実行ロールに対象バケットの `temporary/*` への `s3:PutObject` と `s3:GetObject`、正式キーの `festivals/*` への `s3:PutObject` を付与する。署名付き PUT はこのロールの権限を使用する。必要に応じて KMS 鍵の権限も付与する。
 - `IMAGE_UPLOAD_BUCKET`: 対象バケット名。
 - `IMAGE_PUBLIC_BASE_URL`: 正式キーを配信する HTTPS のベース URL（末尾スラッシュなし）。
 - `AWS_REGION`: バケットのリージョン。既存の Lambda 環境設定を使用する。

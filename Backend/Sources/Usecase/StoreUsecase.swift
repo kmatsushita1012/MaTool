@@ -68,8 +68,7 @@ struct StoreUsecase: StoreUsecaseProtocol {
         guard request.ownerId == current.ownerId,
               request.festivalId == current.festivalId,
               request.purchaseAccountToken == current.purchaseAccountToken,
-              request.moderationStatus == current.moderationStatus,
-              request.createdAt == current.createdAt else {
+              request.moderationStatus == current.moderationStatus else {
             throw Error.badRequest("サーバー管理項目は変更できません。")
         }
         try validate(name: request.name, address: request.address, businessHours: request.businessHours, description: request.description, coordinate: request.coordinate)
@@ -81,7 +80,8 @@ struct StoreUsecase: StoreUsecaseProtocol {
                 currentBanner: current.bannerImagePath,
                 incomingInterstitial: request.interstitialImagePath,
                 currentInterstitial: current.interstitialImagePath,
-                storeId: id
+                storeId: id,
+                festivalId: current.festivalId
             )
         } else {
             guard request.bannerImagePath == current.bannerImagePath,

@@ -187,8 +187,8 @@ Impression の重複防止レコードは、token の有効期間・再送期間
 
 Store PUT は **全体置換・最後に受理された書き込みを採用**し、Store の revision や `If-Match`、画像の ETag ヘッダーは導入しない。低頻度・単一管理アカウントの編集であることを踏まえ、複数端末による古い上書きは MVP の許容事項とする。ユーザー画面は保存後の **Backend が返す Store を最新状態として反映**する。
 
-- 固定一時キー（`temporary/stores/{storeId}/{kind}.jpg`）を指定: 所有権・種類・パス一致・画像実体・サイズを確認し、S3 正式キーにコピーして DB に正式パスを保存。
-- 現在の正式パス（`stores/{storeId}/{kind}.jpg`）を指定: 画像変更なし。
+- 固定一時キー（`temporary/festivals/{festivalId}/stores/{storeId}/{kind}.jpg`）を指定: 所有権・種類・パス一致・画像実体・サイズを確認し、S3 正式キーにコピーして DB に正式パスを保存。
+- 現在の正式パス（`festivals/{festivalId}/stores/{storeId}/{kind}.jpg`）を指定: 画像変更なし。
 - JSON `null`: DB の画像参照を解除。**物理画像をその場で削除しない**（第10章）。
 - 両画像フィールドを省略せず送る。Swift `@NullEncodable` で null を明示し、欠落した場合は 400。
 - ownerId、festivalId、purchaseAccountToken、運営停止状態等のサーバー管理フィールドをクライアントが改ざんできないよう検証。
@@ -256,10 +256,10 @@ Store 作成時、Backend が **Store ごとに固有かつ不変の `purchaseAc
 
 画像は店舗ごとにバナー1枚・全画面1枚。**画像用 UUID、uploadId、専用確定／削除 API は不要**。署名付き URL 発行は Festival / District の紹介画像と共用する1つの API で扱う。iOS が署名付き URL で S3 の店舗別一時キーへ直接 PUT し、**Store Entity の画像パスに一時キーを入れ、通常の Store PUT で確定**する。
 
-    temporary/stores/{storeId}/banner.jpg
-    temporary/stores/{storeId}/interstitial.jpg
-    stores/{storeId}/banner.jpg
-    stores/{storeId}/interstitial.jpg
+    temporary/festivals/{festivalId}/stores/{storeId}/banner.jpg
+    temporary/festivals/{festivalId}/stores/{storeId}/interstitial.jpg
+    festivals/{festivalId}/stores/{storeId}/banner.jpg
+    festivals/{festivalId}/stores/{storeId}/interstitial.jpg
 
 先に Store を作成して storeId を得る。画像は必要に応じて iOS で JPEG に圧縮。バケット名と CDN 等の配信方法は実装環境で決定する。
 
@@ -277,9 +277,9 @@ Store 作成時、Backend が **Store ごとに固有かつ不変の `purchaseAc
 ### 10.2 画像の登録・更新・削除
 
 1. **共通** `POST /images/upload-url` に `target: {type: "store", id: storeId, variant: "banner" | "interstitial"}` と `contentType` を渡す。Backend は Store を取得し、Cognito sub と ownerId が一致することを確認して短寿命 S3 PUT URL と固定の一時パスを返す。Festival / District の Light / Dark も**同じ1 API**で署名発行し、各対象の本部/町 Role を検証する（[別案件の設計書](../20261031_festival_district_images/spec.md)）。
-2. iOS が `temporary/stores/{storeId}/{kind}.jpg` にアップロード。再アップロード時は同じパスに上書き。
+2. iOS が `temporary/festivals/{festivalId}/stores/{storeId}/{kind}.jpg` にアップロード。再アップロード時は同じパスに上書き。
 3. iOS が通常の `PUT /stores/:storeId` で画像パスを一時パスに設定する。
-4. Backend は所有権・店舗 ID と kind に一致する固定パス・画像の存在・Content-Type・容量を検証し、**JPEG のシグネチャ、基本マーカー構造、縦横画素数と上限を必須検証**する（MIME だけ JPEG の非画像・破損 JPEG は拒否）。正常なら S3 の `CopyObject` で `stores/{storeId}/{kind}.jpg` へ上書きコピーする。
+4. Backend は所有権・店舗 ID と kind に一致する固定パス・画像の存在・Content-Type・容量を検証し、**JPEG のシグネチャ、基本マーカー構造、縦横画素数と上限を必須検証**する（MIME だけ JPEG の非画像・破損 JPEG は拒否）。正常なら S3 の `CopyObject` で `festivals/{festivalId}/stores/{storeId}/{kind}.jpg` へ上書きコピーする。
 5. Store Entity の画像パスを**正式キーに対応する公開 URL**（画像差し替えごとに異なる `?v=` 付き URL）へ置き換え、DynamoDB に保存し、更新後の Store を返す。
 6. 現在 DB に保存済みの公開 URL がそのまま送られた場合は画像を維持。`null` なら Store の画像参照を解除する。**画像の物理削除は通常の PUT では実行しない**。
 7. `temporary/` の不要なオブジェクトは短い S3 Lifecycle（例: 1日）で整理。正式画像は長期未利用の整理でのみ扱う。
@@ -290,12 +290,12 @@ Store 作成時、Backend が **Store ごとに固有かつ不変の `purchaseAc
 {
   "id": "store-123",
   "name": "店舗A",
-  "bannerImagePath": "temporary/stores/store-123/banner.jpg",
+  "bannerImagePath": "temporary/festivals/festival-1/stores/store-123/banner.jpg",
   "interstitialImagePath": null
 }
 ```
 
-成功後の `bannerImagePath` は `stores/store-123/banner.jpg` を配信する**正式公開 URL（画像更新版 `?v=` 付き）**になる。両画像フィールドは必須キーであり、未設定は明示 JSON `null`。欠落は400。
+成功後の `bannerImagePath` は `festivals/festival-1/stores/store-123/banner.jpg` を配信する**正式公開 URL（画像更新版 `?v=` 付き）**になる。両画像フィールドは必須キーであり、未設定は明示 JSON `null`。欠落は400。
 
 ### 10.3 MVP で割り切る整合性・キャッシュ
 

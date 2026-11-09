@@ -107,6 +107,7 @@ struct StoreUsecaseTest {
         var requestObject = try #require(JSONSerialization.jsonObject(with: Data(existing.toString().utf8)) as? [String: Any])
         requestObject.removeValue(forKey: "address")
         requestObject.removeValue(forKey: "coordinate")
+        requestObject["createdAt"] = existing.createdAt.timeIntervalSince1970 + 1
         let requestData = try JSONSerialization.data(withJSONObject: requestObject)
         let requestBody = try #require(String(data: requestData, encoding: .utf8))
 
@@ -135,10 +136,12 @@ struct StoreUsecaseTest {
         let responseStore = try decodeStoreResponse(response.body)
         #expect(responseStore.address == nil)
         #expect(responseStore.coordinate == nil)
+        #expect(abs(responseStore.createdAt.timeIntervalSince(existing.createdAt)) < 0.000_001)
         let storedStore = try #require(await repository.snapshot())
         #expect(storedStore.id == responseStore.id)
         #expect(storedStore.address == nil)
         #expect(storedStore.coordinate == nil)
+        #expect(storedStore.createdAt == existing.createdAt)
     }
 
     private func decodeStoreResponse(_ body: String) throws -> Store {
