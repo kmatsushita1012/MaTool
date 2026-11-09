@@ -143,11 +143,26 @@ private struct InfoImageTitleOverlay: View {
 
     @Environment(\.colorScheme) private var colorScheme
 
-    private var titleFont: Font {
-        .custom("YujiBoku-Regular", size: 72, relativeTo: .largeTitle)
+    private let outlineOffsets = [
+        CGSize(width: -1.5, height: -1.5),
+        CGSize(width: 0, height: -1.5),
+        CGSize(width: 1.5, height: -1.5),
+        CGSize(width: -1.5, height: 0),
+        CGSize(width: 1.5, height: 0),
+        CGSize(width: -1.5, height: 1.5),
+        CGSize(width: 0, height: 1.5),
+        CGSize(width: 1.5, height: 1.5)
+    ]
+
+    private var outlineColor: Color {
+        colorScheme == .light ? .white : .black
     }
 
-    var body: some View {
+    private var titleFont: Font {
+        .custom("YujiBoku-Regular", size: 64, relativeTo: .largeTitle)
+    }
+
+    private var titleContent: some View {
         Group {
             if isVertical {
                 VStack(spacing: 0) {
@@ -162,13 +177,23 @@ private struct InfoImageTitleOverlay: View {
             }
         }
         .font(titleFont)
-        .foregroundStyle(.primary)
-        .shadow(
-            color: colorScheme == .light ? .white : .black,
-            radius: 24,
-            x: 0,
-            y: 0
-        )
+    }
+
+    var body: some View {
+        ZStack {
+            titleContent
+                .foregroundStyle(outlineColor)
+                .shadow(color: outlineColor, radius: 40, x: 0, y: 0)
+
+            ForEach(Array(outlineOffsets.enumerated()), id: \.offset) { item in
+                titleContent
+                    .foregroundStyle(outlineColor)
+                    .offset(x: item.element.width, y: item.element.height)
+            }
+
+            titleContent
+                .foregroundStyle(.primary)
+        }
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(title)
     }
