@@ -43,6 +43,7 @@ jobs:
             echo "write=true" >> "$GITHUB_OUTPUT"
           fi
 
+      # 再実行でもDockerfile/Packageのレイヤーキーを変えず、温まったGHAキャッシュを検証する。
       - name: Mark Backend dependency build start
         id: dependency-clock
         shell: bash
