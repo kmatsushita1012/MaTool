@@ -47,7 +47,7 @@ struct StoreCreditFeature {
         case productSelected(String)
         case historyReceived(AppResult<[PurchaseHistoryItem]>)
         case loadMoreHistoryTapped
-        case purchaseTapped
+        case purchaseTapped(String)
         case purchaseReceived(AppResult<StoreCreditPurchaseCompletion>)
         case restoreTapped
         case restoreReceived(AppResult<StoreCreditRestoreOutcome>)
@@ -90,14 +90,16 @@ struct StoreCreditFeature {
                 state.visibleHistoryCount = min(state.visibleHistoryCount + 10, state.purchaseHistory.count)
                 return .none
 
-            case .purchaseTapped:
+            case .purchaseTapped(let productId):
                 guard !state.isPurchasing, !state.isRestoring,
-                      let product = state.selectedProduct else { return .none }
+                      state.storeCreditCatalog.products.contains(where: { $0.id == productId }) else {
+                    return .none
+                }
                 state.isPurchasing = true
-                state.purchasingProductID = product.id
+                state.purchasingProductID = productId
                 let store = state.store
                 return .task(Action.purchaseReceived) {
-                    let result = try await storeCreditUsecase.purchase(store: store, productId: product.id)
+                    let result = try await storeCreditUsecase.purchase(store: store, productId: productId)
                     guard case .completed(let purchaseResult) = result else {
                         return StoreCreditPurchaseCompletion(result: result)
                     }
