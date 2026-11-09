@@ -81,7 +81,8 @@ struct StoreUsecase: StoreUsecaseProtocol {
                 currentBanner: current.bannerImagePath,
                 incomingInterstitial: request.interstitialImagePath,
                 currentInterstitial: current.interstitialImagePath,
-                storeId: id
+                storeId: id,
+                festivalId: current.festivalId
             )
         } else {
             guard request.bannerImagePath == current.bannerImagePath,

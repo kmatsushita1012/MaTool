@@ -11,32 +11,33 @@ struct ImagePathFinalizerTests {
             $0[ImageStorageClientKey.self] = spy
         } operation: {
             try await ImagePathFinalizer().finalizeStoreImages(
-                incomingBanner: "temporary/stores/store-1/banner.jpg",
+                incomingBanner: "temporary/festivals/festival-1/stores/store-1/banner.jpg",
                 currentBanner: nil,
-                incomingInterstitial: "temporary/stores/store-1/interstitial.jpg",
+                incomingInterstitial: "temporary/festivals/festival-1/stores/store-1/interstitial.jpg",
                 currentInterstitial: nil,
-                storeId: "store-1"
+                storeId: "store-1",
+                festivalId: "festival-1"
             )
         }
 
         #expect(result.banner == "https://cdn.example.test/image.jpg?v=1")
         #expect(result.interstitial == "https://cdn.example.test/image.jpg?v=1")
         #expect(await spy.events == [
-            "validate:temporary/stores/store-1/banner.jpg",
-            "validate:temporary/stores/store-1/interstitial.jpg",
-            "publish:temporary/stores/store-1/banner.jpg",
-            "publish:temporary/stores/store-1/interstitial.jpg"
+            "validate:temporary/festivals/festival-1/stores/store-1/banner.jpg",
+            "validate:temporary/festivals/festival-1/stores/store-1/interstitial.jpg",
+            "publish:temporary/festivals/festival-1/stores/store-1/banner.jpg",
+            "publish:temporary/festivals/festival-1/stores/store-1/interstitial.jpg"
         ])
         #expect(await spy.publishCalls.map(\.1) == [
-            "stores/store-1/banner.jpg",
-            "stores/store-1/interstitial.jpg"
+            "festivals/festival-1/stores/store-1/banner.jpg",
+            "festivals/festival-1/stores/store-1/interstitial.jpg"
         ])
     }
 
     @Test("Storeの2枚目が不正なら1枚目も公開コピーしない")
     func rejectsInvalidStoreImageBeforePublishingEither() async {
-        let bannerKey = "temporary/stores/store-1/banner.jpg"
-        let interstitialKey = "temporary/stores/store-1/interstitial.jpg"
+        let bannerKey = "temporary/festivals/festival-1/stores/store-1/banner.jpg"
+        let interstitialKey = "temporary/festivals/festival-1/stores/store-1/interstitial.jpg"
         let spy = ImageStorageClientSpy(validationFailures: [interstitialKey])
 
         await #expect(throws: Error.self) {
@@ -48,7 +49,8 @@ struct ImagePathFinalizerTests {
                     currentBanner: nil,
                     incomingInterstitial: interstitialKey,
                     currentInterstitial: nil,
-                    storeId: "store-1"
+                    storeId: "store-1",
+                    festivalId: "festival-1"
                 )
             }
         }
