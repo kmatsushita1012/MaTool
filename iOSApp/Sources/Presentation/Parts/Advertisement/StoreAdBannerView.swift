@@ -36,6 +36,6 @@ struct StoreAdBannerView: View {
                     }
                 }
         }
-        .padding()
+        .padding(.horizontal)
     }
 }
