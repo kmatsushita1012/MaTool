@@ -1,6 +1,12 @@
 import ComposableArchitecture
 import Foundation
+import os
 import Shared
+
+private let storeAdBannerLogger = Logger(
+    subsystem: Bundle.main.bundleIdentifier ?? "MaTool",
+    category: "StoreAdBannerFeature"
+)
 
 @Reducer
 struct StoreAdBannerFeature {
@@ -11,7 +17,7 @@ struct StoreAdBannerFeature {
         var isLoading = false
         var isDismissEnabled = false
         var hasLoaded = false
-        var reportedImpressionIds: Set<String> = []
+        var impressionReportAttemptedIds: Set<String> = []
 
         init(festivalId: Festival.ID) {
             self.festivalId = festivalId
@@ -52,6 +58,8 @@ struct StoreAdBannerFeature {
                 state.hasLoaded = true
                 guard let candidate else {
                     state.candidate = nil
+                    let festivalId = state.festivalId
+                    storeAdBannerLogger.info("No eligible banner candidate was returned for festivalId=\(festivalId, privacy: .public)")
                     return .none
                 }
                 guard let url = URL(string: candidate.imagePath),
@@ -62,6 +70,9 @@ struct StoreAdBannerFeature {
                     return .none
                 }
                 state.candidate = candidate
+                storeAdBannerLogger.info(
+                    "Banner candidate loaded storeId=\(candidate.storeId, privacy: .public) impressionId=\(candidate.impressionId, privacy: .public)"
+                )
                 return .none
 
             case .loadReceived(.failure):
@@ -73,10 +84,27 @@ struct StoreAdBannerFeature {
 
             case .imageLoaded(let impressionId):
                 guard let candidate = state.candidate,
-                      candidate.impressionId == impressionId,
-                      state.reportedImpressionIds.insert(impressionId).inserted else { return .none }
+                      candidate.impressionId == impressionId else { return .none }
+                guard state.impressionReportAttemptedIds.insert(impressionId).inserted else {
+                    storeAdBannerLogger.debug("Duplicate image-loaded event ignored impressionId=\(impressionId, privacy: .public)")
+                    return .none
+                }
+                storeAdBannerLogger.info(
+                    "Impression report started storeId=\(candidate.storeId, privacy: .public) impressionId=\(impressionId, privacy: .public)"
+                )
                 return .merge(
-                    .run { _ in try? await storeAdBannerUsecase.reportImpression(candidate) },
+                    .run { _ in
+                        do {
+                            try await storeAdBannerUsecase.reportImpression(candidate)
+                            storeAdBannerLogger.info(
+                                "Impression report succeeded storeId=\(candidate.storeId, privacy: .public) impressionId=\(impressionId, privacy: .public)"
+                            )
+                        } catch {
+                            storeAdBannerLogger.error(
+                                "Impression report failed storeId=\(candidate.storeId, privacy: .public) impressionId=\(impressionId, privacy: .public): \(error.localizedDescription, privacy: .public)"
+                            )
+                        }
+                    },
                     .run { send in
                         try await clock.sleep(for: .seconds(5))
                         await send(.dismissButtonEnabled(impressionId))
@@ -86,6 +114,7 @@ struct StoreAdBannerFeature {
 
             case .imageFailed(let impressionId):
                 guard state.candidate?.impressionId == impressionId else { return .none }
+                storeAdBannerLogger.error("Banner image failed to load impressionId=\(impressionId, privacy: .public)")
                 state.candidate = nil
                 state.isDismissEnabled = false
                 return .none
