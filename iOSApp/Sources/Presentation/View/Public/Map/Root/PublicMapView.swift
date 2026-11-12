@@ -196,10 +196,11 @@ struct PublicMapContentView<MapContent: View>: View {
                         onContentSelected(item)
                     } label: {
                         let title = contentTitles[item] ?? ""
-                        if item == selectedContent {
-                            Label(title, systemImage: "checkmark")
-                        } else {
+                        Label {
                             Text(title)
+                        } icon: {
+                            Image(systemName: "checkmark")
+                                .tint(item == selectedContent ? nil : .clear)
                         }
                     }
                 }
