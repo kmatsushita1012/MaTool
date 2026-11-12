@@ -107,13 +107,27 @@ jobs:
             test \
             | tee build/reports/test.log | xcpretty
 
+      - name: Export iOS per-file coverage
+        if: always()
+        run: |
+          set -euo pipefail
+          mkdir -p build/reports
+          xcresult_path="$(find iOSApp/.derivedData/Logs/Test -maxdepth 1 -type d -name '*.xcresult' | sort | tail -n 1)"
+          if [ -n "$xcresult_path" ]; then
+            xcrun xccov view --report --json "$xcresult_path" > build/reports/ios-file-coverage.json
+          else
+            echo "No xcresult bundle available for coverage export"
+          fi
+
       - name: Upload Test Results
         id: upload-tests
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: ios-test-results
-          path: iOSApp/.derivedData/Logs/Test/*.xcresult
+          path: |
+            iOSApp/.derivedData/Logs/Test/*.xcresult
+            build/reports/ios-file-coverage.json
 
       - name: Print Test Summary
         if: always()
