@@ -20,6 +20,13 @@ struct PublicMapFeature {
         case locations
         case route(District.ID)
     }
+
+    struct DistrictContentGroup: Equatable, Identifiable {
+        let name: String?
+        var contents: [Content]
+
+        var id: String { name ?? "" }
+    }
     
     @Reducer
     enum Destination {
@@ -40,6 +47,23 @@ struct PublicMapFeature {
                 selectedDistrictId = nil
             }
             return [.locations] + (appState?.routeDistrictIds(prioritizing: selectedDistrictId).map(Content.route) ?? [])
+        }
+        var districtContentGroups: [DistrictContentGroup] {
+            var groups: [DistrictContentGroup] = []
+
+            for content in contents {
+                guard case .route(let districtId) = content else { continue }
+                let trimmedName = appState?.district(id: districtId)?.group?.trimmingCharacters(in: .whitespacesAndNewlines)
+                let name = trimmedName?.isEmpty == false ? trimmedName : nil
+
+                if !groups.isEmpty, groups[groups.count - 1].name == name {
+                    groups[groups.count - 1].contents.append(content)
+                } else {
+                    groups.append(DistrictContentGroup(name: name, contents: [content]))
+                }
+            }
+
+            return groups
         }
         var festivalTitle: String {
             appState?.festivalState.festival.name ?? ""

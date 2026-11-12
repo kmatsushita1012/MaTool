@@ -59,7 +59,7 @@ struct PublicMapView: View {
     ) -> some View {
         PublicMapContentView(
             festivalTitle: store.festivalTitle,
-            contents: store.contents,
+            districtContentGroups: store.districtContentGroups,
             selectedContent: store.selectedContent,
             contentTitles: store.contentTitles,
             isLoading: store.isLoading,
@@ -85,7 +85,7 @@ struct PublicMapView: View {
 
 struct PublicMapContentView<MapContent: View>: View {
     let festivalTitle: String
-    let contents: [PublicMapFeature.Content]
+    let districtContentGroups: [PublicMapFeature.DistrictContentGroup]
     let selectedContent: PublicMapFeature.Content
     let contentTitles: [PublicMapFeature.Content: String]
     let isLoading: Bool
@@ -190,17 +190,22 @@ struct PublicMapContentView<MapContent: View>: View {
     private var topControls: some View {
         HStack(spacing: 16) {
             Menu {
-                ForEach(contents, id: \.self) { item in
-                    Button {
-                        guard item != selectedContent else { return }
-                        onContentSelected(item)
-                    } label: {
-                        let title = contentTitles[item] ?? ""
-                        Label {
-                            Text(title)
-                        } icon: {
-                            Image(systemName: "checkmark")
-                                .tint(item == selectedContent ? nil : .clear)
+                contentButton(for: .locations)
+                ForEach(districtContentGroups) { group in
+                    if let name = group.name {
+                        Section {
+                            ForEach(group.contents, id: \.self) { item in
+                                contentButton(for: item)
+                            }
+                        } header: {
+                            Text(name)
+                                .font(.headline)
+                                .foregroundStyle(.secondary)
+                                .disabled(true)
+                        }
+                    } else {
+                        ForEach(group.contents, id: \.self) { item in
+                            contentButton(for: item)
                         }
                     }
                 }
@@ -233,6 +238,21 @@ struct PublicMapContentView<MapContent: View>: View {
             Spacer(minLength: 0)
         }
         .padding(.horizontal, 16)
+    }
+
+    private func contentButton(for item: PublicMapFeature.Content) -> some View {
+        Button {
+            guard item != selectedContent else { return }
+            onContentSelected(item)
+        } label: {
+            let title = contentTitles[item] ?? ""
+            Label {
+                Text(title)
+            } icon: {
+                Image(systemName: "checkmark")
+                    .tint(item == selectedContent ? nil : .clear)
+            }
+        }
     }
 }
 
@@ -278,7 +298,7 @@ private extension PublicMapFeature.Content {
     NavigationStack {
         PublicMapContentView(
             festivalTitle: "祭典名",
-            contents: [.locations],
+            districtContentGroups: [],
             selectedContent: .locations,
             contentTitles: [.locations: "現在地一覧"],
             isLoading: false,
