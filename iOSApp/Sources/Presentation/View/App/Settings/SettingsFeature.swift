@@ -72,7 +72,9 @@ struct SettingsFeature {
             self.festivals = festivals
             let selectedFestival = appState.wrappedValue?.festivalState.festival
                 ?? festivals.first(where: { $0.id == selection.festivalId })
-            let selectedDistrict = appState.wrappedValue?.selectedDistrict
+            let selectedDistrict = selection.districtId.flatMap { districtId in
+                appState.wrappedValue?.district(id: districtId)
+            }
             self.selectedFestival = selectedFestival
             self.confirmedFestival = selectedFestival
             self.selectedDistrict = selectedDistrict
