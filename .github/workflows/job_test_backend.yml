@@ -55,12 +55,26 @@ jobs:
             --xunit-output="$(pwd)/build/reports/backend-test-results.xml" \
             | tee build/reports/backend-test.log
 
+      - name: Export Backend file coverage
+        if: always()
+        run: |
+          set -euo pipefail
+          mkdir -p build/reports
+          coverage_json="$(swift test --package-path Backend --show-codecov-path)"
+          if [ -f "$coverage_json" ]; then
+            cp "$coverage_json" build/reports/backend-coverage.json
+          else
+            echo "Coverage JSON not available: $coverage_json"
+          fi
+
       - name: Upload Test Results
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: backend-test-results
-          path: Backend/.build/debug/codecov/
+          path: |
+            Backend/.build/debug/codecov/
+            build/reports/backend-coverage.json
 
       - name: Print Test Summary
         if: always()
