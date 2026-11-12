@@ -8,21 +8,23 @@ import UIKit
 struct FestivalInfoView: View {
     @SwiftUI.Bindable var store: StoreOf<FestivalInfoFeature>
     @Environment(\.colorScheme) private var systemColorScheme
-    @State private var selectedColorScheme: ColorScheme?
     let isSheetRoot: Bool
+    var onCurrentLocationTapped: () -> Void = {}
+    var onRouteTapped: (District.ID) -> Void = { _ in }
 
     var body: some View {
         WithPerceptionTracking {
             FestivalInfoContentView(
                 festival: store.festival,
                 districts: store.districts,
-                selectedColorScheme: $selectedColorScheme,
+                colorTheme: store.colorTheme,
                 isSheetRoot: isSheetRoot,
                 displayMode: $store.displayMode,
                 region: $store.region,
                 isLoading: store.isLoading,
-                selectedDistrictID: store.selectedDistrictID,
-                onDistrictSelected: { store.send(.districtSelected($0)) }
+                onDistrictSelected: { store.send(.districtSelected($0)) },
+                onColorThemeSelected: { store.send(.colorThemeSelected($0)) },
+                onCurrentLocationTapped: onCurrentLocationTapped
             )
             .navigationDestination(item: $store.scope(
                 state: \.destination,
@@ -34,18 +36,26 @@ struct FestivalInfoView: View {
                         store: districtStore,
                         festivalName: nil,
                         onFestivalTapped: {},
+                        onRouteTapped: onRouteTapped,
                         isSheetRoot: false
                     )
                 }
             }
             .alert($store.scope(state: \.alert, action: \.alert))
         }
+        .onAppear {
+            store.send(.colorThemeResolved(InfoImageColorScheme.resolve(
+                lightPath: store.festival.image.light,
+                darkPath: store.festival.image.dark,
+                systemColorScheme: systemColorScheme
+            )))
+        }
         .preferredColorScheme(
             InfoImageColorScheme.preferredColorScheme(
                 lightPath: store.festival.image.light,
                 darkPath: store.festival.image.dark,
                 systemColorScheme: systemColorScheme,
-                selectedColorScheme: selectedColorScheme
+                selectedColorScheme: store.colorTheme
             )
         )
     }
@@ -56,13 +66,14 @@ private struct FestivalInfoContentView: View {
 
     let festival: Festival
     let districts: [District]
-    @Binding var selectedColorScheme: ColorScheme?
+    let colorTheme: ColorScheme?
     let isSheetRoot: Bool
     @Binding var displayMode: FestivalInfoFeature.DisplayMode
     @Binding var region: MKCoordinateRegion?
     let isLoading: Bool
-    let selectedDistrictID: District.ID?
     let onDistrictSelected: (District.ID) -> Void
+    let onColorThemeSelected: (ColorScheme) -> Void
+    let onCurrentLocationTapped: () -> Void
     @Environment(\.dismiss) private var dismiss
     @Environment(\.colorScheme) private var colorScheme
 
@@ -76,10 +87,10 @@ private struct FestivalInfoContentView: View {
     private var themeToggleButton: some View {
         let effectiveColorScheme = InfoImageColorScheme.effective(
             systemColorScheme: colorScheme,
-            selectedColorScheme: selectedColorScheme
+            selectedColorScheme: colorTheme
         )
         return InfoImageThemeToggleButton(colorScheme: effectiveColorScheme) {
-            selectedColorScheme = effectiveColorScheme == .dark ? .light : .dark
+            onColorThemeSelected(effectiveColorScheme == .dark ? .light : .dark)
         }
     }
 
@@ -111,6 +122,11 @@ private struct FestivalInfoContentView: View {
         }
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
+            if isSheetRoot {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button("現在地", action: onCurrentLocationTapped)
+                }
+            }
             if isSheetRoot {
                 ToolbarItem(placement: .topBarLeading) {
                     Button {
@@ -151,7 +167,7 @@ private struct FestivalInfoContentView: View {
             \.colorScheme,
             InfoImageColorScheme.effective(
                 systemColorScheme: colorScheme,
-                selectedColorScheme: selectedColorScheme
+            selectedColorScheme: colorTheme
             )
         )
     }
@@ -176,7 +192,6 @@ private struct FestivalInfoContentView: View {
                 FestivalDistrictListContentView(
                     districts: districts,
                     isLoading: isLoading,
-                    selectedDistrictID: selectedDistrictID,
                     onDistrictSelected: onDistrictSelected
                 )
             }
@@ -213,7 +228,8 @@ private struct FestivalOverviewContentView: View {
         InfoScrollView {
             InfoHeaderImageView(
                 lightPath: festival.image.light,
-                darkPath: festival.image.dark
+                darkPath: festival.image.dark,
+                title: festival.name
             )
 
             if !festival.prefecture.isEmpty || !festival.city.isEmpty {
@@ -257,7 +273,6 @@ private struct FestivalOverviewContentView: View {
 private struct FestivalDistrictListContentView: View {
     let districts: [District]
     let isLoading: Bool
-    let selectedDistrictID: District.ID?
     let onDistrictSelected: (District.ID) -> Void
 
     var body: some View {
@@ -266,7 +281,6 @@ private struct FestivalDistrictListContentView: View {
                 FestivalDistrictGroupContentView(
                     group: group,
                     isLoading: isLoading,
-                    selectedDistrictID: selectedDistrictID,
                     onDistrictSelected: onDistrictSelected
                 )
             }
@@ -301,45 +315,41 @@ private struct FestivalDistrictGroup: Identifiable {
 private struct FestivalDistrictGroupContentView: View {
     let group: FestivalDistrictGroup
     let isLoading: Bool
-    let selectedDistrictID: District.ID?
     let onDistrictSelected: (District.ID) -> Void
 
     var body: some View {
-        InfoMaterialContainer {
+        InfoMaterialContainer(verticalSpacing: 8) {
             VStack(alignment: .leading, spacing: 0) {
                 if let name = group.name {
                     Text(name)
                         .font(.headline)
                         .foregroundStyle(.secondary)
                         .frame(maxWidth: .infinity, alignment: .leading)
-                        .padding(.bottom, 8)
+                        .padding(.vertical, 8)
                 }
 
-                ForEach(group.districts) { district in
-                    if district.id != group.districts.first?.id {
-                        Divider()
-                    }
-
-                    Button {
-                        onDistrictSelected(district.id)
-                    } label: {
-                        HStack {
-                            Text(district.name)
-                                .foregroundStyle(.primary)
-                            Spacer(minLength: 8)
-                            Image(systemName: "chevron.right")
-                                .foregroundStyle(.secondary)
+                VStack(spacing: 0) {
+                    ForEach(group.districts) { district in
+                        Button {
+                            onDistrictSelected(district.id)
+                        } label: {
+                            HStack {
+                                Text(district.name)
+                                Spacer(minLength: 8)
+                                Image(systemName: "chevron.right")
+                                    .foregroundStyle(.secondary)
+                            }
+                            .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
+                            .contentShape(.rect)
+                            .padding(.horizontal, 8)
                         }
-                        .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
-                        .contentShape(.rect)
-                        .padding(.horizontal, 8)
+                        .tint(.primary)
+                        .disabled(isLoading)
+
+                        if district.id != group.districts.last?.id {
+                            Divider()
+                        }
                     }
-                    .buttonStyle(.plain)
-                    .disabled(isLoading)
-                    .background(
-                        selectedDistrictID == district.id ? Color.info.opacity(0.15) : .clear,
-                        in: RoundedRectangle(cornerRadius: 8, style: .continuous)
-                    )
                 }
             }
         }
