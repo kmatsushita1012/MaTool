@@ -19,6 +19,7 @@ struct PublicMapView: View {
                 if let routeStore = store.scope(state: \.destination?.route, action: \.destination.route) {
                     mapContent(
                         routes: routeStore.routes,
+                        selectedRouteId: routeStore.selected?.id,
                         selectedPeriodTitle: routeStore.selected?.text ?? "日程を選択",
                         isRouteLoading: routeStore.isRouteLoading,
                         isPeriodDisabled: store.isLoading,
@@ -49,6 +50,7 @@ struct PublicMapView: View {
 
     private func mapContent<MapContent: View>(
         routes: [RouteEntry]? = nil,
+        selectedRouteId: String? = nil,
         selectedPeriodTitle: String = "日程を選択",
         isRouteLoading: Bool = false,
         isPeriodDisabled: Bool = false,
@@ -61,6 +63,7 @@ struct PublicMapView: View {
             festivalTitle: store.festivalTitle,
             districtContentGroups: store.districtContentGroups,
             selectedContent: store.selectedContent,
+            selectedRouteId: selectedRouteId,
             contentTitles: store.contentTitles,
             isLoading: store.isLoading,
             routes: routes,
@@ -87,6 +90,7 @@ struct PublicMapContentView<MapContent: View>: View {
     let festivalTitle: String
     let districtContentGroups: [PublicMapFeature.DistrictContentGroup]
     let selectedContent: PublicMapFeature.Content
+    let selectedRouteId: String?
     let contentTitles: [PublicMapFeature.Content: String]
     let isLoading: Bool
     let routes: [RouteEntry]?
@@ -193,15 +197,10 @@ struct PublicMapContentView<MapContent: View>: View {
                 contentButton(for: .locations)
                 ForEach(districtContentGroups) { group in
                     if let name = group.name {
-                        Section {
+                        Section(name) {
                             ForEach(group.contents, id: \.self) { item in
                                 contentButton(for: item)
                             }
-                        } header: {
-                            Text(name)
-                                .font(.headline)
-                                .foregroundStyle(.secondary)
-                                .disabled(true)
                         }
                     } else {
                         ForEach(group.contents, id: \.self) { item in
@@ -218,8 +217,15 @@ struct PublicMapContentView<MapContent: View>: View {
             if let routes {
                 Menu {
                     ForEach(routes) { entry in
-                        Button(entry.text) {
+                        Button {
                             onPeriodSelected(entry)
+                        } label: {
+                            Label {
+                                Text(entry.text)
+                            } icon: {
+                                Image(systemName: "checkmark")
+                                    .tint(entry.id == selectedRouteId ? nil : .clear)
+                            }
                         }
                     }
                 } label: {
@@ -300,6 +306,7 @@ private extension PublicMapFeature.Content {
             festivalTitle: "祭典名",
             districtContentGroups: [],
             selectedContent: .locations,
+            selectedRouteId: nil,
             contentTitles: [.locations: "現在地一覧"],
             isLoading: false,
             routes: nil,
