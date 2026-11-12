@@ -16,6 +16,7 @@ struct LocationDataFetcherTests {
         let result = try await withDependencies {
             $0.installTestSpies()
             $0[HTTPClientKey.self] = spy
+            $0.authProvider = tokenProvidingAuthProvider()
         } operation: {
             try await LocationDataFetcher().fetchAll(festivalId: "festival")
         }
@@ -34,6 +35,7 @@ struct LocationDataFetcherTests {
         let result: FloatLocation? = try await withDependencies {
             $0.installTestSpies()
             $0[HTTPClientKey.self] = spy
+            $0.authProvider = tokenProvidingAuthProvider()
         } operation: {
             try await LocationDataFetcher().fetch(districtId: "district")
         }
@@ -48,7 +50,8 @@ struct LocationDataFetcherTests {
     func updateAndDelete() async throws {
         let location = FloatLocation(
             id: "loc", districtId: "district",
-            coordinate: Coordinate(latitude: 35, longitude: 139)
+            coordinate: Coordinate(latitude: 35, longitude: 139),
+            timestamp: Date(timeIntervalSince1970: 100)
         )
         let spy = try RecordingHTTPClientSpy(response: location)
         var auth = AuthProviderSpy().client
@@ -56,6 +59,7 @@ struct LocationDataFetcherTests {
         try await withDependencies {
             $0.installTestSpies()
             $0[HTTPClientKey.self] = spy
+            $0.authProvider = tokenProvidingAuthProvider()
             $0.authProvider = auth
         } operation: {
             let fetcher = LocationDataFetcher()

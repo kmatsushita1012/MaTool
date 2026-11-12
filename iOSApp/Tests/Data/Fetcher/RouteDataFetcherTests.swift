@@ -14,6 +14,7 @@ struct RouteDataFetcherTests {
         let result = try await withDependencies {
             $0.installTestSpies()
             $0[HTTPClientKey.self] = spy
+            $0.authProvider = tokenProvidingAuthProvider()
             $0.authProvider = auth
         } operation: {
             try await RouteDataFetcher().fetchAll(districtID: "district", query: .year(2026))
@@ -35,6 +36,7 @@ struct RouteDataFetcherTests {
         let result = try await withDependencies {
             $0.installTestSpies()
             $0[HTTPClientKey.self] = spy
+            $0.authProvider = tokenProvidingAuthProvider()
         } operation: {
             try await RouteDataFetcher().fetch(routeID: route.id)
         }
@@ -54,6 +56,7 @@ struct RouteDataFetcherTests {
         try await withDependencies {
             $0.installTestSpies()
             $0[HTTPClientKey.self] = spy
+            $0.authProvider = tokenProvidingAuthProvider()
             $0.authProvider = auth
         } operation: {
             let fetcher = RouteDataFetcher()

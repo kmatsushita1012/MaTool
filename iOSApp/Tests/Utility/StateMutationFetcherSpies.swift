@@ -1,4 +1,5 @@
 import Foundation
+import Foundation
 import Shared
 @testable import iOSApp
 
@@ -54,18 +55,26 @@ actor RouteDataFetcherSpy: RouteDataFetcherProtocol {
     let pack: RoutePack
     let routes: [Route]
     let shouldFail: Bool
+    let cancellationOnFetchAll: Bool
     private var operations: [String] = []
 
-    init(pack: RoutePack, routes: [Route] = [], shouldFail: Bool = false) {
+    init(
+        pack: RoutePack,
+        routes: [Route] = [],
+        shouldFail: Bool = false,
+        cancellationOnFetchAll: Bool = false
+    ) {
         self.pack = pack
         self.routes = routes
         self.shouldFail = shouldFail
+        self.cancellationOnFetchAll = cancellationOnFetchAll
     }
 
     func recordedCalls() -> [String] { operations }
 
     func fetchAll(districtID: District.ID, query: Query) async throws -> [Route] {
         operations.append("fetchAll:\(districtID):\(String(describing: query))")
+        if cancellationOnFetchAll { throw CancellationError() }
         if shouldFail { throw FetcherTestError.failed }
         return routes
     }

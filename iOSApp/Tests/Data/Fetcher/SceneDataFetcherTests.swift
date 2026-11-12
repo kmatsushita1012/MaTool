@@ -15,6 +15,7 @@ struct SceneDataFetcherTests {
         let result = try await withDependencies {
             $0.installTestSpies()
             $0[HTTPClientKey.self] = spy
+            $0.authProvider = tokenProvidingAuthProvider()
         } operation: {
             try await SceneDataFetcher().launchFestival(festivalId: "festival")
         }
@@ -34,6 +35,7 @@ struct SceneDataFetcherTests {
         let result = try await withDependencies {
             $0.installTestSpies()
             $0[HTTPClientKey.self] = spy
+            $0.authProvider = tokenProvidingAuthProvider()
         } operation: {
             try await SceneDataFetcher().launchDistrict(districtId: "district", periodId: nil)
         }
