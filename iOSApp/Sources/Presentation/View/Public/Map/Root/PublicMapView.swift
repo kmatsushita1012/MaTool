@@ -48,7 +48,6 @@ struct PublicMapView: View {
                 }
             }
             .onAppear { store.send(.onAppear) }
-            .onDisappear { store.send(.adBanner(.disappeared)) }
         }
     }
 
@@ -75,10 +74,6 @@ struct PublicMapView: View {
             userRole: store.userRole,
             isNavigationDisabled: isNavigationDisabled,
             toast: toast,
-            adBannerCandidate: store.adBanner?.candidate,
-            onAdBannerImageLoaded: { store.send(.adBanner(.imageLoaded($0))) },
-            onAdBannerImageFailed: { store.send(.adBanner(.imageFailed($0))) },
-            onAdBannerDismissed: { store.send(.adBanner(.dismissTapped($0))) },
             onAdminPageTapped: { store.send(.delegate(.settingsOrAdminTapped)) },
             onSettingsTapped: { store.send(.delegate(.settingsTapped)) },
             onEmergencySignOutTapped: { store.send(.delegate(.emergencySignOutTapped)) },
@@ -105,10 +100,6 @@ struct PublicMapContentView<MapContent: View>: View {
     let userRole: UserRole
     let isNavigationDisabled: Bool
     let toast: MapToast?
-    let adBannerCandidate: AdCandidate?
-    let onAdBannerImageLoaded: (String) -> Void
-    let onAdBannerImageFailed: (String) -> Void
-    let onAdBannerDismissed: (String) -> Void
     let onAdminPageTapped: () -> Void
     let onSettingsTapped: () -> Void
     let onEmergencySignOutTapped: () -> Void
@@ -143,18 +134,6 @@ struct PublicMapContentView<MapContent: View>: View {
                             }
                         }
                     }
-                if let adBannerCandidate {
-                    HStack {
-                        Spacer()
-                        StoreAdBannerScreen(
-                            candidate: adBannerCandidate,
-                            onImageLoaded: onAdBannerImageLoaded,
-                            onImageFailed: onAdBannerImageFailed,
-                            onDismiss: onAdBannerDismissed
-                        )
-                    }
-                    .padding(.horizontal, 16)
-                }
                 if let toast {
                     MapToastView(toast: toast, onDismiss: onToastDismissed)
                         .transition(.opacity)
@@ -308,10 +287,6 @@ private extension PublicMapFeature.Content {
             userRole: .guest,
             isNavigationDisabled: false,
             toast: nil,
-            adBannerCandidate: nil,
-            onAdBannerImageLoaded: { _ in },
-            onAdBannerImageFailed: { _ in },
-            onAdBannerDismissed: { _ in },
             onAdminPageTapped: {},
             onSettingsTapped: {},
             onEmergencySignOutTapped: {},

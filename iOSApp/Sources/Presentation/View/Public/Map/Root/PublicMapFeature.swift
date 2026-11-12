@@ -31,7 +31,6 @@ struct PublicMapFeature {
     struct State: Equatable{
         let userRole: UserRole
         @Shared fileprivate var appState: AppState?
-        var adBanner: StoreAdBannerFeature.State?
 
         var contents: [Content] {
             let selectedDistrictId: District.ID?
@@ -76,9 +75,6 @@ struct PublicMapFeature {
         ) {
             self.userRole = userRole
             self.selectedContent = selectedContent
-            self.adBanner = StoreAdBannerFeature.State(
-                festivalId: appState.wrappedValue?.festivalState.festival.id ?? ""
-            )
             self._appState = appState
             self._mapRegion = mapRegion
             self._toast = toast
@@ -101,7 +97,6 @@ struct PublicMapFeature {
         case districtContentEvaluated(District, Bool)
         case districtLaunchReceived(AppResult<DistrictLaunchResult>)
         case errorCaught(AppError)
-        case adBanner(StoreAdBannerFeature.Action)
         case delegate(Delegate)
         case destination(PresentationAction<Destination.Action>)
     }
@@ -114,7 +109,6 @@ struct PublicMapFeature {
         Reduce{ state, action in
             switch action {
             case .onAppear:
-                let bannerLoadEffect = loadAdBanner(in: &state)
                 let permissionEffect = Effect<Action>.run { send in
                     await mapLocationProvider.requestPermission()
                     await mapLocationProvider.startTracking()
@@ -123,12 +117,11 @@ struct PublicMapFeature {
                 guard case .route(let districtId) = state.selectedContent,
                       let district = state.appState?.district(id: districtId),
                       state.appState?.districtState?.districtId != districtId else {
-                    return .merge(permissionEffect, bannerLoadEffect)
+                    return permissionEffect
                 }
                 state.isLoading = true
                 return .merge(
                     permissionEffect,
-                    bannerLoadEffect,
                     districtLaunchEffect(district: district, periodId: state.currentPeriodId, appState: state.$appState)
                 )
             case .binding:
@@ -142,7 +135,6 @@ struct PublicMapFeature {
                 switch value {
                 case .locations:
                     guard let festival = state.appState?.festivalState.festival else { return .none }
-                    let bannerLoadEffect = loadAdBanner(in: &state)
                     state.destination = .locations(
                         PublicLocationsFeature.State(
                             festivalId: festival.id,
@@ -152,20 +144,16 @@ struct PublicMapFeature {
                             toast: state.$toast
                         )
                     )
-                    return bannerLoadEffect
+                    return .none
                 case .route(let districtId):
                     guard let district = state.appState?.district(id: districtId) else {
                         return .none
                     }
-                    let bannerLoadEffect = loadAdBanner(in: &state)
                     state.isLoading = true
-                    return .merge(
-                        districtLaunchEffect(
-                            district: district,
-                            periodId: selectedPeriodId,
-                            appState: state.$appState
-                        ),
-                        bannerLoadEffect
+                    return districtLaunchEffect(
+                        district: district,
+                        periodId: selectedPeriodId,
+                        appState: state.$appState
                     )
                 }
             case .districtLaunchReceived(.success(let result)):
@@ -204,34 +192,9 @@ struct PublicMapFeature {
                 return .none
             case .destination:
                 return .none
-            case .adBanner(.dismissTapped(let impressionId)), .adBanner(.timerFinished(let impressionId)):
-                guard state.adBanner?.candidate?.impressionId == impressionId else { return .none }
-                state.adBanner = nil
-                return .none
-            case .adBanner(.imageFailed(let impressionId)):
-                guard state.adBanner?.candidate?.impressionId == impressionId else { return .none }
-                state.adBanner = nil
-                return .none
-            case .adBanner(.disappeared):
-                state.adBanner = nil
-                return .none
-            case .adBanner:
-                return .none
             }
         }
-        .ifLet(\.adBanner, action: \.adBanner) {
-            StoreAdBannerFeature()
-        }
         .ifLet(\.$destination, action: \.destination)
-    }
-
-    private func loadAdBanner(in state: inout State) -> Effect<Action> {
-        if state.adBanner == nil,
-           let festivalId = state.appState?.festivalState.festival.id {
-            state.adBanner = StoreAdBannerFeature.State(festivalId: festivalId)
-        }
-        guard state.adBanner != nil else { return .none }
-        return .send(.adBanner(.load))
     }
     
     func districtLaunchEffect(

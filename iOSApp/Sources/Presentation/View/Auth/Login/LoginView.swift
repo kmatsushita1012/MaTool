@@ -137,7 +137,7 @@ enum LoginIdentifierKind {
     var keyboardType: UIKeyboardType {
         switch self {
         case .username: .default
-        case .email: .emailAddress
+        case .email: .default
         }
     }
 }

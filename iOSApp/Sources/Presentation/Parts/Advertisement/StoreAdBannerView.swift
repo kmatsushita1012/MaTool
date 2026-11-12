@@ -1,63 +1,41 @@
 import Kingfisher
 import SwiftUI
+import ComposableArchitecture
 import Shared
 
-struct StoreAdBannerScreen: View {
-    let candidate: AdCandidate?
-    let onImageLoaded: (String) -> Void
-    let onImageFailed: (String) -> Void
-    let onDismiss: (String) -> Void
+struct StoreAdBannerView: View {
+    @SwiftUI.Bindable var store: StoreOf<StoreAdBannerFeature>
 
     var body: some View {
-        if let candidate, let imageURL = URL(string: candidate.imagePath) {
-            StoreAdBannerContentView(
-                candidate: candidate,
-                imageURL: imageURL,
-                onImageLoaded: onImageLoaded,
-                onImageFailed: onImageFailed,
-                onDismiss: onDismiss
-            )
-        }
-    }
-}
-
-struct StoreAdBannerContentView: View {
-    let candidate: AdCandidate
-    let imageURL: URL
-    let onImageLoaded: (String) -> Void
-    let onImageFailed: (String) -> Void
-    let onDismiss: (String) -> Void
-
-    var body: some View {
-        KFImage(imageURL)
-            .onSuccess { _ in onImageLoaded(candidate.impressionId) }
-            .onFailure { _ in onImageFailed(candidate.impressionId) }
-            .resizable()
-            .scaledToFit()
-            .overlay(alignment: .topTrailing) {
-                Button { onDismiss(candidate.impressionId) } label: {
-                    Image(systemName: "xmark.circle.fill")
-                        .font(.title3)
-                        .symbolRenderingMode(.palette)
-                        .foregroundStyle(.white, .black.opacity(0.55))
-                        .padding(4)
-                        .contentShape(Rectangle())
+        Group {
+            if let candidate = store.candidate,
+               let imageURL = URL(string: candidate.imagePath) {
+                Color.clear
+                    .aspectRatio(6.4, contentMode: .fit)
+                    .frame(maxWidth: .infinity)
+                    .background(.ultraThinMaterial)
+                    .overlay {
+                        KFImage(imageURL)
+                            .onSuccess { _ in store.send(.imageLoaded(candidate.impressionId)) }
+                            .onFailure { _ in store.send(.imageFailed(candidate.impressionId)) }
+                            .resizable()
+                            .scaledToFit()
+                            .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    }
+                    .overlay(alignment: .topTrailing) {
+                        Button("閉じる", systemImage: "xmark") {
+                            store.send(.dismissTapped(candidate.impressionId))
+                        }
+                        .font(.title)
+                        .buttonStyle(.plain)
+                        .labelStyle(.iconOnly)
+                        .buttonBorderShape(.circle)
+                        .contentShape(.rect)
+                        .controlSize(.extraLarge)
+                        .disabled(!store.isDismissEnabled)
+                    }
                 }
-                .buttonStyle(.plain)
-                .accessibilityLabel("広告を閉じる")
-            }
-            .frame(maxWidth: 360)
-            .frame(height: 84)
-            .clipShape(RoundedRectangle(cornerRadius: 12))
-            .shadow(radius: 6)
+        }
+        .padding()
     }
-}
-
-#Preview {
-    StoreAdBannerScreen(
-        candidate: nil,
-        onImageLoaded: { _ in },
-        onImageFailed: { _ in },
-        onDismiss: { _ in }
-    )
 }
