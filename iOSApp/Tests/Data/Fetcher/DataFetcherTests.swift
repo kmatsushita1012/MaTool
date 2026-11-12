@@ -28,25 +28,27 @@ struct DataFetcherTests {
     func tokenSuccess() async {
         var auth = AuthProviderSpy().client
         auth.getTokens = { "access-token" }
-        let fetcher = withDependencies {
+        let token = await withDependencies {
+            $0.installTestSpies()
             $0.authProvider = auth
         } operation: {
-            PeriodDataFetcher()
+            await PeriodDataFetcher().getToken()
         }
 
-        #expect(await fetcher.getToken() == "access-token")
+        #expect(token == "access-token")
     }
 
     @Test("認証トークンの取得に失敗するとnilを返す")
     func tokenFailureDoesNotThrow() async {
         var auth = AuthProviderSpy().client
         auth.getTokens = { throw SpyInvocationError.unexpected("expired token") }
-        let fetcher = withDependencies {
+        let token = await withDependencies {
+            $0.installTestSpies()
             $0.authProvider = auth
         } operation: {
-            PeriodDataFetcher()
+            await PeriodDataFetcher().getToken()
         }
 
-        #expect(await fetcher.getToken() == nil)
+        #expect(token == nil)
     }
 }

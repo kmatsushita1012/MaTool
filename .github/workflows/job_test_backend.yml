@@ -61,11 +61,33 @@ jobs:
           set -euo pipefail
           mkdir -p build/reports
           coverage_json="$(swift test --package-path Backend --show-codecov-path)"
-          if [ -f "$coverage_json" ]; then
-            cp "$coverage_json" build/reports/backend-coverage.json
-          else
-            echo "Coverage JSON not available: $coverage_json"
+          # SwiftPMはテスト失敗時にJSONを書き出さないため、プロファイルから直接復元する。
+          if [ ! -f "$coverage_json" ]; then
+            codecov_dir="$(dirname "$coverage_json")"
+            mapfile -d '' profiles < <(find "$codecov_dir" -maxdepth 1 -type f -name '*.profraw' -print0)
+            if [ "${#profiles[@]}" -eq 0 ]; then
+              echo "No code coverage profiles were generated" >&2
+              exit 1
+            fi
+            llvm-profdata merge -sparse "${profiles[@]}" -o "$codecov_dir/default.profdata"
+            test_binary="$(find Backend/.build -type f -name '*PackageTests.xctest' | head -n 1)"
+            if [ -z "$test_binary" ]; then
+              echo "Backend test binary was not found" >&2
+              exit 1
+            fi
+            llvm-cov export -instr-profile="$codecov_dir/default.profdata" "$test_binary" > "$coverage_json"
           fi
+          test -s "$coverage_json"
+          cp "$coverage_json" build/reports/backend-coverage.json
+
+      - name: Audit Backend per-file line coverage
+        if: always()
+        run: |
+          python3 ci_scripts/audit_unit_coverage.py \
+            --input build/reports/backend-coverage.json \
+            --scope backend \
+            --manifest ci_scripts/unit_coverage_targets.txt \
+            --output build/reports/backend-coverage-files.csv
 
       - name: Upload Test Results
         if: always()
@@ -75,6 +97,7 @@ jobs:
           path: |
             Backend/.build/debug/codecov/
             build/reports/backend-coverage.json
+            build/reports/backend-coverage-files.csv
 
       - name: Print Test Summary
         if: always()

@@ -119,6 +119,15 @@ jobs:
             echo "No xcresult bundle available for coverage export"
           fi
 
+      - name: Audit iOS per-file line coverage
+        if: always()
+        run: |
+          python3 ci_scripts/audit_unit_coverage.py \
+            --input build/reports/ios-file-coverage.json \
+            --scope ios \
+            --manifest ci_scripts/unit_coverage_targets.txt \
+            --output build/reports/ios-coverage-files.csv
+
       - name: Upload Test Results
         id: upload-tests
         if: always()
@@ -128,6 +137,7 @@ jobs:
           path: |
             iOSApp/.derivedData/Logs/Test/*.xcresult
             build/reports/ios-file-coverage.json
+            build/reports/ios-coverage-files.csv
 
       - name: Print Test Summary
         if: always()

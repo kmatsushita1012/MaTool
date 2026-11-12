@@ -38,8 +38,8 @@ enum AppStateFixture {
     }
 
     static func state(
-        districts: [District] = [district()],
-        periods: [Period] = [period()],
+        districts: [District] = [AppStateFixture.district()],
+        periods: [Period] = [AppStateFixture.period()],
         routes: [Route] = [],
         performances: [Performance] = [],
         locations: [FloatLocation] = [],
