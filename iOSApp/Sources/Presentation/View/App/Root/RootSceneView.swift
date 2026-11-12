@@ -72,12 +72,14 @@ public struct RootSceneView: View {
                                 FestivalInfoView(
                                     store: infoStore,
                                     isSheetRoot: true,
+                                    showsCurrentLocationButton: false,
                                     onCurrentLocationTapped: { store.send(.currentLocationTapped) },
                                     onRouteTapped: { store.send(.routeTapped($0)) }
                                 )
                             case .district(let districtStore):
                                 DistrictIntroductionRootView(
                                     store: districtStore,
+                                    onCurrentLocationTapped: { store.send(.currentLocationTapped) },
                                     onRouteTapped: { store.send(.routeTapped($0)) }
                                 )
                             }

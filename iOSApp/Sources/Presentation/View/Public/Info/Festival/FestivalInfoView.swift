@@ -9,6 +9,7 @@ struct FestivalInfoView: View {
     @SwiftUI.Bindable var store: StoreOf<FestivalInfoFeature>
     @Environment(\.colorScheme) private var systemColorScheme
     let isSheetRoot: Bool
+    let showsCurrentLocationButton: Bool
     var onCurrentLocationTapped: () -> Void = {}
     var onRouteTapped: (District.ID) -> Void = { _ in }
 
@@ -19,6 +20,7 @@ struct FestivalInfoView: View {
                 districts: store.districts,
                 colorTheme: store.colorTheme,
                 isSheetRoot: isSheetRoot,
+                showsCurrentLocationButton: showsCurrentLocationButton,
                 displayMode: $store.displayMode,
                 region: $store.region,
                 isLoading: store.isLoading,
@@ -68,6 +70,7 @@ private struct FestivalInfoContentView: View {
     let districts: [District]
     let colorTheme: ColorScheme?
     let isSheetRoot: Bool
+    let showsCurrentLocationButton: Bool
     @Binding var displayMode: FestivalInfoFeature.DisplayMode
     @Binding var region: MKCoordinateRegion?
     let isLoading: Bool
@@ -122,7 +125,7 @@ private struct FestivalInfoContentView: View {
         }
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
-            if isSheetRoot {
+            if showsCurrentLocationButton {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button("現在地", action: onCurrentLocationTapped)
                 }

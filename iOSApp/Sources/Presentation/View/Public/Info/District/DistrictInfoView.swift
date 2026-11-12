@@ -328,6 +328,7 @@ typealias DistrictInfoScreen = DistrictInfoView
 
 struct DistrictIntroductionRootView: View {
     @SwiftUI.Bindable var store: StoreOf<DistrictIntroductionRootFeature>
+    var onCurrentLocationTapped: () -> Void = {}
     var onRouteTapped: (District.ID) -> Void = { _ in }
 
     var body: some View {
@@ -350,6 +351,8 @@ struct DistrictIntroductionRootView: View {
                     FestivalInfoView(
                         store: festivalStore,
                         isSheetRoot: false,
+                        showsCurrentLocationButton: true,
+                        onCurrentLocationTapped: onCurrentLocationTapped,
                         onRouteTapped: onRouteTapped
                     )
                 }
