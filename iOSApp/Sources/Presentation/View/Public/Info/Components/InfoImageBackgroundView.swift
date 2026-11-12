@@ -163,7 +163,7 @@ private struct InfoImageTitleOverlay: View {
     }
 
     private var titleFont: Font {
-        .custom("YujiBoku-Regular", size: 64, relativeTo: .largeTitle)
+        .custom("YujiSyuku-Regular", size: 64, relativeTo: .largeTitle)
     }
 
     private var titleContent: some View {

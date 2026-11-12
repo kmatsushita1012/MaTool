@@ -6,7 +6,7 @@
 	<string>$(MATOOL_ADMOB_APP_ID)</string>
 	<key>UIAppFonts</key>
 	<array>
-		<string>YujiBoku-Regular.ttf</string>
+		<string>YujiSyuku-Regular.ttf</string>
 	</array>
 	<key>UIBackgroundModes</key>
 	<array>
