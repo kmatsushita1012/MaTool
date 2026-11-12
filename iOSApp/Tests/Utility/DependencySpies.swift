@@ -87,6 +87,12 @@ actor BroadcastLocationProviderSpy: BroadcastLocationProviderProtocol {
     var authorization: CLAuthorizationStatus = .notDetermined
     var servicesEnabled = false
     private var onAlwaysAuthorizationRequest: (@Sendable () async -> Void)?
+    private var trackingCallback: ((AsyncValue<CLLocation>) async -> Void)?
+
+    func setServicesEnabled(_ enabled: Bool) { servicesEnabled = enabled }
+    func emitTrackingUpdate(_ result: AsyncValue<CLLocation>) async {
+        await trackingCallback?(result)
+    }
 
     init(authorizationStatus: CLAuthorizationStatus = .notDetermined) {
         authorization = authorizationStatus
@@ -105,6 +111,7 @@ actor BroadcastLocationProviderSpy: BroadcastLocationProviderProtocol {
     func startTracking(onUpdate: ((AsyncValue<CLLocation>) async -> Void)?) async {
         trackingStarts += 1
         isTracking = true
+        trackingCallback = onUpdate
     }
     func stopTracking() async {
         trackingStops += 1

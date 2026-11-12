@@ -87,7 +87,8 @@ jobs:
             --input build/reports/backend-coverage.json \
             --scope backend \
             --manifest ci_scripts/unit_coverage_targets.txt \
-            --output build/reports/backend-coverage-files.csv
+            --output build/reports/backend-coverage-files.csv \
+            --strict
 
       - name: Upload Test Results
         if: always()

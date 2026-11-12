@@ -36,6 +36,51 @@ struct ImageUploadDataFetcherTests {
         #expect(sent.contentType == "image/jpeg")
     }
 
+
+    @Test("トークン取得が失敗しても通信処理はnilトークンで委譲する")
+    func failedTokenLookupUsesNilHeader() async throws {
+        let target = ImageUploadTarget(type: .festival, id: "festival", variant: .light)
+        let request = ImageUploadURLRequest(target: target, contentType: "image/jpeg")
+        let expected = ImageUploadURLResponse(
+            url: "https://example.com/upload", path: "temporary/upload.jpg",
+            expiresAt: Date(timeIntervalSince1970: 1_800_000_000)
+        )
+        let spy = try RecordingHTTPClientSpy(response: expected)
+        var auth = authProvider(token: "unused")
+        auth.getTokens = { throw FetcherTestError.failed }
+
+        let result = try await withDependencies {
+            $0.installTestSpies()
+            $0[HTTPClientKey.self] = spy
+            $0.authProvider = auth
+        } operation: {
+            try await ImageUploadDataFetcher().issueUploadURL(for: request)
+        }
+
+        #expect(result.path == expected.path)
+        let calls = await spy.calls()
+        #expect(calls.map(\.method) == ["POST"])
+        #expect(calls.first?.accessToken == nil)
+    }
+
+    @Test("署名URL発行のHTTP障害は成功を装わずそのまま通知する")
+    func uploadURLRequestFailurePropagates() async {
+        let target = ImageUploadTarget(type: .district, id: "district", variant: .dark)
+        let request = ImageUploadURLRequest(target: target, contentType: "image/jpeg")
+        let spy = RecordingHTTPClientSpy(responseJSON: "{}", shouldFail: true)
+
+        await #expect(throws: RecordingHTTPClientSpy.Failure.requested) {
+            try await withDependencies {
+                $0.installTestSpies()
+                $0[HTTPClientKey.self] = spy
+                $0.authProvider = tokenProvidingAuthProvider()
+            } operation: {
+                try await ImageUploadDataFetcher().issueUploadURL(for: request)
+            }
+        }
+        #expect(await spy.calls().map(\.path) == ["/images/upload-url"])
+    }
+
     private func authProvider(token: String) -> AuthProvider {
         AuthProvider(
             initialize: {},

@@ -83,6 +83,7 @@ struct LocationDataFetcherTests {
             try await withDependencies {
                 $0.installTestSpies()
                 $0[HTTPClientKey.self] = spy
+                $0.authProvider = tokenProvidingAuthProvider()
             } operation: {
                 try await LocationDataFetcher().fetchAll(festivalId: "festival")
             }

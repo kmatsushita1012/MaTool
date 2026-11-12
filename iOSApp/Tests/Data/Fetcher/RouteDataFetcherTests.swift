@@ -87,6 +87,7 @@ struct RouteDataFetcherTests {
             try await withDependencies {
                 $0.installTestSpies()
                 $0[HTTPClientKey.self] = spy
+                $0.authProvider = tokenProvidingAuthProvider()
             } operation: {
                 try await RouteDataFetcher().fetch(routeID: "route")
             }
