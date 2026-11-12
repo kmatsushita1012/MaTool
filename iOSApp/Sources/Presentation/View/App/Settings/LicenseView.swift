@@ -1,23 +1,41 @@
 import SwiftUI
 
 struct LicenseView: View {
-    private let licenseURL = URL(string: "https://github.com/Kinutafontfactory/Yuji/blob/master/OFL.txt")!
+    private let licenses = [
+        LicenseEntry(
+            name: "佑字 肅 (Yuji Syuku)",
+            copyright: "Copyright 2021 The Yuji Project Authors",
+            license: "SIL Open Font License 1.1",
+            source: URL(string: "https://github.com/Kinutafontfactory/Yuji/blob/master/OFL.txt")!
+        )
+    ]
 
     var body: some View {
         Form {
-            Section("フォント") {
-                LabeledContent("書体", value: "佑字 肅 (Yuji Syuku)")
-                LabeledContent("著作権", value: "Copyright 2021 The Yuji Project Authors")
-            }
-
             Section("ライセンス") {
-                LabeledContent("ライセンス", value: "SIL Open Font License 1.1")
-                Link("ライセンス原文", destination: licenseURL)
+                ForEach(licenses) { license in
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text(license.name)
+                            .font(.headline)
+                        Text(license.copyright)
+                        LabeledContent("ライセンス", value: license.license)
+                        Link("ライセンス原文", destination: license.source)
+                    }
+                }
             }
         }
         .navigationTitle("ライセンス")
         .navigationBarTitleDisplayMode(.inline)
     }
+}
+
+private struct LicenseEntry: Identifiable {
+    let name: String
+    let copyright: String
+    let license: String
+    let source: URL
+
+    var id: String { name }
 }
 
 #Preview {
