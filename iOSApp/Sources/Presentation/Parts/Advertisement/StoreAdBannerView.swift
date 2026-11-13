@@ -23,16 +23,18 @@ struct StoreAdBannerView: View {
                             .frame(maxWidth: .infinity, maxHeight: .infinity)
                     }
                     .overlay(alignment: .topTrailing) {
-                        Button("閉じる", systemImage: "xmark") {
-                            store.send(.dismissTapped(candidate.impressionId))
+                        if store.isDismissEnabled {
+                            Button("閉じる", systemImage: "xmark") {
+                                store.send(.dismissTapped(candidate.impressionId))
+                            }
+                            .font(.title)
+                            .buttonStyle(.plain)
+                            .labelStyle(.iconOnly)
+                            .buttonBorderShape(.circle)
+                            .contentShape(.rect)
+                            .controlSize(.extraLarge)
+                            .tint(.secondary)
                         }
-                        .font(.title)
-                        .buttonStyle(.plain)
-                        .labelStyle(.iconOnly)
-                        .buttonBorderShape(.circle)
-                        .contentShape(.rect)
-                        .controlSize(.extraLarge)
-                        .disabled(!store.isDismissEnabled)
                     }
                 }
         }
