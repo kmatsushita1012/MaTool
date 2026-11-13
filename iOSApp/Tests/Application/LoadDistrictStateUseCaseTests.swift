@@ -60,7 +60,8 @@ struct LoadDistrictStateUseCaseTests {
             $0[SceneDataFetcherKey.self] = spy
         } operation: { LoadDistrictStateUseCase() }
 
-        _ = try await useCase(districtId: "district", appState: state)
+        let protocolUseCase: any LoadDistrictStateUseCaseProtocol = useCase
+        _ = try await protocolUseCase(districtId: "district", appState: state)
 
         #expect(state.wrappedValue == nil)
         #expect(await spy.districtLaunchCallCount() == 1)
