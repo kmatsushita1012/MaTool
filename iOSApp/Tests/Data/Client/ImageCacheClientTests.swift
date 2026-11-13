@@ -57,5 +57,5 @@ private enum ImageRetrievalFailure: Error {
 private actor ImageRetrievalRecorder {
     private var urls: [URL] = []
     func record(_ url: URL) { urls.append(url) }
-    func paths() -> [String] { urls.map(\\.absoluteString) }
+    func paths() -> [String] { urls.map(\.absoluteString) }
 }
