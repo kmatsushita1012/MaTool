@@ -138,10 +138,12 @@ final class RouteRepositoryMock: RouteRepositoryProtocol, @unchecked Sendable {
         return try await postHandler(route)
     }
 
-    private(set) var putCallCount = 0
+    private var _putCallCount = 0
+    private let putCallCountLock = NSLock()
+    var putCallCount: Int { putCallCountLock.withLock { _putCallCount } }
     private let putHandler: ((Route) async throws -> Route)?
     func put(_ route: Route) async throws -> Route {
-        putCallCount += 1
+        putCallCountLock.withLock { _putCallCount += 1 }
         guard let putHandler else { throw TestError.unimplemented }
         return try await putHandler(route)
     }

@@ -57,7 +57,11 @@ struct UserDefaltsManager: Sendable {
         case defaultDistrictId = "district"
         case hasRequestedAlwaysLocationPermission = "hasRequestedAlwaysLocationPermission"
     }
-    let defaults = UserDefaults(suiteName: "matool")!
+    let defaults: UserDefaults
+
+    init(defaults: UserDefaults = UserDefaults(suiteName: "matool")!) {
+        self.defaults = defaults
+    }
 }
 
 protocol UserDefalutsManagerProtocol: Sendable {

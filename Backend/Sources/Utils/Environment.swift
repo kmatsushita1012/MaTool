@@ -42,7 +42,8 @@ extension Environment: DependencyKey{
         )
     }
 
-    private static func value(for key: String, in contents: String) -> String? {
+    // Internal so the .env parsing rules can be verified without changing process environment.
+    static func value(for key: String, in contents: String) -> String? {
         for line in contents.split(whereSeparator: \.isNewline) {
             let line = line.trimmingCharacters(in: .whitespaces)
             guard !line.isEmpty, !line.hasPrefix("#"),

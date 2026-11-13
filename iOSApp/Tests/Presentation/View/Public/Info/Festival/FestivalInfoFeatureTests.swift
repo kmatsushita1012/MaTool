@@ -1,9 +1,23 @@
 import ComposableArchitecture
 import Shared
 import Testing
+import SwiftUI
 @testable import iOSApp
 
 struct FestivalInfoFeatureTests {
+    @Test("外観の自動判定は初回のみ適用され手動選択が優先される")
+    @MainActor
+    func colorThemeSelectionOverridesInitialResolution() async {
+        let fixture = FestivalInfoFixture()
+        let store = TestStore(initialState: fixture.makeState()) {
+            FestivalInfoFeature()
+        } withDependencies: { $0.installTestSpies() }
+        await store.send(.colorThemeResolved(.dark)) { $0.colorTheme = .dark }
+        await store.send(.colorThemeResolved(.light))
+        await store.send(.colorThemeSelected(.light)) { $0.colorTheme = .light }
+        await store.finish()
+    }
+
     @Test("FestivalInfoの切替状態を保持する")
     @MainActor
     func switchesBetweenFestivalAndDistrictList() async {
