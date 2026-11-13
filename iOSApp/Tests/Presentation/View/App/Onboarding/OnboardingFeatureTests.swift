@@ -27,7 +27,7 @@ struct OnboardingFeatureTests {
     @Test("祭典一覧の読み込み成功で一覧を更新する")
     @MainActor
     func festivalsLoadedUpdatesList() async {
-        let fixture = RootFeatureFixture()
+        let fixture = OnboardingFixture()
         let store = makeStore()
         await store.send(.festivalsLoaded(.success([fixture.festival]))) {
             $0.festivals = [fixture.festival]
@@ -38,7 +38,7 @@ struct OnboardingFeatureTests {
     @Test("祭典選択なしの地区選択では選択エラーを表示する")
     @MainActor
     func districtWithoutFestivalShowsError() async {
-        let fixture = RootFeatureFixture()
+        let fixture = OnboardingFixture()
         let store = makeStore()
         await store.send(.districtSelected(fixture.district)) {
             $0.festivalErrorMessaage = "祭典を選択してください。"
@@ -60,7 +60,7 @@ struct OnboardingFeatureTests {
     @MainActor
     func districtSelectionFailureClearsLoading() async {
         let store = makeStore(isDistrictLoading: true)
-        await store.send(.districtDidSet(.failure(.unknown))) {
+        await store.send(.districtDidSet(.failure(.be(.network("network"))))) {
             $0.isDistrictLoading = false
         }
         await store.finish()
@@ -82,5 +82,17 @@ struct OnboardingFeatureTests {
         } withDependencies: {
             $0.installTestSpies()
         }
+    }
+}
+
+private struct OnboardingFixture {
+    let festival = Festival(
+        id: "festival",
+        name: "Festival",
+        subname: "Festival",
+        base: Coordinate(latitude: 35, longitude: 139)
+    )
+    var district: District {
+        District(id: "district", name: "District", festivalId: festival.id)
     }
 }
