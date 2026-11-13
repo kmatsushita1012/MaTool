@@ -113,10 +113,9 @@ struct LocationTrackingFeatureTests {
         await store.send(.locationPermissionButtonStateReceived(.init(
             authorizationStatus: .notDetermined,
             hasRequestedAlwaysLocationPermission: false
-        ))) {
-            $0.locationPermissionSheetMode = .requestWhenInUseAndAlways
-            $0.isLocationPermissionSheetPresented = true
-        }
+        )))
+        #expect(store.state.locationPermissionSheetMode == .requestWhenInUseAndAlways)
+        #expect(store.state.isLocationPermissionSheetPresented)
         await store.send(.locationPermissionButtonStateReceived(.init(
             authorizationStatus: .authorizedAlways,
             hasRequestedAlwaysLocationPermission: true
@@ -177,7 +176,7 @@ struct LocationTrackingFeatureTests {
             authorizationStatus: .denied,
             hasRequestedAlwaysLocationPermission: false
         ))))
-        #expect(!store.state.isLocationPermissionSheetPresented)
+        #expect(store.state.isLocationPermissionSheetPresented)
         await store.finish()
     }
 
