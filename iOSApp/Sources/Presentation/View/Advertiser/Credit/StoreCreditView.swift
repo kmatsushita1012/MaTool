@@ -12,6 +12,7 @@ struct StoreCreditScreen: View {
     var body: some View {
         StoreCreditContentView(
             balance: store.balance.balance,
+            storeName: store.store.name,
             products: store.storeCreditCatalog.products,
             isCatalogLoading: store.storeCreditCatalog.isLoading,
             catalogErrorMessage: store.storeCreditCatalog.errorMessage,
@@ -35,6 +36,7 @@ struct StoreCreditScreen: View {
 
 struct StoreCreditContentView: View {
     let balance: Int
+    let storeName: String
     let products: [StoreCreditProduct]
     let isCatalogLoading: Bool
     let catalogErrorMessage: String?
@@ -58,7 +60,7 @@ struct StoreCreditContentView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 16) {
-                StoreCreditBalanceSection(balance: balance)
+                StoreCreditBalanceSection(balance: balance, storeName: storeName)
 
                 StoreCreditProductSection(
                     products: products,
@@ -98,12 +100,17 @@ struct StoreCreditContentView: View {
 
 private struct StoreCreditBalanceSection: View {
     let balance: Int
+    let storeName: String
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text("利用可能ポイント")
-                .font(.headline)
-                .foregroundStyle(.secondary)
+        HStack {
+            VStack(alignment: .leading, spacing: 8) {
+                Text("利用可能ポイント")
+                    .font(.headline)
+                    .foregroundStyle(.secondary)
+                Text(storeName)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
             HStack(alignment: .firstTextBaseline, spacing: 8) {
                 Text(balance.formatted())
                     .font(.largeTitle.weight(.bold))
