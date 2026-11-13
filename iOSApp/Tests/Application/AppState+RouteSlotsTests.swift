@@ -2,7 +2,7 @@ import Shared
 import Testing
 @testable import iOSApp
 
-struct AppStateRouteSlotsTests {
+extension AppStateTests {
     @Test("期間順を維持し、ルートのない期間も空き枠として返す")
     func ordersSlotsAndRetainsMissingRoutes() {
         let first = AppStateFixture.period(id: "first", day: 3)
