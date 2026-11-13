@@ -21,6 +21,9 @@ struct StoreAdBannerView: View {
                             .resizable()
                             .scaledToFit()
                             .frame(maxWidth: .infinity, maxHeight: .infinity)
+                            .onAppear {
+                                store.send(.imageAppeared(candidate.impressionId))
+                            }
                     }
                     .overlay(alignment: .topTrailing) {
                         if store.isDismissEnabled {

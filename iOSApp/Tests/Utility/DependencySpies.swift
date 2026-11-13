@@ -22,6 +22,7 @@ extension DependencyValues {
         self[LoadDistrictStateUseCaseKey.self] = UnconfiguredLoadDistrictStateUseCaseSpy()
         self[SceneDataFetcherKey.self] = UnconfiguredSceneDataFetcherSpy()
         self[PublicMapAdUsecaseKey.self] = PublicMapAdUsecaseSpy()
+        self[StoreAdImpressionQueueClientKey.self] = StoreAdImpressionQueueClientSpy()
         self[UserDefaltsManagerKey.self] = DefaultUserDefaultsSpy()
         self.userDefaultsClient = UserDefaultsClientSpy().client
         self.authProvider = AuthProviderSpy().client
@@ -329,7 +330,30 @@ final class DefaultUserDefaultsSpy: UserDefalutsManagerProtocol, @unchecked Send
 
 actor ImageCacheClientSpy: ImageCacheClientProtocol {
     private(set) var requests: [[String?]] = []
+    private(set) var preloadedPaths: [String] = []
+
+    private let failsSinglePathPreload: Bool
+
+    init(failsSinglePathPreload: Bool = false) {
+        self.failsSinglePathPreload = failsSinglePathPreload
+    }
+
     func preload(paths: [String?]) async { requests.append(paths) }
+
+    func preload(path: String) async throws {
+        preloadedPaths.append(path)
+        if failsSinglePathPreload {
+            throw ImageCacheClientError.invalidURL
+        }
+    }
+}
+
+actor StoreAdImpressionQueueClientSpy: StoreAdImpressionQueueClientProtocol {
+    private(set) var requests: [ImpressionReportRequest] = []
+
+    func enqueue(_ request: ImpressionReportRequest) async {
+        requests.append(request)
+    }
 }
 
 actor AppStatusClientSpy: AppStatusClientProtocol {

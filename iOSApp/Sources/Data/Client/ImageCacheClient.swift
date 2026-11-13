@@ -4,17 +4,32 @@ import Kingfisher
 
 protocol ImageCacheClientProtocol: Sendable {
     func preload(paths: [String?]) async
+    func preload(path: String) async throws
 }
 
 actor ImageCacheClient: ImageCacheClientProtocol {
     func preload(paths: [String?]) async {
         var loadedURLs = Set<URL>()
         for url in paths.compactMap({ Self.url(from: $0) }) where loadedURLs.insert(url).inserted {
-            _ = try? await KingfisherManager.shared.retrieveImage(
-                with: url,
-                options: [.cacheOriginalImage]
-            )
+            try? await preload(url: url)
         }
+    }
+
+    func preload(path: String) async throws {
+        guard let url = URL(string: path),
+              let scheme = url.scheme?.lowercased(),
+              ["http", "https"].contains(scheme),
+              url.host != nil else {
+            throw ImageCacheClientError.invalidURL
+        }
+        try await preload(url: url)
+    }
+
+    private func preload(url: URL) async throws {
+        _ = try await KingfisherManager.shared.retrieveImage(
+            with: url,
+            options: [.cacheOriginalImage]
+        )
     }
 
     private static func url(from path: String?) -> URL? {
@@ -25,6 +40,10 @@ actor ImageCacheClient: ImageCacheClientProtocol {
         }
         return url
     }
+}
+
+enum ImageCacheClientError: Error, Equatable, Sendable {
+    case invalidURL
 }
 
 enum ImageCacheClientKey: DependencyKey {

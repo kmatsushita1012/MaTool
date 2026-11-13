@@ -101,15 +101,20 @@ actor PublicMapAdUsecaseSpy: PublicMapAdUsecaseProtocol {
 }
 
 actor StoreAdBannerUsecaseSpy: StoreAdBannerUsecaseProtocol {
+    private let candidate: AdCandidate?
     private(set) var requestedFestivalIDs: [Festival.ID] = []
     private(set) var reportedImpressions: [AdCandidate] = []
 
-    func nextBanner(festivalId: Festival.ID) async throws -> AdCandidate? {
-        requestedFestivalIDs.append(festivalId)
-        return nil
+    init(candidate: AdCandidate? = nil) {
+        self.candidate = candidate
     }
 
-    func reportImpression(_ candidate: AdCandidate) async throws {
+    func nextBanner(festivalId: Festival.ID) async throws -> AdCandidate? {
+        requestedFestivalIDs.append(festivalId)
+        return candidate
+    }
+
+    func reportImpression(_ candidate: AdCandidate) async {
         reportedImpressions.append(candidate)
     }
 }
