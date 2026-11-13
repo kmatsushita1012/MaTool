@@ -22,14 +22,6 @@ struct StoreDashboardFeature {
         @Presents var destination: Destination.State?
         @Presents var alert: AlertFeature.State?
 
-        var nextAction: NextAction? {
-            guard let balance else { return nil }
-            if store.bannerImagePath == nil { return .banner }
-            if store.interstitialImagePath == nil { return .interstitial }
-            if balance.balance < 2 { return .credit }
-            return nil
-        }
-
         init(
             store: AdvertiserStore,
             festivals: [Festival],
@@ -41,25 +33,10 @@ struct StoreDashboardFeature {
         }
     }
 
-    enum NextAction: Equatable {
-        case banner
-        case interstitial
-        case credit
-
-        var title: String {
-            switch self {
-            case .banner: "バナー画像を設定"
-            case .interstitial: "全画面画像を設定"
-            case .credit: "クレジットを購入"
-            }
-        }
-    }
-
     @CasePathable
     enum Action: Equatable {
         case onAppear
         case balanceReceived(AppResult<CreditAccount>)
-        case nextActionTapped
         case bannerTapped
         case interstitialTapped
         case creditTapped
@@ -93,23 +70,6 @@ struct StoreDashboardFeature {
             case .balanceReceived(.failure(let error)):
                 state.isBalanceLoading = false
                 state.alert = .error("クレジット残高を取得できませんでした。\n\(error.message)")
-                return .none
-
-            case .nextActionTapped:
-                guard let nextAction = state.nextAction else { return .none }
-                switch nextAction {
-                case .banner:
-                    state.destination = .storeAdImage(makeImageEditState(store: state.store, mode: .banner))
-                case .interstitial:
-                    state.destination = .storeAdImage(makeImageEditState(store: state.store, mode: .interstitial))
-                case .credit:
-                    guard let balance = state.balance else { return .none }
-                    state.destination = .credit(StoreCreditFeature.State(
-                        store: state.store,
-                        balance: balance,
-                        storeCreditCatalog: state.$storeCreditCatalog
-                    ))
-                }
                 return .none
 
             case .bannerTapped:

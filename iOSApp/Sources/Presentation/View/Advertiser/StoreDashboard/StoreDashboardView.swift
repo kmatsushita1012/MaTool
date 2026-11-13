@@ -12,13 +12,11 @@ struct StoreDashboardScreen: View {
             creditBalance: store.balance?.balance,
             isBalanceLoading: store.isBalanceLoading,
             navigationSubtitle: navigationSubtitle,
-            nextStepTitle: store.nextAction?.title,
             isOwnerPaused: Binding(
                 get: { store.store.ownerPaused },
                 set: { store.send(.ownerPausedChanged($0)) }
             ),
             isPauseUpdating: store.isPauseUpdating,
-            onNextActionTapped: { store.send(.nextActionTapped) },
             onBannerTapped: { store.send(.bannerTapped) },
             onInterstitialTapped: { store.send(.interstitialTapped) },
             onCreditTapped: { store.send(.creditTapped) },
@@ -72,10 +70,8 @@ struct StoreDashboardContentView: View {
     let creditBalance: Int?
     let isBalanceLoading: Bool
     let navigationSubtitle: String
-    let nextStepTitle: String?
     @Binding var isOwnerPaused: Bool
     let isPauseUpdating: Bool
-    let onNextActionTapped: () -> Void
     let onBannerTapped: () -> Void
     let onInterstitialTapped: () -> Void
     let onCreditTapped: () -> Void
@@ -83,14 +79,12 @@ struct StoreDashboardContentView: View {
 
     var body: some View {
         Form {
-            if let nextStepTitle {
-                Section {
-                    StoreDashboardNextStepButton(title: nextStepTitle, action: onNextActionTapped)
-                        .disabled(isPauseUpdating)
-                        .listRowInsets(EdgeInsets(top: 8, leading: 0, bottom: 8, trailing: 0))
-                        .listRowBackground(Color.clear)
-                        .listRowSeparator(.hidden)
-                }
+            Section {
+                StoreDashboardNextStepButton(creditBalance: creditBalance, action: onCreditTapped)
+                    .disabled(isBalanceLoading || isPauseUpdating || creditBalance == nil)
+                    .listRowInsets(EdgeInsets(top: 8, leading: 0, bottom: 8, trailing: 0))
+                    .listRowBackground(Color.clear)
+                    .listRowSeparator(.hidden)
             }
 
             if #unavailable(iOS 26.0) {
@@ -129,7 +123,7 @@ struct StoreDashboardContentView: View {
 }
 
 private struct StoreDashboardNextStepButton: View {
-    let title: String
+    let creditBalance: Int?
     let action: () -> Void
 
     var body: some View {
@@ -141,16 +135,21 @@ private struct StoreDashboardNextStepButton: View {
                             .font(.subheadline)
                             .foregroundStyle(.secondary)
 
-                        Text(title)
+                        Text("クレジットを購入")
                             .font(.headline)
                             .foregroundStyle(.primary)
                     }
+                    .frame(maxWidth: .infinity, alignment: .leading)
 
-                    Spacer(minLength: 0)
+                    HStack(spacing: 8) {
+                        Text(creditBalance.map { "\($0.formatted())pt" } ?? "—")
+                            .font(.headline)
+                            .foregroundStyle(creditBalance == nil ? .secondary : .primary)
 
-                    Image(systemName: "chevron.right")
-                        .font(.headline)
-                        .foregroundStyle(Color.accentColor)
+                        Image(systemName: "chevron.right")
+                            .font(.headline)
+                            .foregroundStyle(Color.accentColor)
+                    }
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(16)
@@ -181,10 +180,8 @@ private struct StoreDashboardSubtitle: ViewModifier {
             creditBalance: 0,
             isBalanceLoading: false,
             navigationSubtitle: "公開中・0pt",
-            nextStepTitle: "バナー画像を設定",
             isOwnerPaused: .constant(false),
             isPauseUpdating: false,
-            onNextActionTapped: {},
             onBannerTapped: {},
             onInterstitialTapped: {},
             onCreditTapped: {},
