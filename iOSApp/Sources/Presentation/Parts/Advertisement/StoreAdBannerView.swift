@@ -33,7 +33,7 @@ struct StoreAdBannerView: View {
                             .buttonBorderShape(.circle)
                             .contentShape(.rect)
                             .controlSize(.extraLarge)
-                            .tint(.secondary)
+                            .foregroundStyle(.secondary)
                         }
                     }
                 }
