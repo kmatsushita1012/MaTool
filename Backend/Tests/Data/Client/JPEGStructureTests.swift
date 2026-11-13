@@ -29,7 +29,7 @@ struct JPEGStructureTests {
     func rejectsInvalidMarkerBoundaries() {
         for (offset, value) in [
             (2, 0x00), (3, 0xD8), (3, 0xD0),
-            (4, 0x00), (5, 0x00), (5, 0xFF)
+            (4, 0x01), (5, 0x00), (5, 0xFF)
         ] {
             var data = validJPEG()
             data[offset] = UInt8(value)
@@ -40,7 +40,7 @@ struct JPEGStructureTests {
     @Test("SOFヘッダの寸法不足・Component数不整合を拒否する")
     func rejectsMalformedFrameHeader() {
         for (offset, value) in [
-            (5, 0x07), (7, 0), (8, 0), (9, 0), (10, 0),
+            (5, 0x07), (7, 0x01), (8, 0), (9, 0x01), (10, 0),
             (11, 0), (11, 2)
         ] {
             var data = validJPEG()

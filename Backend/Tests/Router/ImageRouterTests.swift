@@ -80,7 +80,9 @@ struct MaToolAPIRegistrationTests {
     func healthEndpointRespondsInProductionApplication() async {
         let request = Application.Request.make(method: .get, path: "/health")
 
-        let response = await MaToolAPI.app.handle(request)
+        // This checks real route registration without invoking AWS-backed endpoints.
+        let app = withDependencies { $0.context = .live } operation: { MaToolAPI.app }
+        let response = await app.handle(request)
 
         #expect(response.statusCode == 200)
         #expect(response.body == "{}")
@@ -90,7 +92,9 @@ struct MaToolAPIRegistrationTests {
     func unregisteredPathIsNotFound() async {
         let request = Application.Request.make(method: .get, path: "/not-registered")
 
-        let response = await MaToolAPI.app.handle(request)
+        // This checks real route registration without invoking AWS-backed endpoints.
+        let app = withDependencies { $0.context = .live } operation: { MaToolAPI.app }
+        let response = await app.handle(request)
 
         #expect(response.statusCode == 404)
     }

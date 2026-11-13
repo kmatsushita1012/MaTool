@@ -100,4 +100,109 @@ struct OnboardingFeatureTests {
         }
         await store.finish()
     }
+    @Test("表示開始時は祭典一覧の取得UseCaseが呼ばれ一覧が設定される")
+    @MainActor
+    func onAppearFetchesFestivals() async {
+        let festival = AppStateFixture.festival()
+        let store = TestStore(initialState: OnboardingFeature.State(
+            launchState: Shared(value: .loading),
+            appState: Shared<AppState?>(value: nil)
+        )) { OnboardingFeature() } withDependencies: {
+            $0.installTestSpies()
+            $0[FetchFestivalListUseCaseKey.self] = FetchFestivalListUseCaseSpy(festivals: [festival])
+        }
+
+        await store.send(.onAppear)
+        await store.receive(.festivalsLoaded(.success([festival]))) {
+            $0.festivals = [festival]
+        }
+        await store.finish()
+    }
+
+    @Test("選択済み祭典でゲストとして進むと祭典地図画面へ遷移する")
+    @MainActor
+    func guestWithSelectedFestivalContinuesToMap() async {
+        let sharedLaunch = Shared<LaunchState>(value: .onboarding)
+        var initial = OnboardingFeature.State(
+            launchState: sharedLaunch,
+            appState: Shared<AppState?>(value: nil)
+        )
+        initial.selectedFestival = AppStateFixture.festival()
+        let store = TestStore(initialState: initial) {
+            OnboardingFeature()
+        } withDependencies: { $0.installTestSpies() }
+        store.exhaustivity = .off
+
+        await store.send(.externalGuestTapped)
+        await store.receive(.delegate(.continueAsGuest))
+
+        #expect(sharedLaunch.wrappedValue == .festival(.guest))
+        await store.finish()
+    }
+
+    @Test("本部ログイン導線も祭典選択後はゲストの地図画面へ進む")
+    @MainActor
+    func adminWithSelectedFestivalContinuesToMap() async {
+        let sharedLaunch = Shared<LaunchState>(value: .onboarding)
+        var initial = OnboardingFeature.State(
+            launchState: sharedLaunch,
+            appState: Shared<AppState?>(value: nil)
+        )
+        initial.selectedFestival = AppStateFixture.festival()
+        let store = TestStore(initialState: initial) {
+            OnboardingFeature()
+        } withDependencies: { $0.installTestSpies() }
+        store.exhaustivity = .off
+
+        await store.send(.adminTapped)
+        await store.receive(.delegate(.continueAsGuest))
+
+        #expect(sharedLaunch.wrappedValue == .festival(.guest))
+        await store.finish()
+    }
+
+    @Test("地区選択成功時は現在のRouteIDを引き継いで地区画面へ進む")
+    @MainActor
+    func districtSuccessSetsInitialRoute() async {
+        let sharedLaunch = Shared<LaunchState>(value: .onboarding)
+        let appState = Shared<AppState?>(value: AppStateFixture.state())
+        var initial = OnboardingFeature.State(
+            launchState: sharedLaunch, appState: appState
+        )
+        initial.selectedFestival = AppStateFixture.festival()
+        initial.isDistrictLoading = true
+        let store = TestStore(initialState: initial) {
+            OnboardingFeature()
+        } withDependencies: { $0.installTestSpies() }
+        store.exhaustivity = .off
+
+        await store.send(.districtDidSet(.success("route"))) {
+            $0.isDistrictLoading = false
+        }
+        await store.receive(.delegate(.districtSelected("route")))
+
+        #expect(sharedLaunch.wrappedValue == .district(.guest, "route"))
+        await store.finish()
+    }
+
+    @Test("祭典選択保存成功時はロード中状態を解除して一覧を残す")
+    @MainActor
+    func festivalSuccessClearsLoading() async {
+        var initial = OnboardingFeature.State(
+            launchState: Shared(value: .onboarding),
+            appState: Shared<AppState?>(value: nil)
+        )
+        initial.isFestivalLoading = true
+        initial.festivals = [AppStateFixture.festival()]
+        let store = TestStore(initialState: initial) {
+            OnboardingFeature()
+        } withDependencies: { $0.installTestSpies() }
+
+        await store.send(.festivalDidSet(.success)) {
+            $0.isFestivalLoading = false
+        }
+        #expect(store.state.festivals.count == 1)
+        await store.finish()
+    }
+
 }

@@ -9,20 +9,56 @@ import Dependencies
 import Shared
 @preconcurrency import AWSCognitoIdentityProvider
 
-struct CognitoAuthManager: AuthManager {
+/// External AWS calls are captured at a single injectable boundary for deterministic unit tests.
+struct CognitoAuthService: Sendable {
+    var create: @Sendable (AdminCreateUserInput) async throws -> AdminCreateUserOutput
+    var disable: @Sendable (AdminDisableUserInput) async throws -> AdminDisableUserOutput
+    var delete: @Sendable (AdminDeleteUserInput) async throws -> AdminDeleteUserOutput
+    var getByToken: @Sendable (GetUserInput) async throws -> GetUserOutput
+    var getByUsername: @Sendable (AdminGetUserInput) async throws -> AdminGetUserOutput
 
-    private let client: CognitoIdentityProviderClient
+    init(
+        create: @escaping @Sendable (AdminCreateUserInput) async throws -> AdminCreateUserOutput,
+        disable: @escaping @Sendable (AdminDisableUserInput) async throws -> AdminDisableUserOutput,
+        delete: @escaping @Sendable (AdminDeleteUserInput) async throws -> AdminDeleteUserOutput,
+        getByToken: @escaping @Sendable (GetUserInput) async throws -> GetUserOutput,
+        getByUsername: @escaping @Sendable (AdminGetUserInput) async throws -> AdminGetUserOutput
+    ) {
+        self.create = create
+        self.disable = disable
+        self.delete = delete
+        self.getByToken = getByToken
+        self.getByUsername = getByUsername
+    }
+
+    init(client: CognitoIdentityProviderClient) {
+        self.init(
+            create: { try await client.adminCreateUser(input: $0) },
+            disable: { try await client.adminDisableUser(input: $0) },
+            delete: { try await client.adminDeleteUser(input: $0) },
+            getByToken: { try await client.getUser(input: $0) },
+            getByUsername: { try await client.adminGetUser(input: $0) }
+        )
+    }
+}
+
+struct CognitoAuthManager: AuthManager {
+    private let service: CognitoAuthService
     private let userPoolId: String
 
     init(client: CognitoIdentityProviderClient, userPoolId: String) {
-        self.client = client
+        self.init(service: CognitoAuthService(client: client), userPoolId: userPoolId)
+    }
+
+    init(service: CognitoAuthService, userPoolId: String) {
+        self.service = service
         self.userPoolId = userPoolId
     }
-    
+
     init() async throws {
         @Dependency(Environment.self) var env
-        self.client = try await .init()
-        self.userPoolId = env.cognitoPoolId
+        let client = try await CognitoIdentityProviderClient()
+        self.init(client: client, userPoolId: env.cognitoPoolId)
     }
 
     func create(username: String, email: String) async throws -> UserRole {
@@ -31,7 +67,7 @@ struct CognitoAuthManager: AuthManager {
             email: email,
             messageAction: nil
         )
-        let response = try await client.adminCreateUser(input: input)
+        let response = try await service.create(input)
         return try parseCreatedUser(response: response)
     }
 
@@ -40,20 +76,20 @@ struct CognitoAuthManager: AuthManager {
             userPoolId: userPoolId,
             username: username
         )
-        _ = try await client.adminDisableUser(input: disableInput)
+        _ = try await service.disable(disableInput)
 
         let deleteInput = AdminDeleteUserInput(
             userPoolId: userPoolId,
             username: username
         )
-        _ = try await client.adminDeleteUser(input: deleteInput)
+        _ = try await service.delete(deleteInput)
     }
     
     func get(accessToken: String) async throws -> UserRole {
         let input = GetUserInput(
             accessToken: accessToken
         )
-        let response = try await client.getUser(input: input)
+        let response = try await service.getByToken(input)
         
         let user = try parseUserRole(attributes: response.userAttributes, id: response.username)
         return user
@@ -64,7 +100,7 @@ struct CognitoAuthManager: AuthManager {
             userPoolId: userPoolId,
             username: username
         )
-        let response = try await client.adminGetUser(input: input)
+        let response = try await service.getByUsername(input)
         
         let user = try parseUserRole(attributes: response.userAttributes, id: response.username)
         return user
