@@ -61,7 +61,7 @@ struct DistrictInfoFeatureTests {
             DistrictInfoFeature()
         }
 
-        await store.send(.binding(.set(\\.colorTheme, .dark))) {
+        await store.send(.binding(.set(\.colorTheme, .dark))) {
             $0.colorTheme = .dark
         }
         await store.finish()
