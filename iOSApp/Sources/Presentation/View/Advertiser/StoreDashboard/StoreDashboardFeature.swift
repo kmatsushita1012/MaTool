@@ -17,6 +17,7 @@ struct StoreDashboardFeature {
         @Shared var storeCreditCatalog: StoreCreditProductCatalog
         var balance: CreditAccount?
         var isBalanceLoading = false
+        var hasPurchasedCredits: Bool?
         var isPauseUpdating = false
         var ownerPausedBeforeUpdate: Bool?
         @Presents var destination: Destination.State?
@@ -65,6 +66,7 @@ struct StoreDashboardFeature {
             case .balanceReceived(.success(let balance)):
                 state.isBalanceLoading = false
                 state.balance = balance
+                state.hasPurchasedCredits = balance.lastPurchasedAt != nil
                 return .none
 
             case .balanceReceived(.failure(let error)):
@@ -171,11 +173,20 @@ struct StoreDashboardFeature {
                 } else if case .completed(let result) = completion.result {
                     state.balance = CreditAccount(storeId: state.store.id, balance: result.balance)
                 }
+                if case .completed = completion.result {
+                    state.hasPurchasedCredits = true
+                }
                 return .none
 
             case .destination(.presented(.credit(.restoreReceived(.success(.restored(let completion)))))):
                 if let balance = completion.balance {
                     state.balance = balance
+                    if balance.lastPurchasedAt != nil {
+                        state.hasPurchasedCredits = true
+                    }
+                }
+                if completion.history?.isEmpty == false {
+                    state.hasPurchasedCredits = true
                 }
                 return .none
 
