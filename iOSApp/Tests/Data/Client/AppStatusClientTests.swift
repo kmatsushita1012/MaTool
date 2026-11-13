@@ -182,4 +182,55 @@ struct AppStatusClientTests {
         #expect(await client.checkStatus(currentVersion: "1.0.0") == nil)
     }
 
+    @Test("キャッシュされたメンテナンス情報は通信なしで更新要求より優先される")
+    func cachedMaintenancePrecedesRequiredUpdate() async {
+        let until = Date().addingTimeInterval(3600)
+        let status = AppStatus(
+            maintenance: Maintenance(message: "緊急メンテナンス", until: until),
+            update: Update(
+                ios: UpdateInfo(
+                    requiredVersion: "99.0.0",
+                    storeUrl: URL(string: "https://apps.apple.com/app/id123")!
+                ),
+                android: nil
+            )
+        )
+        let client = AppStatusClient(
+            urlString: "invalid",
+            session: AppStatusURLProtocolSpy.makeSession(),
+            cachedStatus: status
+        )
+
+        let result = await client.checkStatus(currentVersion: "1.0.0")
+        if case .maintenance(let message, let actualUntil) = result {
+            #expect(message == "緊急メンテナンス")
+            #expect(actualUntil == until)
+        } else {
+            Issue.record("キャッシュ済みメンテナンスが優先されませんでした")
+        }
+    }
+
+    @Test("キャッシュされた期限切れメンテナンスは更新不要の判定を妨げない")
+    func expiredCachedMaintenanceAllowsCurrentVersion() async {
+        let status = AppStatus(
+            maintenance: Maintenance(
+                message: "終了したメンテナンス",
+                until: Date().addingTimeInterval(-3600)
+            ),
+            update: Update(
+                ios: UpdateInfo(
+                    requiredVersion: "1.0.0",
+                    storeUrl: URL(string: "https://apps.apple.com/app/id123")!
+                ),
+                android: nil
+            )
+        )
+        let client = AppStatusClient(
+            urlString: "invalid",
+            session: AppStatusURLProtocolSpy.makeSession(),
+            cachedStatus: status
+        )
+        #expect(await client.checkStatus(currentVersion: "1.0.0") == nil)
+    }
+
 }
