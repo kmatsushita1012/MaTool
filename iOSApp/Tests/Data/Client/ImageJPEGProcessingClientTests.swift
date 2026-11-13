@@ -46,6 +46,40 @@ struct ImageJPEGProcessingClientTests {
         }
     }
 
+
+    @Test("縦横比の上限ちょうどは許可する")
+    func acceptsMaximumAspectRatio() throws {
+        let input = try makeJPEG(width: 100, height: 10)
+        let result = try ImageJPEGProcessingClient().makeJPEG(from: input)
+        #expect(result.starts(with: [0xFF, 0xD8]))
+    }
+
+    @Test("縦長画像でも縦横比の上限を超えた場合は拒否する")
+    func rejectsTallAspectRatio() throws {
+        let input = try makeJPEG(width: 10, height: 101)
+        #expect(throws: ImageJPEGProcessingError.invalidDimensions) {
+            try ImageJPEGProcessingClient().makeJPEG(from: input)
+        }
+    }
+
+    @Test("空データと途中で切れたJPEGは不正な画像として拒否する")
+    func rejectsEmptyAndTruncatedImage() throws {
+        #expect(throws: ImageJPEGProcessingError.invalidImage) {
+            try ImageJPEGProcessingClient().makeJPEG(from: Data())
+        }
+        let original = try makeJPEG(width: 80, height: 40)
+        #expect(throws: ImageJPEGProcessingError.invalidImage) {
+            try ImageJPEGProcessingClient().makeJPEG(from: Data(original.prefix(2)))
+        }
+    }
+
+    @Test("画像エラーの各種メッセージが利用者向けに用意されている")
+    func providesImageErrorDescriptions() {
+        #expect(ImageJPEGProcessingError.invalidImage.errorDescription?.isEmpty == false)
+        #expect(ImageJPEGProcessingError.invalidDimensions.errorDescription?.isEmpty == false)
+        #expect(ImageJPEGProcessingError.imageTooLarge.errorDescription?.isEmpty == false)
+    }
+
     private func makeJPEG(width: Int, height: Int) throws -> Data {
         try makeImage(width: width, height: height, type: .jpeg)
     }
