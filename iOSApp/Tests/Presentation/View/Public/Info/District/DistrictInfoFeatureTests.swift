@@ -66,4 +66,39 @@ struct DistrictInfoFeatureTests {
         }
         await store.finish()
     }
+    @Test("地区の範囲が空なら基点を中心とする地図領域を使用する")
+    func regionUsesDistrictBaseWhenAreaIsEmpty() throws {
+        let district = District(
+            id: "district", name: "District", festivalId: "festival",
+            base: Coordinate(latitude: 35.2, longitude: 139.4)
+        )
+        let state = DistrictInfoFeature.State(
+            DistrictPack(district: district, performances: []),
+            appState: Shared(value: AppStateFixture.state(districts: [district]))
+        )
+        let region = try #require(state.region)
+        #expect(region.center.latitude == 35.2)
+        #expect(region.center.longitude == 139.4)
+        #expect(region.span.latitudeDelta == spanDelta)
+    }
+
+    @Test("地区の範囲が指定されていれば基点より範囲を優先する")
+    func regionUsesAreaInsteadOfBase() throws {
+        let district = District(
+            id: "district", name: "District", festivalId: "festival",
+            base: Coordinate(latitude: 30, longitude: 130),
+            area: [
+                Coordinate(latitude: 35, longitude: 139),
+                Coordinate(latitude: 36, longitude: 141)
+            ]
+        )
+        let state = DistrictInfoFeature.State(
+            DistrictPack(district: district, performances: []),
+            appState: Shared(value: AppStateFixture.state(districts: [district]))
+        )
+        let region = try #require(state.region)
+        #expect(region.center.latitude == 35.5)
+        #expect(region.center.longitude == 140)
+    }
+
 }
