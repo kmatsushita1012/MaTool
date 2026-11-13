@@ -1,4 +1,5 @@
 import Dependencies
+import Clocks
 import Foundation
 import Shared
 import Testing
@@ -34,6 +35,58 @@ struct StoreAdImpressionQueueClientTests {
         #expect(reports.allSatisfy { $0.impressionToken == request.impressionToken })
     }
 
+    @Test("再試行を使い切ったimpressionは次のenqueueで古いものから再送する")
+    func retainsFailedRequestUntilNextEnqueue() async {
+        let fetcher = StoreAdDataFetcherSpy(impressionOutcomes: [
+            .failure(AppError(statusCode: 503, message: "Unavailable")),
+            .failure(AppError(statusCode: 503, message: "Unavailable")),
+            .failure(AppError(statusCode: 503, message: "Unavailable")),
+            .failure(AppError(statusCode: 503, message: "Unavailable")),
+            .success,
+            .success
+        ])
+        let clock = TestClock()
+        let first = ImpressionReportRequest(impressionId: "impression-1", impressionToken: "token-1")
+        let second = ImpressionReportRequest(impressionId: "impression-2", impressionToken: "token-2")
+        let queue = withDependencies {
+            $0[StoreAdDataFetcherKey.self] = fetcher
+            $0.continuousClock = clock
+        } operation: {
+            StoreAdImpressionQueueClient()
+        }
+
+        await withDependencies {
+            $0[StoreAdDataFetcherKey.self] = fetcher
+            $0.continuousClock = clock
+        } operation: {
+            await queue.enqueue(first)
+            await fetcher.waitForReportCount(1)
+            await clock.advance(by: .seconds(1))
+            await fetcher.waitForReportCount(2)
+            await clock.advance(by: .seconds(2))
+            await fetcher.waitForReportCount(3)
+            await clock.advance(by: .seconds(4))
+            await fetcher.waitForReportCount(4)
+            #expect(await fetcher.reportCount() == 4)
+
+            await queue.enqueue(second)
+            await clock.advance(by: .seconds(8))
+            await fetcher.waitForReportCount(6)
+        }
+
+        let reports = await fetcher.reportedImpressions
+        #expect(reports.map(\.impressionId) == [
+            first.impressionId,
+            first.impressionId,
+            first.impressionId,
+            first.impressionId,
+            first.impressionId,
+            second.impressionId
+        ])
+        #expect(reports[4].impressionToken == first.impressionToken)
+        #expect(reports[5].impressionToken == second.impressionToken)
+    }
+
     @Test("同一IDを重複送信せず複数IDも並列送信しない")
     func deduplicatesAndSerializesRequests() async throws {
         let fetcher = StoreAdDataFetcherSpy(reportDelay: .milliseconds(50))
@@ -62,25 +115,14 @@ struct StoreAdImpressionQueueClientTests {
 
     @Test("再送可能なerrorだけを有限回再試行する")
     func retriesOnlyTransientErrorsAndStopsAtLimit() {
-        #expect(StoreAdImpressionQueueClient.retryDelay(
-            for: AppError(statusCode: 429, message: "Too Many Requests"),
-            retryCount: 0
-        ) == .seconds(1))
-        #expect(StoreAdImpressionQueueClient.retryDelay(
-            for: AppError(statusCode: 500, message: "Internal Server Error"),
-            retryCount: 0
-        ) == .seconds(1))
-        #expect(StoreAdImpressionQueueClient.retryDelay(
-            for: AppError.be(.network("offline")),
-            retryCount: 1
-        ) == .seconds(2))
-        #expect(StoreAdImpressionQueueClient.retryDelay(
-            for: AppError(statusCode: 401, message: "Unauthorized"),
-            retryCount: 0
-        ) == nil)
-        #expect(StoreAdImpressionQueueClient.retryDelay(
-            for: AppError(statusCode: 503, message: "Unavailable"),
-            retryCount: 3
-        ) == nil)
+        #expect(StoreAdImpressionQueueClient.isRetryable(AppError(statusCode: 429, message: "Too Many Requests")))
+        #expect(StoreAdImpressionQueueClient.isRetryable(AppError(statusCode: 500, message: "Internal Server Error")))
+        #expect(StoreAdImpressionQueueClient.isRetryable(AppError.be(.network("offline"))))
+        #expect(!StoreAdImpressionQueueClient.isRetryable(AppError(statusCode: 401, message: "Unauthorized")))
+        #expect(StoreAdImpressionQueueClient.retryDelay(consecutiveFailureCount: 1) == .seconds(1))
+        #expect(StoreAdImpressionQueueClient.retryDelay(consecutiveFailureCount: 2) == .seconds(2))
+        #expect(StoreAdImpressionQueueClient.retryDelay(consecutiveFailureCount: 3) == .seconds(4))
+        #expect(StoreAdImpressionQueueClient.retryDelay(consecutiveFailureCount: 4) == .seconds(8))
+        #expect(StoreAdImpressionQueueClient.retryDelay(consecutiveFailureCount: 100) == .seconds(60))
     }
 }
