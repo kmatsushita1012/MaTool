@@ -233,4 +233,29 @@ struct AppStatusClientTests {
         #expect(await client.checkStatus(currentVersion: "1.0.0") == nil)
     }
 
+    @Test("HTTP 201の成功レスポンスも正常な設定として扱う")
+    func acceptsCreatedHTTPResponse() async {
+        let url = AppStatusURLProtocolSpy.makeURL(
+            json: statusJSON(requiredVersion: "3.0.0"), status: 201
+        )
+        let client = AppStatusClient(
+            urlString: url.absoluteString, session: AppStatusURLProtocolSpy.makeSession()
+        )
+
+        #expect(await client.checkStatus(currentVersion: "2.0.0") ==
+                .updateRequired(storeURL: URL(string: "https://apps.apple.com/app/id123")!))
+    }
+
+    @Test("HTTP 300は成功扱いせず更新要求を返さない")
+    func rejectsHTTP300Boundary() async {
+        let url = AppStatusURLProtocolSpy.makeURL(
+            json: statusJSON(requiredVersion: "3.0.0"), status: 300
+        )
+        let client = AppStatusClient(
+            urlString: url.absoluteString, session: AppStatusURLProtocolSpy.makeSession()
+        )
+
+        #expect(await client.checkStatus(currentVersion: "2.0.0") == nil)
+    }
+
 }
