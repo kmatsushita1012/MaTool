@@ -3,7 +3,7 @@ import Shared
 import Testing
 @testable import iOSApp
 
-struct OnboardingFeatureTests {
+struct OnboardingAdditionalCoverageTests {
     @Test("祭典未選択でゲスト継続を要求すると選択エラーを表示する")
     @MainActor
     func guestWithoutFestivalShowsError() async {
