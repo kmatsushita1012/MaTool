@@ -89,7 +89,7 @@ struct ImageUploadDataFetcherTests {
             path: "temporary/injected.jpg",
             expiresAt: Date(timeIntervalSince1970: 1_800_000_000)
         )
-        let spy = ImageUploadDataFetcherSpy(response: expected)
+        let spy = RecordingImageUploadDataFetcherSpy(response: expected)
         let target = ImageUploadTarget(type: .festival, id: "festival", variant: .light)
         let request = ImageUploadURLRequest(target: target, contentType: "image/jpeg")
 
@@ -121,7 +121,7 @@ struct ImageUploadDataFetcherTests {
     }
 }
 
-private actor ImageUploadDataFetcherSpy: ImageUploadDataFetcherProtocol {
+private actor RecordingImageUploadDataFetcherSpy: ImageUploadDataFetcherProtocol {
     let response: ImageUploadURLResponse
     private(set) var requestCount = 0
 
