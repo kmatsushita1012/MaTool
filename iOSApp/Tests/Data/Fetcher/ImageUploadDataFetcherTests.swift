@@ -81,6 +81,29 @@ struct ImageUploadDataFetcherTests {
         #expect(await spy.calls().map(\.path) == ["/images/upload-url"])
     }
 
+
+    @Test("依存コンテナに差し替えた署名URLFetcherが呼び出される")
+    func injectedFetcherIsUsed() async throws {
+        let expected = ImageUploadURLResponse(
+            url: "https://example.com/injected",
+            path: "temporary/injected.jpg",
+            expiresAt: Date(timeIntervalSince1970: 1_800_000_000)
+        )
+        let spy = ImageUploadDataFetcherSpy(response: expected)
+        let target = ImageUploadTarget(type: .festival, id: "festival", variant: .light)
+        let request = ImageUploadURLRequest(target: target, contentType: "image/jpeg")
+
+        let actual = try await withDependencies {
+            $0.imageUploadDataFetcher = spy
+        } operation: {
+            @Dependency(\.imageUploadDataFetcher) var fetcher
+            return try await fetcher.issueUploadURL(for: request)
+        }
+
+        #expect(actual.path == expected.path)
+        #expect(await spy.requestCount == 1)
+    }
+
     private func authProvider(token: String) -> AuthProvider {
         AuthProvider(
             initialize: {},
@@ -95,5 +118,19 @@ struct ImageUploadDataFetcherTests {
             updateEmail: { _ in throw SpyInvocationError.unexpected("updateEmail") },
             confirmUpdateEmail: { _ in throw SpyInvocationError.unexpected("confirmUpdateEmail") }
         )
+    }
+}
+
+private actor ImageUploadDataFetcherSpy: ImageUploadDataFetcherProtocol {
+    let response: ImageUploadURLResponse
+    private(set) var requestCount = 0
+
+    init(response: ImageUploadURLResponse) {
+        self.response = response
+    }
+
+    func issueUploadURL(for request: ImageUploadURLRequest) async throws -> ImageUploadURLResponse {
+        requestCount += 1
+        return response
     }
 }
