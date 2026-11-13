@@ -233,7 +233,7 @@ struct OnboardingFeatureTests {
             $0.installTestSpies()
         }
 
-        await store.send(.binding(.set(\.$festivalErrorMessaage, "manual error"))) {
+        await store.send(.binding(.set(\.festivalErrorMessaage, "manual error"))) {
             $0.festivalErrorMessaage = "manual error"
         }
         #expect(store.state.isFestivalLoading == false)
