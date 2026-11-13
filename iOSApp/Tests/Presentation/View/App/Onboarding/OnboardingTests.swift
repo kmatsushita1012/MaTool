@@ -223,4 +223,35 @@ struct OnboardingFeatureTests {
         await store.finish()
     }
 
+    @Test("祭典以外のバインディング変更では保存処理を開始しない")
+    @MainActor
+    func nonFestivalBindingDoesNotStartSelection() async {
+        let store = TestStore(initialState: OnboardingFeature.State(
+            launchState: Shared(value: .onboarding),
+            appState: Shared<AppState?>(value: nil)
+        )) { OnboardingFeature() } withDependencies: {
+            $0.installTestSpies()
+        }
+
+        await store.send(\.binding.festivalErrorMessaage, "manual error") {
+            $0.festivalErrorMessaage = "manual error"
+        }
+        #expect(store.state.isFestivalLoading == false)
+        await store.finish()
+    }
+
+    @Test("親画面からのdelegateアクションは状態を変更しない")
+    @MainActor
+    func delegateActionDoesNotMutateState() async {
+        let store = TestStore(initialState: OnboardingFeature.State(
+            launchState: Shared(value: .onboarding),
+            appState: Shared<AppState?>(value: nil)
+        )) { OnboardingFeature() } withDependencies: {
+            $0.installTestSpies()
+        }
+
+        await store.send(.delegate(.continueAsGuest))
+        await store.finish()
+    }
+
 }
