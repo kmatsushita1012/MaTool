@@ -59,6 +59,24 @@ struct OnboardingFeatureTests {
         await store.finish()
     }
 
+    @Test("祭典未選択で地区を選択するとエラーを表示する")
+    @MainActor
+    func districtWithoutSelectedFestivalIsRejected() async {
+        let state = OnboardingFeature.State(
+            launchState: Shared(value: LaunchState.loading),
+            appState: Shared<AppState?>(value: nil)
+        )
+        let store = TestStore(initialState: state) {
+            OnboardingFeature()
+        } withDependencies: { $0.installTestSpies() }
+        let district = District(id: "district", name: "District", festivalId: "festival")
+
+        await store.send(.districtSelected(district)) {
+            $0.festivalErrorMessaage = "祭典を選択してください。"
+        }
+        await store.finish()
+    }
+
     @Test("選択中の祭典と異なる地区を指定しても遷移しない")
     @MainActor
     func unrelatedDistrictIsRejected() async {
