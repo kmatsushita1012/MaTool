@@ -148,4 +148,38 @@ struct AppStatusClientTests {
 
         #expect(await client.checkStatus() == nil)
     }
+    @Test("必須バージョンの各桁を数値比較し、境界直前のみ更新を要求する")
+    func comparesVersionComponentsNumerically() async {
+        let url = AppStatusURLProtocolSpy.makeURL(json: statusJSON(requiredVersion: "2.10.0"))
+        let client = AppStatusClient(
+            urlString: url.absoluteString, session: AppStatusURLProtocolSpy.makeSession()
+        )
+
+        #expect(await client.checkStatus(currentVersion: "2.9.99") ==
+                .updateRequired(storeURL: URL(string: "https://apps.apple.com/app/id123")!))
+        #expect(await client.checkStatus(currentVersion: "2.10.0") == nil)
+        #expect(await client.checkStatus(currentVersion: "2.11.0") == nil)
+    }
+
+    @Test("正常なHTTP応答でも日付の形式が不正ならメンテナンス情報を採用しない")
+    func invalidMaintenanceDateReturnsNil() async {
+        let json = #"{"maintenance":{"message":"停止","until":"not-a-date"},"update":{"ios":{"requiredVersion":"9.0.0","storeUrl":"https://apps.apple.com/app/id123"}}}"#
+        let url = AppStatusURLProtocolSpy.makeURL(json: json)
+        let client = AppStatusClient(
+            urlString: url.absoluteString, session: AppStatusURLProtocolSpy.makeSession()
+        )
+
+        #expect(await client.checkStatus(currentVersion: "1.0.0") == nil)
+    }
+
+    @Test("HTTP 204ではJSONが存在しないため更新要求を返さない")
+    func emptySuccessfulResponseReturnsNil() async {
+        let url = AppStatusURLProtocolSpy.makeURL(json: "", status: 204)
+        let client = AppStatusClient(
+            urlString: url.absoluteString, session: AppStatusURLProtocolSpy.makeSession()
+        )
+
+        #expect(await client.checkStatus(currentVersion: "1.0.0") == nil)
+    }
+
 }
