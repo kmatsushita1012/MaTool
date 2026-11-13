@@ -254,4 +254,45 @@ struct OnboardingFeatureTests {
         await store.finish()
     }
 
+    @Test("祭典選択を解除しても保存UseCaseを起動しない")
+    @MainActor
+    func clearingFestivalSelectionDoesNotSave() async {
+        var initial = OnboardingFeature.State(
+            launchState: Shared(value: LaunchState.onboarding),
+            appState: Shared<AppState?>(value: nil)
+        )
+        initial.selectedFestival = AppStateFixture.festival()
+        let store = TestStore(initialState: initial) {
+            OnboardingFeature()
+        } withDependencies: { $0.installTestSpies() }
+
+        await store.send(.binding(.set(\.selectedFestival, nil))) {
+            $0.selectedFestival = nil
+        }
+        #expect(store.state.isFestivalLoading == false)
+        await store.finish()
+    }
+
+    @Test("地区選択成功でルート指定がない場合も地区画面へ遷移する")
+    @MainActor
+    func districtSuccessWithoutRoute() async {
+        let launch = Shared<LaunchState>(value: .onboarding)
+        var initial = OnboardingFeature.State(
+            launchState: launch,
+            appState: Shared<AppState?>(value: nil)
+        )
+        initial.isDistrictLoading = true
+        let store = TestStore(initialState: initial) {
+            OnboardingFeature()
+        } withDependencies: { $0.installTestSpies() }
+        store.exhaustivity = .off
+
+        await store.send(.districtDidSet(.success(nil))) {
+            $0.isDistrictLoading = false
+        }
+        await store.receive(.delegate(.districtSelected(nil)))
+        #expect(launch.wrappedValue == .district(.guest, nil))
+        await store.finish()
+    }
+
 }
