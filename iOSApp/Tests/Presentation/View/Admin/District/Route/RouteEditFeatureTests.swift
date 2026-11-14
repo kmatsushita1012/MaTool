@@ -858,6 +858,90 @@ struct RouteEditFeatureTests {
         }
     }
 
+
+    @Test("経由点の前後挿入は選択した地点の位置を維持して挿入インデックスを決める")
+    @MainActor
+    func pointInsertActionsChooseCorrectInsertionIndex() async throws {
+        let first = Point(
+            id: "first", routeId: "route",
+            coordinate: Coordinate(latitude: 35, longitude: 139),
+            time: SimpleTime(hour: 9, minute: 0), anchor: .start, index: 0
+        )
+        let second = Point(
+            id: "second", routeId: "route",
+            coordinate: Coordinate(latitude: 35.1, longitude: 139.1),
+            time: SimpleTime(hour: 10, minute: 0), anchor: .end, index: 1
+        )
+        for (action, expected) in [
+            (PointEditFeature.Action.insertBeforeTapped, RouteEditFeature.Operation.insert(0)),
+            (PointEditFeature.Action.insertAfterTapped, RouteEditFeature.Operation.insert(1))
+        ] {
+            var initial = try makeState(mode: .update, points: [first, second])
+            initial.point = PointEditFeature.State(
+                first, districtId: initial.district.id, appState: Shared(value: nil)
+            )
+            let store = TestStore(initialState: initial) {
+                RouteEditFeature()
+            } withDependencies: { $0.installTestSpies() }
+            store.exhaustivity = .off
+
+            await store.send(.point(.presented(action)))
+            #expect(store.state.operation == expected)
+            #expect(store.state.point == nil)
+            #expect(store.state.points.map(\.id) == ["first", "second"])
+            await store.finish()
+        }
+    }
+
+    @Test("最後の地点の後ろには重複した途中挿入状態を作らず追加モードを維持する")
+    @MainActor
+    func insertionAfterLastPointFallsBackToAppend() async throws {
+        let last = Point(
+            id: "last", routeId: "route",
+            coordinate: Coordinate(latitude: 35.1, longitude: 139.1),
+            time: SimpleTime(hour: 10, minute: 0), anchor: .end
+        )
+        var initial = try makeState(mode: .update, points: [last])
+        initial.point = PointEditFeature.State(
+            last, districtId: initial.district.id, appState: Shared(value: nil)
+        )
+        let store = TestStore(initialState: initial) {
+            RouteEditFeature()
+        } withDependencies: { $0.installTestSpies() }
+        store.exhaustivity = .off
+
+        await store.send(.point(.presented(.insertAfterTapped)))
+        #expect(store.state.operation == .add)
+        #expect(store.state.point == nil)
+        #expect(store.state.points.map(\.id) == ["last"])
+        await store.finish()
+    }
+
+    @Test("過去の経路を選んだ時にRouteIDをUseCaseへ渡しコピーとして取り込む")
+    @MainActor
+    func sourceSelectedLoadsRoutePackBeforeCopying() async throws {
+        let source = AppStateFixture.route(id: "source-route", description: "history")
+        let pack = RoutePack(route: source, points: [], passages: [])
+        let spy = RouteEditFetchPackSpy(pack: pack)
+        let initialState = try makeState(mode: .update)
+        let store = TestStore(initialState: initialState) {
+            RouteEditFeature()
+        } withDependencies: {
+            $0.installTestSpies()
+            $0[FetchRoutePackUseCaseKey.self] = spy
+        }
+        store.exhaustivity = .off
+
+        await store.send(.sourceSelected(.init(period: AppStateFixture.period(), route: source)))
+        await store.receive(.copyPrepared(.success(pack)))
+        #expect(await spy.ids == [source.id])
+        #expect(!store.state.isSourceLoading)
+        #expect(store.state.mode == .create)
+        #expect(store.state.route.id != source.id)
+        #expect(store.state.route.districtId == "district")
+        await store.finish()
+    }
+
     private func makeState(
         mode: RouteEditFeature.EditMode,
         points: [Point] = []
@@ -925,5 +1009,19 @@ private actor RouteEditDeleteFailureSpy: DeleteRouteUseCaseProtocol {
     func callAsFunction(routeId: Route.ID, appState: Shared<AppState?>) async throws {
         deletedIDs.append(routeId)
         throw error
+    }
+}
+
+private actor RouteEditFetchPackSpy: FetchRoutePackUseCaseProtocol {
+    let pack: RoutePack
+    private(set) var ids: [Route.ID] = []
+
+    init(pack: RoutePack) {
+        self.pack = pack
+    }
+
+    func callAsFunction(routeId: Route.ID) async throws -> RoutePack {
+        ids.append(routeId)
+        return pack
     }
 }

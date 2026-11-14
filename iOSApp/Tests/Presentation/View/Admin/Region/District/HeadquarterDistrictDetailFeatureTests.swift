@@ -385,6 +385,45 @@ struct HeadquarterDistrictDetailFeatureTests {
         #expect(store.state.district.name == "offline-name")
         await store.finish()
     }
+
+    @Test("編集済み経路でも期間が削除されていればプレビューを開かず再取得も行わない")
+    @MainActor
+    func cachedDraftWithRemovedPeriodDoesNotOpenPreview() async {
+        let route = AppStateFixture.route(periodId: "obsolete-period")
+        let load = DetailRouteLoadSpy(pack: nil)
+        var initial = makeState()
+        initial.routeDrafts[route.id] = RouteDraft(route: route, points: [], passages: [])
+        let store = TestStore(initialState: initial) {
+            HeadquarterDistrictDetailFeature()
+        } withDependencies: {
+            $0.installTestSpies()
+            $0[LoadRouteStateUseCaseKey.self] = load
+        }
+        store.exhaustivity = .off
+
+        await store.send(.routeSelected(.init(
+            period: AppStateFixture.period(), route: route
+        )))
+        #expect(store.state.destination == nil)
+        #expect(!store.state.isLoading)
+        #expect(await load.ids.isEmpty)
+        #expect(store.state.routeDrafts[route.id] != nil)
+        await store.finish()
+    }
+
+    @Test("祭典状態がなくても経路一覧は空として扱い地区の下書きを保持する")
+    func absentSessionShowsEmptySlotsWithoutLosingDraft() {
+        let district = AppStateFixture.district(name: "unsaved district")
+        var state = HeadquarterDistrictDetailFeature.State(
+            district, appState: Shared(value: nil)
+        )
+        let route = AppStateFixture.route()
+        state.routeDrafts[route.id] = RouteDraft(route: route, points: [], passages: [])
+
+        #expect(state.routes.isEmpty)
+        #expect(state.district.name == "unsaved district")
+        #expect(state.routeDrafts[route.id]?.route.id == route.id)
+    }
     private func makeState() -> HeadquarterDistrictDetailFeature.State {
         HeadquarterDistrictDetailFeature.State(
             AppStateFixture.district(),

@@ -616,8 +616,9 @@ private actor TrackingLocationUsecaseSpy: LocationUsecaseProtocol {
         return initialHistory
     }
     func historyStream() async -> AsyncStream<[Status]> {
-        AsyncStream { continuation in
-            for history in streamedHistory { continuation.yield(history) }
+        let samples = streamedHistory
+        return AsyncStream { continuation in
+            for history in samples { continuation.yield(history) }
             continuation.finish()
         }
     }
@@ -633,8 +634,9 @@ private actor TrackingLocationUsecaseSpy: LocationUsecaseProtocol {
     func stop(id: String) async { stopIDs.append(id) }
     func getLocation() async -> AsyncValue<CLLocation> { .loading }
     func locationUpdateStream() async -> AsyncStream<FloatLocation> {
-        AsyncStream { continuation in
-            for location in streamedLocations { continuation.yield(location) }
+        let samples = streamedLocations
+        return AsyncStream { continuation in
+            for location in samples { continuation.yield(location) }
             continuation.finish()
         }
     }

@@ -415,6 +415,63 @@ struct DistrictDashboardFeatureTests {
         #expect(store.state.alert != nil)
         await store.finish()
     }
+
+    @Test("位置配信間隔が保存されていなければ標準の1分間隔で設定画面を開く")
+    @MainActor
+    func locationPreparationWithoutIntervalUsesDefault() async {
+        let store = TestStore(initialState: makeState()) {
+            DistrictDashboardFeature()
+        } withDependencies: { $0.installTestSpies() }
+        store.exhaustivity = .off
+
+        await store.send(.locationPrepared(
+            isTracking: false,
+            interval: nil,
+            permissionState: .init(
+                authorizationStatus: .notDetermined,
+                hasRequestedAlwaysLocationPermission: false
+            )
+        ))
+        #expect(store.state.destination?.location?.id == "district")
+        #expect(store.state.destination?.location?.selectedInterval == .sample)
+        #expect(store.state.destination?.location?.isTracking == false)
+        await store.finish()
+    }
+
+    @Test("地区編集完了後は編集画面を閉じAppStateにある地区を保持する")
+    @MainActor
+    func districtEditCompletionClosesEditor() async {
+        let store = TestStore(initialState: makeState()) {
+            DistrictDashboardFeature()
+        } withDependencies: { $0.installTestSpies() }
+        store.exhaustivity = .off
+
+        await store.send(.onEdit)
+        #expect(store.state.destination?.edit != nil)
+        await store.send(.destination(.presented(.edit(.postReceived(.success)))))
+        #expect(store.state.destination == nil)
+        #expect(store.state.district.id == "district")
+        await store.finish()
+    }
+
+    @Test("画面から戻ったとき共有AppStateに更新された経路一覧を再構築する")
+    @MainActor
+    func dismissedChildRefreshesRouteSlots() async {
+        let appState = Shared<AppState?>(value: AppStateFixture.state())
+        let initial = DistrictDashboardFeature.State(
+            AppStateFixture.district(), appState: appState
+        )
+        let store = TestStore(initialState: initial) {
+            DistrictDashboardFeature()
+        } withDependencies: { $0.installTestSpies() }
+        store.exhaustivity = .off
+        let route = AppStateFixture.route()
+
+        appState.withLock { $0 = AppStateFixture.state(routes: [route]) }
+        await store.send(.destination(.dismiss))
+        #expect(store.state.routes.contains { $0.route?.id == route.id })
+        await store.finish()
+    }
     private func makeState() -> DistrictDashboardFeature.State {
         DistrictDashboardFeature.State(
             AppStateFixture.district(),

@@ -492,15 +492,7 @@ struct SettingsFeatureTests {
         await store.finish()
     }
 
-}
 
-private actor SettingsSignOutUseCaseSpy: SignOutUseCaseProtocol {
-    private(set) var calls = 0
-
-    func callAsFunction(appState: Shared<AppState?>) async throws -> LaunchState {
-        calls += 1
-        return .onboarding
-    }
     @Test("確定済みと同じ祭典や未選択の祭典は切替UseCaseを呼ばない")
     @MainActor
     func duplicateOrNilFestivalSelectionIsIgnored() async {
@@ -544,5 +536,15 @@ private actor SettingsSignOutUseCaseSpy: SignOutUseCaseProtocol {
         await store.finish()
     }
 
+
+}
+
+private actor SettingsSignOutUseCaseSpy: SignOutUseCaseProtocol {
+    private(set) var calls = 0
+
+    func callAsFunction(appState: Shared<AppState?>) async throws -> LaunchState {
+        calls += 1
+        return .onboarding
+    }
 
 }

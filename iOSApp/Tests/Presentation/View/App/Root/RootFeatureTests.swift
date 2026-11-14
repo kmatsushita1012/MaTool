@@ -1002,6 +1002,55 @@ private struct RootFeatureFixture {
             ),
         )
     }
+
+    @Test("地区管理者の画面でログアウトした時もRootが管理者状態と最終画面記録を破棄する")
+    @MainActor
+    func districtAdminSignOutResetsNavigation() async {
+        let fixture = RootFeatureFixture()
+        let appState = Shared<AppState?>(value: fixture.appState)
+        let role = UserRole.district(fixture.district.id)
+        var initial = RootFeature.State(appState: appState)
+        initial.$launchState.withLock { $0 = .district(role, nil) }
+        initial.map = initial.makeMapState(userRole: role)
+        initial.destination = .adminDistrict(.init(fixture.district, appState: appState))
+        let lastScreen = LastMainScreenUseCaseSpy(value: .admin)
+        let store = TestStore(initialState: initial) {
+            RootFeature()
+        } withDependencies: {
+            $0.installTestSpies()
+            $0[LastMainScreenUseCaseKey.self] = lastScreen
+        }
+        store.exhaustivity = .off
+
+        await store.send(.destination(.presented(.adminDistrict(
+            .signOutReceived(.success(.festival(.guest)))
+        ))))
+        #expect(store.state.launchState == .festival(.guest))
+        #expect(store.state.map?.userRole == .guest)
+        #expect(store.state.destination == nil)
+        #expect(lastScreen.value == nil)
+        await store.finish()
+    }
+
+    @Test("Rootのエラー通知を閉じる操作は現在の画面状態を変えずAlertだけ破棄する")
+    @MainActor
+    func rootAlertAcknowledgementDoesNotChangeScene() async {
+        let fixture = RootFeatureFixture()
+        var initial = RootFeature.State(appState: Shared<AppState?>(value: fixture.appState))
+        initial.$launchState.withLock { $0 = .festival(.guest) }
+        initial.map = initial.makeMapState(userRole: .guest)
+        initial.alert = .error("サーバーに接続できませんでした")
+        let store = TestStore(initialState: initial) {
+            RootFeature()
+        } withDependencies: { $0.installTestSpies() }
+        store.exhaustivity = .off
+
+        await store.send(.alert(.presented(.okTapped)))
+        #expect(store.state.alert == nil)
+        #expect(store.state.launchState == .festival(.guest))
+        #expect(store.state.map != nil)
+        await store.finish()
+    }
 }
 
 private func rootTestConstantValues() -> ConstantValues {
