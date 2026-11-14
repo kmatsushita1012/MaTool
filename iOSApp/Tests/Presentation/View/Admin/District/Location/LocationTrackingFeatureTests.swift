@@ -452,12 +452,141 @@ struct LocationTrackingFeatureTests {
         #expect(await usecase.historyQueries == 1)
     }
 
+    @Test("追跡停止時の削除失敗は停止処理を取り消さずエラー履歴に残す")
+    @MainActor
+    func trackingStopDeleteFailureRecordsError() async {
+        let error = AppError.be(.network("delete offline"))
+        let permission = LocationPermissionState(
+            authorizationStatus: .authorizedAlways,
+            hasRequestedAlwaysLocationPermission: true
+        )
+        let usecase = TrackingLocationUsecaseSpy(permission: permission)
+        let delete = TrackingDeleteLocationSpy(error: error)
+        let store = TestStore(initialState: makeState(authorized: .authorizedAlways, isTracking: true)) {
+            LocationTrackingFeature()
+        } withDependencies: {
+            $0.installTestSpies()
+            $0.locationUsecase = usecase
+            $0[DeleteLocationUseCaseKey.self] = delete
+        }
+        store.exhaustivity = .off
+
+        await store.send(.binding(.set(\.isTracking, false)))
+        await store.receive(.locationPermissionStateRefreshed(permission))
+        await store.finish()
+
+        #expect(!store.state.isTracking)
+        #expect(await usecase.stopIDs == ["district"])
+        #expect(await delete.deletedIDs == ["district"])
+        #expect(await usecase.deleteRecords == 0)
+        #expect(await usecase.errors == [error.message])
+    }
+
+    @Test("非同期追跡開始の結果が遅れて到着し削除も失敗した場合は理由を記録する")
+    @MainActor
+    func lateTrackingStartDeleteFailureRecordsError() async {
+        let error = AppError.be(.network("delete offline"))
+        let permission = LocationPermissionState(
+            authorizationStatus: .authorizedAlways,
+            hasRequestedAlwaysLocationPermission: true
+        )
+        let usecase = TrackingLocationUsecaseSpy(permission: permission)
+        let delete = TrackingDeleteLocationSpy(error: error)
+        let store = TestStore(initialState: makeState()) {
+            LocationTrackingFeature()
+        } withDependencies: {
+            $0.installTestSpies()
+            $0.locationUsecase = usecase
+            $0[DeleteLocationUseCaseKey.self] = delete
+        }
+        store.exhaustivity = .off
+
+        await store.send(.trackingStartResultReceived(.started(permission)))
+        await store.finish()
+
+        #expect(!store.state.isTracking)
+        #expect(store.state.isAlwaysLocationAuthorized)
+        #expect(await usecase.stopIDs == ["district"])
+        #expect(await delete.deletedIDs == ["district"])
+        #expect(await usecase.deleteRecords == 0)
+        #expect(await usecase.errors == [error.message])
+    }
+
+    @Test("起動後の位置履歴ストリーム更新は初期履歴を新しい履歴へ置き換える")
+    @MainActor
+    func streamedHistoryUpdatesReplaceInitialHistory() async {
+        let initialLocation = FloatLocation(
+            id: "old", districtId: "district",
+            coordinate: Coordinate(latitude: 35, longitude: 139)
+        )
+        let newLocation = FloatLocation(
+            id: "new", districtId: "district",
+            coordinate: Coordinate(latitude: 35.1, longitude: 139.1)
+        )
+        let permission = LocationPermissionState(
+            authorizationStatus: .authorizedAlways,
+            hasRequestedAlwaysLocationPermission: true
+        )
+        let usecase = TrackingLocationUsecaseSpy(
+            permission: permission,
+            history: [.update(initialLocation)],
+            streamedHistory: [[.update(newLocation)]]
+        )
+        let store = TestStore(initialState: makeState()) {
+            LocationTrackingFeature()
+        } withDependencies: {
+            $0.installTestSpies()
+            $0.locationUsecase = usecase
+        }
+        store.exhaustivity = .off
+
+        await store.send(.onAppear)
+        await store.receive(.historyUpdated([.update(initialLocation)]))
+        await store.receive(.historyUpdated([.update(newLocation)]))
+        #expect(store.state.history == [.update(newLocation)])
+        await store.finish()
+        #expect(await usecase.historyQueries == 1)
+    }
+
+    @Test("起動後の位置ストリーム更新は保存処理へ通知しサーバー応答を履歴に残す")
+    @MainActor
+    func streamedLocationUpdatesInvokeSaveUseCase() async {
+        let location = FloatLocation(
+            id: "streamed", districtId: "district",
+            coordinate: Coordinate(latitude: 35.2, longitude: 139.2)
+        )
+        let permission = LocationPermissionState(
+            authorizationStatus: .authorizedAlways,
+            hasRequestedAlwaysLocationPermission: true
+        )
+        let usecase = TrackingLocationUsecaseSpy(
+            permission: permission, streamedLocations: [location]
+        )
+        let save = TrackingSaveLocationSpy()
+        let store = TestStore(initialState: makeState()) {
+            LocationTrackingFeature()
+        } withDependencies: {
+            $0.installTestSpies()
+            $0.locationUsecase = usecase
+            $0[SaveLocationUseCaseKey.self] = save
+        }
+        store.exhaustivity = .off
+
+        await store.send(.onAppear)
+        await store.receive(.locationUpdateRequested(location))
+        await store.finish()
+        #expect(await save.savedIDs == ["streamed"])
+        #expect(await usecase.updatedIDs == ["streamed"])
+    }
+
 }
 
 
 private actor TrackingLocationUsecaseSpy: LocationUsecaseProtocol {
     let permission: LocationPermissionState
     let initialHistory: [Status]
+    let streamedHistory: [[Status]]
+    let streamedLocations: [FloatLocation]
     private(set) var permissionQueries = 0
     private(set) var permissionRequests = 0
     private(set) var historyQueries = 0
@@ -467,9 +596,16 @@ private actor TrackingLocationUsecaseSpy: LocationUsecaseProtocol {
     private(set) var deleteRecords = 0
     private(set) var errors: [String] = []
 
-    init(permission: LocationPermissionState, history: [Status] = []) {
+    init(
+        permission: LocationPermissionState,
+        history: [Status] = [],
+        streamedHistory: [[Status]] = [],
+        streamedLocations: [FloatLocation] = []
+    ) {
         self.permission = permission
         self.initialHistory = history
+        self.streamedHistory = streamedHistory
+        self.streamedLocations = streamedLocations
     }
 
     func prepareTracking() async -> LocationTrackingPreparation {
@@ -480,7 +616,10 @@ private actor TrackingLocationUsecaseSpy: LocationUsecaseProtocol {
         return initialHistory
     }
     func historyStream() async -> AsyncStream<[Status]> {
-        AsyncStream { continuation in continuation.finish() }
+        AsyncStream { continuation in
+            for history in streamedHistory { continuation.yield(history) }
+            continuation.finish()
+        }
     }
     func requestPermission() async { permissionRequests += 1 }
     func locationPermissionState() async -> LocationPermissionState {
@@ -494,7 +633,10 @@ private actor TrackingLocationUsecaseSpy: LocationUsecaseProtocol {
     func stop(id: String) async { stopIDs.append(id) }
     func getLocation() async -> AsyncValue<CLLocation> { .loading }
     func locationUpdateStream() async -> AsyncStream<FloatLocation> {
-        AsyncStream { continuation in continuation.finish() }
+        AsyncStream { continuation in
+            for location in streamedLocations { continuation.yield(location) }
+            continuation.finish()
+        }
     }
     func recordLocationUpdate(_ location: FloatLocation) async {
         updatedIDs.append(location.id)
@@ -516,8 +658,15 @@ private actor TrackingSaveLocationSpy: SaveLocationUseCaseProtocol {
 }
 
 private actor TrackingDeleteLocationSpy: DeleteLocationUseCaseProtocol {
+    let error: AppError?
     private(set) var deletedIDs: [District.ID] = []
+
+    init(error: AppError? = nil) {
+        self.error = error
+    }
+
     func callAsFunction(districtId: District.ID, appState: Shared<AppState?>) async throws {
         deletedIDs.append(districtId)
+        if let error { throw error }
     }
 }

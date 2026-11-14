@@ -221,6 +221,73 @@ struct PublicLocationsFeatureTests {
         await store.finish()
     }
 
+    @Test("端末の現在地取得が失敗した場合は取得元エラーを通知して地図を動かさない")
+    @MainActor
+    func userLocationFailureShowsProviderError() async {
+        let fixture = LocationMapFixture(locations: [])
+        let error = AppError.be(.network("gps unavailable"))
+        let provider = LocationsMapLocationSpy(result: .failure(error))
+        let initial = fixture.makeState()
+        let originalRegion = initial.mapRegion
+        let store = TestStore(initialState: initial) {
+            PublicLocationsFeature()
+        } withDependencies: {
+            $0.installPublicLocationsTestDependencies()
+            $0.mapLocationProvider = provider
+        }
+        store.exhaustivity = .off
+
+        await store.send(.userFocusTapped)
+        await store.receive(.userLocationFailed(error.message))
+        #expect(store.state.toast != nil)
+        #expect(store.state.mapRegion.center.latitude == originalRegion.center.latitude)
+        #expect(store.state.mapRegion.center.longitude == originalRegion.center.longitude)
+        #expect(await provider.requests == 1)
+        await store.send(.toastDismissed)
+        await store.finish()
+    }
+
+    @Test("有効な現在地情報があれば初回表示で不要な通知タイマーは開始しない")
+    @MainActor
+    func onAppearWithoutToastLeavesMapUnchanged() async {
+        let fixture = LocationMapFixture(locations: [
+            FloatLocation(
+                id: "active", districtId: "first",
+                coordinate: .init(latitude: 35.4, longitude: 139.4)
+            )
+        ])
+        let store = TestStore(initialState: fixture.makeState()) {
+            PublicLocationsFeature()
+        } withDependencies: { $0.installPublicLocationsTestDependencies() }
+        let region = store.state.mapRegion
+
+        #expect(store.state.toast == nil)
+        await store.send(.onAppear)
+        #expect(store.state.toast == nil)
+        #expect(store.state.mapRegion.center.latitude == region.center.latitude)
+        #expect(store.state.mapRegion.center.longitude == region.center.longitude)
+        await store.finish()
+    }
+
+    @Test("祭典データが消えていても位置の再取得結果を安全に受け入れ地図を保持する")
+    @MainActor
+    func reloadSuccessWithoutAppStateDoesNotChangeMapRegion() async {
+        let fixture = LocationMapFixture(locations: [])
+        let initial = fixture.makeState()
+        let oldRegion = initial.mapRegion
+        fixture.appState.withLock { $0 = nil }
+        let store = TestStore(initialState: initial) {
+            PublicLocationsFeature()
+        } withDependencies: { $0.installPublicLocationsTestDependencies() }
+        store.exhaustivity = .off
+
+        await store.send(.reloadReceived(.success([])))
+        #expect(store.state.mapRegion.center.latitude == oldRegion.center.latitude)
+        #expect(store.state.mapRegion.center.longitude == oldRegion.center.longitude)
+        #expect(store.state.floats.isEmpty)
+        await store.finish()
+    }
+
 }
 
 private struct LocationMapFixture {

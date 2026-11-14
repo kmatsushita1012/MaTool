@@ -317,6 +317,133 @@ struct PublicMapFeatureTests {
         await store.finish()
     }
 
+    @Test("読み込み済みの町を表示するときは地区を二重取得せず位置追跡だけ開始する")
+    @MainActor
+    func routeOnAppearDoesNotReloadLoadedDistrict() async {
+        let fixture = PeriodSelectionFixture()
+        let load = UnconfiguredLoadDistrictStateUseCaseSpy()
+        let location = MapLocationProviderSpy()
+        let ad = PublicMapAdUsecaseSpy()
+        let initial = PublicMapFeature.State(
+            festival: fixture.festival,
+            district: fixture.currentDistrict,
+            routeId: fixture.currentRoute.id,
+            userRole: .guest,
+            appState: fixture.appState
+        )
+        let store = TestStore(initialState: initial) {
+            PublicMapFeature()
+        } withDependencies: {
+            $0.installTestSpies()
+            $0[LoadDistrictStateUseCaseKey.self] = load
+            $0.mapLocationProvider = location
+            $0[PublicMapAdUsecaseKey.self] = ad
+        }
+        store.exhaustivity = .off
+
+        await store.send(.onAppear)
+        await store.finish()
+
+        #expect(store.state.destination?.route?.selectedRouteId == fixture.currentRoute.id)
+        #expect(!store.state.isLoading)
+        #expect((await load.requestedDistrictIDs).isEmpty)
+        #expect(await location.permissionRequests == 1)
+        #expect(await location.trackingStarts == 1)
+        #expect(await ad.sessionPreparations == 1)
+    }
+
+    @Test("初期表示の町が未読込なら開催期間外でも読み込みを開始する")
+    @MainActor
+    func routeOnAppearLoadsNewDistrictWithCurrentPeriod() async {
+        let fixture = PeriodSelectionFixture()
+        let load = DistrictLoadSpy(response: LaunchDistrictPack(
+            performances: [],
+            routes: [fixture.nextRoute],
+            points: [],
+            passages: [],
+            currentRouteId: fixture.nextRoute.id
+        ))
+        let initial = PublicMapFeature.State(
+            festival: fixture.festival,
+            district: fixture.nextDistrict,
+            routeId: nil,
+            userRole: .guest,
+            appState: fixture.appState
+        )
+        let store = TestStore(initialState: initial) {
+            PublicMapFeature()
+        } withDependencies: {
+            $0.installTestSpies()
+            $0[LoadDistrictStateUseCaseKey.self] = load
+            $0[PublicMapAdUsecaseKey.self] = PublicMapAdUsecaseSpy()
+        }
+        store.exhaustivity = .off
+
+        await store.send(.onAppear)
+        await store.receive(.districtLaunchReceived(.success(
+            .init(districtId: fixture.nextDistrict.id, routeId: fixture.nextRoute.id)
+        )))
+        #expect(await load.receivedPeriodId() == nil)
+        await store.finish()
+    }
+
+    @Test("AppStateがない場合は祭典名・町名・期間を空の安全な状態として扱う")
+    func absentAppStateUsesSafeFallbackMapContents() {
+        let state = PublicMapFeature.State(
+            festival: AppStateFixture.festival(),
+            userRole: .guest,
+            appState: Shared<AppState?>(value: nil)
+        )
+        #expect(state.contents == [.locations])
+        #expect(state.districtContentGroups.isEmpty)
+        #expect(state.festivalTitle == "")
+        #expect(state.currentPeriodId == nil)
+        #expect(state.selectedPeriodId == nil)
+        #expect(state.contentTitles == [.locations: "現在地一覧"])
+    }
+
+    @Test("AppState消失後の現在地選択は不完全な子画面を再構築しない")
+    @MainActor
+    func locationsSelectionWithoutSessionDoesNotRecreateChild() async {
+        let appState = Shared<AppState?>(value: AppStateFixture.state())
+        var initial = PublicMapFeature.State(
+            festival: AppStateFixture.festival(),
+            userRole: .guest,
+            appState: appState
+        )
+        initial.selectedContent = .route("district")
+        appState.withLock { $0 = nil }
+        let store = TestStore(initialState: initial) {
+            PublicMapFeature()
+        } withDependencies: { $0.installTestSpies() }
+        store.exhaustivity = .off
+
+        await store.send(.contentSelected(.locations))
+        #expect(store.state.selectedContent == .locations)
+        #expect(store.state.destination?.locations?.festivalId == "festival")
+        #expect(!store.state.isLoading)
+        await store.finish()
+    }
+
+    @Test("空白だけの地区グループは名前なしの同一グループにまとめる")
+    func blankGroupNamesAreTreatedAsUngrouped() {
+        let festival = AppStateFixture.festival()
+        let districts = [
+            District(id: "without", name: "A", festivalId: festival.id),
+            District(id: "blank", name: "B", festivalId: festival.id, group: "  \t  ")
+        ]
+        let state = PublicMapFeature.State(
+            festival: festival,
+            userRole: .guest,
+            appState: Shared(value: AppStateFixture.state(districts: districts))
+        )
+        #expect(state.districtContentGroups.count == 1)
+        #expect(state.districtContentGroups.first?.name == nil)
+        #expect(Set(state.districtContentGroups.flatMap(\.contents)) == Set([
+            .route("without"), .route("blank")
+        ]))
+    }
+
 }
 
 private struct PeriodSelectionFixture {
