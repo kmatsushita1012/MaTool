@@ -55,7 +55,7 @@ struct ConfirmSignInUseCase: ConfirmSignInUseCaseProtocol {
             }
             userDefaults.saveDefaultFestivalId(festivalResponse.festival.id)
             userDefaults.saveDefaultDistrictId(districtId)
-        case .guest:
+        case .guest, .advertiser:
             break
         }
         return role

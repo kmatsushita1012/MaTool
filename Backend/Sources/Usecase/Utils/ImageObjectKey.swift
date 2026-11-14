@@ -10,7 +10,8 @@ struct ImageObjectKey: Sendable, Equatable {
         let base: String
         switch (target.type, target.variant) {
         case (.store, .banner), (.store, .interstitial):
-            base = "stores/\(id)"
+            guard let festivalId else { throw Error.badRequest("祭典IDが必要です。") }
+            base = "festivals/\(try Self.component(festivalId))/stores/\(id)"
         case (.festival, .light), (.festival, .dark):
             base = "festivals/\(id)"
         case (.district, .light), (.district, .dark):

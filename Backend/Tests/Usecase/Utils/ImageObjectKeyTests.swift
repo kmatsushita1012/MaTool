@@ -16,10 +16,26 @@ struct ImageObjectKeyTests {
         #expect(key.temporary == "temporary/festivals/%2E%2E%2F%E7%A5%AD/light.jpg")
     }
 
+    @Test("Store画像を祭典配下に生成して既存のS3権限で公開できる")
+    func createsStoreKeysWithinFestivalPrefix() throws {
+        let key = try ImageObjectKey(
+            target: .init(type: .store, id: "store-1", variant: .banner),
+            festivalId: "festival-1"
+        )
+        #expect(key.temporary == "temporary/festivals/festival-1/stores/store-1/banner.jpg")
+        #expect(key.permanent == "festivals/festival-1/stores/store-1/banner.jpg")
+    }
+
     @Test("未対応の組み合わせと空IDを拒否する")
     func rejectsInvalidCombinationsAndMissingIDs() {
         #expect(throws: Error.self) {
-            try ImageObjectKey(target: .init(type: .store, id: "store", variant: .light))
+            try ImageObjectKey(target: .init(type: .store, id: "store", variant: .banner))
+        }
+        #expect(throws: Error.self) {
+            try ImageObjectKey(
+                target: .init(type: .store, id: "store", variant: .banner),
+                festivalId: ""
+            )
         }
         #expect(throws: Error.self) {
             try ImageObjectKey(target: .init(type: .district, id: "district", variant: .light))

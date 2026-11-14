@@ -49,6 +49,14 @@ struct DynamoDBEncoder {
         }
     }
 
+    func encodeValue<T: Encodable>(_ value: T) throws -> DynamoDBClientTypes.AttributeValue {
+        let jsonEncoder = JSONEncoder()
+        jsonEncoder.keyEncodingStrategy = .convertToSnakeCase
+        let data = try jsonEncoder.encode(value)
+        let jsonObject = try JSONSerialization.jsonObject(with: data, options: [.fragmentsAllowed])
+        return try convertToAttributeValue(jsonObject)
+    }
+
     // MARK: - 再帰変換
     private func convertToAttributeValue(_ value: Any) throws -> DynamoDBClientTypes.AttributeValue {
 

@@ -10,6 +10,21 @@
 ## Backend
 
 - レイヤードアーキテクチャを使用する。
+- 各レイヤーの責務、禁止事項、依存方向を次のとおりにする。
+
+| レイヤー | 責務 | 禁止する処理・依存 | 依存先 |
+| --- | --- | --- | --- |
+| Router / Infrastructure | ルート登録、ミドルウェア構成、実行環境や API Gateway アダプターの初期化 | 業務判断、永続化、外部 API の呼び出し | Controller、実行基盤 |
+| Controller | HTTP の入力 decode、Usecase 呼び出し、HTTP status とレスポンス encode | 業務ルール、Repository / Client の直接呼び出し、AWS SDK の利用 | Usecase、HTTP フレームワーク |
+| Usecase | アプリケーション処理の組み立て、認可、入力検証、業務ルールの適用、Repository / Client の調整 | HTTP request / response の操作、DynamoDB の式・属性値・SDK 型の操作 | Shared の型、Repository / Client の protocol |
+| Domain（Shared） | Entity / Value Object と、フレームワークに依存しない業務ルール | Backend の層、HTTP、AWS SDK、Database、Repository / Client への依存 | Shared 内の Domain 型 |
+| Repository（Data/Repository） | DataStore を通じた検索・保存、Record と Shared の型の変換 | 業務判断や編集可能項目の選別、DynamoDB の式・属性値・SDK 型の組み立て | DataStore、Shared の型 |
+| DataStore（Data/Database） | 汎用的な Record の永続化と、共通で必要な DB 処理の SDK への変換 | 業務ポリシー、HTTP の操作、個別 Usecase 専用の API | Database SDK |
+| Client（Data/Client・Data/Auth） | 外部サービスとの通信・認証と、その結果のアプリ内型への変換 | アプリケーション全体の業務フロー、Controller / HTTP response の操作 | 外部 SDK / API、Client protocol |
+
+- 依存方向は `Router / Infrastructure → Controller → Usecase → Repository / Client → DataStore / 外部 SDK` とし、Domain（Shared）は各層から利用する。内側の層から外側の層へ依存しない。
+- Repository は保存・検索の具体的な SDK 表現を作らず、既存の汎用 DataStore 操作を使う。個別案件の都合だけで DataStore に専用メソッドや専用トランザクション API を追加しない。
+- 強い原子性を全ユースケースの標準要件にしない。複数書き込みの all-or-nothing が仕様に明記されている場合だけ transaction を使い、DataStore に Usecase 固有の API や transaction API を増やさず既存の汎用操作を使う。
 - Backend 単独の作業では、原則としてローカルで実行・確認する。
 - Backend 単独の作業では、明示的な指示がある場合のみ push する。
 

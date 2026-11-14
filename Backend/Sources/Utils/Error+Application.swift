@@ -25,6 +25,8 @@ extension Error{
             return "Unauthorized"
         case .conflict(_):
             return "Conflict"
+        case .tooManyRequests(_):
+            return "Too Many Requests"
         case .encodingError(_):
             return "Encoding Error"
         case .decodingError(_):
@@ -40,6 +42,7 @@ extension Error{
         case .internalServerError: return 500
         case .unauthorized: return 401
         case .conflict: return 409
+        case .tooManyRequests: return 429
         case .encodingError, .decodingError: return 500
         }
     }
@@ -53,6 +56,7 @@ extension Error{
              .internalServerError(let message),
              .unauthorized(let message),
              .conflict(let message),
+             .tooManyRequests(let message),
              .encodingError(let message),
              .decodingError(let message):
             return message ?? "unknown"
@@ -87,6 +91,10 @@ extension Error {
     
     static func conflict(localizedDescription: String? = nil) -> Error {
         .conflict(localizedDescription)
+    }
+
+    static func tooManyRequests(localizedDescription: String? = nil) -> Error {
+        .tooManyRequests(localizedDescription)
     }
     
     static func encodingError(localizedDescription: String? = nil) -> Error {

@@ -6,6 +6,9 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-24.04
+    concurrency:
+      group: matool-backend-lambda-deploy
+      cancel-in-progress: false
     env:
       AWS_REGION: ${{ secrets.AWS_REGION }}
       LAMBDA_ARN: ${{ secrets.LAMBDA_ARN }}

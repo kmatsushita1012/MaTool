@@ -1,9 +1,37 @@
+import Foundation
 import Dependencies
 import Shared
 import Testing
 @testable import Backend
 
 struct ImageUploadUsecaseTests {
+    @Test("guestは3種すべての画像署名URLを取得できず401を返す")
+    func rejectsGuestWithUnauthorizedBeforeLookingUpTargets() async {
+        let images = ImageStorageClientSpy()
+        let requests = [
+            request(type: .store, id: "store-1", variant: .banner),
+            request(type: .festival, id: "festival-1", variant: .light),
+            request(type: .district, id: "district-1", variant: .dark)
+        ]
+
+        for request in requests {
+            do {
+                try await withDependencies {
+                    $0[ImageStorageClientKey.self] = images
+                } operation: {
+                    try await ImageUploadUsecase().issue(request, user: .guest)
+                }
+                Issue.record("guestの署名URL発行が成功しました。")
+            } catch let error as Application.Error {
+                #expect(error.statusCode == 401)
+            } catch {
+                Issue.record("予期しないエラー: \(error)")
+            }
+        }
+
+        #expect(await images.presignKeys.isEmpty)
+    }
+
     @Test("Festival本部本人だけがFestivalの署名URLを取得できる")
     func issuesFestivalUploadURLForOwningHeadquarter() async throws {
         let festival = Festival(
@@ -87,6 +115,35 @@ struct ImageUploadUsecaseTests {
             }
             #expect(await images.presignKeys.isEmpty)
         }
+    }
+
+    @Test("Store画像は所有者を確認し祭典配下の一時キーを発行する")
+    func issuesStoreUploadURLWithinFestivalPrefix() async throws {
+        let store = Store(
+            id: "store-1",
+            festivalId: "festival-1",
+            ownerId: "advertiser-1",
+            purchaseAccountToken: UUID(),
+            name: "Store",
+            address: nil,
+            coordinate: nil,
+            businessHours: "",
+            description: nil
+        )
+        let stores = StoreRepositorySpy(store: store)
+        let images = ImageStorageClientSpy()
+        let response = try await withDependencies {
+            $0[StoreRepositoryKey.self] = stores
+            $0[ImageStorageClientKey.self] = images
+        } operation: {
+            try await ImageUploadUsecase().issue(
+                request(type: .store, id: store.id, variant: .banner),
+                user: .advertiser("advertiser-1")
+            )
+        }
+
+        #expect(response.path == "temporary/festivals/festival-1/stores/store-1/banner.jpg")
+        #expect(await images.presignKeys == [response.path])
     }
 }
 
