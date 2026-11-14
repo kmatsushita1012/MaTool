@@ -42,6 +42,24 @@ struct DistrictDashboardFeatureTests {
         #expect(!state.isLoading)
     }
 
+    @Test("エラー確認で警告だけを解除し、管理画面を閉じても地区データを保持する")
+    @MainActor
+    func alertAcknowledgementAndDismissKeepDistrictState() async {
+        var initial = makeState()
+        initial.alert = AlertFeature.error("読み込みに失敗しました")
+        let store = TestStore(initialState: initial) {
+            DistrictDashboardFeature()
+        } withDependencies: { $0.installTestSpies() }
+
+        await store.send(.alert(.presented(.okTapped))) {
+            $0.alert = nil
+        }
+        await store.send(.dismissTapped)
+        #expect(store.state.district.id == initial.district.id)
+        #expect(store.state.destination == nil)
+        await store.finish()
+    }
+
     @Test("パスワードとメールアドレスの変更画面をそれぞれ開ける")
     @MainActor
     func credentialChangeScreensAreDistinct() async {

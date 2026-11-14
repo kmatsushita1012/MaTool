@@ -153,6 +153,22 @@ struct RouteEditFeatureTests {
         #expect(!state.canShowDistrictAreaOverlay)
     }
 
+    @Test("経路の説明文を編集しても保存アクションが届くまではAPI送信を開始しない")
+    @MainActor
+    func editingRouteDescriptionChangesOnlyDraft() async throws {
+        let initial = try makeState(mode: .update)
+        let store = TestStore(initialState: initial) {
+            RouteEditFeature()
+        } withDependencies: { $0.installTestSpies() }
+
+        await store.send(.binding(.set(\.route.description, "新しい経路説明"))) {
+            $0.route.description = "新しい経路説明"
+        }
+        #expect(store.state.route.description == "新しい経路説明")
+        #expect(!store.state.isLoading)
+        await store.finish()
+    }
+
     @Test("経路の端点と所属地区を正しい順序で表示し、2地点以上で自動通過町判定を許可する")
     func routePropertiesIdentifyEndpointsAndAutoPassageAvailability() throws {
         let first = Point(

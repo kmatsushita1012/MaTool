@@ -5,6 +5,23 @@ import Testing
 @testable import iOSApp
 
 struct HeadquarterDistrictDetailFeatureTests {
+    @Test("地区名の編集Bindingは下書きだけを更新し、保存前のAppStateには反映しない")
+    @MainActor
+    func editingDistrictNameUpdatesOnlyDraft() async {
+        let initial = makeState()
+        let original = initial.district.name
+        let store = TestStore(initialState: initial) {
+            HeadquarterDistrictDetailFeature()
+        } withDependencies: { $0.installTestSpies() }
+
+        await store.send(.binding(.set(\.district.name, "編集中の新しい地区名"))) {
+            $0.district.name = "編集中の新しい地区名"
+        }
+        #expect(store.state.district.name != original)
+        #expect(store.state.isSaving == false)
+        await store.finish()
+    }
+
     @Test("表示順は0から始まる永続値を1から始まる入力値へ変換する")
     func displayedOrderClampsInvalidInput() {
         var district = AppStateFixture.district()
