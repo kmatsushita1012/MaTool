@@ -594,6 +594,67 @@ struct RouteEditFeatureTests {
         await store.finish()
     }
 
+
+    @Test("有効な経路の保存は新規と更新それぞれのUseCaseへ整列した地点を渡す")
+    @MainActor
+    func validRouteSaveUsesCorrectUseCase() async throws {
+        let error = AppError.be(.network("offline"))
+        for mode in [RouteEditFeature.EditMode.create, .update] {
+            let first = Point(
+                id: "first", routeId: "route",
+                coordinate: Coordinate(latitude: 35, longitude: 139),
+                time: SimpleTime(hour: 9, minute: 0), anchor: .start, index: 0
+            )
+            let last = Point(
+                id: "last", routeId: "route",
+                coordinate: Coordinate(latitude: 36, longitude: 140),
+                time: SimpleTime(hour: 10, minute: 0), anchor: .end, index: 1
+            )
+            var initial = try makeState(mode: mode, points: [last, first])
+            initial.passages = [
+                RoutePassage(id: "passage", routeId: initial.route.id, districtId: "district", order: 0)
+            ]
+            let spy = RouteEditSavingSpy(error: error)
+            let store = TestStore(initialState: initial) {
+                RouteEditFeature()
+            } withDependencies: {
+                $0.installTestSpies()
+                $0[CreateRouteUseCaseKey.self] = spy
+                $0[UpdateRouteUseCaseKey.self] = spy
+            }
+            store.exhaustivity = .off
+
+            await store.send(.saveTapped)
+            #expect(store.state.isSaving)
+            await store.receive(.saveReceived(.failure(error)))
+            #expect(!store.state.isLoading)
+            #expect(store.state.alert?.notice != nil)
+            #expect(await spy.kinds == [mode == .create ? "create" : "update"])
+            #expect(await spy.pointIDs == [["first", "last"]])
+            #expect(await spy.passageIDs == [["passage"]])
+            await store.finish()
+        }
+    }
+
+    @Test("履歴コピーの要求で選択地区と祭典IDを渡し戻り値を履歴画面に反映する")
+    @MainActor
+    func copyTappedFetchesRouteHistory() async throws {
+        let entry = RouteEntry(period: AppStateFixture.period(), route: AppStateFixture.route())
+        let spy = RouteEditHistoryUseCaseSpy(entries: [entry])
+        let store = TestStore(initialState: try makeState(mode: .update)) {
+            RouteEditFeature()
+        } withDependencies: {
+            $0.installTestSpies()
+            $0[FetchRouteHistoryUseCaseKey.self] = spy
+        }
+        store.exhaustivity = .off
+
+        await store.send(.copyTapped)
+        await store.receive(.historyPrepared(.success([entry])))
+        #expect(store.state.destination == .history([entry]))
+        #expect(await spy.calls == ["district:festival"])
+        await store.finish()
+    }
     private func makeState(
         mode: RouteEditFeature.EditMode,
         points: [Point] = []
@@ -605,4 +666,48 @@ struct RouteEditFeatureTests {
         return try RouteEditFeature.State(mode: mode, route: route, appState: appState)
     }
 
+}
+
+
+private actor RouteEditSavingSpy: CreateRouteUseCaseProtocol, UpdateRouteUseCaseProtocol {
+    let error: AppError
+    private(set) var kinds: [String] = []
+    private(set) var pointIDs: [[String]] = []
+    private(set) var passageIDs: [[String]] = []
+
+    init(error: AppError) { self.error = error }
+
+    func callAsFunction(
+        districtId: District.ID, route: Route, points: [Point],
+        passages: [RoutePassage], appState: Shared<AppState?>
+    ) async throws -> RoutePack {
+        kinds.append("create")
+        pointIDs.append(points.map(\.id))
+        passageIDs.append(passages.map(\.id))
+        throw error
+    }
+
+    func callAsFunction(
+        _ route: Route, points: [Point], passages: [RoutePassage],
+        appState: Shared<AppState?>
+    ) async throws -> RoutePack {
+        kinds.append("update")
+        pointIDs.append(points.map(\.id))
+        passageIDs.append(passages.map(\.id))
+        throw error
+    }
+}
+
+private actor RouteEditHistoryUseCaseSpy: FetchRouteHistoryUseCaseProtocol {
+    let entries: [RouteEntry]
+    private(set) var calls: [String] = []
+
+    init(entries: [RouteEntry]) { self.entries = entries }
+
+    func callAsFunction(
+        districtId: District.ID, festivalId: Festival.ID
+    ) async throws -> [RouteEntry] {
+        calls.append("\(districtId):\(festivalId)")
+        return entries
+    }
 }

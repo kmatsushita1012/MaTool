@@ -377,6 +377,40 @@ struct DistrictEditFeatureTests {
         await store.finish()
     }
 
+    @Test("画像編集中でないときはシートを開閉でき、保存処理を開始しない")
+    @MainActor
+    func imageEditorTogglesWhenIdle() async throws {
+        let fixture = DistrictEditFixture()
+        let store = TestStore(
+            initialState: try DistrictEditFeature.State(fixture.district, appState: fixture.appState)
+        ) { DistrictEditFeature() } withDependencies: { $0.installTestSpies() }
+
+        await store.send(.imageEditTapped) { $0.isImageEditPresented = true }
+        await store.send(.imageEditDismissTapped) { $0.isImageEditPresented = false }
+        #expect(!store.state.isLoading)
+        await store.finish()
+    }
+
+    @Test("保存前に祭典の状態が失われたら座標編集画面を開かない")
+    @MainActor
+    func missingFestivalRejectsCoordinateNavigation() async throws {
+        let fixture = DistrictEditFixture()
+        let initial = try DistrictEditFeature.State(fixture.district, appState: fixture.appState)
+        fixture.appState.withLock { $0 = nil }
+        let store = TestStore(initialState: initial) {
+            DistrictEditFeature()
+        } withDependencies: { $0.installTestSpies() }
+        store.exhaustivity = .off
+        await store.send(.baseTapped)
+        #expect(store.state.destination == nil)
+        #expect(store.state.alert == .error("情報の取得に失敗しました"))
+        await store.send(.alert(.presented(.okTapped)))
+        await store.send(.areaTapped)
+        #expect(store.state.destination == nil)
+        #expect(store.state.alert == .error("情報の取得に失敗しました"))
+        await store.finish()
+    }
+
 }
 
 private struct DistrictEditFixture {

@@ -379,6 +379,42 @@ struct DistrictDashboardFeatureTests {
         await store.finish()
     }
 
+
+    @Test("既に削除された期間の経路パックは編集画面を開かず取得失敗を表示する")
+    @MainActor
+    func missingPeriodInRoutePackPreventsEditor() async {
+        let route = AppStateFixture.route(periodId: "missing-period")
+        let pack = RoutePack(route: route, points: [], passages: [])
+        var initial = makeState()
+        initial.isRouteLoading = true
+        let store = TestStore(initialState: initial) {
+            DistrictDashboardFeature()
+        } withDependencies: { $0.installTestSpies() }
+        store.exhaustivity = .off
+
+        await store.send(.routeEditReceived(.success(pack)))
+        #expect(!store.state.isRouteLoading)
+        #expect(store.state.destination == nil)
+        #expect(store.state.alert != nil)
+        await store.finish()
+    }
+
+    @Test("セッション喪失後は新しい経路の編集画面を開けない")
+    @MainActor
+    func noSessionBlocksNewRouteEditor() async {
+        let initial = DistrictDashboardFeature.State(
+            AppStateFixture.district(), appState: Shared(value: nil)
+        )
+        let store = TestStore(initialState: initial) {
+            DistrictDashboardFeature()
+        } withDependencies: { $0.installTestSpies() }
+        store.exhaustivity = .off
+
+        await store.send(.onRouteEdit(RouteSlot(period: AppStateFixture.period(), route: nil)))
+        #expect(store.state.destination == nil)
+        #expect(store.state.alert != nil)
+        await store.finish()
+    }
     private func makeState() -> DistrictDashboardFeature.State {
         DistrictDashboardFeature.State(
             AppStateFixture.district(),

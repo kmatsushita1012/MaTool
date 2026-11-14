@@ -205,4 +205,30 @@ struct UpdateEmailFeatureTests {
         await store.finish()
     }
 
+    @Test("メール入力と確認コード入力を閉じても更新APIは呼び出されない")
+    @MainActor
+    func dismissWithoutSubmitting() async {
+        let updateSpy = UpdateEmailUseCaseSpy(result: .success(.completed))
+        let confirmSpy = ConfirmUpdateEmailUseCaseSpy()
+        for codeStep in [false, true] {
+            var state = UpdateEmailFeature.State()
+            state.email = "draft@example.com"
+            if codeStep { state.step = .enterCode(destination: state.email) }
+            let store = TestStore(initialState: state) {
+                UpdateEmailFeature()
+            } withDependencies: {
+                $0.installTestSpies()
+                $0[UpdateEmailUseCaseKey.self] = updateSpy
+                $0[ConfirmUpdateEmailUseCaseKey.self] = confirmSpy
+            }
+            let action: UpdateEmailFeature.Action = codeStep
+                ? .enterCode(.dismissTapped) : .enterEmail(.dismissTapped)
+            await store.send(action)
+            #expect(store.state.email == "draft@example.com")
+            await store.finish()
+        }
+        #expect(await updateSpy.emails.isEmpty)
+        #expect(await confirmSpy.codes.isEmpty)
+    }
+
 }

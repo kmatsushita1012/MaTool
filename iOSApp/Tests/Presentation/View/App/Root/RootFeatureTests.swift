@@ -870,6 +870,43 @@ struct RootFeatureTests {
         await store.finish()
     }
 
+    @Test("起動済みのRootへ再びlaunchが届いても起動UseCaseを重複実行しない")
+    @MainActor
+    func duplicateLaunchDoesNotCallBackend() async {
+        var initial = RootFeature.State()
+        initial.didLaunch = true
+        let spy = LaunchSceneUseCaseSpy()
+        let store = TestStore(initialState: initial) {
+            RootFeature()
+        } withDependencies: {
+            $0.installTestSpies()
+            $0[LaunchSceneUseCaseKey.self] = spy
+        }
+        await store.send(.launch)
+        #expect(await spy.calls == 0)
+        await store.finish()
+    }
+
+    @Test("ゲストとして続行するとOnboardingを閉じて祭典地図へ切り替える")
+    @MainActor
+    func guestOnboardingCompletionOpensMap() async {
+        let fixture = RootFeatureFixture()
+        let appState = Shared<AppState?>(value: fixture.appState)
+        var initial = RootFeature.State(appState: appState)
+        initial.$launchState.withLock { $0 = .festival(.guest) }
+        initial.onboarding = initial.makeOnboardingState()
+        let store = TestStore(initialState: initial) {
+            RootFeature()
+        } withDependencies: { $0.installTestSpies() }
+        store.exhaustivity = .off
+
+        await store.send(.onboarding(.delegate(.continueAsGuest)))
+        #expect(store.state.onboarding == nil)
+        #expect(store.state.map?.userRole == .guest)
+        #expect(store.state.scene == .map)
+        await store.finish()
+    }
+
 }
 
 private struct RootFeatureFixture {

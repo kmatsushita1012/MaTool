@@ -225,4 +225,30 @@ struct ResetPasswordFeatureTests {
         await store.finish()
     }
 
+    @Test("ユーザー名画面と確認コード画面を閉じる場合はAPIを実行しない")
+    @MainActor
+    func dismissWithoutSubmitting() async {
+        let resetSpy = ResetPasswordUseCaseSpy()
+        let confirmSpy = ConfirmResetPasswordUseCaseSpy()
+        for codeStep in [false, true] {
+            var state = ResetPasswordFeature.State()
+            state.step = codeStep ? .enterCode : .enterUsername
+            state.username = "draft@example.com"
+            let store = TestStore(initialState: state) {
+                ResetPasswordFeature()
+            } withDependencies: {
+                $0.installTestSpies()
+                $0[ResetPasswordUseCaseKey.self] = resetSpy
+                $0[ConfirmResetPasswordUseCaseKey.self] = confirmSpy
+            }
+            let action: ResetPasswordFeature.Action = codeStep
+                ? .enterCode(.dismissTapped) : .enterUsername(.dismissTapped)
+            await store.send(action)
+            #expect(store.state.username == "draft@example.com")
+            await store.finish()
+        }
+        #expect(await resetSpy.usernames.isEmpty)
+        #expect(await confirmSpy.calls.isEmpty)
+    }
+
 }
