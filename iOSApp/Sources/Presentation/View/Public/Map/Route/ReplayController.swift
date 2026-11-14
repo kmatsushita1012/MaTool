@@ -28,7 +28,7 @@ final class ReplayController: ObservableObject {
     private var onEnd: (() -> Void)?
     private var index: Int = 0 {
         didSet{
-            seekValue = coords.isEmpty ? 0 : Double(index) / Double(coords.count - 1)
+            seekValue = coords.count <= 1 ? 0 : min(1, Double(index) / Double(coords.count - 1))
         }
     }
     
@@ -118,7 +118,8 @@ final class ReplayController: ObservableObject {
         timer = nil
     }
     
-    private func tick() {
+    // Internal to allow deterministic unit verification of replay progression.
+    func tick() {
         guard index < coords.count else {
             stop()
             onEnd?()
@@ -126,12 +127,12 @@ final class ReplayController: ObservableObject {
         }
         annotation?.coordinate = coords[index].toCL()
         index += 1
-        state = .playing(Double(index) / Double(max(coords.count-1, 1)))
+        state = .playing(min(1, Double(index) / Double(max(coords.count - 1, 1))))
     }
     
     // MARK: - Static interpolation
     private static func interpolateCoordinates(_ coords: [Coordinate], step: CLLocationDistance) -> [Coordinate] {
-        guard coords.count > 1 else { return coords }
+        guard coords.count > 1, step > 0 else { return coords }
         
         var result: [Coordinate] = []
         var prev = coords.first!

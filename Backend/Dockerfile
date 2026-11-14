@@ -45,7 +45,16 @@ WORKDIR /workspace
 COPY Shared/Sources ./Shared/Sources
 RUN mkdir -p Backend/Sources Backend/Tests Backend/Bootstrap && \
     touch Backend/.env && \
-    printf '@main struct DependencyPrebuild { static func main() {} }\n' \
+    printf '%s\n' \
+        'import Shared' \
+        'import AWSDynamoDB' \
+        'import AWSS3' \
+        'import AWSCognitoIdentityProvider' \
+        'import Dependencies' \
+        'import AWSLambdaRuntime' \
+        'import AWSLambdaEvents' \
+        'import ServiceLifecycle' \
+        '@main struct DependencyPrebuild { static func main() {} }' \
         > Backend/Sources/__DependencyPrebuild.swift
 
 WORKDIR /workspace/Backend

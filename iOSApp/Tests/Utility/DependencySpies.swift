@@ -8,6 +8,7 @@ import Testing
 // Every test explicitly installs these spies. Production dependency keys remain unchanged.
 extension DependencyValues {
     mutating func installTestSpies() {
+        self.locationUsecase = LocationUsecaseSpy()
         self[MapLocationProviderKey.self] = MapLocationProviderSpy()
         self[BroadcastLocationProviderKey.self] = BroadcastLocationProviderSpy()
         self[HTTPClientKey.self] = HTTPClientSpy()
@@ -90,6 +91,12 @@ actor BroadcastLocationProviderSpy: BroadcastLocationProviderProtocol {
     var authorization: CLAuthorizationStatus = .notDetermined
     var servicesEnabled = false
     private var onAlwaysAuthorizationRequest: (@Sendable () async -> Void)?
+    private var trackingCallback: ((AsyncValue<CLLocation>) async -> Void)?
+
+    func setServicesEnabled(_ enabled: Bool) { servicesEnabled = enabled }
+    func emitTrackingUpdate(_ result: AsyncValue<CLLocation>) async {
+        await trackingCallback?(result)
+    }
 
     init(authorizationStatus: CLAuthorizationStatus = .notDetermined) {
         authorization = authorizationStatus
@@ -108,6 +115,7 @@ actor BroadcastLocationProviderSpy: BroadcastLocationProviderProtocol {
     func startTracking(onUpdate: ((AsyncValue<CLLocation>) async -> Void)?) async {
         trackingStarts += 1
         isTracking = true
+        trackingCallback = onUpdate
     }
     func stopTracking() async {
         trackingStops += 1
@@ -398,4 +406,30 @@ actor FetchFestivalListUseCaseSpy: FetchFestivalListUseCaseProtocol {
         callCount += 1
         return festivals
     }
+}
+
+// A deterministic unit-test double for LocationTrackingFeature side effects.
+actor LocationUsecaseSpy: LocationUsecaseProtocol {
+    private(set) var permissionRequestCount = 0
+    private(set) var stoppedIDs: [String] = []
+    private(set) var errors: [AppError] = []
+
+    func prepareTracking() async -> LocationTrackingPreparation {
+        LocationTrackingPreparation(isTracking: false, interval: nil, permissionState: await locationPermissionState())
+    }
+    func getLocationHistory() async -> [Status] { [] }
+    func historyStream() async -> AsyncStream<[Status]> { AsyncStream { $0.finish() } }
+    func requestPermission() async { permissionRequestCount += 1 }
+    func locationPermissionState() async -> LocationPermissionState {
+        LocationPermissionState(authorizationStatus: .notDetermined, hasRequestedAlwaysLocationPermission: false)
+    }
+    func start(id: String, interval: Interval) async -> LocationTrackingStartResult {
+        .permissionRequired(await locationPermissionState())
+    }
+    func stop(id: String) async { stoppedIDs.append(id) }
+    func getLocation() async -> AsyncValue<CLLocation> { .loading }
+    func locationUpdateStream() async -> AsyncStream<FloatLocation> { AsyncStream { $0.finish() } }
+    func recordLocationUpdate(_ location: FloatLocation) async {}
+    func recordLocationDelete() async {}
+    func recordLocationError(_ error: AppError) async { errors.append(error) }
 }

@@ -74,9 +74,19 @@ public struct RootSceneView: View {
                         let introductionSheet = NavigationStack {
                             switch sheetStore.case {
                             case .festival(let infoStore):
-                                FestivalInfoView(store: infoStore, isSheetRoot: true)
+                                FestivalInfoView(
+                                    store: infoStore,
+                                    isSheetRoot: true,
+                                    showsCurrentLocationButton: false,
+                                    onCurrentLocationTapped: { store.send(.currentLocationTapped) },
+                                    onRouteTapped: { store.send(.routeTapped($0)) }
+                                )
                             case .district(let districtStore):
-                                DistrictIntroductionRootView(store: districtStore)
+                                DistrictIntroductionRootView(
+                                    store: districtStore,
+                                    onCurrentLocationTapped: { store.send(.currentLocationTapped) },
+                                    onRouteTapped: { store.send(.routeTapped($0)) }
+                                )
                             }
                         }
                         .presentationDetents([.medium, .large], selection: $infoSheetDetent)

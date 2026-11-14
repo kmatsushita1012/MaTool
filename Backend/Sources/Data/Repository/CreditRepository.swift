@@ -35,14 +35,14 @@ struct CreditRepository: CreditRepositoryProtocol {
         let names = ["#pk": "pk", "#sk": "sk", "#content": "content", "#balance": "balance", "#lastPurchasedAt": "last_purchased_at"]
         var values: [String: DynamoDBAttribute] = [
             ":oldBalance": try encoder.encodeValue(expected.balance),
-            ":newBalance": try encoder.encodeValue(newBalance),
-            ":nullType": try encoder.encodeValue("NULL")
+            ":newBalance": try encoder.encodeValue(newBalance)
         ]
         var condition = "attribute_exists(#pk) AND attribute_exists(#sk) AND #content.#balance = :oldBalance"
         if let oldDate = expected.lastPurchasedAt {
             values[":oldLastPurchasedAt"] = try encoder.encodeValue(oldDate)
             condition += " AND #content.#lastPurchasedAt = :oldLastPurchasedAt"
         } else {
+            values[":nullType"] = try encoder.encodeValue("NULL")
             condition += " AND attribute_type(#content.#lastPurchasedAt, :nullType)"
         }
         var updateExpression = "SET #content.#balance = :newBalance"

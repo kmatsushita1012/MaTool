@@ -11,9 +11,49 @@ import Foundation
 import Shared
 @preconcurrency import AWSCognitoIdentityProvider
 
-struct CognitoAuthManager: AuthManager {
+/// External AWS calls are captured at a single injectable boundary for deterministic unit tests.
+struct CognitoAuthService: Sendable {
+    var create: @Sendable (AdminCreateUserInput) async throws -> AdminCreateUserOutput
+    var disable: @Sendable (AdminDisableUserInput) async throws -> AdminDisableUserOutput
+    var delete: @Sendable (AdminDeleteUserInput) async throws -> AdminDeleteUserOutput
+    var getByToken: @Sendable (GetUserInput) async throws -> GetUserOutput
+    var getByUsername: @Sendable (AdminGetUserInput) async throws -> AdminGetUserOutput
+    var signUp: (@Sendable (SignUpInput) async throws -> SignUpOutput)?
+    var confirmSignUp: (@Sendable (ConfirmSignUpInput) async throws -> ConfirmSignUpOutput)?
 
-    private let client: CognitoIdentityProviderClient
+    init(
+        create: @escaping @Sendable (AdminCreateUserInput) async throws -> AdminCreateUserOutput,
+        disable: @escaping @Sendable (AdminDisableUserInput) async throws -> AdminDisableUserOutput,
+        delete: @escaping @Sendable (AdminDeleteUserInput) async throws -> AdminDeleteUserOutput,
+        getByToken: @escaping @Sendable (GetUserInput) async throws -> GetUserOutput,
+        getByUsername: @escaping @Sendable (AdminGetUserInput) async throws -> AdminGetUserOutput,
+        signUp: (@Sendable (SignUpInput) async throws -> SignUpOutput)? = nil,
+        confirmSignUp: (@Sendable (ConfirmSignUpInput) async throws -> ConfirmSignUpOutput)? = nil
+    ) {
+        self.create = create
+        self.disable = disable
+        self.delete = delete
+        self.getByToken = getByToken
+        self.getByUsername = getByUsername
+        self.signUp = signUp
+        self.confirmSignUp = confirmSignUp
+    }
+
+    init(client: CognitoIdentityProviderClient) {
+        self.init(
+            create: { try await client.adminCreateUser(input: $0) },
+            disable: { try await client.adminDisableUser(input: $0) },
+            delete: { try await client.adminDeleteUser(input: $0) },
+            getByToken: { try await client.getUser(input: $0) },
+            getByUsername: { try await client.adminGetUser(input: $0) },
+            signUp: { try await client.signUp(input: $0) },
+            confirmSignUp: { try await client.confirmSignUp(input: $0) }
+        )
+    }
+}
+
+struct CognitoAuthManager: AuthManager {
+    private let service: CognitoAuthService
     private let userPoolId: String
     private let advertiserAppClientId: String?
     private let advertiserAppClientSecret: String?
@@ -24,18 +64,35 @@ struct CognitoAuthManager: AuthManager {
         advertiserAppClientId: String? = nil,
         advertiserAppClientSecret: String? = nil
     ) {
-        self.client = client
+        self.init(
+            service: CognitoAuthService(client: client),
+            userPoolId: userPoolId,
+            advertiserAppClientId: advertiserAppClientId,
+            advertiserAppClientSecret: advertiserAppClientSecret
+        )
+    }
+
+    init(
+        service: CognitoAuthService,
+        userPoolId: String,
+        advertiserAppClientId: String? = nil,
+        advertiserAppClientSecret: String? = nil
+    ) {
+        self.service = service
         self.userPoolId = userPoolId
         self.advertiserAppClientId = advertiserAppClientId
         self.advertiserAppClientSecret = advertiserAppClientSecret
     }
-    
+
     init() async throws {
         @Dependency(Environment.self) var env
-        self.client = try await .init()
-        self.userPoolId = env.cognitoPoolId
-        self.advertiserAppClientId = env.advertiserCognitoAppClientId
-        self.advertiserAppClientSecret = env.advertiserCognitoAppClientSecret
+        let client = try await CognitoIdentityProviderClient()
+        self.init(
+            client: client,
+            userPoolId: env.cognitoPoolId,
+            advertiserAppClientId: env.advertiserCognitoAppClientId,
+            advertiserAppClientSecret: env.advertiserCognitoAppClientSecret
+        )
     }
 
     func create(username: String, email: String) async throws -> UserRole {
@@ -44,7 +101,7 @@ struct CognitoAuthManager: AuthManager {
             email: email,
             messageAction: nil
         )
-        let response = try await client.adminCreateUser(input: input)
+        let response = try await service.create(input)
         return try parseCreatedUser(response: response)
     }
 
@@ -53,20 +110,20 @@ struct CognitoAuthManager: AuthManager {
             userPoolId: userPoolId,
             username: username
         )
-        _ = try await client.adminDisableUser(input: disableInput)
+        _ = try await service.disable(disableInput)
 
         let deleteInput = AdminDeleteUserInput(
             userPoolId: userPoolId,
             username: username
         )
-        _ = try await client.adminDeleteUser(input: deleteInput)
+        _ = try await service.delete(deleteInput)
     }
     
     func get(accessToken: String) async throws -> UserRole {
         let input = GetUserInput(
             accessToken: accessToken
         )
-        let response = try await client.getUser(input: input)
+        let response = try await service.getByToken(input)
         
         let user = try parseUserRole(attributes: response.userAttributes, id: response.username)
         return user
@@ -77,7 +134,7 @@ struct CognitoAuthManager: AuthManager {
             userPoolId: userPoolId,
             username: username
         )
-        let response = try await client.adminGetUser(input: input)
+        let response = try await service.getByUsername(input)
         
         let user = try parseUserRole(attributes: response.userAttributes, id: response.username)
         return user
@@ -99,7 +156,10 @@ struct CognitoAuthManager: AuthManager {
         )
 
         do {
-            _ = try await client.signUp(input: input)
+            guard let signUp = service.signUp else {
+                throw Error.internalServerError("広告主登録が設定されていません。")
+            }
+            _ = try await signUp(input)
         } catch is UsernameExistsException {
             throw Error.conflict("このメールアドレスは登録済みです。")
         } catch is AliasExistsException {
@@ -129,7 +189,10 @@ struct CognitoAuthManager: AuthManager {
         )
 
         do {
-            _ = try await client.confirmSignUp(input: input)
+            guard let confirmSignUp = service.confirmSignUp else {
+                throw Error.internalServerError("広告主登録が設定されていません。")
+            }
+            _ = try await confirmSignUp(input)
         } catch is CodeMismatchException {
             throw Error.badRequest("確認コードが正しくありません。")
         } catch is ExpiredCodeException {

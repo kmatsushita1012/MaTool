@@ -8,10 +8,21 @@ protocol ImageCacheClientProtocol: Sendable {
 }
 
 actor ImageCacheClient: ImageCacheClientProtocol {
+    private let retrieve: @Sendable (URL) async throws -> Void
+
+    init(retrieve: @escaping @Sendable (URL) async throws -> Void = { url in
+        _ = try await KingfisherManager.shared.retrieveImage(
+            with: url,
+            options: [.cacheOriginalImage]
+        )
+    }) {
+        self.retrieve = retrieve
+    }
+
     func preload(paths: [String?]) async {
         var loadedURLs = Set<URL>()
         for url in paths.compactMap({ Self.url(from: $0) }) where loadedURLs.insert(url).inserted {
-            try? await preload(url: url)
+            try? await retrieve(url)
         }
     }
 
@@ -22,14 +33,7 @@ actor ImageCacheClient: ImageCacheClientProtocol {
               url.host != nil else {
             throw ImageCacheClientError.invalidURL
         }
-        try await preload(url: url)
-    }
-
-    private func preload(url: URL) async throws {
-        _ = try await KingfisherManager.shared.retrieveImage(
-            with: url,
-            options: [.cacheOriginalImage]
-        )
+        try await retrieve(url)
     }
 
     private static func url(from path: String?) -> URL? {

@@ -54,6 +54,19 @@ extension Environment: DependencyKey{
             return variables
         }
 
+        for (key, value) in parsedValues(in: contents) where variables[key] == nil {
+            variables[key] = value
+        }
+        return variables
+    }
+
+    // Internal so the .env parsing rules can be verified without changing process environment.
+    static func value(for key: String, in contents: String) -> String? {
+        parsedValues(in: contents)[key]
+    }
+
+    private static func parsedValues(in contents: String) -> [String: String] {
+        var parsed: [String: String] = [:]
         for line in contents.split(whereSeparator: \.isNewline) {
             let line = line.trimmingCharacters(in: .whitespaces)
             guard !line.isEmpty, !line.hasPrefix("#"),
@@ -62,7 +75,7 @@ extension Environment: DependencyKey{
             }
 
             let key = line[..<separator].trimmingCharacters(in: .whitespaces)
-            guard variables[key] == nil else { continue }
+            guard parsed[key] == nil else { continue }
 
             var value = line[line.index(after: separator)...].trimmingCharacters(in: .whitespaces)
             if value.count >= 2,
@@ -71,10 +84,10 @@ extension Environment: DependencyKey{
                 value.removeFirst()
                 value.removeLast()
             }
-            variables[key] = value
+            parsed[key] = value
         }
 
-        return variables
+        return parsed
     }
     
     static var testValue: Environment {

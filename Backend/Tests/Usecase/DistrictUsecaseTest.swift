@@ -364,7 +364,7 @@ struct DistrictUsecaseTest {
         var merged: District?
         var lastCalledGetId: String?
         var lastCalledPutId: String?
-        var updatedRoutes: [Route] = []
+        let updatedRouteCollector = RouteUpdateCollector()
         let districtRepository = DistrictRepositoryMock(
             getHandler: { id in
                 lastCalledGetId = id
@@ -394,7 +394,7 @@ struct DistrictUsecaseTest {
                 ]
             },
             putHandler: {
-                updatedRoutes.append($0)
+                updatedRouteCollector.append($0)
                 return $0
             }
         )
@@ -428,6 +428,7 @@ struct DistrictUsecaseTest {
         #expect(periodRepository.queryByYearCallCount == 3)
         #expect(routeRepository.queryByYearCallCount == 1)
         #expect(routeRepository.putCallCount == 2)
+        let updatedRoutes = updatedRouteCollector.values
         #expect(updatedRoutes.count == 2)
         #expect(updatedRoutes.allSatisfy { $0.visibility == .admin })
         #expect(performanceRepository.queryCallCount == 1)

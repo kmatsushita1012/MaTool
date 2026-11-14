@@ -5,6 +5,10 @@ import Shared
 @Reducer
 struct SettingsFeature {
 
+    enum NavigationDestination: Equatable {
+        case license
+    }
+
     @Reducer
     enum Destination {
         case login(LoginFeature)
@@ -45,6 +49,7 @@ struct SettingsFeature {
         var isParticipationLoading: Bool = false
         var isSignOutLoading: Bool = false
         var pendingParticipationChange: PendingParticipationChange?
+        var navigationDestination: NavigationDestination? = nil
         @Shared fileprivate var appState: AppState?
         var userGuide: URL? = {
             @Dependency(\.values.userGuideUrl) var userGuideURLString
@@ -68,7 +73,9 @@ struct SettingsFeature {
             self.festivals = festivals
             let selectedFestival = appState.wrappedValue?.festivalState.festival
                 ?? festivals.first(where: { $0.id == selection.festivalId })
-            let selectedDistrict = appState.wrappedValue?.selectedDistrict
+            let selectedDistrict = selection.districtId.flatMap { districtId in
+                appState.wrappedValue?.district(id: districtId)
+            }
             self.selectedFestival = selectedFestival
             self.confirmedFestival = selectedFestival
             self.selectedDistrict = selectedDistrict
@@ -81,6 +88,8 @@ struct SettingsFeature {
         case binding(BindingAction<State>)
         case loginTapped
         case advertiserLoginTapped
+        case licenseTapped
+        case licenseDismissed
         case signOutTapped
         case signOutReceived(AppResult<LaunchState>)
         case festivalSelectReceived(AppResult<FestivalSelectionResult>)
@@ -135,6 +144,12 @@ struct SettingsFeature {
                 return .none
             case .advertiserLoginTapped:
                 state.destination = .advertiserAuth(AdvertiserAuthFeature.State())
+                return .none
+            case .licenseTapped:
+                state.navigationDestination = .license
+                return .none
+            case .licenseDismissed:
+                state.navigationDestination = nil
                 return .none
             case .signOutTapped:
                 state.isSignOutLoading = true

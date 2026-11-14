@@ -6,11 +6,11 @@ import Shared
 struct DistrictInfoView: View {
     @SwiftUI.Bindable var store: StoreOf<DistrictInfoFeature>
     @Environment(\.colorScheme) private var systemColorScheme
-    @State private var selectedColorScheme: ColorScheme?
     let festivalName: String?
     var locationTimestamp: Date? = nil
     var isNavigationLoading = false
     let onFestivalTapped: () -> Void
+    var onRouteTapped: (District.ID) -> Void = { _ in }
     let isSheetRoot: Bool
 
     var body: some View {
@@ -18,21 +18,30 @@ struct DistrictInfoView: View {
             DistrictInfoContentView(
                 district: store.district,
                 performances: store.performances,
-                selectedColorScheme: $selectedColorScheme,
+                colorTheme: store.colorTheme,
                 region: $store.region,
                 isSheetRoot: isSheetRoot,
                 festivalName: festivalName,
                 locationTimestamp: locationTimestamp,
                 isNavigationLoading: isNavigationLoading,
-                onFestivalTapped: onFestivalTapped
+                onFestivalTapped: onFestivalTapped,
+                onRouteTapped: onRouteTapped,
+                onColorThemeSelected: { store.send(.colorThemeSelected($0)) }
             )
+        }
+        .onAppear {
+            store.send(.colorThemeResolved(InfoImageColorScheme.resolve(
+                lightPath: store.district.image.light,
+                darkPath: store.district.image.dark,
+                systemColorScheme: systemColorScheme
+            )))
         }
         .preferredColorScheme(
             InfoImageColorScheme.preferredColorScheme(
                 lightPath: store.district.image.light,
                 darkPath: store.district.image.dark,
                 systemColorScheme: systemColorScheme,
-                selectedColorScheme: selectedColorScheme
+                selectedColorScheme: store.colorTheme
             )
         )
     }
@@ -41,13 +50,15 @@ struct DistrictInfoView: View {
 private struct DistrictInfoContentView: View {
     let district: District
     let performances: [Performance]
-    @Binding var selectedColorScheme: ColorScheme?
+    let colorTheme: ColorScheme?
     @Binding var region: MKCoordinateRegion?
     let isSheetRoot: Bool
     let festivalName: String?
     let locationTimestamp: Date?
     let isNavigationLoading: Bool
     let onFestivalTapped: () -> Void
+    let onRouteTapped: (District.ID) -> Void
+    let onColorThemeSelected: (ColorScheme) -> Void
     @State private var isMapMovementLocked = true
     @Environment(\.dismiss) private var dismiss
     @Environment(\.colorScheme) private var colorScheme
@@ -62,10 +73,10 @@ private struct DistrictInfoContentView: View {
     private var themeToggleButton: some View {
         let effectiveColorScheme = InfoImageColorScheme.effective(
             systemColorScheme: colorScheme,
-            selectedColorScheme: selectedColorScheme
+            selectedColorScheme: colorTheme
         )
         return InfoImageThemeToggleButton(colorScheme: effectiveColorScheme) {
-            selectedColorScheme = effectiveColorScheme == .dark ? .light : .dark
+            onColorThemeSelected(effectiveColorScheme == .dark ? .light : .dark)
         }
     }
 
@@ -73,7 +84,8 @@ private struct DistrictInfoContentView: View {
         InfoScrollView {
             InfoHeaderImageView(
                 lightPath: district.image.light,
-                darkPath: district.image.dark
+                darkPath: district.image.dark,
+                title: district.name
             )
 
             if let description = district.description {
@@ -178,6 +190,12 @@ private struct DistrictInfoContentView: View {
                         .disabled(isNavigationLoading)
                     }
                 }
+            } else if festivalName == nil {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button("経路") {
+                        onRouteTapped(district.id)
+                    }
+                }
             }
             if supportsThemeSwitch {
                 if #available(iOS 26.0, *) {
@@ -197,7 +215,7 @@ private struct DistrictInfoContentView: View {
             \.colorScheme,
             InfoImageColorScheme.effective(
                 systemColorScheme: colorScheme,
-                selectedColorScheme: selectedColorScheme
+                selectedColorScheme: colorTheme
             )
         )
     }
@@ -310,6 +328,8 @@ typealias DistrictInfoScreen = DistrictInfoView
 
 struct DistrictIntroductionRootView: View {
     @SwiftUI.Bindable var store: StoreOf<DistrictIntroductionRootFeature>
+    var onCurrentLocationTapped: () -> Void = {}
+    var onRouteTapped: (District.ID) -> Void = { _ in }
 
     var body: some View {
         WithPerceptionTracking {
@@ -319,6 +339,7 @@ struct DistrictIntroductionRootView: View {
                 locationTimestamp: store.locationTimestamp,
                 isNavigationLoading: store.isLoading,
                 onFestivalTapped: { store.send(.festivalTapped) },
+                onRouteTapped: onRouteTapped,
                 isSheetRoot: true
             )
             .navigationDestination(item: $store.scope(
@@ -327,7 +348,13 @@ struct DistrictIntroductionRootView: View {
             )) { destinationStore in
                 switch destinationStore.case {
                 case .festival(let festivalStore):
-                    FestivalInfoView(store: festivalStore, isSheetRoot: false)
+                    FestivalInfoView(
+                        store: festivalStore,
+                        isSheetRoot: false,
+                        showsCurrentLocationButton: true,
+                        onCurrentLocationTapped: onCurrentLocationTapped,
+                        onRouteTapped: onRouteTapped
+                    )
                 }
             }
         }

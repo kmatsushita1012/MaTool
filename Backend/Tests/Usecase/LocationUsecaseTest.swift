@@ -158,6 +158,62 @@ struct LocationUsecaseTest {
             _ = try await subject.query(by: "festival-1", user: .guest, now: now)
         }
     }
+    @Test("閲覧権限があっても位置情報が存在しない場合はNot Foundを返す")
+    func get_異常_位置データなし() async {
+        let district = District.mock(id: "district-1", festivalId: "festival-1")
+        let locationRepository = LocationRepositoryMock(getHandler: { _, _ in nil })
+        let subject = make(
+            locationRepository: locationRepository,
+            districtRepository: .init(getHandler: { _ in district }),
+            periodRepository: .init(queryByYearHandler: { _, _ in [] })
+        )
+
+        await #expect(throws: Error.notFound("位置情報が見つかりません")) {
+            _ = try await subject.get(
+                districtId: district.id,
+                user: .district(district.id),
+                now: now
+            )
+        }
+        #expect(locationRepository.getCallCount == 1)
+    }
+
+    @Test("他地区の位置情報を削除しようとした場合は拒否し書き込まない")
+    func delete_異常_権限不一致() async {
+        let locationRepository = LocationRepositoryMock()
+        let districtRepository = DistrictRepositoryMock()
+        let subject = make(
+            locationRepository: locationRepository,
+            districtRepository: districtRepository
+        )
+
+        await #expect(throws: Error.unauthorized("アクセス権限がありません")) {
+            try await subject.delete(
+                districtId: "district-1",
+                user: .district("another")
+            )
+        }
+        #expect(locationRepository.deleteCallCount == 0)
+        #expect(districtRepository.getCallCount == 0)
+    }
+
+    @Test("地区情報が削除済みなら位置削除を許可しない")
+    func delete_異常_地区未登録() async {
+        let locationRepository = LocationRepositoryMock()
+        let subject = make(
+            locationRepository: locationRepository,
+            districtRepository: .init(getHandler: { _ in nil })
+        )
+
+        await #expect(throws: Error.notFound("地区が見つかりません")) {
+            try await subject.delete(
+                districtId: "district-1",
+                user: .district("district-1")
+            )
+        }
+        #expect(locationRepository.deleteCallCount == 0)
+    }
+
 }
 
 private extension LocationUsecaseTest {

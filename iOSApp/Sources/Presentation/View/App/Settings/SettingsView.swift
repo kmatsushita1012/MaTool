@@ -28,7 +28,8 @@ struct SettingsScreen: View {
                 isSignOutLoading: store.isSignOutLoading,
                 onLoginTapped: { store.send(.loginTapped) },
                 onAdvertiserLoginTapped: { store.send(.advertiserLoginTapped) },
-                onSignOutTapped: { store.send(.signOutTapped) }
+                onSignOutTapped: { store.send(.signOutTapped) },
+                onLicenseTapped: { store.send(.licenseTapped) }
             )
             .navigationDestination(item: $store.scope(
                 state: \.destination?.login,
@@ -41,6 +42,16 @@ struct SettingsScreen: View {
                 action: \.destination.advertiserAuth
             )) { store in
                 AdvertiserAuthScreen(store: store)
+            }
+            .navigationDestination(isPresented: Binding(
+                get: { store.navigationDestination == .license },
+                set: { isPresented in
+                    if !isPresented {
+                        store.send(.licenseDismissed)
+                    }
+                }
+            )) {
+                LicenseView()
             }
             .alert($store.scope(state: \.alert, action: \.alert))
         }
@@ -63,6 +74,7 @@ struct SettingsContentView: View {
     let onLoginTapped: () -> Void
     let onAdvertiserLoginTapped: () -> Void
     let onSignOutTapped: () -> Void
+    let onLicenseTapped: () -> Void
 
     var body: some View {
         Form {
@@ -119,6 +131,7 @@ struct SettingsContentView: View {
                 if let contact {
                     Link("お問い合わせ", destination: contact)
                 }
+                Button("ライセンス", action: onLicenseTapped)
                 LabeledContent("バージョン", value: appVersion)
             }
         }
@@ -140,6 +153,7 @@ struct SettingsContentView: View {
         isSignOutLoading: false,
         onLoginTapped: {},
         onAdvertiserLoginTapped: {},
-        onSignOutTapped: {}
+        onSignOutTapped: {},
+        onLicenseTapped: {}
     )
 }

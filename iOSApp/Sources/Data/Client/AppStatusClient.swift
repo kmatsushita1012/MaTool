@@ -35,9 +35,12 @@ actor AppStatusClient: AppStatusClientProtocol {
     
     private var status: AppStatus?
     private let urlString: String
+    private let session: URLSession
 
-    init(urlString: String) {
+    init(urlString: String, session: URLSession = .shared, cachedStatus: AppStatus? = nil) {
         self.urlString = urlString
+        self.session = session
+        self.status = cachedStatus
     }
     
     func checkStatus() async -> StatusCheckResult? {
@@ -70,7 +73,7 @@ actor AppStatusClient: AppStatusClientProtocol {
         guard let url = URL(string: urlString) else {
             throw URLError(.badURL)
         }
-        let (data, response) = try await URLSession.shared.data(from: url)
+        let (data, response) = try await session.data(from: url)
         guard let httpResp = response as? HTTPURLResponse,
               (200..<300).contains(httpResp.statusCode) else {
             throw URLError(.badServerResponse)

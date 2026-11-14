@@ -114,6 +114,8 @@ struct RootFeature {
         case onboarding(OnboardingFeature.Action)
         case destination(PresentationAction<Destination.Action>)
         case sheet(PresentationAction<Sheet.Action>)
+        case currentLocationTapped
+        case routeTapped(District.ID)
         case settingsPrepared(AppResult<SettingsPreparation>)
         case introductionPrepared(AppResult<IntroSheetPreparation>)
         case alert(PresentationAction<AlertFeature.Action>)
@@ -412,6 +414,14 @@ struct RootFeature {
 
             case .destination:
                 return .none
+
+            case .currentLocationTapped:
+                state.sheet = nil
+                return .send(.map(.contentSelected(.locations)))
+
+            case .routeTapped(let districtID):
+                state.sheet = nil
+                return .send(.map(.contentSelected(.route(districtID))))
 
             case .sheet:
                 return .none

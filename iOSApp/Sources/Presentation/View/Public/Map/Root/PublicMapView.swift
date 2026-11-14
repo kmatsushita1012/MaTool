@@ -19,6 +19,7 @@ struct PublicMapView: View {
                 if let routeStore = store.scope(state: \.destination?.route, action: \.destination.route) {
                     mapContent(
                         routes: routeStore.routes,
+                        selectedRouteId: routeStore.selected?.id,
                         selectedPeriodTitle: routeStore.selected?.text ?? "日程を選択",
                         isRouteLoading: routeStore.isRouteLoading,
                         isPeriodDisabled: store.isLoading,
@@ -53,6 +54,7 @@ struct PublicMapView: View {
 
     private func mapContent<MapContent: View>(
         routes: [RouteEntry]? = nil,
+        selectedRouteId: String? = nil,
         selectedPeriodTitle: String = "日程を選択",
         isRouteLoading: Bool = false,
         isPeriodDisabled: Bool = false,
@@ -63,8 +65,9 @@ struct PublicMapView: View {
     ) -> some View {
         PublicMapContentView(
             festivalTitle: store.festivalTitle,
-            contents: store.contents,
+            districtContentGroups: store.districtContentGroups,
             selectedContent: store.selectedContent,
+            selectedRouteId: selectedRouteId,
             contentTitles: store.contentTitles,
             isLoading: store.isLoading,
             routes: routes,
@@ -89,8 +92,9 @@ struct PublicMapView: View {
 
 struct PublicMapContentView<MapContent: View>: View {
     let festivalTitle: String
-    let contents: [PublicMapFeature.Content]
+    let districtContentGroups: [PublicMapFeature.DistrictContentGroup]
     let selectedContent: PublicMapFeature.Content
+    let selectedRouteId: String?
     let contentTitles: [PublicMapFeature.Content: String]
     let isLoading: Bool
     let routes: [RouteEntry]?
@@ -198,16 +202,17 @@ struct PublicMapContentView<MapContent: View>: View {
     private var topControls: some View {
         HStack(spacing: 16) {
             Menu {
-                ForEach(contents, id: \.self) { item in
-                    Button {
-                        guard item != selectedContent else { return }
-                        onContentSelected(item)
-                    } label: {
-                        let title = contentTitles[item] ?? ""
-                        if item == selectedContent {
-                            Label(title, systemImage: "checkmark")
-                        } else {
-                            Text(title)
+                contentButton(for: .locations)
+                ForEach(districtContentGroups) { group in
+                    if let name = group.name {
+                        Section(name) {
+                            ForEach(group.contents, id: \.self) { item in
+                                contentButton(for: item)
+                            }
+                        }
+                    } else {
+                        ForEach(group.contents, id: \.self) { item in
+                            contentButton(for: item)
                         }
                     }
                 }
@@ -220,8 +225,15 @@ struct PublicMapContentView<MapContent: View>: View {
             if let routes {
                 Menu {
                     ForEach(routes) { entry in
-                        Button(entry.text) {
+                        Button {
                             onPeriodSelected(entry)
+                        } label: {
+                            Label {
+                                Text(entry.text)
+                            } icon: {
+                                Image(systemName: "checkmark")
+                                    .tint(entry.id == selectedRouteId ? nil : .clear)
+                            }
                         }
                     }
                 } label: {
@@ -240,6 +252,21 @@ struct PublicMapContentView<MapContent: View>: View {
             Spacer(minLength: 0)
         }
         .padding(.horizontal, 16)
+    }
+
+    private func contentButton(for item: PublicMapFeature.Content) -> some View {
+        Button {
+            guard item != selectedContent else { return }
+            onContentSelected(item)
+        } label: {
+            let title = contentTitles[item] ?? ""
+            Label {
+                Text(title)
+            } icon: {
+                Image(systemName: "checkmark")
+                    .tint(item == selectedContent ? nil : .clear)
+            }
+        }
     }
 }
 
@@ -276,8 +303,9 @@ private extension PublicMapFeature.Content {
     NavigationStack {
         PublicMapContentView(
             festivalTitle: "祭典名",
-            contents: [.locations],
+            districtContentGroups: [],
             selectedContent: .locations,
+            selectedRouteId: nil,
             contentTitles: [.locations: "現在地一覧"],
             isLoading: false,
             routes: nil,

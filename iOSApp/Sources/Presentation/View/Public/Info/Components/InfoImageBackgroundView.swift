@@ -57,17 +57,16 @@ enum InfoImageColorScheme {
         systemColorScheme: ColorScheme,
         selectedColorScheme: ColorScheme?
     ) -> ColorScheme {
-        guard supportsThemeSwitch(lightPath: lightPath, darkPath: darkPath) else {
+        switch (isAvailable(lightPath), isAvailable(darkPath)) {
+        case (true, false), (false, true), (false, false):
             return resolve(
                 lightPath: lightPath,
                 darkPath: darkPath,
                 systemColorScheme: systemColorScheme
             )
+        case (true, true):
+            return selectedColorScheme ?? systemColorScheme
         }
-        return effective(
-            systemColorScheme: systemColorScheme,
-            selectedColorScheme: selectedColorScheme
-        )
     }
 }
 
@@ -103,8 +102,11 @@ struct InfoImageThemeToggleButton: View {
 struct InfoHeaderImageView: View {
     let lightPath: String?
     let darkPath: String?
+    let title: String
 
     @Environment(\.colorScheme) private var colorScheme
+    @State private var imageSize: CGSize?
+    @State private var loadedImagePath: String?
 
     private var imagePath: String? {
         InfoImageColorScheme.imagePath(
@@ -116,10 +118,89 @@ struct InfoHeaderImageView: View {
 
     var body: some View {
         if let imagePath {
-            WebImageView(imagePath: imagePath, contentMode: .fit)
+            WebImageView(imagePath: imagePath, contentMode: .fit) { size in
+                imageSize = size
+                loadedImagePath = imagePath
+            }
                 .frame(maxWidth: .infinity)
+                .overlay(alignment: .bottomTrailing) {
+                    if loadedImagePath == imagePath, let imageSize {
+                        InfoImageTitleOverlay(
+                            title: title,
+                            isVertical: imageSize.height > imageSize.width
+                        )
+                        .padding(16)
+                    }
+                }
                 .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
         }
+    }
+}
+
+private struct InfoImageTitleOverlay: View {
+    let title: String
+    let isVertical: Bool
+
+    @Environment(\.colorScheme) private var colorScheme
+
+    private let outlineOffsets = [
+        CGSize(width: -1.5, height: -1.5),
+        CGSize(width: 0, height: -1.5),
+        CGSize(width: 1.5, height: -1.5),
+        CGSize(width: -1.5, height: 0),
+        CGSize(width: 1.5, height: 0),
+        CGSize(width: -1.5, height: 1.5),
+        CGSize(width: 0, height: 1.5),
+        CGSize(width: 1.5, height: 1.5)
+    ]
+
+    private var outlineColor: Color {
+        colorScheme == .light ? .white : .black
+    }
+
+    private var directionalShadowColor: Color {
+        colorScheme == .light ? .black.opacity(0.72) : .white.opacity(0.72)
+    }
+
+    private var titleFont: Font {
+        .custom("YujiSyuku-Regular", size: 64, relativeTo: .largeTitle)
+    }
+
+    private var titleContent: some View {
+        Group {
+            if isVertical {
+                VStack(spacing: 0) {
+                    ForEach(Array(title.enumerated()), id: \.offset) { character in
+                        Text(String(character.element))
+                    }
+                }
+            } else {
+                Text(title)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.6)
+            }
+        }
+        .font(titleFont)
+    }
+
+    var body: some View {
+        ZStack {
+            titleContent
+                .foregroundStyle(outlineColor)
+                .shadow(color: outlineColor.opacity(0.65), radius: 4, x: -2, y: -2)
+                .shadow(color: directionalShadowColor, radius: 8, x: 4, y: 6)
+
+            ForEach(Array(outlineOffsets.enumerated()), id: \.offset) { item in
+                titleContent
+                    .foregroundStyle(outlineColor)
+                    .offset(x: item.element.width, y: item.element.height)
+            }
+
+            titleContent
+                .foregroundStyle(.primary)
+        }
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(title)
     }
 }
 
