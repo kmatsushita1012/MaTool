@@ -299,7 +299,6 @@ struct FestivalDashboardFeatureTests {
 
         await store.send(.destination(.presented(.edit(.putReceived(.success)))))
         await store.receive(.destination(.presented(.edit(.imageEdit(.reset)))))
-        await store.send(.destination(.dismiss))
         #expect(store.state.destination == nil)
         await store.finish()
     }

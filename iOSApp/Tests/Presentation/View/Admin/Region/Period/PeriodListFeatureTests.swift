@@ -19,6 +19,10 @@ struct PeriodListFeatureTests {
         )
 
         #expect(state.latests?.year == 2026)
+        #expect(state.latests?.id == 2026)
+        #expect(state.latests?.text == "2026年")
+        #expect(state.archives.first?.id == 2025)
+        #expect(state.archives.first?.text == "2025年")
         #expect(state.latests?.periods.map(\.id) == ["current"])
         #expect(state.archives.map(\.year) == [2025])
         #expect(state.yearOptions == [2025, 2026])

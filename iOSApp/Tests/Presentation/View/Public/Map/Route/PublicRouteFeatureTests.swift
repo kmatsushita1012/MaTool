@@ -185,6 +185,20 @@ struct PublicRouteFeatureTests {
         #expect(Set(state.others.map(\.id)) == Set([backup.id, newer.id]))
         #expect(state.isReplayEnable)
         #expect(state.hasDisplayableContent)
+        #expect(state.periods.map(\.id) == ["period"])
+    }
+
+    @Test("公開経路が複数存在しても未選択なら候補として別経路を表示せず再生を無効にする")
+    func unselectedRouteDoesNotOfferAlternatesOrReplay() {
+        let first = AppStateFixture.route(id: "first")
+        let second = AppStateFixture.route(id: "second")
+        let state = makeState(routeId: nil, routes: [first, second])
+
+        #expect(state.selected == nil)
+        #expect(state.routes.count == 2)
+        #expect(state.others.isEmpty)
+        #expect(!state.isReplayEnable)
+        #expect(state.hasDisplayableContent)
     }
 
     @Test("経路が存在しなくても位置配信中なら地図の表示内容を持つ")
@@ -260,6 +274,26 @@ struct PublicRouteFeatureTests {
         #expect(store.state.toast == nil)
         await store.finish()
         #expect(await provider.locationRequests == 1)
+    }
+
+    @Test("現在地取得失敗の通知は3秒後に消去され、同じエラーを繰り返し表示しない")
+    @MainActor
+    func userLocationErrorToastExpiresAfterThreeSeconds() async {
+        let clock = TestClock()
+        let store = TestStore(initialState: makeState()) {
+            PublicRouteFeature()
+        } withDependencies: {
+            $0.installPublicRouteTestDependencies()
+            $0.continuousClock = clock
+        }
+        store.exhaustivity = .off
+
+        await store.send(.userLocationFailed("GPS timeout"))
+        #expect(store.state.toast != nil)
+        await clock.advance(by: .seconds(3))
+        await store.receive(.toastDismissed)
+        #expect(store.state.toast == nil)
+        await store.finish()
     }
 
     @Test("位置配信中の町がなければ地図中心を変えず通知を示す")

@@ -537,6 +537,121 @@ struct SettingsFeatureTests {
     }
 
 
+
+    @Test("ゲストの町選択成功ではUseCaseの経路IDを親へ通知し選択内容を確定する")
+    @MainActor
+    func guestDistrictSelectionInvokesUseCaseAndConfirmsSelection() async {
+        let spy = SuccessfulSelectDistrictUseCaseSpy(routeId: "new-route")
+        let store = TestStore(initialState: makeState()) {
+            SettingsFeature()
+        } withDependencies: {
+            $0.installTestSpies()
+            $0[SelectDistrictUseCaseKey.self] = spy
+        }
+
+        await store.send(.binding(.set(\.selectedDistrict, nil))) {
+            $0.selectedDistrict = nil
+            $0.isParticipationLoading = true
+        }
+        await store.receive(.districtSelectReceived(.success("new-route"))) {
+            $0.isParticipationLoading = false
+            $0.confirmedDistrict = nil
+        }
+        await store.receive(.delegate(.sceneSelectionChanged(.guest, "new-route")))
+        #expect(await spy.districtIDs == [nil])
+        #expect(store.state.confirmedDistrict == nil)
+        await store.finish()
+    }
+
+    @Test("町Pickerは並び順が同じ場合に町名で安定して比較し、祭典未読込時は空にする")
+    func pickerUsesNameAsTieBreakerAndHandlesMissingState() {
+        let festival = AppStateFixture.festival()
+        let later = District(id: "later", name: "B町", festivalId: festival.id, order: 1)
+        let earlier = District(id: "earlier", name: "A町", festivalId: festival.id, order: 1)
+        let appState = Shared<AppState?>(value: AppState(
+            festivalPack: LaunchFestivalPack(
+                festival: festival,
+                year: 2026,
+                districts: [later, earlier],
+                periods: [],
+                locations: [],
+                checkpoints: [],
+                hazardSections: []
+            )
+        ))
+        let populated = withDependencies {
+            $0.installTestSpies()
+        } operation: {
+            SettingsFeature.State(
+                selection: SceneSelection(festivalId: festival.id, districtId: nil),
+                appState: appState
+            )
+        }
+        #expect(populated.districts.map(\.id) == [earlier.id, later.id])
+
+        let empty = withDependencies {
+            $0.installTestSpies()
+        } operation: {
+            SettingsFeature.State(
+                selection: SceneSelection(festivalId: nil, districtId: nil),
+                appState: Shared<AppState?>(value: nil)
+            )
+        }
+        #expect(empty.districts.isEmpty)
+    }
+
+    @Test("管理者が町変更を承認した場合はログアウト後に町選択成功を確認してゲストへ戻す")
+    @MainActor
+    func approvedDistrictChangeInvokesSignOutAndSelection() async {
+        let districtSpy = SuccessfulSelectDistrictUseCaseSpy(routeId: "new-route")
+        let signOutSpy = SettingsSignOutUseCaseSpy()
+        var state = makeState(userRole: .headquarter("festival"))
+        state.pendingParticipationChange = .district(nil)
+        state.alert = AlertFeature.participationChangeConfirmation()
+        let store = TestStore(initialState: state) {
+            SettingsFeature()
+        } withDependencies: {
+            $0.installTestSpies()
+            $0[SelectDistrictUseCaseKey.self] = districtSpy
+            $0[SignOutUseCaseKey.self] = signOutSpy
+        }
+
+        await store.send(.alert(.presented(.confirmTapped))) {
+            $0.alert = nil
+            $0.isParticipationLoading = true
+        }
+        await store.receive(.participationChangeReceived(.init(
+            didSignOut: true, error: nil
+        ))) {
+            $0.isParticipationLoading = false
+            $0.pendingParticipationChange = nil
+            $0.userRole = .guest
+        }
+        await store.receive(.delegate(.participationChanged(.init(
+            festivals: [AppStateFixture.festival()],
+            selection: .init(festivalId: "festival", districtId: "district")
+        ))))
+        #expect(await signOutSpy.calls == 1)
+        #expect(await districtSpy.districtIDs == [nil])
+        #expect(store.state.userRole == .guest)
+        await store.finish()
+    }
+
+}
+
+
+private actor SuccessfulSelectDistrictUseCaseSpy: SelectDistrictUseCaseProtocol {
+    private(set) var districtIDs: [District.ID?] = []
+    private let routeId: Route.ID?
+
+    init(routeId: Route.ID?) { self.routeId = routeId }
+
+    func callAsFunction(
+        districtId: District.ID?, appState: Shared<AppState?>?
+    ) async throws -> Route.ID? {
+        districtIDs.append(districtId)
+        return routeId
+    }
 }
 
 private actor SettingsSignOutUseCaseSpy: SignOutUseCaseProtocol {

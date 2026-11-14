@@ -127,6 +127,7 @@ struct RouteEditFeatureTests {
         #expect(!state.isExportLoading)
 
         state.mode = .update
+        #expect(state.title == "編集")
         state.loadingAction = .save
         #expect(state.isSaveable)
         #expect(state.isDeleteable)
@@ -150,6 +151,58 @@ struct RouteEditFeatureTests {
         state.tab = .edit
         #expect(state.isPartialEnable)
         #expect(!state.canShowDistrictAreaOverlay)
+    }
+
+    @Test("経路の端点と所属地区を正しい順序で表示し、2地点以上で自動通過町判定を許可する")
+    func routePropertiesIdentifyEndpointsAndAutoPassageAvailability() throws {
+        let first = Point(
+            id: "start", routeId: "route",
+            coordinate: .init(latitude: 35.0, longitude: 139.0)
+        )
+        let last = Point(
+            id: "end", routeId: "route",
+            coordinate: .init(latitude: 35.1, longitude: 139.1)
+        )
+        let state = try makeState(mode: .update, points: [first, last])
+
+        #expect(state.start?.id == first.id)
+        #expect(state.end?.id == last.id)
+        #expect(state.districts.map(\.id).contains("district"))
+        #expect(state.districtsById["district"]?.id == "district")
+        #expect(!state.isAutoPassageDisabled)
+        #expect(RouteEditFeature.Destination.passage.id == "passage")
+        #expect(RouteEditFeature.Destination.history([]).id == "history")
+    }
+
+    @Test("自動通過町判定は最新の地点と地区領域を使い、以前の手動下書きを再計算結果で置換する")
+    @MainActor
+    func autoPassageReplacesStalePassagesWithDetectedRoute() async throws {
+        let first = Point(
+            id: "first", routeId: "route",
+            coordinate: .init(latitude: 35.0, longitude: 139.0)
+        )
+        let last = Point(
+            id: "last", routeId: "route",
+            coordinate: .init(latitude: 35.1, longitude: 139.1)
+        )
+        var state = try makeState(mode: .update, points: [first, last])
+        state.passages = [
+            RoutePassage(id: "stale", routeId: state.route.id, districtId: "deleted-district")
+        ]
+        let expected = RoutePassageAutoDetector(mode: .includeTouch).makePassages(
+            routeId: state.route.id,
+            points: state.points,
+            districts: state.districts
+        )
+        let store = TestStore(initialState: state) {
+            RouteEditFeature()
+        } withDependencies: { $0.installTestSpies() }
+        store.exhaustivity = .off
+
+        await store.send(.autoPassageTapped)
+        #expect(store.state.passages == expected)
+        #expect(!store.state.passages.contains { $0.id == "stale" })
+        await store.finish()
     }
 
     @Test("初期State生成で必要な期間や地区状態が欠落していれば編集しない")

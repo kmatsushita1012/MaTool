@@ -8,6 +8,33 @@ import Testing
 @testable import iOSApp
 
 struct FestivalEditFeatureTests {
+    @Test("画像アップロード中の保存要求はAPIへ到達せず、編集中の祭典名と警告を保持する")
+    @MainActor
+    func savingDuringImageUploadIsRejectedWithoutLosingDraft() async {
+        var initial = FestivalEditFeature.State(
+            AppStateFixture.festival(), appState: Shared<AppState?>(value: nil)
+        )
+        initial.imageEdit.activeUploadID = UUID()
+        let saveSpy = SaveFestivalUseCaseSpy()
+        let store = TestStore(initialState: initial) {
+            FestivalEditFeature()
+        } withDependencies: {
+            $0.installTestSpies()
+            $0[SaveFestivalUseCaseKey.self] = saveSpy
+        }
+
+        await store.send(.binding(.set(\.festival.name, "編集中の祭典名"))) {
+            $0.festival.name = "編集中の祭典名"
+        }
+        await store.send(.saveTapped) {
+            $0.alert = AlertFeature.error("画像のアップロードが完了するまで保存できません。")
+        }
+        #expect(!store.state.isLoading)
+        #expect(store.state.festival.name == "編集中の祭典名")
+        #expect(await saveSpy.calls.isEmpty)
+        await store.finish()
+    }
+
     @Test("画像編集シートを閉じても下書きを保ち、既存 Festival PUT で確定する")
     @MainActor
     func retainsDraftUntilFestivalSave() async {

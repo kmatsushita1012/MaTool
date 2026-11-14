@@ -5,6 +5,33 @@ import Testing
 @testable import iOSApp
 
 struct RootFeatureTests {
+    @Test("最初のlaunchだけがUseCaseを呼び、取得したゲストシーンへ遷移する")
+    @MainActor
+    func firstLaunchFetchesSceneExactlyOnce() async {
+        let fixture = RootFeatureFixture()
+        let launchSpy = RootLaunchSuccessSpy(result: .festival(.guest))
+        let lastScreen = LastMainScreenUseCaseSpy()
+        let store = TestStore(initialState: RootFeature.State(
+            appState: Shared<AppState?>(value: fixture.appState)
+        )) {
+            RootFeature()
+        } withDependencies: {
+            $0.installTestSpies()
+            $0[LaunchSceneUseCaseKey.self] = launchSpy
+            $0[LastMainScreenUseCaseKey.self] = lastScreen
+        }
+        store.exhaustivity = .off
+
+        await store.send(.launch)
+        #expect(store.state.didLaunch)
+        await store.receive(.launchFinished(.festival(.guest), nil))
+        #expect(store.state.map != nil)
+        #expect(store.state.launchState == .festival(.guest))
+        await store.send(.launch)
+        #expect(await launchSpy.calls == 1)
+        await store.finish()
+    }
+
     @Test("未ログイン時に地図のgearshapeから設定を開く")
     @MainActor
     func guestGearOpensSettings() async {
@@ -1068,6 +1095,19 @@ private func rootTestConstantValues() -> ConstantValues {
         publicMapInterstitialAdUnitId: nil,
         publicMapBannerAdUnitId: nil
     )
+}
+
+
+private actor RootLaunchSuccessSpy: LaunchSceneUseCaseProtocol {
+    let result: LaunchState
+    private(set) var calls = 0
+
+    init(result: LaunchState) { self.result = result }
+
+    func callAsFunction(appState: Shared<AppState?>?) async -> (LaunchState, StatusCheckResult?) {
+        calls += 1
+        return (result, nil)
+    }
 }
 
 private actor RootSignOutSpy: SignOutUseCaseProtocol {

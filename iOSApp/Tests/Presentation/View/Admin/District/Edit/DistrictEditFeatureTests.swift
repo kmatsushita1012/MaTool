@@ -7,6 +7,35 @@ import Testing
 @testable import iOSApp
 
 struct DistrictEditFeatureTests {
+    @Test("地区編集をキャンセルすると画像の一時ドラフトを破棄し保存処理を呼ばない")
+    @MainActor
+    func cancellationResetsImageDraftWithoutSaving() async throws {
+        let fixture = DistrictEditFixture()
+        var initial = try DistrictEditFeature.State(fixture.district, appState: fixture.appState)
+        initial.imageEdit.lightDraft = .replaced(
+            path: "temporary/districts/district/light.jpg",
+            jpegData: Data([0xFF, 0xD8, 0xFF, 0xD9])
+        )
+        initial.isImageEditPresented = true
+        let saveSpy = SaveDistrictPackUseCaseSpy()
+        let store = TestStore(initialState: initial) {
+            DistrictEditFeature()
+        } withDependencies: {
+            $0.installTestSpies()
+            $0[SaveDistrictPackUseCaseKey.self] = saveSpy
+        }
+
+        await store.send(.cancelTapped) {
+            $0.isImageEditPresented = false
+        }
+        await store.receive(.imageEdit(.reset)) {
+            $0.imageEdit.lightDraft = .unchanged
+        }
+        #expect(await saveSpy.calls.isEmpty)
+        #expect(!store.state.isLoading)
+        await store.finish()
+    }
+
     @Test("地区画像の下書きを既存 Pack PUT へ渡す")
     @MainActor
     func savesDistrictImageThroughExistingPack() async throws {

@@ -200,6 +200,28 @@ struct PublicLocationsFeatureTests {
         await store.finish()
     }
 
+    @Test("配信無しの通知は3秒後に自動消去され、残ったタイマーが再通知しない")
+    @MainActor
+    func initialNoticeExpiresAfterThreeSeconds() async {
+        let clock = TestClock()
+        let fixture = LocationMapFixture(locations: [])
+        let initial = fixture.makeState()
+        let store = TestStore(initialState: initial) {
+            PublicLocationsFeature()
+        } withDependencies: {
+            $0.installPublicLocationsTestDependencies()
+            $0.continuousClock = clock
+        }
+        store.exhaustivity = .off
+
+        #expect(store.state.toast != nil)
+        await store.send(.onAppear)
+        await clock.advance(by: .seconds(3))
+        await store.receive(.toastDismissed)
+        #expect(store.state.toast == nil)
+        await store.finish()
+    }
+
     @Test("配信マーカーをタップするだけでは地図の中心や通知を変更しない")
     @MainActor
     func floatTapDoesNotRefocusMap() async throws {
