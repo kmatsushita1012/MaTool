@@ -7,6 +7,26 @@ import Testing
 @testable import iOSApp
 
 struct PublicLocationsFeatureTests {
+    @Test("地図の操作による表示領域BindingはShared MapRegionへ反映される")
+    @MainActor
+    func mapGestureBindingUpdatesSharedRegion() async {
+        let fixture = LocationMapFixture(locations: [])
+        let initial = fixture.makeState()
+        let region = MKCoordinateRegion(
+            center: CLLocationCoordinate2D(latitude: 34.1, longitude: 138.2),
+            span: MKCoordinateSpan(latitudeDelta: 0.03, longitudeDelta: 0.04)
+        )
+        let store = TestStore(initialState: initial) {
+            PublicLocationsFeature()
+        } withDependencies: { $0.installPublicLocationsTestDependencies() }
+        store.exhaustivity = .off
+
+        await store.send(.binding(.set(\.mapRegion, region)))
+        #expect(store.state.mapRegion.center.latitude == 34.1)
+        #expect(store.state.mapRegion.center.longitude == 138.2)
+        await store.finish()
+    }
+
     @Test("初回表示では配信中の位置全体に地図をfitする")
     func initialStateFitsAllFloatLocations() {
         let fixture = LocationMapFixture(locations: [

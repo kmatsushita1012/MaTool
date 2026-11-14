@@ -8,6 +8,24 @@ import Testing
 @testable import iOSApp
 
 struct PublicRouteFeatureTests {
+    @Test("経路地図の操作で更新されたShared表示領域を次の描画にも引き継ぐ")
+    @MainActor
+    func mapRegionBindingPersistsUserViewport() async {
+        let region = MKCoordinateRegion(
+            center: CLLocationCoordinate2D(latitude: 34.3, longitude: 138.4),
+            span: MKCoordinateSpan(latitudeDelta: 0.04, longitudeDelta: 0.04)
+        )
+        let store = TestStore(initialState: makeState()) {
+            PublicRouteFeature()
+        } withDependencies: { $0.installPublicRouteTestDependencies() }
+        store.exhaustivity = .off
+
+        await store.send(.binding(.set(\.mapRegion, region)))
+        #expect(store.state.mapRegion.center.latitude == 34.3)
+        #expect(store.state.mapRegion.center.longitude == 138.4)
+        await store.finish()
+    }
+
     @Test("再生状態の判定は開始とシークのみ再生中とみなす")
     func replayRunningState() {
         #expect(PublicRouteFeature.Replay.start.isRunning)

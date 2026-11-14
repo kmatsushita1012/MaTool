@@ -230,6 +230,34 @@ struct DistrictDashboardFeatureTests {
         await store.finish()
     }
 
+    @Test("位置配信ボタンは位置権限の準備をUseCaseへ一度だけ依頼して設定画面を開く")
+    @MainActor
+    func locationButtonPreparesTrackingThroughUseCase() async {
+        let permission = LocationPermissionState(
+            authorizationStatus: .authorizedAlways,
+            hasRequestedAlwaysLocationPermission: true
+        )
+        let spy = TrackingLocationUsecaseSpy(permission: permission)
+        let store = TestStore(initialState: makeState()) {
+            DistrictDashboardFeature()
+        } withDependencies: {
+            $0.installTestSpies()
+            $0.locationUsecase = spy
+        }
+        store.exhaustivity = .off
+
+        await store.send(.onLocation)
+        #expect(store.state.isLocationLoading)
+        await store.receive(.locationPrepared(
+            isTracking: false, interval: nil, permissionState: permission
+        ))
+        #expect(!store.state.isLocationLoading)
+        #expect(store.state.destination?.location?.selectedInterval == .sample)
+        #expect(store.state.destination?.location?.isAlwaysLocationAuthorized == true)
+        #expect(await spy.preparationQueries == 1)
+        await store.finish()
+    }
+
     @Test("位置配信設定の準備完了時は配信状態と許可状態を保持して画面を開く")
     @MainActor
     func locationPreparationPreservesTrackingState() async {
@@ -456,9 +484,9 @@ struct DistrictDashboardFeatureTests {
         await store.finish()
     }
 
-    @Test("地区編集完了後は編集画面を閉じAppStateにある地区を保持する")
+    @Test("地区編集完了後は画像編集のリセットを受け取りAppStateの地区を保持する")
     @MainActor
-    func districtEditCompletionClosesEditor() async {
+    func districtEditCompletionResetsImageEditor() async {
         let store = TestStore(initialState: makeState()) {
             DistrictDashboardFeature()
         } withDependencies: { $0.installTestSpies() }
@@ -468,7 +496,7 @@ struct DistrictDashboardFeatureTests {
         #expect(store.state.destination?.edit != nil)
         await store.send(.destination(.presented(.edit(.postReceived(.success)))))
         await store.receive(.destination(.presented(.edit(.imageEdit(.reset)))))
-        #expect(store.state.destination == nil)
+        #expect(store.state.destination?.edit?.imageEdit.lightDraft == .unchanged)
         #expect(store.state.district.id == "district")
         await store.finish()
     }

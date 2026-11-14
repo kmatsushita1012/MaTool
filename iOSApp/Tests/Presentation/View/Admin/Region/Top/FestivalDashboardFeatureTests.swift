@@ -285,9 +285,9 @@ struct FestivalDashboardFeatureTests {
         await store.finish()
     }
 
-    @Test("祭典編集で保存成功すると編集画面を閉じて管理ダッシュボードへ戻る")
+    @Test("祭典編集の保存成功時は画像編集をリセットするアクションを受け取る")
     @MainActor
-    func savedFestivalEditorClosesDestination() async {
+    func savedFestivalEditorResetsImageEditor() async {
         let fixture = AppStateFixture.festival()
         let appState = Shared<AppState?>(value: AppStateFixture.state())
         var initial = FestivalDashboardFeature.State(fixture, appState: appState)
@@ -299,7 +299,7 @@ struct FestivalDashboardFeatureTests {
 
         await store.send(.destination(.presented(.edit(.putReceived(.success)))))
         await store.receive(.destination(.presented(.edit(.imageEdit(.reset)))))
-        #expect(store.state.destination == nil)
+        #expect(store.state.destination?.edit?.imageEdit.lightDraft == .unchanged)
         await store.finish()
     }
 

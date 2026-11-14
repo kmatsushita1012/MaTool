@@ -5,6 +5,29 @@ import Testing
 @testable import iOSApp
 
 struct PublicMapFeatureTests {
+    @Test("メイン地図の表示領域をBindingで変更すると子画面と共有する地図領域が更新される")
+    @MainActor
+    func mapViewportBindingUpdatesSharedRegion() async {
+        let initial = PublicMapFeature.State(
+            festival: AppStateFixture.festival(),
+            userRole: .guest,
+            appState: Shared(value: AppStateFixture.state())
+        )
+        let region = MKCoordinateRegion(
+            center: CLLocationCoordinate2D(latitude: 34.5, longitude: 138.5),
+            span: MKCoordinateSpan(latitudeDelta: 0.04, longitudeDelta: 0.04)
+        )
+        let store = TestStore(initialState: initial) {
+            PublicMapFeature()
+        } withDependencies: { $0.installTestSpies() }
+        store.exhaustivity = .off
+
+        await store.send(.binding(.set(\.mapRegion, region)))
+        #expect(store.state.mapRegion.center.latitude == 34.5)
+        #expect(store.state.mapRegion.center.longitude == 138.5)
+        await store.finish()
+    }
+
     @Test("地図の町Pickerはgroup名、町名の順で並び、選択中の町と同じgroupを優先する")
     func districtsAreSortedForMapPicker() {
         let festival = Festival(

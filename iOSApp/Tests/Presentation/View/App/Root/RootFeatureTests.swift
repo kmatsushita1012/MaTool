@@ -135,6 +135,90 @@ struct RootFeatureTests {
         await store.finish()
     }
 
+    @Test("町管理者としてログインした場合は地区IDを維持し地図と管理画面を更新する")
+    @MainActor
+    func districtLoginActivatesCorrespondingAdminDashboard() async {
+        let fixture = RootFeatureFixture()
+        let role = UserRole.district(fixture.district.id)
+        let appState = Shared<AppState?>(value: fixture.appState)
+        var initial = RootFeature.State(appState: appState)
+        initial.$launchState.withLock { $0 = .festival(.guest) }
+        initial.map = initial.makeMapState(userRole: .guest)
+        var settings = withDependencies {
+            $0.installTestSpies()
+            $0.values = rootTestConstantValues()
+        } operation: {
+            SettingsFeature.State(
+                selection: .init(festivalId: fixture.festival.id, districtId: nil),
+                festivals: [fixture.festival],
+                userRole: .guest,
+                appState: appState
+            )
+        }
+        settings.destination = .login(LoginFeature.State(appState: appState))
+        initial.destination = .settings(settings)
+        let lastScreen = LastMainScreenUseCaseSpy()
+        let store = TestStore(initialState: initial) {
+            RootFeature()
+        } withDependencies: {
+            $0.installTestSpies()
+            $0.values = rootTestConstantValues()
+            $0[LastMainScreenUseCaseKey.self] = lastScreen
+        }
+        store.exhaustivity = .off
+
+        await store.send(.destination(.presented(.settings(
+            .destination(.presented(.login(.received(.success(.signedIn(role))))))
+        ))))
+        #expect(store.state.launchState == .district(role, nil))
+        #expect(store.state.map?.userRole == role)
+        #expect(store.state.destination?.adminDistrict != nil)
+        #expect(lastScreen.value == .admin)
+        await store.finish()
+    }
+
+    @Test("ゲスト権限を管理者ログイン成功として受け取っても管理画面への昇格を拒否する")
+    @MainActor
+    func guestLoginResponseCannotActivateAdminDashboard() async {
+        let fixture = RootFeatureFixture()
+        let appState = Shared<AppState?>(value: fixture.appState)
+        var initial = RootFeature.State(appState: appState)
+        initial.$launchState.withLock { $0 = .festival(.guest) }
+        initial.map = initial.makeMapState(userRole: .guest)
+        var settings = withDependencies {
+            $0.installTestSpies()
+            $0.values = rootTestConstantValues()
+        } operation: {
+            SettingsFeature.State(
+                selection: .init(festivalId: fixture.festival.id, districtId: nil),
+                festivals: [fixture.festival],
+                userRole: .guest,
+                appState: appState
+            )
+        }
+        settings.destination = .login(LoginFeature.State(appState: appState))
+        initial.destination = .settings(settings)
+        let lastScreen = LastMainScreenUseCaseSpy()
+        let store = TestStore(initialState: initial) {
+            RootFeature()
+        } withDependencies: {
+            $0.installTestSpies()
+            $0.values = rootTestConstantValues()
+            $0[LastMainScreenUseCaseKey.self] = lastScreen
+        }
+        store.exhaustivity = .off
+
+        await store.send(.destination(.presented(.settings(
+            .destination(.presented(.login(.received(.success(.signedIn(.guest))))))
+        ))))
+        #expect(store.state.launchState == .festival(.guest))
+        #expect(store.state.destination?.adminDistrict == nil)
+        #expect(store.state.destination?.adminFestival == nil)
+        #expect(store.state.alert == .error("管理者としてログインできませんでした"))
+        #expect(lastScreen.value == .map)
+        await store.finish()
+    }
+
     @Test("ログアウト後は管理画面を破棄して地図へ戻る")
     @MainActor
     func signOutClearsAdminDestination() async {
@@ -205,6 +289,29 @@ struct RootFeatureTests {
         #expect(store.state.map != nil)
         #expect(store.state.destination == nil)
         #expect(lastMainScreen.value == nil)
+        await store.finish()
+    }
+
+    @Test("地区管理者の前回画面が地図なら管理画面を開かず地区用の地図を復元する")
+    @MainActor
+    func districtAdminWithMapHistoryRestoresMapWithoutDashboard() async {
+        let fixture = RootFeatureFixture()
+        let role = UserRole.district(fixture.district.id)
+        let appState = Shared<AppState?>(value: fixture.appState)
+        let lastScreen = LastMainScreenUseCaseSpy(value: .map)
+        let store = TestStore(initialState: RootFeature.State(appState: appState)) {
+            RootFeature()
+        } withDependencies: {
+            $0.installTestSpies()
+            $0[LastMainScreenUseCaseKey.self] = lastScreen
+        }
+        store.exhaustivity = .off
+
+        await store.send(.launchFinished(.district(role, nil), nil))
+        #expect(store.state.launchState == .district(role, nil))
+        #expect(store.state.map?.userRole == role)
+        #expect(store.state.destination == nil)
+        #expect(lastScreen.value == .map)
         await store.finish()
     }
 
@@ -349,6 +456,41 @@ struct RootFeatureTests {
 
         #expect(store.state.sheet?.district != nil)
         #expect(store.state.map?.selectedContent == .locations)
+        await store.finish()
+    }
+
+    @Test("地図上の配信位置から町紹介を開く際に地区取得が失敗したら取得理由を提示する")
+    @MainActor
+    func annotationIntroductionFailureReportsFetchError() async {
+        let fixture = RootFeatureFixture()
+        let appState = Shared<AppState?>(value: fixture.appState)
+        var initial = RootFeature.State(appState: appState)
+        initial.$launchState.withLock { $0 = .festival(.guest) }
+        initial.map = initial.makeMapState(userRole: .guest)
+        let error = AppError.be(.network("district unavailable"))
+        let store = TestStore(initialState: initial) {
+            RootFeature()
+        } withDependencies: {
+            $0.installTestSpies()
+            $0[FetchDistrictUseCaseKey.self] = RootDistrictFetchFailureSpy(error: error)
+        }
+        store.exhaustivity = .off
+        let entry = FloatEntry(
+            floatLocation: FloatLocation(
+                id: "float-1", districtId: fixture.district.id,
+                coordinate: Coordinate(latitude: 35, longitude: 139)
+            ),
+            district: fixture.district
+        )
+
+        await store.send(.map(.destination(.presented(.locations(.floatTapped(entry)))))) {
+            $0.isIntroductionLoading = true
+        }
+        await store.receive(.introductionPrepared(.failure(error))) {
+            $0.isIntroductionLoading = false
+            $0.alert = .error(error.message)
+        }
+        #expect(store.state.sheet == nil)
         await store.finish()
     }
 
@@ -1059,6 +1201,26 @@ private struct RootFeatureFixture {
         await store.finish()
     }
 
+    @Test("エラー通知をスワイプで閉じた場合もRootの起動状態は変わらない")
+    @MainActor
+    func dismissingAlertWithoutButtonPreservesScene() async {
+        let fixture = RootFeatureFixture()
+        var initial = RootFeature.State(appState: Shared<AppState?>(value: fixture.appState))
+        initial.$launchState.withLock { $0 = .festival(.guest) }
+        initial.map = initial.makeMapState(userRole: .guest)
+        initial.alert = .error("接続が切断されました")
+        let store = TestStore(initialState: initial) {
+            RootFeature()
+        } withDependencies: { $0.installTestSpies() }
+        store.exhaustivity = .off
+
+        await store.send(.alert(.dismiss))
+        #expect(store.state.alert == nil)
+        #expect(store.state.launchState == .festival(.guest))
+        #expect(store.state.map != nil)
+        await store.finish()
+    }
+
     @Test("Rootのエラー通知を閉じる操作は現在の画面状態を変えずAlertだけ破棄する")
     @MainActor
     func rootAlertAcknowledgementDoesNotChangeScene() async {
@@ -1097,6 +1259,17 @@ private func rootTestConstantValues() -> ConstantValues {
     )
 }
 
+
+
+private actor RootDistrictFetchFailureSpy: FetchDistrictUseCaseProtocol {
+    let error: AppError
+
+    init(error: AppError) { self.error = error }
+
+    func callAsFunction(districtId: District.ID) async throws -> DistrictPack {
+        throw error
+    }
+}
 
 private actor RootLaunchSuccessSpy: LaunchSceneUseCaseProtocol {
     let result: LaunchState

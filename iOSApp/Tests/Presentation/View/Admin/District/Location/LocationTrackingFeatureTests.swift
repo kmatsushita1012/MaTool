@@ -64,6 +64,36 @@ struct LocationTrackingFeatureTests {
         )
     }
 
+    @Test("将来追加された未知の位置情報許可状態では設定画面への案内にフォールバックする")
+    func unknownAuthorizationStatusFallsBackToSettings() throws {
+        let unknown = try #require(CLAuthorizationStatus(rawValue: 999))
+        #expect(
+            LocationPermissionSheetMode(
+                authorizationStatus: unknown,
+                hasRequestedAlwaysLocationPermission: false
+            ) == .settings
+        )
+    }
+
+    @Test("配信停止中の送信間隔Bindingは次回の開始条件として保持され、閉じても送信しない")
+    @MainActor
+    func intervalBindingAndDismissKeepTrackingStopped() async {
+        let state = makeState(isTracking: false)
+        let store = TestStore(initialState: state) {
+            LocationTrackingFeature()
+        } withDependencies: { $0.installTestSpies() }
+        let interval = Interval(label: "2分", value: 120)
+
+        await store.send(.binding(.set(\.selectedInterval, interval))) {
+            $0.selectedInterval = interval
+        }
+        #expect(store.state.isPickerEnabled)
+        #expect(!store.state.isTracking)
+        await store.send(.dismissTapped)
+        #expect(store.state.selectedInterval.value == 120)
+        await store.finish()
+    }
+
     @Test("初期状態はLocation権限とTrackerの選択状態を一致させる")
     func initialStateUsesPermissionAndTrackingFlags() {
         let state = makeState(authorized: .authorizedAlways, isTracking: true)
@@ -582,11 +612,12 @@ struct LocationTrackingFeatureTests {
 }
 
 
-private actor TrackingLocationUsecaseSpy: LocationUsecaseProtocol {
+actor TrackingLocationUsecaseSpy: LocationUsecaseProtocol {
     let permission: LocationPermissionState
     let initialHistory: [Status]
     let streamedHistory: [[Status]]
     let streamedLocations: [FloatLocation]
+    private(set) var preparationQueries = 0
     private(set) var permissionQueries = 0
     private(set) var permissionRequests = 0
     private(set) var historyQueries = 0
@@ -609,7 +640,8 @@ private actor TrackingLocationUsecaseSpy: LocationUsecaseProtocol {
     }
 
     func prepareTracking() async -> LocationTrackingPreparation {
-        LocationTrackingPreparation(isTracking: false, interval: nil, permissionState: permission)
+        preparationQueries += 1
+        return LocationTrackingPreparation(isTracking: false, interval: nil, permissionState: permission)
     }
     func getLocationHistory() async -> [Status] {
         historyQueries += 1
