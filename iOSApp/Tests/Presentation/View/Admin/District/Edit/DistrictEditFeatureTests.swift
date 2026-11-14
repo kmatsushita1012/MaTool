@@ -7,6 +7,38 @@ import Testing
 @testable import iOSApp
 
 struct DistrictEditFeatureTests {
+    @Test("町の基準座標は子画面で変更しても確定するまでは親の下書きに反映しない")
+    @MainActor
+    func childBaseEditDoesNotCommitUntilDone() async throws {
+        let fixture = DistrictEditFixture()
+        let oldCoordinate = Coordinate(latitude: 35, longitude: 139)
+        let newCoordinate = Coordinate(latitude: 34, longitude: 138)
+        var initial = try DistrictEditFeature.State(fixture.district, appState: fixture.appState)
+        initial.district.base = oldCoordinate
+        initial.destination = .base(.init(base: oldCoordinate))
+        let store = TestStore(initialState: initial) {
+            DistrictEditFeature()
+        } withDependencies: { $0.installTestSpies() }
+        store.exhaustivity = .off
+
+        await store.send(.destination(.presented(.base(.mapTapped(newCoordinate)))))
+        #expect(store.state.destination?.base?.coordinate == newCoordinate)
+        #expect(store.state.district.base == oldCoordinate)
+
+        let newAreaPoint = Coordinate(latitude: 35.2, longitude: 139.2)
+        let previousArea = store.state.district.area
+        await store.send(.areaTapped)
+        await store.send(.destination(.presented(.area(.mapTapped(newAreaPoint)))))
+        #expect(store.state.destination?.area?.coordinates.last == newAreaPoint)
+        #expect(store.state.district.area == previousArea)
+
+        await store.send(.performanceEditTapped(fixture.performance))
+        await store.send(.destination(.presented(.performance(.deleteTapped))))
+        #expect(store.state.destination?.performance?.alert != nil)
+        #expect(store.state.performances == [fixture.performance])
+        await store.finish()
+    }
+
     @Test("地区名のフォームBindingは下書きだけを変更し保存APIは呼び出さない")
     @MainActor
     func districtNameBindingEditsDraftWithoutSaving() async throws {

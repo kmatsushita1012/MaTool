@@ -12,7 +12,7 @@ import re
 import subprocess
 from pathlib import Path
 
-from audit_unit_coverage import canonical_path
+from audit_unit_coverage import canonical_path, infrastructure_regions
 
 ZERO_COUNT_LINE = re.compile(r"^\s*(\d+):\s*0(?:\s|$)")
 
@@ -22,6 +22,7 @@ def main() -> int:
     parser.add_argument("--xcresult", required=True, type=Path)
     parser.add_argument("--coverage", required=True, type=Path)
     parser.add_argument("--csv", required=True, type=Path)
+    parser.add_argument("--infrastructure-regions", type=Path)
     args = parser.parse_args()
 
     if not all(p.exists() for p in (args.xcresult, args.coverage, args.csv)):
@@ -35,6 +36,7 @@ def main() -> int:
         return 0
 
     raw = json.loads(args.coverage.read_text(encoding="utf-8"))
+    regions = infrastructure_regions(args.infrastructure_regions)
     coverage_paths = {
         canonical_path(source.get("path", "")): source.get("path", "")
         for target in raw.get("targets", [])
@@ -58,10 +60,15 @@ def main() -> int:
                   f"{result.stderr.strip()[:160]}")
             continue
 
+        excluded = {
+            line
+            for start, end, _ in regions.get(source, [])
+            for line in range(start, end + 1)
+        }
         missed_lines = [
             int(match.group(1))
             for line in result.stdout.splitlines()
-            if (match := ZERO_COUNT_LINE.match(line))
+            if (match := ZERO_COUNT_LINE.match(line)) and int(match.group(1)) not in excluded
         ]
         if not missed_lines:
             print(f"  [NO SOURCE LINE] {source}: check compiler-generated coverage")

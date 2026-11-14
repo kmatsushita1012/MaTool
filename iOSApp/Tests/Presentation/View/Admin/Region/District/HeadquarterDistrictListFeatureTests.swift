@@ -14,6 +14,31 @@ struct HeadquarterDistrictListFeatureTests {
         return (AppStateFixture.festival(), state, a, b)
     }
 
+    @Test("町の新規作成画面と警告を閉じても並べ替え途中の下書きを保持する")
+    @MainActor
+    func childDismissalsPreserveDistrictReorderingDraft() async {
+        let (festival, appState, a, b) = fixtures()
+        let shared = Shared<AppState?>(value: appState)
+        var initial = HeadquarterDistrictListFeature.State(festival, appState: shared)
+        initial.draftDistricts = [b, a]
+        initial.isReordering = true
+        initial.destination = .create(.init(festivalId: festival.id, appState: shared))
+        initial.alert = .error("通信エラー")
+        let store = TestStore(initialState: initial) {
+            HeadquarterDistrictListFeature()
+        } withDependencies: { $0.installTestSpies() }
+        store.exhaustivity = .off
+
+        await store.send(.destination(.dismiss))
+        #expect(store.state.destination == nil)
+        #expect(store.state.draftDistricts?.map(\.id) == [b.id, a.id])
+        #expect(store.state.isReordering)
+        await store.send(.alert(.dismiss))
+        #expect(store.state.alert == nil)
+        #expect(store.state.draftDistricts?.map(\.id) == [b.id, a.id])
+        await store.finish()
+    }
+
     @Test("検索文字列で地区を絞り込み、並べ替え中はドラフトの順序を使う")
     func filtersDistrictsAndUsesDraftOrder() {
         let (festival, appState, a, b) = fixtures()

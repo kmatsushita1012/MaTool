@@ -538,6 +538,34 @@ struct SettingsFeatureTests {
 
 
 
+    @Test("管理者が祭典変更を承認した場合はUseCaseへログアウト要求を明示しゲストの参加設定に戻る")
+    @MainActor
+    func approvedFestivalChangeSignsOutBeforeSwitchingParticipation() async {
+        let spy = SuccessfulSelectFestivalUseCaseSpy(result: .changed(.guest))
+        var initial = makeState(userRole: .headquarter("festival"))
+        initial.pendingParticipationChange = .festival("other-festival")
+        initial.alert = .participationChangeConfirmation()
+        let store = TestStore(initialState: initial) {
+            SettingsFeature()
+        } withDependencies: {
+            $0.installTestSpies()
+            $0[SelectFestivalUseCaseKey.self] = spy
+        }
+        store.exhaustivity = .off
+
+        await store.send(.alert(.presented(.confirmTapped)))
+        await store.receive(.participationChangeReceived(.init(didSignOut: true, error: nil)))
+        await store.receive(.delegate(.participationChanged(.init(
+            festivals: [AppStateFixture.festival()],
+            selection: .init(festivalId: "festival", districtId: "district")
+        ))))
+        #expect(await spy.festivalIDs == ["other-festival"])
+        #expect(await spy.signOutFlags == [true])
+        #expect(store.state.userRole == .guest)
+        #expect(store.state.pendingParticipationChange == nil)
+        await store.finish()
+    }
+
     @Test("ゲストによる祭典の切替え成功時はUseCaseの結果で選択を確定し親画面へ新しい権限を通知する")
     @MainActor
     func guestFestivalSelectionInvokesUseCaseAndUpdatesScene() async {
@@ -568,7 +596,7 @@ struct SettingsFeatureTests {
         await store.receive(.delegate(.sceneSelectionChanged(.guest, nil)))
         #expect(store.state.confirmedFestival?.id == next.id)
         #expect(await spy.festivalIDs == [next.id])
-        #expect(await spy.signOutFlags == [false])
+        #expect(await spy.signOutFlags == [true])
         await store.finish()
     }
 

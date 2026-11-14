@@ -5,6 +5,214 @@ import Testing
 @testable import iOSApp
 
 struct RootFeatureTests {
+    @Test("起動結果が未設定ユーザーなら地図を作らずOnboardingの祭典一覧を一度取得する")
+    @MainActor
+    func onboardingLaunchLoadsFestivalOptions() async {
+        let fixture = RootFeatureFixture()
+        let store = TestStore(initialState: RootFeature.State(
+            appState: Shared<AppState?>(value: fixture.appState)
+        )) {
+            RootFeature()
+        } withDependencies: {
+            $0.installTestSpies()
+            $0[FetchFestivalListUseCaseKey.self] = FetchFestivalListUseCaseSpy(
+                festivals: [fixture.festival]
+            )
+        }
+        store.exhaustivity = .off
+
+        await store.send(.launchFinished(.onboarding, nil))
+        await store.receive(.onboarding(.onAppear))
+        await store.receive(.onboarding(.festivalsLoaded(.success([fixture.festival]))))
+        #expect(store.state.map == nil)
+        #expect(store.state.destination == nil)
+        #expect(store.state.onboarding?.festivals == [fixture.festival])
+        await store.finish()
+    }
+
+    @Test("設定画面で町の経路を選ぶと管理権限と経路を保持して地図を更新する")
+    @MainActor
+    func selectingDistrictRouteUpdatesMapWithoutDroppingSelection() async {
+        let fixture = RootFeatureFixture()
+        let appState = Shared<AppState?>(value: AppStateFixture.state())
+        var initial = RootFeature.State(appState: appState)
+        initial.$launchState.withLock { $0 = .festival(.guest) }
+        initial.map = initial.makeMapState(userRole: .guest)
+        initial.destination = .settings(withDependencies {
+            $0.installTestSpies()
+            $0.values = rootTestConstantValues()
+        } operation: {
+            SettingsFeature.State(
+                selection: .init(festivalId: fixture.festival.id, districtId: nil),
+                festivals: [fixture.festival],
+                userRole: .guest,
+                appState: appState
+            )
+        })
+        let store = TestStore(initialState: initial) {
+            RootFeature()
+        } withDependencies: {
+            $0.installTestSpies()
+            $0.values = rootTestConstantValues()
+        }
+        store.exhaustivity = .off
+
+        let role = UserRole.district(fixture.district.id)
+        await store.send(.destination(.presented(.settings(
+            .delegate(.sceneSelectionChanged(role, "route"))
+        ))))
+        #expect(store.state.launchState == .district(role, "route"))
+        #expect(store.state.map?.userRole == role)
+        #expect(store.state.map?.selectedContent == .route(fixture.district.id))
+        await store.finish()
+    }
+
+    @Test("祭典の管理画面からログアウトして町を選択した状態に戻る場合も経路を保持する")
+    @MainActor
+    func signOutRestoresDistrictRouteSelection() async {
+        let fixture = RootFeatureFixture()
+        let appState = Shared<AppState?>(value: AppStateFixture.state())
+        let role = UserRole.headquarter(fixture.festival.id)
+        var initial = RootFeature.State(appState: appState)
+        initial.$launchState.withLock { $0 = .festival(role) }
+        initial.map = initial.makeMapState(userRole: role)
+        initial.destination = .adminFestival(.init(fixture.festival, appState: appState))
+        let lastScreen = LastMainScreenUseCaseSpy(value: .admin)
+        let store = TestStore(initialState: initial) {
+            RootFeature()
+        } withDependencies: {
+            $0.installTestSpies()
+            $0[LastMainScreenUseCaseKey.self] = lastScreen
+        }
+        store.exhaustivity = .off
+
+        await store.send(.destination(.presented(.adminFestival(
+            .signOutReceived(.success(.district(.guest, "route")))
+        ))))
+        #expect(store.state.launchState == .district(.guest, "route"))
+        #expect(store.state.map?.selectedContent == .route(fixture.district.id))
+        #expect(store.state.map?.userRole == .guest)
+        #expect(store.state.destination == nil)
+        #expect(lastScreen.value == nil)
+        await store.finish()
+    }
+
+    @Test("Rootの設定画面でライセンスを開いても親の管理先と地図は切り替えない")
+    @MainActor
+    func licenseNavigationRemainsInSettingsChild() async {
+        let fixture = RootFeatureFixture()
+        let appState = Shared<AppState?>(value: fixture.appState)
+        var initial = RootFeature.State(appState: appState)
+        initial.$launchState.withLock { $0 = .festival(.guest) }
+        initial.map = initial.makeMapState(userRole: .guest)
+        initial.destination = .settings(withDependencies {
+            $0.installTestSpies()
+            $0.values = rootTestConstantValues()
+        } operation: {
+            SettingsFeature.State(
+                selection: SceneSelection(festivalId: fixture.festival.id, districtId: nil),
+                festivals: [fixture.festival],
+                userRole: .guest,
+                appState: appState
+            )
+        })
+        let store = TestStore(initialState: initial) {
+            RootFeature()
+        } withDependencies: {
+            $0.installTestSpies()
+            $0.values = rootTestConstantValues()
+        }
+        store.exhaustivity = .off
+
+        await store.send(.destination(.presented(.settings(.licenseTapped))))
+        #expect(store.state.destination?.settings?.navigationDestination == .license)
+        #expect(store.state.map?.userRole == .guest)
+        await store.finish()
+    }
+
+    @Test("Onboardingで祭典一覧の読み込みに失敗した場合はRootをエラー画面へ切り替えない")
+    @MainActor
+    func onboardingFetchFailureStaysInsideChildWithoutLosingScene() async {
+        var initial = RootFeature.State()
+        initial.$launchState.withLock { $0 = .onboarding }
+        initial.onboarding = initial.makeOnboardingState()
+        let store = TestStore(initialState: initial) {
+            RootFeature()
+        } withDependencies: { $0.installTestSpies() }
+        store.exhaustivity = .off
+
+        let error = AppError.be(.network("offline"))
+        await store.send(.onboarding(.festivalsLoaded(.failure(error))))
+        #expect(store.state.scene == .onboarding)
+        #expect(store.state.onboarding?.festivalErrorMessaage == error.message)
+        #expect(store.state.map == nil)
+        await store.finish()
+    }
+
+    @Test("経路地図の屋台配信位置から町紹介を開くと配信時刻を紹介画面へ引き継ぐ")
+    @MainActor
+    func routeMapAnnotationOpensDistrictIntroduction() async {
+        let fixture = RootFeatureFixture()
+        let appState = Shared<AppState?>(value: AppStateFixture.state())
+        var initial = RootFeature.State(appState: appState)
+        initial.$launchState.withLock { $0 = .district(.guest, nil) }
+        initial.map = PublicMapFeature.State(
+            festival: fixture.festival,
+            district: fixture.district,
+            routeId: nil,
+            userRole: .guest,
+            appState: appState
+        )
+        let pack = DistrictPack(district: fixture.district, performances: [])
+        let store = TestStore(initialState: initial) {
+            RootFeature()
+        } withDependencies: {
+            $0.installTestSpies()
+            $0[FetchDistrictUseCaseKey.self] = FetchDistrictUseCaseSpy(pack: pack)
+            $0[ImageCacheClientKey.self] = ImageCacheClientSpy()
+        }
+        store.exhaustivity = .off
+
+        let entry = FloatEntry(
+            floatLocation: FloatLocation(
+                id: "route-float",
+                districtId: fixture.district.id,
+                coordinate: Coordinate(latitude: 35.1, longitude: 139.1)
+            ),
+            district: fixture.district
+        )
+        #expect(store.state.map?.destination?.route != nil)
+        await store.send(.map(.destination(.presented(.route(.locationTapped(entry))))))
+        await store.receive(.introductionPrepared(.success(.district(
+            fixture.festival, pack, entry.floatLocation.timestamp
+        ))))
+        #expect(store.state.sheet?.district != nil)
+        #expect(store.state.map?.selectedContent == .route(fixture.district.id))
+        await store.finish()
+    }
+
+    @Test("本部管理画面の町一覧遷移はRootの画面スタックを置き換えず子画面だけを開く")
+    @MainActor
+    func adminChildNavigationDoesNotReplaceRootDestination() async {
+        let fixture = RootFeatureFixture()
+        let appState = Shared<AppState?>(value: fixture.appState)
+        let role = UserRole.headquarter(fixture.festival.id)
+        var initial = RootFeature.State(appState: appState)
+        initial.$launchState.withLock { $0 = .festival(role) }
+        initial.map = initial.makeMapState(userRole: role)
+        initial.destination = .adminFestival(.init(fixture.festival, appState: appState))
+        let store = TestStore(initialState: initial) {
+            RootFeature()
+        } withDependencies: { $0.installTestSpies() }
+        store.exhaustivity = .off
+
+        await store.send(.destination(.presented(.adminFestival(.districtsTapped))))
+        #expect(store.state.destination?.adminFestival?.destination?.districts != nil)
+        #expect(store.state.launchState == .festival(role))
+        #expect(store.state.map != nil)
+        await store.finish()
+    }
+
     @Test("最初のlaunchだけがUseCaseを呼び、取得したゲストシーンへ遷移する")
     @MainActor
     func firstLaunchFetchesSceneExactlyOnce() async {

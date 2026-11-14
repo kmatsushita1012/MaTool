@@ -5,6 +5,32 @@ import Testing
 @testable import iOSApp
 
 struct HeadquarterDistrictDetailFeatureTests {
+    @Test("町の再発行画面や警告を閉じても未保存の経路ドラフトと編集中の地区を保持する")
+    @MainActor
+    func childDismissalsPreserveUnsavedDistrictAndRouteDraft() async {
+        let district = AppStateFixture.district()
+        let appState = Shared<AppState?>(value: AppStateFixture.state())
+        let route = AppStateFixture.route()
+        var initial = HeadquarterDistrictDetailFeature.State(district, appState: appState)
+        initial.district.name = "編集中の町"
+        initial.routeDrafts[route.id] = RouteDraft(route: route, points: [], passages: [])
+        initial.destination = .reissue(.init(districtId: district.id, appState: appState))
+        initial.alert = .error("通信エラー")
+        let store = TestStore(initialState: initial) {
+            HeadquarterDistrictDetailFeature()
+        } withDependencies: { $0.installTestSpies() }
+        store.exhaustivity = .off
+
+        await store.send(.destination(.dismiss))
+        #expect(store.state.destination == nil)
+        #expect(store.state.routeDrafts[route.id]?.route.id == route.id)
+        #expect(store.state.district.name == "編集中の町")
+        await store.send(.alert(.dismiss))
+        #expect(store.state.alert == nil)
+        #expect(store.state.routeDrafts[route.id]?.route.id == route.id)
+        await store.finish()
+    }
+
     @Test("地区名の編集Bindingは下書きだけを更新し、保存前のAppStateには反映しない")
     @MainActor
     func editingDistrictNameUpdatesOnlyDraft() async {
