@@ -19,13 +19,20 @@ struct ImpressionTokenTests {
 
         #expect(try token.verify(signed, now: now) == payload)
 
-        let tampered = String(signed.dropLast()) + (signed.last == "a" ? "b" : "a")
+        // Alter a significant signature byte: the final base64url character can contain
+        // unused padding bits, so changing it is not necessarily a tamper.
+        let parts = signed.split(separator: ".")
+        let signature = String(parts[1])
+        let tampered = String(parts[0]) + "."
+            + (signature.first == "a" ? "b" : "a") + String(signature.dropFirst())
         #expect(throws: Error.self) { try token.verify(tampered, now: now) }
         #expect(throws: Error.self) { try token.verify(signed, now: payload.expiresAt) }
+        #expect(throws: Error.self) { try token.verify(signed + ".extra", now: now) }
+        #expect(throws: Error.self) { try token.verify("not-a-token", now: now) }
     }
 
     @Test("短すぎる署名鍵ではtokenを発行しない")
-    func rejectsShortSigningSecret() {
+    func rejectsShortSigningSecret() throws {
         let token = ImpressionToken(secret: "short")
         let payload = ImpressionTokenPayload(
             impressionId: "impression-1",
@@ -36,5 +43,7 @@ struct ImpressionTokenTests {
         )
 
         #expect(throws: Error.self) { try token.sign(payload) }
+        let signed = try ImpressionToken(secret: String(repeating: "s", count: 32)).sign(payload)
+        #expect(throws: Error.self) { try token.verify(signed) }
     }
 }

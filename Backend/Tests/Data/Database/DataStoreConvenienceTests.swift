@@ -197,4 +197,98 @@ struct DataStoreConvenienceTests {
         #expect(store.getCallCount == 1)
     }
 
+
+    @Test("DataStoreのデフォルト強整合取得と検索は通常のストア操作へ値を欠落させず委譲する")
+    func defaultConsistentReadMethodsDelegateWithoutDroppingParameters() async throws {
+        let district = District.mock(id: "district-1", festivalId: "festival-1")
+        var getKeys: [String: Codable] = [:]
+        var indexName: String?
+        var queryConditions: [QueryCondition] = []
+        var queryFilters: [FilterCondition] = []
+        var queryLimit: Int?
+        var queryAscending = true
+
+        let base = DataStoreMock(
+            getHandler: { keys, _ in
+                getKeys = keys
+                return try encodeForDataStore(Record(district))
+            },
+            queryHandler: { index, conditions, filters, limit, ascending, _ in
+                indexName = index
+                queryConditions = conditions
+                queryFilters = filters
+                queryLimit = limit
+                queryAscending = ascending
+                return try encodeForDataStore([Record(district)])
+            }
+        )
+        // Unlike DataStoreMock, this adapter deliberately uses the protocol's
+        // default strong-consistency methods, as production stores may do.
+        let store = DefaultConsistentReadDataStore(base: base)
+
+        let fetched: Record<District>? = try await store.get(
+            keys: ["pk": "FESTIVAL#festival-1"],
+            consistentRead: true,
+            as: Record<District>.self
+        )
+        let queried: [Record<District>] = try await store.query(
+            indexName: "district-index",
+            keyConditions: [.equals("pk", "FESTIVAL#festival-1")],
+            filterConditions: [.beginsWith("sk", "DISTRICT#")],
+            limit: 3,
+            ascending: false,
+            consistentRead: true,
+            as: Record<District>.self
+        )
+
+        #expect(fetched?.content == district)
+        #expect(getKeys["pk"] as? String == "FESTIVAL#festival-1")
+        #expect(base.getCallCount == 1)
+        #expect(queried.map(\.content) == [district])
+        #expect(indexName == "district-index")
+        #expect(queryConditions.count == 1)
+        #expect(queryFilters.count == 1)
+        #expect(queryLimit == 3)
+        #expect(!queryAscending)
+        #expect(base.queryCallCount == 1)
+    }
+
+}
+
+private struct DefaultConsistentReadDataStore: DataStore {
+    let base: DataStoreMock
+
+    func put<T: RecordProtocol>(_ item: T) async throws {
+        try await base.put(item)
+    }
+
+    func get<T: RecordProtocol>(keys: [String: Codable], as type: T.Type) async throws -> T? {
+        try await base.get(keys: keys, as: type)
+    }
+
+    func delete(keys: [String: Codable]) async throws {
+        try await base.delete(keys: keys)
+    }
+
+    func scan<T: RecordProtocol>(_ type: T.Type, ignoreDecodeError: Bool) async throws -> [T] {
+        try await base.scan(type, ignoreDecodeError: ignoreDecodeError)
+    }
+
+    func query<T: RecordProtocol>(
+        indexName: String?,
+        keyConditions: [QueryCondition],
+        filterConditions: [FilterCondition],
+        limit: Int?,
+        ascending: Bool,
+        as type: T.Type
+    ) async throws -> [T] {
+        try await base.query(
+            indexName: indexName,
+            keyConditions: keyConditions,
+            filterConditions: filterConditions,
+            limit: limit,
+            ascending: ascending,
+            as: type
+        )
+    }
 }
