@@ -273,4 +273,112 @@ struct HeadquarterDistrictListFeatureTests {
         await store.finish()
     }
 
+    @Test("地区順序変更は差分となった地区だけSaveDistrictUseCaseに順番どおり渡す")
+    @MainActor
+    func savesChangedDistrictOrders() async {
+        let (festival, appState, a, b) = fixtures()
+        var movedA = a
+        movedA.order = 2
+        var movedB = b
+        movedB.order = 1
+        var state = HeadquarterDistrictListFeature.State(
+            festival, appState: Shared<AppState?>(value: appState)
+        )
+        state.isReordering = true
+        state.draftDistricts = [movedB, movedA]
+        let spy = ListSaveDistrictSpy()
+        let store = TestStore(initialState: state) {
+            HeadquarterDistrictListFeature()
+        } withDependencies: {
+            $0.installTestSpies()
+            $0[SaveDistrictUseCaseKey.self] = spy
+        }
+
+        await store.send(.reorderTapped) {
+            $0.isReorderingSaving = true
+        }
+        await store.receive(.reorderReceived(.success)) {
+            $0.isReorderingSaving = false
+            $0.isReordering = false
+            $0.draftDistricts = nil
+        }
+        #expect(await spy.ids == ["b", "a"])
+        #expect(!store.state.isLoading)
+        await store.finish()
+    }
+
+    @Test("並べ替え保存途中で失敗したらエラーを表示しドラフトを維持する")
+    @MainActor
+    func reorderFailurePreservesDraftForRetry() async {
+        let (festival, appState, a, b) = fixtures()
+        var movedA = a
+        movedA.order = 2
+        var movedB = b
+        movedB.order = 1
+        var state = HeadquarterDistrictListFeature.State(
+            festival, appState: Shared<AppState?>(value: appState)
+        )
+        state.isReordering = true
+        state.draftDistricts = [movedB, movedA]
+        let error = AppError.be(.network("offline"))
+        let spy = ListSaveDistrictSpy(error: error)
+        let store = TestStore(initialState: state) {
+            HeadquarterDistrictListFeature()
+        } withDependencies: {
+            $0.installTestSpies()
+            $0[SaveDistrictUseCaseKey.self] = spy
+        }
+
+        await store.send(.reorderTapped) {
+            $0.isReorderingSaving = true
+        }
+        await store.receive(.reorderReceived(.failure(error))) {
+            $0.isReorderingSaving = false
+            $0.alert = AlertFeature.error(error.message)
+        }
+        #expect(store.state.isReordering)
+        #expect(store.state.draftDistricts == [movedB, movedA])
+        #expect(await spy.ids == ["b"])
+        await store.finish()
+    }
+
+    @Test("地区タップで指定地区の初期読込をUseCaseへ依頼し詳細画面へ遷移する")
+    @MainActor
+    func selectedDistrictInvokesLoadUseCase() async {
+        let (festival, appState, a, _) = fixtures()
+        let spy = DistrictLoadSpy(response: LaunchDistrictPack(
+            performances: [], routes: [], points: [], passages: [], currentRouteId: nil
+        ))
+        let store = TestStore(
+            initialState: HeadquarterDistrictListFeature.State(
+                festival, appState: Shared<AppState?>(value: appState)
+            )
+        ) {
+            HeadquarterDistrictListFeature()
+        } withDependencies: {
+            $0.installTestSpies()
+            $0[LoadDistrictStateUseCaseKey.self] = spy
+        }
+        store.exhaustivity = .off
+
+        await store.send(.selected(a))
+        await store.receive(.selectedReceived(.success(a)))
+        #expect(store.state.loadingDistrictID == nil)
+        #expect(store.state.destination?.detail?.district.id == a.id)
+        await store.finish()
+    }
+
+}
+
+private actor ListSaveDistrictSpy: SaveDistrictUseCaseProtocol {
+    private(set) var ids: [District.ID] = []
+    let error: AppError?
+
+    init(error: AppError? = nil) { self.error = error }
+
+    func callAsFunction(district: District, appState: Shared<AppState?>) async throws -> District {
+        ids.append(district.id)
+        if let error { throw error }
+        return district
+    }
 }

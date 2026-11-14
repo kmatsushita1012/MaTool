@@ -99,4 +99,150 @@ struct PublicRouteFeatureTests {
             toast: Shared<MapToast?>(value: nil)
         )
     }
+    @Test("現在地取得に成功したら地図の中心を取得座標へ移動する")
+    @MainActor
+    func userFocusMovesMapToCurrentLocation() async {
+        let provider = RouteMapLocationSpy(result: .success(
+            CLLocation(latitude: 34.8, longitude: 138.2)
+        ))
+        let store = TestStore(initialState: makeState()) {
+            PublicRouteFeature()
+        } withDependencies: {
+            $0.installTestSpies()
+            $0.mapLocationProvider = provider
+        }
+        store.exhaustivity = .off
+
+        await store.send(.userFocusTapped)
+        await store.receive(.userLocationReceived(Coordinate(latitude: 34.8, longitude: 138.2)))
+        #expect(store.state.mapRegion.center.latitude == 34.8)
+        #expect(store.state.mapRegion.center.longitude == 138.2)
+        await store.finish()
+        #expect(await provider.locationRequests == 1)
+    }
+
+    @Test("現在地が読み込み中なら位置取得失敗を表示して自動消去できる")
+    @MainActor
+    func unavailableUserLocationShowsToast() async {
+        let provider = RouteMapLocationSpy(result: .loading)
+        let store = TestStore(initialState: makeState()) {
+            PublicRouteFeature()
+        } withDependencies: {
+            $0.installTestSpies()
+            $0.mapLocationProvider = provider
+        }
+        store.exhaustivity = .off
+
+        await store.send(.userFocusTapped)
+        await store.receive(.userLocationFailed("現在地を取得できませんでした。"))
+        #expect(store.state.toast != nil)
+        await store.send(.toastDismissed)
+        #expect(store.state.toast == nil)
+        await store.finish()
+        #expect(await provider.locationRequests == 1)
+    }
+
+    @Test("位置配信中の町がなければ地図中心を変えず通知を示す")
+    @MainActor
+    func absentFloatLocationShowsUnavailableNotice() async {
+        let store = TestStore(initialState: makeState()) {
+            PublicRouteFeature()
+        } withDependencies: { $0.installTestSpies() }
+        store.exhaustivity = .off
+        let before = store.state.mapRegion
+
+        await store.send(.floatFocusTapped)
+        #expect(store.state.mapRegion.center.latitude == before.center.latitude)
+        #expect(store.state.toast != nil)
+        await store.send(.toastDismissed)
+        #expect(store.state.toast == nil)
+        await store.finish()
+    }
+
+    @Test("選択中の経路の読み込み失敗はユーザーへ理由を通知する")
+    @MainActor
+    func routeFailureProducesErrorToast() async {
+        var state = makeState(routeId: "route")
+        state.isRouteLoading = true
+        let store = TestStore(initialState: state) {
+            PublicRouteFeature()
+        } withDependencies: { $0.installTestSpies() }
+        store.exhaustivity = .off
+        let error = AppError.be(.network("offline"))
+
+        await store.send(.routeLoaded(.failure(error)))
+        #expect(!store.state.isRouteLoading)
+        #expect(store.state.toast != nil)
+        await store.send(.toastDismissed)
+        #expect(store.state.toast == nil)
+        await store.finish()
+    }
+
+    @Test("別の経路を選択したら選択IDを更新し、対応するUseCaseを起動する")
+    @MainActor
+    func selectingRouteLoadsSelectedRoute() async throws {
+        let spy = RouteLoadUseCaseSpy()
+        let state = makeState(routeId: nil)
+        let entry = try #require(state.routes.first)
+        let store = TestStore(initialState: state) {
+            PublicRouteFeature()
+        } withDependencies: {
+            $0.installTestSpies()
+            $0[LoadRouteStateUseCaseKey.self] = spy
+        }
+        store.exhaustivity = .off
+
+        await store.send(.selected(entry))
+        await store.receive(.routeLoaded(.success(nil)))
+        #expect(store.state.selectedRouteId == entry.id)
+        #expect(store.state.replay == .initial(entry.id))
+        #expect(!store.state.isRouteLoading)
+        #expect(await spy.routeIDs == [entry.id])
+        await store.finish()
+    }
+
+    @Test("経路表示中に再訪したときは同じ経路を再読込する")
+    @MainActor
+    func onAppearReloadsActiveRoute() async {
+        let spy = RouteLoadUseCaseSpy()
+        let store = TestStore(initialState: makeState(routeId: "route")) {
+            PublicRouteFeature()
+        } withDependencies: {
+            $0.installTestSpies()
+            $0[LoadRouteStateUseCaseKey.self] = spy
+        }
+        store.exhaustivity = .off
+
+        await store.send(.onAppear)
+        await store.receive(.routeLoaded(.success(nil)))
+        #expect(!store.state.isRouteLoading)
+        #expect(await spy.routeIDs == ["route"])
+        await store.finish()
+    }
+
+}
+
+private actor RouteMapLocationSpy: MapLocationProviderProtocol {
+    let result: AsyncValue<CLLocation>
+    private(set) var locationRequests = 0
+
+    init(result: AsyncValue<CLLocation>) { self.result = result }
+
+    func requestPermission() async {}
+    func startTracking() async {}
+    func stopTracking() async {}
+    func getLocation() async -> AsyncValue<CLLocation> {
+        locationRequests += 1
+        return result
+    }
+    var isTracking: Bool { get async { false } }
+}
+
+private actor RouteLoadUseCaseSpy: LoadRouteStateUseCaseProtocol {
+    private(set) var routeIDs: [Route.ID] = []
+
+    func callAsFunction(routeId: Route.ID, appState: Shared<AppState?>) async throws -> RoutePack? {
+        routeIDs.append(routeId)
+        return nil
+    }
 }

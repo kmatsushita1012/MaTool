@@ -191,6 +191,126 @@ struct DistrictEditFeatureTests {
         #expect(store.state.destination == nil)
         await store.finish()
     }
+    @Test("詳細情報がない地区の編集Stateは作成せずnotFoundとして扱う")
+    func initRejectsUnloadedDistrict() {
+        let fixture = DistrictEditFixture()
+        let unloaded = Shared<AppState?>(value: AppState(festivalPack: fixture.festivalPack))
+        #expect(throws: PresentationError.self) {
+            _ = try DistrictEditFeature.State(fixture.district, appState: unloaded)
+        }
+    }
+
+    @Test("地区保存中の二重タップはUseCaseを再実行しない")
+    @MainActor
+    func savingPreventsDuplicateRequests() async throws {
+        let fixture = DistrictEditFixture()
+        var initial = try DistrictEditFeature.State(fixture.district, appState: fixture.appState)
+        initial.isLoading = true
+        let spy = SaveDistrictPackUseCaseSpy()
+        let store = TestStore(initialState: initial) {
+            DistrictEditFeature()
+        } withDependencies: {
+            $0.installTestSpies()
+            $0[SaveDistrictPackUseCaseKey.self] = spy
+        }
+
+        await store.send(.saveTapped)
+        await store.send(.imageEditTapped)
+        #expect(store.state.isLoading)
+        #expect(!store.state.isImageEditPresented)
+        #expect(await spy.calls.isEmpty)
+        await store.finish()
+    }
+
+    @Test("画像アップロード中のシートを閉じる要求は拒否する")
+    @MainActor
+    func uploadingImagePreventsDismissal() async throws {
+        let fixture = DistrictEditFixture()
+        var initial = try DistrictEditFeature.State(fixture.district, appState: fixture.appState)
+        initial.isImageEditPresented = true
+        initial.imageEdit.lightDraft = .uploading(Data([0xFF, 0xD8]))
+        let store = TestStore(initialState: initial) {
+            DistrictEditFeature()
+        } withDependencies: { $0.installTestSpies() }
+
+        await store.send(.imageEditDismissTapped)
+        #expect(store.state.isImageEditPresented)
+        await store.finish()
+    }
+
+    @Test("アップロード中の画像は保存処理へ渡さず理由を表示する")
+    @MainActor
+    func savingPendingUploadIsRejected() async throws {
+        let fixture = DistrictEditFixture()
+        var initial = try DistrictEditFeature.State(fixture.district, appState: fixture.appState)
+        initial.imageEdit.darkDraft = .uploading(Data([0xFF, 0xD8]))
+        let spy = SaveDistrictPackUseCaseSpy()
+        let store = TestStore(initialState: initial) {
+            DistrictEditFeature()
+        } withDependencies: {
+            $0.installTestSpies()
+            $0[SaveDistrictPackUseCaseKey.self] = spy
+        }
+        await store.send(.saveTapped) {
+            $0.alert = AlertFeature.error("画像のアップロードが完了するまで保存できません。")
+        }
+        #expect(await spy.calls.isEmpty)
+        await store.finish()
+    }
+
+    @Test("既存の地区基準座標がある場合は祭典基準より優先する")
+    @MainActor
+    func existingDistrictBaseOverridesFestivalBase() async throws {
+        let fixture = DistrictEditFixture()
+        var initial = try DistrictEditFeature.State(fixture.district, appState: fixture.appState)
+        initial.district.base = Coordinate(latitude: 34, longitude: 138)
+        let store = TestStore(initialState: initial) {
+            DistrictEditFeature()
+        } withDependencies: { $0.installTestSpies() }
+
+        await store.send(.baseTapped) {
+            $0.destination = .base(.init(base: Coordinate(latitude: 34, longitude: 138)))
+        }
+        #expect(store.state.destination?.base?.coordinate == initial.district.base)
+        await store.finish()
+    }
+
+    @Test("演目追加は地区IDを引き継ぎ既存演目の編集とは区別する")
+    @MainActor
+    func performanceNavigationKeepsIdentity() async throws {
+        let fixture = DistrictEditFixture()
+        let store = TestStore(
+            initialState: try DistrictEditFeature.State(fixture.district, appState: fixture.appState)
+        ) {
+            DistrictEditFeature()
+        } withDependencies: { $0.installTestSpies() }
+        store.exhaustivity = .off
+
+        await store.send(.performanceAddTapped)
+        #expect(store.state.destination?.performance != nil)
+        await store.send(.performanceEditTapped(fixture.performance))
+        #expect(store.state.destination?.performance?.item.id == fixture.performance.id)
+        await store.finish()
+    }
+
+    @Test("保存失敗のアラートを閉じても入力した地区の内容を維持する")
+    @MainActor
+    func alertDismissPreservesDistrictDraft() async throws {
+        let fixture = DistrictEditFixture()
+        var initial = try DistrictEditFeature.State(fixture.district, appState: fixture.appState)
+        initial.district.name = "draft name"
+        initial.alert = AlertFeature.error("offline")
+        let store = TestStore(initialState: initial) {
+            DistrictEditFeature()
+        } withDependencies: { $0.installTestSpies() }
+
+        await store.send(.alert(.presented(.okTapped))) {
+            $0.alert = nil
+        }
+        #expect(store.state.district.name == "draft name")
+        await store.finish()
+    }
+
 }
 
 private struct DistrictEditFixture {

@@ -245,4 +245,279 @@ struct LocationTrackingFeatureTests {
         await store.finish()
     }
 
+    @Test("権限ボタンはUseCaseから実際の権限状態を読み、適切なSheetを表示する")
+    @MainActor
+    func permissionButtonReadsUseCase() async {
+        let usecase = TrackingLocationUsecaseSpy(
+            permission: .init(authorizationStatus: .denied, hasRequestedAlwaysLocationPermission: true)
+        )
+        let store = TestStore(initialState: makeState(authorized: .authorizedAlways)) {
+            LocationTrackingFeature()
+        } withDependencies: {
+            $0.installTestSpies()
+            $0.locationUsecase = usecase
+        }
+        await store.send(.locationPermissionButtonTapped)
+        await store.receive(.locationPermissionButtonStateReceived(.init(
+            authorizationStatus: .denied,
+            hasRequestedAlwaysLocationPermission: true
+        ))) {
+            $0.showsUserLocation = false
+            $0.isAlwaysLocationAuthorized = false
+            $0.locationPermissionSheetMode = .settings
+            $0.isLocationPermissionSheetPresented = true
+        }
+        #expect(await usecase.permissionQueries == 1)
+        await store.finish()
+    }
+
+    @Test("権限Sheetを続行したら許可を要求し、設定復帰時は権限を再読込する")
+    @MainActor
+    func settingsSheetDismissalRequestsAndRefreshes() async {
+        let permission = LocationPermissionState(
+            authorizationStatus: .authorizedAlways,
+            hasRequestedAlwaysLocationPermission: true
+        )
+        let usecase = TrackingLocationUsecaseSpy(permission: permission)
+        var state = makeState(authorized: .denied)
+        state.locationPermissionSheetMode = .settings
+        state.isLocationPermissionSheetPresented = true
+        state.shouldRequestLocationPermission = true
+        let store = TestStore(initialState: state) {
+            LocationTrackingFeature()
+        } withDependencies: {
+            $0.installTestSpies()
+            $0.locationUsecase = usecase
+        }
+        await store.send(.locationPermissionSheetDismissed) {
+            $0.shouldRequestLocationPermission = false
+        }
+        await store.receive(.locationPermissionStateRefreshed(permission)) {
+            $0.showsUserLocation = true
+            $0.isAlwaysLocationAuthorized = true
+        }
+        #expect(await usecase.permissionRequests == 1)
+        #expect(await usecase.permissionQueries == 1)
+        await store.finish()
+    }
+
+    @Test("権限が十分なら追跡開始はUseCaseへIDと送信間隔を渡す")
+    @MainActor
+    func trackingStartsWithSelectedInterval() async {
+        let permission = LocationPermissionState(
+            authorizationStatus: .authorizedAlways,
+            hasRequestedAlwaysLocationPermission: true
+        )
+        let usecase = TrackingLocationUsecaseSpy(permission: permission)
+        let store = TestStore(initialState: makeState(authorized: .authorizedAlways)) {
+            LocationTrackingFeature()
+        } withDependencies: {
+            $0.installTestSpies()
+            $0.locationUsecase = usecase
+        }
+        await store.send(.binding(.set(\.isTracking, true))) {
+            $0.isTracking = true
+        }
+        await store.receive(.locationPermissionStateRefreshed(permission))
+        await store.receive(.trackingStartResultReceived(.started(permission)))
+        #expect(await usecase.startCalls == ["district:60"])
+        #expect(store.state.isTracking)
+        await store.finish()
+    }
+
+    @Test("追跡を停止すると位置削除と履歴記録を行い、二重送信はしない")
+    @MainActor
+    func trackingStopDeletesLocation() async {
+        let permission = LocationPermissionState(
+            authorizationStatus: .authorizedAlways,
+            hasRequestedAlwaysLocationPermission: true
+        )
+        let usecase = TrackingLocationUsecaseSpy(permission: permission)
+        let delete = TrackingDeleteLocationSpy()
+        let store = TestStore(initialState: makeState(authorized: .authorizedAlways, isTracking: true)) {
+            LocationTrackingFeature()
+        } withDependencies: {
+            $0.installTestSpies()
+            $0.locationUsecase = usecase
+            $0[DeleteLocationUseCaseKey.self] = delete
+        }
+        await store.send(.binding(.set(\.isTracking, false))) {
+            $0.isTracking = false
+        }
+        await store.receive(.locationPermissionStateRefreshed(permission))
+        await store.finish()
+        #expect(await usecase.stopIDs == ["district"])
+        #expect(await usecase.deleteRecords == 1)
+        #expect(await delete.deletedIDs == ["district"])
+    }
+
+    @Test("Tracking結果が到着した後にすでに停止していたら位置データを削除する")
+    @MainActor
+    func lateStartResultStillStopsLocation() async {
+        let permission = LocationPermissionState(
+            authorizationStatus: .authorizedAlways,
+            hasRequestedAlwaysLocationPermission: true
+        )
+        let usecase = TrackingLocationUsecaseSpy(permission: permission)
+        let delete = TrackingDeleteLocationSpy()
+        let store = TestStore(initialState: makeState()) {
+            LocationTrackingFeature()
+        } withDependencies: {
+            $0.installTestSpies()
+            $0.locationUsecase = usecase
+            $0[DeleteLocationUseCaseKey.self] = delete
+        }
+        await store.send(.trackingStartResultReceived(.started(permission))) {
+            $0.showsUserLocation = true
+            $0.isAlwaysLocationAuthorized = true
+        }
+        await store.finish()
+        #expect(await usecase.stopIDs == ["district"])
+        #expect(await delete.deletedIDs == ["district"])
+    }
+
+    @Test("位置更新通知はSaveLocationUseCaseへ渡して成功履歴を記録する")
+    @MainActor
+    func locationUpdatesAreSavedAndRecorded() async {
+        let usecase = TrackingLocationUsecaseSpy(permission: .init(
+            authorizationStatus: .authorizedAlways, hasRequestedAlwaysLocationPermission: true
+        ))
+        let save = TrackingSaveLocationSpy()
+        let store = TestStore(initialState: makeState()) {
+            LocationTrackingFeature()
+        } withDependencies: {
+            $0.installTestSpies()
+            $0.locationUsecase = usecase
+            $0[SaveLocationUseCaseKey.self] = save
+        }
+        let location = FloatLocation(
+            id: "loc", districtId: "district",
+            coordinate: Coordinate(latitude: 35, longitude: 139)
+        )
+        await store.send(.locationUpdateRequested(location))
+        await store.finish()
+        #expect(await save.savedIDs == ["loc"])
+        #expect(await usecase.updatedIDs == ["loc"])
+    }
+
+    @Test("位置保存に失敗した場合は位置更新成功履歴を残さずエラー履歴を残す")
+    @MainActor
+    func failedLocationUpdateRecordsActualError() async {
+        let error = AppError.be(.network("offline"))
+        let usecase = TrackingLocationUsecaseSpy(permission: .init(
+            authorizationStatus: .authorizedAlways, hasRequestedAlwaysLocationPermission: true
+        ))
+        let save = TrackingSaveLocationSpy(error: error)
+        let store = TestStore(initialState: makeState()) {
+            LocationTrackingFeature()
+        } withDependencies: {
+            $0.installTestSpies()
+            $0.locationUsecase = usecase
+            $0[SaveLocationUseCaseKey.self] = save
+        }
+        let location = FloatLocation(
+            id: "loc", districtId: "district",
+            coordinate: Coordinate(latitude: 35, longitude: 139)
+        )
+        await store.send(.locationUpdateRequested(location))
+        await store.finish()
+        #expect(await save.savedIDs == ["loc"])
+        #expect(await usecase.updatedIDs.isEmpty)
+        #expect(await usecase.errors == [error.message])
+    }
+
+    @Test("位置履歴の初期ロードをUseCaseから取得し画面Stateに取り込む")
+    @MainActor
+    func onAppearLoadsInitialHistory() async {
+        let location = FloatLocation(
+            id: "previous", districtId: "district",
+            coordinate: Coordinate(latitude: 35, longitude: 139)
+        )
+        let usecase = TrackingLocationUsecaseSpy(
+            permission: .init(authorizationStatus: .authorizedAlways,
+                              hasRequestedAlwaysLocationPermission: true),
+            history: [.update(location)]
+        )
+        let store = TestStore(initialState: makeState()) {
+            LocationTrackingFeature()
+        } withDependencies: {
+            $0.installTestSpies()
+            $0.locationUsecase = usecase
+        }
+        await store.send(.onAppear)
+        await store.receive(.historyUpdated([.update(location)])) {
+            $0.history = [.update(location)]
+        }
+        await store.finish()
+        #expect(await usecase.historyQueries == 1)
+    }
+
+}
+
+
+private actor TrackingLocationUsecaseSpy: LocationUsecaseProtocol {
+    let permission: LocationPermissionState
+    let initialHistory: [Status]
+    private(set) var permissionQueries = 0
+    private(set) var permissionRequests = 0
+    private(set) var historyQueries = 0
+    private(set) var startCalls: [String] = []
+    private(set) var stopIDs: [String] = []
+    private(set) var updatedIDs: [FloatLocation.ID] = []
+    private(set) var deleteRecords = 0
+    private(set) var errors: [String] = []
+
+    init(permission: LocationPermissionState, history: [Status] = []) {
+        self.permission = permission
+        self.initialHistory = history
+    }
+
+    func prepareTracking() async -> LocationTrackingPreparation {
+        LocationTrackingPreparation(isTracking: false, interval: nil, permissionState: permission)
+    }
+    func getLocationHistory() async -> [Status] {
+        historyQueries += 1
+        return initialHistory
+    }
+    func historyStream() async -> AsyncStream<[Status]> {
+        AsyncStream { continuation in continuation.finish() }
+    }
+    func requestPermission() async { permissionRequests += 1 }
+    func locationPermissionState() async -> LocationPermissionState {
+        permissionQueries += 1
+        return permission
+    }
+    func start(id: String, interval: Interval) async -> LocationTrackingStartResult {
+        startCalls.append("\(id):\(interval.value)")
+        return .started(permission)
+    }
+    func stop(id: String) async { stopIDs.append(id) }
+    func getLocation() async -> AsyncValue<CLLocation> { .loading }
+    func locationUpdateStream() async -> AsyncStream<FloatLocation> {
+        AsyncStream { continuation in continuation.finish() }
+    }
+    func recordLocationUpdate(_ location: FloatLocation) async {
+        updatedIDs.append(location.id)
+    }
+    func recordLocationDelete() async { deleteRecords += 1 }
+    func recordLocationError(_ error: AppError) async { errors.append(error.message) }
+}
+
+private actor TrackingSaveLocationSpy: SaveLocationUseCaseProtocol {
+    let error: AppError?
+    private(set) var savedIDs: [FloatLocation.ID] = []
+
+    init(error: AppError? = nil) { self.error = error }
+    func callAsFunction(_ location: FloatLocation, appState: Shared<AppState?>) async throws -> FloatLocation {
+        savedIDs.append(location.id)
+        if let error { throw error }
+        return location
+    }
+}
+
+private actor TrackingDeleteLocationSpy: DeleteLocationUseCaseProtocol {
+    private(set) var deletedIDs: [District.ID] = []
+    func callAsFunction(districtId: District.ID, appState: Shared<AppState?>) async throws {
+        deletedIDs.append(districtId)
+    }
 }
