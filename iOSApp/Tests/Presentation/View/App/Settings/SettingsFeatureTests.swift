@@ -538,6 +538,40 @@ struct SettingsFeatureTests {
 
 
 
+    @Test("ゲストによる祭典の切替え成功時はUseCaseの結果で選択を確定し親画面へ新しい権限を通知する")
+    @MainActor
+    func guestFestivalSelectionInvokesUseCaseAndUpdatesScene() async {
+        let next = Festival(
+            id: "other-festival",
+            name: "新しい祭典",
+            subname: "本部",
+            base: Coordinate(latitude: 34.7, longitude: 138.1)
+        )
+        let spy = SuccessfulSelectFestivalUseCaseSpy(result: .changed(.guest))
+        let store = TestStore(initialState: makeState()) {
+            SettingsFeature()
+        } withDependencies: {
+            $0.installTestSpies()
+            $0[SelectFestivalUseCaseKey.self] = spy
+        }
+
+        await store.send(.binding(.set(\.selectedFestival, next))) {
+            $0.selectedFestival = next
+            $0.isParticipationLoading = true
+        }
+        await store.receive(.festivalSelectReceived(.success(.changed(.guest)))) {
+            $0.isParticipationLoading = false
+            $0.selectedDistrict = nil
+            $0.confirmedFestival = next
+            $0.confirmedDistrict = nil
+        }
+        await store.receive(.delegate(.sceneSelectionChanged(.guest, nil)))
+        #expect(store.state.confirmedFestival?.id == next.id)
+        #expect(await spy.festivalIDs == [next.id])
+        #expect(await spy.signOutFlags == [false])
+        await store.finish()
+    }
+
     @Test("ゲストの町選択成功ではUseCaseの経路IDを親へ通知し選択内容を確定する")
     @MainActor
     func guestDistrictSelectionInvokesUseCaseAndConfirmsSelection() async {
@@ -560,6 +594,38 @@ struct SettingsFeatureTests {
         await store.receive(.delegate(.sceneSelectionChanged(.guest, "new-route")))
         #expect(await spy.districtIDs == [nil])
         #expect(store.state.confirmedDistrict == nil)
+        await store.finish()
+    }
+
+    @Test("設定画面のライセンス遷移先Bindingを戻すとメニューの表示状態だけが初期化される")
+    @MainActor
+    func navigationBindingDismissesLicenseWithoutChangingParticipation() async {
+        let store = TestStore(initialState: makeState()) {
+            SettingsFeature()
+        } withDependencies: { $0.installTestSpies() }
+        store.exhaustivity = .off
+
+        await store.send(.binding(.set(\.navigationDestination, .license)))
+        #expect(store.state.navigationDestination == .license)
+        await store.send(.binding(.set(\.navigationDestination, nil)))
+        #expect(store.state.navigationDestination == nil)
+        #expect(store.state.selectedFestival?.id == "festival")
+        await store.finish()
+    }
+
+    @Test("参加設定変更のエラーダイアログでOKを押すと警告だけを閉じて選択中の町を保持する")
+    @MainActor
+    func participationErrorAcknowledgementPreservesSelection() async {
+        var initial = makeState()
+        initial.alert = .error("変更に失敗しました")
+        let store = TestStore(initialState: initial) {
+            SettingsFeature()
+        } withDependencies: { $0.installTestSpies() }
+        store.exhaustivity = .off
+
+        await store.send(.alert(.presented(.okTapped)))
+        #expect(store.state.alert == nil)
+        #expect(store.state.selectedDistrict?.id == "district")
         await store.finish()
     }
 
@@ -639,6 +705,25 @@ struct SettingsFeatureTests {
 
 }
 
+
+
+private actor SuccessfulSelectFestivalUseCaseSpy: SelectFestivalUseCaseProtocol {
+    let result: FestivalSelectionResult
+    private(set) var festivalIDs: [Festival.ID] = []
+    private(set) var signOutFlags: [Bool] = []
+
+    init(result: FestivalSelectionResult) { self.result = result }
+
+    func callAsFunction(
+        festivalId: Festival.ID,
+        appState: Shared<AppState?>?,
+        signOutCurrentUser: Bool
+    ) async throws -> FestivalSelectionResult {
+        festivalIDs.append(festivalId)
+        signOutFlags.append(signOutCurrentUser)
+        return result
+    }
+}
 
 private actor SuccessfulSelectDistrictUseCaseSpy: SelectDistrictUseCaseProtocol {
     private(set) var districtIDs: [District.ID?] = []

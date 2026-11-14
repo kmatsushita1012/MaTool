@@ -5,9 +5,9 @@ import Testing
 @testable import iOSApp
 
 struct PublicMapFeatureTests {
-    @Test("メイン地図の表示領域をBindingで変更すると子画面と共有する地図領域が更新される")
+    @Test("メイン地図へのBinding通知では子画面が管理する共有表示領域を意図せず上書きしない")
     @MainActor
-    func mapViewportBindingUpdatesSharedRegion() async {
+    func mapViewportBindingDoesNotOverwriteChildRegion() async {
         let initial = PublicMapFeature.State(
             festival: AppStateFixture.festival(),
             userRole: .guest,
@@ -22,9 +22,10 @@ struct PublicMapFeatureTests {
         } withDependencies: { $0.installTestSpies() }
         store.exhaustivity = .off
 
+        let original = store.state.mapRegion
         await store.send(.binding(.set(\.mapRegion, region)))
-        #expect(store.state.mapRegion.center.latitude == 34.5)
-        #expect(store.state.mapRegion.center.longitude == 138.5)
+        #expect(store.state.mapRegion.center.latitude == original.center.latitude)
+        #expect(store.state.mapRegion.center.longitude == original.center.longitude)
         await store.finish()
     }
 

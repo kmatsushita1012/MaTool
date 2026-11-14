@@ -118,6 +118,7 @@ struct RouteEditFeatureTests {
     func modeControlsEditingAndTitles() throws {
         var state = try makeState(mode: .create)
         #expect(state.isSaveable)
+        #expect(!state.isConfirmDisabled)
         #expect(!state.isDeleteable)
         #expect(state.title == "新規作成")
         #expect(state.saveButtonTitle == "保存")
@@ -151,6 +152,21 @@ struct RouteEditFeatureTests {
         state.tab = .edit
         #expect(state.isPartialEnable)
         #expect(!state.canShowDistrictAreaOverlay)
+    }
+
+    @Test("経路編集のキャンセルは保存・削除の処理状態を開始せず下書きを保持する")
+    @MainActor
+    func cancellingRouteEditorDoesNotSaveOrDeleteDraft() async throws {
+        let initial = try makeState(mode: .update)
+        let store = TestStore(initialState: initial) {
+            RouteEditFeature()
+        } withDependencies: { $0.installTestSpies() }
+        let routeId = initial.route.id
+
+        await store.send(.cancelTapped)
+        #expect(store.state.route.id == routeId)
+        #expect(store.state.loadingAction == nil)
+        await store.finish()
     }
 
     @Test("経路の説明文を編集しても保存アクションが届くまではAPI送信を開始しない")

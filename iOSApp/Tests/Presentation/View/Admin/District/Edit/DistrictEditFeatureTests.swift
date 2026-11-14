@@ -7,6 +7,28 @@ import Testing
 @testable import iOSApp
 
 struct DistrictEditFeatureTests {
+    @Test("地区名のフォームBindingは下書きだけを変更し保存APIは呼び出さない")
+    @MainActor
+    func districtNameBindingEditsDraftWithoutSaving() async throws {
+        let fixture = DistrictEditFixture()
+        let initial = try DistrictEditFeature.State(fixture.district, appState: fixture.appState)
+        let spy = SaveDistrictPackUseCaseSpy()
+        let store = TestStore(initialState: initial) {
+            DistrictEditFeature()
+        } withDependencies: {
+            $0.installTestSpies()
+            $0[SaveDistrictPackUseCaseKey.self] = spy
+        }
+
+        await store.send(.binding(.set(\.district.name, "地区名を編集中"))) {
+            $0.district.name = "地区名を編集中"
+        }
+        #expect(!store.state.isLoading)
+        #expect(store.state.district.name == "地区名を編集中")
+        #expect(await spy.calls.isEmpty)
+        await store.finish()
+    }
+
     @Test("地区編集をキャンセルすると画像の一時ドラフトを破棄し保存処理を呼ばない")
     @MainActor
     func cancellationResetsImageDraftWithoutSaving() async throws {
