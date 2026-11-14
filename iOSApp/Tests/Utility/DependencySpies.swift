@@ -251,6 +251,24 @@ final class AuthProviderInitializeSpy: @unchecked Sendable {
     }
 }
 
+actor AuthProviderRoleLookupSpy {
+    private let role: UserRole
+    private var calls = 0
+
+    init(role: UserRole) {
+        self.role = role
+    }
+
+    func call() -> UserRole {
+        calls += 1
+        return role
+    }
+
+    func callCount() -> Int {
+        calls
+    }
+}
+
 final class UserDefaultsClientSpy: @unchecked Sendable {
     private let lock = NSLock()
     private var strings: [String: String] = [:]
