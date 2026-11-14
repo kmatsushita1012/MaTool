@@ -18,3 +18,12 @@ iOSApp/Sources/Data/Client/ImageJPEGProcessingClient.swift | ImageIOでの画像
 iOSApp/Sources/Data/Client/MapLocationProvider.swift | CoreLocation地図位置情報（インフラ）
 iOSApp/Sources/Data/Client/PhotoLibraryClient.swift | PhotosUIとの統合（インフラ）
 iOSApp/Sources/Data/ConstantValues.swift | XCConfigとBundleアプリ設定の読込（インフラ）
+Backend/Sources/Backend.swift | Lambdaアプリ起動と依存配線のみ（インフラ）
+Backend/Sources/Controller/AdvertisementController.swift | HTTP受信・レスポンス変換の境界（ビジネス判定はUsecaseで検証）
+Backend/Sources/Controller/AdvertiserAuthController.swift | HTTP認証入力の転送境界（認証の検証はUsecaseで実施）
+Backend/Sources/Controller/PurchaseController.swift | HTTP購入APIのController境界（購入条件はUsecaseで検証）
+Backend/Sources/Controller/StoreController.swift | HTTP店舗APIのController境界（登録・権限条件はUsecaseで検証）
+Backend/Sources/Data/Client/AppStoreClient.swift | Apple App Store Server API SDK接続（インフラ）
+Backend/Sources/Data/Client/ReportNotificationClient.swift | AWS SNS SDK通知接続（インフラ）
+Backend/Sources/Data/Database/DynamoDBTransactionalDataStore.swift | DynamoDB SDK抽象プロトコルのみで実行可能行なし（インフラ）
+Backend/Sources/Utils/AdvertisingEnvironment.swift | AWS環境変数とApp Store SDK証明書設定の読み取り（インフラ）

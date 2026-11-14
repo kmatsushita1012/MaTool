@@ -5,6 +5,18 @@ import Testing
 @testable import iOSApp
 
 struct RootFeatureTests {
+    @Test("ゲスト権限では管理画面の遷移先を構築できない")
+    @MainActor
+    func guestRoleCannotCreateAdminDestination() {
+        let fixture = RootFeatureFixture()
+        var state = RootFeature.State(appState: Shared<AppState?>(value: fixture.appState))
+        let changed = RootFeature().setAdminDestination(state: &state, userRole: .guest)
+
+        #expect(!changed)
+        #expect(state.destination == nil)
+        #expect(state.alert == nil)
+    }
+
     @Test("起動結果が未設定ユーザーなら地図を作らずOnboardingの祭典一覧を一度取得する")
     @MainActor
     func onboardingLaunchLoadsFestivalOptions() async {

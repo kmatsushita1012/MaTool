@@ -447,7 +447,7 @@ struct RootFeature {
     }
 
     @discardableResult
-    private func setAdminDestination(state: inout State, userRole: UserRole) -> Bool {
+    func setAdminDestination(state: inout State, userRole: UserRole) -> Bool {
         switch userRole {
         case .headquarter(let festivalId):
             guard let festival = state.appState?.festivalState.festival,
@@ -464,7 +464,7 @@ struct RootFeature {
             }
             state.destination = .adminDistrict(.init(district, appState: state.$appState))
             return true
-        case .guest, .advertiser:
+        case .guest:
             return false
         }
     }
@@ -477,7 +477,7 @@ struct RootFeature {
             state.$launchState.withLock { $0 = .festival(userRole) }
         case .district:
             state.$launchState.withLock { $0 = .district(userRole, currentRouteId) }
-        case .guest, .advertiser:
+        case .guest:
             state.alert = .error("管理者としてログインできませんでした")
             return false
         }

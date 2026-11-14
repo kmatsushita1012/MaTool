@@ -175,4 +175,26 @@ struct DataStoreConvenienceTests {
 
         #expect(try await repository.get(id: district.id) == district)
     }
+    @Test("強整合指定のPKとSK取得はDataStoreの標準取得へ正しいキーを渡す")
+    func consistentReadByPKAndSKDelegatesToGet() async throws {
+        var keys: [String: Codable] = [:]
+        let district = District.mock(id: "district-1", festivalId: "festival-1")
+        let store = DataStoreMock(getHandler: { captured, _ in
+            keys = captured
+            return try encodeForDataStore(Record(district))
+        })
+
+        let fetched: Record<District>? = try await store.get(
+            pk: "FESTIVAL#festival-1",
+            sk: "DISTRICT#district-1",
+            consistentRead: true,
+            as: Record<District>.self
+        )
+
+        #expect(fetched?.content == district)
+        #expect(keys["pk"] as? String == "FESTIVAL#festival-1")
+        #expect(keys["sk"] as? String == "DISTRICT#district-1")
+        #expect(store.getCallCount == 1)
+    }
+
 }

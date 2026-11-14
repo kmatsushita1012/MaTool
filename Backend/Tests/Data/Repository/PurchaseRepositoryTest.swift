@@ -119,6 +119,157 @@ struct PurchaseRepositoryTest {
         #expect(purchaseCondition?.contains("#content.#lastRefundDate = :lastRefundDate") == true)
         #expect(balanceCondition?.contains("#content.#balance = :oldBalance") == true)
     }
+    @Test("transactionIdから購入台帳を強整合読み取りする")
+    func getFetchesPurchaseByExactKey() async throws {
+        let record = makeRecord()
+        var readKeys: [String: Codable] = [:]
+        let dataStore = DataStoreMock(getHandler: { keys, _ in
+            readKeys = keys
+            return try encodeForDataStore(Record(
+                pk: "PURCHASE#transaction-1", sk: "METADATA", content: record
+            ))
+        })
+
+        let fetched = try await withDependencies {
+            $0.dataStoreFactory = { _ in dataStore }
+        } operation: {
+            try await PurchaseRepository().get(transactionId: record.transactionId)
+        }
+
+        #expect(fetched == record)
+        #expect(readKeys["pk"] as? String == "PURCHASE#transaction-1")
+        #expect(readKeys["sk"] as? String == "METADATA")
+    }
+
+    @Test("購入履歴は店舗PKに限定し新しい順へ並ぶqueryを指定する")
+    func historyUsesStorePartitionAndDescendingQuery() async throws {
+        let record = makeRecord()
+        let history = PurchaseHistoryItem(
+            transactionId: record.transactionId,
+            productId: record.productId,
+            creditedAmount: record.creditedAmount,
+            purchasedAt: record.purchasedAt
+        )
+        var wasDescending = false
+        let dataStore = DataStoreMock(queryHandler: { index, conditions, filters, limit, ascending, _ in
+            #expect(index == nil)
+            #expect(conditions.count == 2)
+            #expect(filters.isEmpty)
+            #expect(limit == nil)
+            wasDescending = !ascending
+            return try encodeForDataStore([
+                Record(pk: "STORE#store-1", sk: "PURCHASE#2026#transaction-1", content: history)
+            ])
+        })
+
+        let entries = try await withDependencies {
+            $0.dataStoreFactory = { _ in dataStore }
+        } operation: {
+            try await PurchaseRepository().history(storeId: "store-1")
+        }
+
+        #expect(wasDescending)
+        #expect(entries.count == 1)
+        #expect(entries.first?.transactionId == record.transactionId)
+    }
+
+    @Test("返金マーカーの新規登録は購入台帳に条件付き一件Putする")
+    func refundMarkerCreateUsesConditionalPut() async throws {
+        let marker = makeRecord()
+        let dataStore = DataStoreMock(transactWriteHandler: { _ in })
+
+        let inserted = try await withDependencies {
+            $0.dataStoreFactory = { _ in dataStore }
+        } operation: {
+            try await PurchaseRepository().createRefundMarker(marker)
+        }
+
+        #expect(inserted)
+        let writes = try #require(dataStore.lastTransaction)
+        #expect(writes.count == 1)
+        guard case let .put(_, condition, _, _) = writes[0] else {
+            Issue.record("返金マーカーがPutではない")
+            return
+        }
+        #expect(condition == "attribute_not_exists(#pk)")
+    }
+
+    @Test("既存マーカーが競合した場合は再作成せずfalseを返す")
+    func existingRefundMarkerIsIdempotent() async throws {
+        let marker = makeRecord()
+        let dataStore = DataStoreMock(
+            getHandler: { _, _ in
+                try encodeForDataStore(Record(
+                    pk: "PURCHASE#transaction-1", sk: "METADATA", content: marker
+                ))
+            },
+            transactWriteHandler: { _ in throw TestError.intentional }
+        )
+
+        let inserted = try await withDependencies {
+            $0.dataStoreFactory = { _ in dataStore }
+        } operation: {
+            try await PurchaseRepository().createRefundMarker(marker)
+        }
+
+        #expect(!inserted)
+    }
+
+    @Test("既存の未付与レコードを付与する際は返金日時も楽観ロック条件へ入れる")
+    func grantWithPriorRefundDateChecksPriorVersion() async throws {
+        var prior = makeRecord()
+        prior.creditGranted = false
+        prior.lastRefundEventSignedDate = Date(timeIntervalSince1970: 1_700_000_100)
+        let credit = CreditAccount(storeId: "store-1", balance: 0)
+        let dataStore = DataStoreMock(transactWriteHandler: { _ in })
+
+        let updated = try await withDependencies {
+            $0.dataStoreFactory = { _ in dataStore }
+        } operation: {
+            try await PurchaseRepository().grant(
+                makeRecord(), replacing: prior, credit: credit,
+                newBalance: 500, newLastPurchasedAt: prior.purchasedAt
+            )
+        }
+
+        #expect(updated)
+        let writes = try #require(dataStore.lastTransaction)
+        guard case let .put(_, condition, _, values) = writes[0] else {
+            Issue.record("購入台帳の更新がPutではない")
+            return
+        }
+        #expect(condition?.contains("#content.#lastRefundDate = :lastRefundDate") == true)
+        #expect(values[":lastRefundDate"] != nil)
+    }
+
+    @Test("Credit変動なしの返金通知は台帳だけを書き換える")
+    func notificationWithoutBalanceChangeWritesSingleRecord() async throws {
+        let prior = makeRecord()
+        var updated = prior
+        updated.refundStatus = .refunded
+        let dataStore = DataStoreMock(transactWriteHandler: { _ in })
+
+        let applied = try await withDependencies {
+            $0.dataStoreFactory = { _ in dataStore }
+        } operation: {
+            try await PurchaseRepository().applyNotification(
+                updated, replacing: prior,
+                credit: CreditAccount(storeId: "store-1", balance: 10),
+                newBalance: 10
+            )
+        }
+
+        #expect(applied)
+        let writes = try #require(dataStore.lastTransaction)
+        #expect(writes.count == 1)
+        guard case let .put(_, condition, _, _) = writes[0] else {
+            Issue.record("返金通知の更新がPutではない")
+            return
+        }
+        #expect(condition?.contains("attribute_type(#content.#lastRefundDate") == true)
+    }
+
+
 }
 
 private func makeRecord() -> PurchaseRecord {

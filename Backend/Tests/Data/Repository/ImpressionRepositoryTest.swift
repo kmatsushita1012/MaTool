@@ -70,4 +70,43 @@ struct ImpressionRepositoryTest {
         #expect(impressionCondition == "attribute_not_exists(#pk)")
         #expect(balanceCondition?.contains("#content.#balance = :oldBalance") == true)
     }
+    @Test("残高不足の表示ではDynamoDBの課金トランザクションを作成しない")
+    func insufficientCreditDoesNotWriteTransaction() async throws {
+        let dataStore = DataStoreMock(getHandler: { _, _ in nil })
+        let credits = CreditRepositorySpy(account: CreditAccount(storeId: "store-1", balance: 1))
+        let result = try await withDependencies {
+            $0.dataStoreFactory = { _ in dataStore }
+            $0[CreditRepositoryKey.self] = credits
+        } operation: {
+            try await ImpressionRepository().charge(
+                impressionId: "impression-10",
+                storeId: "store-1",
+                placement: .interstitial,
+                chargedAt: Date()
+            )
+        }
+
+        #expect(result == .insufficientBalance)
+        #expect(dataStore.lastTransaction == nil)
+    }
+
+    @Test("Credit残高のない店舗は課金せずnotFoundを返す")
+    func missingCreditAccountFailsBeforeCharging() async {
+        let dataStore = DataStoreMock(getHandler: { _, _ in nil })
+        await #expect(throws: Error.notFound("Credit 残高が見つかりません。")) {
+            try await withDependencies {
+                $0.dataStoreFactory = { _ in dataStore }
+                $0[CreditRepositoryKey.self] = CreditRepositorySpy()
+            } operation: {
+                try await ImpressionRepository().charge(
+                    impressionId: "impression-11",
+                    storeId: "store-1",
+                    placement: .banner,
+                    chargedAt: Date()
+                )
+            }
+        }
+        #expect(dataStore.lastTransaction == nil)
+    }
+
 }

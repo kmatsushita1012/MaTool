@@ -192,9 +192,9 @@ struct RouteEditFeature{
                     }
                 case .create, .update:
                     state.loadingAction = .save
-                    return .task(Action.saveReceived) {[state, points, appState = state.$appState] in
-                        switch state.mode {
-                        case .create:
+                    let isCreate = state.mode == .create
+                    return .task(Action.saveReceived) { [state, points, appState = state.$appState, isCreate] in
+                        if isCreate {
                             _ = try await createRouteUseCase(
                                 districtId: state.route.districtId,
                                 route: state.route,
@@ -202,15 +202,13 @@ struct RouteEditFeature{
                                 passages: state.passages,
                                 appState: appState
                             )
-                        case .update:
+                        } else {
                             _ = try await updateRouteUseCase(
                                 state.route,
                                 points: points,
                                 passages: state.passages,
                                 appState: appState
                             )
-                        case .preview:
-                            throw AppError.be(.forbidden("権限がありません"))
                         }
                         await dismiss()
                     }

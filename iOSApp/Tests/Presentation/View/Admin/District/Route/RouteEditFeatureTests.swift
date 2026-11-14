@@ -6,6 +6,22 @@ import Testing
 @testable import iOSApp
 
 struct RouteEditFeatureTests {
+    @Test("経路削除の確認をキャンセルした場合は削除せずAlertだけを閉じる")
+    @MainActor
+    func cancelDeleteConfirmationKeepsRoute() async throws {
+        var initial = try makeState(mode: .update)
+        initial.alert = .delete(AlertFeature.delete())
+        let store = TestStore(initialState: initial) {
+            RouteEditFeature()
+        } withDependencies: { $0.installTestSpies() }
+        store.exhaustivity = .off
+
+        await store.send(.alert(.presented(.delete(.cancelTapped))))
+        #expect(store.state.alert == nil)
+        #expect(!store.state.isDeleting)
+        await store.finish()
+    }
+
     @Test("有効な新規・更新経路の保存成功は対応UseCaseへ値を渡し保存完了を受け取る")
     @MainActor
     func successfulRouteSaveInvokesCorrectUseCaseAndCompletes() async throws {

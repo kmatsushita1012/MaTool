@@ -196,6 +196,68 @@ struct PurchaseUsecaseTest {
         #expect(stored.refundStatus == .active)
         #expect(stored.lastRefundEventSignedDate == reversalDate)
     }
+    @Test("広告主が自分の店舗の残高を取得するとCreditAccountを返す")
+    func creditsReturnsOwnedStoreBalance() async throws {
+        let store = makeStore()
+        let account = CreditAccount(storeId: store.id, balance: 42)
+        let result = try await withDependencies {
+            $0[StoreRepositoryKey.self] = StoreRepositorySpy(store: store)
+            $0[CreditRepositoryKey.self] = CreditRepositorySpy(account: account)
+        } operation: {
+            try await PurchaseUsecase().credits(storeId: store.id, user: .advertiser(store.ownerId))
+        }
+        #expect(result.balance == 42)
+        #expect(result.storeId == store.id)
+    }
+
+    @Test("存在しないCredit残高はゼロと捏造せずnotFoundを返す")
+    func creditsRequiresExistingAccount() async {
+        let store = makeStore()
+        await #expect(throws: Error.notFound("Credit 残高が見つかりません。")) {
+            try await withDependencies {
+                $0[StoreRepositoryKey.self] = StoreRepositorySpy(store: store)
+                $0[CreditRepositoryKey.self] = CreditRepositorySpy()
+            } operation: {
+                try await PurchaseUsecase().credits(storeId: store.id, user: .advertiser(store.ownerId))
+            }
+        }
+    }
+
+    @Test("所有者以外には購入履歴を開示せず、本人なら履歴取得を許可する")
+    func historyChecksOwnerBeforeFetching() async throws {
+        let store = makeStore()
+        let repository = StoreRepositorySpy(store: store)
+        let purchases = PurchaseRepositorySpy()
+
+        await #expect(throws: Error.notFound("指定された店舗が見つかりません。")) {
+            try await withDependencies {
+                $0[StoreRepositoryKey.self] = repository
+                $0[PurchaseRepositoryKey.self] = purchases
+            } operation: {
+                try await PurchaseUsecase().history(storeId: store.id, user: .advertiser("other-owner"))
+            }
+        }
+
+        let history = try await withDependencies {
+            $0[StoreRepositoryKey.self] = repository
+            $0[PurchaseRepositoryKey.self] = purchases
+        } operation: {
+            try await PurchaseUsecase().history(storeId: store.id, user: .advertiser(store.ownerId))
+        }
+        #expect(history.isEmpty)
+    }
+
+    @Test("未ログイン・管理者権限では購入Creditにアクセスできない")
+    func rejectsNonAdvertiserCreditRequests() async {
+        let store = makeStore()
+        await #expect(throws: Error.unauthorized("広告主としてログインしてください。")) {
+            try await PurchaseUsecase().credits(storeId: store.id, user: .guest)
+        }
+        await #expect(throws: Error.forbidden("広告主としてログインしてください。")) {
+            try await PurchaseUsecase().credits(storeId: store.id, user: .district("district-1"))
+        }
+    }
+
 }
 
 private func makeEnvironment() -> AdvertisingEnvironment {
