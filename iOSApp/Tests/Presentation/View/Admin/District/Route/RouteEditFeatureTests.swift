@@ -167,7 +167,8 @@ struct RouteEditFeatureTests {
     @Test("経路上のロングタップは新しい点を追加し地図座標を保持する")
     @MainActor
     func mapLongPressAddsPoint() async throws {
-        let store = TestStore(initialState: try makeState(mode: .create)) {
+        let storeInitial = try makeState(mode: .create)
+        let store = TestStore(initialState: storeInitial) {
             RouteEditFeature()
         } withDependencies: { $0.installTestSpies() }
         store.exhaustivity = .off
@@ -280,7 +281,8 @@ struct RouteEditFeatureTests {
     @Test("部分出力で描画範囲が未指定なら非同期の画像作成は開始しない")
     @MainActor
     func partialExportRequiresMapSize() async throws {
-        let store = TestStore(initialState: try makeState(mode: .update)) {
+        let storeInitial = try makeState(mode: .update)
+        let store = TestStore(initialState: storeInitial) {
             RouteEditFeature()
         } withDependencies: { $0.installTestSpies() }
         store.exhaustivity = .off
@@ -293,7 +295,8 @@ struct RouteEditFeatureTests {
     @Test("新規作成モードの削除ボタンは拒否し既存経路なら削除確認を出す")
     @MainActor
     func deleteRequiresExistingRoute() async throws {
-        let newStore = TestStore(initialState: try makeState(mode: .create)) {
+        let newStoreInitial = try makeState(mode: .create)
+        let newStore = TestStore(initialState: newStoreInitial) {
             RouteEditFeature()
         } withDependencies: { $0.installTestSpies() }
         newStore.exhaustivity = .off
@@ -301,7 +304,9 @@ struct RouteEditFeatureTests {
         #expect(newStore.state.alert != nil)
         await newStore.finish()
 
-        let existingStore = TestStore(initialState: try makeState(mode: .update)) {
+        let existingStoreInitial = try makeState(mode: .update)
+
+        let existingStore = TestStore(initialState: existingStoreInitial) {
             RouteEditFeature()
         } withDependencies: { $0.installTestSpies() }
         existingStore.exhaustivity = .off
@@ -313,7 +318,8 @@ struct RouteEditFeatureTests {
     @Test("通過町の追加・挿入位置選択は下書きの位置を正確に保持する")
     @MainActor
     func passageInsertPositionsAreBounded() async throws {
-        let store = TestStore(initialState: try makeState(mode: .create)) {
+        let storeInitial = try makeState(mode: .create)
+        let store = TestStore(initialState: storeInitial) {
             RouteEditFeature()
         } withDependencies: { $0.installTestSpies() }
         await store.send(.passageAddTapped) {
@@ -331,7 +337,8 @@ struct RouteEditFeatureTests {
     @Test("通過町の選択は追加状態を解消し、メモと対象町を保持する")
     @MainActor
     func passageSelectionStoresDistrictAndMemo() async throws {
-        let store = TestStore(initialState: try makeState(mode: .create)) {
+        let storeInitial = try makeState(mode: .create)
+        let store = TestStore(initialState: storeInitial) {
             RouteEditFeature()
         } withDependencies: { $0.installTestSpies() }
         store.exhaustivity = .off
@@ -348,7 +355,8 @@ struct RouteEditFeatureTests {
     @Test("保存結果の成功通知は重複した状態変更を起こさない")
     @MainActor
     func modifiedSuccessIsNoop() async throws {
-        let store = TestStore(initialState: try makeState(mode: .preview)) {
+        let storeInitial = try makeState(mode: .preview)
+        let store = TestStore(initialState: storeInitial) {
             RouteEditFeature()
         } withDependencies: { $0.installTestSpies() }
         await store.send(.modified(.success))
@@ -359,7 +367,8 @@ struct RouteEditFeatureTests {
     @Test("点追加後のUndoとRedoは座標履歴を往復し操作モードを初期化する")
     @MainActor
     func undoRedoRestoresRouteGeometry() async throws {
-        let store = TestStore(initialState: try makeState(mode: .create)) {
+        let storeInitial = try makeState(mode: .create)
+        let store = TestStore(initialState: storeInitial) {
             RouteEditFeature()
         } withDependencies: { $0.installTestSpies() }
         store.exhaustivity = .off
@@ -401,7 +410,8 @@ struct RouteEditFeatureTests {
     @Test("未設定の経路で保存しようとすると不正な点列を拒否しUseCaseを実行しない")
     @MainActor
     func emptyRouteCannotBeSaved() async throws {
-        let store = TestStore(initialState: try makeState(mode: .create)) {
+        let storeInitial = try makeState(mode: .create)
+        let store = TestStore(initialState: storeInitial) {
             RouteEditFeature()
         } withDependencies: { $0.installTestSpies() }
         store.exhaustivity = .off
@@ -415,7 +425,8 @@ struct RouteEditFeatureTests {
     @Test("通過町の選択後に先頭挿入しても既存メモの順序を壊さない")
     @MainActor
     func passageInsertAtBeginningPreservesOrder() async throws {
-        let store = TestStore(initialState: try makeState(mode: .create)) {
+        let storeInitial = try makeState(mode: .create)
+        let store = TestStore(initialState: storeInitial) {
             RouteEditFeature()
         } withDependencies: { $0.installTestSpies() }
         store.exhaustivity = .off
@@ -432,7 +443,8 @@ struct RouteEditFeatureTests {
     @Test("通過町の移動と削除でリスト内の操作対象を正しく反映する")
     @MainActor
     func passageMovementAndDeletionPreserveRemainingPassages() async throws {
-        let store = TestStore(initialState: try makeState(mode: .create)) {
+        let storeInitial = try makeState(mode: .create)
+        let store = TestStore(initialState: storeInitial) {
             RouteEditFeature()
         } withDependencies: { $0.installTestSpies() }
         store.exhaustivity = .off
@@ -491,7 +503,8 @@ struct RouteEditFeatureTests {
     @Test("保存エラーの通知結果と編集結果の失敗でそれぞれ理由を保持する")
     @MainActor
     func modifiedFailureKeepsErrorMessage() async throws {
-        let store = TestStore(initialState: try makeState(mode: .preview)) {
+        let storeInitial = try makeState(mode: .preview)
+        let store = TestStore(initialState: storeInitial) {
             RouteEditFeature()
         } withDependencies: { $0.installTestSpies() }
         store.exhaustivity = .off

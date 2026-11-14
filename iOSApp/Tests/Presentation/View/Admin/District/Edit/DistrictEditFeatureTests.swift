@@ -279,9 +279,8 @@ struct DistrictEditFeatureTests {
     @MainActor
     func performanceNavigationKeepsIdentity() async throws {
         let fixture = DistrictEditFixture()
-        let store = TestStore(
-            initialState: try DistrictEditFeature.State(fixture.district, appState: fixture.appState)
-        ) {
+        let initial = try DistrictEditFeature.State(fixture.district, appState: fixture.appState)
+        let store = TestStore(initialState: initial) {
             DistrictEditFeature()
         } withDependencies: { $0.installTestSpies() }
         store.exhaustivity = .off

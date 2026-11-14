@@ -152,7 +152,7 @@ struct PeriodListFeatureTests {
 
     @Test("指定年度を一括作成すると元のタイトルと開始終了時刻を引き継ぐ")
     @MainActor
-    func batchCreationInvokesUseCaseWithCopiedPeriod() async {
+    func batchCreationInvokesUseCaseWithCopiedPeriod() async throws {
         var original = AppStateFixture.period()
         original.title = "night"
         let created = AppStateFixture.period(id: "server-created", day: 4)
