@@ -45,15 +45,11 @@ extension APIGateway {
     }
 }
 
-enum APIGatewayRoutePath {
-    static func resolve(rawPath: String, proxyPath: String?) -> String {
-        guard let proxyPath else { return rawPath }
-        return "/\(proxyPath)"
-    }
-}
-
 extension APIGatewayV2Request {
     var routePath: String {
-        APIGatewayRoutePath.resolve(rawPath: rawPath, proxyPath: pathParameters["proxy"])
+        guard let proxyPath = pathParameters["proxy"] else {
+            return rawPath
+        }
+        return "/\(proxyPath)"
     }
 }
