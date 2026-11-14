@@ -763,26 +763,21 @@ struct RootFeatureTests {
     func sceneIsDerivedFromLaunchState() {
         var state = RootFeature.State()
         #expect(state.scene == .loading)
-        #expect(state.isAdminLoggedIn == false)
 
         state.$launchState.withLock { $0 = .onboarding }
         #expect(state.scene == .onboarding)
-        #expect(state.isAdminLoggedIn == false)
 
         state.$launchState.withLock { $0 = .festival(.guest) }
         #expect(state.scene == .map)
-        #expect(state.isAdminLoggedIn == false)
 
         state.$launchState.withLock { $0 = .district(.district("district"), "route") }
         #expect(state.scene == .map)
-        #expect(state.isAdminLoggedIn)
 
         state.$launchState.withLock { $0 = .festival(.headquarter("festival")) }
-        #expect(state.isAdminLoggedIn)
+        #expect(state.scene == .map)
 
         state.$launchState.withLock { $0 = .error("offline") }
         #expect(state.scene == .error("offline"))
-        #expect(state.isAdminLoggedIn == false)
     }
 
     @Test("AppStateが無いと地図を作らず、町がある場合は町選択を引き継ぐ")
@@ -902,7 +897,7 @@ struct RootFeatureTests {
             $0.isEmergencySignOutLoading = false
             $0.alert = AlertFeature.error("ログアウトに失敗しました。 \(error.message)")
         }
-        #expect(store.state.isAdminLoggedIn)
+        #expect(store.state.launchState == .festival(.headquarter("festival")))
         await store.finish()
     }
 

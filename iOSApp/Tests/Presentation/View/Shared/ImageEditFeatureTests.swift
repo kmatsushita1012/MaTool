@@ -223,7 +223,7 @@ struct ImageEditFeatureTests {
             $0[PhotoLibraryClientKey.self] = photoLibrary
         }
 
-        await store.send(.modeSelected(.dark)) { $0.selectedMode = .dark }
+        await store.send(.binding(.set(\.selectedMode, .dark))) { $0.selectedMode = .dark }
         let id = UUID()
         await store.send(.photoSelected(id: id, item: PhotosPickerItem(itemIdentifier: "denied"))) {
             $0.activeUploadID = id
@@ -256,7 +256,7 @@ struct ImageEditFeatureTests {
             $0[UploadImageUseCaseKey.self] = upload
         }
 
-        await store.send(.modeSelected(.dark)) { $0.selectedMode = .dark }
+        await store.send(.binding(.set(\.selectedMode, .dark))) { $0.selectedMode = .dark }
         let id = UUID()
         await store.send(.photoSelected(id: id, item: PhotosPickerItem(itemIdentifier: "invalid"))) {
             $0.activeUploadID = id
@@ -299,7 +299,7 @@ struct ImageEditFeatureTests {
             $0[UploadImageUseCaseKey.self] = upload
         }
 
-        await store.send(.modeSelected(.dark)) { $0.selectedMode = .dark }
+        await store.send(.binding(.set(\.selectedMode, .dark))) { $0.selectedMode = .dark }
         let id = UUID()
         await store.send(.photoSelected(id: id, item: PhotosPickerItem(itemIdentifier: "dark"))) {
             $0.activeUploadID = id
@@ -341,7 +341,7 @@ struct ImageEditFeatureTests {
             $0[UploadImageUseCaseKey.self] = upload
         }
 
-        await store.send(.modeSelected(.dark)) { $0.selectedMode = .dark }
+        await store.send(.binding(.set(\.selectedMode, .dark))) { $0.selectedMode = .dark }
         let id = UUID()
         await store.send(.photoSelected(id: id, item: PhotosPickerItem(itemIdentifier: "dark-fail"))) {
             $0.activeUploadID = id

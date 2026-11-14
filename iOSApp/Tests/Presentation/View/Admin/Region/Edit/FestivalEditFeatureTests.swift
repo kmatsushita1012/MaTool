@@ -257,7 +257,7 @@ struct FestivalEditFeatureTests {
             FestivalEditFeature()
         } withDependencies: { $0.installTestSpies() }
 
-        await store.send(.imageEditDismissTapped)
+        await store.send(.imageEdit(.closeTapped))
         #expect(store.state.isImageEditPresented)
         await store.finish()
     }
@@ -305,7 +305,11 @@ struct FestivalEditFeatureTests {
     func finishedBaseEditUpdatesFestivalDraft() async {
         let origin = Coordinate(latitude: 34.5, longitude: 138.2)
         var initial = makeState()
-        initial.destination = .base(.init(base: origin))
+        initial.destination = .base(.init(
+            coordinate: origin,
+            regionOrigin: origin,
+            title: "祭典基準位置"
+        ))
         let store = TestStore(initialState: initial) {
             FestivalEditFeature()
         } withDependencies: { $0.installTestSpies() }

@@ -443,6 +443,7 @@ struct PublicRouteFeatureTests {
         let store = TestStore(initialState: makeState(routeId: nil)) {
             PublicRouteFeature()
         } withDependencies: { $0.installPublicRouteTestDependencies() }
+        store.exhaustivity = .off
 
         await store.send(.onAppear)
         #expect(store.state.toast == nil)

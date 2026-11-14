@@ -23,6 +23,8 @@ extension DependencyValues {
         self[LoadDistrictStateUseCaseKey.self] = UnconfiguredLoadDistrictStateUseCaseSpy()
         self[SceneDataFetcherKey.self] = UnconfiguredSceneDataFetcherSpy()
         self[PublicMapAdUsecaseKey.self] = PublicMapAdUsecaseSpy()
+        self[StoreAdBannerUsecaseKey.self] = StoreAdBannerUsecaseSpy()
+        self[StoreCreditUsecaseKey.self] = StoreCreditUsecaseSpy()
         self[StoreAdImpressionQueueClientKey.self] = StoreAdImpressionQueueClientSpy()
         self[UserDefaltsManagerKey.self] = DefaultUserDefaultsSpy()
         self.userDefaultsClient = UserDefaultsClientSpy().client
