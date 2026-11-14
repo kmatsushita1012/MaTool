@@ -97,8 +97,6 @@ struct PublicLocationsFeature {
             case .toastDismissed:
                 state.$toast.withLock { $0 = nil }
                 return .cancel(id: CancelID.toastDismissal)
-            default:
-                return .none
             }
         }
     }

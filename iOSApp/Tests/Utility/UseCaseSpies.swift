@@ -202,3 +202,173 @@ actor UnconfiguredLoadDistrictStateUseCaseSpy: LoadDistrictStateUseCaseProtocol 
         throw SpyInvocationError.unexpected("LoadDistrictStateUseCase \(districtId)")
     }
 }
+
+
+actor ConfirmSignInUseCaseSpy: ConfirmSignInUseCaseProtocol {
+    private(set) var passwords: [String] = []
+    private let result: Result<UserRole, AppError>
+
+    init(result: Result<UserRole, AppError>) {
+        self.result = result
+    }
+
+    func callAsFunction(password: String, appState: Shared<AppState?>?) async throws -> UserRole {
+        passwords.append(password)
+        return try result.get()
+    }
+}
+
+
+actor CreateDistrictUseCaseSpy: CreateDistrictUseCaseProtocol {
+    struct Call: Equatable, Sendable {
+        let name: String
+        let email: String
+        let festivalId: Festival.ID
+    }
+    private(set) var calls: [Call] = []
+    let result: Result<DistrictPack, AppError>
+
+    init(result: Result<DistrictPack, AppError>) { self.result = result }
+
+    func callAsFunction(
+        name: String, email: String, festivalId: Festival.ID,
+        appState: Shared<AppState?>
+    ) async throws -> DistrictPack {
+        calls.append(Call(name: name, email: email, festivalId: festivalId))
+        return try result.get()
+    }
+}
+
+actor ReissueDistrictUseCaseSpy: ReissueDistrictUseCaseProtocol {
+    struct Call: Equatable, Sendable {
+        let districtId: District.ID
+        let email: String
+    }
+    private(set) var calls: [Call] = []
+    let result: Result<DistrictPack, AppError>
+
+    init(result: Result<DistrictPack, AppError>) { self.result = result }
+
+    func callAsFunction(
+        districtId: District.ID, email: String,
+        appState: Shared<AppState?>
+    ) async throws -> DistrictPack {
+        calls.append(Call(districtId: districtId, email: email))
+        return try result.get()
+    }
+}
+
+actor SelectFestivalUseCaseSpy: SelectFestivalUseCaseProtocol {
+    private(set) var festivalIDs: [Festival.ID] = []
+    private let error: AppError
+
+    init(error: AppError) { self.error = error }
+
+    func callAsFunction(
+        festivalId: Festival.ID, appState: Shared<AppState?>?,
+        signOutCurrentUser: Bool
+    ) async throws -> FestivalSelectionResult {
+        festivalIDs.append(festivalId)
+        throw error
+    }
+}
+
+actor SelectDistrictUseCaseSpy: SelectDistrictUseCaseProtocol {
+    private(set) var districtIDs: [District.ID?] = []
+    private let error: AppError
+
+    init(error: AppError) { self.error = error }
+
+    func callAsFunction(
+        districtId: District.ID?, appState: Shared<AppState?>?
+    ) async throws -> Route.ID? {
+        districtIDs.append(districtId)
+        throw error
+    }
+}
+
+
+actor SignInUseCaseSpy: SignInUseCaseProtocol {
+    struct Call: Equatable, Sendable {
+        let username: String
+        let password: String
+    }
+    private(set) var calls: [Call] = []
+    private let result: Result<SignInState, AppError>
+
+    init(result: Result<SignInState, AppError>) { self.result = result }
+
+    func callAsFunction(
+        username: String, password: String, appState: Shared<AppState?>?
+    ) async throws -> SignInState {
+        calls.append(Call(username: username, password: password))
+        return try result.get()
+    }
+}
+
+actor ResetPasswordUseCaseSpy: ResetPasswordUseCaseProtocol {
+    private(set) var usernames: [String] = []
+    private let result: Result<Void, AppError>
+
+    init(result: Result<Void, AppError> = .success(())) { self.result = result }
+
+    func callAsFunction(username: String) async throws {
+        usernames.append(username)
+        try result.get()
+    }
+}
+
+actor ConfirmResetPasswordUseCaseSpy: ConfirmResetPasswordUseCaseProtocol {
+    struct Call: Equatable, Sendable {
+        let username: String
+        let newPassword: String
+        let code: String
+    }
+    private(set) var calls: [Call] = []
+    private let result: Result<Void, AppError>
+
+    init(result: Result<Void, AppError> = .success(())) { self.result = result }
+
+    func callAsFunction(username: String, newPassword: String, code: String) async throws {
+        calls.append(Call(username: username, newPassword: newPassword, code: code))
+        try result.get()
+    }
+}
+
+actor UpdateEmailUseCaseSpy: UpdateEmailUseCaseProtocol {
+    private(set) var emails: [String] = []
+    private let result: Result<UpdateEmailState, AppError>
+
+    init(result: Result<UpdateEmailState, AppError>) { self.result = result }
+
+    func callAsFunction(email: String) async throws -> UpdateEmailState {
+        emails.append(email)
+        return try result.get()
+    }
+}
+
+actor ConfirmUpdateEmailUseCaseSpy: ConfirmUpdateEmailUseCaseProtocol {
+    private(set) var codes: [String] = []
+    private let result: Result<Void, AppError>
+
+    init(result: Result<Void, AppError> = .success(())) { self.result = result }
+
+    func callAsFunction(code: String) async throws {
+        codes.append(code)
+        try result.get()
+    }
+}
+
+actor FetchLocationUseCaseSpy: FetchLocationUseCaseProtocol {
+    private(set) var festivalIDs: [Festival.ID] = []
+    private let result: Result<[FloatLocation], AppError>
+
+    init(result: Result<[FloatLocation], AppError>) { self.result = result }
+
+    func callAsFunction(
+        festivalId: Festival.ID, appState: Shared<AppState?>
+    ) async throws -> [FloatLocation] {
+        festivalIDs.append(festivalId)
+        return try result.get()
+    }
+}

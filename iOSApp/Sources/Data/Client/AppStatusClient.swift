@@ -66,7 +66,9 @@ actor AppStatusClient: AppStatusClientProtocol {
         if let cached = status {
             return cached
         }
-        return try? await fetch()
+        guard let fetched = try? await fetch() else { return nil }
+        status = fetched
+        return fetched
     }
 
     private func fetch() async throws -> AppStatus {

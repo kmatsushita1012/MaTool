@@ -1,0 +1,12 @@
+# User-authorized infrastructure-only source regions; all reducer business logic stays in scope.
+# Format: Swift source path | inclusive source line range | exact start-line text prefix | reason
+# Raw xccov file-level executable/covered lines remain visible separately in every audit row.
+iOSApp/Sources/Presentation/View/Admin/District/Top/DistrictDashboardFeature.swift | 277-319 | func exportEffect | PDFRenderer・ActionTableSnapshotter・RouteSnapshotterによるPDF生成（インフラ）
+iOSApp/Sources/Presentation/View/Admin/Region/District/HeadquarterDistrictDetailFeature.swift | 160-207 | func exportEffect | PDFRenderer・ActionTableSnapshotter・RouteSnapshotterによるPDF生成（インフラ）
+iOSApp/Sources/Presentation/View/Admin/Region/District/HeadquarterDistrictListFeature.swift | 157-212 | func batchExportEffect | PDFRenderer・ActionTableSnapshotter・RouteSnapshotterによるPDF一括生成（インフラ）
+iOSApp/Sources/Presentation/View/Admin/District/Route/RouteEditFeature.swift | 236-246 | let snapshotter = try await RouteSnapshotter | MapKit画面画像の生成・出力（インフラ）
+iOSApp/Sources/Presentation/View/Admin/District/Route/RouteEditFeature.swift | 257-267 | let snapshotter = try await RouteSnapshotter | MapKit指定範囲画像の生成・出力（インフラ）
+iOSApp/Sources/Presentation/View/App/Root/RootFeature.swift | 6-6 | private let rootFeatureLogger | OSLogのグローバル初期化（診断インフラ）
+iOSApp/Sources/Presentation/View/Auth/Login/LoginFeature.swift | 13-13 | private let loginLogger | OSLogのグローバル初期化（診断インフラ）
+iOSApp/Sources/Presentation/View/Admin/District/Top/DistrictDashboardFeature.swift | 195-200 | case .submissionExportTapped | PDF生成エフェクトの起動と共有用ロード状態（インフラの入口）
+iOSApp/Sources/Presentation/View/Admin/Region/District/HeadquarterDistrictDetailFeature.swift | 103-108 | case .batchExportTapped | PDF生成エフェクトの起動と共有用ロード状態（インフラの入口）

@@ -116,4 +116,80 @@ struct ConfirmSignInFeatureTests {
         await store.finish()
     }
 
+    @Test("有効なパスワードで確定するとUseCaseに一度だけ渡し、成功時は読み込みを解除する")
+    @MainActor
+    func submitValidPasswordCallsUseCase() async {
+        let spy = ConfirmSignInUseCaseSpy(result: .success(.guest))
+        var state = ConfirmSignInFeature.State()
+        state.password1 = "ValidPass123"
+        state.password2 = "ValidPass123"
+        let store = TestStore(initialState: state) {
+            ConfirmSignInFeature()
+        } withDependencies: {
+            $0.installTestSpies()
+            $0[ConfirmSignInUseCaseKey.self] = spy
+        }
+
+        await store.send(.submitTapped) {
+            $0.isLoading = true
+        }
+        await store.receive(.received(.success(.guest))) {
+            $0.isLoading = false
+        }
+        #expect(await spy.passwords == ["ValidPass123"])
+        await store.finish()
+    }
+
+    @Test("送信UseCaseが失敗した場合は理由を表示し、同じパスワードで再送信できる")
+    @MainActor
+    func failedSubmissionCanBeRetried() async {
+        let failure = AppError.be(.network("offline"))
+        let spy = ConfirmSignInUseCaseSpy(result: .failure(failure))
+        var state = ConfirmSignInFeature.State()
+        state.password1 = "ValidPass123"
+        state.password2 = "ValidPass123"
+        let store = TestStore(initialState: state) {
+            ConfirmSignInFeature()
+        } withDependencies: {
+            $0.installTestSpies()
+            $0[ConfirmSignInUseCaseKey.self] = spy
+        }
+
+        await store.send(.submitTapped) {
+            $0.isLoading = true
+        }
+        await store.receive(.received(.failure(failure))) {
+            $0.isLoading = false
+            $0.alert = AlertFeature.error("送信に失敗しました。\(failure.message)")
+        }
+        await store.send(.alert(.dismiss)) {
+            $0.alert = nil
+        }
+        await store.send(.submitTapped) {
+            $0.isLoading = true
+        }
+        await store.receive(.received(.failure(failure))) {
+            $0.isLoading = false
+            $0.alert = AlertFeature.error("送信に失敗しました。\(failure.message)")
+        }
+        #expect(await spy.passwords == ["ValidPass123", "ValidPass123"])
+        await store.finish()
+    }
+
+    @Test("閉じるボタンは認証を実行せず、dismissアクションを発行する")
+    @MainActor
+    func dismissDoesNotConfirmPassword() async {
+        let spy = ConfirmSignInUseCaseSpy(result: .success(.guest))
+        let store = TestStore(initialState: ConfirmSignInFeature.State()) {
+            ConfirmSignInFeature()
+        } withDependencies: {
+            $0.installTestSpies()
+            $0[ConfirmSignInUseCaseKey.self] = spy
+        }
+
+        await store.send(.dismissTapped)
+        #expect(await spy.passwords.isEmpty)
+        await store.finish()
+    }
+
 }

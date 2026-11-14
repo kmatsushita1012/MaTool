@@ -8,6 +8,33 @@ import Testing
 @testable import iOSApp
 
 struct FestivalEditFeatureTests {
+    @Test("画像アップロード中の保存要求はAPIへ到達せず、編集中の祭典名と警告を保持する")
+    @MainActor
+    func savingDuringImageUploadIsRejectedWithoutLosingDraft() async {
+        var initial = FestivalEditFeature.State(
+            AppStateFixture.festival(), appState: Shared<AppState?>(value: nil)
+        )
+        initial.imageEdit.activeUploadID = UUID()
+        let saveSpy = SaveFestivalUseCaseSpy()
+        let store = TestStore(initialState: initial) {
+            FestivalEditFeature()
+        } withDependencies: {
+            $0.installTestSpies()
+            $0[SaveFestivalUseCaseKey.self] = saveSpy
+        }
+
+        await store.send(.binding(.set(\.festival.name, "編集中の祭典名"))) {
+            $0.festival.name = "編集中の祭典名"
+        }
+        await store.send(.saveTapped) {
+            $0.alert = AlertFeature.error("画像のアップロードが完了するまで保存できません。")
+        }
+        #expect(!store.state.isLoading)
+        #expect(store.state.festival.name == "編集中の祭典名")
+        #expect(await saveSpy.calls.isEmpty)
+        await store.finish()
+    }
+
     @Test("画像編集シートを閉じても下書きを保ち、既存 Festival PUT で確定する")
     @MainActor
     func retainsDraftUntilFestivalSave() async {
@@ -145,4 +172,317 @@ struct FestivalEditFeatureTests {
         #expect(calls[1].festival.image == oldImage)
         await store.finish()
     }
+    @Test("空の祭典名は保存処理を開始せず入力エラーを表示する")
+    @MainActor
+    func emptyFestivalNameIsRejected() async {
+        var initial = makeState()
+        initial.festival.name = "  \n "
+        let spy = SaveFestivalUseCaseSpy()
+        let store = TestStore(initialState: initial) {
+            FestivalEditFeature()
+        } withDependencies: {
+            $0.installTestSpies()
+            $0[SaveFestivalUseCaseKey.self] = spy
+        }
+        await store.send(.saveTapped) {
+            $0.alert = AlertFeature.error("祭典名を1文字以上入力してください。")
+        }
+        #expect(!store.state.isLoading)
+        #expect(await spy.calls.isEmpty)
+        await store.finish()
+    }
+
+    @Test("本部名が空白だけなら保存せずエラーを表示する")
+    @MainActor
+    func emptyHeadquarterNameIsRejected() async {
+        var initial = makeState()
+        initial.festival.subname = "\n  "
+        let spy = SaveFestivalUseCaseSpy()
+        let store = TestStore(initialState: initial) {
+            FestivalEditFeature()
+        } withDependencies: {
+            $0.installTestSpies()
+            $0[SaveFestivalUseCaseKey.self] = spy
+        }
+        await store.send(.saveTapped) {
+            $0.alert = AlertFeature.error("本部名を1文字以上入力してください。")
+        }
+        #expect(await spy.calls.isEmpty)
+        await store.finish()
+    }
+
+    @Test("祭典の所在地が未設定なら不完全な情報を送信しない")
+    @MainActor
+    func missingBaseIsRejected() async {
+        var initial = makeState()
+        initial.base = nil
+        let spy = SaveFestivalUseCaseSpy()
+        let store = TestStore(initialState: initial) {
+            FestivalEditFeature()
+        } withDependencies: {
+            $0.installTestSpies()
+            $0[SaveFestivalUseCaseKey.self] = spy
+        }
+        await store.send(.saveTapped) {
+            $0.alert = AlertFeature.error("本部所在地を設定してください。")
+        }
+        #expect(await spy.calls.isEmpty)
+        await store.finish()
+    }
+
+    @Test("保存中の二重送信や画像編集ボタンは無視する")
+    @MainActor
+    func loadingPreventsDuplicateActions() async {
+        var initial = makeState()
+        initial.isLoading = true
+        let store = TestStore(initialState: initial) {
+            FestivalEditFeature()
+        } withDependencies: { $0.installTestSpies() }
+
+        await store.send(.saveTapped)
+        await store.send(.imageEditTapped)
+        #expect(store.state.isLoading)
+        #expect(!store.state.isImageEditPresented)
+        await store.finish()
+    }
+
+    @Test("画像アップロード中は画像編集シートを閉じない")
+    @MainActor
+    func imageUploadPreventsSheetDismissal() async {
+        var initial = makeState()
+        initial.isImageEditPresented = true
+        initial.imageEdit.lightDraft = .uploading(Data([0xFF, 0xD8]))
+        initial.imageEdit.activeUploadID = UUID()
+        let store = TestStore(initialState: initial) {
+            FestivalEditFeature()
+        } withDependencies: { $0.installTestSpies() }
+
+        await store.send(.imageEditDismissTapped)
+        #expect(store.state.isImageEditPresented)
+        await store.finish()
+    }
+
+    @Test("保存エラーのアラートを閉じても入力途中の祭典情報は維持する")
+    @MainActor
+    func errorAlertDismissalPreservesDraft() async {
+        var initial = makeState()
+        initial.festival.name = "draft"
+        initial.alert = AlertFeature.error("offline")
+        let store = TestStore(initialState: initial) {
+            FestivalEditFeature()
+        } withDependencies: { $0.installTestSpies() }
+
+        await store.send(.alert(.presented(.okTapped))) {
+            $0.alert = nil
+        }
+        #expect(store.state.festival.name == "draft")
+        await store.finish()
+    }
+
+    @Test("本部所在地の編集画面には現在の所在地を引き継ぐ")
+    @MainActor
+    func baseEditorStartsAtCurrentCoordinate() async {
+        let state = makeState()
+        let expected = state.base
+        let store = TestStore(initialState: state) {
+            FestivalEditFeature()
+        } withDependencies: { $0.installTestSpies() }
+        store.exhaustivity = .off
+
+        await store.send(.baseTapped)
+        #expect(store.state.destination?.base?.coordinate == expected)
+        await store.finish()
+    }
+
+    private func makeState() -> FestivalEditFeature.State {
+        FestivalEditFeature.State(
+            AppStateFixture.festival(), appState: Shared<AppState?>(value: nil)
+        )
+    }
+
+    @Test("祭典基準座標の編集完了は保存前の編集Stateへ反映する")
+    @MainActor
+    func finishedBaseEditUpdatesFestivalDraft() async {
+        let origin = Coordinate(latitude: 34.5, longitude: 138.2)
+        var initial = makeState()
+        initial.destination = .base(.init(base: origin))
+        let store = TestStore(initialState: initial) {
+            FestivalEditFeature()
+        } withDependencies: { $0.installTestSpies() }
+        store.exhaustivity = .off
+
+        await store.send(.destination(.presented(.base(.doneTapped))))
+        #expect(store.state.base == origin)
+        #expect(store.state.destination == nil)
+        await store.finish()
+    }
+
+    @Test("交差点の編集完了は同じIDを更新し削除要求で一覧から取り除く")
+    @MainActor
+    func checkpointEditUpsertsAndDeletes() async {
+        let checkpoint = Checkpoint(id: "checkpoint", name: "original", festivalId: "festival")
+        var updated = checkpoint
+        updated.name = "updated"
+        var initial = makeState()
+        initial.checkpoints = [checkpoint]
+        initial.destination = .checkpoint(.init(title: "交差点", item: updated))
+        let store = TestStore(initialState: initial) {
+            FestivalEditFeature()
+        } withDependencies: { $0.installTestSpies() }
+        store.exhaustivity = .off
+
+        await store.send(.destination(.presented(.checkpoint(.doneTapped))))
+        #expect(store.state.checkpoints.count == 1)
+        #expect(store.state.checkpoints.first?.name == "updated")
+
+        await store.send(.onCheckpointEdit(updated))
+        await store.send(.destination(.presented(.checkpoint(.deleteTapped))))
+        #expect(store.state.checkpoints.isEmpty)
+        #expect(store.state.destination == nil)
+        await store.finish()
+    }
+
+    @Test("危険区域の正常な図形だけを保存し削除すると祭典ドラフトから除く")
+    @MainActor
+    func validHazardIsStoredAndCanBeDeleted() async {
+        let hazard = HazardSection(
+            id: "hazard", title: "注意箇所", festivalId: "festival",
+            coordinates: [
+                Coordinate(latitude: 35, longitude: 139),
+                Coordinate(latitude: 35.1, longitude: 139.1)
+            ]
+        )
+        var initial = makeState()
+        initial.destination = .hazard(.init(hazard, mapRegion: makeRegion(hazard.coordinates)))
+        let store = TestStore(initialState: initial) {
+            FestivalEditFeature()
+        } withDependencies: { $0.installTestSpies() }
+        store.exhaustivity = .off
+
+        await store.send(.destination(.presented(.hazard(.doneTapped))))
+        #expect(store.state.hazardSections.map(\.id) == ["hazard"])
+        #expect(store.state.destination == nil)
+
+        await store.send(.hazardTapped(hazard))
+        await store.send(.destination(.presented(.hazard(.deleteTapped))))
+        #expect(store.state.hazardSections.isEmpty)
+        await store.finish()
+    }
+
+    @Test("未完成の危険区域を確定しようとしても祭典データへ反映しない")
+    @MainActor
+    func invalidHazardIsNotCommitted() async {
+        let invalid = HazardSection(id: "invalid", title: "", festivalId: "festival")
+        var initial = makeState()
+        initial.destination = .hazard(.init(
+            invalid, mapRegion: makeRegion(origin: AppStateFixture.festival().base, spanDelta: spanDelta)
+        ))
+        let store = TestStore(initialState: initial) {
+            FestivalEditFeature()
+        } withDependencies: { $0.installTestSpies() }
+        store.exhaustivity = .off
+
+        await store.send(.destination(.presented(.hazard(.doneTapped))))
+        #expect(store.state.hazardSections.isEmpty)
+        #expect(store.state.destination?.hazard != nil)
+        await store.finish()
+    }
+
+    @Test("本部所在地を未指定に戻した場合は祭典の登録位置を初期座標として開く")
+    @MainActor
+    func baseEditorFallsBackToFestivalLocation() async {
+        var state = makeState()
+        state.base = nil
+        let store = TestStore(initialState: state) {
+            FestivalEditFeature()
+        } withDependencies: { $0.installTestSpies() }
+        store.exhaustivity = .off
+
+        await store.send(.baseTapped)
+        #expect(store.state.destination?.base?.region?.center.latitude
+                == AppStateFixture.festival().base.latitude)
+        await store.finish()
+    }
+
+    @Test("交差点追加は現在の祭典IDで新規Entityを作り、既存一覧を変更しない")
+    @MainActor
+    func checkpointCreationKeepsFestivalIdentity() async {
+        let store = TestStore(initialState: makeState()) {
+            FestivalEditFeature()
+        } withDependencies: { $0.installTestSpies() }
+        store.exhaustivity = .off
+
+        await store.send(.onCheckpointAdd)
+        #expect(store.state.destination?.checkpoint?.item.festivalId == "festival")
+        #expect(store.state.destination?.checkpoint?.item.id != nil)
+        #expect(store.state.checkpoints.isEmpty)
+        await store.finish()
+    }
+
+    @Test("危険区域の新規作成は祭典IDを持った空の下書きから開始する")
+    @MainActor
+    func hazardCreationStartsWithNoCoordinates() async {
+        let store = TestStore(initialState: makeState()) {
+            FestivalEditFeature()
+        } withDependencies: { $0.installTestSpies() }
+        store.exhaustivity = .off
+
+        await store.send(.hazardCreateTapped)
+        #expect(store.state.destination?.hazard?.item.festivalId == "festival")
+        #expect(store.state.destination?.hazard?.item.coordinates.isEmpty == true)
+        #expect(store.state.hazardSections.isEmpty)
+        await store.finish()
+    }
+
+
+    @Test("祭典編集をキャンセルすると画像シートを閉じ保存APIを呼ばず終了する")
+    @MainActor
+    func cancelTappedClosesImageEditorWithoutSaving() async {
+        var initial = makeState()
+        initial.isImageEditPresented = true
+        initial.festival.name = "保存していない祭典名"
+        let store = TestStore(initialState: initial) {
+            FestivalEditFeature()
+        } withDependencies: { $0.installTestSpies() }
+        store.exhaustivity = .off
+
+        await store.send(.cancelTapped)
+        #expect(!store.state.isImageEditPresented)
+        #expect(!store.state.isLoading)
+        #expect(store.state.festival.name == "保存していない祭典名")
+        await store.finish()
+    }
+
+    @Test("危険区域に座標が無い場合は祭典の本部所在地を地図の初期中心に使う")
+    @MainActor
+    func emptyHazardUsesFestivalOriginForEditing() async {
+        let store = TestStore(initialState: makeState()) {
+            FestivalEditFeature()
+        } withDependencies: { $0.installTestSpies() }
+        store.exhaustivity = .off
+        let emptyHazard = HazardSection(
+            id: "empty-hazard", title: "入力中", festivalId: "festival"
+        )
+
+        await store.send(.hazardTapped(emptyHazard))
+        #expect(store.state.destination?.hazard?.item.id == "empty-hazard")
+        #expect(store.state.destination?.hazard?.mapRegion?.center.latitude
+                == AppStateFixture.festival().base.latitude)
+        await store.finish()
+    }
+
+    @Test("セッションを持たない祭典編集画面は渡された祭典データから安全に初期化する")
+    func missingAppStateRetainsFestivalEditDraft() {
+        var festival = AppStateFixture.festival()
+        festival.name = "remote festival"
+        let state = FestivalEditFeature.State(
+            festival, appState: Shared<AppState?>(value: nil)
+        )
+        #expect(state.festival.name == "remote festival")
+        #expect(state.base == festival.base)
+        #expect(state.checkpoints.isEmpty)
+        #expect(state.hazardSections.isEmpty)
+        #expect(!state.isLoading)
+    }
+
 }

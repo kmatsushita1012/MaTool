@@ -217,6 +217,7 @@ struct SettingsFeature {
                 return .none
             case .districtSelectReceived(.failure(let error)):
                 state.isParticipationLoading = false
+                state.selectedDistrict = state.confirmedDistrict
                 state.alert = AlertFeature.error("情報の取得に失敗しました \(error.message)")
                 return .none
             case .destination:

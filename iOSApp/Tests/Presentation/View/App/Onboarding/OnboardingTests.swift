@@ -295,4 +295,144 @@ struct OnboardingFeatureTests {
         await store.finish()
     }
 
+    @Test("祭典の選択Bindingは選択した祭典IDをUseCaseへ渡し、保存失敗で待機状態を解除する")
+    @MainActor
+    func festivalSelectionFailurePropagatesFromUseCase() async {
+        let error = AppError.be(.network("festival unavailable"))
+        let spy = SelectFestivalUseCaseSpy(error: error)
+        let festival = AppStateFixture.festival()
+        let store = TestStore(initialState: OnboardingFeature.State(
+            launchState: Shared(value: .onboarding),
+            appState: Shared<AppState?>(value: nil)
+        )) { OnboardingFeature() } withDependencies: {
+            $0.installTestSpies()
+            $0[SelectFestivalUseCaseKey.self] = spy
+        }
+
+        await store.send(.binding(.set(\.selectedFestival, festival))) {
+            $0.selectedFestival = festival
+            $0.isFestivalLoading = true
+        }
+        await store.receive(.festivalDidSet(.failure(error))) {
+            $0.isFestivalLoading = false
+        }
+        #expect(await spy.festivalIDs == [festival.id])
+        await store.finish()
+    }
+
+    @Test("選択祭典に属する地区はUseCaseに正しい地区IDを渡す")
+    @MainActor
+    func matchingDistrictStartsDistrictSelection() async {
+        let error = AppError.be(.network("district unavailable"))
+        let spy = SelectDistrictUseCaseSpy(error: error)
+        let festival = AppStateFixture.festival()
+        let district = AppStateFixture.district(id: "valid-district")
+        var state = OnboardingFeature.State(
+            launchState: Shared(value: .onboarding),
+            appState: Shared<AppState?>(value: nil)
+        )
+        state.selectedFestival = festival
+        let store = TestStore(initialState: state) {
+            OnboardingFeature()
+        } withDependencies: {
+            $0.installTestSpies()
+            $0[SelectDistrictUseCaseKey.self] = spy
+        }
+
+        await store.send(.districtSelected(district)) {
+            $0.isDistrictLoading = true
+        }
+        await store.receive(.districtDidSet(.failure(error))) {
+            $0.isDistrictLoading = false
+        }
+        #expect(await spy.districtIDs == [district.id])
+        await store.finish()
+    }
+
+    @Test("祭典選択成功は選択IDをUseCaseに渡してローディングを終了する")
+    @MainActor
+    func selectedFestivalCallsUseCaseSuccessfully() async {
+        let festival = AppStateFixture.festival()
+        let spy = OnboardingSuccessSelectFestivalSpy()
+        let store = TestStore(initialState: OnboardingFeature.State(
+            launchState: Shared(value: .onboarding),
+            appState: Shared<AppState?>(value: nil)
+        )) { OnboardingFeature() } withDependencies: {
+            $0.installTestSpies()
+            $0[SelectFestivalUseCaseKey.self] = spy
+        }
+        store.exhaustivity = .off
+
+        await store.send(.binding(.set(\.selectedFestival, festival)))
+        await store.receive(.festivalDidSet(.success))
+        #expect(await spy.festivalIDs == [festival.id])
+        #expect(!store.state.isFestivalLoading)
+        await store.finish()
+    }
+
+    @Test("地区選択成功時はUseCaseが返したRouteIDで初期表示を決める")
+    @MainActor
+    func selectedDistrictCallsUseCaseSuccessfully() async {
+        let district = AppStateFixture.district()
+        let launch = Shared<LaunchState>(value: .onboarding)
+        let spy = OnboardingSuccessSelectDistrictSpy(returnedRouteID: "saved-route")
+        var initial = OnboardingFeature.State(
+            launchState: launch, appState: Shared<AppState?>(value: nil)
+        )
+        initial.selectedFestival = AppStateFixture.festival()
+        let store = TestStore(initialState: initial) {
+            OnboardingFeature()
+        } withDependencies: {
+            $0.installTestSpies()
+            $0[SelectDistrictUseCaseKey.self] = spy
+        }
+        store.exhaustivity = .off
+
+        await store.send(.districtSelected(district))
+        await store.receive(.districtDidSet(.success("saved-route")))
+        await store.receive(.delegate(.districtSelected("saved-route")))
+        #expect(await spy.districtIDs == [district.id])
+        #expect(launch.wrappedValue == .district(.guest, "saved-route"))
+        await store.finish()
+    }
+
+    @Test("アプリ情報から地区候補を取得し未取得時は空配列として扱う")
+    func districtCandidatesFollowSelectedFestivalState() {
+        let withState = OnboardingFeature.State(
+            launchState: Shared(value: .onboarding),
+            appState: Shared<AppState?>(value: AppStateFixture.state())
+        )
+        #expect(withState.districts.map(\.id) == ["district"])
+
+        let withoutState = OnboardingFeature.State(
+            launchState: Shared(value: .onboarding),
+            appState: Shared<AppState?>(value: nil)
+        )
+        #expect(withoutState.districts.isEmpty)
+    }
+
+}
+
+private actor OnboardingSuccessSelectFestivalSpy: SelectFestivalUseCaseProtocol {
+    private(set) var festivalIDs: [Festival.ID] = []
+
+    func callAsFunction(
+        festivalId: Festival.ID, appState: Shared<AppState?>?,
+        signOutCurrentUser: Bool
+    ) async throws -> FestivalSelectionResult {
+        festivalIDs.append(festivalId)
+        return .unchanged
+    }
+}
+
+private actor OnboardingSuccessSelectDistrictSpy: SelectDistrictUseCaseProtocol {
+    private(set) var districtIDs: [District.ID?] = []
+    let returnedRouteID: Route.ID?
+
+    init(returnedRouteID: Route.ID?) { self.returnedRouteID = returnedRouteID }
+
+    func callAsFunction(districtId: District.ID?, appState: Shared<AppState?>?) async throws -> Route.ID? {
+        districtIDs.append(districtId)
+        return returnedRouteID
+    }
 }

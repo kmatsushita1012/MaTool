@@ -93,6 +93,68 @@ struct FestivalInfoFeatureTests {
 
         #expect(state.districts.map(\.id) == ["a1", "a2", "b2"])
     }
+    @Test("存在しない町の選択は取得処理を始めず、エラーを表示する")
+    @MainActor
+    func unknownDistrictShowsAlertWithoutFetching() async {
+        let fixture = FestivalInfoFixture()
+        let spy = FetchDistrictUseCaseSpy()
+        let store = TestStore(initialState: fixture.makeState()) {
+            FestivalInfoFeature()
+        } withDependencies: {
+            $0.installTestSpies()
+            $0[FetchDistrictUseCaseKey.self] = spy
+        }
+
+        await store.send(.districtSelected("missing-district")) {
+            $0.alert = .error("町の紹介を表示できませんでした")
+        }
+        #expect(await spy.requestedIDs.isEmpty)
+        await store.send(.alert(.dismiss)) { $0.alert = nil }
+        await store.finish()
+    }
+
+    @Test("町の紹介取得に失敗するとローディングを解除し、原因を表示する")
+    @MainActor
+    func districtFetchErrorClearsLoadingAndShowsReason() async {
+        let fixture = FestivalInfoFixture()
+        let error = AppError.be(.network("offline"))
+        let store = TestStore(initialState: fixture.makeState()) {
+            FestivalInfoFeature()
+        } withDependencies: {
+            $0.installTestSpies()
+            $0[FetchDistrictUseCaseKey.self] = FailingFestivalInfoDistrictSpy(error: error)
+        }
+
+        await store.send(.districtSelected(fixture.district.id)) { $0.isLoading = true }
+        await store.receive(.districtReceived(.failure(error))) {
+            $0.isLoading = false
+            $0.alert = .error(error.message)
+        }
+        await store.finish()
+    }
+
+    @Test("同じGroup名と町名の町はID順に安定して並べる")
+    func tiesInDistrictNamesSortByID() {
+        let fixture = FestivalInfoFixture()
+        let festival = fixture.festival
+        let state = Shared<AppState?>(value: AppState(
+            festivalPack: LaunchFestivalPack(
+                festival: festival,
+                year: 2026,
+                districts: [
+                    District(id: "z", name: "同名", festivalId: festival.id, group: "A"),
+                    District(id: "a", name: "同名", festivalId: festival.id, group: "A")
+                ],
+                periods: [],
+                locations: [],
+                checkpoints: [],
+                hazardSections: []
+            )
+        ))
+        let subject = FestivalInfoFeature.State(festival, appState: state)
+        #expect(subject.districts.map(\.id) == ["a", "z"])
+    }
+
 }
 
 private struct FestivalInfoFixture {
@@ -123,5 +185,13 @@ private struct FestivalInfoFixture {
 
     func makeState() -> FestivalInfoFeature.State {
         FestivalInfoFeature.State(festival, appState: appState)
+    }
+}
+
+private struct FailingFestivalInfoDistrictSpy: FetchDistrictUseCaseProtocol {
+    let error: AppError
+
+    func callAsFunction(districtId: District.ID) async throws -> DistrictPack {
+        throw error
     }
 }

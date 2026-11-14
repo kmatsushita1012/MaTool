@@ -60,6 +60,47 @@ struct LoadRouteStateUseCaseTests {
         #expect(detailStore.state.destination == nil)
         await detailStore.finish()
     }
+    @Test("有効なRoute応答は地区のRouteと選択中のRouteStateに同時反映する")
+    @MainActor
+    func validRouteResponseUpdatesBothStates() async throws {
+        let fixture = RouteLoadingFixture()
+        let pack = RoutePack(route: fixture.responseRoute, points: [], passages: [])
+        let fetcher = RouteDataFetcherSpy(pack: pack)
+        let useCase = withDependencies {
+            $0.installTestSpies()
+            $0[RouteDataFetcherKey.self] = fetcher
+        } operation: {
+            LoadRouteStateUseCase()
+        }
+
+        let result = try await useCase(routeId: fixture.route.id, appState: fixture.appState)
+
+        #expect(result == pack)
+        #expect(fixture.appState.wrappedValue?.districtState?.route(id: fixture.route.id)?.description == "stale response")
+        #expect(fixture.appState.wrappedValue?.routeState?.route.description == "stale response")
+        #expect(await fetcher.recordedCalls() == ["fetch:route"])
+    }
+
+    @Test("地区に存在しないRouteの要求はデータ取得を実行せず状態を変更しない")
+    @MainActor
+    func unknownRouteDoesNotFetch() async throws {
+        let fixture = RouteLoadingFixture()
+        let pack = RoutePack(route: fixture.responseRoute, points: [], passages: [])
+        let fetcher = RouteDataFetcherSpy(pack: pack)
+        let useCase = withDependencies {
+            $0.installTestSpies()
+            $0[RouteDataFetcherKey.self] = fetcher
+        } operation: {
+            LoadRouteStateUseCase()
+        }
+
+        let result = try await useCase(routeId: "unknown", appState: fixture.appState)
+
+        #expect(result == nil)
+        #expect(fixture.appState.wrappedValue?.routeState?.route.description == "current")
+        #expect(await fetcher.recordedCalls().isEmpty)
+    }
+
 }
 
 private struct RouteLoadingFixture {

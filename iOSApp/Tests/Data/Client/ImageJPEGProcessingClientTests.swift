@@ -1,3 +1,4 @@
+import Dependencies
 import CoreGraphics
 import Foundation
 import ImageIO
@@ -78,6 +79,40 @@ struct ImageJPEGProcessingClientTests {
         #expect(ImageJPEGProcessingError.invalidImage.errorDescription?.isEmpty == false)
         #expect(ImageJPEGProcessingError.invalidDimensions.errorDescription?.isEmpty == false)
         #expect(ImageJPEGProcessingError.imageTooLarge.errorDescription?.isEmpty == false)
+    }
+
+
+    @Test("GIFの単一フレームもJPEGへ変換できる")
+    func convertsGIFToJPEG() throws {
+        let input = try makeImage(width: 32, height: 24, type: .gif)
+        let output = try ImageJPEGProcessingClient().makeJPEG(from: input)
+        let source = CGImageSourceCreateWithData(output as CFData, nil)
+        #expect(source != nil)
+        #expect((source.flatMap { CGImageSourceGetType($0) } as String?) == UTType.jpeg.identifier)
+    }
+
+    @Test("縦横比の上限ちょうどの縦長画像も受け付ける")
+    func acceptsMaximumTallAspectRatio() throws {
+        let input = try makeJPEG(width: 10, height: 100)
+        let output = try ImageJPEGProcessingClient().makeJPEG(from: input)
+        let source = CGImageSourceCreateWithData(output as CFData, nil)
+        let image = source.flatMap { CGImageSourceCreateImageAtIndex($0, 0, nil) }
+        #expect(image?.width == 10)
+        #expect(image?.height == 100)
+    }
+
+
+    @Test("依存注入で選択したJPEG変換処理を使用する")
+    func dependencyOverrideUsesSelectedImageProcessor() throws {
+        let input = try makeImage(width: 24, height: 16, type: .png)
+        let output = try withDependencies {
+            $0.imageJPEGProcessingClient = ImageJPEGProcessingClient()
+        } operation: {
+            @Dependency(\.imageJPEGProcessingClient) var processor
+            return try processor.makeJPEG(from: input)
+        }
+
+        #expect(output.starts(with: [0xFF, 0xD8]))
     }
 
     private func makeJPEG(width: Int, height: Int) throws -> Data {

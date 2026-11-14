@@ -85,6 +85,202 @@ struct StoreRepositoryTest {
         #expect(record.content.address == nil)
         #expect(record.content.coordinate == nil)
     }
+    @Test("店舗IDと祭典IDの組み合わせで正しいキーを強整合取得する")
+    func getUsesFestivalAndStoreKeys() async throws {
+        let item = makeStore()
+        var captured: [String: Codable] = [:]
+        let dataStore = DataStoreMock(getHandler: { keys, _ in
+            captured = keys
+            return try encodeForDataStore(Record(
+                pk: "FESTIVAL#festival-1", sk: "STORE#store-1", content: item
+            ))
+        })
+
+        let result = try await withDependencies {
+            $0.dataStoreFactory = { _ in dataStore }
+        } operation: {
+            try await StoreRepository().get(id: item.id, festivalId: item.festivalId, consistentRead: true)
+        }
+
+        #expect(result == item)
+        #expect(captured["pk"] as? String == "FESTIVAL#festival-1")
+        #expect(captured["sk"] as? String == "STORE#store-1")
+    }
+
+    @Test("店舗IDによる検索はTYPE indexにID条件を含めて1件取得する")
+    func findUsesStoreTypeIndex() async throws {
+        let item = makeStore()
+        var observedIndex: String?
+        var observedLimit: Int?
+        let dataStore = DataStoreMock(queryHandler: { index, conditions, _, limit, _, _ in
+            observedIndex = index
+            observedLimit = limit
+            #expect(conditions.count == 2)
+            return try encodeForDataStore([
+                Record(pk: "FESTIVAL#festival-1", sk: "STORE#store-1", content: item)
+            ])
+        })
+
+        let result = try await withDependencies {
+            $0.dataStoreFactory = { _ in dataStore }
+        } operation: {
+            try await StoreRepository().find(id: item.id)
+        }
+
+        #expect(result == item)
+        #expect(observedIndex == "index-TYPE")
+        #expect(observedLimit == 1)
+    }
+
+    @Test("所有店舗取得はOwner参照を経由し、所有者IDの一致を確認する")
+    func getOwnedChecksReferenceAndOwner() async throws {
+        let item = makeStore()
+        let reference = StoreOwnerReference(storeId: item.id, festivalId: item.festivalId)
+        let dataStore = DataStoreMock(getHandler: { keys, type in
+            if type == Record<StoreOwnerReference>.self {
+                #expect(keys["pk"] as? String == "USER#owner-1")
+                return try encodeForDataStore(Record(
+                    pk: "USER#owner-1", sk: "STORE#store-1", content: reference
+                ))
+            }
+            return try encodeForDataStore(Record(
+                pk: "FESTIVAL#festival-1", sk: "STORE#store-1", content: item
+            ))
+        })
+
+        let result = try await withDependencies {
+            $0.dataStoreFactory = { _ in dataStore }
+        } operation: {
+            try await StoreRepository().getOwned(id: item.id, ownerId: item.ownerId)
+        }
+
+        #expect(result == item)
+        #expect(dataStore.getCallCount == 2)
+    }
+
+    @Test("所有店舗一覧はOwner参照から取得し、実店舗を返す")
+    func storesOwnedResolvesReferences() async throws {
+        let item = makeStore()
+        let reference = StoreOwnerReference(storeId: item.id, festivalId: item.festivalId)
+        let dataStore = DataStoreMock(
+            getHandler: { _, _ in
+                try encodeForDataStore(Record(
+                    pk: "FESTIVAL#festival-1", sk: "STORE#store-1", content: item
+                ))
+            },
+            consistentQueryHandler: { index, conditions, _, _, _, consistent, type in
+                #expect(index == nil)
+                #expect(conditions.count == 2)
+                #expect(consistent)
+                #expect(ObjectIdentifier(type) == ObjectIdentifier(Record<StoreOwnerReference>.self))
+                return try encodeForDataStore([
+                    Record(pk: "USER#owner-1", sk: "STORE#store-1", content: reference)
+                ])
+            }
+        )
+
+        let owned = try await withDependencies {
+            $0.dataStoreFactory = { _ in dataStore }
+        } operation: {
+            try await StoreRepository().storesOwned(by: item.ownerId)
+        }
+
+        #expect(owned == [item])
+        #expect(dataStore.lastQueryConsistentRead == true)
+    }
+
+    @Test("Owner参照が存在しても実店舗の所有者と一致しなければ公開しない")
+    func getOwnedDoesNotTrustStaleOwnerReference() async throws {
+        let item = makeStore()
+        let reference = StoreOwnerReference(storeId: item.id, festivalId: item.festivalId)
+        let dataStore = DataStoreMock(getHandler: { _, type in
+            if type == Record<StoreOwnerReference>.self {
+                return try encodeForDataStore(Record(
+                    pk: "USER#another-owner", sk: "STORE#store-1", content: reference
+                ))
+            }
+            return try encodeForDataStore(Record(
+                pk: "FESTIVAL#festival-1", sk: "STORE#store-1", content: item
+            ))
+        })
+
+        let result = try await withDependencies {
+            $0.dataStoreFactory = { _ in dataStore }
+        } operation: {
+            try await StoreRepository().getOwned(id: item.id, ownerId: "another-owner")
+        }
+
+        #expect(result == nil)
+        #expect(dataStore.getCallCount == 2)
+    }
+
+    @Test("複数店舗の所有者一覧は参照の取得順に依存せず作成日時順になる")
+    func storesOwnedSortsByCreationDate() async throws {
+        let older = Store(
+            id: "old", festivalId: "festival-1", ownerId: "owner-1",
+            purchaseAccountToken: UUID(), name: "Old", businessHours: "",
+            createdAt: Date(timeIntervalSince1970: 1)
+        )
+        let newer = Store(
+            id: "new", festivalId: "festival-1", ownerId: "owner-1",
+            purchaseAccountToken: UUID(), name: "New", businessHours: "",
+            createdAt: Date(timeIntervalSince1970: 2)
+        )
+        let dataStore = DataStoreMock(
+            getHandler: { keys, _ in
+                let store = (keys["sk"] as? String) == "STORE#new" ? newer : older
+                return try encodeForDataStore(Record(
+                    pk: "FESTIVAL#festival-1", sk: "STORE#\(store.id)", content: store
+                ))
+            },
+            consistentQueryHandler: { _, _, _, _, _, _, _ in
+                try encodeForDataStore([
+                    Record(
+                        pk: "USER#owner-1", sk: "STORE#new",
+                        content: StoreOwnerReference(storeId: "new", festivalId: "festival-1")
+                    ),
+                    Record(
+                        pk: "USER#owner-1", sk: "STORE#old",
+                        content: StoreOwnerReference(storeId: "old", festivalId: "festival-1")
+                    )
+                ])
+            }
+        )
+
+        let result = try await withDependencies {
+            $0.dataStoreFactory = { _ in dataStore }
+        } operation: {
+            try await StoreRepository().storesOwned(by: "owner-1")
+        }
+
+        #expect(result.map(\.id) == ["old", "new"])
+    }
+
+    @Test("店舗登録はStore本体・Owner参照・初期Creditを同一トランザクションで保存する")
+    func createAtomicallyInsertsStoreReferenceAndCredit() async throws {
+        let item = makeStore()
+        let dataStore = DataStoreMock(transactWriteHandler: { operations in
+            #expect(operations.count == 3)
+        })
+
+        try await withDependencies {
+            $0.dataStoreFactory = { _ in dataStore }
+        } operation: {
+            try await StoreRepository().create(item)
+        }
+
+        let writes = try #require(dataStore.lastTransaction)
+        #expect(writes.count == 3)
+        for write in writes {
+            guard case let .put(_, condition, _, _) = write else {
+                Issue.record("店舗登録が条件付きPutではありません")
+                continue
+            }
+            #expect(condition == "attribute_not_exists(#pk)")
+        }
+    }
+
+
 }
 
 private func makeStore(

@@ -1,3 +1,4 @@
+import Dependencies
 import Foundation
 import Testing
 @testable import iOSApp
@@ -89,6 +90,49 @@ struct ImageCacheClientTests {
             "https://example.com/retry.jpg",
             "https://example.com/retry.jpg"
         ])
+    }
+
+
+    @Test("空配列のpreloadでは取得処理を呼び出さない")
+    func emptyBatchDoesNotRetrieve() async {
+        let recorder = ImageRetrievalRecorder()
+        let client = ImageCacheClient { url in await recorder.record(url) }
+
+        await client.preload(paths: [])
+
+        #expect(await recorder.paths().isEmpty)
+    }
+
+    @Test("クエリの異なる画像URLは別の画像として取得する")
+    func distinctQueryParametersAreNotDeduplicated() async {
+        let recorder = ImageRetrievalRecorder()
+        let client = ImageCacheClient { url in await recorder.record(url) }
+
+        await client.preload(paths: [
+            "https://example.com/banner.jpg?version=1",
+            "https://example.com/banner.jpg?version=2",
+            "https://example.com/banner.jpg?version=1"
+        ])
+
+        #expect(await recorder.paths() == [
+            "https://example.com/banner.jpg?version=1",
+            "https://example.com/banner.jpg?version=2"
+        ])
+    }
+
+    @Test("DependencyValuesから差し替えた画像キャッシュ実装を取得して利用できる")
+    func resolvesInjectedCacheClient() async {
+        let recorder = ImageRetrievalRecorder()
+        let client = ImageCacheClient { url in await recorder.record(url) }
+
+        await withDependencies {
+            $0.imageCacheClient = client
+        } operation: {
+            @Dependency(\.imageCacheClient) var resolvedClient
+            await resolvedClient.preload(paths: ["https://example.com/injected.jpg"])
+        }
+
+        #expect(await recorder.paths() == ["https://example.com/injected.jpg"])
     }
 
 }

@@ -1,0 +1,30 @@
+# User-authorized exclusions: infrastructure adapters and View bodies are not business-logic coverage gates.
+# Format: source path | concrete exclusion reason; numeric measurements stay visible as EXCLUDED in audit CSV/logs.
+# No iOS Feature reducer or Application use-case files are excluded; the mixed Backend App Store SDK history adapter is explicitly documented.
+Backend/Sources/Data/Auth/AuthManager.swift | Cognito認証アダプタの抽象宣言（インフラ）
+Backend/Sources/Data/Auth/CognitoAuthManager.swift | AWS Cognito SDKとの接続（インフラ）
+Backend/Sources/Data/Client/S3ImageClient.swift | AWS S3 SDKとの接続（インフラ）
+Backend/Sources/Data/Database/DynamoDBStore.swift | AWS DynamoDB SDKとの接続（インフラ）
+Backend/Sources/Data/Repository/Repository.swift | 抽象リポジトリ宣言のみ、実行可能行の計測なし
+Backend/Sources/Infrastructure/APIGateway.swift | AWS Lambdaイベント境界（追加依存不可）
+Backend/Sources/Utils/Environment.swift | 環境変数と設定ファイルの読込（インフラ）
+iOSApp/Sources/Data/Client/AdManager.swift | Google Mobile AdsとUIKit表示の統合（インフラ）
+iOSApp/Sources/Data/Client/AppStatusClient.swift | アプリ稼働状態HTTPクライアント（インフラ）
+iOSApp/Sources/Data/Client/AuthProvider.swift | Cognito認証SDKとの接続（インフラ）
+iOSApp/Sources/Data/Client/BroadcastLocationProvider.swift | CoreLocationバックグラウンド配信（インフラ）
+iOSApp/Sources/Data/Client/HTTPClient.swift | HTTP通信クライアント（インフラ）
+iOSApp/Sources/Data/Client/ImageCacheClient.swift | 画像キャッシュSDKとの統合（インフラ）
+iOSApp/Sources/Data/Client/ImageJPEGProcessingClient.swift | ImageIOでの画像符号化処理（インフラ）
+iOSApp/Sources/Data/Client/MapLocationProvider.swift | CoreLocation地図位置情報（インフラ）
+iOSApp/Sources/Data/Client/PhotoLibraryClient.swift | PhotosUIとの統合（インフラ）
+iOSApp/Sources/Data/ConstantValues.swift | XCConfigとBundleアプリ設定の読込（インフラ）
+Backend/Sources/Backend.swift | Lambdaアプリ起動と依存配線のみ（インフラ）
+Backend/Sources/Controller/AdvertisementController.swift | HTTP受信・レスポンス変換の境界（ビジネス判定はUsecaseで検証）
+Backend/Sources/Controller/AdvertiserAuthController.swift | HTTP認証入力の転送境界（認証の検証はUsecaseで実施）
+Backend/Sources/Controller/PurchaseController.swift | HTTP購入APIのController境界（購入条件はUsecaseで検証）
+Backend/Sources/Controller/StoreController.swift | HTTP店舗APIのController境界（登録・権限条件はUsecaseで検証）
+Backend/Sources/Data/Client/AppStoreClient.swift | Apple App Store Server API SDK接続（インフラ）
+Backend/Sources/Data/Client/ReportNotificationClient.swift | AWS SNS SDK通知接続（インフラ）
+Backend/Sources/Data/Database/DynamoDBTransactionalDataStore.swift | DynamoDB SDK抽象プロトコルのみで実行可能行なし（インフラ）
+Backend/Sources/Utils/AdvertisingEnvironment.swift | AWS環境変数とApp Store SDK証明書設定の読み取り（インフラ）
+Backend/Sources/Usecase/AppStoreNotificationHistoryRecovery.swift | 同一ファイル内のAppStoreServerLibrary通信・通知履歴ページングはApple SDK境界（回復時の期間検証と再投入は既存ユニットテストで検証）

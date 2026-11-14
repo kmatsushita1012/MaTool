@@ -9,7 +9,8 @@ struct CognitoAuthManagerUnitTests {
         recorder: CognitoCallRecorder,
         username: String? = "district",
         role: String? = "district",
-        failOn: String? = nil
+        failOn: String? = nil,
+        omitCreatedUser: Bool = false
     ) -> CognitoAuthService {
         let attributes = role.map { [CognitoIdentityProviderClientTypes.AttributeType(
             name: "custom:role", value: $0
@@ -18,7 +19,7 @@ struct CognitoAuthManagerUnitTests {
             create: { request in
                 await recorder.create(request)
                 if failOn == "create" { throw TestError.intentional }
-                return .init(user: .init(attributes: attributes, username: username))
+                return .init(user: omitCreatedUser ? nil : .init(attributes: attributes, username: username))
             },
             disable: { request in
                 await recorder.disable(request)
@@ -204,6 +205,34 @@ struct CognitoAuthManagerUnitTests {
             }
         }
     }
+    @Test("Cognitoのユーザー作成応答にUserオブジェクトが存在しない場合は拒否する")
+    func rejectsMissingCreateUserObject() async {
+        let recorder = CognitoCallRecorder()
+        let manager = CognitoAuthManager(
+            service: service(recorder: recorder, omitCreatedUser: true),
+            userPoolId: "pool"
+        )
+
+        await #expect(throws: Error.self) {
+            _ = try await manager.create(username: "district", email: "admin@example.com")
+        }
+        #expect(await recorder.created.count == 1)
+    }
+
+    @Test("作成応答にロール属性が無い場合はユーザーを管理者として登録しない")
+    func rejectsMissingRoleInCreatedUser() async {
+        let recorder = CognitoCallRecorder()
+        let manager = CognitoAuthManager(
+            service: service(recorder: recorder, role: nil),
+            userPoolId: "pool"
+        )
+
+        await #expect(throws: Error.self) {
+            _ = try await manager.create(username: "district", email: "admin@example.com")
+        }
+        #expect(await recorder.created.count == 1)
+    }
+
 }
 
 private actor CognitoCallRecorder {
