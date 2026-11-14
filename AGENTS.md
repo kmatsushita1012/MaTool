@@ -3,6 +3,7 @@
 ## iOS
 
 - View と Presentation Feature は [matool-swiftui-view](.codex/skills/matool-swiftui-view/SKILL.md) に従う。View 以外のレイヤー設計は [$swift-app-architecture](/Users/matsushitakazuya/.homesick/repos/dotfiles/home/.agents/skills/swift-app-architecture/SKILL.md) に従い、クリーンアーキテクチャを目指す。
+- TCA の `Delegate` Action は使用しない。親 Feature への通知には、子 Action を直接扱うか、具体的なイベント名の Action を使う。
 - Usecase から別の Usecase を呼び出さない。責務やライフサイクルが異なる処理は必要な重複を許容し、共通化は同じ責務を持つ処理に限る。
 - `authProvider.initialize()` はアプリの初回起動時にのみ呼び出し、サインアウトや起動データ再取得では呼び出さない。
 

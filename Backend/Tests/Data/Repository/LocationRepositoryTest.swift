@@ -95,6 +95,84 @@ struct LocationRepositoryTest {
         #expect(dataStore.queryCallCount == 1)
         #expect(dataStore.putCallCount == 0)
     }
+    @Test("祭典に属する複数地区の位置情報を取得する")
+    func query_正常_祭典配下の位置を返す() async throws {
+        let first = FloatLocation.mock(id: "one", districtId: "district-1")
+        let second = FloatLocation.mock(id: "two", districtId: "district-2")
+        var conditions: [QueryCondition] = []
+        let store = DataStoreMock(queryHandler: { _, query, _, _, _, _ in
+            conditions = query
+            return try encodeForDataStore([
+                LRecord(first, festivalId: "festival-1"),
+                LRecord(second, festivalId: "festival-1")
+            ])
+        })
+        let repository = make(dataStore: store)
+
+        let result = try await repository.query(by: "festival-1")
+
+        #expect(result == [first, second])
+        #expect(store.queryCallCount == 1)
+        #expect(conditions.count == 2)
+    }
+
+    @Test("地区の位置情報投稿は祭典・地区のPKとSKに保存する")
+    func post_正常_位置情報を新規登録する() async throws {
+        let location = FloatLocation.mock(id: "one", districtId: "district-1")
+        var stored: LRecord?
+        let store = DataStoreMock(putHandler: { record in
+            stored = try decodeFromEncodable(record, as: LRecord.self)
+        })
+        let repository = make(dataStore: store)
+
+        let result = try await repository.post(location, festivalId: "festival-1")
+
+        #expect(result == location)
+        #expect(stored?.pk == "FESTIVAL#festival-1")
+        #expect(stored?.sk == "LOCATION#DISTRICT#district-1")
+        #expect(stored?.content == location)
+        #expect(store.putCallCount == 1)
+    }
+
+    @Test("同時刻の再送は新しいリクエストを採用する")
+    func put_境界_同じタイムスタンプを更新する() async throws {
+        let timestamp = Date(timeIntervalSince1970: 1_700_000_000)
+        let previous = FloatLocation.mock(
+            id: "previous", districtId: "district-1", timestamp: timestamp
+        )
+        let current = FloatLocation.mock(
+            id: "updated", districtId: "district-1",
+            coordinate: .init(latitude: 36, longitude: 140), timestamp: timestamp
+        )
+        let store = DataStoreMock(
+            putHandler: { record in
+                let stored = try decodeFromEncodable(record, as: LRecord.self)
+                #expect(stored.content == current)
+            },
+            queryHandler: { _, _, _, _, _, _ in
+                try encodeForDataStore([LRecord(previous, festivalId: "festival-1")])
+            }
+        )
+        let repository = make(dataStore: store)
+
+        let result = try await repository.put(current, festivalId: "festival-1")
+
+        #expect(result == current)
+        #expect(store.queryCallCount == 1)
+        #expect(store.putCallCount == 1)
+    }
+
+    @Test("存在しない地区の位置情報はnilを返す")
+    func get_異常_位置情報が存在しない() async throws {
+        let store = DataStoreMock(queryHandler: { _, _, _, _, _, _ in
+            try encodeForDataStore([LRecord]())
+        })
+        let repository = make(dataStore: store)
+
+        #expect(try await repository.get(festivalId: "festival", districtId: "missing") == nil)
+        #expect(store.queryCallCount == 1)
+    }
+
 }
 
 private extension LocationRepositoryTest {

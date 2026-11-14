@@ -9,6 +9,7 @@ import ComposableArchitecture
 import Fallback
 import MapKit
 import Shared
+import SwiftUI
 
 @Reducer
 struct DistrictInfoFeature {
@@ -24,16 +25,32 @@ struct DistrictInfoFeature {
         @ObservationStateIgnored
         var district: District
         let performances: [Performance]
+        var colorTheme: ColorScheme?
         var region: MKCoordinateRegion?
     }
     
     @CasePathable
     enum Action: Equatable, BindableAction {
         case binding(BindingAction<State>)
+        case colorThemeResolved(ColorScheme)
+        case colorThemeSelected(ColorScheme)
     }
     
     var body: some ReducerOf<DistrictInfoFeature> {
         BindingReducer()
+        Reduce { state, action in
+            switch action {
+            case .binding:
+                return .none
+            case .colorThemeResolved(let colorTheme):
+                guard state.colorTheme == nil else { return .none }
+                state.colorTheme = colorTheme
+                return .none
+            case .colorThemeSelected(let colorTheme):
+                state.colorTheme = colorTheme
+                return .none
+            }
+        }
     }
 }
 

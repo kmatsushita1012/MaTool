@@ -13,7 +13,6 @@ struct InfoMapMovementButton: View {
         }
         .modifier(InfoMapMovementButtonStyle(isMapMovementLocked: isMapMovementLocked))
         .modifier(InfoMapMovementButtonShape())
-        .modifier(InfoMapMovementButtonControlSize())
         .accessibilityLabel(isMapMovementLocked ? "地図の移動を有効" : "地図の移動を停止")
     }
 }
@@ -24,21 +23,26 @@ private struct InfoMapMovementButtonShape: ViewModifier {
     }
 }
 
-private struct InfoMapMovementButtonControlSize: ViewModifier {
-    func body(content: Content) -> some View {
-        content.controlSize(.extraLarge)
-    }
-}
-
 private struct InfoMapMovementButtonStyle: ViewModifier {
     let isMapMovementLocked: Bool
+    @Environment(\.isLiquidGlassDisabled) private var isLiquidGlassDisabled
 
     @ViewBuilder
     func body(content: Content) -> some View {
-        if isMapMovementLocked {
+        if #available(iOS 26.0, *), !isLiquidGlassDisabled {
+            if isMapMovementLocked {
+                content.buttonStyle(.glass)
+            } else {
+                content
+                    .buttonStyle(.glass)
+                    .tint(.accentColor)
+            }
+        } else if isMapMovementLocked {
             content.buttonStyle(.bordered)
         } else {
-            content.buttonStyle(.borderedProminent)
+            content
+                .buttonStyle(.borderedProminent)
+                .tint(.accentColor)
         }
     }
 }

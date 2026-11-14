@@ -4,20 +4,31 @@ import Testing
 @testable import iOSApp
 
 struct FetchFestivalListUseCaseTests {
-    @Test("注入した祭典一覧SpyをUseCaseとして呼び出す")
-    func injectedSpyReturnsEmptyFestivalList() async throws {
-        let spy = FetchFestivalListUseCaseSpy(festivals: [])
+    @Test("祭典一覧をDataFetcherに一度だけ問い合わせてその結果を返す")
+    func delegatesToFestivalFetcher() async throws {
+        let festival = AppStateFixture.festival()
+        let pack = FestivalPack(festival: festival, checkpoints: [], hazardSections: [])
+        let spy = FestivalDataFetcherSpy(response: pack, festivalList: [festival])
         let useCase = withDependencies {
             $0.installTestSpies()
-            $0[FetchFestivalListUseCaseKey.self] = spy
-        } operation: {
-            @Dependency(FetchFestivalListUseCaseKey.self) var useCase
-            return useCase
-        }
+            $0[FestivalDataFetcherKey.self] = spy
+        } operation: { FetchFestivalListUseCase() }
 
-        let festivals = try await useCase()
+        #expect(try await useCase() == [festival])
+        #expect(await spy.recordedCalls() == ["fetchAll"])
+    }
 
-        #expect(festivals.isEmpty)
-        #expect(await spy.callCount == 1)
+    @Test("一覧取得失敗は空配列として隠さず呼び出し元へ返す")
+    func propagatesFetcherFailure() async {
+        let festival = AppStateFixture.festival()
+        let pack = FestivalPack(festival: festival, checkpoints: [], hazardSections: [])
+        let spy = FestivalDataFetcherSpy(response: pack, shouldFail: true)
+        let useCase = withDependencies {
+            $0.installTestSpies()
+            $0[FestivalDataFetcherKey.self] = spy
+        } operation: { FetchFestivalListUseCase() }
+
+        await #expect(throws: FetcherTestError.failed) { try await useCase() }
+        #expect(await spy.recordedCalls() == ["fetchAll"])
     }
 }

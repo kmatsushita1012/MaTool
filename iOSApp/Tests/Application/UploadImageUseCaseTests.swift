@@ -5,6 +5,17 @@ import Testing
 @testable import iOSApp
 
 struct UploadImageUseCaseTests {
+    @Test("UploadImageUseCaseのDIアクセサは差し替えを保持する")
+    func dependencyAccessorPreservesInjectedUseCase() {
+        let selected = withDependencies {
+            $0.uploadImageUseCase = UploadImageUseCase()
+        } operation: {
+            @Dependency(\.uploadImageUseCase) var useCase
+            return useCase
+        }
+        #expect(selected is UploadImageUseCase)
+    }
+
     @Test("JPEG 化を経由し、署名 URL 取得後に S3 PUT する")
     func preparesAndUploadsImage() async throws {
         let source = Data([1, 2, 3])

@@ -1,6 +1,7 @@
 import ComposableArchitecture
 import MapKit
 import Shared
+import SwiftUI
 
 @Reducer
 struct FestivalInfoFeature {
@@ -33,7 +34,7 @@ struct FestivalInfoFeature {
                 }
         }
         var displayMode: DisplayMode = .festival
-        var selectedDistrictID: District.ID?
+        var colorTheme: ColorScheme?
         var region: MKCoordinateRegion?
         var isLoading = false
         @Presents var destination: Destination.State?
@@ -52,6 +53,8 @@ struct FestivalInfoFeature {
     @CasePathable
     enum Action: Equatable, BindableAction {
         case binding(BindingAction<State>)
+        case colorThemeResolved(ColorScheme)
+        case colorThemeSelected(ColorScheme)
         case districtSelected(District.ID)
         case districtReceived(AppResult<DistrictPack>)
         case destination(PresentationAction<Destination.Action>)
@@ -68,12 +71,20 @@ struct FestivalInfoFeature {
             case .binding:
                 return .none
 
+            case .colorThemeResolved(let colorTheme):
+                guard state.colorTheme == nil else { return .none }
+                state.colorTheme = colorTheme
+                return .none
+
+            case .colorThemeSelected(let colorTheme):
+                state.colorTheme = colorTheme
+                return .none
+
             case .districtSelected(let districtID):
                 guard state.districts.contains(where: { $0.id == districtID }) else {
                     state.alert = .error("町の紹介を表示できませんでした")
                     return .none
                 }
-                state.selectedDistrictID = districtID
                 state.isLoading = true
                 let fetchDistrictUseCase = self.fetchDistrictUseCase
                 let imageCacheClient = self.imageCacheClient
@@ -102,7 +113,6 @@ struct FestivalInfoFeature {
 
             case .districtReceived(.failure(let error)):
                 state.isLoading = false
-                state.selectedDistrictID = nil
                 state.alert = .error(error.message)
                 return .none
 

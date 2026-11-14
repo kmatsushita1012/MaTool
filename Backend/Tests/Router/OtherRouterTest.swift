@@ -95,6 +95,18 @@ struct OtherRouterTest {
 
         #expect(response.statusCode == 404)
     }
+    @Test("ヘルスチェックは認証情報がなくても200と空のJSONを返す")
+    func health_正常_稼働確認レスポンスを返す() async {
+        let app = make()
+        let request = Application.Request.make(method: .get, path: "/health")
+
+        let response = await app.handle(request)
+
+        #expect(response.statusCode == 200)
+        #expect(response.headers["Content-Type"] == "application/json")
+        #expect(response.body == "{}")
+    }
+
 }
 
 private extension OtherRouterTest {

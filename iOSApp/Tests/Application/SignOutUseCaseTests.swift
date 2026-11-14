@@ -116,6 +116,105 @@ struct SignOutUseCaseTests {
         #expect(await dataFetcher.requests.isEmpty)
     }
 
+
+    @Test("祭典未選択時のログアウトはOnboardingに戻りAppStateを削除する")
+    func noFestivalSelectionReturnsOnboarding() async throws {
+        let fixture = SignOutFixture()
+        let appState = Shared<AppState?>(value: fixture.oldAppState)
+        let defaults = DefaultUserDefaultsSpy()
+        var auth = AuthProviderSpy().client
+        auth.signOut = {}
+        let result = try await withDependencies {
+            $0.installTestSpies()
+            $0.authProvider = auth
+            $0[UserDefaltsManagerKey.self] = defaults
+        } operation: {
+            try await SignOutUseCase()(appState: appState)
+        }
+
+        #expect(result == .onboarding)
+        #expect(appState.wrappedValue == nil)
+    }
+
+    @Test("地区の選択がない場合は祭典だけを再読込してゲスト表示に戻る")
+    func festivalOnlyRestoresGuestSession() async throws {
+        let fixture = SignOutFixture()
+        let appState = Shared<AppState?>(value: fixture.oldAppState)
+        let defaults = DefaultUserDefaultsSpy(festivalId: fixture.festival.id)
+        let fetcher = SignOutSceneDataFetcherSpy(
+            festivalPack: fixture.festivalPack, districtPack: fixture.districtPack
+        )
+        var auth = AuthProviderSpy().client
+        auth.signOut = {}
+
+        let result = try await withDependencies {
+            $0.installTestSpies()
+            $0.authProvider = auth
+            $0[UserDefaltsManagerKey.self] = defaults
+            $0[SceneDataFetcherKey.self] = fetcher
+        } operation: {
+            try await SignOutUseCase()(appState: appState)
+        }
+
+        #expect(result == .festival(.guest))
+        #expect(appState.wrappedValue?.festivalState.festival == fixture.festival)
+        #expect(appState.wrappedValue?.districtState == nil)
+        #expect(await fetcher.requests == ["festival:\(fixture.festival.id)"])
+    }
+
+    @Test("既定の祭典が削除済みの場合は既定選択を解除してOnboardingへ戻る")
+    func notFoundClearsStoredFestivalAndDistrict() async throws {
+        let fixture = SignOutFixture()
+        let appState = Shared<AppState?>(value: fixture.oldAppState)
+        let defaults = DefaultUserDefaultsSpy(
+            festivalId: fixture.festival.id, districtId: fixture.district.id
+        )
+        var auth = AuthProviderSpy().client
+        auth.signOut = {}
+
+        let result = try await withDependencies {
+            $0.installTestSpies()
+            $0.authProvider = auth
+            $0[UserDefaltsManagerKey.self] = defaults
+            $0[SceneDataFetcherKey.self] = MissingSceneDataFetcherSpy()
+        } operation: {
+            try await SignOutUseCase()(appState: appState)
+        }
+
+        #expect(result == .onboarding)
+        #expect(defaults.defaultFestivalId == nil)
+        #expect(defaults.defaultDistrictId == nil)
+        #expect(appState.wrappedValue == nil)
+    }
+
+    @Test("再読込中に新しいセッションが始まった場合は古い結果を無視してLoadingを返す")
+    func supersededResponseIsIgnored() async throws {
+        let fixture = SignOutFixture()
+        let coordinator = SceneSessionCoordinatorSpy()
+        let appState = Shared<AppState?>(value: fixture.oldAppState)
+        let fetcher = SupersedingLogoutFetcherSpy(
+            response: fixture.festivalPack,
+            sessionCoordinator: coordinator
+        )
+        var auth = AuthProviderSpy().client
+        auth.signOut = {}
+
+        let result = try await withDependencies {
+            $0.installTestSpies()
+            $0.authProvider = auth
+            $0[UserDefaltsManagerKey.self] = DefaultUserDefaultsSpy(
+                festivalId: fixture.festival.id
+            )
+            $0[SceneDataFetcherKey.self] = fetcher
+            $0[SceneSessionCoordinatorKey.self] = coordinator
+        } operation: {
+            try await SignOutUseCase()(appState: appState)
+        }
+
+        #expect(result == .loading)
+        #expect(appState.wrappedValue == nil)
+    }
+
     private func isError(_ launchState: LaunchState) -> Bool {
         if case .error = launchState { return true }
         return false
@@ -197,4 +296,22 @@ private struct SignOutFixture {
 
 private enum SignOutFixtureError: Error {
     case failed
+}
+
+private struct SupersedingLogoutFetcherSpy: SceneDataFetcherProtocol {
+    let response: LaunchFestivalPack
+    let sessionCoordinator: SceneSessionCoordinatorSpy
+
+    func launchFestival(festivalId: Festival.ID) async throws -> LaunchFestivalPack {
+        _ = await sessionCoordinator.beginSession()
+        return response
+    }
+
+    func launchFestival(districtId: District.ID) async throws -> LaunchFestivalPack {
+        throw CancellationError()
+    }
+
+    func launchDistrict(districtId: District.ID, periodId: Period.ID?) async throws -> LaunchDistrictPack {
+        throw CancellationError()
+    }
 }

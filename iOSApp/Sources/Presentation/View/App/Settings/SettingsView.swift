@@ -27,13 +27,24 @@ struct SettingsScreen: View {
                 isParticipationLoading: store.isParticipationLoading,
                 isSignOutLoading: store.isSignOutLoading,
                 onLoginTapped: { store.send(.loginTapped) },
-                onSignOutTapped: { store.send(.signOutTapped) }
+                onSignOutTapped: { store.send(.signOutTapped) },
+                onLicenseTapped: { store.send(.licenseTapped) }
             )
             .navigationDestination(item: $store.scope(
                 state: \.destination?.login,
                 action: \.destination.login
             )) { store in
                 LoginView(store: store)
+            }
+            .navigationDestination(isPresented: Binding(
+                get: { store.navigationDestination == .license },
+                set: { isPresented in
+                    if !isPresented {
+                        store.send(.licenseDismissed)
+                    }
+                }
+            )) {
+                LicenseView()
             }
             .alert($store.scope(state: \.alert, action: \.alert))
         }
@@ -55,6 +66,7 @@ struct SettingsContentView: View {
     let isSignOutLoading: Bool
     let onLoginTapped: () -> Void
     let onSignOutTapped: () -> Void
+    let onLicenseTapped: () -> Void
 
     var body: some View {
         Form {
@@ -109,6 +121,7 @@ struct SettingsContentView: View {
                 if let contact {
                     Link("お問い合わせ", destination: contact)
                 }
+                Button("ライセンス", action: onLicenseTapped)
                 LabeledContent("バージョン", value: appVersion)
             }
         }
@@ -129,6 +142,7 @@ struct SettingsContentView: View {
         isParticipationLoading: false,
         isSignOutLoading: false,
         onLoginTapped: {},
-        onSignOutTapped: {}
+        onSignOutTapped: {},
+        onLicenseTapped: {}
     )
 }

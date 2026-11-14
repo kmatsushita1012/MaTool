@@ -4,6 +4,10 @@
 <dict>
 	<key>GADApplicationIdentifier</key>
 	<string>$(MATOOL_ADMOB_APP_ID)</string>
+	<key>UIAppFonts</key>
+	<array>
+		<string>YujiSyuku-Regular.ttf</string>
+	</array>
 	<key>UIBackgroundModes</key>
 	<array>
 		<string>location</string>
