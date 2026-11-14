@@ -449,9 +449,9 @@ struct DistrictDashboardFeatureTests {
         await store.send(.onEdit)
         #expect(store.state.destination?.edit != nil)
         await store.send(.destination(.presented(.edit(.postReceived(.success)))))
+        await store.finish()
         #expect(store.state.destination == nil)
         #expect(store.state.district.id == "district")
-        await store.finish()
     }
 
     @Test("画面から戻ったとき共有AppStateに更新された経路一覧を再構築する")
@@ -467,6 +467,8 @@ struct DistrictDashboardFeatureTests {
         store.exhaustivity = .off
         let route = AppStateFixture.route()
 
+        await store.send(.onEdit)
+        #expect(store.state.destination?.edit != nil)
         appState.withLock { $0 = AppStateFixture.state(routes: [route]) }
         await store.send(.destination(.dismiss))
         #expect(store.state.routes.contains { $0.route?.id == route.id })

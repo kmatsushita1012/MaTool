@@ -256,7 +256,8 @@ struct PublicLocationsFeatureTests {
                 coordinate: .init(latitude: 35.4, longitude: 139.4)
             )
         ])
-        let store = TestStore(initialState: fixture.makeState()) {
+        let initial = fixture.makeState()
+        let store = TestStore(initialState: initial) {
             PublicLocationsFeature()
         } withDependencies: { $0.installPublicLocationsTestDependencies() }
         let region = store.state.mapRegion

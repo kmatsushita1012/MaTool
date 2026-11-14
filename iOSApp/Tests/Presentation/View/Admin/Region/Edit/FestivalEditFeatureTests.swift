@@ -408,4 +408,54 @@ struct FestivalEditFeatureTests {
     }
 
 
+    @Test("祭典編集をキャンセルすると画像シートを閉じ保存APIを呼ばず終了する")
+    @MainActor
+    func cancelTappedClosesImageEditorWithoutSaving() async {
+        var initial = makeState()
+        initial.isImageEditPresented = true
+        initial.festival.name = "保存していない祭典名"
+        let store = TestStore(initialState: initial) {
+            FestivalEditFeature()
+        } withDependencies: { $0.installTestSpies() }
+        store.exhaustivity = .off
+
+        await store.send(.cancelTapped)
+        #expect(!store.state.isImageEditPresented)
+        #expect(!store.state.isLoading)
+        #expect(store.state.festival.name == "保存していない祭典名")
+        await store.finish()
+    }
+
+    @Test("危険区域に座標が無い場合は祭典の本部所在地を地図の初期中心に使う")
+    @MainActor
+    func emptyHazardUsesFestivalOriginForEditing() async {
+        let store = TestStore(initialState: makeState()) {
+            FestivalEditFeature()
+        } withDependencies: { $0.installTestSpies() }
+        store.exhaustivity = .off
+        let emptyHazard = HazardSection(
+            id: "empty-hazard", title: "入力中", festivalId: "festival"
+        )
+
+        await store.send(.hazardTapped(emptyHazard))
+        #expect(store.state.destination?.hazard?.item.id == "empty-hazard")
+        #expect(store.state.destination?.hazard?.mapRegion?.center.latitude
+                == AppStateFixture.festival().base.latitude)
+        await store.finish()
+    }
+
+    @Test("セッションを持たない祭典編集画面は渡された祭典データから安全に初期化する")
+    func missingAppStateRetainsFestivalEditDraft() {
+        var festival = AppStateFixture.festival()
+        festival.name = "remote festival"
+        let state = FestivalEditFeature.State(
+            festival, appState: Shared<AppState?>(value: nil)
+        )
+        #expect(state.festival.name == "remote festival")
+        #expect(state.base == festival.base)
+        #expect(state.checkpoints.isEmpty)
+        #expect(state.hazardSections.isEmpty)
+        #expect(!state.isLoading)
+    }
+
 }

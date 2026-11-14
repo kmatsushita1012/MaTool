@@ -298,8 +298,8 @@ struct FestivalDashboardFeatureTests {
         store.exhaustivity = .off
 
         await store.send(.destination(.presented(.edit(.putReceived(.success)))))
-        #expect(store.state.destination == nil)
         await store.finish()
+        #expect(store.state.destination == nil)
     }
 
     @Test("管理画面を閉じる操作ではログアウトUseCaseを呼ばず表示データも保持する")

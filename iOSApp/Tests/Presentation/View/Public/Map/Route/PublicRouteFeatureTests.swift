@@ -340,6 +340,65 @@ struct PublicRouteFeatureTests {
         await store.finish()
     }
 
+    @Test("現在地取得APIが失敗した時は元のエラーを示し表示座標を維持する")
+    @MainActor
+    func failedUserLocationRequestPreservesRegion() async {
+        let error = AppError.be(.network("gps offline"))
+        let provider = RouteMapLocationSpy(result: .failure(error))
+        let store = TestStore(initialState: makeState()) {
+            PublicRouteFeature()
+        } withDependencies: {
+            $0.installPublicRouteTestDependencies()
+            $0.mapLocationProvider = provider
+        }
+        store.exhaustivity = .off
+        let original = store.state.mapRegion
+
+        await store.send(.userFocusTapped)
+        await store.receive(.userLocationFailed(error.message))
+        #expect(store.state.toast != nil)
+        #expect(store.state.mapRegion.center.latitude == original.center.latitude)
+        #expect(store.state.mapRegion.center.longitude == original.center.longitude)
+        #expect(await provider.locationRequests == 1)
+        await store.send(.toastDismissed)
+        await store.finish()
+    }
+
+    @Test("開催時間中に経路だけが配信され位置が未配信なら停止通知を表示する")
+    @MainActor
+    func activePeriodWithoutFloatShowsLocationNotice() async {
+        let currentPeriod = AppStateFixture.period()
+        let activeAt = currentPeriod.date.toDate.addingTimeInterval(10 * 60 * 60)
+        let store = TestStore(initialState: makeState(routeId: nil)) {
+            PublicRouteFeature()
+        } withDependencies: {
+            $0.installPublicRouteTestDependencies()
+            $0.date.now = activeAt
+        }
+        store.exhaustivity = .off
+
+        await store.send(.onAppear)
+        #expect(store.state.toast != nil)
+        #expect(store.state.routes.count == 1)
+        await store.send(.toastDismissed)
+        #expect(store.state.toast == nil)
+        await store.finish()
+    }
+
+    @Test("開催時間外に経路がある町を開く場合は位置配信停止通知を出さない")
+    @MainActor
+    func routeOutsideFestivalHoursOpensWithoutToast() async {
+        let store = TestStore(initialState: makeState(routeId: nil)) {
+            PublicRouteFeature()
+        } withDependencies: { $0.installPublicRouteTestDependencies() }
+
+        await store.send(.onAppear)
+        #expect(store.state.toast == nil)
+        #expect(!store.state.isRouteLoading)
+        #expect(store.state.routes.count == 1)
+        await store.finish()
+    }
+
 }
 
 private actor RouteMapLocationSpy: MapLocationProviderProtocol {

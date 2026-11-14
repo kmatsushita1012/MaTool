@@ -248,10 +248,14 @@ final class PeriodRepositoryMock: PeriodRepositoryProtocol, @unchecked Sendable 
         return try await getHandler(id)
     }
 
-    private(set) var queryByYearCallCount = 0
+    private let queryByYearCountLock = NSLock()
+    private var queryByYearCount = 0
+    var queryByYearCallCount: Int {
+        queryByYearCountLock.withLock { queryByYearCount }
+    }
     private let queryByYearHandler: ((String, Int) async throws -> [Period])?
     func query(by festivalId: String, year: Int) async throws -> [Period] {
-        queryByYearCallCount += 1
+        queryByYearCountLock.withLock { queryByYearCount += 1 }
         guard let queryByYearHandler else { throw TestError.unimplemented }
         return try await queryByYearHandler(festivalId, year)
     }

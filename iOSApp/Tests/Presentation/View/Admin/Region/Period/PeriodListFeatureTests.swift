@@ -276,6 +276,50 @@ struct PeriodListFeatureTests {
         await store.finish()
     }
 
+
+    @Test("過去年度から期間を更新した場合も最新の期間一覧に変更を反映する")
+    @MainActor
+    func archiveEditedPeriodUpdatesParentList() async {
+        let original = AppStateFixture.period(id: "archive-period")
+        var updated = original
+        updated.title = "archived update"
+        let store = TestStore(initialState: makeState([original])) {
+            PeriodListFeature()
+        } withDependencies: { $0.installTestSpies() }
+        store.exhaustivity = .off
+
+        await store.send(.archiveTapped(.init(year: original.date.year, periods: [original])))
+        await store.send(.destination(.presented(.archives(.periodTapped(original)))))
+        #expect(store.state.destination?.archives?.destination?.edit != nil)
+        await store.send(.destination(.presented(.archives(
+            .destination(.presented(.edit(.saveReceived(.success(updated)))))
+        ))))
+        #expect(store.state.periods.count == 1)
+        #expect(store.state.periods.first?.title == "archived update")
+        #expect(store.state.destination == nil)
+        await store.finish()
+    }
+
+    @Test("過去年度で期間を削除した場合は親の年度一覧からも除去する")
+    @MainActor
+    func archiveDeletedPeriodRemovesParentEntry() async {
+        let obsolete = AppStateFixture.period(id: "old")
+        let retained = AppStateFixture.period(id: "keep", day: 4)
+        let store = TestStore(initialState: makeState([obsolete, retained])) {
+            PeriodListFeature()
+        } withDependencies: { $0.installTestSpies() }
+        store.exhaustivity = .off
+
+        await store.send(.archiveTapped(.init(year: obsolete.date.year, periods: [obsolete])))
+        await store.send(.destination(.presented(.archives(.periodTapped(obsolete)))))
+        await store.send(.destination(.presented(.archives(
+            .destination(.presented(.edit(.deleteReceived(.success(obsolete.id)))))
+        ))))
+        #expect(store.state.periods.map(\.id) == ["keep"])
+        #expect(store.state.destination == nil)
+        await store.finish()
+    }
+
     private func makeState(_ periods: [Period]) -> PeriodListFeature.State {
         PeriodListFeature.State(
             festivalId: "festival", periods: periods,
