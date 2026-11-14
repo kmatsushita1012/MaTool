@@ -501,4 +501,48 @@ private actor SettingsSignOutUseCaseSpy: SignOutUseCaseProtocol {
         calls += 1
         return .onboarding
     }
+    @Test("確定済みと同じ祭典や未選択の祭典は切替UseCaseを呼ばない")
+    @MainActor
+    func duplicateOrNilFestivalSelectionIsIgnored() async {
+        let spy = SelectFestivalUseCaseSpy(error: .be(.network("unexpected")))
+        let store = TestStore(initialState: makeState()) {
+            SettingsFeature()
+        } withDependencies: {
+            $0.installTestSpies()
+            $0[SelectFestivalUseCaseKey.self] = spy
+        }
+        store.exhaustivity = .off
+
+        await store.send(.binding(.set(\.selectedFestival, AppStateFixture.festival())))
+        await store.send(.binding(.set(\.selectedFestival, nil)))
+        #expect(!store.state.isParticipationLoading)
+        #expect(await spy.festivalIDs.isEmpty)
+        await store.finish()
+    }
+
+    @Test("管理者の町参加変更をキャンセルすると選択を確定済みに戻しサインアウトしない")
+    @MainActor
+    func cancelAdminDistrictChangeRestoresConfirmedSelection() async {
+        let spy = SettingsSignOutUseCaseSpy()
+        let store = TestStore(initialState: makeState(userRole: .headquarter("festival"))) {
+            SettingsFeature()
+        } withDependencies: {
+            $0.installTestSpies()
+            $0[SignOutUseCaseKey.self] = spy
+        }
+        store.exhaustivity = .off
+
+        await store.send(.binding(.set(\.selectedDistrict, nil)))
+        #expect(store.state.pendingParticipationChange == .district(nil))
+        #expect(store.state.selectedDistrict?.id == "district")
+        #expect(store.state.alert != nil)
+        await store.send(.alert(.presented(.cancelTapped)))
+        #expect(store.state.pendingParticipationChange == nil)
+        #expect(store.state.selectedDistrict?.id == "district")
+        #expect(store.state.alert == nil)
+        #expect(await spy.calls == 0)
+        await store.finish()
+    }
+
+
 }

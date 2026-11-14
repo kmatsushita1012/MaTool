@@ -173,6 +173,33 @@ struct PublicRouteFeatureTests {
         await store.finish()
     }
 
+
+    @Test("複数の公開経路の候補から選択中IDだけを除外して再生可否を計算する")
+    func alternateRoutesExcludeCurrentSelection() {
+        let selected = AppStateFixture.route(id: "selected")
+        let backup = AppStateFixture.route(id: "backup")
+        let newer = AppStateFixture.route(id: "newer")
+        let state = makeState(routeId: selected.id, routes: [backup, selected, newer])
+
+        #expect(state.selected?.id == selected.id)
+        #expect(Set(state.others.map(\.id)) == Set([backup.id, newer.id]))
+        #expect(state.isReplayEnable)
+        #expect(state.hasDisplayableContent)
+    }
+
+    @Test("経路が存在しなくても位置配信中なら地図の表示内容を持つ")
+    func locationOnlyDistrictIsDisplayable() {
+        let location = FloatLocation(
+            id: "live", districtId: "district",
+            coordinate: Coordinate(latitude: 35.4, longitude: 139.6)
+        )
+        let state = makeState(routeId: nil, routes: [], locations: [location])
+        #expect(state.hasDisplayableContent)
+        #expect(state.float?.floatLocation.id == location.id)
+        #expect(state.others.isEmpty)
+        #expect(!state.isReplayEnable)
+    }
+
     private func makeState(
         routeId: Route.ID? = nil,
         routes: [Route] = [AppStateFixture.route()],

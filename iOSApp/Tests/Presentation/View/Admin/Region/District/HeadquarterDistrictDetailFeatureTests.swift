@@ -351,6 +351,40 @@ struct HeadquarterDistrictDetailFeatureTests {
         await store.finish()
     }
 
+
+    @Test("削除された期間に属する経路パックは画面を開かず取得エラーを表示する")
+    @MainActor
+    func obsoletePeriodRouteCannotBePreviewed() async {
+        let route = AppStateFixture.route(periodId: "obsolete-period")
+        let pack = RoutePack(route: route, points: [], passages: [])
+        var initial = makeState()
+        initial.isLoading = true
+        let store = TestStore(initialState: initial) {
+            HeadquarterDistrictDetailFeature()
+        } withDependencies: { $0.installTestSpies() }
+        store.exhaustivity = .off
+
+        await store.send(.routeReceived(.success(pack)))
+        #expect(!store.state.isLoading)
+        #expect(store.state.destination == nil)
+        #expect(store.state.alert != nil)
+        await store.finish()
+    }
+
+    @Test("セッションが失われていても地区の編集中テキストは保持する")
+    @MainActor
+    func editWithoutSessionKeepsText() async {
+        let district = AppStateFixture.district(name: "offline-name")
+        let state = HeadquarterDistrictDetailFeature.State(
+            district, appState: Shared(value: nil)
+        )
+        let store = TestStore(initialState: state) {
+            HeadquarterDistrictDetailFeature()
+        } withDependencies: { $0.installTestSpies() }
+        await store.send(.editTapped) { $0.isEditable = true }
+        #expect(store.state.district.name == "offline-name")
+        await store.finish()
+    }
     private func makeState() -> HeadquarterDistrictDetailFeature.State {
         HeadquarterDistrictDetailFeature.State(
             AppStateFixture.district(),

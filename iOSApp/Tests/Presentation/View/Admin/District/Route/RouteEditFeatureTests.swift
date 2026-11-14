@@ -641,7 +641,8 @@ struct RouteEditFeatureTests {
     func copyTappedFetchesRouteHistory() async throws {
         let entry = RouteEntry(period: AppStateFixture.period(), route: AppStateFixture.route())
         let spy = RouteEditHistoryUseCaseSpy(entries: [entry])
-        let store = TestStore(initialState: try makeState(mode: .update)) {
+        let initialState = try makeState(mode: .update)
+        let store = TestStore(initialState: initialState) {
             RouteEditFeature()
         } withDependencies: {
             $0.installTestSpies()
@@ -655,6 +656,208 @@ struct RouteEditFeatureTests {
         #expect(await spy.calls == ["district:festival"])
         await store.finish()
     }
+
+    @Test("地点編集の移動要求は同じ点のIDを保ったまま地図の移動操作に切り替える")
+    @MainActor
+    func pointMoveKeepsOriginalPointIdentity() async throws {
+        let point = Point(
+            id: "first", routeId: "route",
+            coordinate: Coordinate(latitude: 35, longitude: 139),
+            time: SimpleTime(hour: 9, minute: 0), anchor: .start
+        )
+        var initial = try makeState(mode: .update, points: [point])
+        initial.point = PointEditFeature.State(
+            point, districtId: initial.district.id, appState: Shared(value: nil)
+        )
+        let store = TestStore(initialState: initial) {
+            RouteEditFeature()
+        } withDependencies: { $0.installTestSpies() }
+        store.exhaustivity = .off
+
+        await store.send(.point(.presented(.moveTapped)))
+        #expect(store.state.operation == .move(0))
+        #expect(store.state.point == nil)
+        #expect(store.state.points.map(\.id) == ["first"])
+        await store.finish()
+    }
+
+    @Test("時刻を消した不完全な地点でも削除でき、ルート配列から対象だけを除去する")
+    @MainActor
+    func deleteInvalidPointDoesNotRequireValidation() async throws {
+        let original = Point(
+            id: "obsolete", routeId: "route",
+            coordinate: Coordinate(latitude: 35, longitude: 139),
+            time: SimpleTime(hour: 9, minute: 0), anchor: .start
+        )
+        var invalid = original
+        invalid.time = nil
+        var initial = try makeState(mode: .update, points: [original])
+        initial.point = PointEditFeature.State(
+            invalid, districtId: initial.district.id, appState: Shared(value: nil)
+        )
+        let store = TestStore(initialState: initial) {
+            RouteEditFeature()
+        } withDependencies: { $0.installTestSpies() }
+        store.exhaustivity = .off
+
+        await store.send(.point(.presented(.deleteTapped)))
+        #expect(store.state.points.isEmpty)
+        #expect(store.state.point == nil)
+        await store.finish()
+    }
+
+
+    @Test("地点確定時は編集済み座標を保存し選択画面を閉じる")
+    @MainActor
+    func pointDoneUpsertsCoordinate() async throws {
+        let original = Point(
+            id: "first", routeId: "route",
+            coordinate: Coordinate(latitude: 35, longitude: 139),
+            time: SimpleTime(hour: 9, minute: 0), anchor: .start
+        )
+        var changed = original
+        changed.coordinate = Coordinate(latitude: 35.7, longitude: 139.7)
+        var initial = try makeState(mode: .update, points: [original])
+        initial.point = PointEditFeature.State(
+            changed, districtId: initial.district.id, appState: Shared(value: nil)
+        )
+        let store = TestStore(initialState: initial) {
+            RouteEditFeature()
+        } withDependencies: { $0.installTestSpies() }
+        store.exhaustivity = .off
+
+        await store.send(.point(.presented(.doneTapped)))
+        #expect(store.state.points.first?.coordinate == changed.coordinate)
+        #expect(store.state.point == nil)
+        await store.finish()
+    }
+
+
+    @Test("削除確認後は対象ルートIDをUseCaseへ渡し失敗時は警告して編集を残す")
+    @MainActor
+    func confirmedDeletionCallsUseCaseAndShowsFailure() async throws {
+        let error = AppError.be(.network("offline"))
+        let spy = RouteEditDeleteFailureSpy(error: error)
+        let initialState = try makeState(mode: .update)
+        let store = TestStore(initialState: initialState) {
+            RouteEditFeature()
+        } withDependencies: {
+            $0.installTestSpies()
+            $0[DeleteRouteUseCaseKey.self] = spy
+        }
+        store.exhaustivity = .off
+
+        await store.send(.deleteTapped)
+        #expect(store.state.alert?.delete != nil)
+        await store.send(.alert(.presented(.delete(.okTapped))))
+        #expect(store.state.isDeleting)
+        await store.receive(.deleteReceived(.failure(error)))
+        #expect(store.state.alert?.notice != nil)
+        #expect(!store.state.isLoading)
+        #expect(await spy.deletedIDs == ["route"])
+        await store.finish()
+    }
+
+
+    @Test("経路プレビューの修正確定では保存APIを呼ばず元画面へ結果を返す")
+    @MainActor
+    func previewSaveDoesNotCallCreateOrUpdate() async throws {
+        let first = Point(
+            id: "first", routeId: "route",
+            coordinate: Coordinate(latitude: 35, longitude: 139),
+            time: SimpleTime(hour: 9, minute: 0), anchor: .start, index: 0
+        )
+        let last = Point(
+            id: "last", routeId: "route",
+            coordinate: Coordinate(latitude: 35.1, longitude: 139.1),
+            time: SimpleTime(hour: 10, minute: 0), anchor: .end, index: 1
+        )
+        let spy = RouteEditSavingSpy(error: .be(.network("unexpected")))
+        let initialState = try makeState(mode: .preview, points: [first, last])
+        let store = TestStore(initialState: initialState) {
+            RouteEditFeature()
+        } withDependencies: {
+            $0.installTestSpies()
+            $0[CreateRouteUseCaseKey.self] = spy
+            $0[UpdateRouteUseCaseKey.self] = spy
+        }
+        store.exhaustivity = .off
+
+        await store.send(.saveTapped)
+        await store.receive(.modified(.success))
+        #expect(!store.state.isSaving)
+        #expect(await spy.kinds.isEmpty)
+        await store.finish()
+    }
+
+
+    @Test("地区領域の表示はプレビューモードかつポリゴンがある場合のみ切替可能")
+    @MainActor
+    func districtAreaOverlayToggleRespectsPreviewAvailability() async throws {
+        var initial = try makeState(mode: .preview)
+        initial.districtAreaOverlays = [
+            DistrictAreaOverlay(
+                districtId: "district", districtName: "町",
+                area: [
+                    Coordinate(latitude: 35, longitude: 139),
+                    Coordinate(latitude: 35.1, longitude: 139),
+                    Coordinate(latitude: 35, longitude: 139.1)
+                ],
+                center: Coordinate(latitude: 35.03, longitude: 139.03),
+                colorIndex: 0
+            )
+        ]
+        let store = TestStore(initialState: initial) {
+            RouteEditFeature()
+        } withDependencies: { $0.installTestSpies() }
+
+        await store.send(.districtAreaOverlayTapped) {
+            $0.isDistrictAreaOverlayVisible = true
+        }
+        await store.send(.districtAreaOverlayTapped) {
+            $0.isDistrictAreaOverlayVisible = false
+        }
+        #expect(store.state.canShowDistrictAreaOverlay)
+        await store.finish()
+
+        initial.mode = .update
+        let updateStore = TestStore(initialState: initial) {
+            RouteEditFeature()
+        } withDependencies: { $0.installTestSpies() }
+        await updateStore.send(.districtAreaOverlayTapped)
+        #expect(!updateStore.state.isDistrictAreaOverlayVisible)
+        await updateStore.finish()
+    }
+
+
+    @Test("出力時にセッションが解放されていた場合は全体・部分とも画像化せず理由を通知する")
+    @MainActor
+    func exportsWithoutSessionFailBeforeSnapshot() async throws {
+        let route = AppStateFixture.route()
+        let error = AppError.export(.notFound("必要な情報の取得に失敗しました。"))
+        for partial in [false, true] {
+            let shared = Shared<AppState?>(value: AppStateFixture.state(
+                routes: [route], currentRouteId: route.id
+            ))
+            var initial = try RouteEditFeature.State(
+                mode: .update, route: route, appState: shared
+            )
+            initial.size = CGSize(width: 320, height: 240)
+            shared.withLock { $0 = nil }
+            let store = TestStore(initialState: initial) {
+                RouteEditFeature()
+            } withDependencies: { $0.installTestSpies() }
+            store.exhaustivity = .off
+
+            await store.send(partial ? .partialTapped : .wholeTapped)
+            #expect(store.state.loadingAction == .export)
+            await store.receive(.previewPrepared(.failure(error)))
+            #expect(!store.state.isLoading)
+            #expect(store.state.alert?.notice != nil)
+            await store.finish()
+        }
+    }
+
     private func makeState(
         mode: RouteEditFeature.EditMode,
         points: [Point] = []
@@ -709,5 +912,18 @@ private actor RouteEditHistoryUseCaseSpy: FetchRouteHistoryUseCaseProtocol {
     ) async throws -> [RouteEntry] {
         calls.append("\(districtId):\(festivalId)")
         return entries
+    }
+}
+
+
+private actor RouteEditDeleteFailureSpy: DeleteRouteUseCaseProtocol {
+    let error: AppError
+    private(set) var deletedIDs: [Route.ID] = []
+
+    init(error: AppError) { self.error = error }
+
+    func callAsFunction(routeId: Route.ID, appState: Shared<AppState?>) async throws {
+        deletedIDs.append(routeId)
+        throw error
     }
 }

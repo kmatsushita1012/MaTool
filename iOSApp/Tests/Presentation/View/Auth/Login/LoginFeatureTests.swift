@@ -208,4 +208,23 @@ struct LoginFeatureTests {
         await store.finish()
     }
 
+    @Test("パスワード再設定画面を途中で閉じてもログインIDと入力パスワードを保持する")
+    @MainActor
+    func dismissedResetPasswordRetainsCredentials() async {
+        var initial = LoginFeature.State(id: "test@example.com")
+        initial.password = "draft-password"
+        initial.destination = .resetPassword(.init(username: initial.id))
+        let store = TestStore(initialState: initial) {
+            LoginFeature()
+        } withDependencies: { $0.installTestSpies() }
+
+        await store.send(.destination(.dismiss)) {
+            $0.destination = nil
+        }
+        #expect(store.state.id == "test@example.com")
+        #expect(store.state.password == "draft-password")
+        await store.finish()
+    }
+
+
 }

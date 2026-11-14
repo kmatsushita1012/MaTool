@@ -393,6 +393,43 @@ struct HeadquarterDistrictListFeatureTests {
         await store.finish()
     }
 
+    @Test("登録された地区が0件なら一括出力は空のフォルダとして完了する")
+    @MainActor
+    func noDistrictsExportDoesNotInvokeNetworkOrRenderer() async {
+        let empty = AppStateFixture.state(districts: [], selectedDistrictId: nil)
+        let store = TestStore(initialState: HeadquarterDistrictListFeature.State(
+            AppStateFixture.festival(), appState: Shared(value: Optional(empty))
+        )) {
+            HeadquarterDistrictListFeature()
+        } withDependencies: { $0.installTestSpies() }
+        store.exhaustivity = .off
+
+        await store.send(.batchExportTapped)
+        #expect(store.state.isExportLoading)
+        await store.receive(.batchExportReceived(.success([])))
+        #expect(!store.state.isExportLoading)
+        #expect(store.state.folder != nil)
+        await store.finish()
+    }
+
+    @Test("地区が0件の行動表出力もネットワークへアクセスせず空で完了する")
+    @MainActor
+    func noDistrictsTableExportCompletes() async {
+        let empty = AppStateFixture.state(districts: [], selectedDistrictId: nil)
+        let store = TestStore(initialState: HeadquarterDistrictListFeature.State(
+            AppStateFixture.festival(), appState: Shared(value: Optional(empty))
+        )) {
+            HeadquarterDistrictListFeature()
+        } withDependencies: { $0.installTestSpies() }
+        store.exhaustivity = .off
+
+        await store.send(.tableExportTapped)
+        await store.receive(.batchExportReceived(.success([])))
+        #expect(!store.state.isExportLoading)
+        #expect(store.state.folder != nil)
+        await store.finish()
+    }
+
 }
 
 private actor ListSaveDistrictSpy: SaveDistrictUseCaseProtocol {

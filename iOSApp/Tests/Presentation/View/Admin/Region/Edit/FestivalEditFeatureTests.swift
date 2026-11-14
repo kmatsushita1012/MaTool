@@ -361,4 +361,51 @@ struct FestivalEditFeatureTests {
         await store.finish()
     }
 
+    @Test("本部所在地を未指定に戻した場合は祭典の登録位置を初期座標として開く")
+    @MainActor
+    func baseEditorFallsBackToFestivalLocation() async {
+        var state = makeState()
+        state.base = nil
+        let store = TestStore(initialState: state) {
+            FestivalEditFeature()
+        } withDependencies: { $0.installTestSpies() }
+        store.exhaustivity = .off
+
+        await store.send(.baseTapped)
+        #expect(store.state.destination?.base?.region?.center.latitude
+                == AppStateFixture.festival().base.latitude)
+        await store.finish()
+    }
+
+    @Test("交差点追加は現在の祭典IDで新規Entityを作り、既存一覧を変更しない")
+    @MainActor
+    func checkpointCreationKeepsFestivalIdentity() async {
+        let store = TestStore(initialState: makeState()) {
+            FestivalEditFeature()
+        } withDependencies: { $0.installTestSpies() }
+        store.exhaustivity = .off
+
+        await store.send(.onCheckpointAdd)
+        #expect(store.state.destination?.checkpoint?.item.festivalId == "festival")
+        #expect(store.state.destination?.checkpoint?.item.id != nil)
+        #expect(store.state.checkpoints.isEmpty)
+        await store.finish()
+    }
+
+    @Test("危険区域の新規作成は祭典IDを持った空の下書きから開始する")
+    @MainActor
+    func hazardCreationStartsWithNoCoordinates() async {
+        let store = TestStore(initialState: makeState()) {
+            FestivalEditFeature()
+        } withDependencies: { $0.installTestSpies() }
+        store.exhaustivity = .off
+
+        await store.send(.hazardCreateTapped)
+        #expect(store.state.destination?.hazard?.item.festivalId == "festival")
+        #expect(store.state.destination?.hazard?.item.coordinates.isEmpty == true)
+        #expect(store.state.hazardSections.isEmpty)
+        await store.finish()
+    }
+
+
 }

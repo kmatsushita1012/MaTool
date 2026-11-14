@@ -258,6 +258,24 @@ struct PeriodListFeatureTests {
         await store.finish()
     }
 
+
+    @Test("コピー元年度に期間がなければ一括作成はAPIを呼ばず空の成功として終了する")
+    @MainActor
+    func missingSourceYearCompletesWithoutCreatingPeriods() async {
+        let store = TestStore(initialState: makeState([])) {
+            PeriodListFeature()
+        } withDependencies: { $0.installTestSpies() }
+        store.exhaustivity = .off
+
+        await store.send(.batchCreateTapped(2020))
+        #expect(store.state.isLoading)
+        await store.receive(.batchCreateReceived(.success([])))
+        #expect(store.state.periods.isEmpty)
+        #expect(!store.state.isLoading)
+        #expect(store.state.alert == .notice("一括作成が完了しました。"))
+        await store.finish()
+    }
+
     private func makeState(_ periods: [Period]) -> PeriodListFeature.State {
         PeriodListFeature.State(
             festivalId: "festival", periods: periods,

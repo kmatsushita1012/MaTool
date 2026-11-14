@@ -907,6 +907,74 @@ struct RootFeatureTests {
         await store.finish()
     }
 
+    @Test("存在しない地区への経路切替要求は紹介シートを閉じ、地図側で選択だけ保持する")
+    @MainActor
+    func unknownDistrictRouteTapDoesNotStartLoad() async {
+        let fixture = RootFeatureFixture()
+        let appState = Shared<AppState?>(value: fixture.appState)
+        var initial = RootFeature.State(appState: appState)
+        initial.$launchState.withLock { $0 = .festival(.guest) }
+        initial.map = initial.makeMapState(userRole: .guest)
+        initial.sheet = .festival(FestivalInfoFeature.State(
+            fixture.festival, appState: appState
+        ))
+        let store = TestStore(initialState: initial) {
+            RootFeature()
+        } withDependencies: { $0.installTestSpies() }
+        store.exhaustivity = .off
+
+        await store.send(.routeTapped("unknown-district"))
+        await store.receive(.map(.contentSelected(.route("unknown-district"))))
+        #expect(store.state.sheet == nil)
+        #expect(store.state.map?.selectedContent == .route("unknown-district"))
+        await store.finish()
+    }
+
+
+    @Test("地区管理者として復元したが権限に対応する町が無い場合は管理画面を開かない")
+    @MainActor
+    func staleDistrictAdminRoleFallsBackToMap() async {
+        let fixture = RootFeatureFixture()
+        let lastScreen = LastMainScreenUseCaseSpy(value: .admin)
+        let store = TestStore(initialState: RootFeature.State(
+            appState: Shared<AppState?>(value: fixture.appState)
+        )) {
+            RootFeature()
+        } withDependencies: {
+            $0.installTestSpies()
+            $0[LastMainScreenUseCaseKey.self] = lastScreen
+        }
+        store.exhaustivity = .off
+
+        await store.send(.launchFinished(.district(.district("deleted-district"), nil), nil))
+        #expect(store.state.map != nil)
+        #expect(store.state.destination == nil)
+        #expect(store.state.alert != nil)
+        #expect(lastScreen.value == .map)
+        await store.finish()
+    }
+
+    @Test("Onboardingで町を選択すると指定ルートを保持して地区地図へ移行する")
+    @MainActor
+    func onboardingDistrictChoiceClosesOnboarding() async {
+        let fixture = RootFeatureFixture()
+        let appState = Shared<AppState?>(value: fixture.appState)
+        var initial = RootFeature.State(appState: appState)
+        initial.$launchState.withLock { $0 = .district(.guest, nil) }
+        initial.onboarding = initial.makeOnboardingState()
+        let store = TestStore(initialState: initial) {
+            RootFeature()
+        } withDependencies: { $0.installTestSpies() }
+        store.exhaustivity = .off
+
+        await store.send(.onboarding(.delegate(.districtSelected("selected-route"))))
+        #expect(store.state.onboarding == nil)
+        #expect(store.state.map?.userRole == .guest)
+        #expect(store.state.scene == .map)
+        await store.finish()
+    }
+
+
 }
 
 private struct RootFeatureFixture {

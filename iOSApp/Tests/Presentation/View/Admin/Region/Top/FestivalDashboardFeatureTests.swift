@@ -285,6 +285,42 @@ struct FestivalDashboardFeatureTests {
         await store.finish()
     }
 
+    @Test("祭典編集で保存成功すると編集画面を閉じて管理ダッシュボードへ戻る")
+    @MainActor
+    func savedFestivalEditorClosesDestination() async {
+        let fixture = AppStateFixture.festival()
+        let appState = Shared<AppState?>(value: AppStateFixture.state())
+        var initial = FestivalDashboardFeature.State(fixture, appState: appState)
+        initial.destination = .edit(FestivalEditFeature.State(fixture, appState: appState))
+        let store = TestStore(initialState: initial) {
+            FestivalDashboardFeature()
+        } withDependencies: { $0.installTestSpies() }
+        store.exhaustivity = .off
+
+        await store.send(.destination(.presented(.edit(.putReceived(.success)))))
+        #expect(store.state.destination == nil)
+        await store.finish()
+    }
+
+    @Test("管理画面を閉じる操作ではログアウトUseCaseを呼ばず表示データも保持する")
+    @MainActor
+    func dismissOnlyClosesDashboard() async {
+        let spy = FestivalDashboardSignOutSpy()
+        let store = TestStore(initialState: FestivalDashboardFeature.State(
+            AppStateFixture.festival(),
+            appState: Shared<AppState?>(value: AppStateFixture.state())
+        )) {
+            FestivalDashboardFeature()
+        } withDependencies: {
+            $0.installTestSpies()
+            $0[SignOutUseCaseKey.self] = spy
+        }
+        await store.send(.dismissTapped)
+        #expect(store.state.festival.id == "festival")
+        #expect(await spy.calls == 0)
+        await store.finish()
+    }
+
     private func makeState() -> FestivalDashboardFeature.State {
         FestivalDashboardFeature.State(
             AppStateFixture.festival(),

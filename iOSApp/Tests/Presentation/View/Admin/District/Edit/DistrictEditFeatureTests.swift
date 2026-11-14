@@ -381,9 +381,10 @@ struct DistrictEditFeatureTests {
     @MainActor
     func imageEditorTogglesWhenIdle() async throws {
         let fixture = DistrictEditFixture()
-        let store = TestStore(
-            initialState: try DistrictEditFeature.State(fixture.district, appState: fixture.appState)
-        ) { DistrictEditFeature() } withDependencies: { $0.installTestSpies() }
+        let initialState = try DistrictEditFeature.State(fixture.district, appState: fixture.appState)
+        let store = TestStore(initialState: initialState) {
+            DistrictEditFeature()
+        } withDependencies: { $0.installTestSpies() }
 
         await store.send(.imageEditTapped) { $0.isImageEditPresented = true }
         await store.send(.imageEditDismissTapped) { $0.isImageEditPresented = false }
