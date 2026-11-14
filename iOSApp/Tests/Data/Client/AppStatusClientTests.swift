@@ -148,4 +148,140 @@ struct AppStatusClientTests {
 
         #expect(await client.checkStatus() == nil)
     }
+    @Test("必須バージョンの各桁を数値比較し、境界直前のみ更新を要求する")
+    func comparesVersionComponentsNumerically() async {
+        let url = AppStatusURLProtocolSpy.makeURL(json: statusJSON(requiredVersion: "2.10.0"))
+        let client = AppStatusClient(
+            urlString: url.absoluteString, session: AppStatusURLProtocolSpy.makeSession()
+        )
+
+        #expect(await client.checkStatus(currentVersion: "2.9.99") ==
+                .updateRequired(storeURL: URL(string: "https://apps.apple.com/app/id123")!))
+        #expect(await client.checkStatus(currentVersion: "2.10.0") == nil)
+        #expect(await client.checkStatus(currentVersion: "2.11.0") == nil)
+    }
+
+    @Test("正常なHTTP応答でも日付の形式が不正ならメンテナンス情報を採用しない")
+    func invalidMaintenanceDateReturnsNil() async {
+        let json = #"{"maintenance":{"message":"停止","until":"not-a-date"},"update":{"ios":{"requiredVersion":"9.0.0","storeUrl":"https://apps.apple.com/app/id123"}}}"#
+        let url = AppStatusURLProtocolSpy.makeURL(json: json)
+        let client = AppStatusClient(
+            urlString: url.absoluteString, session: AppStatusURLProtocolSpy.makeSession()
+        )
+
+        #expect(await client.checkStatus(currentVersion: "1.0.0") == nil)
+    }
+
+    @Test("HTTP 204ではJSONが存在しないため更新要求を返さない")
+    func emptySuccessfulResponseReturnsNil() async {
+        let url = AppStatusURLProtocolSpy.makeURL(json: "", status: 204)
+        let client = AppStatusClient(
+            urlString: url.absoluteString, session: AppStatusURLProtocolSpy.makeSession()
+        )
+
+        #expect(await client.checkStatus(currentVersion: "1.0.0") == nil)
+    }
+
+    @Test("キャッシュされたメンテナンス情報は通信なしで更新要求より優先される")
+    func cachedMaintenancePrecedesRequiredUpdate() async {
+        let until = Date().addingTimeInterval(3600)
+        let status = AppStatus(
+            maintenance: Maintenance(message: "緊急メンテナンス", until: until),
+            update: Update(
+                ios: UpdateInfo(
+                    requiredVersion: "99.0.0",
+                    storeUrl: URL(string: "https://apps.apple.com/app/id123")!
+                ),
+                android: nil
+            )
+        )
+        let client = AppStatusClient(
+            urlString: "invalid",
+            session: AppStatusURLProtocolSpy.makeSession(),
+            cachedStatus: status
+        )
+
+        let result = await client.checkStatus(currentVersion: "1.0.0")
+        if case .maintenance(let message, let actualUntil) = result {
+            #expect(message == "緊急メンテナンス")
+            #expect(actualUntil == until)
+        } else {
+            Issue.record("キャッシュ済みメンテナンスが優先されませんでした")
+        }
+    }
+
+    @Test("キャッシュされた期限切れメンテナンスは更新不要の判定を妨げない")
+    func expiredCachedMaintenanceAllowsCurrentVersion() async {
+        let status = AppStatus(
+            maintenance: Maintenance(
+                message: "終了したメンテナンス",
+                until: Date().addingTimeInterval(-3600)
+            ),
+            update: Update(
+                ios: UpdateInfo(
+                    requiredVersion: "1.0.0",
+                    storeUrl: URL(string: "https://apps.apple.com/app/id123")!
+                ),
+                android: nil
+            )
+        )
+        let client = AppStatusClient(
+            urlString: "invalid",
+            session: AppStatusURLProtocolSpy.makeSession(),
+            cachedStatus: status
+        )
+        #expect(await client.checkStatus(currentVersion: "1.0.0") == nil)
+    }
+
+    @Test("HTTP 201の成功レスポンスも正常な設定として扱う")
+    func acceptsCreatedHTTPResponse() async {
+        let url = AppStatusURLProtocolSpy.makeURL(
+            json: statusJSON(requiredVersion: "3.0.0"), status: 201
+        )
+        let client = AppStatusClient(
+            urlString: url.absoluteString, session: AppStatusURLProtocolSpy.makeSession()
+        )
+
+        #expect(await client.checkStatus(currentVersion: "2.0.0") ==
+                .updateRequired(storeURL: URL(string: "https://apps.apple.com/app/id123")!))
+    }
+
+    @Test("HTTP 300は成功扱いせず更新要求を返さない")
+    func rejectsHTTP300Boundary() async {
+        let url = AppStatusURLProtocolSpy.makeURL(
+            json: statusJSON(requiredVersion: "3.0.0"), status: 300
+        )
+        let client = AppStatusClient(
+            urlString: url.absoluteString, session: AppStatusURLProtocolSpy.makeSession()
+        )
+
+        #expect(await client.checkStatus(currentVersion: "2.0.0") == nil)
+    }
+
+
+    @Test("HTTP 299は成功範囲の上限として設定を受け入れる")
+    func acceptsHTTP299Boundary() async {
+        let url = AppStatusURLProtocolSpy.makeURL(
+            json: statusJSON(requiredVersion: "3.0.0"), status: 299
+        )
+        let client = AppStatusClient(
+            urlString: url.absoluteString, session: AppStatusURLProtocolSpy.makeSession()
+        )
+
+        #expect(await client.checkStatus(currentVersion: "2.0.0") ==
+                .updateRequired(storeURL: URL(string: "https://apps.apple.com/app/id123")!))
+    }
+
+    @Test("HTTP 199は成功範囲外として設定を拒否する")
+    func rejectsHTTP199Boundary() async {
+        let url = AppStatusURLProtocolSpy.makeURL(
+            json: statusJSON(requiredVersion: "3.0.0"), status: 199
+        )
+        let client = AppStatusClient(
+            urlString: url.absoluteString, session: AppStatusURLProtocolSpy.makeSession()
+        )
+
+        #expect(await client.checkStatus(currentVersion: "2.0.0") == nil)
+    }
+
 }

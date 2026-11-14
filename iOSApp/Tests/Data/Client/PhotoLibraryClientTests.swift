@@ -21,6 +21,29 @@ struct PhotoLibraryClientTests {
         #expect(result == expected)
         #expect(await recordedIdentifier.value == "selected-photo")
     }
+    @Test("画像データが存在しない場合はnilをそのまま返す")
+    func missingImageDataReturnsNil() async throws {
+        let client = PhotoLibraryClient { _ in nil }
+        let result = try await client.loadImageData(
+            from: PhotosPickerItem(itemIdentifier: "empty-photo")
+        )
+        #expect(result == nil)
+    }
+
+    @Test("画像の読み込み失敗は呼び出し元に伝播する")
+    func imageLoadFailurePropagates() async {
+        let client = PhotoLibraryClient { _ in throw PhotoLibraryTestError.failed }
+        await #expect(throws: PhotoLibraryTestError.failed) {
+            try await client.loadImageData(
+                from: PhotosPickerItem(itemIdentifier: "unavailable-photo")
+            )
+        }
+    }
+
+}
+
+private enum PhotoLibraryTestError: Error {
+    case failed
 }
 
 private actor ItemIdentifierSpy {

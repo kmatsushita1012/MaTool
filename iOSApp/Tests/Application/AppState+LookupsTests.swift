@@ -3,7 +3,7 @@ import Shared
 import Testing
 @testable import iOSApp
 
-struct AppStateLookupsTests {
+extension AppStateTests {
     @Test("ID検索と選択地区・選択ルートは一致したデータのみを返す")
     func resolvesOnlyMatchingEntries() {
         let period = AppStateFixture.period()

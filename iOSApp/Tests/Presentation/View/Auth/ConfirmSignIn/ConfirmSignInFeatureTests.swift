@@ -75,4 +75,45 @@ struct ConfirmSignInFeatureTests {
         }
         await store.finish()
     }
+    @Test("パスワード入力のBindingは入力値だけを更新し認証を開始しない")
+    @MainActor
+    func bindingUpdatesPasswordWithoutSubmitting() async {
+        let store = TestStore(initialState: ConfirmSignInFeature.State()) {
+            ConfirmSignInFeature()
+        } withDependencies: {
+            $0.installTestSpies()
+        }
+
+        await store.send(.binding(.set(\.password1, "ValidPass123"))) {
+            $0.password1 = "ValidPass123"
+        }
+        await store.send(.binding(.set(\.password2, "ValidPass123"))) {
+            $0.password2 = "ValidPass123"
+        }
+        #expect(store.state.isLoading == false)
+        await store.finish()
+    }
+
+    @Test("入力エラー後にアラートを閉じると再入力可能な状態に戻る")
+    @MainActor
+    func alertDismissalClearsValidationError() async {
+        var state = ConfirmSignInFeature.State()
+        state.password1 = "ValidPass123"
+        state.password2 = "Different123"
+        let store = TestStore(initialState: state) {
+            ConfirmSignInFeature()
+        } withDependencies: {
+            $0.installTestSpies()
+        }
+
+        await store.send(.submitTapped) {
+            $0.alert = AlertFeature.error("パスワードが一致しません。")
+        }
+        await store.send(.alert(.dismiss)) {
+            $0.alert = nil
+        }
+        #expect(store.state.isLoading == false)
+        await store.finish()
+    }
+
 }
