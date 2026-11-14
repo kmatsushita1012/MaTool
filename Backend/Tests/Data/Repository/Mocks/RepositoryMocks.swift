@@ -335,10 +335,12 @@ final class PointRepositoryMock: PointRepositoryProtocol, @unchecked Sendable {
         return try await putHandler(item)
     }
 
-    private(set) var postCallCount = 0
+    private let postCallLock = NSLock()
+    private var storedPostCallCount = 0
+    var postCallCount: Int { postCallLock.withLock { storedPostCallCount } }
     private let postHandler: ((Point) async throws -> Point)?
     func post(_ item: Point) async throws -> Point {
-        postCallCount += 1
+        postCallLock.withLock { storedPostCallCount += 1 }
         guard let postHandler else { throw TestError.unimplemented }
         return try await postHandler(item)
     }
