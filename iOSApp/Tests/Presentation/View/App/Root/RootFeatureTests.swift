@@ -1,4 +1,5 @@
 import ComposableArchitecture
+import Foundation
 import Shared
 import Testing
 @testable import iOSApp
@@ -416,6 +417,151 @@ struct RootFeatureTests {
         #expect(onboarding.launchState == .loading)
         state.$launchState.withLock { $0 = .onboarding }
         #expect(onboarding.launchState == .onboarding)
+    }
+
+    @Test("起動状態がエラーの場合だけ障害情報をエラー領域に表示する")
+    func statusIsClassifiedByLaunchScene() {
+        var state = RootFeature.State()
+        let status = StatusCheckResult.updateRequired(
+            storeURL: URL(string: "https://apps.apple.com/app/id123")!
+        )
+        state.status = status
+        #expect(state.errorStatus == nil)
+        #expect(state.normalStatus == status)
+
+        state.$launchState.withLock { $0 = .error("offline") }
+        #expect(state.errorStatus == status)
+        #expect(state.normalStatus == nil)
+        state.$launchState.withLock { $0 = .onboarding }
+        #expect(state.errorStatus == nil)
+        #expect(state.normalStatus == status)
+    }
+
+    @Test("メンテナンス情報のDismissは起動状態と地図を変更しない")
+    @MainActor
+    func dismissStatusOnlyClearsStatus() async {
+        let fixture = RootFeatureFixture()
+        var state = RootFeature.State(appState: Shared<AppState?>(value: fixture.appState))
+        state.$launchState.withLock { $0 = .festival(.guest) }
+        state.map = state.makeMapState(userRole: .guest)
+        state.status = .maintenance(message: "maintenance", until: Date(timeIntervalSince1970: 2_000_000_000))
+        let store = TestStore(initialState: state) {
+            RootFeature()
+        } withDependencies: { $0.installTestSpies() }
+
+        await store.send(.statusDismissed) {
+            $0.status = nil
+        }
+        #expect(store.state.launchState == .festival(.guest))
+        #expect(store.state.map != nil)
+        await store.finish()
+    }
+
+    @Test("紹介データの取得失敗後は読み込みを解除してエラー原因を表示する")
+    @MainActor
+    func failedIntroductionShowsMessage() async {
+        let error = AppError.be(.network("offline"))
+        var state = RootFeature.State()
+        state.isIntroductionLoading = true
+        let store = TestStore(initialState: state) {
+            RootFeature()
+        } withDependencies: { $0.installTestSpies() }
+
+        await store.send(.introductionPrepared(.failure(error))) {
+            $0.isIntroductionLoading = false
+            $0.alert = AlertFeature.error(error.message)
+        }
+        #expect(store.state.sheet == nil)
+        await store.finish()
+    }
+
+    @Test("設定準備が成功しても起動シーンが確定していなければ設定画面を表示しない")
+    @MainActor
+    func settingsResultIgnoredBeforeLaunchFinishes() async {
+        var state = RootFeature.State()
+        state.isDestinationLoading = true
+        let store = TestStore(initialState: state) {
+            RootFeature()
+        } withDependencies: { $0.installTestSpies() }
+
+        await store.send(.settingsPrepared(.success(.init(
+            festivals: [AppStateFixture.festival()],
+            selection: SceneSelection(festivalId: "festival", districtId: nil)
+        )))) {
+            $0.isDestinationLoading = false
+        }
+        #expect(store.state.destination == nil)
+        await store.finish()
+    }
+
+    @Test("緊急ログアウト失敗時は管理画面を残し失敗理由を警告する")
+    @MainActor
+    func failedEmergencySignOutKeepsCurrentScene() async {
+        let fixture = RootFeatureFixture()
+        var state = RootFeature.State(appState: Shared<AppState?>(value: fixture.appState))
+        state.$launchState.withLock { $0 = .festival(.headquarter("festival")) }
+        state.map = state.makeMapState(userRole: .headquarter("festival"))
+        state.isEmergencySignOutLoading = true
+        let store = TestStore(initialState: state) {
+            RootFeature()
+        } withDependencies: { $0.installTestSpies() }
+        let error = AppError.be(.network("offline"))
+
+        await store.send(.emergencySignOutReceived(.failure(error))) {
+            $0.isEmergencySignOutLoading = false
+            $0.alert = AlertFeature.error("ログアウトに失敗しました。 \(error.message)")
+        }
+        #expect(store.state.isAdminLoggedIn)
+        await store.finish()
+    }
+
+    @Test("緊急ログアウト成功時は管理者の画面状態と最終画面記録を破棄する")
+    @MainActor
+    func successfulEmergencySignOutResetsAdminScene() async {
+        let fixture = RootFeatureFixture()
+        let appState = Shared<AppState?>(value: fixture.appState)
+        var state = RootFeature.State(appState: appState)
+        state.$launchState.withLock { $0 = .festival(.headquarter("festival")) }
+        state.map = state.makeMapState(userRole: .headquarter("festival"))
+        state.destination = .adminFestival(.init(fixture.festival, appState: appState))
+        state.isEmergencySignOutLoading = true
+        let lastScreen = LastMainScreenUseCaseSpy(value: .admin)
+        let store = TestStore(initialState: state) {
+            RootFeature()
+        } withDependencies: {
+            $0.installTestSpies()
+            $0[LastMainScreenUseCaseKey.self] = lastScreen
+        }
+        store.exhaustivity = .off
+
+        await store.send(.emergencySignOutReceived(.success(.onboarding)))
+        #expect(store.state.launchState == .onboarding)
+        #expect(store.state.map == nil)
+        #expect(store.state.destination == nil)
+        #expect(store.state.onboarding != nil)
+        #expect(!store.state.isEmergencySignOutLoading)
+        #expect(lastScreen.value == nil)
+        await store.finish()
+    }
+
+    @Test("起動に失敗したときは中途半端な地図やオンボーディング状態を保持しない")
+    @MainActor
+    func launchFailureClearsDestinations() async {
+        let fixture = RootFeatureFixture()
+        let appState = Shared<AppState?>(value: fixture.appState)
+        var state = RootFeature.State(appState: appState)
+        state.map = state.makeMapState(userRole: .guest)
+        let store = TestStore(initialState: state) {
+            RootFeature()
+        } withDependencies: { $0.installTestSpies() }
+        store.exhaustivity = .off
+
+        await store.send(.launchFinished(.error("offline"), nil))
+        #expect(store.state.scene == .error("offline"))
+        #expect(store.state.map == nil)
+        #expect(store.state.onboarding == nil)
+        #expect(store.state.destination == nil)
+        await store.finish()
     }
 
 }

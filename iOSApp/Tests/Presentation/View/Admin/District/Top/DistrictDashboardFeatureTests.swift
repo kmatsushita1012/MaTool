@@ -1,4 +1,5 @@
 import ComposableArchitecture
+import CoreLocation
 import Foundation
 import Shared
 import Testing
@@ -162,6 +163,111 @@ struct DistrictDashboardFeatureTests {
             $0.isAWSLoading = false
         }
         await successStore.finish()
+    }
+
+    @Test("地区の編集ボタンはロード済みの地区状態を編集画面へ引き継ぐ")
+    @MainActor
+    func editTappedOpensLoadedDistrict() async {
+        let store = TestStore(initialState: makeState()) {
+            DistrictDashboardFeature()
+        } withDependencies: { $0.installTestSpies() }
+        store.exhaustivity = .off
+
+        await store.send(.onEdit)
+        #expect(store.state.destination?.edit?.district.id == "district")
+        await store.finish()
+    }
+
+    @Test("経路が未作成の期間は新規経路編集モードで開く")
+    @MainActor
+    func emptyRouteSlotOpensCreationMode() async {
+        let store = TestStore(initialState: makeState()) {
+            DistrictDashboardFeature()
+        } withDependencies: { $0.installTestSpies() }
+        store.exhaustivity = .off
+        await store.send(.onRouteEdit(RouteSlot(
+            period: AppStateFixture.period(), route: nil
+        )))
+        #expect(store.state.destination?.route?.mode == .create)
+        #expect(store.state.destination?.route?.route.periodId == "period")
+        await store.finish()
+    }
+
+    @Test("既存経路のロード成功ではRoutePackの内容をプレビュードラフトへ渡す")
+    @MainActor
+    func loadedRouteOpensUpdateEditor() async {
+        let route = AppStateFixture.route()
+        let pack = RoutePack(route: route, points: [], passages: [])
+        var initial = makeState()
+        initial.isRouteLoading = true
+        let store = TestStore(initialState: initial) {
+            DistrictDashboardFeature()
+        } withDependencies: { $0.installTestSpies() }
+        store.exhaustivity = .off
+
+        await store.send(.routeEditReceived(.success(pack)))
+        #expect(!store.state.isRouteLoading)
+        #expect(store.state.destination?.route?.mode == .update)
+        #expect(store.state.destination?.route?.route.id == route.id)
+        await store.finish()
+    }
+
+    @Test("位置配信設定の準備完了時は配信状態と許可状態を保持して画面を開く")
+    @MainActor
+    func locationPreparationPreservesTrackingState() async {
+        var initial = makeState()
+        initial.isLocationLoading = true
+        let store = TestStore(initialState: initial) {
+            DistrictDashboardFeature()
+        } withDependencies: { $0.installTestSpies() }
+        store.exhaustivity = .off
+
+        await store.send(.locationPrepared(
+            isTracking: true,
+            interval: .init(label: "5分", value: 300),
+            permissionState: .init(authorizationStatus: .authorizedAlways,
+                                   hasRequestedAlwaysLocationPermission: true)
+        ))
+        #expect(!store.state.isLocationLoading)
+        #expect(store.state.destination?.location?.id == "district")
+        #expect(store.state.destination?.location?.selectedInterval.value == 300)
+        #expect(store.state.destination?.location?.isTracking == true)
+        await store.finish()
+    }
+
+    @Test("設定情報の取得成功では地区管理者の権限を設定画面へ渡す")
+    @MainActor
+    func preparedSettingsOpenDistrictRole() async {
+        var initial = makeState()
+        initial.isSettingsLoading = true
+        let store = TestStore(initialState: initial) {
+            DistrictDashboardFeature()
+        } withDependencies: { $0.installTestSpies() }
+        store.exhaustivity = .off
+
+        await store.send(.settingsPrepared(.success(.init(
+            festivals: [AppStateFixture.festival()],
+            selection: SceneSelection(festivalId: "festival", districtId: "district")
+        ))))
+        #expect(!store.state.isSettingsLoading)
+        #expect(store.state.destination?.settings?.userRole == .district("district"))
+        await store.finish()
+    }
+
+    @Test("パスワード変更完了時は編集画面を閉じて成功通知を出す")
+    @MainActor
+    func changePasswordSuccessShowsCompletion() async {
+        var initial = makeState()
+        initial.destination = .changePassword(.init())
+        let store = TestStore(initialState: initial) {
+            DistrictDashboardFeature()
+        } withDependencies: { $0.installTestSpies() }
+
+        await store.send(.destination(.presented(.changePassword(.received(.success))))) {
+            $0.destination = nil
+            $0.alert = AlertFeature.success("パスワードが変更されました")
+        }
+        await store.finish()
     }
 
     private func makeState() -> DistrictDashboardFeature.State {

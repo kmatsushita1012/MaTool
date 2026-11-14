@@ -121,6 +121,82 @@ struct FestivalDashboardFeatureTests {
         await store.finish()
     }
 
+    @Test("祭典編集と町一覧はそれぞれ専用の画面Stateを開く")
+    @MainActor
+    func festivalAndDistrictNavigation() async {
+        let editing = TestStore(initialState: makeState()) {
+            FestivalDashboardFeature()
+        } withDependencies: { $0.installTestSpies() }
+        editing.exhaustivity = .off
+        await editing.send(.onEdit)
+        #expect(editing.state.destination?.edit?.festival.id == "festival")
+        await editing.finish()
+
+        let listing = TestStore(initialState: makeState()) {
+            FestivalDashboardFeature()
+        } withDependencies: { $0.installTestSpies() }
+        listing.exhaustivity = .off
+        await listing.send(.districtsTapped)
+        #expect(listing.state.destination?.districts != nil)
+        await listing.finish()
+    }
+
+    @Test("取得した日程は編集一覧へ渡し、ロード中表示を消す")
+    @MainActor
+    func fetchedPeriodsOpenPeriodList() async {
+        var initial = makeState()
+        initial.isApiLoading = true
+        let store = TestStore(initialState: initial) {
+            FestivalDashboardFeature()
+        } withDependencies: { $0.installTestSpies() }
+        store.exhaustivity = .off
+        let periods = [AppStateFixture.period(id: "morning"), AppStateFixture.period(id: "evening")]
+
+        await store.send(.periodsPrepared(.success(periods)))
+        #expect(!store.state.isApiLoading)
+        #expect(store.state.destination?.periods?.festivalId == "festival")
+        #expect(store.state.destination?.periods?.periods.count == 2)
+        await store.finish()
+    }
+
+    @Test("設定情報が揃うと本部管理者権限で設定画面を開く")
+    @MainActor
+    func fetchedSettingsOpenHeadquarterSettings() async {
+        var initial = makeState()
+        initial.isSettingsLoading = true
+        let store = TestStore(initialState: initial) {
+            FestivalDashboardFeature()
+        } withDependencies: { $0.installTestSpies() }
+        store.exhaustivity = .off
+
+        await store.send(.settingsPrepared(.success(.init(
+            festivals: [AppStateFixture.festival()],
+            selection: SceneSelection(festivalId: "festival", districtId: nil)
+        ))))
+        #expect(!store.state.isSettingsLoading)
+        #expect(store.state.destination?.settings?.userRole == .headquarter("festival"))
+        await store.finish()
+    }
+
+    @Test("パスワード変更完了を受け取ったら編集画面を閉じ成功通知を出す")
+    @MainActor
+    func successfulPasswordChangeShowsNotice() async {
+        var initial = makeState()
+        initial.destination = .changePassword(.init())
+        let store = TestStore(initialState: initial) {
+            FestivalDashboardFeature()
+        } withDependencies: { $0.installTestSpies() }
+
+        await store.send(.destination(.presented(.changePassword(.received(.success))))) {
+            $0.destination = nil
+            $0.alert = AlertFeature.success("パスワードが変更されました")
+        }
+        await store.send(.alert(.dismiss)) {
+            $0.alert = nil
+        }
+        await store.finish()
+    }
+
     private func makeState() -> FestivalDashboardFeature.State {
         FestivalDashboardFeature.State(
             AppStateFixture.festival(),

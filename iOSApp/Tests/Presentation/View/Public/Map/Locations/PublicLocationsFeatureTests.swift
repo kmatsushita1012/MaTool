@@ -97,6 +97,125 @@ struct PublicLocationsFeatureTests {
         #expect(state.floats.first?.district.id == "first")
     }
 
+    @Test("配信中の町を選択すると地図中心をその町の最新位置に移動する")
+    @MainActor
+    func selectedFloatFocusesBroadcastCoordinate() async throws {
+        let location = FloatLocation(
+            id: "first", districtId: "first",
+            coordinate: .init(latitude: 34.5, longitude: 138.3)
+        )
+        let fixture = LocationMapFixture(locations: [location])
+        let state = fixture.makeState()
+        let entry = try #require(state.floats.first)
+        let store = TestStore(initialState: state) {
+            PublicLocationsFeature()
+        } withDependencies: { $0.installTestSpies() }
+        store.exhaustivity = .off
+
+        await store.send(.floatFocusSelected(entry))
+        #expect(store.state.mapRegion.center.latitude == 34.5)
+        #expect(store.state.mapRegion.center.longitude == 138.3)
+        await store.finish()
+    }
+
+    @Test("現在地の取得が成功したら地図の現在地ボタンで取得位置へ移動する")
+    @MainActor
+    func userFocusUsesLocationProvider() async {
+        let fixture = LocationMapFixture(locations: [])
+        let spy = LocationsMapLocationSpy(result: .success(
+            CLLocation(latitude: 35.65, longitude: 139.75)
+        ))
+        let store = TestStore(initialState: fixture.makeState()) {
+            PublicLocationsFeature()
+        } withDependencies: {
+            $0.installTestSpies()
+            $0.mapLocationProvider = spy
+        }
+        store.exhaustivity = .off
+
+        await store.send(.userFocusTapped)
+        await store.receive(.userLocationReceived(Coordinate(latitude: 35.65, longitude: 139.75)))
+        #expect(store.state.mapRegion.center.latitude == 35.65)
+        #expect(store.state.mapRegion.center.longitude == 139.75)
+        #expect(await spy.requests == 1)
+        await store.finish()
+    }
+
+    @Test("位置データ再取得エラーは取得を成功扱いせず通知を表示する")
+    @MainActor
+    func reloadFailureShowsActualError() async {
+        let fixture = LocationMapFixture(locations: [])
+        let store = TestStore(initialState: fixture.makeState()) {
+            PublicLocationsFeature()
+        } withDependencies: { $0.installTestSpies() }
+        store.exhaustivity = .off
+
+        let error = AppError.be(.network("offline"))
+        await store.send(.reloadReceived(.failure(error)))
+        #expect(store.state.toast != nil)
+        await store.send(.toastDismissed)
+        #expect(store.state.toast == nil)
+        await store.finish()
+    }
+
+    @Test("現在地読み込み中なら失敗メッセージを出し、閉じると通知が消える")
+    @MainActor
+    func loadingLocationShowsUnavailableMessage() async {
+        let spy = LocationsMapLocationSpy(result: .loading)
+        let fixture = LocationMapFixture(locations: [])
+        let store = TestStore(initialState: fixture.makeState()) {
+            PublicLocationsFeature()
+        } withDependencies: {
+            $0.installTestSpies()
+            $0.mapLocationProvider = spy
+        }
+        store.exhaustivity = .off
+
+        await store.send(.userFocusTapped)
+        await store.receive(.userLocationFailed("現在地を取得できませんでした。"))
+        #expect(store.state.toast != nil)
+        await store.send(.toastDismissed)
+        #expect(store.state.toast == nil)
+        await store.finish()
+    }
+
+    @Test("初回の配信無し通知は画面表示時に閉じるタイマーを開始する")
+    @MainActor
+    func onAppearWithInitialNoticeSchedulesDismissal() async {
+        let fixture = LocationMapFixture(locations: [])
+        let store = TestStore(initialState: fixture.makeState()) {
+            PublicLocationsFeature()
+        } withDependencies: { $0.installTestSpies() }
+        store.exhaustivity = .off
+
+        #expect(store.state.toast != nil)
+        await store.send(.onAppear)
+        await store.send(.toastDismissed)
+        #expect(store.state.toast == nil)
+        await store.finish()
+    }
+
+    @Test("配信マーカーをタップするだけでは地図の中心や通知を変更しない")
+    @MainActor
+    func floatTapDoesNotRefocusMap() async throws {
+        let location = FloatLocation(
+            id: "first", districtId: "first",
+            coordinate: .init(latitude: 35.5, longitude: 139.5)
+        )
+        let fixture = LocationMapFixture(locations: [location])
+        let state = fixture.makeState()
+        let entry = try #require(state.floats.first)
+        let store = TestStore(initialState: state) {
+            PublicLocationsFeature()
+        } withDependencies: { $0.installTestSpies() }
+        let before = store.state.mapRegion
+
+        await store.send(.floatTapped(entry))
+        #expect(store.state.mapRegion.center.latitude == before.center.latitude)
+        #expect(store.state.mapRegion.center.longitude == before.center.longitude)
+        await store.finish()
+    }
+
 }
 
 private struct LocationMapFixture {
@@ -136,4 +255,20 @@ private struct LocationMapFixture {
             toast: Shared(value: nil)
         )
     }
+}
+
+private actor LocationsMapLocationSpy: MapLocationProviderProtocol {
+    let result: AsyncValue<CLLocation>
+    private(set) var requests = 0
+
+    init(result: AsyncValue<CLLocation>) { self.result = result }
+
+    func requestPermission() async {}
+    func startTracking() async {}
+    func stopTracking() async {}
+    func getLocation() async -> AsyncValue<CLLocation> {
+        requests += 1
+        return result
+    }
+    var isTracking: Bool { get async { false } }
 }

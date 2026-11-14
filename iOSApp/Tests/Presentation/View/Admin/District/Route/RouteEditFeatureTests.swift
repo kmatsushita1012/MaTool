@@ -1,4 +1,5 @@
 import ComposableArchitecture
+import Foundation
 import Shared
 import Testing
 @testable import iOSApp
@@ -351,6 +352,152 @@ struct RouteEditFeatureTests {
             RouteEditFeature()
         } withDependencies: { $0.installTestSpies() }
         await store.send(.modified(.success))
+        await store.finish()
+    }
+
+
+    @Test("点追加後のUndoとRedoは座標履歴を往復し操作モードを初期化する")
+    @MainActor
+    func undoRedoRestoresRouteGeometry() async throws {
+        let store = TestStore(initialState: try makeState(mode: .create)) {
+            RouteEditFeature()
+        } withDependencies: { $0.installTestSpies() }
+        store.exhaustivity = .off
+        let coordinate = Coordinate(latitude: 35.1, longitude: 139.1)
+
+        await store.send(.mapLongPressed(coordinate))
+        #expect(store.state.points.count == 1)
+        #expect(store.state.canUndo)
+        await store.send(.undoTapped)
+        #expect(store.state.points.isEmpty)
+        #expect(store.state.canRedo)
+        await store.send(.redoTapped)
+        #expect(store.state.points.count == 1)
+        #expect(store.state.points.first?.coordinate == coordinate)
+        #expect(store.state.operation == .add)
+        await store.finish()
+    }
+
+    @Test("登録済み経由点のタップで同じIDの編集画面を開く")
+    @MainActor
+    func tappingPointOpensEditor() async throws {
+        let point = Point(
+            id: "point", routeId: "route",
+            coordinate: Coordinate(latitude: 35, longitude: 139)
+        )
+        let state = try makeState(mode: .update, points: [point])
+        let entry = try #require(state.pointEntries.first)
+        let store = TestStore(initialState: state) {
+            RouteEditFeature()
+        } withDependencies: { $0.installTestSpies() }
+        store.exhaustivity = .off
+
+        await store.send(.pointTapped(entry))
+        #expect(store.state.point?.point.id == "point")
+        #expect(store.state.operation == .add)
+        await store.finish()
+    }
+
+    @Test("未設定の経路で保存しようとすると不正な点列を拒否しUseCaseを実行しない")
+    @MainActor
+    func emptyRouteCannotBeSaved() async throws {
+        let store = TestStore(initialState: try makeState(mode: .create)) {
+            RouteEditFeature()
+        } withDependencies: { $0.installTestSpies() }
+        store.exhaustivity = .off
+
+        await store.send(.saveTapped)
+        #expect(store.state.alert?.notice != nil)
+        #expect(!store.state.isSaving)
+        await store.finish()
+    }
+
+    @Test("通過町の選択後に先頭挿入しても既存メモの順序を壊さない")
+    @MainActor
+    func passageInsertAtBeginningPreservesOrder() async throws {
+        let store = TestStore(initialState: try makeState(mode: .create)) {
+            RouteEditFeature()
+        } withDependencies: { $0.installTestSpies() }
+        store.exhaustivity = .off
+
+        await store.send(.passageSelected(districtId: "first", memo: "first"))
+        await store.send(.passageInsertAboveTapped(0))
+        await store.send(.passageSelected(districtId: "new-first", memo: "inserted"))
+        #expect(store.state.passages.map(\.memo) == ["inserted", "first"])
+        #expect(store.state.passages.map(\.districtId) == ["new-first", "first"])
+        #expect(store.state.passageInsertIndex == nil)
+        await store.finish()
+    }
+
+    @Test("通過町の移動と削除でリスト内の操作対象を正しく反映する")
+    @MainActor
+    func passageMovementAndDeletionPreserveRemainingPassages() async throws {
+        let store = TestStore(initialState: try makeState(mode: .create)) {
+            RouteEditFeature()
+        } withDependencies: { $0.installTestSpies() }
+        store.exhaustivity = .off
+
+        await store.send(.passageSelected(districtId: "first", memo: "first"))
+        await store.send(.passageSelected(districtId: "second", memo: "second"))
+        await store.send(.passageSelected(districtId: "third", memo: "third"))
+        await store.send(.passageMoved(from: IndexSet(integer: 0), to: 3))
+        #expect(store.state.passages.map(\.memo) == ["second", "third", "first"])
+        await store.send(.passageDeleteTapped(1))
+        #expect(store.state.passages.map(\.memo) == ["second", "first"])
+        await store.finish()
+    }
+
+    @Test("保存・削除・経路コピー・画像出力の失敗は操作状態を解除しエラーを伝える")
+    @MainActor
+    func operationFailuresClearBusyState() async throws {
+        let failure = AppError.be(.network("offline"))
+        let operations: [(RouteEditFeature.LoadingAction, RouteEditFeature.Action)] = [
+            (.save, .saveReceived(.failure(failure))),
+            (.delete, .deleteReceived(.failure(failure))),
+            (.source, .copyPrepared(.failure(failure))),
+            (.export, .previewPrepared(.failure(failure)))
+        ]
+        for (loading, action) in operations {
+            var state = try makeState(mode: .update)
+            state.loadingAction = loading
+            let store = TestStore(initialState: state) {
+                RouteEditFeature()
+            } withDependencies: { $0.installTestSpies() }
+            store.exhaustivity = .off
+
+            await store.send(action)
+            #expect(!store.state.isLoading)
+            #expect(store.state.alert?.notice != nil)
+            await store.finish()
+        }
+    }
+
+    @Test("通知アラートの確認で表示を閉じ、画面の編集状態は維持する")
+    @MainActor
+    func noticeAlertCanBeDismissed() async throws {
+        var state = try makeState(mode: .update)
+        state.alert = .notice(.notice("Editing is paused"))
+        let store = TestStore(initialState: state) {
+            RouteEditFeature()
+        } withDependencies: { $0.installTestSpies() }
+        store.exhaustivity = .off
+
+        await store.send(.alert(.presented(.notice(.okTapped))))
+        #expect(store.state.alert == nil)
+        #expect(store.state.mode == .update)
+        await store.finish()
+    }
+
+    @Test("保存エラーの通知結果と編集結果の失敗でそれぞれ理由を保持する")
+    @MainActor
+    func modifiedFailureKeepsErrorMessage() async throws {
+        let store = TestStore(initialState: try makeState(mode: .preview)) {
+            RouteEditFeature()
+        } withDependencies: { $0.installTestSpies() }
+        store.exhaustivity = .off
+
+        await store.send(.modified(.failure(.be(.network("offline")))))
+        #expect(store.state.alert?.notice != nil)
         await store.finish()
     }
 

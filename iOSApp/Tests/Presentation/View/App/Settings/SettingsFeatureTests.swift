@@ -350,4 +350,155 @@ struct SettingsFeatureTests {
         }
     }
 
+    @Test("ゲストの町切替が失敗したら確認済みの町に選択を戻して再試行可能にする")
+    @MainActor
+    func guestDistrictChangeFailureRestoresConfirmedSelection() async {
+        let error = AppError.be(.network("offline"))
+        let spy = SelectDistrictUseCaseSpy(error: error)
+        let store = TestStore(initialState: makeState()) {
+            SettingsFeature()
+        } withDependencies: {
+            $0.installTestSpies()
+            $0[SelectDistrictUseCaseKey.self] = spy
+        }
+
+        await store.send(.binding(.set(\.selectedDistrict, nil))) {
+            $0.selectedDistrict = nil
+            $0.isParticipationLoading = true
+        }
+        await store.receive(.districtSelectReceived(.failure(error))) {
+            $0.isParticipationLoading = false
+            $0.selectedDistrict = $0.confirmedDistrict
+            $0.alert = AlertFeature.error("情報の取得に失敗しました \(error.message)")
+        }
+        #expect(store.state.selectedDistrict?.id == "district")
+        #expect(await spy.districtIDs == [nil])
+        await store.finish()
+    }
+
+    @Test("ログインボタンは現在のAppStateを使う認証画面へ遷移する")
+    @MainActor
+    func loginButtonOpensLoginFeature() async {
+        let store = TestStore(initialState: makeState()) {
+            SettingsFeature()
+        } withDependencies: { $0.installTestSpies() }
+        store.exhaustivity = .off
+        await store.send(.loginTapped)
+        #expect(store.state.destination?.login != nil)
+        await store.finish()
+    }
+
+    @Test("サインアウトボタンはUseCaseに委譲し成功後はLoadingだけ解除する")
+    @MainActor
+    func signOutTappedCallsUseCase() async {
+        let spy = SettingsSignOutUseCaseSpy()
+        let store = TestStore(initialState: makeState(userRole: .headquarter("festival"))) {
+            SettingsFeature()
+        } withDependencies: {
+            $0.installTestSpies()
+            $0[SignOutUseCaseKey.self] = spy
+        }
+        await store.send(.signOutTapped) {
+            $0.isSignOutLoading = true
+        }
+        await store.receive(.signOutReceived(.success(.onboarding))) {
+            $0.isSignOutLoading = false
+        }
+        #expect(await spy.calls == 1)
+        await store.finish()
+    }
+
+    @Test("管理者が祭典変更を確認した場合は現在のユーザーを明示して切替UseCaseを呼ぶ")
+    @MainActor
+    func confirmedFestivalChangePassesSignOutFlag() async {
+        let error = AppError.be(.network("offline"))
+        let spy = SelectFestivalUseCaseSpy(error: error)
+        var state = makeState(userRole: .headquarter("festival"))
+        state.pendingParticipationChange = .festival("next-festival")
+        state.alert = AlertFeature.participationChangeConfirmation()
+        let store = TestStore(initialState: state) {
+            SettingsFeature()
+        } withDependencies: {
+            $0.installTestSpies()
+            $0[SelectFestivalUseCaseKey.self] = spy
+        }
+
+        await store.send(.alert(.presented(.confirmTapped))) {
+            $0.alert = nil
+            $0.isParticipationLoading = true
+        }
+        await store.receive(.participationChangeReceived(.init(
+            didSignOut: false, error: error
+        ))) {
+            $0.isParticipationLoading = false
+            $0.pendingParticipationChange = nil
+            $0.alert = AlertFeature.error("情報の取得に失敗しました \(error.message)")
+        }
+        #expect(store.state.userRole == .headquarter("festival"))
+        #expect(await spy.festivalIDs == ["next-festival"])
+        await store.finish()
+    }
+
+    @Test("管理者の町変更でサインアウト後に選択失敗してもゲストへ移行する")
+    @MainActor
+    func districtChangeFailureAfterSignOutStillNotifiesParent() async {
+        let error = AppError.be(.network("offline"))
+        let districtSpy = SelectDistrictUseCaseSpy(error: error)
+        let signOutSpy = SettingsSignOutUseCaseSpy()
+        var state = makeState(userRole: .headquarter("festival"))
+        state.pendingParticipationChange = .district(nil)
+        state.alert = AlertFeature.participationChangeConfirmation()
+        let store = TestStore(initialState: state) {
+            SettingsFeature()
+        } withDependencies: {
+            $0.installTestSpies()
+            $0[SelectDistrictUseCaseKey.self] = districtSpy
+            $0[SignOutUseCaseKey.self] = signOutSpy
+        }
+
+        await store.send(.alert(.presented(.confirmTapped))) {
+            $0.alert = nil
+            $0.isParticipationLoading = true
+        }
+        await store.receive(.participationChangeReceived(.init(
+            didSignOut: true, error: error
+        ))) {
+            $0.isParticipationLoading = false
+            $0.pendingParticipationChange = nil
+            $0.userRole = .guest
+            $0.alert = AlertFeature.error("情報の取得に失敗しました \(error.message)")
+        }
+        await store.receive(.delegate(.participationChanged(.init(
+            festivals: [AppStateFixture.festival()],
+            selection: .init(festivalId: "festival", districtId: "district")
+        ))))
+        #expect(await signOutSpy.calls == 1)
+        #expect(await districtSpy.districtIDs == [nil])
+        await store.finish()
+    }
+
+    @Test("確認対象が無いときの確認タップは処理を起動しない")
+    @MainActor
+    func confirmWithoutPendingChangeOnlyDismissesAlert() async {
+        var state = makeState(userRole: .headquarter("festival"))
+        state.alert = AlertFeature.participationChangeConfirmation()
+        let store = TestStore(initialState: state) {
+            SettingsFeature()
+        } withDependencies: { $0.installTestSpies() }
+        await store.send(.alert(.presented(.confirmTapped))) {
+            $0.alert = nil
+        }
+        #expect(!store.state.isParticipationLoading)
+        await store.finish()
+    }
+
+}
+
+private actor SettingsSignOutUseCaseSpy: SignOutUseCaseProtocol {
+    private(set) var calls = 0
+
+    func callAsFunction(appState: Shared<AppState?>) async throws -> LaunchState {
+        calls += 1
+        return .onboarding
+    }
 }

@@ -81,9 +81,99 @@ struct PublicRouteFeatureTests {
         #expect(!state.isReplayEnable)
     }
 
+    @Test("ルート非配信の町を開いたら位置配信と混同せず配信停止の通知を表示する")
+    @MainActor
+    func onAppearShowsNoRouteNotice() async {
+        let store = TestStore(initialState: makeState(routeId: nil, routes: [])) {
+            PublicRouteFeature()
+        } withDependencies: { $0.installTestSpies() }
+        store.exhaustivity = .off
+
+        await store.send(.onAppear)
+        #expect(store.state.toast != nil)
+        await store.send(.toastDismissed)
+        #expect(store.state.toast == nil)
+        await store.finish()
+    }
+
+    @Test("現在地の配信がある町では配信位置に地図の中心を合わせる")
+    @MainActor
+    func floatFocusUsesBroadcastCoordinate() async {
+        let location = FloatLocation(
+            id: "float-1", districtId: "district",
+            coordinate: Coordinate(latitude: 35.25, longitude: 139.5)
+        )
+        let store = TestStore(initialState: makeState(locations: [location])) {
+            PublicRouteFeature()
+        } withDependencies: { $0.installTestSpies() }
+        store.exhaustivity = .off
+
+        await store.send(.floatFocusTapped)
+        #expect(store.state.mapRegion.center.latitude == 35.25)
+        #expect(store.state.mapRegion.center.longitude == 139.5)
+        #expect(store.state.toast == nil)
+        await store.finish()
+    }
+
+    @Test("地図上の点を押すと対応するPointEntryを詳細状態に保持する")
+    @MainActor
+    func pointTapSelectsPointDetail() async {
+        let point = Point(
+            id: "point-1", routeId: "route",
+            coordinate: Coordinate(latitude: 35, longitude: 139)
+        )
+        let entry = PointEntry(point, checkpoint: nil, performance: nil)
+        let store = TestStore(initialState: makeState(routeId: "route")) {
+            PublicRouteFeature()
+        } withDependencies: { $0.installTestSpies() }
+        await store.send(.pointTapped(entry)) {
+            $0.detail = .point(entry)
+        }
+        #expect(store.state.detail?.id == "point-1")
+        await store.finish()
+    }
+
+    @Test("経路を取得できたら読み込み表示を終了し選択した経路を維持する")
+    @MainActor
+    func matchingRouteResultClearsLoading() async {
+        let route = AppStateFixture.route(id: "route")
+        var state = makeState(routeId: route.id)
+        state.isRouteLoading = true
+        let store = TestStore(initialState: state) {
+            PublicRouteFeature()
+        } withDependencies: { $0.installTestSpies() }
+        store.exhaustivity = .off
+        await store.send(.routeLoaded(.success(RoutePack(route: route, points: [], passages: []))))
+        #expect(!store.state.isRouteLoading)
+        #expect(store.state.selectedRouteId == route.id)
+        await store.finish()
+    }
+
+    @Test("位置マーカータップは現在選択中の点や経路を解除しない")
+    @MainActor
+    func locationTapIsNoop() async {
+        let location = FloatLocation(
+            id: "float-1", districtId: "district",
+            coordinate: Coordinate(latitude: 35, longitude: 139)
+        )
+        let state = makeState(routeId: "route", locations: [location])
+        guard let entry = state.float else {
+            Issue.record("expected the district float entry")
+            return
+        }
+        let store = TestStore(initialState: state) {
+            PublicRouteFeature()
+        } withDependencies: { $0.installTestSpies() }
+
+        await store.send(.locationTapped(entry))
+        #expect(store.state.selectedRouteId == "route")
+        await store.finish()
+    }
+
     private func makeState(
         routeId: Route.ID? = nil,
-        routes: [Route] = [AppStateFixture.route()]
+        routes: [Route] = [AppStateFixture.route()],
+        locations: [FloatLocation] = []
     ) -> PublicRouteFeature.State {
         let district = AppStateFixture.district()
         let mapRegion = Shared(value: MKCoordinateRegion(
@@ -94,7 +184,7 @@ struct PublicRouteFeatureTests {
             districtId: district.id,
             district: district,
             routeId: routeId,
-            appState: Shared<AppState?>(value: AppStateFixture.state(routes: routes)),
+            appState: Shared<AppState?>(value: AppStateFixture.state(routes: routes, locations: locations)),
             mapRegion: mapRegion,
             toast: Shared<MapToast?>(value: nil)
         )

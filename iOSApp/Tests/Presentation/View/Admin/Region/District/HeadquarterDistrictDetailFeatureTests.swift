@@ -162,10 +162,138 @@ struct HeadquarterDistrictDetailFeatureTests {
         }
     }
 
+    @Test("編集済み地区の保存はUseCaseを1回だけ呼び、成功応答で編集を終了する")
+    @MainActor
+    func saveEditedDistrictInvokesUseCase() async {
+        let updated = AppStateFixture.district(name: "saved")
+        let spy = DetailSaveDistrictSpy(updated: updated)
+        var initial = makeState()
+        initial.isEditable = true
+        initial.district.name = "draft"
+        let store = TestStore(initialState: initial) {
+            HeadquarterDistrictDetailFeature()
+        } withDependencies: {
+            $0.installTestSpies()
+            $0[SaveDistrictUseCaseKey.self] = spy
+        }
+
+        await store.send(.editTapped) {
+            $0.isLoading = true
+            $0.isSaving = true
+        }
+        await store.receive(.updateReceived(.success(updated))) {
+            $0.isLoading = false
+            $0.isSaving = false
+            $0.district = updated
+            $0.isEditable = false
+        }
+        #expect(await spy.savedNames == ["draft"])
+        await store.finish()
+    }
+
+    @Test("既存の経路を選択するとRouteIDをUseCaseに渡し編集用ドラフトを開く")
+    @MainActor
+    func selectedRouteLoadsPackAndOpensPreview() async {
+        let route = AppStateFixture.route()
+        let pack = RoutePack(route: route, points: [], passages: [])
+        let spy = DetailRouteLoadSpy(pack: pack)
+        let store = TestStore(initialState: makeState()) {
+            HeadquarterDistrictDetailFeature()
+        } withDependencies: {
+            $0.installTestSpies()
+            $0[LoadRouteStateUseCaseKey.self] = spy
+        }
+        store.exhaustivity = .off
+
+        await store.send(.routeSelected(.init(period: AppStateFixture.period(), route: route)))
+        await store.receive(.routeReceived(.success(pack)))
+        #expect(store.state.destination?.route?.route.id == route.id)
+        #expect(store.state.destination?.route?.mode == .preview)
+        #expect(await spy.ids == [route.id])
+        await store.finish()
+    }
+
+    @Test("経路未作成の期間を選択してもUseCaseを呼び出さない")
+    @MainActor
+    func emptyRouteSelectionIsNoop() async {
+        let spy = DetailRouteLoadSpy(pack: nil)
+        let store = TestStore(initialState: makeState()) {
+            HeadquarterDistrictDetailFeature()
+        } withDependencies: {
+            $0.installTestSpies()
+            $0[LoadRouteStateUseCaseKey.self] = spy
+        }
+        await store.send(.routeSelected(.init(period: AppStateFixture.period(), route: nil)))
+        #expect(store.state.destination == nil)
+        #expect(await spy.ids.isEmpty)
+        await store.finish()
+    }
+
+    @Test("ローカルに修正済み経路があれば再読込せずそのドラフトを表示する")
+    @MainActor
+    func cachedRouteDraftOpensWithoutNetwork() async {
+        let route = AppStateFixture.route()
+        let spy = DetailRouteLoadSpy(pack: nil)
+        var state = makeState()
+        state.routeDrafts[route.id] = RouteDraft(route: route, points: [], passages: [])
+        let store = TestStore(initialState: state) {
+            HeadquarterDistrictDetailFeature()
+        } withDependencies: {
+            $0.installTestSpies()
+            $0[LoadRouteStateUseCaseKey.self] = spy
+        }
+        store.exhaustivity = .off
+
+        await store.send(.routeSelected(.init(period: AppStateFixture.period(), route: route)))
+        #expect(store.state.destination?.route?.mode == .preview)
+        #expect(await spy.ids.isEmpty)
+        await store.finish()
+    }
+
+    @Test("経路ドラフトの破棄ボタンで未保存の差分だけを初期化する")
+    @MainActor
+    func resetDraftsRemovesOnlyLocalRouteChanges() async {
+        let route = AppStateFixture.route()
+        var initial = makeState()
+        initial.routeDrafts[route.id] = RouteDraft(route: route, points: [], passages: [])
+        let store = TestStore(initialState: initial) {
+            HeadquarterDistrictDetailFeature()
+        } withDependencies: { $0.installTestSpies() }
+        await store.send(.resetDraftsTapped) {
+            $0.routeDrafts = [:]
+        }
+        #expect(store.state.district.id == "district")
+        await store.finish()
+    }
+
     private func makeState() -> HeadquarterDistrictDetailFeature.State {
         HeadquarterDistrictDetailFeature.State(
             AppStateFixture.district(),
             appState: Shared<AppState?>(value: AppStateFixture.state())
         )
+    }
+}
+
+private actor DetailSaveDistrictSpy: SaveDistrictUseCaseProtocol {
+    private(set) var savedNames: [String] = []
+    let updated: District
+
+    init(updated: District) { self.updated = updated }
+
+    func callAsFunction(district: District, appState: Shared<AppState?>) async throws -> District {
+        savedNames.append(district.name)
+        return updated
+    }
+}
+
+private actor DetailRouteLoadSpy: LoadRouteStateUseCaseProtocol {
+    private(set) var ids: [Route.ID] = []
+    let pack: RoutePack?
+
+    init(pack: RoutePack?) { self.pack = pack }
+
+    func callAsFunction(routeId: Route.ID, appState: Shared<AppState?>) async throws -> RoutePack? {
+        ids.append(routeId)
+        return pack
     }
 }
