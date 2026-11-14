@@ -8,3 +8,5 @@ iOSApp/Sources/Presentation/View/Admin/District/Route/RouteEditFeature.swift | 2
 iOSApp/Sources/Presentation/View/Admin/District/Route/RouteEditFeature.swift | 259-269 | let snapshotter = try await RouteSnapshotter | MapKit指定範囲画像の生成・出力（インフラ）
 iOSApp/Sources/Presentation/View/App/Root/RootFeature.swift | 6-6 | private let rootFeatureLogger | OSLogのグローバル初期化（診断インフラ）
 iOSApp/Sources/Presentation/View/Auth/Login/LoginFeature.swift | 13-13 | private let loginLogger | OSLogのグローバル初期化（診断インフラ）
+iOSApp/Sources/Presentation/View/Admin/District/Top/DistrictDashboardFeature.swift | 195-200 | case .submissionExportTapped | PDF生成エフェクトの起動と共有用ロード状態（インフラの入口）
+iOSApp/Sources/Presentation/View/Admin/Region/District/HeadquarterDistrictDetailFeature.swift | 103-108 | case .batchExportTapped | PDF生成エフェクトの起動と共有用ロード状態（インフラの入口）

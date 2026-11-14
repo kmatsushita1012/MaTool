@@ -6,6 +6,27 @@ import Testing
 @testable import iOSApp
 
 struct DistrictDashboardFeatureTests {
+    @Test("PDF共有シートを閉じるBindingは共有URLだけを消し地区状態を維持する")
+    @MainActor
+    func dismissedShareSheetAndAlertPreserveDistrictState() async {
+        var initial = makeState()
+        let district = initial.district
+        initial.url = URL(fileURLWithPath: "/tmp/share-test.pdf")
+        initial.alert = .error("エクスポートに失敗しました")
+        let store = TestStore(initialState: initial) {
+            DistrictDashboardFeature()
+        } withDependencies: { $0.installTestSpies() }
+        store.exhaustivity = .off
+
+        await store.send(.binding(.set(\.url, nil)))
+        #expect(store.state.url == nil)
+        #expect(store.state.district.id == district.id)
+        await store.send(.alert(.dismiss))
+        #expect(store.state.alert == nil)
+        #expect(store.state.district == district)
+        await store.finish()
+    }
+
     @Test("地区ダッシュボードの読み込み状態は画面遷移とPDF出力を区別する")
     func loadingFlagsReflectCurrentOperation() {
         var state = makeState()

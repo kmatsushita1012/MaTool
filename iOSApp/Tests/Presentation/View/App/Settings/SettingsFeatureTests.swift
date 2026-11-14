@@ -544,7 +544,7 @@ struct SettingsFeatureTests {
         let spy = SuccessfulSelectFestivalUseCaseSpy(result: .changed(.guest))
         var initial = makeState(userRole: .headquarter("festival"))
         initial.pendingParticipationChange = .festival("other-festival")
-        initial.alert = .participationChangeConfirmation()
+        initial.alert = AlertFeature.participationChangeConfirmation()
         let store = TestStore(initialState: initial) {
             SettingsFeature()
         } withDependencies: {

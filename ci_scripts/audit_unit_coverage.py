@@ -151,7 +151,14 @@ def main() -> int:
     parser.add_argument("--infrastructure-regions", type=Path, help="Explicitly authorized infrastructure-only source spans")
     args = parser.parse_args()
 
-    coverage = json.loads(args.input.read_text(encoding="utf-8"))
+    if not args.input.exists() or args.input.stat().st_size == 0:
+        print("Coverage audit: UNVERIFIED — no xccov JSON; compilation or test execution failed")
+        return 1
+    try:
+        coverage = json.loads(args.input.read_text(encoding="utf-8"))
+    except json.JSONDecodeError:
+        print("Coverage audit: UNVERIFIED — invalid xccov JSON; compilation or test execution failed")
+        return 1
     lines = backend_lines(coverage) if args.scope == "backend" else ios_lines(coverage)
     paths = [
         line.strip()

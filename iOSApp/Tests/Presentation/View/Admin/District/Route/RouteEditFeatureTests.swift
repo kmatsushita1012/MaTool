@@ -1,10 +1,85 @@
 import ComposableArchitecture
 import Foundation
+import UIKit
 import Shared
 import Testing
 @testable import iOSApp
 
 struct RouteEditFeatureTests {
+    @Test("有効な新規・更新経路の保存成功は対応UseCaseへ値を渡し保存完了を受け取る")
+    @MainActor
+    func successfulRouteSaveInvokesCorrectUseCaseAndCompletes() async throws {
+        for mode in [RouteEditFeature.EditMode.create, .update] {
+            let first = Point(
+                id: "first", routeId: "route",
+                coordinate: Coordinate(latitude: 35, longitude: 139),
+                time: SimpleTime(hour: 9, minute: 0), anchor: .start, index: 0
+            )
+            let last = Point(
+                id: "last", routeId: "route",
+                coordinate: Coordinate(latitude: 36, longitude: 140),
+                time: SimpleTime(hour: 10, minute: 0), anchor: .end, index: 1
+            )
+            let spy = RouteEditSuccessfulSaveSpy()
+            let store = TestStore(initialState: try makeState(mode: mode, points: [last, first])) {
+                RouteEditFeature()
+            } withDependencies: {
+                $0.installTestSpies()
+                $0[CreateRouteUseCaseKey.self] = spy
+                $0[UpdateRouteUseCaseKey.self] = spy
+            }
+            store.exhaustivity = .off
+
+            await store.send(.saveTapped)
+            await store.receive(.saveReceived(.success))
+            #expect(await spy.kinds == [mode == .create ? "create" : "update"])
+            #expect(await spy.pointIDs == [["first", "last"]])
+            await store.finish()
+        }
+    }
+
+    @Test("経路削除の確認後にUseCaseが成功したら同じRouteIDで完了を受け取る")
+    @MainActor
+    func successfulRouteDeletionCallsUseCaseExactlyOnce() async throws {
+        let spy = RouteEditSuccessfulDeleteSpy()
+        let store = TestStore(initialState: try makeState(mode: .update)) {
+            RouteEditFeature()
+        } withDependencies: {
+            $0.installTestSpies()
+            $0[DeleteRouteUseCaseKey.self] = spy
+        }
+        store.exhaustivity = .off
+
+        await store.send(.deleteTapped)
+        #expect(store.state.alert?.delete != nil)
+        await store.send(.alert(.presented(.delete(.okTapped))))
+        #expect(store.state.isDeleting)
+        await store.receive(.deleteReceived(.success))
+        #expect(await spy.deletedIDs == ["route"])
+        await store.finish()
+    }
+
+    @Test("画像生成の成功通知は出力画面の一意IDと画像・URLを保持して進行状態を解除する")
+    @MainActor
+    func successfulPreviewPreparationStoresIdentifiedExportedItem() async throws {
+        var initial = try makeState(mode: .update)
+        initial.loadingAction = .export
+        let item = ExportedItem(
+            image: UIImage(),
+            url: URL(fileURLWithPath: "/tmp/route-preview.pdf")
+        )
+        let store = TestStore(initialState: initial) {
+            RouteEditFeature()
+        } withDependencies: { $0.installTestSpies() }
+        store.exhaustivity = .off
+
+        await store.send(.previewPrepared(.success(item)))
+        #expect(store.state.destination == .preview(item))
+        #expect(store.state.destination?.id == "preview-\(item.id)")
+        #expect(!store.state.isLoading)
+        await store.finish()
+    }
+
     @Test("過去のRouteをコピーすると別IDの新規RouteとPoint、Passageになる")
     @MainActor
     func 過去Routeのコピーで新しいEntityを作る() async throws {
@@ -1041,6 +1116,29 @@ struct RouteEditFeatureTests {
 }
 
 
+private actor RouteEditSuccessfulSaveSpy: CreateRouteUseCaseProtocol, UpdateRouteUseCaseProtocol {
+    private(set) var kinds: [String] = []
+    private(set) var pointIDs: [[String]] = []
+
+    func callAsFunction(
+        districtId: District.ID, route: Route, points: [Point],
+        passages: [RoutePassage], appState: Shared<AppState?>
+    ) async throws -> RoutePack {
+        kinds.append("create")
+        pointIDs.append(points.map(\.id))
+        return RoutePack(route: route, points: points, passages: passages)
+    }
+
+    func callAsFunction(
+        _ route: Route, points: [Point], passages: [RoutePassage],
+        appState: Shared<AppState?>
+    ) async throws -> RoutePack {
+        kinds.append("update")
+        pointIDs.append(points.map(\.id))
+        return RoutePack(route: route, points: points, passages: passages)
+    }
+}
+
 private actor RouteEditSavingSpy: CreateRouteUseCaseProtocol, UpdateRouteUseCaseProtocol {
     let error: AppError
     private(set) var kinds: [String] = []
@@ -1084,6 +1182,14 @@ private actor RouteEditHistoryUseCaseSpy: FetchRouteHistoryUseCaseProtocol {
     }
 }
 
+
+private actor RouteEditSuccessfulDeleteSpy: DeleteRouteUseCaseProtocol {
+    private(set) var deletedIDs: [Route.ID] = []
+
+    func callAsFunction(routeId: Route.ID, appState: Shared<AppState?>) async throws {
+        deletedIDs.append(routeId)
+    }
+}
 
 private actor RouteEditDeleteFailureSpy: DeleteRouteUseCaseProtocol {
     let error: AppError
