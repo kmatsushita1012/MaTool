@@ -263,6 +263,98 @@ struct StoreUsecaseTest {
         #expect(await repo.snapshot()?.id == stored.id)
     }
 
+
+    @Test("本人の店舗は直接取得でき、他人の店舗IDは存在を漏らさない")
+    func getStoreChecksAuthenticatedOwner() async throws {
+        let stored = Store(
+            id: "store-1", festivalId: "festival-1", ownerId: "owner-1",
+            purchaseAccountToken: UUID(), name: "Cafe", businessHours: ""
+        )
+        let repository = StoreRepositorySpy(store: stored)
+        let actual = try await withDependencies {
+            $0[StoreRepositoryKey.self] = repository
+        } operation: {
+            try await StoreUsecase().get(id: stored.id, user: .advertiser(stored.ownerId))
+        }
+        #expect(actual == stored)
+
+        await #expect(throws: Error.notFound("指定された店舗が見つかりません。")) {
+            try await withDependencies {
+                $0[StoreRepositoryKey.self] = repository
+            } operation: {
+                try await StoreUsecase().get(id: stored.id, user: .advertiser("other-owner"))
+            }
+        }
+    }
+
+    @Test("管理される店舗所有者情報を改ざんした更新リクエストは拒否する")
+    func putRejectsServerOwnedFieldTampering() async {
+        let original = Store(
+            id: "store-1", festivalId: "festival-1", ownerId: "owner-1",
+            purchaseAccountToken: UUID(), name: "Cafe", businessHours: ""
+        )
+        let altered = Store(
+            id: original.id, festivalId: original.festivalId, ownerId: "other-owner",
+            purchaseAccountToken: original.purchaseAccountToken,
+            name: "Cafe", businessHours: ""
+        )
+        let repository = StoreRepositorySpy(store: original)
+        await #expect(throws: Error.badRequest("サーバー管理項目は変更できません。")) {
+            try await withDependencies {
+                $0[StoreRepositoryKey.self] = repository
+            } operation: {
+                try await StoreUsecase().put(
+                    id: original.id, request: altered, user: .advertiser(original.ownerId)
+                )
+            }
+        }
+        #expect(await repository.snapshot() == original)
+    }
+
+    @Test("掲載停止中の店舗は画像の差し替えを拒否する")
+    func suspendedStoreCannotReplaceImages() async {
+        let original = Store(
+            id: "store-1", festivalId: "festival-1", ownerId: "owner-1",
+            purchaseAccountToken: UUID(), name: "Cafe", businessHours: "",
+            bannerImagePath: "old.jpg", moderationStatus: .suspended
+        )
+        let changed = Store(
+            id: original.id, festivalId: original.festivalId, ownerId: original.ownerId,
+            purchaseAccountToken: original.purchaseAccountToken,
+            name: original.name, businessHours: original.businessHours,
+            bannerImagePath: "new.jpg", moderationStatus: .suspended
+        )
+        let repository = StoreRepositorySpy(store: original)
+        await #expect(throws: Error.forbidden("掲載停止中は広告画像を変更できません。")) {
+            try await withDependencies {
+                $0[StoreRepositoryKey.self] = repository
+            } operation: {
+                try await StoreUsecase().put(
+                    id: original.id, request: changed, user: .advertiser(original.ownerId)
+                )
+            }
+        }
+        #expect(await repository.snapshot() == original)
+    }
+
+    @Test("公開店舗は一時停止中でも存在を返し、画像だけを非公開とする")
+    func publicStoresRedactImagesWhilePaused() async throws {
+        let paused = Store(
+            id: "store-1", festivalId: "festival-1", ownerId: "owner-1",
+            purchaseAccountToken: UUID(), name: "Cafe", businessHours: "",
+            bannerImagePath: "banner.jpg", ownerPaused: true
+        )
+        let result = try await withDependencies {
+            $0[StoreRepositoryKey.self] = StoreRepositorySpy(store: paused)
+        } operation: {
+            try await StoreUsecase().publicStores(in: paused.festivalId)
+        }
+
+        #expect(result.count == 1)
+        #expect(result.first?.id == paused.id)
+        #expect(result.first?.bannerImagePath == nil)
+    }
+
     private func decodeStoreResponse(_ body: String) throws -> Store {
         let decoder = JSONDecoder()
         decoder.dateDecodingStrategy = .secondsSince1970

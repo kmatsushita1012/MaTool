@@ -9,12 +9,14 @@ struct RootFeatureTests {
     @MainActor
     func guestRoleCannotCreateAdminDestination() {
         let fixture = RootFeatureFixture()
-        var state = RootFeature.State(appState: Shared<AppState?>(value: fixture.appState))
-        let changed = RootFeature().setAdminDestination(state: &state, userRole: .guest)
+        for role in [UserRole.guest, .advertiser("owner-1")] {
+            var state = RootFeature.State(appState: Shared<AppState?>(value: fixture.appState))
+            let changed = RootFeature().setAdminDestination(state: &state, userRole: role)
 
-        #expect(!changed)
-        #expect(state.destination == nil)
-        #expect(state.alert == nil)
+            #expect(!changed)
+            #expect(state.destination == nil)
+            #expect(state.alert == nil)
+        }
     }
 
     @Test("起動結果が未設定ユーザーなら地図を作らずOnboardingの祭典一覧を一度取得する")

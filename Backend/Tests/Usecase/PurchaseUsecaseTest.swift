@@ -247,6 +247,83 @@ struct PurchaseUsecaseTest {
         #expect(history.isEmpty)
     }
 
+
+    @Test("存在しない店舗への購入確定はApple検証を呼び出す前に拒否する")
+    func claimRequiresOwnedStore() async {
+        await #expect(throws: Error.notFound("指定された店舗が見つかりません。")) {
+            try await withDependencies {
+                $0[StoreRepositoryKey.self] = StoreRepositorySpy()
+            } operation: {
+                try await PurchaseUsecase().claim(
+                    storeId: "missing",
+                    signedTransactionInfo: "not-verified",
+                    user: .advertiser("owner-1")
+                )
+            }
+        }
+    }
+
+    @Test("Apple購入のAppAccountTokenが店舗と不一致ならCreditを付与しない")
+    func claimRejectsAnotherStoreToken() async {
+        let store = makeStore()
+        let valid = makePurchase(store: store)
+        let foreign = VerifiedPurchase(
+            transactionId: valid.transactionId,
+            appAccountToken: UUID(),
+            productId: valid.productId,
+            purchasedAt: valid.purchasedAt,
+            environment: valid.environment,
+            revocationDate: nil,
+            isConsumable: true
+        )
+        let purchases = PurchaseRepositorySpy()
+        let appStore = AppStoreClientSpy(purchase: foreign, notification: .init(
+            notificationUUID: nil, type: .other,
+            signedDate: Date(timeIntervalSince1970: 2_000), purchase: nil
+        ))
+        await #expect(throws: Error.forbidden("購入取引と店舗の購入 token が一致しません。")) {
+            try await withDependencies {
+                $0[StoreRepositoryKey.self] = StoreRepositorySpy(store: store)
+                $0[AppStoreClientKey.self] = appStore
+                $0[PurchaseRepositoryKey.self] = purchases
+            } operation: {
+                try await PurchaseUsecase().claim(
+                    storeId: store.id,
+                    signedTransactionInfo: "foreign-jws",
+                    user: .advertiser(store.ownerId)
+                )
+            }
+        }
+        #expect(await purchases.grantCalls.isEmpty)
+    }
+
+    @Test("設定外の商品IDは購入検証後でもCreditの付与対象にしない")
+    func claimRejectsUnconfiguredProduct() async {
+        let store = makeStore()
+        let purchase = makePurchase(store: store, productId: "unrelated-product")
+        let purchases = PurchaseRepositorySpy()
+        let appStore = AppStoreClientSpy(purchase: purchase, notification: .init(
+            notificationUUID: nil, type: .other,
+            signedDate: Date(timeIntervalSince1970: 2_000), purchase: nil
+        ))
+        await #expect(throws: Error.badRequest("対象外の商品または環境の取引です。")) {
+            try await withDependencies {
+                $0[AdvertisingEnvironmentKey.self] = makeEnvironment()
+                $0[StoreRepositoryKey.self] = StoreRepositorySpy(store: store)
+                $0[PurchaseRepositoryKey.self] = purchases
+                $0[AppStoreClientKey.self] = appStore
+            } operation: {
+                try await PurchaseUsecase().claim(
+                    storeId: store.id,
+                    signedTransactionInfo: "unrelated-jws",
+                    user: .advertiser(store.ownerId)
+                )
+            }
+        }
+        #expect(await purchases.grantCalls.isEmpty)
+        #expect(await appStore.currentPurchaseCallCount == 0)
+    }
+
     @Test("未ログイン・管理者権限では購入Creditにアクセスできない")
     func rejectsNonAdvertiserCreditRequests() async {
         let store = makeStore()

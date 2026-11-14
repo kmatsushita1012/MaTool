@@ -1,6 +1,6 @@
 # User-authorized exclusions: infrastructure adapters and View bodies are not business-logic coverage gates.
 # Format: source path | concrete exclusion reason; numeric measurements stay visible as EXCLUDED in audit CSV/logs.
-# No Feature reducer or Application use-case files are excluded.
+# No iOS Feature reducer or Application use-case files are excluded; the mixed Backend App Store SDK history adapter is explicitly documented.
 Backend/Sources/Data/Auth/AuthManager.swift | Cognito認証アダプタの抽象宣言（インフラ）
 Backend/Sources/Data/Auth/CognitoAuthManager.swift | AWS Cognito SDKとの接続（インフラ）
 Backend/Sources/Data/Client/S3ImageClient.swift | AWS S3 SDKとの接続（インフラ）
@@ -27,3 +27,4 @@ Backend/Sources/Data/Client/AppStoreClient.swift | Apple App Store Server API SD
 Backend/Sources/Data/Client/ReportNotificationClient.swift | AWS SNS SDK通知接続（インフラ）
 Backend/Sources/Data/Database/DynamoDBTransactionalDataStore.swift | DynamoDB SDK抽象プロトコルのみで実行可能行なし（インフラ）
 Backend/Sources/Utils/AdvertisingEnvironment.swift | AWS環境変数とApp Store SDK証明書設定の読み取り（インフラ）
+Backend/Sources/Usecase/AppStoreNotificationHistoryRecovery.swift | 同一ファイル内のAppStoreServerLibrary通信・通知履歴ページングはApple SDK境界（回復時の期間検証と再投入は既存ユニットテストで検証）

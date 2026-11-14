@@ -11,7 +11,7 @@ struct CreditRepositoryTests {
         var observed: [String: Codable] = [:]
         let dataStore = DataStoreMock(getHandler: { keys, _ in
             observed = keys
-            return try encodeForDataStore(Record(account))
+            return try encodeForDataStore(Record(pk: "STORE#store-1", sk: "CREDIT", content: account))
         })
 
         let loaded = try await withDependencies {

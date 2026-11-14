@@ -242,6 +242,74 @@ struct PurchaseRepositoryTest {
         #expect(values[":lastRefundDate"] != nil)
     }
 
+
+    @Test("店舗IDのない購入台帳をCreditへ付与することを拒否する")
+    func grantRequiresStoreID() async {
+        let old = makeRecord()
+        let record = PurchaseRecord(
+            transactionId: old.transactionId,
+            storeId: nil,
+            appAccountToken: old.appAccountToken,
+            productId: old.productId,
+            creditedAmount: old.creditedAmount,
+            purchasedAt: old.purchasedAt,
+            environment: old.environment
+        )
+        let dataStore = DataStoreMock()
+        await #expect(throws: Error.internalServerError("購入記録に店舗IDがありません。")) {
+            try await withDependencies {
+                $0.dataStoreFactory = { _ in dataStore }
+            } operation: {
+                try await PurchaseRepository().grant(
+                    record, replacing: nil,
+                    credit: CreditAccount(storeId: "store-1", balance: 0),
+                    newBalance: 500, newLastPurchasedAt: record.purchasedAt
+                )
+            }
+        }
+        #expect(dataStore.lastTransaction == nil)
+    }
+
+    @Test("通知処理の競合でより新しい台帳が存在すれば古い更新を諦める")
+    func outdatedNotificationCannotOverwriteNewerPurchase() async throws {
+        let old = makeRecord()
+        var latest = old
+        latest.refundStatus = .refunded
+        let dataStore = DataStoreMock(
+            getHandler: { _, _ in
+                try encodeForDataStore(Record(
+                    pk: "PURCHASE#transaction-1", sk: "METADATA", content: latest
+                ))
+            },
+            transactWriteHandler: { _ in throw TestError.intentional }
+        )
+
+        let applied = try await withDependencies {
+            $0.dataStoreFactory = { _ in dataStore }
+        } operation: {
+            try await PurchaseRepository().applyNotification(
+                old, replacing: old, credit: nil, newBalance: nil
+            )
+        }
+        #expect(!applied)
+        #expect(dataStore.lastTransaction?.count == 1)
+    }
+
+    @Test("既存台帳の存在しないマーカー作成失敗は元のDB障害を伝播する")
+    func refundMarkerPersistsDatabaseErrors() async {
+        let dataStore = DataStoreMock(
+            getHandler: { _, _ in nil },
+            transactWriteHandler: { _ in throw TestError.intentional }
+        )
+        await #expect(throws: TestError.intentional) {
+            try await withDependencies {
+                $0.dataStoreFactory = { _ in dataStore }
+            } operation: {
+                try await PurchaseRepository().createRefundMarker(makeRecord())
+            }
+        }
+    }
+
     @Test("Credit変動なしの返金通知は台帳だけを書き換える")
     func notificationWithoutBalanceChangeWritesSingleRecord() async throws {
         let prior = makeRecord()
