@@ -513,6 +513,87 @@ struct RouteEditFeatureTests {
         await store.finish()
     }
 
+    @Test("地区が更新停止中なら経路編集の開始時に警告し確認モードでは警告しない")
+    @MainActor
+    func unavailableDistrictShowsNoticeExceptPreview() async throws {
+        var state = try makeState(mode: .update)
+        state.district.isEditable = false
+        let store = TestStore(initialState: state) {
+            RouteEditFeature()
+        } withDependencies: { $0.installTestSpies() }
+        store.exhaustivity = .off
+
+        await store.send(.onAppear)
+        #expect(store.state.alert?.notice != nil)
+        await store.finish()
+
+        state.mode = .preview
+        let preview = TestStore(initialState: state) {
+            RouteEditFeature()
+        } withDependencies: { $0.installTestSpies() }
+        await preview.send(.onAppear)
+        #expect(preview.state.alert == nil)
+        await preview.finish()
+    }
+
+    @Test("編集対象の点はIDで探し不正な時刻を拒否し削除操作だけは検索を許す")
+    func findPointForEditingValidatesDraft() throws {
+        let point = Point(
+            id: "start", routeId: "route",
+            coordinate: Coordinate(latitude: 35, longitude: 139),
+            time: SimpleTime(hour: 9, minute: 0),
+            anchor: .start
+        )
+        var state = try makeState(mode: .update, points: [point])
+        let reducer = RouteEditFeature()
+        #expect(reducer.findPointIndex(state)?.index == nil)
+
+        state.point = PointEditFeature.State(
+            point, districtId: state.district.id, appState: Shared(value: nil)
+        )
+        #expect(reducer.findPointIndex(state)?.index == 0)
+
+        var invalidPoint = point
+        invalidPoint.time = nil
+        state.point = PointEditFeature.State(
+            invalidPoint, districtId: state.district.id, appState: Shared(value: nil)
+        )
+        #expect(reducer.findPointIndex(state)?.index == nil)
+        #expect(reducer.findPointIndex(state, ignoreValidation: true)?.index == 0)
+
+        let unrelatedPoint = Point(
+            id: "unrelated", routeId: "route",
+            coordinate: Coordinate(latitude: 34, longitude: 138)
+        )
+        state.point = PointEditFeature.State(
+            unrelatedPoint, districtId: state.district.id, appState: Shared(value: nil)
+        )
+        #expect(reducer.findPointIndex(state, ignoreValidation: true)?.index == nil)
+    }
+
+    @Test("通過町の挿入位置が負数や件数超過なら末尾へ追加しメモを保持する")
+    @MainActor
+    func invalidPassageInsertPositionAppendsSafely() async throws {
+        var state = try makeState(mode: .create)
+        let first = RoutePassage(id: "first", routeId: state.route.id, districtId: "a", memo: "first")
+        state.passages = [first]
+        state.passageInsertIndex = -1
+        let store = TestStore(initialState: state) {
+            RouteEditFeature()
+        } withDependencies: { $0.installTestSpies() }
+        store.exhaustivity = .off
+
+        await store.send(.passageSelected(districtId: "b", memo: "second"))
+        #expect(store.state.passages.map(\.memo) == ["first", "second"])
+        #expect(store.state.passageInsertIndex == nil)
+
+        await store.send(.passageInsertAboveTapped(50))
+        await store.send(.passageSelected(districtId: "c", memo: "third"))
+        #expect(store.state.passages.map(\.districtId) == ["a", "b", "c"])
+        #expect(store.state.destination == nil)
+        await store.finish()
+    }
+
     private func makeState(
         mode: RouteEditFeature.EditMode,
         points: [Point] = []

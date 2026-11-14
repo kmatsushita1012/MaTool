@@ -270,10 +270,152 @@ struct DistrictDashboardFeatureTests {
         await store.finish()
     }
 
+    @Test("既存経路の選択は対象IDのUseCaseを呼び出し取得結果を編集画面に渡す")
+    @MainActor
+    func selectingExistingRouteLoadsDraft() async {
+        let route = AppStateFixture.route()
+        let period = AppStateFixture.period()
+        let pack = RoutePack(route: route, points: [], passages: [])
+        let spy = DashboardLoadRouteSpy(result: .success(pack))
+        let store = TestStore(initialState: makeState()) {
+            DistrictDashboardFeature()
+        } withDependencies: {
+            $0.installTestSpies()
+            $0[LoadRouteStateUseCaseKey.self] = spy
+        }
+        store.exhaustivity = .off
+
+        await store.send(.onRouteEdit(RouteSlot(period: period, route: route)))
+        await store.receive(.routeEditReceived(.success(pack)))
+        #expect(await spy.requestedIDs == [route.id])
+        #expect(!store.state.isRouteLoading)
+        #expect(store.state.destination?.route?.route.id == route.id)
+        await store.finish()
+    }
+
+    @Test("既存経路の取得エラー時は編集中画面を開かず取得失敗を表示する")
+    @MainActor
+    func selectingExistingRoutePropagatesError() async {
+        let route = AppStateFixture.route()
+        let error = AppError.be(.network("offline"))
+        let spy = DashboardLoadRouteSpy(result: .failure(error))
+        let store = TestStore(initialState: makeState()) {
+            DistrictDashboardFeature()
+        } withDependencies: {
+            $0.installTestSpies()
+            $0[LoadRouteStateUseCaseKey.self] = spy
+        }
+        store.exhaustivity = .off
+
+        await store.send(.onRouteEdit(RouteSlot(period: AppStateFixture.period(), route: route)))
+        await store.receive(.routeEditReceived(.failure(error)))
+        #expect(await spy.requestedIDs == [route.id])
+        #expect(store.state.destination == nil)
+        #expect(store.state.alert == .error(error.message))
+        #expect(!store.state.isRouteLoading)
+        await store.finish()
+    }
+
+    @Test("編集に必要なアプリデータがない場合は編集画面を作らずエラーにする")
+    @MainActor
+    func missingAppStatePreventsDistrictEditing() async {
+        let district = AppStateFixture.district()
+        let state = DistrictDashboardFeature.State(
+            district, appState: Shared(value: nil)
+        )
+        let store = TestStore(initialState: state) {
+            DistrictDashboardFeature()
+        } withDependencies: { $0.installTestSpies() }
+        store.exhaustivity = .off
+
+        await store.send(.onEdit)
+        #expect(store.state.destination == nil)
+        #expect(store.state.alert == .error("情報の取得に失敗しました"))
+        await store.finish()
+    }
+
+    @Test("地区設定ボタンは祭典候補と現在の選択状態をUseCaseから取得する")
+    @MainActor
+    func settingsButtonFetchesDistrictContext() async {
+        let festival = AppStateFixture.festival()
+        let selection = SceneSelection(festivalId: festival.id, districtId: "district")
+        let fetchSpy = DistrictDashboardFetchFestivalsSpy(festivals: [festival])
+        let selectionSpy = GetSceneSelectionUseCaseSpy(selection: selection)
+        let store = TestStore(initialState: makeState()) {
+            DistrictDashboardFeature()
+        } withDependencies: {
+            $0.installTestSpies()
+            $0[FetchFestivalListUseCaseKey.self] = fetchSpy
+            $0[GetSceneSelectionUseCaseKey.self] = selectionSpy
+        }
+        store.exhaustivity = .off
+
+        await store.send(.settingsTapped)
+        await store.receive(.settingsPrepared(.success(SettingsPreparation(
+            festivals: [festival], selection: selection
+        ))))
+        #expect(await fetchSpy.calls == 1)
+        #expect(selectionSpy.callCount == 1)
+        #expect(store.state.destination?.settings?.userRole == .district("district"))
+        await store.finish()
+    }
+
+    @Test("地区管理画面のログアウトはUseCaseを呼び出し成功時に処理中表示を消す")
+    @MainActor
+    func signOutButtonInvokesUseCase() async {
+        let spy = DistrictDashboardSignOutSpy()
+        let store = TestStore(initialState: makeState()) {
+            DistrictDashboardFeature()
+        } withDependencies: {
+            $0.installTestSpies()
+            $0[SignOutUseCaseKey.self] = spy
+        }
+        store.exhaustivity = .off
+
+        await store.send(.signOutTapped)
+        await store.receive(.signOutReceived(.success(.onboarding)))
+        #expect(await spy.calls == 1)
+        #expect(!store.state.isAWSLoading)
+        await store.finish()
+    }
+
     private func makeState() -> DistrictDashboardFeature.State {
         DistrictDashboardFeature.State(
             AppStateFixture.district(),
             appState: Shared<AppState?>(value: AppStateFixture.state())
         )
+    }
+}
+
+private actor DashboardLoadRouteSpy: LoadRouteStateUseCaseProtocol {
+    let result: Result<RoutePack?, AppError>
+    private(set) var requestedIDs: [Route.ID] = []
+
+    init(result: Result<RoutePack?, AppError>) { self.result = result }
+
+    func callAsFunction(routeId: Route.ID, appState: Shared<AppState?>) async throws -> RoutePack? {
+        requestedIDs.append(routeId)
+        return try result.get()
+    }
+}
+
+private actor DistrictDashboardFetchFestivalsSpy: FetchFestivalListUseCaseProtocol {
+    let festivals: [Festival]
+    private(set) var calls = 0
+
+    init(festivals: [Festival]) { self.festivals = festivals }
+
+    func callAsFunction() async throws -> [Festival] {
+        calls += 1
+        return festivals
+    }
+}
+
+private actor DistrictDashboardSignOutSpy: SignOutUseCaseProtocol {
+    private(set) var calls = 0
+
+    func callAsFunction(appState: Shared<AppState?>) async throws -> LaunchState {
+        calls += 1
+        return .onboarding
     }
 }

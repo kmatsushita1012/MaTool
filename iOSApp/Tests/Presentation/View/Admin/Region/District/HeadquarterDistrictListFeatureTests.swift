@@ -368,6 +368,31 @@ struct HeadquarterDistrictListFeatureTests {
         await store.finish()
     }
 
+    @Test("地区の読込失敗は選択したIDを記録しローディングを止めて理由を表示する")
+    @MainActor
+    func selectingDistrictPropagatesLoadFailure() async {
+        let (festival, appState, district, _) = fixtures()
+        let error = AppError.be(.network("offline"))
+        let spy = FailingListDistrictLoadSpy(error: error)
+        let store = TestStore(initialState: HeadquarterDistrictListFeature.State(
+            festival, appState: Shared<AppState?>(value: appState)
+        )) {
+            HeadquarterDistrictListFeature()
+        } withDependencies: {
+            $0.installTestSpies()
+            $0[LoadDistrictStateUseCaseKey.self] = spy
+        }
+        store.exhaustivity = .off
+
+        await store.send(.selected(district))
+        await store.receive(.selectedReceived(.failure(error)))
+        #expect(await spy.districtIDs == [district.id])
+        #expect(store.state.loadingDistrictID == nil)
+        #expect(store.state.destination == nil)
+        #expect(store.state.alert == .error(error.message))
+        await store.finish()
+    }
+
 }
 
 private actor ListSaveDistrictSpy: SaveDistrictUseCaseProtocol {
@@ -380,5 +405,20 @@ private actor ListSaveDistrictSpy: SaveDistrictUseCaseProtocol {
         ids.append(district.id)
         if let error { throw error }
         return district
+    }
+}
+
+private actor FailingListDistrictLoadSpy: LoadDistrictStateUseCaseProtocol {
+    private(set) var districtIDs: [District.ID] = []
+    let error: AppError
+
+    init(error: AppError) { self.error = error }
+
+    func callAsFunction(
+        districtId: District.ID, periodId: Period.ID?,
+        appState: Shared<AppState?>
+    ) async throws -> LaunchDistrictPack {
+        districtIDs.append(districtId)
+        throw error
     }
 }

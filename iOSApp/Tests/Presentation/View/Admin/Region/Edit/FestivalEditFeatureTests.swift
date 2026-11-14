@@ -273,4 +273,92 @@ struct FestivalEditFeatureTests {
         )
     }
 
+    @Test("祭典基準座標の編集完了は保存前の編集Stateへ反映する")
+    @MainActor
+    func finishedBaseEditUpdatesFestivalDraft() async {
+        let origin = Coordinate(latitude: 34.5, longitude: 138.2)
+        var initial = makeState()
+        initial.destination = .base(.init(base: origin))
+        let store = TestStore(initialState: initial) {
+            FestivalEditFeature()
+        } withDependencies: { $0.installTestSpies() }
+        store.exhaustivity = .off
+
+        await store.send(.destination(.presented(.base(.doneTapped))))
+        #expect(store.state.base == origin)
+        #expect(store.state.destination == nil)
+        await store.finish()
+    }
+
+    @Test("交差点の編集完了は同じIDを更新し削除要求で一覧から取り除く")
+    @MainActor
+    func checkpointEditUpsertsAndDeletes() async {
+        let checkpoint = Checkpoint(id: "checkpoint", name: "original", festivalId: "festival")
+        var updated = checkpoint
+        updated.name = "updated"
+        var initial = makeState()
+        initial.checkpoints = [checkpoint]
+        initial.destination = .checkpoint(.init(title: "交差点", item: updated))
+        let store = TestStore(initialState: initial) {
+            FestivalEditFeature()
+        } withDependencies: { $0.installTestSpies() }
+        store.exhaustivity = .off
+
+        await store.send(.destination(.presented(.checkpoint(.doneTapped))))
+        #expect(store.state.checkpoints.count == 1)
+        #expect(store.state.checkpoints.first?.name == "updated")
+
+        await store.send(.onCheckpointEdit(updated))
+        await store.send(.destination(.presented(.checkpoint(.deleteTapped))))
+        #expect(store.state.checkpoints.isEmpty)
+        #expect(store.state.destination == nil)
+        await store.finish()
+    }
+
+    @Test("危険区域の正常な図形だけを保存し削除すると祭典ドラフトから除く")
+    @MainActor
+    func validHazardIsStoredAndCanBeDeleted() async {
+        let hazard = HazardSection(
+            id: "hazard", title: "注意箇所", festivalId: "festival",
+            coordinates: [
+                Coordinate(latitude: 35, longitude: 139),
+                Coordinate(latitude: 35.1, longitude: 139.1)
+            ]
+        )
+        var initial = makeState()
+        initial.destination = .hazard(.init(hazard, mapRegion: makeRegion(hazard.coordinates)))
+        let store = TestStore(initialState: initial) {
+            FestivalEditFeature()
+        } withDependencies: { $0.installTestSpies() }
+        store.exhaustivity = .off
+
+        await store.send(.destination(.presented(.hazard(.doneTapped))))
+        #expect(store.state.hazardSections.map(\.id) == ["hazard"])
+        #expect(store.state.destination == nil)
+
+        await store.send(.hazardTapped(hazard))
+        await store.send(.destination(.presented(.hazard(.deleteTapped))))
+        #expect(store.state.hazardSections.isEmpty)
+        await store.finish()
+    }
+
+    @Test("未完成の危険区域を確定しようとしても祭典データへ反映しない")
+    @MainActor
+    func invalidHazardIsNotCommitted() async {
+        let invalid = HazardSection(id: "invalid", title: "", festivalId: "festival")
+        var initial = makeState()
+        initial.destination = .hazard(.init(
+            invalid, mapRegion: makeRegion(origin: AppStateFixture.festival().base, spanDelta: spanDelta)
+        ))
+        let store = TestStore(initialState: initial) {
+            FestivalEditFeature()
+        } withDependencies: { $0.installTestSpies() }
+        store.exhaustivity = .off
+
+        await store.send(.destination(.presented(.hazard(.doneTapped))))
+        #expect(store.state.hazardSections.isEmpty)
+        #expect(store.state.destination?.hazard != nil)
+        await store.finish()
+    }
+
 }

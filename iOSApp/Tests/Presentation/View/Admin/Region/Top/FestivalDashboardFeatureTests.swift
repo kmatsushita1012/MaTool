@@ -197,10 +197,103 @@ struct FestivalDashboardFeatureTests {
         await store.finish()
     }
 
+    @Test("日程ボタンは祭典IDでUseCaseを呼び出し取得した日程へ遷移する")
+    @MainActor
+    func periodTappedFetchesFestivalPeriods() async {
+        let periods = [AppStateFixture.period(id: "first")]
+        let spy = DashboardFetchPeriodsSpy(result: .success(periods))
+        let store = TestStore(initialState: makeState()) {
+            FestivalDashboardFeature()
+        } withDependencies: {
+            $0.installTestSpies()
+            $0[FetchFestivalPeriodsUseCaseKey.self] = spy
+        }
+        store.exhaustivity = .off
+
+        await store.send(.periodTapped)
+        await store.receive(.periodsPrepared(.success(periods)))
+        #expect(await spy.requestedFestivalIDs == ["festival"])
+        #expect(store.state.destination?.periods?.periods == periods)
+        #expect(!store.state.isApiLoading)
+        await store.finish()
+    }
+
+    @Test("日程の取得エラーが発生した場合は画面遷移せずエラーを通知する")
+    @MainActor
+    func periodTappedPropagatesFetchFailure() async {
+        let error = AppError.be(.network("offline"))
+        let spy = DashboardFetchPeriodsSpy(result: .failure(error))
+        let store = TestStore(initialState: makeState()) {
+            FestivalDashboardFeature()
+        } withDependencies: {
+            $0.installTestSpies()
+            $0[FetchFestivalPeriodsUseCaseKey.self] = spy
+        }
+        store.exhaustivity = .off
+
+        await store.send(.periodTapped)
+        await store.receive(.periodsPrepared(.failure(error)))
+        #expect(await spy.requestedFestivalIDs == ["festival"])
+        #expect(!store.state.isApiLoading)
+        #expect(store.state.destination == nil)
+        #expect(store.state.alert == .error("日程の取得に失敗しました。\n\(error.message)"))
+        await store.finish()
+    }
+
+    @Test("設定ボタンは祭典一覧と保存済みシーンを取得して設定画面を作る")
+    @MainActor
+    func settingsTappedFetchesPreparationValues() async {
+        let festival = AppStateFixture.festival()
+        let selection = SceneSelection(festivalId: festival.id, districtId: nil)
+        let festivalSpy = DashboardFetchFestivalsSpy(result: .success([festival]))
+        let sceneSpy = GetSceneSelectionUseCaseSpy(selection: selection)
+        let store = TestStore(initialState: makeState()) {
+            FestivalDashboardFeature()
+        } withDependencies: {
+            $0.installTestSpies()
+            $0[FetchFestivalListUseCaseKey.self] = festivalSpy
+            $0[GetSceneSelectionUseCaseKey.self] = sceneSpy
+        }
+        store.exhaustivity = .off
+
+        await store.send(.settingsTapped)
+        await store.receive(.settingsPrepared(.success(SettingsPreparation(
+            festivals: [festival], selection: selection
+        ))))
+        #expect(await festivalSpy.calls == 1)
+        #expect(sceneSpy.callCount == 1)
+        #expect(store.state.destination?.settings?.userRole == .headquarter("festival"))
+        await store.finish()
+    }
+
     private func makeState() -> FestivalDashboardFeature.State {
         FestivalDashboardFeature.State(
             AppStateFixture.festival(),
             appState: Shared<AppState?>(value: AppStateFixture.state())
         )
+    }
+}
+
+private actor DashboardFetchPeriodsSpy: FetchFestivalPeriodsUseCaseProtocol {
+    let result: Result<[Period], AppError>
+    private(set) var requestedFestivalIDs: [Festival.ID] = []
+
+    init(result: Result<[Period], AppError>) { self.result = result }
+
+    func callAsFunction(festivalId: Festival.ID) async throws -> [Period] {
+        requestedFestivalIDs.append(festivalId)
+        return try result.get()
+    }
+}
+
+private actor DashboardFetchFestivalsSpy: FetchFestivalListUseCaseProtocol {
+    let result: Result<[Festival], AppError>
+    private(set) var calls = 0
+
+    init(result: Result<[Festival], AppError>) { self.result = result }
+
+    func callAsFunction() async throws -> [Festival] {
+        calls += 1
+        return try result.get()
     }
 }

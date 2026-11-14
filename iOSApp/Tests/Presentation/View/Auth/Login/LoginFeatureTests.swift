@@ -169,4 +169,43 @@ struct LoginFeatureTests {
         await store.finish()
     }
 
+    @Test("パスワード再設定の確認完了はログイン画面へ戻し入力中の認証情報を維持する")
+    @MainActor
+    func completedPasswordResetClosesChild() async {
+        var initial = LoginFeature.State(id: "user@example.com")
+        initial.password = "old-password"
+        initial.destination = .resetPassword(.init(username: initial.id))
+        let store = TestStore(initialState: initial) {
+            LoginFeature()
+        } withDependencies: { $0.installTestSpies() }
+        store.exhaustivity = .off
+
+        await store.send(.destination(.presented(.resetPassword(.confirmResetReceived(.success)))))
+        #expect(store.state.destination == nil)
+        #expect(store.state.id == "user@example.com")
+        #expect(store.state.password == "old-password")
+        await store.finish()
+    }
+
+    @Test("初回パスワード変更完了は確認画面を閉じログイン状態を初期化する")
+    @MainActor
+    func completedInitialPasswordChangeClearsChildAndError() async {
+        var initial = LoginFeature.State(id: "user@example.com")
+        initial.isLoading = true
+        initial.errorMessage = "old error"
+        initial.destination = .confirmSignIn(.init())
+        let store = TestStore(initialState: initial) {
+            LoginFeature()
+        } withDependencies: { $0.installTestSpies() }
+        store.exhaustivity = .off
+
+        await store.send(.destination(.presented(.confirmSignIn(
+            .received(.success(.headquarter("festival")))
+        ))))
+        #expect(store.state.destination == nil)
+        #expect(!store.state.isLoading)
+        #expect(store.state.errorMessage == nil)
+        await store.finish()
+    }
+
 }

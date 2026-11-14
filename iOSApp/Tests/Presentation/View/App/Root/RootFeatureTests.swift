@@ -564,6 +564,157 @@ struct RootFeatureTests {
         await store.finish()
     }
 
+    @Test("町シーンのゲスト起動は保存済み管理画面を破棄して地図を復元する")
+    @MainActor
+    func districtGuestLaunchRestoresMapWithoutAdmin() async {
+        let fixture = RootFeatureFixture()
+        let lastScreen = LastMainScreenUseCaseSpy(value: .admin)
+        let store = TestStore(
+            initialState: RootFeature.State(appState: Shared<AppState?>(value: fixture.appState))
+        ) {
+            RootFeature()
+        } withDependencies: {
+            $0.installTestSpies()
+            $0[LastMainScreenUseCaseKey.self] = lastScreen
+        }
+        store.exhaustivity = .off
+
+        await store.send(.launchFinished(.district(.guest, nil), nil))
+        #expect(store.state.launchState == .district(.guest, nil))
+        #expect(store.state.map != nil)
+        #expect(store.state.destination == nil)
+        #expect(lastScreen.value == nil)
+        await store.finish()
+    }
+
+    @Test("他の祭典の本部権限では管理画面を開かず地図へフォールバックする")
+    @MainActor
+    func mismatchedAdminFestivalCannotOpenDashboard() async {
+        let fixture = RootFeatureFixture()
+        let role = UserRole.headquarter("different-festival")
+        let lastScreen = LastMainScreenUseCaseSpy(value: .admin)
+        let store = TestStore(
+            initialState: RootFeature.State(appState: Shared<AppState?>(value: fixture.appState))
+        ) {
+            RootFeature()
+        } withDependencies: {
+            $0.installTestSpies()
+            $0[LastMainScreenUseCaseKey.self] = lastScreen
+        }
+        store.exhaustivity = .off
+
+        await store.send(.launchFinished(.festival(role), nil))
+        #expect(store.state.map?.userRole == role)
+        #expect(store.state.destination == nil)
+        #expect(store.state.alert == .error("情報の取得に失敗しました"))
+        #expect(lastScreen.value == .map)
+        await store.finish()
+    }
+
+    @Test("起動待ち状態への緊急ログアウトでは以前の管理セッションをすべて破棄する")
+    @MainActor
+    func emergencySignOutToLoadingClearsSession() async {
+        let fixture = RootFeatureFixture()
+        let appState = Shared<AppState?>(value: fixture.appState)
+        var initial = RootFeature.State(appState: appState)
+        initial.$launchState.withLock { $0 = .festival(.headquarter(fixture.festival.id)) }
+        initial.map = initial.makeMapState(userRole: .headquarter(fixture.festival.id))
+        initial.destination = .adminFestival(.init(fixture.festival, appState: appState))
+        initial.isEmergencySignOutLoading = true
+        let lastScreen = LastMainScreenUseCaseSpy(value: .admin)
+        let store = TestStore(initialState: initial) {
+            RootFeature()
+        } withDependencies: {
+            $0.installTestSpies()
+            $0[LastMainScreenUseCaseKey.self] = lastScreen
+        }
+        store.exhaustivity = .off
+
+        await store.send(.emergencySignOutReceived(.success(.loading)))
+        #expect(store.state.launchState == .loading)
+        #expect(store.state.map == nil)
+        #expect(store.state.onboarding == nil)
+        #expect(store.state.destination == nil)
+        #expect(!store.state.isEmergencySignOutLoading)
+        #expect(lastScreen.value == nil)
+        await store.finish()
+    }
+
+    @Test("管理画面を閉じたら次回の初期画面を地図にする")
+    @MainActor
+    func dismissingAdminRecordsMapAsLastScreen() async {
+        let fixture = RootFeatureFixture()
+        let role = UserRole.headquarter(fixture.festival.id)
+        let appState = Shared<AppState?>(value: fixture.appState)
+        var initial = RootFeature.State(appState: appState)
+        initial.$launchState.withLock { $0 = .festival(role) }
+        initial.destination = .adminFestival(.init(fixture.festival, appState: appState))
+        let lastScreen = LastMainScreenUseCaseSpy(value: .admin)
+        let store = TestStore(initialState: initial) {
+            RootFeature()
+        } withDependencies: {
+            $0.installTestSpies()
+            $0[LastMainScreenUseCaseKey.self] = lastScreen
+        }
+        store.exhaustivity = .off
+
+        await store.send(.destination(.dismiss))
+        #expect(lastScreen.value == .map)
+        await store.finish()
+    }
+
+    @Test("緊急ログアウトの操作はUseCaseを一度呼び出し成功時にゲスト状態へ切り替える")
+    @MainActor
+    func emergencySignOutButtonInvokesUseCase() async {
+        let fixture = RootFeatureFixture()
+        let appState = Shared<AppState?>(value: fixture.appState)
+        var initial = RootFeature.State(appState: appState)
+        let role = UserRole.headquarter(fixture.festival.id)
+        initial.$launchState.withLock { $0 = .festival(role) }
+        initial.map = initial.makeMapState(userRole: role)
+        let spy = RootSignOutSpy(result: .success(.festival(.guest)))
+        let lastScreen = LastMainScreenUseCaseSpy(value: .admin)
+        let store = TestStore(initialState: initial) {
+            RootFeature()
+        } withDependencies: {
+            $0.installTestSpies()
+            $0[SignOutUseCaseKey.self] = spy
+            $0[LastMainScreenUseCaseKey.self] = lastScreen
+        }
+        store.exhaustivity = .off
+
+        await store.send(.map(.delegate(.emergencySignOutTapped)))
+        await store.receive(.emergencySignOutReceived(.success(.festival(.guest))))
+        #expect(await spy.calls == 1)
+        #expect(store.state.launchState == .festival(.guest))
+        #expect(!store.state.isEmergencySignOutLoading)
+        #expect(lastScreen.value == nil)
+        await store.finish()
+    }
+
+    @Test("緊急ログアウト中の連打は二重にUseCaseを起動しない")
+    @MainActor
+    func repeatedEmergencySignOutWhileLoadingIsIgnored() async {
+        let fixture = RootFeatureFixture()
+        var initial = RootFeature.State(appState: Shared<AppState?>(value: fixture.appState))
+        initial.$launchState.withLock { $0 = .festival(.guest) }
+        initial.map = initial.makeMapState(userRole: .guest)
+        initial.isEmergencySignOutLoading = true
+        let spy = RootSignOutSpy(result: .success(.onboarding))
+        let store = TestStore(initialState: initial) {
+            RootFeature()
+        } withDependencies: {
+            $0.installTestSpies()
+            $0[SignOutUseCaseKey.self] = spy
+        }
+        store.exhaustivity = .off
+
+        await store.send(.map(.delegate(.emergencySignOutTapped)))
+        #expect(await spy.calls == 0)
+        #expect(store.state.isEmergencySignOutLoading)
+        await store.finish()
+    }
+
 }
 
 private struct RootFeatureFixture {
@@ -608,4 +759,16 @@ private func rootTestConstantValues() -> ConstantValues {
         publicMapInterstitialAdUnitId: nil,
         publicMapBannerAdUnitId: nil
     )
+}
+
+private actor RootSignOutSpy: SignOutUseCaseProtocol {
+    let result: Result<LaunchState, AppError>
+    private(set) var calls = 0
+
+    init(result: Result<LaunchState, AppError>) { self.result = result }
+
+    func callAsFunction(appState: Shared<AppState?>) async throws -> LaunchState {
+        calls += 1
+        return try result.get()
+    }
 }

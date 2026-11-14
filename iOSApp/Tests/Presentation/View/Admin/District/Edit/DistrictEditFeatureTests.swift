@@ -312,6 +312,71 @@ struct DistrictEditFeatureTests {
         await store.finish()
     }
 
+    @Test("地区基準座標の編集完了は変更座標を地区ドラフトへ反映する")
+    @MainActor
+    func finishedBaseEditUpdatesDistrictDraft() async throws {
+        let fixture = DistrictEditFixture()
+        let newBase = Coordinate(latitude: 34.5, longitude: 138.5)
+        var initial = try DistrictEditFeature.State(fixture.district, appState: fixture.appState)
+        initial.destination = .base(.init(base: newBase))
+        let store = TestStore(initialState: initial) {
+            DistrictEditFeature()
+        } withDependencies: { $0.installTestSpies() }
+        store.exhaustivity = .off
+
+        await store.send(.destination(.presented(.base(.doneTapped))))
+        #expect(store.state.district.base == newBase)
+        #expect(store.state.destination == nil)
+        await store.finish()
+    }
+
+    @Test("地区領域の編集結果は元の地区に戻し、座標の並びを維持する")
+    @MainActor
+    func finishedAreaEditUpdatesDistrictArea() async throws {
+        let fixture = DistrictEditFixture()
+        let coords = [
+            Coordinate(latitude: 35, longitude: 139),
+            Coordinate(latitude: 35.1, longitude: 139.1),
+            Coordinate(latitude: 35.2, longitude: 139)
+        ]
+        var initial = try DistrictEditFeature.State(fixture.district, appState: fixture.appState)
+        initial.destination = .area(.init(coordinates: coords, origin: fixture.festivalBase))
+        let store = TestStore(initialState: initial) {
+            DistrictEditFeature()
+        } withDependencies: { $0.installTestSpies() }
+        store.exhaustivity = .off
+
+        await store.send(.destination(.presented(.area(.doneTapped))))
+        #expect(store.state.district.area == coords)
+        #expect(store.state.destination == nil)
+        await store.finish()
+    }
+
+    @Test("演目の編集完了は同じIDの内容を更新し、削除ではリストから消す")
+    @MainActor
+    func performanceEditResultUpsertsAndDeletes() async throws {
+        let fixture = DistrictEditFixture()
+        var updated = fixture.performance
+        updated.name = "updated"
+        var initial = try DistrictEditFeature.State(fixture.district, appState: fixture.appState)
+        initial.destination = .performance(.init(item: updated))
+        let store = TestStore(initialState: initial) {
+            DistrictEditFeature()
+        } withDependencies: { $0.installTestSpies() }
+        store.exhaustivity = .off
+
+        await store.send(.destination(.presented(.performance(.doneTapped))))
+        #expect(store.state.performances.count == 1)
+        #expect(store.state.performances.first?.name == "updated")
+        #expect(store.state.destination == nil)
+
+        await store.send(.performanceEditTapped(updated))
+        await store.send(.destination(.presented(.performance(.deleteTapped))))
+        #expect(store.state.performances.isEmpty)
+        #expect(store.state.destination == nil)
+        await store.finish()
+    }
+
 }
 
 private struct DistrictEditFixture {
