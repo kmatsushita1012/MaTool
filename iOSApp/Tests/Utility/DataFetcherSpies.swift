@@ -1,6 +1,76 @@
 import Shared
 @testable import iOSApp
 
+enum StoreAdImpressionOutcome: Sendable {
+    case success
+    case failure(AppError)
+}
+
+actor StoreAdDataFetcherSpy: StoreAdDataFetcherProtocol {
+    private let candidate: AdCandidate?
+    private let candidateError: AppError?
+    private let impressionOutcomes: [StoreAdImpressionOutcome]
+    private let reportDelay: Duration?
+
+    private(set) var requestedFestivalIDs: [Festival.ID] = []
+    private(set) var reportedImpressions: [ImpressionReportRequest] = []
+    private(set) var maximumConcurrentReports = 0
+
+    private var activeReports = 0
+    private var reportWaiters: [(Int, CheckedContinuation<Void, Never>)] = []
+
+    init(
+        candidate: AdCandidate? = nil,
+        candidateError: AppError? = nil,
+        impressionOutcomes: [StoreAdImpressionOutcome] = [],
+        reportDelay: Duration? = nil
+    ) {
+        self.candidate = candidate
+        self.candidateError = candidateError
+        self.impressionOutcomes = impressionOutcomes
+        self.reportDelay = reportDelay
+    }
+
+    func nextBanner(festivalId: Festival.ID) async throws -> AdCandidate? {
+        requestedFestivalIDs.append(festivalId)
+        if let candidateError { throw candidateError }
+        return candidate
+    }
+
+    func reportImpression(_ request: ImpressionReportRequest) async throws {
+        activeReports += 1
+        maximumConcurrentReports = max(maximumConcurrentReports, activeReports)
+        defer { activeReports -= 1 }
+
+        reportedImpressions.append(request)
+        resumeSatisfiedWaiters()
+        let responseIndex = reportedImpressions.count - 1
+        if let reportDelay {
+            try? await Task.sleep(for: reportDelay)
+        }
+
+        guard impressionOutcomes.indices.contains(responseIndex) else { return }
+        if case .failure(let error) = impressionOutcomes[responseIndex] {
+            throw error
+        }
+    }
+
+    func waitForReportCount(_ count: Int) async {
+        guard reportedImpressions.count < count else { return }
+        await withCheckedContinuation { continuation in
+            reportWaiters.append((count, continuation))
+        }
+    }
+
+    func reportCount() -> Int { reportedImpressions.count }
+
+    private func resumeSatisfiedWaiters() {
+        let ready = reportWaiters.filter { $0.0 <= reportedImpressions.count }
+        reportWaiters.removeAll { $0.0 <= reportedImpressions.count }
+        ready.forEach { $0.1.resume() }
+    }
+}
+
 actor SceneDataFetcherSpy: SceneDataFetcherProtocol {
     private let response: LaunchDistrictPack
     private var districtLaunchCalls = 0

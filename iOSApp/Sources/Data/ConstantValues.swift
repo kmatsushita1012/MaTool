@@ -27,6 +27,8 @@ struct ConstantValues:Sendable {
     let admobAppId: String?
     let publicMapInterstitialAdUnitId: String?
     let publicMapBannerAdUnitId: String?
+    let storeCreditProductId500: String?
+    let storeCreditProductId1000: String?
 }
 
 extension ConstantValues: DependencyKey {
@@ -36,6 +38,8 @@ extension ConstantValues: DependencyKey {
     private static let admobAppIdKey = "MATOOL_ADMOB_APP_ID"
     private static let publicMapInterstitialAdUnitIdKey = "MATOOL_PUBLIC_MAP_INTERSTITIAL_AD_UNIT_ID"
     private static let publicMapBannerAdUnitIdKey = "MATOOL_PUBLIC_MAP_BANNER_AD_UNIT_ID"
+    private static let storeCreditProductId500Key = "MATOOL_STORE_CREDIT_PRODUCT_ID_500"
+    private static let storeCreditProductId1000Key = "MATOOL_STORE_CREDIT_PRODUCT_ID_1000"
 
     private static func value(fromXCConfig key: String) -> String {
         let configName: String = {
@@ -114,6 +118,8 @@ extension ConstantValues: DependencyKey {
         }(),
         admobAppId: optionalValue(fromXCConfig: admobAppIdKey),
         publicMapInterstitialAdUnitId: optionalValue(fromXCConfig: publicMapInterstitialAdUnitIdKey),
-        publicMapBannerAdUnitId: optionalValue(fromXCConfig: publicMapBannerAdUnitIdKey)
+        publicMapBannerAdUnitId: optionalValue(fromXCConfig: publicMapBannerAdUnitIdKey),
+        storeCreditProductId500: optionalValue(fromXCConfig: storeCreditProductId500Key),
+        storeCreditProductId1000: optionalValue(fromXCConfig: storeCreditProductId1000Key)
     )
 }

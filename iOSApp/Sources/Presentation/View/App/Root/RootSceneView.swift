@@ -36,7 +36,6 @@ public struct RootSceneView: View {
                     NavigationStack {
                         PublicMapView(
                             store: mapStore,
-                            isAdminLoggedIn: store.isAdminLoggedIn,
                             isNavigationDisabled: store.isDestinationLoading
                                 || store.isIntroductionLoading
                                 || store.isEmergencySignOutLoading
@@ -58,6 +57,12 @@ public struct RootSceneView: View {
                                 action: \.destination.adminFestival
                             )) { adminStore in
                                 FestivalDashboardView(store: adminStore)
+                            }
+                            .navigationDestination(item: $store.scope(
+                                state: \.destination?.advertiserDashboard,
+                                action: \.destination.advertiserDashboard
+                            )) { advertiserStore in
+                                AdvertiserDashboardScreen(store: advertiserStore)
                             }
                     }
                     .sheet(item: $store.scope(

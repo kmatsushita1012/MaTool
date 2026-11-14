@@ -100,6 +100,25 @@ actor PublicMapAdUsecaseSpy: PublicMapAdUsecaseProtocol {
     }
 }
 
+actor StoreAdBannerUsecaseSpy: StoreAdBannerUsecaseProtocol {
+    private let candidate: AdCandidate?
+    private(set) var requestedFestivalIDs: [Festival.ID] = []
+    private(set) var reportedImpressions: [AdCandidate] = []
+
+    init(candidate: AdCandidate? = nil) {
+        self.candidate = candidate
+    }
+
+    func nextBanner(festivalId: Festival.ID) async throws -> AdCandidate? {
+        requestedFestivalIDs.append(festivalId)
+        return candidate
+    }
+
+    func reportImpression(_ candidate: AdCandidate) async {
+        reportedImpressions.append(candidate)
+    }
+}
+
 actor DistrictLoadSpy: LoadDistrictStateUseCaseProtocol {
     private let response: LaunchDistrictPack
     private var periodId: Period.ID?

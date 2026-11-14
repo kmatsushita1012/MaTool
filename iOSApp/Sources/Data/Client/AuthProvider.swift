@@ -70,7 +70,6 @@ extension AuthProvider: DependencyKey {
                     try Self.rethrowAsAuthErrorIfNeeded(error, operation: "signIn")
                 }
             },
-            
             confirmSignIn: { newPassword in
                 do {
                     let result = try await withTimeout(seconds: timeout) {
@@ -90,21 +89,25 @@ extension AuthProvider: DependencyKey {
                         return try await (attributes, user)
                     }
                     
-                    if let role = attributes.first(where: { $0.key.rawValue == "custom:role" })?.value {
-                        switch role {
-                        case "region":
-                            authProviderLogger.info("getUserRole: completed as headquarter")
-                            return .headquarter(user.username)
-                        case "district":
-                            authProviderLogger.info("getUserRole: completed as district")
-                            return .district(user.username)
-                        default:
-                            authProviderLogger.info("getUserRole: completed as guest")
-                            return .guest
+                    let role = attributes.first(where: { $0.key.rawValue == "custom:role" })?.value
+                    switch role {
+                    case "region":
+                        authProviderLogger.info("getUserRole: completed as headquarter")
+                        return .headquarter(user.username)
+                    case "district":
+                        authProviderLogger.info("getUserRole: completed as district")
+                        return .district(user.username)
+                    case "advertiser":
+                        guard let sub = attributes.first(where: { $0.key.rawValue == "sub" })?.value,
+                              !sub.isEmpty,
+                              attributes.first(where: { $0.key.rawValue == "email_verified" })?.value == "true" else {
+                            throw AppError.auth(.unauthorized("メール確認が完了した広告主として認証できません。"))
                         }
+                        authProviderLogger.info("getUserRole: completed as advertiser")
+                        return .advertiser(sub)
+                    default:
+                        throw AppError.auth(.unauthorized("このアカウントはログインできません。"))
                     }
-                    authProviderLogger.info("getUserRole: completed without role attribute")
-                    return .guest
                 } catch {
                     authProviderLogger.error("getUserRole: failed (\(String(reflecting: type(of: error)), privacy: .public))")
                     try Self.rethrowAsAuthErrorIfNeeded(error, operation: "getUserRole")

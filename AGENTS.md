@@ -3,9 +3,14 @@
 ## iOS
 
 - View と Presentation Feature は [matool-swiftui-view](.codex/skills/matool-swiftui-view/SKILL.md) に従う。View 以外のレイヤー設計は [$swift-app-architecture](/Users/matsushitakazuya/.homesick/repos/dotfiles/home/.agents/skills/swift-app-architecture/SKILL.md) に従い、クリーンアーキテクチャを目指す。
-- TCA の `Delegate` Action は使用しない。親 Feature への通知には、子 Action を直接扱うか、具体的なイベント名の Action を使う。
-- Usecase から別の Usecase を呼び出さない。責務やライフサイクルが異なる処理は必要な重複を許容し、共通化は同じ責務を持つ処理に限る。
+- ViewModel の代わりに TCA（The Composable Architecture）を使用する。スキルの ViewModel に関する方針より、このルールを優先する。
+- AppState を可能な限り状態の唯一の情報源（SSOT）にする。
+- 親Featureへの通知だけを目的に子FeatureのActionをDelegate Actionへ包み直して再送しない。親Featureで子Featureの具体的なActionを直接受け取り、必要な状態更新や遷移を処理する。
+- UseCaseから別のUseCaseを呼び出さない。UseCase間で共通化する処理は `Application/Common` に関数として定義し、UseCaseからのみ利用する。必要な依存は引数で受け取り、共通処理のためだけの protocol・struct・DI登録を作らない。
 - `authProvider.initialize()` はアプリの初回起動時にのみ呼び出し、サインアウトや起動データ再取得では呼び出さない。
+- iOS の実装後は必ず XcodeBuildMCP を用いて iPhone シミュレータで iOSApp を起動し、動作確認を行う。
+- [$sim-use](/Users/matsushitakazuya/.codex/skills/sim-use/SKILL.md) に従って実際に画面操作を行い、実装・変更した画面に到達したことを確認する。起動確認だけで完了としない。
+- 対象画面で必要なタップ・入力・スクロールなどを行い、動作と UI を必ず目視で確認する。最終状態のスクリーンショットと UI 情報を取得し、要件と照合する。
 
 ## Backend
 

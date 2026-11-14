@@ -59,6 +59,13 @@ protocol HTTPClientProtocol: Sendable {
         accessToken: String?
     ) async throws -> Response
 
+    func post<Body: Encodable>(
+        path: String,
+        body: Body,
+        query: [String: Any],
+        accessToken: String?
+    ) async throws
+
     func put<Response: Decodable, Body: Encodable>(
         path: String,
         body: Body,
@@ -133,10 +140,8 @@ actor HTTPClient: HTTPClientProtocol {
             throw AppError(statusCode: nil, message: "実行中にエラーが発生しました。インターネット接続を確認してください。")
         }
 
-        // If we have HTTP response, check status code
-        if let http = http, !(200...299).contains(http.statusCode),
-           let response: ErrorResponse = try await decodeResponse(from: data){
-            throw AppError(statusCode: http.statusCode, message: response.localizedDescription)
+        if let http, !(200...299).contains(http.statusCode) {
+            throw makeHTTPError(statusCode: http.statusCode, data: data)
         }
 
         if let http, (200...399).contains(http.statusCode), method != "GET", method != "HEAD" {
@@ -165,6 +170,10 @@ actor HTTPClient: HTTPClientProtocol {
         try await request(path: path, method: "POST", query: query, body: body, accessToken: accessToken, isCache: false)
     }
 
+    func post<Body: Encodable>(path: String, body: Body, query: [String: Any] = [:], accessToken: String? = nil) async throws {
+        try await sendWithoutResponse(path: path, method: "POST", query: query, body: body, accessToken: accessToken)
+    }
+
     func put<Response: Decodable, Body: Encodable>(path: String, body: Body, query: [String: Any] = [:], accessToken: String? = nil) async throws -> Response {
         try await request(path: path, method: "PUT", query: query, body: body, accessToken: accessToken, isCache: false)
     }
@@ -174,14 +183,64 @@ actor HTTPClient: HTTPClientProtocol {
     }
 
     func delete(path: String, query: [String: Any] = [:], accessToken: String? = nil) async throws {
-        let _: EmptyResponse = try await request(
-            path: path,
-            method: "DELETE",
-            query: query,
-            body: Optional<EmptyBody>.none,
+        try await sendWithoutResponse(path: path, method: "DELETE", query: query, body: Optional<EmptyBody>.none, accessToken: accessToken)
+    }
+
+    private func sendWithoutResponse<Body: Encodable>(
+        path: String,
+        method: String,
+        query: [String: Any],
+        body: Body?,
+        accessToken: String?
+    ) async throws {
+        let url = try makeURL(path: path, query: query)
+        let bodyData = try await encodeBody(body)
+        let urlRequest = makeRequest(
+            url: url,
+            method: method,
+            bodyData: bodyData,
             accessToken: accessToken,
             isCache: false
         )
+        let (data, http): (Data, HTTPURLResponse?)
+        do {
+            (data, http) = try await execute(request: urlRequest)
+        } catch {
+            throw AppError(statusCode: nil, message: "実行中にエラーが発生しました。インターネット接続を確認してください。")
+        }
+        guard let http, (200...299).contains(http.statusCode) else {
+            throw makeHTTPError(
+                statusCode: http?.statusCode,
+                data: data
+            )
+        }
+        invalidateCache()
+    }
+
+    private func makeHTTPError(statusCode: Int?, data: Data) -> AppError {
+        let commonResponse = try? jsonDecoder.decode(ErrorResponse.self, from: data)
+        let message = commonResponse?.localizedDescription
+            ?? Self.messageFromErrorResponse(data)
+            ?? "サーバーからエラー応答を受け取りました。"
+        return AppError(statusCode: statusCode, message: message)
+    }
+
+    private static func messageFromErrorResponse(_ data: Data) -> String? {
+        if let object = try? JSONSerialization.jsonObject(with: data) as? [String: Any] {
+            for key in ["localizedDescription", "message", "detail", "error"] {
+                if let value = object[key] as? String {
+                    let message = value.trimmingCharacters(in: .whitespacesAndNewlines)
+                    if !message.isEmpty { return message }
+                }
+            }
+        }
+
+        guard let body = String(data: data, encoding: .utf8)?
+            .trimmingCharacters(in: .whitespacesAndNewlines),
+              !body.isEmpty else {
+            return nil
+        }
+        return String(body.prefix(500))
     }
 
     private func makeURL(path: String, query: [String: Any]) throws -> URL {
@@ -242,7 +301,30 @@ actor HTTPClient: HTTPClientProtocol {
                 try jsonDecoder.decode(Response.self, from: data)
             }.value
         } catch {
-            throw AppError.system(.decoding(error.localizedDescription))
+            throw AppError.system(.decoding(Self.decodingFailureMessage(error)))
+        }
+    }
+
+    private static func decodingFailureMessage(_ error: Error) -> String {
+        func path(_ codingPath: [any CodingKey]) -> String {
+            codingPath.map(\.stringValue).joined(separator: ".")
+        }
+
+        switch error {
+        case let DecodingError.keyNotFound(key, context):
+            let fieldPath = path(context.codingPath + [key])
+            return "応答に必須項目「\(fieldPath)」がありません。"
+        case let DecodingError.valueNotFound(type, context):
+            let fieldPath = path(context.codingPath)
+            return "応答の「\(fieldPath)」が空です（\(type)）。"
+        case let DecodingError.typeMismatch(type, context):
+            let fieldPath = path(context.codingPath)
+            return "応答の「\(fieldPath)」の型が一致しません（\(type)）。"
+        case let DecodingError.dataCorrupted(context):
+            let fieldPath = path(context.codingPath)
+            return "応答の「\(fieldPath)」を読み取れませんでした。"
+        default:
+            return error.localizedDescription
         }
     }
 
@@ -339,6 +421,15 @@ extension HTTPClientProtocol {
             query: query,
             accessToken: accessToken
         )
+    }
+
+    func post<Body: Encodable>(
+        path: String,
+        body: Body,
+        query: [String: Any] = [:],
+        accessToken: String? = nil
+    ) async throws {
+        try await self.post(path: path, body: body, query: query, accessToken: accessToken)
     }
 
     func delete(

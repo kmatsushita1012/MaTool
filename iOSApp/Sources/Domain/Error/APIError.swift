@@ -33,6 +33,10 @@ enum AppError: LocalizedError, Equatable, Hashable, Sendable {
             self = .be(.notFound(message))
         case 409:
             self = .be(.conflict(message))
+        case 408:
+            self = .be(.server(statusCode: statusCode, message: message))
+        case 429:
+            self = .be(.server(statusCode: statusCode, message: message))
         case 500...599:
             self = .be(.server(statusCode: statusCode, message: message))
         default:

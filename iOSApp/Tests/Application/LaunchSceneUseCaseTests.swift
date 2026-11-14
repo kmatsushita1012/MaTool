@@ -22,11 +22,13 @@ struct LaunchSceneUseCaseTests {
         )
     }
 
-    @Test("祭典未選択では認証初期化だけを行ってOnboardingを返す")
+    @Test("祭典未選択でも認証状態を読み取ってOnboardingを返す")
     func noSelectionOpensOnboarding() async {
         let initialization = AuthProviderInitializeSpy()
+        let roleLookup = AuthProviderRoleLookupSpy(role: .guest)
         var auth = AuthProviderSpy().client
         auth.initialize = { initialization.record() }
+        auth.getUserRole = { await roleLookup.call() }
         let defaults = DefaultUserDefaultsSpy()
         let state = Shared<AppState?>(value: AppStateFixture.state())
         let useCase = withDependencies {
@@ -41,6 +43,7 @@ struct LaunchSceneUseCaseTests {
         #expect(launchState == .onboarding)
         #expect(status == nil)
         #expect(initialization.callCount == 1)
+        #expect(await roleLookup.callCount() == 1)
         #expect(state.wrappedValue == nil)
     }
 

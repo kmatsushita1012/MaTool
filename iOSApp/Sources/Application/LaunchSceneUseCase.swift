@@ -20,16 +20,15 @@ struct LaunchSceneUseCase: LaunchSceneUseCaseProtocol {
         async let appStatusTask = appStatusClient.checkStatus()
         do {
             try authProvider.initialize()
-            guard let festivalId = userDefaults.defaultFestivalId else {
-                return (.onboarding, await appStatusTask)
-            }
-
             let userRole: UserRole
             do {
                 userRole = try await authProvider.getUserRole()
             } catch {
                 try? await authProvider.signOut()
                 userRole = .guest
+            }
+            guard let festivalId = userDefaults.defaultFestivalId else {
+                return (.onboarding, await appStatusTask)
             }
             if let districtId = userDefaults.defaultDistrictId {
                 async let festivalTask = dataFetcher.launchFestival(festivalId: festivalId)

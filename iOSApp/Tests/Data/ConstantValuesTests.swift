@@ -46,7 +46,9 @@ struct ConstantValuesTests {
             isLiquidGlassEnabled: true,
             admobAppId: "app-id",
             publicMapInterstitialAdUnitId: "interstitial-id",
-            publicMapBannerAdUnitId: "banner-id"
+            publicMapBannerAdUnitId: "banner-id",
+            storeCreditProductId500: "credit-500",
+            storeCreditProductId1000: "credit-1000"
         )
         let second = withDependencies {
             $0.values = configured
@@ -62,5 +64,7 @@ struct ConstantValuesTests {
         #expect(second.admobAppId == "app-id")
         #expect(second.publicMapInterstitialAdUnitId == "interstitial-id")
         #expect(second.publicMapBannerAdUnitId == "banner-id")
+        #expect(second.storeCreditProductId500 == "credit-500")
+        #expect(second.storeCreditProductId1000 == "credit-1000")
     }
 }
