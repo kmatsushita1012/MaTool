@@ -156,4 +156,121 @@ struct HeadquarterDistrictListFeatureTests {
         }
         await store.finish()
     }
+    @Test("並べ替え中の検索入力は消去され、通常の検索入力のみ保持する")
+    @MainActor
+    func searchBindingIsIgnoredDuringReordering() async {
+        let (festival, appState, _, _) = fixtures()
+        var initial = HeadquarterDistrictListFeature.State(
+            festival, appState: Shared(value: Optional(appState))
+        )
+        initial.isReordering = true
+        let store = TestStore(initialState: initial) {
+            HeadquarterDistrictListFeature()
+        } withDependencies: { $0.installTestSpies() }
+
+        await store.send(.binding(.set(\.searchText, "Bravo")))
+        #expect(store.state.searchText.isEmpty)
+        await store.send(.binding(.set(\.isReordering, false))) {
+            $0.isReordering = false
+        }
+        await store.send(.binding(.set(\.searchText, "Alpha"))) {
+            $0.searchText = "Alpha"
+        }
+        #expect(store.state.filteredDistricts.map(\.id) == ["a"])
+        await store.finish()
+    }
+
+    @Test("ドラフトがない移動要求は実データを変更しない")
+    @MainActor
+    func movementWithoutDraftDoesNothing() async {
+        let (festival, appState, _, _) = fixtures()
+        let store = TestStore(
+            initialState: HeadquarterDistrictListFeature.State(
+                festival, appState: Shared(value: Optional(appState))
+            )
+        ) { HeadquarterDistrictListFeature() } withDependencies: {
+            $0.installTestSpies()
+        }
+        await store.send(.districtMoved(from: IndexSet(integer: 0), to: 1))
+        #expect(store.state.draftDistricts == nil)
+        #expect(store.state.districts.map(\.order) == [2, 1])
+        await store.finish()
+    }
+
+    @Test("地区の取得成功では読み込みフラグを消して詳細画面へ遷移する")
+    @MainActor
+    func selectedDistrictSuccessOpensDetail() async {
+        let (festival, appState, a, _) = fixtures()
+        var initial = HeadquarterDistrictListFeature.State(
+            festival, appState: Shared(value: Optional(appState))
+        )
+        initial.loadingDistrictID = a.id
+        let store = TestStore(initialState: initial) {
+            HeadquarterDistrictListFeature()
+        } withDependencies: { $0.installTestSpies() }
+        store.exhaustivity = .off
+
+        await store.send(.selectedReceived(.success(a)))
+        #expect(store.state.loadingDistrictID == nil)
+        #expect(store.state.destination?.detail?.district.id == a.id)
+        await store.finish()
+    }
+
+    @Test("並べ替えと一括出力のエラーは処理中の状態を解除する")
+    @MainActor
+    func reorderAndExportFailureClearFlags() async {
+        let (festival, appState, a, b) = fixtures()
+        let error = AppError.be(.network("service unavailable"))
+        var initial = HeadquarterDistrictListFeature.State(
+            festival, appState: Shared(value: Optional(appState))
+        )
+        initial.isReordering = true
+        initial.draftDistricts = [b, a]
+        initial.isReorderingSaving = true
+        initial.isExportLoading = true
+
+        let store = TestStore(initialState: initial) {
+            HeadquarterDistrictListFeature()
+        } withDependencies: { $0.installTestSpies() }
+        await store.send(.reorderReceived(.failure(error))) {
+            $0.isReorderingSaving = false
+            $0.isExportLoading = false
+            $0.alert = AlertFeature.error(error.message)
+        }
+        #expect(store.state.isReordering)
+        #expect(!store.state.isLoading)
+        await store.finish()
+
+        var exportInitial = HeadquarterDistrictListFeature.State(
+            festival, appState: Shared(value: Optional(appState))
+        )
+        exportInitial.isExportLoading = true
+        let exportStore = TestStore(initialState: exportInitial) {
+            HeadquarterDistrictListFeature()
+        } withDependencies: { $0.installTestSpies() }
+        await exportStore.send(.batchExportReceived(.failure(error))) {
+            $0.isExportLoading = false
+            $0.alert = AlertFeature.error(error.message)
+        }
+        await exportStore.finish()
+    }
+
+    @Test("空のPDF出力結果も成功として完了しフォルダを構成する")
+    @MainActor
+    func emptyBatchExportProducesFolder() async {
+        let (festival, appState, _, _) = fixtures()
+        var initial = HeadquarterDistrictListFeature.State(
+            festival, appState: Shared(value: Optional(appState))
+        )
+        initial.isExportLoading = true
+        let store = TestStore(initialState: initial) {
+            HeadquarterDistrictListFeature()
+        } withDependencies: { $0.installTestSpies() }
+        store.exhaustivity = .off
+        await store.send(.batchExportReceived(.success([])))
+        #expect(!store.state.isExportLoading)
+        #expect(store.state.folder != nil)
+        await store.finish()
+    }
+
 }

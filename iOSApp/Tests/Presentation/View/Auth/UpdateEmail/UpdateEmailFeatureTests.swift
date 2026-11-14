@@ -79,4 +79,114 @@ struct UpdateEmailFeatureTests {
         }
         await failureStore.finish()
     }
+    @Test("メール変更を送信すると入力メールをUseCaseへ渡して認証コード画面に進む")
+    @MainActor
+    func submitEmailInvokesUseCase() async {
+        let destination = "new@example.com"
+        let spy = UpdateEmailUseCaseSpy(result: .success(.verificationRequired(destination: destination)))
+        var state = UpdateEmailFeature.State()
+        state.email = destination
+        let store = TestStore(initialState: state) {
+            UpdateEmailFeature()
+        } withDependencies: {
+            $0.installTestSpies()
+            $0[UpdateEmailUseCaseKey.self] = spy
+        }
+
+        await store.send(.enterEmail(.okTapped)) {
+            $0.isLoading = true
+        }
+        await store.receive(.updateReceived(.success(.verificationRequired(destination: destination)))) {
+            $0.isLoading = false
+            $0.step = .enterCode(destination: destination)
+        }
+        #expect(await spy.emails == [destination])
+        await store.finish()
+    }
+
+    @Test("確認コードの再送信では入力中のメールを再びUseCaseへ渡す")
+    @MainActor
+    func resendEmailInvokesUseCaseAgain() async {
+        let spy = UpdateEmailUseCaseSpy(result: .success(.completed))
+        var state = UpdateEmailFeature.State()
+        state.step = .enterCode(destination: "new@example.com")
+        state.email = "new@example.com"
+        let store = TestStore(initialState: state) {
+            UpdateEmailFeature()
+        } withDependencies: {
+            $0.installTestSpies()
+            $0[UpdateEmailUseCaseKey.self] = spy
+        }
+
+        await store.send(.resendTapped) {
+            $0.isLoading = true
+        }
+        await store.receive(.updateReceived(.success(.completed))) {
+            $0.isLoading = false
+            $0.completeAlert = AlertFeature.success("メールアドレスが変更されました")
+        }
+        #expect(await spy.emails == ["new@example.com"])
+        await store.finish()
+    }
+
+    @Test("コード認証は入力中の確認コードだけをUseCaseに渡す")
+    @MainActor
+    func submitVerificationCodeCallsUseCase() async {
+        let spy = ConfirmUpdateEmailUseCaseSpy()
+        var state = UpdateEmailFeature.State()
+        state.step = .enterCode(destination: "new@example.com")
+        state.code = "902104"
+        let store = TestStore(initialState: state) {
+            UpdateEmailFeature()
+        } withDependencies: {
+            $0.installTestSpies()
+            $0[ConfirmUpdateEmailUseCaseKey.self] = spy
+        }
+
+        await store.send(.enterCode(.okTapped)) {
+            $0.isLoading = true
+        }
+        await store.receive(.confirmUpdateReceived(.success)) {
+            $0.isLoading = false
+            $0.completeAlert = AlertFeature.success("メールアドレスが変更されました")
+        }
+        #expect(await spy.codes == ["902104"])
+        await store.finish()
+    }
+
+    @Test("メール入力のBindingは変更を送信せず入力値だけを更新する")
+    @MainActor
+    func bindingOnlyChangesEmail() async {
+        let spy = UpdateEmailUseCaseSpy(result: .success(.completed))
+        let store = TestStore(initialState: UpdateEmailFeature.State()) {
+            UpdateEmailFeature()
+        } withDependencies: {
+            $0.installTestSpies()
+            $0[UpdateEmailUseCaseKey.self] = spy
+        }
+
+        await store.send(.binding(.set(\.email, "new@example.com"))) {
+            $0.email = "new@example.com"
+        }
+        #expect(await spy.emails.isEmpty)
+        await store.finish()
+    }
+
+    @Test("メール変更失敗のアラートは閉じると再試行可能になる")
+    @MainActor
+    func errorAlertCanBeDismissed() async {
+        let error = AppError.be(.network("offline"))
+        let store = TestStore(initialState: UpdateEmailFeature.State()) {
+            UpdateEmailFeature()
+        } withDependencies: { $0.installTestSpies() }
+
+        await store.send(.updateReceived(.failure(error))) {
+            $0.errorAlert = .error(error.message)
+        }
+        await store.send(.errorAlert(.dismiss)) {
+            $0.errorAlert = nil
+        }
+        await store.finish()
+    }
+
 }

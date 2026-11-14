@@ -1,3 +1,4 @@
+import Dependencies
 import CoreGraphics
 import Foundation
 import ImageIO
@@ -98,6 +99,20 @@ struct ImageJPEGProcessingClientTests {
         let image = source.flatMap { CGImageSourceCreateImageAtIndex($0, 0, nil) }
         #expect(image?.width == 10)
         #expect(image?.height == 100)
+    }
+
+
+    @Test("依存注入で選択したJPEG変換処理を使用する")
+    func dependencyOverrideUsesSelectedImageProcessor() throws {
+        let input = try makeImage(width: 24, height: 16, type: .png)
+        let output = try withDependencies {
+            $0.imageJPEGProcessingClient = ImageJPEGProcessingClient()
+        } operation: {
+            @Dependency(\.imageJPEGProcessingClient) var processor
+            return try processor.makeJPEG(from: input)
+        }
+
+        #expect(output.starts(with: [0xFF, 0xD8]))
     }
 
     private func makeJPEG(width: Int, height: Int) throws -> Data {

@@ -9,6 +9,41 @@
 
 fileprivate typealias AttributeValue = DynamoDBClientTypes.AttributeValue
 
+
+/// Separates DynamoDB's transport from encoding, pagination and query semantics.
+struct DynamoDBService: Sendable {
+    let put: @Sendable (PutItemInput) async throws -> PutItemOutput
+    let get: @Sendable (GetItemInput) async throws -> GetItemOutput
+    let delete: @Sendable (DeleteItemInput) async throws -> DeleteItemOutput
+    let scan: @Sendable (ScanInput) async throws -> ScanOutput
+    let query: @Sendable (QueryInput) async throws -> QueryOutput
+
+    init(
+        put: @escaping @Sendable (PutItemInput) async throws -> PutItemOutput,
+        get: @escaping @Sendable (GetItemInput) async throws -> GetItemOutput,
+        delete: @escaping @Sendable (DeleteItemInput) async throws -> DeleteItemOutput,
+        scan: @escaping @Sendable (ScanInput) async throws -> ScanOutput,
+        query: @escaping @Sendable (QueryInput) async throws -> QueryOutput
+    ) {
+        self.put = put
+        self.get = get
+        self.delete = delete
+        self.scan = scan
+        self.query = query
+    }
+
+    init(client: DynamoDBClient) {
+        self.init(
+            put: { try await client.putItem(input: $0) },
+            get: { try await client.getItem(input: $0) },
+            delete: { try await client.deleteItem(input: $0) },
+            scan: { try await client.scan(input: $0) },
+            query: { try await client.query(input: $0) }
+        )
+    }
+}
+
+
 // MARK: - DynamoDBStore
 struct DynamoDBStore: DataStore {
     private static let defaultRegion = "ap-northeast-1"
@@ -20,15 +55,24 @@ struct DynamoDBStore: DataStore {
         }
     }()
 
-    private let client: DynamoDBClient
+    private let service: DynamoDBService
     private let tableName: String
     private let encoder = DynamoDBEncoder()
     private let decoder = DynamoDBDecoder()
-    
+
     init(region: String = Self.defaultRegion, tableName: String) throws {
-        self.client = region == Self.defaultRegion
-            ? Self.sharedClient
-            : try DynamoDBClient(region: region)
+        let client: DynamoDBClient
+        if region == Self.defaultRegion {
+            client = Self.sharedClient
+        } else {
+            client = try DynamoDBClient(region: region)
+        }
+        self.init(tableName: tableName, service: DynamoDBService(client: client))
+    }
+
+    /// Unit tests can inject deterministic responses without contacting AWS.
+    init(tableName: String, service: DynamoDBService) {
+        self.service = service
         self.tableName = tableName
     }
     
@@ -36,7 +80,7 @@ struct DynamoDBStore: DataStore {
     func put<R: RecordProtocol>(_ record: R) async throws {
         let attrs = try encoder.encode(record)
         let input = PutItemInput(item: attrs, tableName: tableName)
-        let _ = try await client.putItem(input: input)
+        let _ = try await service.put(input)
     }
 
     // MARK: get
@@ -44,7 +88,7 @@ struct DynamoDBStore: DataStore {
         let key = try keys.toExpression()
         let input = GetItemInput(key: key, tableName: tableName)
         
-        let output = try await client.getItem(input: input)
+        let output = try await service.get(input)
         guard let item = output.item else { return nil }
         return try decoder.decode(item, as: T.self)
     }
@@ -53,7 +97,7 @@ struct DynamoDBStore: DataStore {
     func delete(keys: [String: Codable]) async throws {
         let key = try keys.toExpression()
         let input = DeleteItemInput(key: key, tableName: tableName)
-        let _ = try await client.deleteItem(input: input)
+        let _ = try await service.delete(input)
     }
     
     // MARK: scan
@@ -66,7 +110,7 @@ struct DynamoDBStore: DataStore {
                 exclusiveStartKey: exclusiveStartKey,
                 tableName: tableName
             )
-            let output = try await client.scan(input: input)
+            let output = try await service.scan(input)
             let items = output.items ?? []
 
             if ignoreDecodeError {
@@ -139,7 +183,7 @@ struct DynamoDBStore: DataStore {
                 input.limit = limit - records.count
             }
 
-            let output = try await client.query(input: input)
+            let output = try await service.query(input)
             records.append(contentsOf: try (output.items ?? []).map { try decoder.decode($0, as: T.self) })
 
             if let limit, records.count >= limit {

@@ -267,3 +267,89 @@ actor SelectDistrictUseCaseSpy: SelectDistrictUseCaseProtocol {
         throw error
     }
 }
+
+
+actor SignInUseCaseSpy: SignInUseCaseProtocol {
+    struct Call: Equatable, Sendable {
+        let username: String
+        let password: String
+    }
+    private(set) var calls: [Call] = []
+    private let result: Result<SignInState, AppError>
+
+    init(result: Result<SignInState, AppError>) { self.result = result }
+
+    func callAsFunction(
+        username: String, password: String, appState: Shared<AppState?>?
+    ) async throws -> SignInState {
+        calls.append(Call(username: username, password: password))
+        return try result.get()
+    }
+}
+
+actor ResetPasswordUseCaseSpy: ResetPasswordUseCaseProtocol {
+    private(set) var usernames: [String] = []
+    private let result: Result<Void, AppError>
+
+    init(result: Result<Void, AppError> = .success(())) { self.result = result }
+
+    func callAsFunction(username: String) async throws {
+        usernames.append(username)
+        try result.get()
+    }
+}
+
+actor ConfirmResetPasswordUseCaseSpy: ConfirmResetPasswordUseCaseProtocol {
+    struct Call: Equatable, Sendable {
+        let username: String
+        let newPassword: String
+        let code: String
+    }
+    private(set) var calls: [Call] = []
+    private let result: Result<Void, AppError>
+
+    init(result: Result<Void, AppError> = .success(())) { self.result = result }
+
+    func callAsFunction(username: String, newPassword: String, code: String) async throws {
+        calls.append(Call(username: username, newPassword: newPassword, code: code))
+        try result.get()
+    }
+}
+
+actor UpdateEmailUseCaseSpy: UpdateEmailUseCaseProtocol {
+    private(set) var emails: [String] = []
+    private let result: Result<UpdateEmailState, AppError>
+
+    init(result: Result<UpdateEmailState, AppError>) { self.result = result }
+
+    func callAsFunction(email: String) async throws -> UpdateEmailState {
+        emails.append(email)
+        return try result.get()
+    }
+}
+
+actor ConfirmUpdateEmailUseCaseSpy: ConfirmUpdateEmailUseCaseProtocol {
+    private(set) var codes: [String] = []
+    private let result: Result<Void, AppError>
+
+    init(result: Result<Void, AppError> = .success(())) { self.result = result }
+
+    func callAsFunction(code: String) async throws {
+        codes.append(code)
+        try result.get()
+    }
+}
+
+actor FetchLocationUseCaseSpy: FetchLocationUseCaseProtocol {
+    private(set) var festivalIDs: [Festival.ID] = []
+    private let result: Result<[FloatLocation], AppError>
+
+    init(result: Result<[FloatLocation], AppError>) { self.result = result }
+
+    func callAsFunction(
+        festivalId: Festival.ID, appState: Shared<AppState?>
+    ) async throws -> [FloatLocation] {
+        festivalIDs.append(festivalId)
+        return try result.get()
+    }
+}

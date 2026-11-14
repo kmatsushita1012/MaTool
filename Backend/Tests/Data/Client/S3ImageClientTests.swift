@@ -65,6 +65,83 @@ struct S3ImageClientTests {
             ))
         }
     }
+    @Test("JPEGの先頭マーカー・終端マーカー・余分な末尾データを検証する")
+    func rejectsInvalidMarkerBoundaries() {
+        let original = jpeg(width: 1, height: 1)
+        var invalidStart = original
+        invalidStart[0] = 0x00
+        var missingStart = original
+        missingStart.removeFirst(2)
+        var trailingBytes = original
+        trailingBytes.append(contentsOf: [0x00, 0x01])
+        var missingEnd = original
+        missingEnd.removeLast(2)
+        var unexpectedRestart = original
+        unexpectedRestart[3] = 0xD0
+
+        for data in [Data(), Data([0xFF, 0xD8, 0xFF]), invalidStart,
+                     missingStart, trailingBytes, missingEnd, unexpectedRestart] {
+            #expect(!UploadedJPEGValidator.isValid(
+                contentType: "image/jpeg", contentLength: data.count, data: data
+            ))
+        }
+    }
+
+    @Test("SOFのゼロ次元・コンポーネント数・サンプリング係数・量子化テーブルを拒否する")
+    func rejectsInvalidFrameParameters() {
+        for (offset, replacement) in [
+            (8, UInt8(0)), (10, 0),
+            (11, 0), (13, 0), (13, 0x50), (14, 4), (5, 0x04)
+        ] {
+            var data = jpeg(width: 1, height: 1)
+            data[offset] = replacement
+            #expect(!UploadedJPEGValidator.isValid(
+                contentType: "image/jpeg", contentLength: data.count, data: data
+            ))
+        }
+    }
+
+    @Test("SOSの長さ・参照先コンポーネント・ハフマン表指定を拒否する")
+    func rejectsInvalidScanParameters() {
+        for (offset, replacement) in [
+            (18, UInt8(0)), (19, 0), (20, 3), (21, 0x40)
+        ] {
+            var data = jpeg(width: 1, height: 1)
+            data[offset] = replacement
+            #expect(!UploadedJPEGValidator.isValid(
+                contentType: "image/jpeg", contentLength: data.count, data: data
+            ))
+        }
+    }
+
+    @Test("エントロピー領域のエスケープ済みFFとリスタートマーカーを許容する")
+    func acceptsEscapedEntropyAndRestartMarkers() {
+        for marker in [UInt8(0x00), 0xD0, 0xD7] {
+            var data = jpeg(width: 1, height: 1)
+            data.insert(contentsOf: [0xFF, marker], at: data.count - 2)
+            #expect(UploadedJPEGValidator.isValid(
+                contentType: "image/jpeg", contentLength: data.count, data: data
+            ))
+        }
+    }
+
+    @Test("ファイルサイズ・Content-Typeのnilとゼロ長を区別して拒否する")
+    func rejectsMissingMetadata() {
+        let data = jpeg(width: 1, height: 1)
+        #expect(!UploadedJPEGValidator.isValid(
+            contentType: nil, contentLength: data.count, data: data
+        ))
+        #expect(!UploadedJPEGValidator.isValid(
+            contentType: "image/jpeg", contentLength: nil, data: data
+        ))
+        #expect(!UploadedJPEGValidator.isValid(
+            contentType: "image/jpeg", contentLength: 0, data: data
+        ))
+        #expect(!UploadedJPEGValidator.isValid(
+            contentType: "image/jpeg", contentLength: -1, data: data
+        ))
+    }
+
 }
 
 private extension S3ImageClientTests {

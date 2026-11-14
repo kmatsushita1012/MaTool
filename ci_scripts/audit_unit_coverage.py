@@ -50,9 +50,11 @@ def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--input", required=True, type=Path)
     parser.add_argument("--manifest", required=True, type=Path)
+    parser.add_argument("--full-line-manifest", type=Path, help="Paths requiring measured 100% line coverage")
     parser.add_argument("--scope", required=True, choices=("backend", "ios"))
     parser.add_argument("--output", required=True, type=Path)
     parser.add_argument("--strict", action="store_true")
+    parser.add_argument("--show-all", action="store_true", help="Print measured coverage for all targets")
     args = parser.parse_args()
 
     coverage = json.loads(args.input.read_text(encoding="utf-8"))
@@ -62,6 +64,16 @@ def main() -> int:
         for line in args.manifest.read_text(encoding="utf-8").splitlines()
         if line.strip() and not line.lstrip().startswith("#")
     ]
+    full_targets = set()
+    if args.full_line_manifest:
+        full_targets = {
+            line.strip()
+            for line in args.full_line_manifest.read_text(encoding="utf-8").splitlines()
+            if line.strip() and not line.lstrip().startswith("#")
+        }
+        unknown_targets = full_targets.difference(paths)
+        if unknown_targets:
+            raise ValueError(f"Full-line targets absent from coverage manifest: {sorted(unknown_targets)}")
     paths = [
         path
         for path in paths
@@ -84,7 +96,7 @@ def main() -> int:
         percent = 100.0 * covered / executable
         rows.append((
             path, str(executable), str(covered), f"{percent:.4f}",
-            "PASS" if covered * 10 >= executable * 9 else "FAIL"
+            "PASS" if (covered == executable if path in full_targets else covered * 10 >= executable * 9) else "FAIL"
         ))
 
     with args.output.open("w", encoding="utf-8", newline="") as handle:
@@ -100,7 +112,7 @@ def main() -> int:
     for key, value in counts.items():
         print(f"  {key}: {value}")
     for path, executable, covered, percent, status in rows:
-        if status != "PASS":
+        if args.show_all or status != "PASS":
             print(f"  [{status}] {path}: {covered}/{executable} ({percent or 'N/A'}%)")
 
     return 1 if args.strict and counts["PASS"] != len(paths) else 0

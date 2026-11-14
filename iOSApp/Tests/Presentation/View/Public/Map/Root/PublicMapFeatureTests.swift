@@ -90,6 +90,51 @@ struct PublicMapFeatureTests {
         #expect(await loadUseCase.receivedPeriodId() == fixture.period.id)
         await store.finish()
     }
+    @Test("一覧と地区経路のコンテンツIDは一貫している")
+    func contentIDsAreStable() {
+        #expect(PublicMapFeature.Content.locations.id == "locations")
+        #expect(PublicMapFeature.Content.route("district-1").id == "district-1")
+        #expect(PublicMapFeature.Content.route("district-2").id == "district-2")
+        #expect(PublicMapFeature.Content.route("district-1") != .route("district-2"))
+    }
+
+    @Test("地図のPicker表示名は祭典名・町名から生成される")
+    func titlesComeFromFestivalAndDistrict() {
+        let appState = Shared<AppState?>(value: AppStateFixture.state())
+        let state = PublicMapFeature.State(
+            festival: AppStateFixture.festival(), userRole: .guest, appState: appState
+        )
+
+        #expect(state.festivalTitle == "Festival")
+        #expect(state.contentTitles[.locations] == "現在地一覧")
+        #expect(state.contentTitles[.route("district")] == "District")
+    }
+
+    @Test("町ごとのコンテンツグループには全ての町を重複せず含む")
+    func districtGroupsPreserveDistrictContents() {
+        let festival = AppStateFixture.festival()
+        let districts = [
+            District(id: "one", name: "A", festivalId: festival.id, group: "G"),
+            District(id: "two", name: "B", festivalId: festival.id, group: "G"),
+            District(id: "three", name: "C", festivalId: festival.id, group: "H")
+        ]
+        let appState = Shared<AppState?>(value: AppStateFixture.state(districts: districts))
+        let state = PublicMapFeature.State(
+            festival: festival, userRole: .guest, appState: appState
+        )
+        let grouped = state.districtContentGroups
+        let ids = grouped.flatMap(\.contents).compactMap { content -> String? in
+            guard case .route(let id) = content else { return nil }
+            return id
+        }
+
+        #expect(ids.count == 3)
+        #expect(Set(ids) == Set(["one", "two", "three"]))
+        #expect(grouped.allSatisfy { !$0.contents.isEmpty })
+        #expect(grouped.map(\.id).contains("G"))
+        #expect(grouped.map(\.id).contains("H"))
+    }
+
 }
 
 private struct PeriodSelectionFixture {

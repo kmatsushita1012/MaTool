@@ -62,6 +62,41 @@ struct PublicLocationsFeatureTests {
         #expect(abs(region.span.longitudeDelta - 4.4) < 0.000001)
         await store.finish()
     }
+    @Test("位置配信一覧の更新操作は祭典IDをUseCaseに渡して更新完了を受け取る")
+    @MainActor
+    func reloadTappedCallsFetchLocationUseCase() async {
+        let fixture = LocationMapFixture(locations: [
+            FloatLocation(id: "first", districtId: "first", coordinate: .init(latitude: 35, longitude: 139))
+        ])
+        let spy = FetchLocationUseCaseSpy(result: .success([]))
+        let store = TestStore(initialState: fixture.makeState()) {
+            PublicLocationsFeature()
+        } withDependencies: {
+            $0.installTestSpies()
+            $0[FetchLocationUseCaseKey.self] = spy
+        }
+
+        await store.send(.reloadTapped)
+        await store.receive(.reloadReceived(.success([])))
+        #expect(await spy.festivalIDs == [fixture.festival.id])
+        await store.finish()
+    }
+
+    @Test("位置配信一覧のStateは配信データがある地区だけを含む")
+    func stateFloatEntriesComeFromAppState() {
+        let location = FloatLocation(
+            id: "first", districtId: "first",
+            coordinate: .init(latitude: 35.5, longitude: 139.5)
+        )
+        let fixture = LocationMapFixture(locations: [location])
+        let state = fixture.makeState()
+
+        #expect(state.festivalId == fixture.festival.id)
+        #expect(state.floats.count == 1)
+        #expect(state.floats.first?.floatLocation.id == location.id)
+        #expect(state.floats.first?.district.id == "first")
+    }
+
 }
 
 private struct LocationMapFixture {

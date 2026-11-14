@@ -106,4 +106,123 @@ struct ResetPasswordFeatureTests {
         }
         await failureStore.finish()
     }
+    @Test("ユーザー名入力完了はUseCaseへユーザー名を渡し、確認コード入力に遷移する")
+    @MainActor
+    func requestResetCallsUseCase() async {
+        let spy = ResetPasswordUseCaseSpy()
+        var state = ResetPasswordFeature.State()
+        state.username = "user@example.com"
+        let store = TestStore(initialState: state) {
+            ResetPasswordFeature()
+        } withDependencies: {
+            $0.installTestSpies()
+            $0[ResetPasswordUseCaseKey.self] = spy
+        }
+
+        await store.send(.enterUsername(.okTapped)) {
+            $0.isLoading = true
+        }
+        await store.receive(.resetReceived(.success)) {
+            $0.isLoading = false
+            $0.step = .enterCode
+        }
+        #expect(await spy.usernames == ["user@example.com"])
+        await store.finish()
+    }
+
+    @Test("確認コード再送信は登録中のユーザー名で改めてリセット要求する")
+    @MainActor
+    func resendCodeRequestsAgain() async {
+        let spy = ResetPasswordUseCaseSpy(result: .failure(.be(.network("offline"))))
+        let error = AppError.be(.network("offline"))
+        var state = ResetPasswordFeature.State()
+        state.step = .enterCode
+        state.username = "user@example.com"
+        let store = TestStore(initialState: state) {
+            ResetPasswordFeature()
+        } withDependencies: {
+            $0.installTestSpies()
+            $0[ResetPasswordUseCaseKey.self] = spy
+        }
+
+        await store.send(.resendTapped) {
+            $0.isLoading = true
+        }
+        await store.receive(.resetReceived(.failure(error))) {
+            $0.isLoading = false
+            $0.alert = AlertFeature.error("リセットに失敗しました。\(error.message)")
+        }
+        #expect(await spy.usernames == ["user@example.com"])
+        await store.finish()
+    }
+
+    @Test("正しい確認コードとパスワードはUseCaseへ全引数を渡して送信する")
+    @MainActor
+    func confirmationCallsUseCaseWithAllValues() async {
+        let spy = ConfirmResetPasswordUseCaseSpy()
+        var state = ResetPasswordFeature.State()
+        state.step = .enterCode
+        state.username = "user@example.com"
+        state.newPassword1 = "ValidPass123"
+        state.newPassword2 = "ValidPass123"
+        state.code = "654321"
+        let store = TestStore(initialState: state) {
+            ResetPasswordFeature()
+        } withDependencies: {
+            $0.installTestSpies()
+            $0[ConfirmResetPasswordUseCaseKey.self] = spy
+        }
+
+        await store.send(.enterCode(.okTapped)) {
+            $0.isLoading = true
+        }
+        await store.receive(.confirmResetReceived(.success)) {
+            $0.isLoading = false
+        }
+        #expect(await spy.calls == [
+            ConfirmResetPasswordUseCaseSpy.Call(
+                username: "user@example.com", newPassword: "ValidPass123", code: "654321"
+            )
+        ])
+        await store.finish()
+    }
+
+    @Test("確認コード入力の変更ではUseCaseは実行されない")
+    @MainActor
+    func bindingOnlyChangesCode() async {
+        let spy = ConfirmResetPasswordUseCaseSpy()
+        let store = TestStore(initialState: ResetPasswordFeature.State()) {
+            ResetPasswordFeature()
+        } withDependencies: {
+            $0.installTestSpies()
+            $0[ConfirmResetPasswordUseCaseKey.self] = spy
+        }
+
+        await store.send(.binding(.set(\.code, "123456"))) {
+            $0.code = "123456"
+        }
+        #expect(await spy.calls.isEmpty)
+        await store.finish()
+    }
+
+    @Test("検証エラーのアラートは閉じた後に再入力できる")
+    @MainActor
+    func alertDismissalClearsValidationError() async {
+        var state = ResetPasswordFeature.State()
+        state.step = .enterCode
+        state.newPassword1 = "Mismatch123"
+        state.newPassword2 = "Different123"
+        let store = TestStore(initialState: state) {
+            ResetPasswordFeature()
+        } withDependencies: { $0.installTestSpies() }
+
+        await store.send(.enterCode(.okTapped)) {
+            $0.alert = AlertFeature.error("パスワード（確認用）が一致しません")
+        }
+        await store.send(.alert(.dismiss)) {
+            $0.alert = nil
+        }
+        await store.finish()
+    }
+
 }

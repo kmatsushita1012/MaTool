@@ -367,6 +367,57 @@ struct RootFeatureTests {
 
         #expect(await useCase.fetchCallCount() == 2)
     }
+    @Test("起動状態は地図・オンボーディング・エラー表示へ漏れなく変換される")
+    func sceneIsDerivedFromLaunchState() {
+        var state = RootFeature.State()
+        #expect(state.scene == .loading)
+        #expect(state.isAdminLoggedIn == false)
+
+        state.$launchState.withLock { $0 = .onboarding }
+        #expect(state.scene == .onboarding)
+        #expect(state.isAdminLoggedIn == false)
+
+        state.$launchState.withLock { $0 = .festival(.guest) }
+        #expect(state.scene == .map)
+        #expect(state.isAdminLoggedIn == false)
+
+        state.$launchState.withLock { $0 = .district(.district("district"), "route") }
+        #expect(state.scene == .map)
+        #expect(state.isAdminLoggedIn)
+
+        state.$launchState.withLock { $0 = .festival(.headquarter("festival")) }
+        #expect(state.isAdminLoggedIn)
+
+        state.$launchState.withLock { $0 = .error("offline") }
+        #expect(state.scene == .error("offline"))
+        #expect(state.isAdminLoggedIn == false)
+    }
+
+    @Test("AppStateが無いと地図を作らず、町がある場合は町選択を引き継ぐ")
+    func mapStateRespectsAvailableAppState() {
+        let empty = RootFeature.State()
+        #expect(empty.makeMapState(userRole: .guest) == nil)
+
+        let appState = Shared<AppState?>(value: AppStateFixture.state())
+        let state = RootFeature.State(appState: appState)
+        let map = state.makeMapState(userRole: .district("district"), currentRouteId: "route")
+
+        #expect(map != nil)
+        #expect(map?.selectedContent == .route("district"))
+        #expect(map?.userRole == .district("district"))
+    }
+
+    @Test("オンボーディングの状態は起動状態とアプリ情報を共有する")
+    func onboardingStateSharesLaunchState() {
+        let appState = Shared<AppState?>(value: nil)
+        var state = RootFeature.State(appState: appState)
+        let onboarding = state.makeOnboardingState()
+
+        #expect(onboarding.launchState == .loading)
+        state.$launchState.withLock { $0 = .onboarding }
+        #expect(onboarding.launchState == .onboarding)
+    }
+
 }
 
 private struct RootFeatureFixture {
