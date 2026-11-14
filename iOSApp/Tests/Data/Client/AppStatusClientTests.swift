@@ -258,4 +258,30 @@ struct AppStatusClientTests {
         #expect(await client.checkStatus(currentVersion: "2.0.0") == nil)
     }
 
+
+    @Test("HTTP 299は成功範囲の上限として設定を受け入れる")
+    func acceptsHTTP299Boundary() async {
+        let url = AppStatusURLProtocolSpy.makeURL(
+            json: statusJSON(requiredVersion: "3.0.0"), status: 299
+        )
+        let client = AppStatusClient(
+            urlString: url.absoluteString, session: AppStatusURLProtocolSpy.makeSession()
+        )
+
+        #expect(await client.checkStatus(currentVersion: "2.0.0") ==
+                .updateRequired(storeURL: URL(string: "https://apps.apple.com/app/id123")!))
+    }
+
+    @Test("HTTP 199は成功範囲外として設定を拒否する")
+    func rejectsHTTP199Boundary() async {
+        let url = AppStatusURLProtocolSpy.makeURL(
+            json: statusJSON(requiredVersion: "3.0.0"), status: 199
+        )
+        let client = AppStatusClient(
+            urlString: url.absoluteString, session: AppStatusURLProtocolSpy.makeSession()
+        )
+
+        #expect(await client.checkStatus(currentVersion: "2.0.0") == nil)
+    }
+
 }
