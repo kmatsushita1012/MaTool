@@ -80,6 +80,26 @@ struct ImageJPEGProcessingClientTests {
         #expect(ImageJPEGProcessingError.imageTooLarge.errorDescription?.isEmpty == false)
     }
 
+
+    @Test("GIFの単一フレームもJPEGへ変換できる")
+    func convertsGIFToJPEG() throws {
+        let input = try makeImage(width: 32, height: 24, type: .gif)
+        let output = try ImageJPEGProcessingClient().makeJPEG(from: input)
+        let source = CGImageSourceCreateWithData(output as CFData, nil)
+        #expect(source != nil)
+        #expect((source.flatMap { CGImageSourceGetType($0) } as String?) == UTType.jpeg.identifier)
+    }
+
+    @Test("縦横比の上限ちょうどの縦長画像も受け付ける")
+    func acceptsMaximumTallAspectRatio() throws {
+        let input = try makeJPEG(width: 10, height: 100)
+        let output = try ImageJPEGProcessingClient().makeJPEG(from: input)
+        let source = CGImageSourceCreateWithData(output as CFData, nil)
+        let image = source.flatMap { CGImageSourceCreateImageAtIndex($0, 0, nil) }
+        #expect(image?.width == 10)
+        #expect(image?.height == 100)
+    }
+
     private func makeJPEG(width: Int, height: Int) throws -> Data {
         try makeImage(width: width, height: height, type: .jpeg)
     }
