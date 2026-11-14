@@ -33,8 +33,10 @@ struct DistrictEditFeatureTests {
         #expect(store.state.district.area == previousArea)
 
         await store.send(.performanceEditTapped(fixture.performance))
-        await store.send(.destination(.presented(.performance(.deleteTapped))))
-        #expect(store.state.destination?.performance?.alert != nil)
+        await store.send(.destination(.presented(.performance(
+            .binding(.set(\.item.name, "演目を編集中"))
+        ))))
+        #expect(store.state.destination?.performance?.item.name == "演目を編集中")
         #expect(store.state.performances == [fixture.performance])
         await store.finish()
     }

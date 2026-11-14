@@ -92,4 +92,26 @@ struct ChangePasswordFeatureTests {
         }
         await store.finish()
     }
+
+
+    @Test("入力の変更はバインディングで保持し、表示中のエラーを閉じられる")
+    @MainActor
+    func bindingAndAlertDismissal() async {
+        let store = TestStore(initialState: ChangePasswordFeature.State()) {
+            ChangePasswordFeature()
+        } withDependencies: {
+            $0.installTestSpies()
+        }
+
+        await store.send(.binding(.set(\.current, "OldPass123"))) {
+            $0.current = "OldPass123"
+        }
+        await store.send(.okTapped) {
+            $0.alert = AlertFeature.error("パスワードが条件を満たしていません。次の条件を満たしてください。\n 8文字以上 \n 少なくとも 1 つの数字を含む \n 少なくとも 1 つの大文字を含む \n 少なくとも 1 つの小文字を含む")
+        }
+        await store.send(.alert(.dismiss)) {
+            $0.alert = nil
+        }
+        await store.finish()
+    }
 }
