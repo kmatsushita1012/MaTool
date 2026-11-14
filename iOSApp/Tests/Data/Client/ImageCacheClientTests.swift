@@ -84,6 +84,34 @@ struct ImageCacheClientTests {
         ])
     }
 
+
+    @Test("空配列のpreloadでは取得処理を呼び出さない")
+    func emptyBatchDoesNotRetrieve() async {
+        let recorder = ImageRetrievalRecorder()
+        let client = ImageCacheClient { url in await recorder.record(url) }
+
+        await client.preload(paths: [])
+
+        #expect(await recorder.paths().isEmpty)
+    }
+
+    @Test("クエリの異なる画像URLは別の画像として取得する")
+    func distinctQueryParametersAreNotDeduplicated() async {
+        let recorder = ImageRetrievalRecorder()
+        let client = ImageCacheClient { url in await recorder.record(url) }
+
+        await client.preload(paths: [
+            "https://example.com/banner.jpg?version=1",
+            "https://example.com/banner.jpg?version=2",
+            "https://example.com/banner.jpg?version=1"
+        ])
+
+        #expect(await recorder.paths() == [
+            "https://example.com/banner.jpg?version=1",
+            "https://example.com/banner.jpg?version=2"
+        ])
+    }
+
 }
 
 private enum ImageRetrievalFailure: Error {
