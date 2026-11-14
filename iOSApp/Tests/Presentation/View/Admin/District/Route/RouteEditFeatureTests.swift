@@ -21,7 +21,8 @@ struct RouteEditFeatureTests {
                 time: SimpleTime(hour: 10, minute: 0), anchor: .end, index: 1
             )
             let spy = RouteEditSuccessfulSaveSpy()
-            let store = TestStore(initialState: try makeState(mode: mode, points: [last, first])) {
+            let initial = try makeState(mode: mode, points: [last, first])
+            let store = TestStore(initialState: initial) {
                 RouteEditFeature()
             } withDependencies: {
                 $0.installTestSpies()
@@ -42,7 +43,8 @@ struct RouteEditFeatureTests {
     @MainActor
     func successfulRouteDeletionCallsUseCaseExactlyOnce() async throws {
         let spy = RouteEditSuccessfulDeleteSpy()
-        let store = TestStore(initialState: try makeState(mode: .update)) {
+        let initial = try makeState(mode: .update)
+        let store = TestStore(initialState: initial) {
             RouteEditFeature()
         } withDependencies: {
             $0.installTestSpies()
