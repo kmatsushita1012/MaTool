@@ -225,6 +225,7 @@ struct FestivalEditFeatureTests {
         var initial = makeState()
         initial.isImageEditPresented = true
         initial.imageEdit.lightDraft = .uploading(Data([0xFF, 0xD8]))
+        initial.imageEdit.activeUploadID = UUID()
         let store = TestStore(initialState: initial) {
             FestivalEditFeature()
         } withDependencies: { $0.installTestSpies() }

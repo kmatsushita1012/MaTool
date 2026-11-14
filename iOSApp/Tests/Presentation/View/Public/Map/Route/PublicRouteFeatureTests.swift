@@ -1,4 +1,7 @@
+import Clocks
 import ComposableArchitecture
+import Dependencies
+import Foundation
 import MapKit
 import Shared
 import Testing
@@ -19,7 +22,7 @@ struct PublicRouteFeatureTests {
     func playbackActionsRespectCurrentState() async {
         let store = TestStore(initialState: makeState(routeId: "route")) {
             PublicRouteFeature()
-        } withDependencies: { $0.installTestSpies() }
+        } withDependencies: { $0.installPublicRouteTestDependencies() }
 
         await store.send(.didSeek(0.5))
         await store.send(.replayTapped) {
@@ -43,7 +46,7 @@ struct PublicRouteFeatureTests {
         state.isRouteLoading = true
         let store = TestStore(initialState: state) {
             PublicRouteFeature()
-        } withDependencies: { $0.installTestSpies() }
+        } withDependencies: { $0.installPublicRouteTestDependencies() }
         let pack = RoutePack(
             route: AppStateFixture.route(id: "another-route"),
             points: [], passages: []
@@ -63,7 +66,7 @@ struct PublicRouteFeatureTests {
         state.isRouteLoading = true
         let store = TestStore(initialState: state) {
             PublicRouteFeature()
-        } withDependencies: { $0.installTestSpies() }
+        } withDependencies: { $0.installPublicRouteTestDependencies() }
 
         await store.send(.routeLoaded(.success(nil))) {
             $0.isRouteLoading = false
@@ -86,7 +89,7 @@ struct PublicRouteFeatureTests {
     func onAppearShowsNoRouteNotice() async {
         let store = TestStore(initialState: makeState(routeId: nil, routes: [])) {
             PublicRouteFeature()
-        } withDependencies: { $0.installTestSpies() }
+        } withDependencies: { $0.installPublicRouteTestDependencies() }
         store.exhaustivity = .off
 
         await store.send(.onAppear)
@@ -105,7 +108,7 @@ struct PublicRouteFeatureTests {
         )
         let store = TestStore(initialState: makeState(locations: [location])) {
             PublicRouteFeature()
-        } withDependencies: { $0.installTestSpies() }
+        } withDependencies: { $0.installPublicRouteTestDependencies() }
         store.exhaustivity = .off
 
         await store.send(.floatFocusTapped)
@@ -125,7 +128,7 @@ struct PublicRouteFeatureTests {
         let entry = PointEntry(point, checkpoint: nil, performance: nil)
         let store = TestStore(initialState: makeState(routeId: "route")) {
             PublicRouteFeature()
-        } withDependencies: { $0.installTestSpies() }
+        } withDependencies: { $0.installPublicRouteTestDependencies() }
         await store.send(.pointTapped(entry)) {
             $0.detail = .point(entry)
         }
@@ -141,7 +144,7 @@ struct PublicRouteFeatureTests {
         state.isRouteLoading = true
         let store = TestStore(initialState: state) {
             PublicRouteFeature()
-        } withDependencies: { $0.installTestSpies() }
+        } withDependencies: { $0.installPublicRouteTestDependencies() }
         store.exhaustivity = .off
         await store.send(.routeLoaded(.success(RoutePack(route: route, points: [], passages: []))))
         #expect(!store.state.isRouteLoading)
@@ -163,7 +166,7 @@ struct PublicRouteFeatureTests {
         }
         let store = TestStore(initialState: state) {
             PublicRouteFeature()
-        } withDependencies: { $0.installTestSpies() }
+        } withDependencies: { $0.installPublicRouteTestDependencies() }
 
         await store.send(.locationTapped(entry))
         #expect(store.state.selectedRouteId == "route")
@@ -198,7 +201,7 @@ struct PublicRouteFeatureTests {
         let store = TestStore(initialState: makeState()) {
             PublicRouteFeature()
         } withDependencies: {
-            $0.installTestSpies()
+            $0.installPublicRouteTestDependencies()
             $0.mapLocationProvider = provider
         }
         store.exhaustivity = .off
@@ -218,7 +221,7 @@ struct PublicRouteFeatureTests {
         let store = TestStore(initialState: makeState()) {
             PublicRouteFeature()
         } withDependencies: {
-            $0.installTestSpies()
+            $0.installPublicRouteTestDependencies()
             $0.mapLocationProvider = provider
         }
         store.exhaustivity = .off
@@ -237,7 +240,7 @@ struct PublicRouteFeatureTests {
     func absentFloatLocationShowsUnavailableNotice() async {
         let store = TestStore(initialState: makeState()) {
             PublicRouteFeature()
-        } withDependencies: { $0.installTestSpies() }
+        } withDependencies: { $0.installPublicRouteTestDependencies() }
         store.exhaustivity = .off
         let before = store.state.mapRegion
 
@@ -256,7 +259,7 @@ struct PublicRouteFeatureTests {
         state.isRouteLoading = true
         let store = TestStore(initialState: state) {
             PublicRouteFeature()
-        } withDependencies: { $0.installTestSpies() }
+        } withDependencies: { $0.installPublicRouteTestDependencies() }
         store.exhaustivity = .off
         let error = AppError.be(.network("offline"))
 
@@ -277,7 +280,7 @@ struct PublicRouteFeatureTests {
         let store = TestStore(initialState: state) {
             PublicRouteFeature()
         } withDependencies: {
-            $0.installTestSpies()
+            $0.installPublicRouteTestDependencies()
             $0[LoadRouteStateUseCaseKey.self] = spy
         }
         store.exhaustivity = .off
@@ -298,7 +301,7 @@ struct PublicRouteFeatureTests {
         let store = TestStore(initialState: makeState(routeId: "route")) {
             PublicRouteFeature()
         } withDependencies: {
-            $0.installTestSpies()
+            $0.installPublicRouteTestDependencies()
             $0[LoadRouteStateUseCaseKey.self] = spy
         }
         store.exhaustivity = .off
@@ -334,5 +337,13 @@ private actor RouteLoadUseCaseSpy: LoadRouteStateUseCaseProtocol {
     func callAsFunction(routeId: Route.ID, appState: Shared<AppState?>) async throws -> RoutePack? {
         routeIDs.append(routeId)
         return nil
+    }
+}
+
+private extension DependencyValues {
+    mutating func installPublicRouteTestDependencies() {
+        installTestSpies()
+        continuousClock = TestClock()
+        date.now = Date(timeIntervalSince1970: 0)
     }
 }

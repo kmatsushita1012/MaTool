@@ -1,4 +1,6 @@
+import Clocks
 import ComposableArchitecture
+import Dependencies
 import MapKit
 import Shared
 import Testing
@@ -72,12 +74,15 @@ struct PublicLocationsFeatureTests {
         let store = TestStore(initialState: fixture.makeState()) {
             PublicLocationsFeature()
         } withDependencies: {
-            $0.installTestSpies()
+            $0.installPublicLocationsTestDependencies()
             $0[FetchLocationUseCaseKey.self] = spy
         }
 
+        store.exhaustivity = .off
         await store.send(.reloadTapped)
         await store.receive(.reloadReceived(.success([])))
+        #expect(store.state.mapRegion.center.latitude == 35)
+        #expect(store.state.mapRegion.center.longitude == 139)
         #expect(await spy.festivalIDs == [fixture.festival.id])
         await store.finish()
     }
@@ -109,7 +114,7 @@ struct PublicLocationsFeatureTests {
         let entry = try #require(state.floats.first)
         let store = TestStore(initialState: state) {
             PublicLocationsFeature()
-        } withDependencies: { $0.installTestSpies() }
+        } withDependencies: { $0.installPublicLocationsTestDependencies() }
         store.exhaustivity = .off
 
         await store.send(.floatFocusSelected(entry))
@@ -128,7 +133,7 @@ struct PublicLocationsFeatureTests {
         let store = TestStore(initialState: fixture.makeState()) {
             PublicLocationsFeature()
         } withDependencies: {
-            $0.installTestSpies()
+            $0.installPublicLocationsTestDependencies()
             $0.mapLocationProvider = spy
         }
         store.exhaustivity = .off
@@ -147,7 +152,7 @@ struct PublicLocationsFeatureTests {
         let fixture = LocationMapFixture(locations: [])
         let store = TestStore(initialState: fixture.makeState()) {
             PublicLocationsFeature()
-        } withDependencies: { $0.installTestSpies() }
+        } withDependencies: { $0.installPublicLocationsTestDependencies() }
         store.exhaustivity = .off
 
         let error = AppError.be(.network("offline"))
@@ -166,7 +171,7 @@ struct PublicLocationsFeatureTests {
         let store = TestStore(initialState: fixture.makeState()) {
             PublicLocationsFeature()
         } withDependencies: {
-            $0.installTestSpies()
+            $0.installPublicLocationsTestDependencies()
             $0.mapLocationProvider = spy
         }
         store.exhaustivity = .off
@@ -185,7 +190,7 @@ struct PublicLocationsFeatureTests {
         let fixture = LocationMapFixture(locations: [])
         let store = TestStore(initialState: fixture.makeState()) {
             PublicLocationsFeature()
-        } withDependencies: { $0.installTestSpies() }
+        } withDependencies: { $0.installPublicLocationsTestDependencies() }
         store.exhaustivity = .off
 
         #expect(store.state.toast != nil)
@@ -207,7 +212,7 @@ struct PublicLocationsFeatureTests {
         let entry = try #require(state.floats.first)
         let store = TestStore(initialState: state) {
             PublicLocationsFeature()
-        } withDependencies: { $0.installTestSpies() }
+        } withDependencies: { $0.installPublicLocationsTestDependencies() }
         let before = store.state.mapRegion
 
         await store.send(.floatTapped(entry))
@@ -271,4 +276,11 @@ private actor LocationsMapLocationSpy: MapLocationProviderProtocol {
         return result
     }
     var isTracking: Bool { get async { false } }
+}
+
+private extension DependencyValues {
+    mutating func installPublicLocationsTestDependencies() {
+        installTestSpies()
+        continuousClock = TestClock()
+    }
 }

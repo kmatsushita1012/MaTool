@@ -140,11 +140,12 @@ struct PublicMapFeatureTests {
     func onAppearStartsLocationAndAdSession() async {
         let location = MapLocationProviderSpy()
         let ad = PublicMapAdUsecaseSpy()
-        let store = TestStore(initialState: PublicMapFeature.State(
+        let initial = PublicMapFeature.State(
             festival: AppStateFixture.festival(),
             userRole: .guest,
             appState: Shared(value: AppStateFixture.state())
-        )) {
+        )
+        let store = TestStore(initialState: initial) {
             PublicMapFeature()
         } withDependencies: {
             $0.installTestSpies()

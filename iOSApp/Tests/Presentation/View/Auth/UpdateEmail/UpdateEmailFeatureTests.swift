@@ -189,4 +189,20 @@ struct UpdateEmailFeatureTests {
         await store.finish()
     }
 
+    @Test("メール変更完了の確認は成功通知を閉じて親画面へ戻る")
+    @MainActor
+    func confirmationAlertClosesFeature() async {
+        var state = UpdateEmailFeature.State()
+        state.completeAlert = AlertFeature.success("メールアドレスが変更されました")
+        let store = TestStore(initialState: state) {
+            UpdateEmailFeature()
+        } withDependencies: { $0.installTestSpies() }
+
+        await store.send(.completeAlert(.dismiss)) {
+            $0.completeAlert = nil
+        }
+        #expect(store.state.completeAlert == nil)
+        await store.finish()
+    }
+
 }

@@ -266,6 +266,39 @@ struct HeadquarterDistrictDetailFeatureTests {
         await store.finish()
     }
 
+
+    @Test("経路プレビュー内の修正完了で未保存のRouteと点・通過町をドラフトに保持する")
+    @MainActor
+    func routeModificationStoresDraftWithoutSavingToServer() async throws {
+        let route = AppStateFixture.route()
+        let point = Point(
+            id: "point-1", routeId: route.id,
+            coordinate: Coordinate(latitude: 35.1, longitude: 139.1)
+        )
+        let passage = RoutePassage(
+            id: "passage-1", routeId: route.id, districtId: "district", order: 0
+        )
+        let draft = RouteDraft(route: route, points: [point], passages: [passage])
+        let appState = Shared<AppState?>(value: AppStateFixture.state())
+        var initial = HeadquarterDistrictDetailFeature.State(
+            AppStateFixture.district(), appState: appState
+        )
+        initial.destination = .route(try RouteEditFeature.State(
+            mode: .preview, draft: draft, appState: appState
+        ))
+        let store = TestStore(initialState: initial) {
+            HeadquarterDistrictDetailFeature()
+        } withDependencies: { $0.installTestSpies() }
+        store.exhaustivity = .off
+
+        await store.send(.destination(.presented(.route(.modified(.success)))))
+        let savedDraft = try #require(store.state.routeDrafts[route.id])
+        #expect(savedDraft.route.id == route.id)
+        #expect(savedDraft.points.map(\.id) == ["point-1"])
+        #expect(savedDraft.passages.map(\.id) == ["passage-1"])
+        await store.finish()
+    }
+
     private func makeState() -> HeadquarterDistrictDetailFeature.State {
         HeadquarterDistrictDetailFeature.State(
             AppStateFixture.district(),

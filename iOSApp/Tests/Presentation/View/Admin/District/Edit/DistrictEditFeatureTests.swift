@@ -229,6 +229,7 @@ struct DistrictEditFeatureTests {
         var initial = try DistrictEditFeature.State(fixture.district, appState: fixture.appState)
         initial.isImageEditPresented = true
         initial.imageEdit.lightDraft = .uploading(Data([0xFF, 0xD8]))
+        initial.imageEdit.activeUploadID = UUID()
         let store = TestStore(initialState: initial) {
             DistrictEditFeature()
         } withDependencies: { $0.installTestSpies() }
@@ -244,6 +245,7 @@ struct DistrictEditFeatureTests {
         let fixture = DistrictEditFixture()
         var initial = try DistrictEditFeature.State(fixture.district, appState: fixture.appState)
         initial.imageEdit.darkDraft = .uploading(Data([0xFF, 0xD8]))
+        initial.imageEdit.activeUploadID = UUID()
         let spy = SaveDistrictPackUseCaseSpy()
         let store = TestStore(initialState: initial) {
             DistrictEditFeature()

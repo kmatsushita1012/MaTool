@@ -328,9 +328,8 @@ struct RouteEditFeatureTests {
         await store.send(.passageInsertAboveTapped(0)) {
             $0.passageInsertIndex = 0
         }
-        await store.send(.passageInsertBelowTapped(100)) {
-            $0.passageInsertIndex = 0
-        }
+        await store.send(.passageInsertBelowTapped(100))
+        #expect(store.state.passageInsertIndex == 0)
         await store.finish()
     }
 
