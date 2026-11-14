@@ -295,4 +295,58 @@ struct OnboardingFeatureTests {
         await store.finish()
     }
 
+    @Test("祭典の選択Bindingは選択した祭典IDをUseCaseへ渡し、保存失敗で待機状態を解除する")
+    @MainActor
+    func festivalSelectionFailurePropagatesFromUseCase() async {
+        let error = AppError.be(.network("festival unavailable"))
+        let spy = SelectFestivalUseCaseSpy(error: error)
+        let festival = AppStateFixture.festival()
+        let store = TestStore(initialState: OnboardingFeature.State(
+            launchState: Shared(value: .onboarding),
+            appState: Shared<AppState?>(value: nil)
+        )) { OnboardingFeature() } withDependencies: {
+            $0.installTestSpies()
+            $0[SelectFestivalUseCaseKey.self] = spy
+        }
+
+        await store.send(.binding(.set(\.selectedFestival, festival))) {
+            $0.selectedFestival = festival
+            $0.isFestivalLoading = true
+        }
+        await store.receive(.festivalDidSet(.failure(error))) {
+            $0.isFestivalLoading = false
+        }
+        #expect(await spy.festivalIDs == [festival.id])
+        await store.finish()
+    }
+
+    @Test("選択祭典に属する地区はUseCaseに正しい地区IDを渡す")
+    @MainActor
+    func matchingDistrictStartsDistrictSelection() async {
+        let error = AppError.be(.network("district unavailable"))
+        let spy = SelectDistrictUseCaseSpy(error: error)
+        let festival = AppStateFixture.festival()
+        let district = AppStateFixture.district(id: "valid-district")
+        var state = OnboardingFeature.State(
+            launchState: Shared(value: .onboarding),
+            appState: Shared<AppState?>(value: nil)
+        )
+        state.selectedFestival = festival
+        let store = TestStore(initialState: state) {
+            OnboardingFeature()
+        } withDependencies: {
+            $0.installTestSpies()
+            $0[SelectDistrictUseCaseKey.self] = spy
+        }
+
+        await store.send(.districtSelected(district)) {
+            $0.isDistrictLoading = true
+        }
+        await store.receive(.districtDidSet(.failure(error))) {
+            $0.isDistrictLoading = false
+        }
+        #expect(await spy.districtIDs == [district.id])
+        await store.finish()
+    }
+
 }

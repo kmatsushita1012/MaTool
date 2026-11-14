@@ -1,3 +1,4 @@
+import Dependencies
 import Foundation
 import Testing
 @testable import iOSApp
@@ -110,6 +111,21 @@ struct ImageCacheClientTests {
             "https://example.com/banner.jpg?version=1",
             "https://example.com/banner.jpg?version=2"
         ])
+    }
+
+    @Test("DependencyValuesから差し替えた画像キャッシュ実装を取得して利用できる")
+    func resolvesInjectedCacheClient() async {
+        let recorder = ImageRetrievalRecorder()
+        let client = ImageCacheClient { url in await recorder.record(url) }
+
+        await withDependencies {
+            $0.imageCacheClient = client
+        } operation: {
+            @Dependency(\.imageCacheClient) var resolvedClient
+            await resolvedClient.preload(paths: ["https://example.com/injected.jpg"])
+        }
+
+        #expect(await recorder.paths() == ["https://example.com/injected.jpg"])
     }
 
 }

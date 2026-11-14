@@ -1,3 +1,4 @@
+import Dependencies
 import Foundation
 import PhotosUI
 import SwiftUI
@@ -38,6 +39,21 @@ struct PhotoLibraryClientTests {
                 from: PhotosPickerItem(itemIdentifier: "unavailable-photo")
             )
         }
+    }
+
+    @Test("DependencyValuesに差し替えたPhotosPickerローダーを通してデータを取得する")
+    func resolvesInjectedPhotoLibraryClient() async throws {
+        let client = PhotoLibraryClient { _ in Data([0xAB, 0xCD]) }
+        let data = try await withDependencies {
+            $0.photoLibraryClient = client
+        } operation: {
+            @Dependency(\.photoLibraryClient) var resolvedClient
+            return try await resolvedClient.loadImageData(
+                from: PhotosPickerItem(itemIdentifier: "injected-photo")
+            )
+        }
+
+        #expect(data == Data([0xAB, 0xCD]))
     }
 
 }
