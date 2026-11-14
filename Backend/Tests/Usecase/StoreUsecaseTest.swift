@@ -144,6 +144,222 @@ struct StoreUsecaseTest {
         #expect(storedStore.createdAt == existing.createdAt)
     }
 
+    @Test("広告主以外のユーザーは所有店舗一覧を取得できない")
+    func nonAdvertisersCannotAccessStoreOperations() async {
+        let repository = StoreRepositorySpy()
+        for user in [UserRole.guest, .district("district-1")] {
+            do {
+                _ = try await withDependencies {
+                    $0[StoreRepositoryKey.self] = repository
+                } operation: {
+                    try await StoreUsecase().storesOwned(by: user)
+                }
+                Issue.record("非広告主が所有店舗を取得できた")
+            } catch {
+                #expect((error as? Application.Error)?.localizedDescription == "広告主としてログインしてください。")
+            }
+        }
+    }
+
+    @Test("登録フォームの入力は前後空白を除去して保存し、広告主IDはログイン情報から決定する")
+    func createsSanitizedStore() async throws {
+        let repository = StoreRepositorySpy()
+        let festival = Festival(
+            id: "festival-1", name: "Festival", subname: "",
+            base: Coordinate(latitude: 35, longitude: 139)
+        )
+        let created = try await withDependencies {
+            $0[StoreRepositoryKey.self] = repository
+            $0[FestivalRepositoryKey.self] = FestivalRepositorySpy(festivals: [festival])
+            $0[AdvertisingEnvironmentKey.self] = AdvertisingEnvironment(environment: [:])
+        } operation: {
+            try await StoreUsecase().create(
+                festivalId: festival.id,
+                request: StoreCreateRequest(
+                    name: "  Cafe  ", address: nil, businessHours: "  9-17  ", description: "  "
+                ),
+                user: .advertiser("owner-1")
+            )
+        }
+
+        #expect(created.name == "Cafe")
+        #expect(created.ownerId == "owner-1")
+        #expect(created.address == nil)
+        #expect(created.description == nil)
+        #expect(created.businessHours == "9-17")
+        #expect(await repository.snapshot()?.id == created.id)
+    }
+
+    @Test("店舗名が空白だけの場合はRepoへ新規保存せず入力エラーを返す")
+    func invalidStoreNameIsRejectedBeforePersisting() async {
+        let repo = StoreRepositorySpy()
+        do {
+            try await withDependencies {
+                $0[StoreRepositoryKey.self] = repo
+            } operation: {
+                _ = try await StoreUsecase().create(
+                    festivalId: "festival-1",
+                    request: StoreCreateRequest(name: "  ", businessHours: ""),
+                    user: .advertiser("owner-1")
+                )
+            }
+            Issue.record("空の店舗名が保存された")
+        } catch {
+            #expect((error as? Application.Error)?.localizedDescription == "店舗情報が不正です。")
+        }
+        #expect(await repo.snapshot() == nil)
+    }
+
+    @Test("広告主あたりの店舗数上限を超える新規作成を拒否する")
+    func maximumStoreCountIsEnforced() async {
+        let existing = Store(
+            id: "store-existing",
+            festivalId: "festival-1",
+            ownerId: "owner-1",
+            purchaseAccountToken: UUID(),
+            name: "Existing",
+            businessHours: ""
+        )
+        let repo = StoreRepositorySpy(store: existing)
+        let festival = Festival(
+            id: "festival-1", name: "Festival", subname: "",
+            base: Coordinate(latitude: 35, longitude: 139)
+        )
+        do {
+            try await withDependencies {
+                $0[StoreRepositoryKey.self] = repo
+                $0[FestivalRepositoryKey.self] = FestivalRepositorySpy(festivals: [festival])
+                $0[AdvertisingEnvironmentKey.self] = AdvertisingEnvironment(environment: [
+                    "ADVERTISEMENT_MAX_STORES_PER_OWNER": "1"
+                ])
+            } operation: {
+                _ = try await StoreUsecase().create(
+                    festivalId: "festival-1",
+                    request: StoreCreateRequest(name: "New", businessHours: "10-18"),
+                    user: .advertiser("owner-1")
+                )
+            }
+            Issue.record("上限超過の店舗登録が許可された")
+        } catch {
+            #expect((error as? Application.Error)?.localizedDescription == "登録できる店舗数の上限に達しています。")
+        }
+        #expect(await repo.snapshot()?.id == existing.id)
+    }
+
+    @Test("店舗更新URLと送信した店舗IDが異なる場合はデータを更新しない")
+    func putRejectsMismatchedStoreID() async {
+        let stored = Store(
+            id: "store-1", festivalId: "festival-1", ownerId: "owner-1",
+            purchaseAccountToken: UUID(), name: "Cafe", businessHours: ""
+        )
+        let repo = StoreRepositorySpy(store: stored)
+        do {
+            try await withDependencies {
+                $0[StoreRepositoryKey.self] = repo
+            } operation: {
+                _ = try await StoreUsecase().put(
+                    id: "other-store", request: stored, user: .advertiser("owner-1")
+                )
+            }
+            Issue.record("URLとデータの店舗ID不一致が受け入れられた")
+        } catch {
+            #expect((error as? Application.Error)?.localizedDescription == "URLの店舗IDと送信データの店舗IDが一致しません。")
+        }
+        #expect(await repo.snapshot()?.id == stored.id)
+    }
+
+
+    @Test("本人の店舗は直接取得でき、他人の店舗IDは存在を漏らさない")
+    func getStoreChecksAuthenticatedOwner() async throws {
+        let stored = Store(
+            id: "store-1", festivalId: "festival-1", ownerId: "owner-1",
+            purchaseAccountToken: UUID(), name: "Cafe", businessHours: ""
+        )
+        let repository = StoreRepositorySpy(store: stored)
+        let actual = try await withDependencies {
+            $0[StoreRepositoryKey.self] = repository
+        } operation: {
+            try await StoreUsecase().get(id: stored.id, user: .advertiser(stored.ownerId))
+        }
+        #expect(actual == stored)
+
+        await #expect(throws: Error.notFound("指定された店舗が見つかりません。")) {
+            try await withDependencies {
+                $0[StoreRepositoryKey.self] = repository
+            } operation: {
+                try await StoreUsecase().get(id: stored.id, user: .advertiser("other-owner"))
+            }
+        }
+    }
+
+    @Test("管理される店舗所有者情報を改ざんした更新リクエストは拒否する")
+    func putRejectsServerOwnedFieldTampering() async {
+        let original = Store(
+            id: "store-1", festivalId: "festival-1", ownerId: "owner-1",
+            purchaseAccountToken: UUID(), name: "Cafe", businessHours: ""
+        )
+        let altered = Store(
+            id: original.id, festivalId: original.festivalId, ownerId: "other-owner",
+            purchaseAccountToken: original.purchaseAccountToken,
+            name: "Cafe", businessHours: ""
+        )
+        let repository = StoreRepositorySpy(store: original)
+        await #expect(throws: Error.badRequest("サーバー管理項目は変更できません。")) {
+            try await withDependencies {
+                $0[StoreRepositoryKey.self] = repository
+            } operation: {
+                try await StoreUsecase().put(
+                    id: original.id, request: altered, user: .advertiser(original.ownerId)
+                )
+            }
+        }
+        #expect(await repository.snapshot() == original)
+    }
+
+    @Test("掲載停止中の店舗は画像の差し替えを拒否する")
+    func suspendedStoreCannotReplaceImages() async {
+        let original = Store(
+            id: "store-1", festivalId: "festival-1", ownerId: "owner-1",
+            purchaseAccountToken: UUID(), name: "Cafe", businessHours: "",
+            bannerImagePath: "old.jpg", moderationStatus: .suspended
+        )
+        let changed = Store(
+            id: original.id, festivalId: original.festivalId, ownerId: original.ownerId,
+            purchaseAccountToken: original.purchaseAccountToken,
+            name: original.name, businessHours: original.businessHours,
+            bannerImagePath: "new.jpg", moderationStatus: .suspended
+        )
+        let repository = StoreRepositorySpy(store: original)
+        await #expect(throws: Error.forbidden("掲載停止中は広告画像を変更できません。")) {
+            try await withDependencies {
+                $0[StoreRepositoryKey.self] = repository
+            } operation: {
+                try await StoreUsecase().put(
+                    id: original.id, request: changed, user: .advertiser(original.ownerId)
+                )
+            }
+        }
+        #expect(await repository.snapshot() == original)
+    }
+
+    @Test("公開店舗は一時停止中でも存在を返し、画像だけを非公開とする")
+    func publicStoresRedactImagesWhilePaused() async throws {
+        let paused = Store(
+            id: "store-1", festivalId: "festival-1", ownerId: "owner-1",
+            purchaseAccountToken: UUID(), name: "Cafe", businessHours: "",
+            bannerImagePath: "banner.jpg", ownerPaused: true
+        )
+        let result = try await withDependencies {
+            $0[StoreRepositoryKey.self] = StoreRepositorySpy(store: paused)
+        } operation: {
+            try await StoreUsecase().publicStores(in: paused.festivalId)
+        }
+
+        #expect(result.count == 1)
+        #expect(result.first?.id == paused.id)
+        #expect(result.first?.bannerImagePath == nil)
+    }
+
     private func decodeStoreResponse(_ body: String) throws -> Store {
         let decoder = JSONDecoder()
         decoder.dateDecodingStrategy = .secondsSince1970

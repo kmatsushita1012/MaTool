@@ -13,9 +13,10 @@ protocol ImpressionUsecaseProtocol: Sendable {
 struct ImpressionUsecase: ImpressionUsecaseProtocol {
     @Dependency(StoreRepositoryKey.self) var stores
     @Dependency(ImpressionRepositoryKey.self) var impressions
+    @Dependency(\.advertisingEnvironment) var advertisingEnvironment
 
     func report(_ request: ImpressionReportRequest) async throws {
-        let payload = try ImpressionToken().verify(request.impressionToken)
+        let payload = try ImpressionToken(secret: advertisingEnvironment.impressionTokenSecret).verify(request.impressionToken)
         guard payload.impressionId == request.impressionId else { throw Error.badRequest("表示実績 token の対象が一致しません。") }
         guard let store = try await stores.get(id: payload.storeId, festivalId: payload.festivalId, consistentRead: true) else {
             throw Error.notFound("表示対象の店舗が見つかりません。")

@@ -447,7 +447,7 @@ struct RootFeature {
     }
 
     @discardableResult
-    private func setAdminDestination(state: inout State, userRole: UserRole) -> Bool {
+    func setAdminDestination(state: inout State, userRole: UserRole) -> Bool {
         switch userRole {
         case .headquarter(let festivalId):
             guard let festival = state.appState?.festivalState.festival,

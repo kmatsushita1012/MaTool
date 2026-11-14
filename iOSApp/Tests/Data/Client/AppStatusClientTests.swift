@@ -284,4 +284,18 @@ struct AppStatusClientTests {
         #expect(await client.checkStatus(currentVersion: "2.0.0") == nil)
     }
 
+    @Test("初回取得に成功した設定はセッション無効化後も再利用できる")
+    func successfulFetchIsCachedForSubsequentChecks() async {
+        let session = AppStatusURLProtocolSpy.makeSession()
+        let url = AppStatusURLProtocolSpy.makeURL(json: statusJSON(requiredVersion: "4.0.0"))
+        let client = AppStatusClient(urlString: url.absoluteString, session: session)
+
+        #expect(await client.checkStatus(currentVersion: "3.0.0") ==
+                .updateRequired(storeURL: URL(string: "https://apps.apple.com/app/id123")!))
+        session.invalidateAndCancel()
+        #expect(await client.checkStatus(currentVersion: "4.0.0") == nil)
+        #expect(await client.checkStatus(currentVersion: "3.0.0") ==
+                .updateRequired(storeURL: URL(string: "https://apps.apple.com/app/id123")!))
+    }
+
 }
