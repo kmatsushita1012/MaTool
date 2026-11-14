@@ -41,7 +41,6 @@ let package = Package(
             name: "BackendTests",
             dependencies: [
                 "Backend",
-                .product(name: "AWSLambdaEvents", package: "swift-aws-lambda-events"),
                 .product(name: "CasePaths", package: "swift-case-paths"),
                 .product(name: "DependenciesTestSupport", package: "swift-dependencies"),
                 .product(name: "AWSCognitoIdentityProvider", package: "aws-sdk-swift"),
