@@ -1,5 +1,4 @@
 import Dependencies
-import Clocks
 import Foundation
 import Shared
 import Testing
@@ -45,7 +44,7 @@ struct StoreAdImpressionQueueClientTests {
             .success,
             .success
         ])
-        let clock = TestClock()
+        let clock = ContinuousClock()
         let first = ImpressionReportRequest(impressionId: "impression-1", impressionToken: "token-1")
         let second = ImpressionReportRequest(impressionId: "impression-2", impressionToken: "token-2")
         let queue = withDependencies {
@@ -61,16 +60,12 @@ struct StoreAdImpressionQueueClientTests {
         } operation: {
             await queue.enqueue(first)
             await fetcher.waitForReportCount(1)
-            await clock.advance(by: .seconds(1))
             await fetcher.waitForReportCount(2)
-            await clock.advance(by: .seconds(2))
             await fetcher.waitForReportCount(3)
-            await clock.advance(by: .seconds(4))
             await fetcher.waitForReportCount(4)
             #expect(await fetcher.reportCount() == 4)
 
             await queue.enqueue(second)
-            await clock.advance(by: .seconds(8))
             await fetcher.waitForReportCount(6)
         }
 
@@ -113,12 +108,41 @@ struct StoreAdImpressionQueueClientTests {
         #expect(await fetcher.maximumConcurrentReports == 1)
     }
 
+    @Test("恒久的なクライアントエラーは破棄し、後続のimpressionを送信する")
+    func dropsPermanentFailureAndContinuesWithNextRequest() async {
+        let fetcher = StoreAdDataFetcherSpy(impressionOutcomes: [
+            .failure(AppError(statusCode: 400, message: "Invalid token")),
+            .success
+        ])
+        let first = ImpressionReportRequest(impressionId: "impression-invalid", impressionToken: "expired-token")
+        let second = ImpressionReportRequest(impressionId: "impression-next", impressionToken: "valid-token")
+        let queue = withDependencies {
+            $0[StoreAdDataFetcherKey.self] = fetcher
+        } operation: {
+            StoreAdImpressionQueueClient()
+        }
+
+        await withDependencies {
+            $0[StoreAdDataFetcherKey.self] = fetcher
+        } operation: {
+            await queue.enqueue(first)
+            await queue.enqueue(second)
+            await fetcher.waitForReportCount(2)
+        }
+
+        let reports = await fetcher.reportedImpressions
+        #expect(reports.map(\.impressionId) == [first.impressionId, second.impressionId])
+    }
+
     @Test("再送可能なerrorだけを有限回再試行する")
     func retriesOnlyTransientErrorsAndStopsAtLimit() {
         #expect(StoreAdImpressionQueueClient.isRetryable(AppError(statusCode: 429, message: "Too Many Requests")))
         #expect(StoreAdImpressionQueueClient.isRetryable(AppError(statusCode: 500, message: "Internal Server Error")))
         #expect(StoreAdImpressionQueueClient.isRetryable(AppError.be(.network("offline"))))
+        #expect(StoreAdImpressionQueueClient.isRetryable(AppError.be(.timeout("request timed out"))))
+        #expect(StoreAdImpressionQueueClient.isRetryable(AppError(statusCode: 408, message: "Request Timeout")))
         #expect(!StoreAdImpressionQueueClient.isRetryable(AppError(statusCode: 401, message: "Unauthorized")))
+        #expect(!StoreAdImpressionQueueClient.isRetryable(AppError(statusCode: 404, message: "Not Found")))
         #expect(StoreAdImpressionQueueClient.retryDelay(consecutiveFailureCount: 1) == .seconds(1))
         #expect(StoreAdImpressionQueueClient.retryDelay(consecutiveFailureCount: 2) == .seconds(2))
         #expect(StoreAdImpressionQueueClient.retryDelay(consecutiveFailureCount: 3) == .seconds(4))

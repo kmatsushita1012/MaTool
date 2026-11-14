@@ -107,7 +107,7 @@ actor StoreAdImpressionQueueClient: StoreAdImpressionQueueClientProtocol {
         case .be(.network), .be(.timeout):
             return true
         case .be(.server(let statusCode, _)):
-            return statusCode == 429 || (500...599).contains(statusCode)
+            return statusCode == 408 || statusCode == 429 || (500...599).contains(statusCode)
         default:
             return false
         }
