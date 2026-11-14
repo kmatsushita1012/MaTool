@@ -109,4 +109,61 @@ struct ImpressionRepositoryTest {
         #expect(dataStore.lastTransaction == nil)
     }
 
+    @Test("トランザクションが失敗し残高が不変ならDB障害を握りつぶさずに伝播する")
+    func unchangedCreditAfterWriteFailurePropagatesError() async {
+        let dataStore = DataStoreMock(
+            getHandler: { _, _ in nil },
+            transactWriteHandler: { _ in throw TestError.intentional }
+        )
+        let credits = CreditRepositorySpy(account: CreditAccount(storeId: "store-1", balance: 10))
+
+        await #expect(throws: TestError.intentional) {
+            try await withDependencies {
+                $0.dataStoreFactory = { _ in dataStore }
+                $0[CreditRepositoryKey.self] = credits
+            } operation: {
+                try await ImpressionRepository().charge(
+                    impressionId: "impression-conflict",
+                    storeId: "store-1",
+                    placement: .banner,
+                    chargedAt: Date()
+                )
+            }
+        }
+        #expect(dataStore.lastTransaction?.count == 2)
+    }
+
+    @Test("残高競合が発生した場合は最新残高を読み直して条件付き書き込みを再試行する")
+    func changedCreditAfterWriteFailureIsRetried() async throws {
+        let credits = CreditRepositorySpy(account: CreditAccount(storeId: "store-1", balance: 10))
+        var attempts = 0
+        let dataStore = DataStoreMock(
+            getHandler: { _, _ in nil },
+            transactWriteHandler: { _ in
+                attempts += 1
+                if attempts == 1 {
+                    await credits.set(CreditAccount(storeId: "store-1", balance: 9))
+                    throw TestError.intentional
+                }
+            }
+        )
+
+        let result = try await withDependencies {
+            $0.dataStoreFactory = { _ in dataStore }
+            $0[CreditRepositoryKey.self] = credits
+        } operation: {
+            try await ImpressionRepository().charge(
+                impressionId: "impression-retry",
+                storeId: "store-1",
+                placement: .banner,
+                chargedAt: Date()
+            )
+        }
+
+        #expect(result == .charged)
+        #expect(attempts == 2)
+        #expect(dataStore.lastTransaction?.count == 2)
+    }
+
+
 }

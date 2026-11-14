@@ -144,11 +144,16 @@ struct StoreUsecaseTest {
         #expect(storedStore.createdAt == existing.createdAt)
     }
 
-    @Test("広告主以外のユーザーは店舗の取得と作成を実行できない")
+    @Test("広告主以外のユーザーは所有店舗一覧を取得できない")
     func nonAdvertisersCannotAccessStoreOperations() async {
+        let repository = StoreRepositorySpy()
         for user in [UserRole.guest, .district("district-1")] {
             do {
-                _ = try await StoreUsecase().storesOwned(by: user)
+                _ = try await withDependencies {
+                    $0[StoreRepositoryKey.self] = repository
+                } operation: {
+                    try await StoreUsecase().storesOwned(by: user)
+                }
                 Issue.record("非広告主が所有店舗を取得できた")
             } catch {
                 #expect((error as? Application.Error)?.localizedDescription == "広告主としてログインしてください。")
@@ -171,7 +176,7 @@ struct StoreUsecaseTest {
             try await StoreUsecase().create(
                 festivalId: festival.id,
                 request: StoreCreateRequest(
-                    name: "  Cafe  ", address: "  ", businessHours: "  9-17  ", description: "  "
+                    name: "  Cafe  ", address: nil, businessHours: "  9-17  ", description: "  "
                 ),
                 user: .advertiser("owner-1")
             )
