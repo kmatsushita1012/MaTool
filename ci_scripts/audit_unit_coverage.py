@@ -50,7 +50,7 @@ def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--input", required=True, type=Path)
     parser.add_argument("--manifest", required=True, type=Path)
-    parser.add_argument("--full-line-manifest", type=Path, help="Paths requiring measured 100% line coverage")
+    parser.add_argument("--full-line-manifest", type=Path, help="Paths requiring measured 100%% line coverage")
     parser.add_argument("--scope", required=True, choices=("backend", "ios"))
     parser.add_argument("--output", required=True, type=Path)
     parser.add_argument("--strict", action="store_true")
