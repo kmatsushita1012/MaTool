@@ -99,4 +99,30 @@ struct EnvironmentTests {
         #expect(selected.cognitoPoolId == "stub-pool")
         #expect(selected.cognitoTestEmail == "stub@example.com")
     }
+    @Test("引用符の無い値と空の引用符は正確に返し、一文字だけの引用符は削除しない")
+    func parsesEmptyAndUnpairedQuotedValues() {
+        let content = """
+        EMPTY = ""
+        SINGLE = '
+        BARE = https://example.com/path?x=y
+        MISMATCH = 'unclosed"
+        """
+        #expect(Environment.value(for: "EMPTY", in: content) == "")
+        #expect(Environment.value(for: "SINGLE", in: content) == "'")
+        #expect(Environment.value(for: "BARE", in: content) == "https://example.com/path?x=y")
+        #expect(Environment.value(for: "MISMATCH", in: content) == "'unclosed\"")
+    }
+
+    @Test("キーの前方一致やコメントに含まれる設定値を誤認しない")
+    func parsesExactKeysOnly() {
+        let content = """
+        # TARGET = should-ignore
+        TARGET_SUFFIX = should-ignore
+        TARGET = actual
+        """
+        #expect(Environment.value(for: "TARGET", in: content) == "actual")
+        #expect(Environment.value(for: "TARGET_SUFFIX", in: content) == "should-ignore")
+        #expect(Environment.value(for: "NON_EXISTENT", in: content) == nil)
+    }
+
 }

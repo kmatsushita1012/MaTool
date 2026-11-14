@@ -99,7 +99,7 @@ struct FestivalEditFeature {
                 }
             case .cancelTapped:
                 state.isImageEditPresented = false
-                return .merge(.send(.imageEdit(.reset)), .dismiss)
+                return .concatenate(.send(.imageEdit(.reset)), .dismiss)
             case .imageEditTapped:
                 guard !state.isLoading else { return .none }
                 state.isImageEditPresented = true
@@ -122,7 +122,7 @@ struct FestivalEditFeature {
             case .putReceived(.success):
                 state.isLoading = false
                 state.isImageEditPresented = false
-                return .merge(.send(.imageEdit(.reset)), .dismiss)
+                return .concatenate(.send(.imageEdit(.reset)), .dismiss)
             case .onCheckpointEdit(let item):
                 state.destination = .checkpoint(
                     CheckpointEditFeature.State(

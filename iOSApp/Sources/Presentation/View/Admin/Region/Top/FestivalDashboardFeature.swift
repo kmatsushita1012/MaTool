@@ -143,7 +143,6 @@ struct FestivalDashboardFeature {
                 state.isAuthLoading = false
                 return .none
             case .destination(.presented(.edit(.putReceived(.success)))):
-                state.destination = nil
                 return .none
             case .destination(.presented(.changePassword(.received(.success)))):
                 state.destination = nil

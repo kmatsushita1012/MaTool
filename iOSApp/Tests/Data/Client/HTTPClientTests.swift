@@ -78,6 +78,79 @@ struct HTTPClientTests {
         #expect(object["timestamp"] == expected.timeIntervalSince1970)
     }
 
+
+    @Test("GETのクエリは文字列・整数・小数・BoolだけをURLにシリアライズする")
+    func queryParametersAreEncodedBySupportedType() async throws {
+        let (client, _) = makeClient()
+        let _: Payload = try await client.get(path: "/routes", query: [
+            "name": "町名", "count": 3, "ratio": 1.5,
+            "enabled": true, "ignored": ["unhandled"]
+        ])
+
+        let request = try #require(CacheTestURLProtocol.recordedRequests().first)
+        let url = try #require(request.url)
+        let components = try #require(URLComponents(url: url, resolvingAgainstBaseURL: false))
+        let items = Dictionary(uniqueKeysWithValues: (components.queryItems ?? []).map {
+            ($0.name, $0.value ?? "")
+        })
+        #expect(items["name"] == "町名")
+        #expect(items["count"] == "3")
+        #expect(items["ratio"] == "1.5")
+        #expect(items["enabled"] == "true")
+        #expect(items["ignored"] == nil)
+    }
+
+    @Test("POSTとDELETEは適切なHTTPメソッドを送信し、リクエスト本文を必要時だけ設定する")
+    func postAndDeleteUseExpectedRequests() async throws {
+        let (client, _) = makeClient()
+        let posted: Payload = try await client.post(path: "/items", body: Payload(value: "submitted"))
+        let deleted: Payload = try await client.delete(path: "/items")
+        try await client.delete(path: "/items")
+
+        #expect(posted.value == "guest")
+        #expect(deleted.value == "guest")
+        let requests = CacheTestURLProtocol.recordedRequests()
+        #expect(requests.map(\.httpMethod) == ["POST", "DELETE", "DELETE"])
+        #expect(requests[0].value(forHTTPHeaderField: "Content-Type") == "application/json")
+        let body = try #require(CacheTestURLProtocol.recordedRequestBodies().first ?? nil)
+        let decoded = try JSONDecoder().decode(Payload.self, from: body)
+        #expect(decoded == Payload(value: "submitted"))
+        #expect(requests[1].httpBody == nil)
+    }
+
+    @Test("サーバーがエラー応答を返したときにHTTPステータスと公開メッセージを失わない")
+    func serverErrorReportsStatusAndMessage() async throws {
+        let (client, _) = makeClient()
+        do {
+            let _: Payload = try await client.get(path: "/server-error")
+            Issue.record("5xx response must fail")
+        } catch let error as AppError {
+            #expect(error == .be(.server(statusCode: 503, message: "サーバーに接続できません")))
+            #expect(error.message.contains("サーバーに接続できません"))
+        }
+    }
+
+    @Test("受信JSONのパース失敗は復号エラーとして呼び出し元に返す")
+    func invalidJSONReportsDecodingError() async {
+        let (client, _) = makeClient()
+        await #expect(throws: Error.self) {
+            let _: Payload = try await client.get(path: "/bad-json")
+        }
+    }
+
+    @Test("URLSession自体が失敗した場合はユーザー向けの接続エラーに変換する")
+    func transportErrorsHaveConnectionMessage() async {
+        let (client, _) = makeClient()
+        do {
+            let _: Payload = try await client.get(path: "/transport-error")
+            Issue.record("Network failure must not succeed")
+        } catch let error as AppError {
+            #expect(error.message.contains("インターネット接続"))
+        } catch {
+            Issue.record("Transport error was not normalized to AppError")
+        }
+    }
+
     private func makeClient() -> (HTTPClient, URLCache) {
         CacheTestURLProtocol.reset()
         let cache = URLCache(memoryCapacity: 1024 * 1024, diskCapacity: 0)
@@ -125,8 +198,16 @@ private final class CacheTestURLProtocol: URLProtocol {
         Self.requestBodies.append(body)
         Self.lock.unlock()
 
+        if request.url?.path == "/transport-error" {
+            client?.urlProtocol(self, didFailWithError: URLError(.timedOut))
+            return
+        }
         let data: Data
-        if request.url?.path == "/locations" {
+        if request.url?.path == "/server-error" {
+            data = Data("{\"message\":\"internal\",\"localizedDescription\":\"サーバーに接続できません\"}".utf8)
+        } else if request.url?.path == "/bad-json" {
+            data = Data("not-json".utf8)
+        } else if request.url?.path == "/locations" {
             data = Data("{\"timestamp\":1700000000}".utf8)
         } else {
             let value = request.value(forHTTPHeaderField: "Authorization") == nil ? "guest" : "signed-in"
@@ -134,7 +215,7 @@ private final class CacheTestURLProtocol: URLProtocol {
         }
         let response = HTTPURLResponse(
             url: request.url!,
-            statusCode: 200,
+            statusCode: request.url?.path == "/server-error" ? 503 : 200,
             httpVersion: "HTTP/1.1",
             headerFields: ["Cache-Control": "public, max-age=3600"]
         )!

@@ -107,6 +107,13 @@ jobs:
             test \
             | tee build/reports/test.log | xcpretty
 
+      - name: Report Swift compiler diagnostics
+        if: failure()
+        run: |
+          if [ -f build/reports/test.log ]; then
+            grep -nE '\.swift:[0-9]+:[0-9]+: error:|error: Call can throw|error: Errors thrown' build/reports/test.log | tail -100 || true
+          fi
+
       - name: Export iOS per-file coverage
         if: always()
         run: |
@@ -122,12 +129,34 @@ jobs:
       - name: Audit iOS per-file line coverage
         if: always()
         run: |
+          xcresult_path="$(find iOSApp/.derivedData/Logs/Test -maxdepth 1 -type d -name '*.xcresult' | sort | tail -n 1)"
           python3 ci_scripts/audit_unit_coverage.py \
             --input build/reports/ios-file-coverage.json \
             --scope ios \
             --manifest ci_scripts/unit_coverage_targets.txt \
             --output build/reports/ios-coverage-files.csv \
-            --strict
+            --strict \
+            --show-all \
+            --full-line-manifest ci_scripts/unit_coverage_full_targets.txt \
+            --excluded-manifest ci_scripts/unit_coverage_exclusions.txt \
+            --xcresult "$xcresult_path" \
+            --infrastructure-regions ci_scripts/unit_coverage_infrastructure_regions.txt
+
+      - name: Report uncovered iOS source lines
+        if: always()
+        run: |
+          if [ -d iOSApp/.derivedData/Logs/Test ] &&
+             [ -s build/reports/ios-file-coverage.json ] &&
+             [ -s build/reports/ios-coverage-files.csv ]; then
+            xcresult_path="$(find iOSApp/.derivedData/Logs/Test -maxdepth 1 -type d -name '*.xcresult' | sort | tail -n 1)"
+            if [ -n "$xcresult_path" ]; then
+              python3 ci_scripts/report_ios_uncovered_lines.py \
+                --xcresult "$xcresult_path" \
+                --coverage build/reports/ios-file-coverage.json \
+                --csv build/reports/ios-coverage-files.csv \
+                --infrastructure-regions ci_scripts/unit_coverage_infrastructure_regions.txt
+            fi
+          fi
 
       - name: Upload Test Results
         id: upload-tests

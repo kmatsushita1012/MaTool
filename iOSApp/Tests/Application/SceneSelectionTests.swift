@@ -21,4 +21,20 @@ struct SceneSelectionTests {
         #expect(FestivalSelectionResult.changed(.district("district")) !=
             .changed(.headquarter("festival")))
     }
+    @Test("祭典のみ・地区のみ・未選択をそれぞれ独立して保持する")
+    func selectionPreservesPartialIdentifiers() {
+        let festivalOnly = SceneSelection(festivalId: "festival", districtId: nil)
+        let districtOnly = SceneSelection(festivalId: nil, districtId: "district")
+        let empty = SceneSelection(festivalId: nil, districtId: nil)
+
+        #expect(festivalOnly.festivalId == "festival")
+        #expect(festivalOnly.districtId == nil)
+        #expect(districtOnly.festivalId == nil)
+        #expect(districtOnly.districtId == "district")
+        #expect(empty.festivalId == nil)
+        #expect(empty.districtId == nil)
+        #expect(festivalOnly != districtOnly)
+        #expect(districtOnly != empty)
+    }
+
 }

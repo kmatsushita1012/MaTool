@@ -63,7 +63,7 @@ struct DistrictEditFeature {
                 return .none
             case .cancelTapped:
                 state.isImageEditPresented = false
-                return .merge(.send(.imageEdit(.reset)), .dismiss)
+                return .concatenate(.send(.imageEdit(.reset)), .dismiss)
             case .saveTapped:
                 guard !state.isLoading else { return .none }
                 guard let image = state.imageEdit.imagePath(applyingTo: state.district.image) else {
@@ -124,7 +124,7 @@ struct DistrictEditFeature {
             case .postReceived(.success):
                 state.isLoading = false
                 state.isImageEditPresented = false
-                return .merge(.send(.imageEdit(.reset)), .dismiss)
+                return .concatenate(.send(.imageEdit(.reset)), .dismiss)
             case .destination(.presented(let childAction)):
                 switch childAction {
                 case .base(.doneTapped):

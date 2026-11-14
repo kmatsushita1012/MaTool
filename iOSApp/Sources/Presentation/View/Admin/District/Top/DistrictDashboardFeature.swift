@@ -212,7 +212,6 @@ struct DistrictDashboardFeature {
                     if let updated = state.appState?.district(id: state.district.id) {
                         state.district = updated
                     }
-                    state.destination = nil
                     return .none
                 case .changePassword(.received(.success)):
                     state.destination = nil

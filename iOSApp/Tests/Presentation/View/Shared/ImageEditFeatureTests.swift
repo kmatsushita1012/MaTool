@@ -173,4 +173,195 @@ struct ImageEditFeatureTests {
         #expect(await useCase.uploadCalls.count == 1)
         await store.finish()
     }
+
+    @Test("写真ピッカーからデータが得られない場合は元画像を保持し、原因を記録する")
+    @MainActor
+    func missingPickerDataKeepsOriginal() async {
+        let original = ImagePath(light: "https://cdn.example/original.jpg")
+        let photoLibrary = PhotoLibraryClientSpy(data: nil)
+        let upload = UploadImageUseCaseSpy()
+        let store = TestStore(initialState: ImageEditFeature.State(
+            targetType: .district, targetID: "district-1", image: original
+        )) {
+            ImageEditFeature()
+        } withDependencies: {
+            $0.installTestSpies()
+            $0[PhotoLibraryClientKey.self] = photoLibrary
+            $0[UploadImageUseCaseKey.self] = upload
+        }
+
+        let id = UUID()
+        await store.send(.photoSelected(id: id, item: PhotosPickerItem(itemIdentifier: "nil"))) {
+            $0.activeUploadID = id
+            $0.lightDraft = .loading
+        }
+        await store.receive(.photoDataFailed(
+            id: id, mode: .light, message: "画像を読み込めませんでした。"
+        )) {
+            $0.activeUploadID = nil
+            $0.lightDraft = .unchanged
+            $0.failureMessages[.light] = "画像を読み込めませんでした。"
+        }
+        #expect(store.state.imagePath(applyingTo: original) == original)
+        #expect(store.state.canSave)
+        #expect(await photoLibrary.loadCallCount == 1)
+        #expect(await upload.prepareInputs.isEmpty)
+        await store.finish()
+    }
+
+    @Test("写真へのアクセスで例外が発生した場合も元画像を保持して失敗理由を示す")
+    @MainActor
+    func pickerThrowPreservesDarkImage() async {
+        let original = ImagePath(light: nil, dark: "https://cdn.example/dark.jpg")
+        let photoLibrary = PhotoLibraryClientSpy(failure: "Library denied")
+        let store = TestStore(initialState: ImageEditFeature.State(
+            targetType: .district, targetID: "district-1", image: original
+        )) {
+            ImageEditFeature()
+        } withDependencies: {
+            $0.installTestSpies()
+            $0[PhotoLibraryClientKey.self] = photoLibrary
+        }
+
+        await store.send(.modeSelected(.dark)) { $0.selectedMode = .dark }
+        let id = UUID()
+        await store.send(.photoSelected(id: id, item: PhotosPickerItem(itemIdentifier: "denied"))) {
+            $0.activeUploadID = id
+            $0.darkDraft = .loading
+        }
+        await store.receive(.photoDataFailed(id: id, mode: .dark, message: "Library denied")) {
+            $0.activeUploadID = nil
+            $0.darkDraft = .unchanged
+            $0.failureMessages[.dark] = "Library denied"
+        }
+        #expect(store.state.imagePath(applyingTo: original) == original)
+        #expect(store.state.failureMessage(for: .light) == nil)
+        #expect(store.state.previewURL == original.dark)
+        await store.finish()
+    }
+
+    @Test("Dark画像のJPEG変換失敗ではアップロードせず、選択前の画像に戻す")
+    @MainActor
+    func jpegPreparationFailureRestoresDarkImage() async {
+        let original = ImagePath(light: nil, dark: "https://cdn.example/dark.jpg")
+        let photoData = Data([10, 20, 30])
+        let upload = UploadImageUseCaseSpy(preparationFailure: "Cannot convert JPEG")
+        let store = TestStore(initialState: ImageEditFeature.State(
+            targetType: .festival, targetID: "festival-1", image: original
+        )) {
+            ImageEditFeature()
+        } withDependencies: {
+            $0.installTestSpies()
+            $0[PhotoLibraryClientKey.self] = PhotoLibraryClientSpy(data: photoData)
+            $0[UploadImageUseCaseKey.self] = upload
+        }
+
+        await store.send(.modeSelected(.dark)) { $0.selectedMode = .dark }
+        let id = UUID()
+        await store.send(.photoSelected(id: id, item: PhotosPickerItem(itemIdentifier: "invalid"))) {
+            $0.activeUploadID = id
+            $0.darkDraft = .loading
+        }
+        await store.receive(.photoDataReceived(id: id, mode: .dark, data: photoData)) {
+            $0.darkDraft = .preparing
+        }
+        await store.receive(.jpegPreparationFailed(
+            id: id, mode: .dark, message: "Cannot convert JPEG"
+        )) {
+            $0.activeUploadID = nil
+            $0.darkDraft = .unchanged
+            $0.failureMessages[.dark] = "Cannot convert JPEG"
+        }
+        #expect(store.state.imagePath(applyingTo: original) == original)
+        #expect(await upload.prepareInputs == [photoData])
+        #expect(await upload.uploadCalls.isEmpty)
+        await store.finish()
+    }
+
+    @Test("Dark画像のJPEG変換とアップロード成功はDarkだけを置き換える")
+    @MainActor
+    func successfulDarkUploadPreservesLightImage() async {
+        let original = ImagePath(
+            light: "https://cdn.example/light.jpg",
+            dark: "https://cdn.example/dark.jpg"
+        )
+        let photoData = Data([11, 12])
+        let jpeg = Data([0xFF, 0xD8, 0xFF, 0xD9])
+        let path = "temporary/festivals/festival-1/dark.jpg"
+        let upload = UploadImageUseCaseSpy(preparedData: jpeg, path: path)
+        let store = TestStore(initialState: ImageEditFeature.State(
+            targetType: .festival, targetID: "festival-1", image: original
+        )) {
+            ImageEditFeature()
+        } withDependencies: {
+            $0.installTestSpies()
+            $0[PhotoLibraryClientKey.self] = PhotoLibraryClientSpy(data: photoData)
+            $0[UploadImageUseCaseKey.self] = upload
+        }
+
+        await store.send(.modeSelected(.dark)) { $0.selectedMode = .dark }
+        let id = UUID()
+        await store.send(.photoSelected(id: id, item: PhotosPickerItem(itemIdentifier: "dark"))) {
+            $0.activeUploadID = id
+            $0.darkDraft = .loading
+        }
+        await store.receive(.photoDataReceived(id: id, mode: .dark, data: photoData)) {
+            $0.darkDraft = .preparing
+        }
+        await store.receive(.jpegPrepared(id: id, mode: .dark, data: jpeg)) {
+            $0.darkDraft = .uploading(jpeg)
+        }
+        #expect(store.state.previewData == jpeg)
+        await store.receive(.uploadCompleted(id: id, mode: .dark, data: jpeg, path: path)) {
+            $0.activeUploadID = nil
+            $0.darkDraft = .replaced(path: path, jpegData: jpeg)
+        }
+        #expect(store.state.imagePath(applyingTo: original) == ImagePath(
+            light: original.light, dark: path
+        ))
+        #expect(await upload.uploadCalls.count == 1)
+        #expect(await upload.uploadCalls.first?.target.variant == .dark)
+        await store.finish()
+    }
+
+    @Test("Dark画像のアップロードに失敗した場合はLightに影響させず下書きを戻す")
+    @MainActor
+    func failedDarkUploadDoesNotChangeLight() async {
+        let original = ImagePath(light: "https://cdn.example/light.jpg", dark: nil)
+        let photoData = Data([11, 12])
+        let jpeg = Data([0xFF, 0xD8, 0xFF, 0xD9])
+        let upload = UploadImageUseCaseSpy(preparedData: jpeg, uploadFailure: "Upload unavailable")
+        let store = TestStore(initialState: ImageEditFeature.State(
+            targetType: .festival, targetID: "festival-1", image: original
+        )) {
+            ImageEditFeature()
+        } withDependencies: {
+            $0.installTestSpies()
+            $0[PhotoLibraryClientKey.self] = PhotoLibraryClientSpy(data: photoData)
+            $0[UploadImageUseCaseKey.self] = upload
+        }
+
+        await store.send(.modeSelected(.dark)) { $0.selectedMode = .dark }
+        let id = UUID()
+        await store.send(.photoSelected(id: id, item: PhotosPickerItem(itemIdentifier: "dark-fail"))) {
+            $0.activeUploadID = id
+            $0.darkDraft = .loading
+        }
+        await store.receive(.photoDataReceived(id: id, mode: .dark, data: photoData)) {
+            $0.darkDraft = .preparing
+        }
+        await store.receive(.jpegPrepared(id: id, mode: .dark, data: jpeg)) {
+            $0.darkDraft = .uploading(jpeg)
+        }
+        await store.receive(.uploadFailed(id: id, mode: .dark, message: "Upload unavailable")) {
+            $0.activeUploadID = nil
+            $0.darkDraft = .unchanged
+            $0.failureMessages[.dark] = "Upload unavailable"
+        }
+        #expect(store.state.imagePath(applyingTo: original) == original)
+        #expect(store.state.failureMessage(for: .dark) == "Upload unavailable")
+        #expect(await upload.uploadCalls.count == 1)
+        await store.finish()
+    }
+
 }
