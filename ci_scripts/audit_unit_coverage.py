@@ -2,7 +2,8 @@
 """List every in-scope unit-test source and its tool-reported line coverage.
 
 Missing files and 0-executable-line files remain visible in the output.
-No target is silently excluded, and no coverage percentage is estimated.
+User-authorized infrastructure exclusions remain visible with their reasons.
+No coverage percentage is estimated or altered.
 """
 from __future__ import annotations
 
@@ -46,11 +47,29 @@ def ios_lines(raw: dict) -> dict[str, tuple[int, int]]:
     return found
 
 
+def discovered_swift_targets() -> set[str]:
+    """Fail if a checked-out business-logic source is omitted from the target manifest."""
+    sources: set[str] = set()
+    for root in ("Backend/Sources", "iOSApp/Sources/Application",
+                 "iOSApp/Sources/Data", "iOSApp/Sources/Presentation"):
+        for source in Path(root).rglob("*.swift"):
+            path = source.as_posix()
+            if path.startswith(("Backend/Sources/", "iOSApp/Sources/Application/", "iOSApp/Sources/Data/")):
+                sources.add(path)
+            elif path.startswith("iOSApp/Sources/Presentation/") and (
+                path.endswith("Feature.swift")
+                or path.endswith("/Onboarding.swift")
+                or path.endswith("/ReplayController.swift")
+            ):
+                sources.add(path)
+    return sources
+
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--input", required=True, type=Path)
     parser.add_argument("--manifest", required=True, type=Path)
     parser.add_argument("--full-line-manifest", type=Path, help="Paths requiring measured 100%% line coverage")
+    parser.add_argument("--excluded-manifest", type=Path, help="Explicit exclusions (path | reason), kept visible")
     parser.add_argument("--scope", required=True, choices=("backend", "ios"))
     parser.add_argument("--output", required=True, type=Path)
     parser.add_argument("--strict", action="store_true")
@@ -64,6 +83,9 @@ def main() -> int:
         for line in args.manifest.read_text(encoding="utf-8").splitlines()
         if line.strip() and not line.lstrip().startswith("#")
     ]
+    missing_from_manifest = discovered_swift_targets().difference(paths)
+    if missing_from_manifest:
+        raise ValueError(f"HEAD Swift targets absent from coverage manifest: {sorted(missing_from_manifest)}")
     full_targets = set()
     if args.full_line_manifest:
         full_targets = {
@@ -74,6 +96,22 @@ def main() -> int:
         unknown_targets = full_targets.difference(paths)
         if unknown_targets:
             raise ValueError(f"Full-line targets absent from coverage manifest: {sorted(unknown_targets)}")
+    exclusions: dict[str, str] = {}
+    if args.excluded_manifest:
+        for raw_line in args.excluded_manifest.read_text(encoding="utf-8").splitlines():
+            line = raw_line.strip()
+            if not line or line.startswith("#"):
+                continue
+            if "|" not in line:
+                raise ValueError(f"Exclusion requires a path and reason: {line}")
+            path, reason = (part.strip() for part in line.split("|", 1))
+            if not path or not reason or path in exclusions:
+                raise ValueError(f"Invalid or duplicate exclusion: {line}")
+            exclusions[path] = reason
+        unknown_exclusions = set(exclusions).difference(paths)
+        if unknown_exclusions:
+            raise ValueError(f"Excluded paths absent from coverage manifest: {sorted(unknown_exclusions)}")
+
     paths = [
         path
         for path in paths
@@ -84,6 +122,16 @@ def main() -> int:
     rows = []
     for path in sorted(paths):
         result = lines.get(path)
+        if path in exclusions:
+            if result is None:
+                rows.append((path, "", "", "", "EXCLUDED"))
+            else:
+                executable, covered = result
+                if covered > executable or covered < 0:
+                    raise ValueError(f"Invalid line counts in {path}: {covered}/{executable}")
+                percent = f"{100.0 * covered / executable:.4f}" if executable else ""
+                rows.append((path, str(executable), str(covered), percent, "EXCLUDED"))
+            continue
         if result is None:
             rows.append((path, "", "", "", "MISSING"))
             continue
@@ -106,16 +154,17 @@ def main() -> int:
 
     counts = {
         status: sum(row[-1] == status for row in rows)
-        for status in ("PASS", "FAIL", "MISSING", "NO_EXECUTABLE_LINES")
+        for status in ("PASS", "FAIL", "MISSING", "NO_EXECUTABLE_LINES", "EXCLUDED")
     }
     print(f"Coverage audit ({args.scope}): {len(paths)} source files")
     for key, value in counts.items():
         print(f"  {key}: {value}")
     for path, executable, covered, percent, status in rows:
         if args.show_all or status != "PASS":
-            print(f"  [{status}] {path}: {covered}/{executable} ({percent or 'N/A'}%)")
+            print(f"  [{status}] {path}: {covered}/{executable} ({percent or 'N/A'}%)"
+                  + (f" — {exclusions[path]}" if status == "EXCLUDED" else ""))
 
-    return 1 if args.strict and counts["PASS"] != len(paths) else 0
+    return 1 if args.strict and counts["PASS"] + counts["EXCLUDED"] != len(paths) else 0
 
 
 if __name__ == "__main__":

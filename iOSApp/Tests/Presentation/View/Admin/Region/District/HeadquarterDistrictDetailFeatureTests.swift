@@ -299,6 +299,58 @@ struct HeadquarterDistrictDetailFeatureTests {
         await store.finish()
     }
 
+    @Test("経路一覧は未保存のドラフトで対象Routeだけを上書きし他のRouteを維持する")
+    func routeListUsesUnsavedDraftOverrides() {
+        let original = AppStateFixture.route(description: "server")
+        let another = AppStateFixture.route(id: "another", periodId: "second-period", description: "other")
+        let appState = Shared<AppState?>(value: AppStateFixture.state(
+            periods: [AppStateFixture.period(), AppStateFixture.period(id: "second-period", day: 4)],
+            routes: [original, another]
+        ))
+        var state = HeadquarterDistrictDetailFeature.State(
+            AppStateFixture.district(), appState: appState
+        )
+        var edited = original
+        edited.description = "draft"
+        state.routeDrafts[original.id] = RouteDraft(
+            route: edited, points: [], passages: []
+        )
+
+        let slots = state.routes
+        #expect(slots.contains {
+            $0.route?.id == original.id && $0.route?.description == "draft"
+        })
+        #expect(slots.contains {
+            $0.route?.id == another.id && $0.route?.description == "other"
+        })
+    }
+
+    @Test("地区保存のUseCaseが失敗すると編集中状態とドラフトを維持したまま理由を表示する")
+    @MainActor
+    func failedEditSaveKeepsDistrictDraft() async {
+        let error = AppError.be(.network("offline"))
+        let spy = FailingDetailSaveDistrictSpy(error: error)
+        var initial = makeState()
+        initial.isEditable = true
+        initial.district.name = "unsaved name"
+        let store = TestStore(initialState: initial) {
+            HeadquarterDistrictDetailFeature()
+        } withDependencies: {
+            $0.installTestSpies()
+            $0[SaveDistrictUseCaseKey.self] = spy
+        }
+        store.exhaustivity = .off
+
+        await store.send(.editTapped)
+        await store.receive(.updateReceived(.failure(error)))
+        #expect(await spy.names == ["unsaved name"])
+        #expect(store.state.district.name == "unsaved name")
+        #expect(store.state.isEditable)
+        #expect(!store.state.isSaving)
+        #expect(store.state.alert == .error(error.message))
+        await store.finish()
+    }
+
     private func makeState() -> HeadquarterDistrictDetailFeature.State {
         HeadquarterDistrictDetailFeature.State(
             AppStateFixture.district(),
@@ -328,5 +380,17 @@ private actor DetailRouteLoadSpy: LoadRouteStateUseCaseProtocol {
     func callAsFunction(routeId: Route.ID, appState: Shared<AppState?>) async throws -> RoutePack? {
         ids.append(routeId)
         return pack
+    }
+}
+
+private actor FailingDetailSaveDistrictSpy: SaveDistrictUseCaseProtocol {
+    private(set) var names: [String] = []
+    let error: AppError
+
+    init(error: AppError) { self.error = error }
+
+    func callAsFunction(district: District, appState: Shared<AppState?>) async throws -> District {
+        names.append(district.name)
+        throw error
     }
 }

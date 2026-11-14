@@ -112,4 +112,32 @@ struct DistrictReissueFeatureTests {
         await store.finish()
     }
 
+    @Test("再発行成功時は更新対象の地区IDとメールを渡して待機状態を解除する")
+    @MainActor
+    func reissueSuccessRecordsRequest() async {
+        let district = AppStateFixture.district()
+        let spy = ReissueDistrictUseCaseSpy(result: .success(DistrictPack(
+            district: district, performances: []
+        )))
+        var initial = DistrictReissueFeature.State(districtId: district.id)
+        initial.email = "updated@example.com"
+        let store = TestStore(initialState: initial) {
+            DistrictReissueFeature()
+        } withDependencies: {
+            $0.installTestSpies()
+            $0[ReissueDistrictUseCaseKey.self] = spy
+        }
+        store.exhaustivity = .off
+
+        await store.send(.reissueTapped)
+        await store.receive(.reissueReceived(.success))
+        #expect(await spy.calls == [
+            ReissueDistrictUseCaseSpy.Call(
+                districtId: district.id, email: "updated@example.com"
+            )
+        ])
+        #expect(!store.state.isLoading)
+        await store.finish()
+    }
+
 }

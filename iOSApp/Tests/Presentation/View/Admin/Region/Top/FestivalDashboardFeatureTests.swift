@@ -266,6 +266,25 @@ struct FestivalDashboardFeatureTests {
         await store.finish()
     }
 
+    @Test("本部管理画面でログアウト操作するとUseCaseへ委譲し処理中表示を解除する")
+    @MainActor
+    func signOutTappedDelegatesToUseCase() async {
+        let spy = FestivalDashboardSignOutSpy()
+        let store = TestStore(initialState: makeState()) {
+            FestivalDashboardFeature()
+        } withDependencies: {
+            $0.installTestSpies()
+            $0[SignOutUseCaseKey.self] = spy
+        }
+        store.exhaustivity = .off
+
+        await store.send(.signOutTapped)
+        await store.receive(.signOutReceived(.success(.onboarding)))
+        #expect(await spy.calls == 1)
+        #expect(!store.state.isAuthLoading)
+        await store.finish()
+    }
+
     private func makeState() -> FestivalDashboardFeature.State {
         FestivalDashboardFeature.State(
             AppStateFixture.festival(),
@@ -295,5 +314,14 @@ private actor DashboardFetchFestivalsSpy: FetchFestivalListUseCaseProtocol {
     func callAsFunction() async throws -> [Festival] {
         calls += 1
         return try result.get()
+    }
+}
+
+private actor FestivalDashboardSignOutSpy: SignOutUseCaseProtocol {
+    private(set) var calls = 0
+
+    func callAsFunction(appState: Shared<AppState?>) async throws -> LaunchState {
+        calls += 1
+        return .onboarding
     }
 }

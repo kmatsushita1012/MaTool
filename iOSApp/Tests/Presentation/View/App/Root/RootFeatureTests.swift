@@ -715,6 +715,161 @@ struct RootFeatureTests {
         await store.finish()
     }
 
+    @Test("現在地へ戻る操作は開いている紹介シートを閉じ地図の表示対象を現在地に戻す")
+    @MainActor
+    func currentLocationDismissesSheetAndSelectsLocations() async {
+        let fixture = RootFeatureFixture()
+        let appState = Shared<AppState?>(value: fixture.appState)
+        var initial = RootFeature.State(appState: appState)
+        initial.$launchState.withLock { $0 = .district(.guest, nil) }
+        initial.map = PublicMapFeature.State(
+            festival: fixture.festival,
+            district: fixture.district,
+            routeId: nil,
+            userRole: .guest,
+            appState: appState
+        )
+        initial.sheet = .festival(.init(fixture.festival, appState: appState))
+        let store = TestStore(initialState: initial) {
+            RootFeature()
+        } withDependencies: { $0.installTestSpies() }
+        store.exhaustivity = .off
+
+        await store.send(.currentLocationTapped)
+        await store.receive(.map(.contentSelected(.locations)))
+        #expect(store.state.sheet == nil)
+        #expect(store.state.map?.selectedContent == .locations)
+        await store.finish()
+    }
+
+    @Test("設定画面の準備中は再タップしても二重の取得処理を開始しない")
+    @MainActor
+    func settingsTapWhileLoadingIsIgnored() async {
+        let fixture = RootFeatureFixture()
+        var initial = RootFeature.State(appState: Shared<AppState?>(value: fixture.appState))
+        initial.$launchState.withLock { $0 = .festival(.guest) }
+        initial.map = initial.makeMapState(userRole: .guest)
+        initial.isDestinationLoading = true
+        let spy = FailingFestivalListUseCaseSpy()
+        let store = TestStore(initialState: initial) {
+            RootFeature()
+        } withDependencies: {
+            $0.installTestSpies()
+            $0[FetchFestivalListUseCaseKey.self] = spy
+        }
+        store.exhaustivity = .off
+
+        await store.send(.map(.delegate(.settingsTapped)))
+        #expect(await spy.fetchCallCount() == 0)
+        #expect(store.state.isDestinationLoading)
+        await store.finish()
+    }
+
+    @Test("紹介画面の準備中は同じ操作を繰り返しても取得を開始しない")
+    @MainActor
+    func introductionTapWhileLoadingIsIgnored() async {
+        let fixture = RootFeatureFixture()
+        var initial = RootFeature.State(appState: Shared<AppState?>(value: fixture.appState))
+        initial.$launchState.withLock { $0 = .festival(.guest) }
+        initial.map = initial.makeMapState(userRole: .guest)
+        initial.isIntroductionLoading = true
+        let spy = FetchDistrictUseCaseSpy()
+        let store = TestStore(initialState: initial) {
+            RootFeature()
+        } withDependencies: {
+            $0.installTestSpies()
+            $0[FetchDistrictUseCaseKey.self] = spy
+        }
+        store.exhaustivity = .off
+
+        await store.send(.map(.delegate(.introductionTapped)))
+        #expect(await spy.requestedIDs.isEmpty)
+        #expect(store.state.isIntroductionLoading)
+        await store.finish()
+    }
+
+    @Test("設定画面で管理者からゲストへ切り替えると地図と保存済み管理画面を更新する")
+    @MainActor
+    func guestSceneSelectionClosesAdminDestination() async {
+        let fixture = RootFeatureFixture()
+        let appState = Shared<AppState?>(value: fixture.appState)
+        let role = UserRole.headquarter(fixture.festival.id)
+        var initial = RootFeature.State(appState: appState)
+        initial.$launchState.withLock { $0 = .festival(role) }
+        initial.map = initial.makeMapState(userRole: role)
+        initial.destination = .settings(withDependencies {
+            $0.installTestSpies()
+            $0.values = rootTestConstantValues()
+        } operation: {
+            SettingsFeature.State(
+                selection: .init(festivalId: fixture.festival.id, districtId: nil),
+                festivals: [fixture.festival],
+                userRole: role,
+                appState: appState
+            )
+        })
+        let lastScreen = LastMainScreenUseCaseSpy(value: .admin)
+        let store = TestStore(initialState: initial) {
+            RootFeature()
+        } withDependencies: {
+            $0.installTestSpies()
+            $0.values = rootTestConstantValues()
+            $0[LastMainScreenUseCaseKey.self] = lastScreen
+        }
+        store.exhaustivity = .off
+
+        await store.send(.destination(.presented(.settings(
+            .delegate(.sceneSelectionChanged(.guest, nil))
+        ))))
+        #expect(store.state.launchState == .festival(.guest))
+        #expect(store.state.map?.userRole == .guest)
+        #expect(store.state.destination == nil)
+        #expect(lastScreen.value == nil)
+        await store.finish()
+    }
+
+    @Test("管理者の参加設定変更はゲスト地図と現在の設定画面を同時に作り直す")
+    @MainActor
+    func participationChangeRebuildsGuestSettings() async {
+        let fixture = RootFeatureFixture()
+        let appState = Shared<AppState?>(value: fixture.appState)
+        let role = UserRole.headquarter(fixture.festival.id)
+        let selection = SceneSelection(festivalId: fixture.festival.id, districtId: nil)
+        let preparation = SettingsPreparation(
+            festivals: [fixture.festival], selection: selection
+        )
+        var initial = RootFeature.State(appState: appState)
+        initial.$launchState.withLock { $0 = .festival(role) }
+        initial.map = initial.makeMapState(userRole: role)
+        initial.destination = .settings(withDependencies {
+            $0.installTestSpies()
+            $0.values = rootTestConstantValues()
+        } operation: {
+            SettingsFeature.State(
+                selection: selection, festivals: [fixture.festival],
+                userRole: role, appState: appState
+            )
+        })
+        let lastScreen = LastMainScreenUseCaseSpy(value: .admin)
+        let store = TestStore(initialState: initial) {
+            RootFeature()
+        } withDependencies: {
+            $0.installTestSpies()
+            $0.values = rootTestConstantValues()
+            $0[LastMainScreenUseCaseKey.self] = lastScreen
+        }
+        store.exhaustivity = .off
+
+        await store.send(.destination(.presented(.settings(
+            .delegate(.participationChanged(preparation))
+        ))))
+        #expect(store.state.launchState == .festival(.guest))
+        #expect(store.state.map?.userRole == .guest)
+        #expect(store.state.destination?.settings?.userRole == .guest)
+        #expect(lastScreen.value == nil)
+        await store.finish()
+    }
+
 }
 
 private struct RootFeatureFixture {

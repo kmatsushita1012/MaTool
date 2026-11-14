@@ -134,4 +134,33 @@ struct DistrictCreateFeatureTests {
         await store.finish()
     }
 
+    @Test("地区作成成功時は入力値をUseCaseへ渡してローディングを終了する")
+    @MainActor
+    func createSuccessUsesSubmittedValues() async {
+        let district = AppStateFixture.district(id: "new-district", name: "新しい町")
+        let spy = CreateDistrictUseCaseSpy(result: .success(DistrictPack(
+            district: district, performances: []
+        )))
+        var initial = DistrictCreateFeature.State(festivalId: "festival")
+        initial.name = "新しい町"
+        initial.email = "new@example.com"
+        let store = TestStore(initialState: initial) {
+            DistrictCreateFeature()
+        } withDependencies: {
+            $0.installTestSpies()
+            $0[CreateDistrictUseCaseKey.self] = spy
+        }
+        store.exhaustivity = .off
+
+        await store.send(.createTapped)
+        await store.receive(.createReceived(.success))
+        #expect(await spy.calls == [
+            CreateDistrictUseCaseSpy.Call(
+                name: "新しい町", email: "new@example.com", festivalId: "festival"
+            )
+        ])
+        #expect(!store.state.isLoading)
+        await store.finish()
+    }
+
 }

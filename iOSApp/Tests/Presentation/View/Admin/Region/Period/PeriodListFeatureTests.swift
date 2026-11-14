@@ -199,6 +199,65 @@ struct PeriodListFeatureTests {
         await store.finish()
     }
 
+    @Test("編集中の期間を保存すると同じIDの期間を更新し一覧へ戻る")
+    @MainActor
+    func savedEditedPeriodUpsertsIntoList() async {
+        let original = AppStateFixture.period()
+        var updated = original
+        updated.title = "updated"
+        let store = TestStore(initialState: makeState([original])) {
+            PeriodListFeature()
+        } withDependencies: { $0.installTestSpies() }
+        store.exhaustivity = .off
+
+        await store.send(.periodTapped(original))
+        await store.send(.destination(.presented(.edit(.saveReceived(.success(updated))))))
+        #expect(store.state.periods.count == 1)
+        #expect(store.state.periods.first?.title == "updated")
+        #expect(store.state.destination == nil)
+        await store.finish()
+    }
+
+    @Test("編集中の期間を削除すると該当IDだけが一覧から消える")
+    @MainActor
+    func deletedPeriodRemovesOnlyMatchingEntry() async {
+        let first = AppStateFixture.period(id: "first")
+        let second = AppStateFixture.period(id: "second", day: 4)
+        let store = TestStore(initialState: makeState([first, second])) {
+            PeriodListFeature()
+        } withDependencies: { $0.installTestSpies() }
+        store.exhaustivity = .off
+
+        await store.send(.periodTapped(first))
+        await store.send(.destination(.presented(.edit(.deleteReceived(.success(first.id))))))
+        #expect(store.state.periods.map(\.id) == ["second"])
+        #expect(store.state.destination == nil)
+        await store.finish()
+    }
+
+    @Test("期間の一括複製が途中で失敗するとエラー内容を通知して成功扱いにしない")
+    @MainActor
+    func failedBatchCreationReportsError() async {
+        let error = AppError.be(.network("offline"))
+        let spy = FailingPeriodCreateSpy(error: error)
+        let original = AppStateFixture.period()
+        let store = TestStore(initialState: makeState([original])) {
+            PeriodListFeature()
+        } withDependencies: {
+            $0.installTestSpies()
+            $0[CreatePeriodUseCaseKey.self] = spy
+        }
+        store.exhaustivity = .off
+
+        await store.send(.batchCreateTapped(2026))
+        await store.receive(.batchCreateReceived(.failure(error)))
+        #expect(await spy.createdIDs.count == 1)
+        #expect(store.state.periods == [original])
+        #expect(store.state.alert == .error(error.message))
+        #expect(!store.state.isLoading)
+        await store.finish()
+    }
+
     private func makeState(_ periods: [Period]) -> PeriodListFeature.State {
         PeriodListFeature.State(
             festivalId: "festival", periods: periods,
@@ -217,5 +276,17 @@ private actor PeriodCreateUseCaseSpy: CreatePeriodUseCaseProtocol {
     func callAsFunction(_ period: Period, appState: Shared<AppState?>) async throws -> Period {
         created.append(period)
         return result
+    }
+}
+
+private actor FailingPeriodCreateSpy: CreatePeriodUseCaseProtocol {
+    private(set) var createdIDs: [Period.ID] = []
+    let error: AppError
+
+    init(error: AppError) { self.error = error }
+
+    func callAsFunction(_ period: Period, appState: Shared<AppState?>) async throws -> Period {
+        createdIDs.append(period.id)
+        throw error
     }
 }
