@@ -139,6 +139,21 @@ jobs:
             --full-line-manifest ci_scripts/unit_coverage_full_targets.txt \
             --excluded-manifest ci_scripts/unit_coverage_exclusions.txt
 
+      - name: Report uncovered iOS source lines
+        if: always()
+        run: |
+          if [ -d iOSApp/.derivedData/Logs/Test ] &&
+             [ -s build/reports/ios-file-coverage.json ] &&
+             [ -s build/reports/ios-coverage-files.csv ]; then
+            xcresult_path="$(find iOSApp/.derivedData/Logs/Test -maxdepth 1 -type d -name '*.xcresult' | sort | tail -n 1)"
+            if [ -n "$xcresult_path" ]; then
+              python3 ci_scripts/report_ios_uncovered_lines.py \
+                --xcresult "$xcresult_path" \
+                --coverage build/reports/ios-file-coverage.json \
+                --csv build/reports/ios-coverage-files.csv
+            fi
+          fi
+
       - name: Upload Test Results
         id: upload-tests
         if: always()
