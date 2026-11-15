@@ -41,17 +41,14 @@ struct DistrictEditScreen: View {
         )
         .sheet(isPresented: $store.isImageEditPresented) {
             NavigationStack {
-                ImageEditContentView(
-                    store: store.scope(state: \.imageEdit, action: \.imageEdit),
-                    onClose: { store.send(.imageEditDismissTapped) }
-                )
+                ImageEditScreen(store: store.scope(state: \.imageEdit, action: \.imageEdit))
             }
             .navigationBarTitleDisplayMode(.inline)
             .interactiveDismissDisabled(store.imageEdit.isUploading)
         }
         .dismissible(backButton: false, edgeSwipe: false)
         .navigationDestination(item: $store.scope(state: \.destination?.base, action: \.destination.base)) { store in
-            DistrictBaseEditView(store: store)
+            MapCoordinatePickerScreen(store: store)
         }
         .navigationDestination(item: $store.scope(state: \.destination?.area, action: \.destination.area)) { store in
             DistrictAreaEditView(store: store)

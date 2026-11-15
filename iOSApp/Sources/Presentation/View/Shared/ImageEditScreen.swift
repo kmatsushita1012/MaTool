@@ -1,14 +1,48 @@
 import ComposableArchitecture
 import PhotosUI
-import SwiftUI
 import Shared
+import SwiftUI
 import UIKit
 
 @available(iOS 17.0, *)
-struct ImageEditContentView: View {
+struct ImageEditScreen: View {
     @SwiftUI.Bindable var store: StoreOf<ImageEditFeature>
-    let onClose: () -> Void
-    @State private var selectedItem: PhotosPickerItem?
+
+    var body: some View {
+        ImageEditContentView(
+            isStoreTarget: store.targetType == .store,
+            targetType: store.targetType,
+            selectedMode: $store.selectedMode,
+            selectedPhotoItem: $store.selectedPhotoItem,
+            previewData: store.previewData,
+            previewURL: store.previewURL,
+            hasImage: store.hasImage,
+            isUploading: store.isUploading,
+            isSaving: store.isSaving,
+            failureMessage: store.failureMessages[store.selectedMode],
+            onRemoveTapped: { store.send(.removeTapped) },
+            onSaveTapped: { store.send(.saveTapped) },
+            onCloseTapped: { store.send(.closeTapped) }
+        )
+        .alert($store.scope(state: \.alert, action: \.alert))
+    }
+}
+
+@available(iOS 17.0, *)
+struct ImageEditContentView: View {
+    let isStoreTarget: Bool
+    let targetType: ImageUploadTarget.Kind
+    @Binding var selectedMode: ImageEditMode
+    @Binding var selectedPhotoItem: PhotosPickerItem?
+    let previewData: Data?
+    let previewURL: String?
+    let hasImage: Bool
+    let isUploading: Bool
+    let isSaving: Bool
+    let failureMessage: String?
+    let onRemoveTapped: () -> Void
+    let onSaveTapped: () -> Void
+    let onCloseTapped: () -> Void
 
     var body: some View {
         VStack(spacing: 0) {
@@ -31,116 +65,102 @@ struct ImageEditContentView: View {
                     .padding(.vertical, 8)
             } else {
                 modePicker
-                    .padding(.horizontal, 12)
+                    .padding(.horizontal, 16)
                     .padding(.vertical, 8)
                     .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 24))
                     .padding(.horizontal)
                     .padding(.vertical, 8)
             }
         }
-        .navigationTitle("紹介画像")
+        .navigationTitle(navigationTitle)
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
-            ToolbarItem(placement: .topBarTrailing) {
-                Button("完了", action: onClose)
-                    .disabled(store.isUploading)
+            if isStoreTarget {
+                ToolbarSaveButton(
+                    isDisabled: isUploading,
+                    isLoading: isSaving,
+                    action: onSaveTapped
+                )
+            } else {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button("完了", action: onCloseTapped)
+                        .disabled(isUploading)
+                }
             }
-        }
-        .onChange(of: selectedItem) { _, item in
-            guard let item else { return }
-            store.send(.photoSelected(id: UUID(), item: item))
-            selectedItem = nil
         }
     }
 
     private var modePicker: some View {
-        Picker(
-            "表示モード",
-            selection: Binding(
-                get: { store.selectedMode },
-                set: { store.send(.modeSelected($0)) }
-            )
-        ) {
-            Text("ライト").tag(ImageEditFeature.Mode.light)
-            Text("ダーク").tag(ImageEditFeature.Mode.dark)
+        Picker("表示モード", selection: $selectedMode) {
+            Text(ImageEditMode.light.title(for: targetType))
+                .tag(isStoreTarget ? ImageEditMode.banner : .light)
+            Text(ImageEditMode.dark.title(for: targetType))
+                .tag(isStoreTarget ? ImageEditMode.interstitial : .dark)
         }
         .labelsHidden()
         .modifier(ImageEditSegmentPickerStyleModifier())
         .frame(maxWidth: .infinity)
-        .disabled(store.isUploading)
+        .disabled(isUploading || isSaving)
     }
 
     private var previewArea: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text("プレビュー")
-                .font(.subheadline.weight(.semibold))
+                .font(.subheadline)
                 .foregroundStyle(.secondary)
                 .padding(.horizontal, 8)
 
             preview
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .padding(12)
+                .padding(16)
                 .background(.background, in: RoundedRectangle(cornerRadius: 24))
         }
         .padding(.horizontal, 16)
-        .padding(.top, 12)
+        .padding(.top, 16)
         .padding(.bottom, 8)
+    }
+
+    private var navigationTitle: String {
+        guard isStoreTarget else { return "紹介画像" }
+        return "\(selectedMode.title(for: targetType))広告"
     }
 
     private var actionsCard: some View {
         VStack(spacing: 0) {
-            PhotosPicker(
-                selection: $selectedItem,
-                matching: .images
-            ) {
-                Label(store.hasImage ? "画像を変更" : "画像を追加", systemImage: "photo")
+            PhotosPicker(selection: $selectedPhotoItem, matching: .images) {
+                Label(hasImage ? "画像を変更" : "画像を追加", systemImage: "photo")
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
-            .disabled(store.isUploading)
+            .loadingIndicator(isLoading: isUploading)
+            .disabled(isSaving)
             .padding(.horizontal, 16)
             .padding(.vertical, 16)
 
-            if store.hasImage {
+            if hasImage {
                 Divider()
                     .padding(.leading, 48)
 
-                Button(role: .destructive) {
-                    store.send(.removeTapped)
-                } label: {
-                    HStack(spacing: 8) {
-                        Image(systemName: "trash")
-                            .foregroundStyle(.red)
-                        Text("画像を削除")
-                            .foregroundStyle(.red)
-                        Spacer(minLength: 0)
-                    }
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .contentShape(Rectangle())
+                Button(role: .destructive, action: onRemoveTapped) {
+                    Label("画像を削除", systemImage: "trash")
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .contentShape(Rectangle())
                 }
-                .tint(.red)
                 .buttonStyle(.plain)
-                .disabled(store.isUploading)
+                .disabled(isUploading || isSaving)
                 .padding(.horizontal, 16)
                 .padding(.vertical, 16)
             }
 
-            if store.isUploading {
-                ProgressView("画像をアップロード中")
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(.horizontal, 16)
-                    .padding(.vertical, 12)
-            }
-
-            if let message = store.state.failureMessage(for: store.selectedMode) {
-                Text(message)
+            if let failureMessage {
+                Text(failureMessage)
                     .font(.footnote)
                     .foregroundStyle(.red)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .fixedSize(horizontal: false, vertical: true)
                     .padding(.horizontal, 16)
-                    .padding(.vertical, 12)
+                    .padding(.vertical, 16)
             }
         }
         .background(.background, in: RoundedRectangle(cornerRadius: 24))
@@ -148,13 +168,13 @@ struct ImageEditContentView: View {
 
     @ViewBuilder
     private var preview: some View {
-        if let data = store.previewData, let image = UIImage(data: data) {
+        if let previewData, let image = UIImage(data: previewData) {
             Image(uiImage: image)
                 .resizable()
                 .scaledToFit()
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
-        } else if let path = store.previewURL {
-            WebImageView(imagePath: path, contentMode: .fit)
+        } else if let previewURL {
+            WebImageView(imagePath: previewURL, contentMode: .fit)
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
         } else {
             ContentUnavailableView("画像がありません", systemImage: "photo")
@@ -185,16 +205,19 @@ private struct ImageEditSegmentPickerStyleModifier: ViewModifier {
 #Preview {
     NavigationStack {
         ImageEditContentView(
-            store: Store(
-                initialState: ImageEditFeature.State(
-                    targetType: .festival,
-                    targetID: "preview",
-                    image: ImagePath()
-                )
-            ) {
-                ImageEditFeature()
-            },
-            onClose: {}
+            isStoreTarget: false,
+            targetType: .festival,
+            selectedMode: .constant(.light),
+            selectedPhotoItem: .constant(nil),
+            previewData: nil,
+            previewURL: nil,
+            hasImage: false,
+            isUploading: false,
+            isSaving: false,
+            failureMessage: nil,
+            onRemoveTapped: {},
+            onSaveTapped: {},
+            onCloseTapped: {}
         )
     }
 }

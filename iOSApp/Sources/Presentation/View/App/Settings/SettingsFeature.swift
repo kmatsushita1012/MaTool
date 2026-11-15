@@ -12,6 +12,7 @@ struct SettingsFeature {
     @Reducer
     enum Destination {
         case login(LoginFeature)
+        case advertiserAuth(AdvertiserAuthFeature)
     }
 
     enum Delegate: Equatable {
@@ -86,6 +87,7 @@ struct SettingsFeature {
     enum Action: Equatable, BindableAction {
         case binding(BindingAction<State>)
         case loginTapped
+        case advertiserLoginTapped
         case licenseTapped
         case licenseDismissed
         case signOutTapped
@@ -139,6 +141,9 @@ struct SettingsFeature {
                 return .none
             case .loginTapped:
                 state.destination = .login(LoginFeature.State(appState: state.$appState))
+                return .none
+            case .advertiserLoginTapped:
+                state.destination = .advertiserAuth(AdvertiserAuthFeature.State())
                 return .none
             case .licenseTapped:
                 state.navigationDestination = .license

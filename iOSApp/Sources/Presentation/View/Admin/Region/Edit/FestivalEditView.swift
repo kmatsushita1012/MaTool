@@ -15,54 +15,49 @@ struct FestivalEditScreen: View {
     @SwiftUI.Bindable var store: StoreOf<FestivalEditFeature>
 
     var body: some View {
-        WithPerceptionTracking {
-            FestivalEditContentView(
-                name: $store.festival.name,
-                subname: $store.festival.subname,
-                prefecture: $store.festival.prefecture,
-                city: $store.festival.city,
-                description: $store.festival.description.nonOptional,
-                baseStatusText: store.base == nil ? "未設定" : "設定済み",
-                checkpoints: store.checkpoints,
-                hazardSections: store.hazardSections,
-                isLoading: store.isLoading,
-                onImageEditTapped: { store.send(.imageEditTapped) },
-                onBaseTapped: { store.send(.baseTapped) },
-                onCheckpointEditTapped: { store.send(.onCheckpointEdit($0)) },
-                onCheckpointAddTapped: { store.send(.onCheckpointAdd) },
-                onHazardTapped: { store.send(.hazardTapped($0)) },
-                onHazardCreateTapped: { store.send(.hazardCreateTapped) },
-                onCancelTapped: { store.send(.cancelTapped) },
-                onSaveTapped: { store.send(.saveTapped) }
-            )
-            .sheet(isPresented: $store.isImageEditPresented) {
-                NavigationStack {
-                    ImageEditContentView(
-                        store: store.scope(state: \.imageEdit, action: \.imageEdit),
-                        onClose: { store.send(.imageEditDismissTapped) }
-                    )
-                }
-                .navigationBarTitleDisplayMode(.inline)
-                .interactiveDismissDisabled(store.imageEdit.isUploading)
+        FestivalEditContentView(
+            name: $store.festival.name,
+            subname: $store.festival.subname,
+            prefecture: $store.festival.prefecture,
+            city: $store.festival.city,
+            description: $store.festival.description.nonOptional,
+            baseStatusText: store.base == nil ? "未設定" : "設定済み",
+            checkpoints: store.checkpoints,
+            hazardSections: store.hazardSections,
+            isLoading: store.isLoading,
+            onImageEditTapped: { store.send(.imageEditTapped) },
+            onBaseTapped: { store.send(.baseTapped) },
+            onCheckpointEditTapped: { store.send(.onCheckpointEdit($0)) },
+            onCheckpointAddTapped: { store.send(.onCheckpointAdd) },
+            onHazardTapped: { store.send(.hazardTapped($0)) },
+            onHazardCreateTapped: { store.send(.hazardCreateTapped) },
+            onCancelTapped: { store.send(.cancelTapped) },
+            onSaveTapped: { store.send(.saveTapped) }
+        )
+        .sheet(isPresented: $store.isImageEditPresented) {
+            NavigationStack {
+                ImageEditScreen(store: store.scope(state: \.imageEdit, action: \.imageEdit))
             }
-            .navigationDestination(
-                item: $store.scope(state: \.destination?.base, action: \.destination.base)
-            ) { store in
-                DistrictBaseEditView(store: store)
-            }
-            .navigationDestination(
-                item: $store.scope(state: \.destination?.checkpoint, action: \.destination.checkpoint)
-            ) { store in
-                CheckpointEditView(store: store)
-            }
-            .navigationDestination(
-                item: $store.scope(state: \.destination?.hazard, action: \.destination.hazard)
-            ) { store in
-                HazardSectionView(store: store)
-            }
-            .dismissible(backButton: false, edgeSwipe: false)
-            .alert($store.scope(state: \.alert, action: \.alert))
+            .navigationBarTitleDisplayMode(.inline)
+            .interactiveDismissDisabled(store.imageEdit.isUploading)
         }
+        .navigationDestination(
+            item: $store.scope(state: \.destination?.base, action: \.destination.base)
+        ) { store in
+            MapCoordinatePickerScreen(store: store)
+        }
+        .navigationDestination(
+            item: $store.scope(state: \.destination?.checkpoint, action: \.destination.checkpoint)
+        ) { store in
+            CheckpointEditView(store: store)
+        }
+        .navigationDestination(
+            item: $store.scope(state: \.destination?.hazard, action: \.destination.hazard)
+        ) { store in
+            HazardSectionView(store: store)
+        }
+        .dismissible(backButton: false, edgeSwipe: false)
+        .alert($store.scope(state: \.alert, action: \.alert))
     }
 }
 

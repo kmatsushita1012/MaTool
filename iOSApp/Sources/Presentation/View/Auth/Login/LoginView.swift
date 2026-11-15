@@ -8,6 +8,7 @@
 import SwiftUI
 import ComposableArchitecture
 import NavigationSwipeControl
+import UIKit
 
 @available(iOS 17.0, *)
 struct LoginScreen: View {
@@ -21,8 +22,9 @@ struct LoginScreen: View {
             contactURL: URL(string: contactURLString),
             errorMessage: store.errorMessage,
             isLoading: store.isLoading,
+            onResetPasswordTapped: { store.send(.resetPasswordTapped) },
             onSignInTapped: { store.send(.signInTapped) },
-            onResetPasswordTapped: { store.send(.resetPasswordTapped) }
+            onCreateAccountTapped: nil
         )
         .navigationDestination(item: $store.scope(state: \.destination?.confirmSignIn, action: \.destination.confirmSignIn)) { store in
             ConfirmSignInView(store: store)
@@ -43,8 +45,11 @@ struct LoginContentView: View {
     let contactURL: URL?
     let errorMessage: String?
     let isLoading: Bool
-    let onSignInTapped: () -> Void
+    var identifierKind: LoginIdentifierKind = .username
     let onResetPasswordTapped: () -> Void
+    let onSignInTapped: () -> Void
+    var createAccountTitle: LocalizedStringResource? = nil
+    var onCreateAccountTapped: (() -> Void)? = nil
 
     @FocusState private var focusedField: Field?
 
@@ -57,8 +62,9 @@ struct LoginContentView: View {
         VStack(spacing: 16) {
             Text("ログイン")
                 .font(.largeTitle)
-            TextField("ID", text: $id)
-                .textContentType(.username)
+            TextField(identifierKind.title, text: $id)
+                .textContentType(identifierKind.contentType)
+                .keyboardType(identifierKind.keyboardType)
                 .textInputAutocapitalization(.never)
                 .autocorrectionDisabled()
                 .modifier(AuthTextFieldModifier())
@@ -82,8 +88,18 @@ struct LoginContentView: View {
                 onResetPasswordTapped()
                 focusedField = nil
             }
-            .buttonStyle(SecondaryButtonStyle())
+            .buttonStyle(.plain)
+            .foregroundStyle(.tint)
             .disabled(isLoading)
+
+            if let createAccountTitle, let onCreateAccountTapped {
+                Button(createAccountTitle) {
+                    onCreateAccountTapped()
+                    focusedField = nil
+                }
+                .buttonStyle(SecondaryButtonStyle())
+                .disabled(isLoading)
+            }
             
             if let contactURL {
                 Link(
@@ -100,6 +116,32 @@ struct LoginContentView: View {
     }
 }
 
+enum LoginIdentifierKind {
+    case username
+    case email
+
+    var title: LocalizedStringKey {
+        switch self {
+        case .username: "ID"
+        case .email: "メールアドレス"
+        }
+    }
+
+    var contentType: UITextContentType {
+        switch self {
+        case .username: .username
+        case .email: .emailAddress
+        }
+    }
+
+    var keyboardType: UIKeyboardType {
+        switch self {
+        case .username: .default
+        case .email: .default
+        }
+    }
+}
+
 #Preview {
     LoginContentView(
         id: .constant(""),
@@ -107,7 +149,8 @@ struct LoginContentView: View {
         contactURL: nil,
         errorMessage: nil,
         isLoading: false,
+        onResetPasswordTapped: {},
         onSignInTapped: {},
-        onResetPasswordTapped: {}
+        onCreateAccountTapped: nil
     )
 }

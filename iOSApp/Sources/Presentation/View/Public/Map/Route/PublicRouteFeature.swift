@@ -67,6 +67,7 @@ struct PublicRouteFeature {
         @Shared var mapRegion: MKCoordinateRegion
         @Shared var toast: MapToast?
         var replay: Replay
+        var adBanner: StoreAdBannerFeature.State? = nil
 
         // Navigation
         var detail: Detail?
@@ -88,6 +89,7 @@ struct PublicRouteFeature {
         case replayTapped
         case replayEnded
         case didSeek(Double)
+        case adBanner(StoreAdBannerFeature.Action)
     }
 
     @Dependency(\.mapLocationProvider) var mapLocationProvider
@@ -110,6 +112,11 @@ struct PublicRouteFeature {
                 if let routeId = state.selectedRouteId {
                     state.isRouteLoading = true
                     effects.append(loadRouteEffect(routeId: routeId, appState: state.$appState))
+                }
+                if let adBanner = state.adBanner,
+                   !adBanner.isLoading,
+                   !adBanner.hasLoaded {
+                    effects.append(.send(.adBanner(.load)))
                 }
                 return .merge(effects)
             case .binding:
@@ -182,7 +189,12 @@ struct PublicRouteFeature {
             case .replayEnded:
                 state.replay = .stop
                 return .none
+            case .adBanner:
+                return .none
             }
+        }
+        .ifLet(\.adBanner, action: \.adBanner) {
+            StoreAdBannerFeature()
         }
     }
 
@@ -221,6 +233,9 @@ extension PublicRouteFeature.State {
         self._mapRegion = mapRegion
         self._toast = toast
         self.replay = .initial(routeId)
+        if let festivalId = appState.wrappedValue?.festivalState.festival.id {
+            self.adBanner = StoreAdBannerFeature.State(festivalId: festivalId)
+        }
         let current = appState.wrappedValue
         let district = current?.district(id: districtId)
         let points = current?.routeState(for: routeId)?.points ?? []

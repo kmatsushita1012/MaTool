@@ -7,6 +7,11 @@ extension DataFetcher {
         @Dependency(\.authProvider) var authProvider
         return try? await authProvider.getTokens()
     }
+
+    func getRequiredToken() async throws -> String {
+        @Dependency(\.authProvider) var authProvider
+        return try await authProvider.getTokens()
+    }
 }
 
 enum Query: Sendable, Equatable {

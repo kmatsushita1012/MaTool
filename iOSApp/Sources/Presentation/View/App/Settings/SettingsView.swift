@@ -27,6 +27,7 @@ struct SettingsScreen: View {
                 isParticipationLoading: store.isParticipationLoading,
                 isSignOutLoading: store.isSignOutLoading,
                 onLoginTapped: { store.send(.loginTapped) },
+                onAdvertiserLoginTapped: { store.send(.advertiserLoginTapped) },
                 onSignOutTapped: { store.send(.signOutTapped) },
                 onLicenseTapped: { store.send(.licenseTapped) }
             )
@@ -35,6 +36,12 @@ struct SettingsScreen: View {
                 action: \.destination.login
             )) { store in
                 LoginView(store: store)
+            }
+            .navigationDestination(item: $store.scope(
+                state: \.destination?.advertiserAuth,
+                action: \.destination.advertiserAuth
+            )) { store in
+                AdvertiserAuthScreen(store: store)
             }
             .navigationDestination(isPresented: Binding(
                 get: { store.navigationDestination == .license },
@@ -65,6 +72,7 @@ struct SettingsContentView: View {
     let isParticipationLoading: Bool
     let isSignOutLoading: Bool
     let onLoginTapped: () -> Void
+    let onAdvertiserLoginTapped: () -> Void
     let onSignOutTapped: () -> Void
     let onLicenseTapped: () -> Void
 
@@ -108,6 +116,8 @@ struct SettingsContentView: View {
                 if userRole == .guest {
                     Button("管理者ログイン", systemImage: "person.badge.key", action: onLoginTapped)
                         .disabled(isParticipationLoading || isSignOutLoading)
+                    Button("広告主ログイン", systemImage: "storefront", action: onAdvertiserLoginTapped)
+                        .disabled(isParticipationLoading || isSignOutLoading)
                 } else {
                     Button("ログアウト", role: .destructive, action: onSignOutTapped)
                         .loadingIndicator(isLoading: isSignOutLoading)
@@ -142,6 +152,7 @@ struct SettingsContentView: View {
         isParticipationLoading: false,
         isSignOutLoading: false,
         onLoginTapped: {},
+        onAdvertiserLoginTapped: {},
         onSignOutTapped: {},
         onLicenseTapped: {}
     )

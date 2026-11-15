@@ -7,10 +7,10 @@
 
 import ComposableArchitecture
 import SwiftUI
+import Shared
 
 struct PublicMapView: View {
     @SwiftUI.Bindable var store: StoreOf<PublicMapFeature>
-    var isAdminLoggedIn = false
     var isNavigationDisabled = false
     
     var body: some View {
@@ -27,7 +27,9 @@ struct PublicMapView: View {
                         onPeriodSelected: { routeStore.send(.selected($0)) },
                         onToastDismissed: { routeStore.send(.toastDismissed) }
                     ) {
-                        PublicRouteMapView(store: routeStore)
+                        PublicRouteMapView(
+                            store: routeStore
+                        )
                             .id(routeStore.district.id)
                     }
                 } else if let locationsStore = store.scope(
@@ -38,7 +40,9 @@ struct PublicMapView: View {
                         toast: locationsStore.toast,
                         onToastDismissed: { locationsStore.send(.toastDismissed) }
                     ) {
-                        PublicLocationsMapView(store: locationsStore)
+                        PublicLocationsMapView(
+                            store: locationsStore
+                        )
                     }
                 } else {
                     Spacer()
@@ -70,7 +74,7 @@ struct PublicMapView: View {
             selectedPeriodTitle: selectedPeriodTitle,
             isRouteLoading: isRouteLoading,
             isPeriodDisabled: isPeriodDisabled,
-            isAdminLoggedIn: isAdminLoggedIn,
+            userRole: store.userRole,
             isNavigationDisabled: isNavigationDisabled,
             toast: toast,
             onAdminPageTapped: { store.send(.delegate(.settingsOrAdminTapped)) },
@@ -97,7 +101,7 @@ struct PublicMapContentView<MapContent: View>: View {
     let selectedPeriodTitle: String
     let isRouteLoading: Bool
     let isPeriodDisabled: Bool
-    let isAdminLoggedIn: Bool
+    let userRole: UserRole
     let isNavigationDisabled: Bool
     let toast: MapToast?
     let onAdminPageTapped: () -> Void
@@ -116,7 +120,7 @@ struct PublicMapContentView<MapContent: View>: View {
                 .ignoresSafeArea(.all)
         }
         .safeAreaInset(edge: .top, spacing: 0) {
-            VStack(alignment: .leading, spacing: 0) {
+            VStack(alignment: .leading, spacing: 16) {
                 topControls
                     .fixedSize(horizontal: false, vertical: true)
                     .background {
@@ -134,14 +138,11 @@ struct PublicMapContentView<MapContent: View>: View {
                             }
                         }
                     }
-                    .padding(.top, 0)
                 if let toast {
                     MapToastView(toast: toast, onDismiss: onToastDismissed)
-                        .padding(.top, 16)
                         .transition(.opacity)
                 }
             }
-            .frame(maxWidth: .infinity, alignment: .leading)
             .animation(.easeInOut(duration: 0.2), value: toast)
         }
         .toolbar {
@@ -161,17 +162,12 @@ struct PublicMapContentView<MapContent: View>: View {
                 ToolbarSpacer(.fixed, placement: .topBarTrailing)
             }
             ToolbarItem(placement: .topBarTrailing) {
-                if isAdminLoggedIn {
+                switch userRole {
+                case .district, .headquarter:
                     Menu {
-                        Button(action: onAdminPageTapped) {
-                            MapMenuItemLabel(title: "管理者ページ", systemImage: "person.crop.circle")
-                        }
-                        Button(action: onSettingsTapped) {
-                            MapMenuItemLabel(title: "設定", systemImage: "gearshape")
-                        }
-                        Button(role: .destructive, action: onEmergencySignOutTapped) {
-                            MapMenuItemLabel(title: "ログアウト", systemImage: "rectangle.portrait.and.arrow.right")
-                        }
+                        Button("管理者ページ", action: onAdminPageTapped)
+                        Button("設定", action: onSettingsTapped)
+                        Button("ログアウト", role: .destructive, action: onEmergencySignOutTapped)
                     } label: {
                         Image(systemName: "person.crop.circle")
                     } primaryAction: {
@@ -179,7 +175,19 @@ struct PublicMapContentView<MapContent: View>: View {
                     }
                     .accessibilityLabel("管理者")
                     .disabled(isNavigationDisabled)
-                } else {
+                case .advertiser:
+                    Menu {
+                        Button("広告主ページ", action: onAdminPageTapped)
+                        Button("設定", action: onSettingsTapped)
+                        Button("ログアウト", role: .destructive, action: onEmergencySignOutTapped)
+                    } label: {
+                        Image(systemName: "storefront")
+                    } primaryAction: {
+                        onAdminPageTapped()
+                    }
+                    .accessibilityLabel("広告主")
+                    .disabled(isNavigationDisabled)
+                case .guest:
                     Button(action: onSettingsTapped) {
                         Image(systemName: "gearshape")
                     }
@@ -188,7 +196,7 @@ struct PublicMapContentView<MapContent: View>: View {
                 }
             }
         }
-        .toolbarBackgroundVisibility(.hidden, for: .navigationBar)
+        .toolbarBackground(.hidden, for: .navigationBar)
     }
 
     private var topControls: some View {
@@ -262,15 +270,6 @@ struct PublicMapContentView<MapContent: View>: View {
     }
 }
 
-private struct MapMenuItemLabel: View {
-    let title: String
-    let systemImage: String
-
-    var body: some View {
-        Label(title, systemImage: systemImage)
-    }
-}
-
 private struct MapTopMenuStyle: ViewModifier {
     let isLiquidGlassDisabled: Bool
 
@@ -313,7 +312,7 @@ private extension PublicMapFeature.Content {
             selectedPeriodTitle: "日程を選択",
             isRouteLoading: false,
             isPeriodDisabled: false,
-            isAdminLoggedIn: false,
+            userRole: .guest,
             isNavigationDisabled: false,
             toast: nil,
             onAdminPageTapped: {},

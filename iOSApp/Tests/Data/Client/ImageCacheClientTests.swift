@@ -4,6 +4,13 @@ import Testing
 @testable import iOSApp
 
 struct ImageCacheClientTests {
+    @Test("広告画像として扱えないURLをプリロードしない")
+    func rejectsNonHTTPImageURL() async {
+        await #expect(throws: ImageCacheClientError.invalidURL) {
+            try await ImageCacheClient().preload(path: "file:///tmp/banner.jpg")
+        }
+    }
+
     @Test("有効なURLのみを重複排除して順番に取得する")
     func preloadsDistinctValidURLs() async {
         let recorder = ImageRetrievalRecorder()

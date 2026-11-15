@@ -15,7 +15,11 @@ struct DistrictEditFeatureTests {
         let newCoordinate = Coordinate(latitude: 34, longitude: 138)
         var initial = try DistrictEditFeature.State(fixture.district, appState: fixture.appState)
         initial.district.base = oldCoordinate
-        initial.destination = .base(.init(base: oldCoordinate))
+        initial.destination = .base(.init(
+            coordinate: oldCoordinate,
+            regionOrigin: oldCoordinate,
+            title: "会所位置"
+        ))
         let store = TestStore(initialState: initial) {
             DistrictEditFeature()
         } withDependencies: { $0.installTestSpies() }
@@ -224,7 +228,11 @@ struct DistrictEditFeatureTests {
         #expect(store.state.performances == [fixture.performance])
 
         await store.send(.baseTapped) {
-            $0.destination = .base(.init(origin: fixture.festivalBase))
+            $0.destination = .base(.init(
+                coordinate: nil,
+                regionOrigin: fixture.festivalBase,
+                title: "会所位置"
+            ))
         }
         #expect(store.state.destination?.base?.region?.center.latitude == fixture.festivalBase.latitude)
         #expect(store.state.destination?.base?.region?.center.longitude == fixture.festivalBase.longitude)
@@ -319,7 +327,7 @@ struct DistrictEditFeatureTests {
             DistrictEditFeature()
         } withDependencies: { $0.installTestSpies() }
 
-        await store.send(.imageEditDismissTapped)
+        await store.send(.imageEdit(.closeTapped))
         #expect(store.state.isImageEditPresented)
         await store.finish()
     }
@@ -356,7 +364,12 @@ struct DistrictEditFeatureTests {
         } withDependencies: { $0.installTestSpies() }
 
         await store.send(.baseTapped) {
-            $0.destination = .base(.init(base: Coordinate(latitude: 34, longitude: 138)))
+            let coordinate = Coordinate(latitude: 34, longitude: 138)
+            $0.destination = .base(.init(
+                coordinate: coordinate,
+                regionOrigin: coordinate,
+                title: "会所位置"
+            ))
         }
         #expect(store.state.destination?.base?.coordinate == initial.district.base)
         await store.finish()
@@ -403,7 +416,11 @@ struct DistrictEditFeatureTests {
         let fixture = DistrictEditFixture()
         let newBase = Coordinate(latitude: 34.5, longitude: 138.5)
         var initial = try DistrictEditFeature.State(fixture.district, appState: fixture.appState)
-        initial.destination = .base(.init(base: newBase))
+        initial.destination = .base(.init(
+            coordinate: newBase,
+            regionOrigin: newBase,
+            title: "会所位置"
+        ))
         let store = TestStore(initialState: initial) {
             DistrictEditFeature()
         } withDependencies: { $0.installTestSpies() }
@@ -472,7 +489,7 @@ struct DistrictEditFeatureTests {
         } withDependencies: { $0.installTestSpies() }
 
         await store.send(.imageEditTapped) { $0.isImageEditPresented = true }
-        await store.send(.imageEditDismissTapped) { $0.isImageEditPresented = false }
+        await store.send(.imageEdit(.closeTapped)) { $0.isImageEditPresented = false }
         #expect(!store.state.isLoading)
         await store.finish()
     }

@@ -7,6 +7,7 @@
 
 import SwiftUI
 import ComposableArchitecture
+import Shared
 
 struct PublicRouteMapView: View {
     @SwiftUI.Bindable var store: StoreOf<PublicRouteFeature>
@@ -53,14 +54,19 @@ struct PublicRouteMapView: View {
                 .ignoresSafeArea(.all)
             }
             .safeAreaInset(edge: .bottom) {
-                Group {
-                    if isLiquidGlassDisabled {
-                        toolbarLayerBeforeLiquidGlass
-                    } else if #available(iOS 26.0, *) {
-                        toolbarLayerAfterLiquidGlass
+                VStack(alignment: .trailing, spacing: 8) {
+                    if let adBannerStore = store.scope(state: \.adBanner, action: \.adBanner) {
+                        StoreAdBannerView(store: adBannerStore)
                     }
+                    Group {
+                        if isLiquidGlassDisabled {
+                            toolbarLayerBeforeLiquidGlass
+                        } else if #available(iOS 26.0, *) {
+                            toolbarLayerAfterLiquidGlass
+                        }
+                    }
+                    .padding()
                 }
-                .padding()
             }
             .sheet(item: $store.detail) { detail in
                 switch detail{

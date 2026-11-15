@@ -14,7 +14,7 @@ struct FestivalEditFeature {
     
     @Reducer
     enum Destination {
-        case base(DistrictBaseEditFeature)
+        case base(MapCoordinatePickerFeature)
         case checkpoint(CheckpointEditFeature)
         case hazard(HazardSectionFeature)
     }
@@ -39,7 +39,6 @@ struct FestivalEditFeature {
         case saveTapped
         case cancelTapped
         case imageEditTapped
-        case imageEditDismissTapped
         case imageEdit(ImageEditFeature.Action)
         case baseTapped
         case putReceived(VoidAppResult)
@@ -104,15 +103,27 @@ struct FestivalEditFeature {
                 guard !state.isLoading else { return .none }
                 state.isImageEditPresented = true
                 return .none
-            case .imageEditDismissTapped:
+            case .imageEdit(.closeTapped):
                 guard !state.imageEdit.isUploading else { return .none }
                 state.isImageEditPresented = false
                 return .none
             case .baseTapped:
                 if let base = state.base {
-                    state.destination = .base(DistrictBaseEditFeature.State(base: base))
+                    state.destination = .base(
+                        MapCoordinatePickerFeature.State(
+                            coordinate: base,
+                            regionOrigin: base,
+                            title: "本部所在地"
+                        )
+                    )
                 } else {
-                    state.destination = .base(DistrictBaseEditFeature.State(origin: state.festival.base))
+                    state.destination = .base(
+                        MapCoordinatePickerFeature.State(
+                            coordinate: nil,
+                            regionOrigin: state.festival.base,
+                            title: "本部所在地"
+                        )
+                    )
                 }
                 return .none
             case .putReceived(.failure(let error)):

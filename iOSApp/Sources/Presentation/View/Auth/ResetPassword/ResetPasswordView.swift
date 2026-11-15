@@ -12,11 +12,13 @@ import NavigationSwipeControl
 @available(iOS 17.0, *)
 struct ResetPasswordScreen: View {
     @SwiftUI.Bindable var store: StoreOf<ResetPasswordFeature>
+    var usernameTitle: LocalizedStringKey = "ID（ユーザー名）"
 
     var body: some View {
         ResetPasswordContentView(
             step: store.step,
             username: $store.username,
+            usernameTitle: usernameTitle,
             newPassword1: $store.newPassword1,
             newPassword2: $store.newPassword2,
             code: $store.code,
@@ -44,6 +46,7 @@ typealias ResetPasswordView = ResetPasswordScreen
 struct ResetPasswordContentView: View {
     let step: ResetPasswordFeature.State.Step
     @Binding var username: String
+    var usernameTitle: LocalizedStringKey = "ID（ユーザー名）"
     @Binding var newPassword1: String
     @Binding var newPassword2: String
     @Binding var code: String
@@ -69,7 +72,7 @@ struct ResetPasswordContentView: View {
             case .enterUsername:
                 Text("パスワードをリセットするには、登録済みのメールアドレスに送信された認証コードが必要です。")
                     .foregroundStyle(.secondary)
-                TextField("ID（ユーザー名）", text: $username)
+                TextField(usernameTitle, text: $username)
                     .textContentType(.none)
                     .textInputAutocapitalization(.never)
                     .autocorrectionDisabled()

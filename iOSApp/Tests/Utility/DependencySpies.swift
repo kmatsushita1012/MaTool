@@ -23,6 +23,9 @@ extension DependencyValues {
         self[LoadDistrictStateUseCaseKey.self] = UnconfiguredLoadDistrictStateUseCaseSpy()
         self[SceneDataFetcherKey.self] = UnconfiguredSceneDataFetcherSpy()
         self[PublicMapAdUsecaseKey.self] = PublicMapAdUsecaseSpy()
+        self[StoreAdBannerUsecaseKey.self] = StoreAdBannerUsecaseSpy()
+        self[StoreCreditUsecaseKey.self] = StoreCreditUsecaseSpy()
+        self[StoreAdImpressionQueueClientKey.self] = StoreAdImpressionQueueClientSpy()
         self[UserDefaltsManagerKey.self] = DefaultUserDefaultsSpy()
         self.userDefaultsClient = UserDefaultsClientSpy().client
         self.authProvider = AuthProviderSpy().client
@@ -54,7 +57,9 @@ extension ConstantValues {
         isLiquidGlassEnabled: false,
         admobAppId: nil,
         publicMapInterstitialAdUnitId: nil,
-        publicMapBannerAdUnitId: nil
+        publicMapBannerAdUnitId: nil,
+        storeCreditProductId500: nil,
+        storeCreditProductId1000: nil
     )
 }
 
@@ -175,6 +180,19 @@ actor HTTPClientSpy: HTTPClientProtocol {
         return try decoder.decode(Response.self, from: responseData)
     }
 
+    func post<Body: Encodable>(
+        path: String, body: Body, query: [String: Any], accessToken: String?
+    ) async throws {
+        calls.append("POST \(path)")
+        let encoder = JSONEncoder()
+        encoder.dateEncodingStrategy = .secondsSince1970
+        postCalls.append(HTTPPostCall(
+            path: path,
+            body: try encoder.encode(body),
+            accessToken: accessToken
+        ))
+    }
+
     func put<Response: Decodable, Body: Encodable>(
         path: String, body: Body, query: [String: Any], accessToken: String?
     ) async throws -> Response {
@@ -232,6 +250,24 @@ final class AuthProviderInitializeSpy: @unchecked Sendable {
 
     func record() {
         lock.withLock { count += 1 }
+    }
+}
+
+actor AuthProviderRoleLookupSpy {
+    private let role: UserRole
+    private var calls = 0
+
+    init(role: UserRole) {
+        self.role = role
+    }
+
+    func call() -> UserRole {
+        calls += 1
+        return role
+    }
+
+    func callCount() -> Int {
+        calls
     }
 }
 
@@ -322,7 +358,30 @@ final class DefaultUserDefaultsSpy: UserDefalutsManagerProtocol, @unchecked Send
 
 actor ImageCacheClientSpy: ImageCacheClientProtocol {
     private(set) var requests: [[String?]] = []
+    private(set) var preloadedPaths: [String] = []
+
+    private let failsSinglePathPreload: Bool
+
+    init(failsSinglePathPreload: Bool = false) {
+        self.failsSinglePathPreload = failsSinglePathPreload
+    }
+
     func preload(paths: [String?]) async { requests.append(paths) }
+
+    func preload(path: String) async throws {
+        preloadedPaths.append(path)
+        if failsSinglePathPreload {
+            throw ImageCacheClientError.invalidURL
+        }
+    }
+}
+
+actor StoreAdImpressionQueueClientSpy: StoreAdImpressionQueueClientProtocol {
+    private(set) var requests: [ImpressionReportRequest] = []
+
+    func enqueue(_ request: ImpressionReportRequest) async {
+        requests.append(request)
+    }
 }
 
 actor AppStatusClientSpy: AppStatusClientProtocol {
