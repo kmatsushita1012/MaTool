@@ -34,15 +34,8 @@ enum LatestPeriodRouteResolver {
             nowYear: nowYear,
             periodRepository: periodRepository
         )
-        let years = Array(Set(periods.map { $0.date.year })).sorted(by: >)
-
-        for year in years {
-            let routes = try await routeRepository.query(by: districtId, year: year)
-            if !routes.isEmpty {
-                return (routes, periods)
-            }
-        }
-
-        return ([], periods)
+        guard let year = periods.first?.date.year else { return ([], periods) }
+        let routes = try await routeRepository.query(by: districtId, year: year)
+        return (routes, periods)
     }
 }
