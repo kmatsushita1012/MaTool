@@ -425,7 +425,7 @@ struct DistrictUsecaseTest {
         #expect(lastCalledPutId == current.id)
         #expect(districtRepository.getCallCount == 1)
         #expect(districtRepository.putCallCount == 1)
-        #expect(periodRepository.queryByYearCallCount == 3)
+        #expect(periodRepository.queryByYearCallCount == 2)
         #expect(routeRepository.queryByYearCallCount == 1)
         #expect(routeRepository.putCallCount == 2)
         let updatedRoutes = updatedRouteCollector.values

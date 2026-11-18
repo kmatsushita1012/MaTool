@@ -4,7 +4,7 @@ import Testing
 
 struct LatestPeriodRouteResolverTest {
     @Test
-    func fetchLatestPeriods_翌年Periodありは翌年と今年を返す() async throws {
+    func fetchLatestPeriods_翌年Periodありは翌年だけ返す() async throws {
         let festivalId = "festival-1"
         let repository = PeriodRepositoryMock(queryByYearHandler: { _, year in
             switch year {
@@ -23,12 +23,12 @@ struct LatestPeriodRouteResolverTest {
             periodRepository: repository
         )
 
-        #expect(periods.map { $0.id } == ["period-2027", "period-2026"])
+        #expect(periods.map { $0.id } == ["period-2027"])
         #expect(repository.queryByYearCallCount == 2)
     }
 
     @Test
-    func fetchLatestPeriods_翌年Periodなしは今年と前年を返す() async throws {
+    func fetchLatestPeriods_翌年Periodなしは今年だけ返す() async throws {
         let festivalId = "festival-1"
         let repository = PeriodRepositoryMock(queryByYearHandler: { _, year in
             switch year {
@@ -47,8 +47,8 @@ struct LatestPeriodRouteResolverTest {
             periodRepository: repository
         )
 
-        #expect(periods.map { $0.id } == ["period-2026", "period-2025"])
-        #expect(repository.queryByYearCallCount == 3)
+        #expect(periods.map { $0.id } == ["period-2026"])
+        #expect(repository.queryByYearCallCount == 2)
     }
 
     @Test
@@ -83,12 +83,12 @@ struct LatestPeriodRouteResolverTest {
         )
 
         #expect(result.routes == [nextYearRoute])
-        #expect(result.periods.map { $0.id } == ["period-2027", "period-2026"])
+        #expect(result.periods.map { $0.id } == ["period-2027"])
         #expect(queriedYears == [2027])
     }
 
     @Test
-    func fetchLatestRoutes_翌年Periodあり翌年Routeなしは今年を返す() async throws {
+    func fetchLatestRoutes_翌年Periodあり翌年Routeなしは今年Routeへfallbackしない() async throws {
         let festivalId = "festival-1"
         let districtId = "district-1"
         let currentYearRoute = Route.mock(id: "route-2026", districtId: districtId)
@@ -118,12 +118,13 @@ struct LatestPeriodRouteResolverTest {
             routeRepository: routeRepository
         )
 
-        #expect(result.routes == [currentYearRoute])
-        #expect(queriedYears == [2027, 2026])
+        #expect(result.routes.isEmpty)
+        #expect(result.periods.map { $0.id } == ["period-2027"])
+        #expect(queriedYears == [2027])
     }
 
     @Test
-    func fetchLatestRoutes_翌年Periodなし今年Routeなしで前年を返す() async throws {
+    func fetchLatestRoutes_今年Routeなしは前年Routeへfallbackしない() async throws {
         let festivalId = "festival-1"
         let districtId = "district-1"
         let lastYearRoute = Route.mock(id: "route-2025", districtId: districtId)
@@ -153,8 +154,9 @@ struct LatestPeriodRouteResolverTest {
             routeRepository: routeRepository
         )
 
-        #expect(result.routes == [lastYearRoute])
-        #expect(queriedYears == [2026, 2025])
+        #expect(result.routes.isEmpty)
+        #expect(result.periods.map { $0.id } == ["period-2026"])
+        #expect(queriedYears == [2026])
     }
 
     @Test

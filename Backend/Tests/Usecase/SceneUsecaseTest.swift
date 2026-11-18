@@ -63,7 +63,7 @@ struct SceneUsecaseTest {
     }
 
     @Test
-    func fetchLaunchFestivalPack_正常_翌年を優先し今年の期間も返す() async throws {
+    func fetchLaunchFestivalPack_正常_翌年を優先し翌年の期間だけ返す() async throws {
         let now = makeDate(year: 2026, month: 2, day: 22, hour: 12)
         let festival = Festival.mock(id: "festival-1")
         let currentPeriod = Period.mock(id: "current", festivalId: festival.id, date: .init(year: 2026, month: 2, day: 22))
@@ -84,7 +84,7 @@ struct SceneUsecaseTest {
         let result = try await subject.fetchLaunchFestivalPack(festivalId: festival.id, user: .guest, now: now)
 
         #expect(result.year == 2027)
-        #expect(result.periods == [nextPeriod, currentPeriod])
+        #expect(result.periods == [nextPeriod])
     }
 
     @Test
@@ -281,7 +281,7 @@ struct SceneUsecaseTest {
     }
 
     @Test
-    func fetchLaunchDistrictPack_正常_前年fallback経路をPackで解決する() async throws {
+    func fetchLaunchDistrictPack_正常_当年度にRouteがなければ前年Routeを返さない() async throws {
         let now = makeDate(year: 2026, month: 2, day: 22, hour: 12)
         let district = District.mock(id: "district-1", festivalId: "festival-1")
         let currentPeriod = Period.mock(
@@ -321,8 +321,8 @@ struct SceneUsecaseTest {
             now: now
         )
 
-        #expect(result.routes == [route])
-        #expect(result.currentRouteId == route.id)
+        #expect(result.routes.isEmpty)
+        #expect(result.currentRouteId == nil)
     }
 
     @Test
