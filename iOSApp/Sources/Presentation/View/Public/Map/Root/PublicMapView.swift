@@ -258,11 +258,13 @@ struct PublicMapContentView<MapContent: View>: View {
             onContentSelected(item)
         } label: {
             Label {
-                Text(item.name)
                 if let subtitle = item.subname, !subtitle.isEmpty {
-                    Text(subtitle)
+                    Text(item.name)
+                        + Text("\n\(subtitle)")
                         .font(.caption)
-                        .foregroundStyle(.secondary)
+                        .foregroundColor(.secondary)
+                } else {
+                    Text(item.name)
                 }
             } icon: {
                 Image(systemName: "checkmark")
