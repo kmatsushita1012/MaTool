@@ -66,9 +66,8 @@ struct PublicMapView: View {
         PublicMapContentView(
             festivalTitle: store.festivalTitle,
             districtContentGroups: store.districtContentGroups,
-            selectedContent: store.selectedContent,
+            selectedContent: store.selectedContentItem,
             selectedRouteId: selectedRouteId,
-            contentTitles: store.contentTitles,
             isLoading: store.isLoading,
             routes: routes,
             selectedPeriodTitle: selectedPeriodTitle,
@@ -95,7 +94,6 @@ struct PublicMapContentView<MapContent: View>: View {
     let districtContentGroups: [PublicMapFeature.DistrictContentGroup]
     let selectedContent: PublicMapFeature.Content
     let selectedRouteId: String?
-    let contentTitles: [PublicMapFeature.Content: String]
     let isLoading: Bool
     let routes: [RouteEntry]?
     let selectedPeriodTitle: String
@@ -206,18 +204,18 @@ struct PublicMapContentView<MapContent: View>: View {
                 ForEach(districtContentGroups) { group in
                     if let name = group.name {
                         Section(name) {
-                            ForEach(group.contents, id: \.self) { item in
+                            ForEach(group.contents) { item in
                                 contentButton(for: item)
                             }
                         }
                     } else {
-                        ForEach(group.contents, id: \.self) { item in
+                        ForEach(group.contents) { item in
                             contentButton(for: item)
                         }
                     }
                 }
             } label: {
-                Label(contentTitles[selectedContent] ?? "", systemImage: selectedContent.menuSymbol)
+                Label(selectedContent.name, systemImage: selectedContent.menuSymbol)
             }
             .modifier(MapTopMenuStyle(isLiquidGlassDisabled: isLiquidGlassDisabled))
             .loadingIndicator(isLoading: isLoading)
@@ -259,12 +257,19 @@ struct PublicMapContentView<MapContent: View>: View {
             guard item != selectedContent else { return }
             onContentSelected(item)
         } label: {
-            let title = contentTitles[item] ?? ""
-            Label {
-                Text(title)
-            } icon: {
-                Image(systemName: "checkmark")
-                    .tint(item == selectedContent ? nil : .clear)
+            HStack(spacing: 8) {
+                VStack(alignment: .leading) {
+                    Text(item.name)
+                    if let subtitle = item.subname, !subtitle.isEmpty {
+                        Text(subtitle)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+                Spacer(minLength: 8)
+                if item == selectedContent {
+                    Image(systemName: "checkmark")
+                }
             }
         }
     }
@@ -306,7 +311,6 @@ private extension PublicMapFeature.Content {
             districtContentGroups: [],
             selectedContent: .locations,
             selectedRouteId: nil,
-            contentTitles: [.locations: "現在地一覧"],
             isLoading: false,
             routes: nil,
             selectedPeriodTitle: "日程を選択",

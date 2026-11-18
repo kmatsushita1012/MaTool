@@ -278,8 +278,8 @@ struct RootFeature {
                 switch map.selectedContent {
                 case .locations:
                     initialDistrictID = nil
-                case .route(let districtId):
-                    initialDistrictID = districtId
+                case .route(let district):
+                    initialDistrictID = district.id
                 }
                 return prepareIntroduction(state: &state, festival: festival, districtId: initialDistrictID)
 
@@ -421,7 +421,8 @@ struct RootFeature {
 
             case .routeTapped(let districtID):
                 state.sheet = nil
-                return .send(.map(.contentSelected(.route(districtID))))
+                guard let district = state.appState?.district(id: districtID) else { return .none }
+                return .send(.map(.contentSelected(.route(district))))
 
             case .sheet:
                 return .none

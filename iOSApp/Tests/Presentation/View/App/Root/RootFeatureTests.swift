@@ -77,7 +77,7 @@ struct RootFeatureTests {
         ))))
         #expect(store.state.launchState == .district(role, "route"))
         #expect(store.state.map?.userRole == role)
-        #expect(store.state.map?.selectedContent == .route(fixture.district.id))
+        #expect(store.state.map?.selectedContent == .route(fixture.district))
         await store.finish()
     }
 
@@ -104,7 +104,7 @@ struct RootFeatureTests {
             .signOutReceived(.success(.district(.guest, "route")))
         ))))
         #expect(store.state.launchState == .district(.guest, "route"))
-        #expect(store.state.map?.selectedContent == .route(fixture.district.id))
+        #expect(store.state.map?.selectedContent == .route(fixture.district))
         #expect(store.state.map?.userRole == .guest)
         #expect(store.state.destination == nil)
         #expect(lastScreen.value == nil)
@@ -201,7 +201,7 @@ struct RootFeatureTests {
             fixture.festival, pack, entry.floatLocation.timestamp
         ))))
         #expect(store.state.sheet?.district != nil)
-        #expect(store.state.map?.selectedContent == .route(fixture.district.id))
+        #expect(store.state.map?.selectedContent == .route(fixture.district))
         await store.finish()
     }
 
@@ -790,7 +790,7 @@ struct RootFeatureTests {
         let map = state.makeMapState(userRole: .district("district"), currentRouteId: "route")
 
         #expect(map != nil)
-        #expect(map?.selectedContent == .route("district"))
+        #expect(map?.selectedContent == .route(AppStateFixture.district()))
         #expect(map?.userRole == .district("district"))
     }
 
@@ -1310,9 +1310,8 @@ struct RootFeatureTests {
         store.exhaustivity = .off
 
         await store.send(.routeTapped("unknown-district"))
-        await store.receive(.map(.contentSelected(.route("unknown-district"))))
         #expect(store.state.sheet == nil)
-        #expect(store.state.map?.selectedContent == .route("unknown-district"))
+        #expect(store.state.map?.selectedContent == .locations)
         await store.finish()
     }
 

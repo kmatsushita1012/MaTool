@@ -336,8 +336,12 @@ private struct FestivalDistrictGroupContentView: View {
                         Button {
                             onDistrictSelected(district.id)
                         } label: {
-                            HStack {
+                            HStack(spacing: 8) {
                                 Text(district.name)
+                                if let subname = district.subname, !subname.isEmpty {
+                                    Text(subname)
+                                        .foregroundStyle(.secondary)
+                                }
                                 Spacer(minLength: 8)
                                 Image(systemName: "chevron.right")
                                     .foregroundStyle(.secondary)
