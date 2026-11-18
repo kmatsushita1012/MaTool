@@ -91,23 +91,15 @@ struct DistrictEditContentView<VisibilityValue: Hashable & CaseIterable>: View {
                 TextEditor(text: $description)
                     .frame(height: 120)
             }
-            Section(header: Text("紹介画像")) {
-                Button("画像を変更", systemImage: "photo", action: onImageEditTapped)
+            Section {
+                Button("写真を選択", systemImage: "photo", action: onImageEditTapped)
                     .disabled(isSaving)
-            }
-            Section(header: Text("会所")) {
-                Button(action: onBaseTapped) {
-                    Label("地図で選択", systemImage: "map")
-                        .font(.body)
-                }
-                .disabled(isSaving)
-            }
-            Section(header: Text("町域")) {
-                Button(action: onAreaTapped) {
-                    Label("地図で選択", systemImage: "map")
-                        .font(.body)
-                }
-                .disabled(isSaving)
+
+                Button("会所を選択", systemImage: "mappin", action: onBaseTapped)
+                    .disabled(isSaving)
+
+                Button("町域を選択", systemImage: "mappin.and.ellipse", action: onAreaTapped)
+                    .disabled(isSaving)
             }
             Section(header: Text("ルート"), footer: Text("最新年の全てのルートの公開範囲が変更されます")) {
                 Picker("デフォルトの公開範囲", selection: $visibility) {
