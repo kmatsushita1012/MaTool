@@ -9,6 +9,7 @@
 public struct District: Entity, Identifiable {
     public let id: String
     public var name: String
+    @NullEncodable public var subname: String?
     public let festivalId: Festival.ID
     public var order: Int
     @NullEncodable public var group: String?
@@ -23,6 +24,7 @@ public struct District: Entity, Identifiable {
         id: String,
         name: String,
         festivalId: String,
+        subname: String? = nil,
         order: Int = 0,
         group: String? = nil,
         description: String? = nil,
@@ -34,6 +36,7 @@ public struct District: Entity, Identifiable {
     ) {
         self.id = id
         self.name = name
+        self.subname = subname
         self.festivalId = festivalId
         self.order = order
         self.group = group
