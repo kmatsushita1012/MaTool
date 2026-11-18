@@ -151,8 +151,7 @@ struct ImageEditContentView: View {
                 role: .destructive,
                 action: onRemoveTapped
             )
-                .symbolRenderingMode(.monochrome)
-                .foregroundStyle(.red)
+                .tint(.red)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(16)
                 .contentShape(.rect)
@@ -167,10 +166,12 @@ struct ImageEditContentView: View {
             Image(uiImage: image)
                 .resizable()
                 .scaledToFit()
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+                .frame(maxWidth: .infinity)
         } else if let previewURL {
             WebImageView(imagePath: previewURL, contentMode: .fit)
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+                .frame(maxWidth: .infinity)
         } else {
             PhotosPicker(selection: $selectedPhotoItem, matching: .images) {
                 Label("画像を追加", systemImage: "photo")
