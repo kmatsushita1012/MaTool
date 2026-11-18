@@ -137,7 +137,7 @@ struct RouteUsecaseTest {
     }
 
     @Test
-    func query_正常_latest_翌年Periodありで今年Routeを採用() async throws {
+    func query_正常_latest_翌年Periodありで今年Routeへfallbackしない() async throws {
         let district = District.mock(id: "district-1", festivalId: "festival-1")
         let now = SimpleDate(year: 2026, month: 2, day: 1)
         let currentYearRoute = Route.mock(id: "route-current", districtId: district.id)
@@ -164,14 +164,14 @@ struct RouteUsecaseTest {
 
         let result = try await subject.query(by: district.id, type: .latest, now: now, user: .guest)
 
-        #expect(result == [currentYearRoute])
-        #expect(repository.queryByYearCallCount == 2)
-        #expect(queriedYears == [2027, 2026])
+        #expect(result.isEmpty)
+        #expect(repository.queryByYearCallCount == 1)
+        #expect(queriedYears == [2027])
         #expect(periodRepository.queryByYearCallCount == 2)
     }
 
     @Test
-    func query_正常_latest_翌年Periodなしで前年Routeを採用() async throws {
+    func query_正常_latest_今年Routeがなければ前年Routeへfallbackしない() async throws {
         let district = District.mock(id: "district-1", festivalId: "festival-1")
         let lastYearRoute = Route.mock(id: "route-last", districtId: district.id)
         var queriedYears: [Int] = []
@@ -202,10 +202,10 @@ struct RouteUsecaseTest {
             user: .guest
         )
 
-        #expect(result == [lastYearRoute])
-        #expect(repository.queryByYearCallCount == 2)
-        #expect(queriedYears == [2026, 2025])
-        #expect(periodRepository.queryByYearCallCount == 3)
+        #expect(result.isEmpty)
+        #expect(repository.queryByYearCallCount == 1)
+        #expect(queriedYears == [2026])
+        #expect(periodRepository.queryByYearCallCount == 2)
     }
 
     @Test

@@ -12,11 +12,14 @@ enum LatestPeriodRouteResolver {
         let (nextYearPeriods, currentYearPeriods) = try await (nextYearTask, currentYearTask)
 
         if !nextYearPeriods.isEmpty {
-            return nextYearPeriods + currentYearPeriods
+            return nextYearPeriods
         }
 
-        let lastYearPeriods = try await periodRepository.query(by: festivalId, year: nowYear - 1)
-        return currentYearPeriods + lastYearPeriods
+        if !currentYearPeriods.isEmpty {
+            return currentYearPeriods
+        }
+
+        return try await periodRepository.query(by: festivalId, year: nowYear - 1)
     }
 
     static func fetchLatestRoutes(
