@@ -190,14 +190,39 @@ private struct InfoImageTitleOverlay: View {
         .font(titleFont)
     }
 
-    private var overlayContent: some View {
-        VStack(alignment: .trailing, spacing: 0) {
-            titleContent
-            if let subtitle, !subtitle.isEmpty {
+    private func subtitleContent(_ subtitle: String) -> some View {
+        Group {
+            if isVertical {
+                VStack(spacing: 0) {
+                    ForEach(Array(subtitle.enumerated()), id: \.offset) { character in
+                        Text(String(character.element))
+                    }
+                }
+            } else {
                 Text(subtitle)
-                    .font(subtitleFont)
                     .lineLimit(1)
                     .minimumScaleFactor(0.6)
+            }
+        }
+        .font(subtitleFont)
+    }
+
+    private var overlayContent: some View {
+        Group {
+            if isVertical {
+                HStack(alignment: .bottom, spacing: 8) {
+                    if let subtitle, !subtitle.isEmpty {
+                        subtitleContent(subtitle)
+                    }
+                    titleContent
+                }
+            } else {
+                VStack(alignment: .trailing, spacing: 8) {
+                    titleContent
+                    if let subtitle, !subtitle.isEmpty {
+                        subtitleContent(subtitle)
+                    }
+                }
             }
         }
     }

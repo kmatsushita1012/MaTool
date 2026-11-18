@@ -257,19 +257,16 @@ struct PublicMapContentView<MapContent: View>: View {
             guard item != selectedContent else { return }
             onContentSelected(item)
         } label: {
-            HStack(spacing: 8) {
-                VStack(alignment: .leading) {
-                    Text(item.name)
-                    if let subtitle = item.subname, !subtitle.isEmpty {
-                        Text(subtitle)
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                    }
+            Label {
+                Text(item.name)
+                if let subtitle = item.subname, !subtitle.isEmpty {
+                    Text(subtitle)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
                 }
-                Spacer(minLength: 8)
-                if item == selectedContent {
-                    Image(systemName: "checkmark")
-                }
+            } icon: {
+                Image(systemName: "checkmark")
+                    .tint(item == selectedContent ? nil : .clear)
             }
         }
     }
