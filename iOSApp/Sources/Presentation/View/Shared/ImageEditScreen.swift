@@ -45,50 +45,25 @@ struct ImageEditContentView: View {
     let onCloseTapped: () -> Void
 
     var body: some View {
-        Form {
-            Section {
-                preview
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    .containerRelativeFrame(.vertical)
-                    .listRowInsets(EdgeInsets())
-                    .listRowBackground(Color.clear)
-            } header: {
-                if hasImage {
-                    Text("プレビュー")
-                }
-            }
+        VStack(spacing: 16) {
+            previewArea
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
 
             if hasImage {
-                Section {
-                    PhotosPicker(selection: $selectedPhotoItem, matching: .images) {
-                        Label("画像を変更", systemImage: "photo")
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .contentShape(Rectangle())
-                    }
-                    .loadingIndicator(isLoading: isUploading)
-                    .disabled(isSaving)
-
-                    Button(role: .destructive, action: onRemoveTapped) {
-                        Label("画像を削除", systemImage: "trash")
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .contentShape(Rectangle())
-                    }
-                    .tint(.red)
-                    .disabled(isUploading || isSaving)
-                }
+                imageActions
+                    .padding(.horizontal)
             }
 
             if let failureMessage {
-                Section {
-                    Text(failureMessage)
-                        .font(.footnote)
-                        .foregroundStyle(.red)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
+                Text(failureMessage)
+                    .font(.footnote)
+                    .foregroundStyle(.red)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .padding()
             }
         }
-        .scrollContentBackground(.hidden)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(Color(uiColor: .systemGroupedBackground))
         .safeAreaInset(edge: .top, spacing: 0) {
             if #available(iOS 26.0, *) {
@@ -131,14 +106,60 @@ struct ImageEditContentView: View {
                 .tag(isStoreTarget ? ImageEditMode.interstitial : .dark)
         }
         .labelsHidden()
-        .modifier(ImageEditSegmentPickerStyleModifier())
+        .pickerStyle(.segmented)
+        .controlSize(.large)
         .frame(maxWidth: .infinity)
         .disabled(isUploading || isSaving)
+    }
+
+    private var previewArea: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            if hasImage {
+                Text("プレビュー")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    .padding(.horizontal, 8)
+            }
+
+            preview
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+        }
+        .padding()
     }
 
     private var navigationTitle: String {
         guard isStoreTarget else { return "紹介画像" }
         return "\(selectedMode.title(for: targetType))広告"
+    }
+
+    private var imageActions: some View {
+        VStack(spacing: 0) {
+            PhotosPicker(selection: $selectedPhotoItem, matching: .images) {
+                Label("画像を変更", systemImage: "photo")
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding()
+                    .contentShape(.rect)
+            }
+            .loadingIndicator(isLoading: isUploading)
+            .disabled(isSaving)
+
+            Divider()
+                .padding(.horizontal)
+
+            Button(
+                "画像を削除",
+                systemImage: "trash",
+                role: .destructive,
+                action: onRemoveTapped
+            )
+                .symbolRenderingMode(.monochrome)
+                .foregroundStyle(.red)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(16)
+                .contentShape(.rect)
+                .disabled(isUploading || isSaving)
+        }
+        .background(.background, in: RoundedRectangle(cornerRadius: 16))
     }
 
     @ViewBuilder
@@ -157,29 +178,11 @@ struct ImageEditContentView: View {
             }
             .buttonStyle(.borderedProminent)
             .buttonBorderShape(.capsule)
+            .controlSize(.large)
             .loadingIndicator(isLoading: isUploading)
             .disabled(isSaving)
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
-    }
-}
-
-private struct ImageEditSegmentPickerStyleModifier: ViewModifier {
-    init() {
-        UISegmentedControl.appearance().setTitleTextAttributes(
-            [.font: UIFont.preferredFont(forTextStyle: .body)],
-            for: .normal
-        )
-        UISegmentedControl.appearance().setTitleTextAttributes(
-            [.font: UIFont.preferredFont(forTextStyle: .headline)],
-            for: .selected
-        )
-    }
-
-    func body(content: Content) -> some View {
-        content
-            .pickerStyle(.segmented)
-            .controlSize(.large)
     }
 }
 
