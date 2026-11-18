@@ -106,8 +106,7 @@ struct ImageEditContentView: View {
                 .tag(isStoreTarget ? ImageEditMode.interstitial : .dark)
         }
         .labelsHidden()
-        .pickerStyle(.segmented)
-        .controlSize(.large)
+        .modifier(ImageEditSegmentPickerStyleModifier())
         .frame(maxWidth: .infinity)
         .disabled(isUploading || isSaving)
     }
@@ -183,6 +182,25 @@ struct ImageEditContentView: View {
             .disabled(isSaving)
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
+    }
+}
+
+private struct ImageEditSegmentPickerStyleModifier: ViewModifier {
+    init() {
+        UISegmentedControl.appearance().setTitleTextAttributes(
+            [.font: UIFont.preferredFont(forTextStyle: .body)],
+            for: .normal
+        )
+        UISegmentedControl.appearance().setTitleTextAttributes(
+            [.font: UIFont.preferredFont(forTextStyle: .headline)],
+            for: .selected
+        )
+    }
+
+    func body(content: Content) -> some View {
+        content
+            .pickerStyle(.segmented)
+            .controlSize(.large)
     }
 }
 
