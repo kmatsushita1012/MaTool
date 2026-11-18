@@ -45,17 +45,50 @@ struct ImageEditContentView: View {
     let onCloseTapped: () -> Void
 
     var body: some View {
-        VStack(spacing: 0) {
-            previewArea
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
+        Form {
+            Section {
+                preview
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .containerRelativeFrame(.vertical)
+                    .listRowInsets(EdgeInsets())
+                    .listRowBackground(Color.clear)
+            } header: {
+                if hasImage {
+                    Text("プレビュー")
+                }
+            }
 
-            actionsCard
-                .fixedSize(horizontal: false, vertical: true)
-                .padding(.horizontal, 16)
-                .padding(.top, 8)
-                .padding(.bottom, 8)
+            if hasImage {
+                Section {
+                    PhotosPicker(selection: $selectedPhotoItem, matching: .images) {
+                        Label("画像を変更", systemImage: "photo")
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .contentShape(Rectangle())
+                    }
+                    .loadingIndicator(isLoading: isUploading)
+                    .disabled(isSaving)
+
+                    Button(role: .destructive, action: onRemoveTapped) {
+                        Label("画像を削除", systemImage: "trash")
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .contentShape(Rectangle())
+                    }
+                    .tint(.red)
+                    .disabled(isUploading || isSaving)
+                }
+            }
+
+            if let failureMessage {
+                Section {
+                    Text(failureMessage)
+                        .font(.footnote)
+                        .foregroundStyle(.red)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .scrollContentBackground(.hidden)
         .background(Color(uiColor: .systemGroupedBackground))
         .safeAreaInset(edge: .top, spacing: 0) {
             if #available(iOS 26.0, *) {
@@ -103,67 +136,9 @@ struct ImageEditContentView: View {
         .disabled(isUploading || isSaving)
     }
 
-    private var previewArea: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text("プレビュー")
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
-                .padding(.horizontal, 8)
-
-            preview
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .padding(16)
-                .background(.background, in: RoundedRectangle(cornerRadius: 24))
-        }
-        .padding(.horizontal, 16)
-        .padding(.top, 16)
-        .padding(.bottom, 8)
-    }
-
     private var navigationTitle: String {
         guard isStoreTarget else { return "紹介画像" }
         return "\(selectedMode.title(for: targetType))広告"
-    }
-
-    private var actionsCard: some View {
-        VStack(spacing: 0) {
-            PhotosPicker(selection: $selectedPhotoItem, matching: .images) {
-                Label(hasImage ? "画像を変更" : "画像を追加", systemImage: "photo")
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .contentShape(Rectangle())
-            }
-            .buttonStyle(.plain)
-            .loadingIndicator(isLoading: isUploading)
-            .disabled(isSaving)
-            .padding(.horizontal, 16)
-            .padding(.vertical, 16)
-
-            if hasImage {
-                Divider()
-                    .padding(.leading, 48)
-
-                Button(role: .destructive, action: onRemoveTapped) {
-                    Label("画像を削除", systemImage: "trash")
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .contentShape(Rectangle())
-                }
-                .buttonStyle(.plain)
-                .disabled(isUploading || isSaving)
-                .padding(.horizontal, 16)
-                .padding(.vertical, 16)
-            }
-
-            if let failureMessage {
-                Text(failureMessage)
-                    .font(.footnote)
-                    .foregroundStyle(.red)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .fixedSize(horizontal: false, vertical: true)
-                    .padding(.horizontal, 16)
-                    .padding(.vertical, 16)
-            }
-        }
-        .background(.background, in: RoundedRectangle(cornerRadius: 24))
     }
 
     @ViewBuilder
@@ -177,8 +152,14 @@ struct ImageEditContentView: View {
             WebImageView(imagePath: previewURL, contentMode: .fit)
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
         } else {
-            ContentUnavailableView("画像がありません", systemImage: "photo")
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
+            PhotosPicker(selection: $selectedPhotoItem, matching: .images) {
+                Label("画像を追加", systemImage: "photo")
+            }
+            .buttonStyle(.borderedProminent)
+            .buttonBorderShape(.capsule)
+            .loadingIndicator(isLoading: isUploading)
+            .disabled(isSaving)
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
     }
 }
