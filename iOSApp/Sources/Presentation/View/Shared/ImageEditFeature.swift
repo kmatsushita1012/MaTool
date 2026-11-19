@@ -27,8 +27,8 @@ enum ImageEditMode: Equatable, Hashable, Sendable {
             }
         }
         return switch self {
-        case .light, .banner: "ライト"
-        case .dark, .interstitial: "ダーク"
+        case .light, .banner: "日中"
+        case .dark, .interstitial: "夜間"
         }
     }
 }
