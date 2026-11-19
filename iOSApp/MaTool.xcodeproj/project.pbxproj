@@ -656,8 +656,8 @@
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/aws-amplify/amplify-ios.git";
 			requirement = {
-				kind = upToNextMajorVersion;
-				minimumVersion = 2.62.0;
+				kind = exactVersion;
+				version = "2.63.2-unstable.4";
 			};
 		};
 		29F7B7302EC872E80099607E /* XCRemoteSwiftPackageReference "NavigationSwipeControl" */ = {
