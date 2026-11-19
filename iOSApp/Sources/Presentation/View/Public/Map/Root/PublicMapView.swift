@@ -250,8 +250,8 @@ struct PublicMapContentView<MapContent: View>: View {
                 }
                 .modifier(MapTopMenuStyle(isLiquidGlassDisabled: isLiquidGlassDisabled))
                 .fixedSize(horizontal: true, vertical: false)
-                .disabled(isPeriodDisabled || isRouteLoading || routes.isEmpty)
-                .loadingIndicator(isLoading: isLoading)
+                .disabled(isPeriodDisabled || routes.isEmpty)
+                .loadingIndicator(isLoading: isRouteLoading)
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
