@@ -215,9 +215,18 @@ struct PublicMapContentView<MapContent: View>: View {
                     }
                 }
             } label: {
-                Label(selectedContent.name, systemImage: selectedContent.menuSymbol)
+                Label {
+                    Text(selectedContent.displayTitle)
+                        .lineLimit(1)
+                        .truncationMode(.tail)
+                } icon: {
+                    Image(systemName: selectedContent.menuSymbol)
+                }
+                .labelStyle(.titleOnly)
+                .frame(maxWidth: .infinity, alignment: .leading)
             }
             .modifier(MapTopMenuStyle(isLiquidGlassDisabled: isLiquidGlassDisabled))
+            .frame(maxWidth: .infinity, alignment: .leading)
             .loadingIndicator(isLoading: isLoading)
 
             if let routes {
@@ -235,9 +244,15 @@ struct PublicMapContentView<MapContent: View>: View {
                         }
                     }
                 } label: {
-                    Label(selectedPeriodTitle, systemImage: "calendar")
+                    Label {
+                        Text(selectedPeriodTitle)
+                    } icon: {
+                        Image(systemName: "calendar")
+                    }
                 }
                 .modifier(MapTopMenuStyle(isLiquidGlassDisabled: isLiquidGlassDisabled))
+                .fixedSize(horizontal: true, vertical: false)
+                .layoutPriority(1)
                 .disabled(isPeriodDisabled || isRouteLoading || routes.isEmpty)
                 .overlay {
                     if isRouteLoading {
@@ -247,7 +262,6 @@ struct PublicMapContentView<MapContent: View>: View {
                 }
             }
 
-            Spacer(minLength: 0)
         }
         .padding(.horizontal, 16)
     }
@@ -258,14 +272,7 @@ struct PublicMapContentView<MapContent: View>: View {
             onContentSelected(item)
         } label: {
             Label {
-                if let subtitle = item.subname, !subtitle.isEmpty {
-                    Text(item.name)
-                        + Text("\n\(subtitle)")
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-                } else {
-                    Text(item.name)
-                }
+                Text(item.displayTitle)
             } icon: {
                 Image(systemName: "checkmark")
                     .tint(item == selectedContent ? nil : .clear)
@@ -295,6 +302,11 @@ private struct MapTopMenuStyle: ViewModifier {
 }
 
 private extension PublicMapFeature.Content {
+    var displayTitle: String {
+        guard let subname, !subname.isEmpty else { return name }
+        return "\(name)（\(subname)）"
+    }
+
     var menuSymbol: String {
         switch self {
         case .locations: "mappin.and.ellipse"
