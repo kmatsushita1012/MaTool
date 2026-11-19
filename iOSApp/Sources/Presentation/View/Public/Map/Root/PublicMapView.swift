@@ -250,17 +250,11 @@ struct PublicMapContentView<MapContent: View>: View {
                 }
                 .modifier(MapTopMenuStyle(isLiquidGlassDisabled: isLiquidGlassDisabled))
                 .fixedSize(horizontal: true, vertical: false)
-                .layoutPriority(1)
                 .disabled(isPeriodDisabled || isRouteLoading || routes.isEmpty)
-                .overlay {
-                    if isRouteLoading {
-                        ProgressView()
-                            .controlSize(.small)
-                    }
-                }
+                .loadingIndicator(isLoading: isLoading)
             }
-
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.horizontal, 16)
     }
 
@@ -271,6 +265,7 @@ struct PublicMapContentView<MapContent: View>: View {
         } label: {
             Label {
                 Text(item.displayTitle)
+                    .frame(maxWidth: .infinity)
             } icon: {
                 Image(systemName: "checkmark")
                     .tint(item == selectedContent ? nil : .clear)
