@@ -223,10 +223,8 @@ struct PublicMapContentView<MapContent: View>: View {
                     Image(systemName: selectedContent.menuSymbol)
                 }
                 .labelStyle(.titleOnly)
-                .frame(maxWidth: .infinity, alignment: .leading)
             }
             .modifier(MapTopMenuStyle(isLiquidGlassDisabled: isLiquidGlassDisabled))
-            .frame(maxWidth: .infinity, alignment: .leading)
             .loadingIndicator(isLoading: isLoading)
 
             if let routes {
