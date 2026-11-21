@@ -38,6 +38,7 @@ struct RouteRepository: RouteRepositoryProtocol {
     private let store: DataStore
 
     @Dependency(DistrictRepositoryKey.self) var districtRepository
+    @Dependency(EditionRepositoryKey.self) var editionRepository
     @Dependency(PeriodRepositoryKey.self) var periodRepository
 
     init() {
@@ -122,11 +123,14 @@ struct RouteRepository: RouteRepositoryProtocol {
         guard let editionId = period.editionId else {
             throw Error.badRequest("ルートの日程にEditionが設定されていません。")
         }
-        let districts = try await districtRepository.query(by: period.festivalId)
-        guard districts.contains(where: {
-            $0.id == route.districtId && $0.festivalId == period.festivalId
-        }) else {
+        guard let edition = try await editionRepository.get(id: editionId) else {
+            throw Error.notFound("指定されたルートに合致するEditionが取得できませんでした。")
+        }
+        guard let district = try await districtRepository.get(id: route.districtId) else {
             throw Error.notFound("指定されたルートに合致する地区が取得できませんでした。")
+        }
+        guard edition.festivalId == district.festivalId else {
+            throw Error.badRequest("ルートの日程と地区の祭典が一致しません。")
         }
         return (editionId, period.date)
     }

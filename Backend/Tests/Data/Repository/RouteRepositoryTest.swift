@@ -75,13 +75,17 @@ struct RouteRepositoryTest {
     }
 
     @Test
-    func post_PeriodのEditionを使ったキーで保存する() async throws {
+    func post_Editionのキーで保存しPeriodの旧Festivalには依存しない() async throws {
         let route = Route.mock(id: "route-1", districtId: "district-1", periodId: "period-1")
-        let period = Period.mock(id: route.periodId, festivalId: "festival-1", editionId: "edition-1", date: .init(year: 2026, month: 2, day: 22))
+        let period = Period.mock(id: route.periodId, festivalId: "legacy-festival", editionId: "edition-1", date: .init(year: 2026, month: 2, day: 22))
         var saved: RouteRecord?
         let store = DataStoreMock(putHandler: { item in saved = try decodeFromEncodable(item, as: RouteRecord.self) })
+        let editionRepository = EditionRepositorySpy(getHandler: { _ in
+            .init(id: "edition-1", festivalId: "festival-1", year: 2026)
+        })
         let repository = make(
             dataStore: store,
+            editionRepository: editionRepository,
             periodRepository: .init(getHandler: { _ in period })
         )
 
@@ -91,6 +95,7 @@ struct RouteRepositoryTest {
         #expect(saved?.id == route.id)
         #expect(saved?.date == "ROUTE#DATE#2026-02-22")
         #expect(saved?.content == route)
+        #expect(editionRepository.getCallCount == 1)
     }
 
     @Test
@@ -105,7 +110,13 @@ struct RouteRepositoryTest {
             deleteHandler: { deleted = $0 },
             queryHandler: { _, _, _, _, _, _ in try JSONEncoder().encode([oldRecord]) }
         )
-        let repository = make(dataStore: store, periodRepository: .init(getHandler: { _ in period }))
+        let repository = make(
+            dataStore: store,
+            editionRepository: EditionRepositorySpy(getHandler: { _ in
+                .init(id: "edition-new", festivalId: "festival-1", year: 2026)
+            }),
+            periodRepository: .init(getHandler: { _ in period })
+        )
 
         _ = try await repository.put(route)
 
@@ -125,7 +136,13 @@ struct RouteRepositoryTest {
             putHandler: { item in saved = try decodeFromEncodable(item, as: RouteRecord.self) },
             queryHandler: { _, _, _, _, _, _ in try JSONEncoder().encode([oldRecord]) }
         )
-        let repository = make(dataStore: store, periodRepository: .init(getHandler: { _ in period }))
+        let repository = make(
+            dataStore: store,
+            editionRepository: EditionRepositorySpy(getHandler: { _ in
+                .init(id: "edition-1", festivalId: "festival-1", year: 2026)
+            }),
+            periodRepository: .init(getHandler: { _ in period })
+        )
 
         _ = try await repository.put(route)
 
@@ -135,20 +152,28 @@ struct RouteRepositoryTest {
     }
 
     @Test
-    func post_地区とPeriodの祭典が異なる場合は保存しない() async {
+    func post_Editionと地区の祭典が異なる場合は書き込みしない() async {
         let route = Route.mock(id: "route-1", districtId: "district-1", periodId: "period-1")
-        let period = Period.mock(id: route.periodId, festivalId: "festival-2", editionId: "edition-2")
+        let period = Period.mock(id: route.periodId, festivalId: "legacy-festival", editionId: "edition-2")
         let store = DataStoreMock()
+        let districtRepository = DistrictRepositoryMock(getHandler: { _ in
+            .mock(id: route.districtId, festivalId: "festival-1")
+        })
         let repository = make(
             dataStore: store,
-            districtRepository: .init(queryHandler: { _ in [.mock(id: route.districtId, festivalId: "festival-1")] }),
+            districtRepository: districtRepository,
+            editionRepository: EditionRepositorySpy(getHandler: { _ in
+                .init(id: "edition-2", festivalId: "festival-2", year: 2026)
+            }),
             periodRepository: .init(getHandler: { _ in period })
         )
 
-        await #expect(throws: Error.notFound("指定されたルートに合致する地区が取得できませんでした。")) {
+        await #expect(throws: Error.badRequest("ルートの日程と地区の祭典が一致しません。")) {
             _ = try await repository.post(route)
         }
         #expect(store.putCallCount == 0)
+        #expect(store.deleteCallCount == 0)
+        #expect(store.queryCallCount == 0)
     }
 
     @Test
@@ -211,14 +236,16 @@ struct RouteRepositoryTest {
 private extension RouteRepositoryTest {
     func make(
         dataStore: DataStoreMock = .init(),
-        districtRepository: DistrictRepositoryMock = .init(
-            queryHandler: { festivalId in [.mock(id: "district-1", festivalId: festivalId)] }
-        ),
+        districtRepository: DistrictRepositoryMock = .init(getHandler: { id in
+            .mock(id: id, festivalId: "festival-1")
+        }),
+        editionRepository: EditionRepositoryProtocol = EditionRepositorySpy(),
         periodRepository: PeriodRepositoryMock = .init()
     ) -> RouteRepository {
         withDependencies {
             $0.dataStoreFactory = { dataStore }
             $0[DistrictRepositoryKey.self] = districtRepository
+            $0[EditionRepositoryKey.self] = editionRepository
             $0[PeriodRepositoryKey.self] = periodRepository
         } operation: {
             RouteRepository()
