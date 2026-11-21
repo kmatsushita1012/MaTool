@@ -4,7 +4,6 @@ import Shared
 import SwiftUI
 import UIKit
 
-@available(iOS 17.0, *)
 struct ImageEditScreen: View {
     @SwiftUI.Bindable var store: StoreOf<ImageEditFeature>
 
@@ -28,7 +27,6 @@ struct ImageEditScreen: View {
     }
 }
 
-@available(iOS 17.0, *)
 struct ImageEditContentView: View {
     let isStoreTarget: Bool
     let targetType: ImageUploadTarget.Kind

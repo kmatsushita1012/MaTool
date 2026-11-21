@@ -9,7 +9,6 @@ import SwiftUI
 import ComposableArchitecture
 import NavigationSwipeControl
 
-@available(iOS 17.0, *)
 struct PerformanceEditScreen: View {
     @SwiftUI.Bindable var store: StoreOf<PerformanceEditFeature>
 
@@ -28,10 +27,8 @@ struct PerformanceEditScreen: View {
     }
 }
 
-@available(iOS 17.0, *)
 typealias PerformanceEditView = PerformanceEditScreen
 
-@available(iOS 17.0, *)
 struct PerformanceEditContentView: View {
     @Binding var name: String
     @Binding var performer: String

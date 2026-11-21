@@ -9,7 +9,6 @@ import SwiftUI
 import ComposableArchitecture
 import UIKit
 
-@available(iOS 17.0, *)
 struct LocationTrackingView: View {
     @SwiftUI.Bindable var store: StoreOf<LocationTrackingFeature>
     @Environment(\.dismiss) private var dismiss

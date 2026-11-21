@@ -10,7 +10,6 @@ import ComposableArchitecture
 import NavigationSwipeControl
 import Shared
 
-@available(iOS 17.0, *)
 struct PeriodEditScreen: View {
     @SwiftUI.Bindable var store: StoreOf<PeriodEditFeature>
     
@@ -37,10 +36,8 @@ struct PeriodEditScreen: View {
     }
 }
 
-@available(iOS 17.0, *)
 typealias PeriodEditView = PeriodEditScreen
 
-@available(iOS 17.0, *)
 struct PeriodEditContentView: View {
     let modeTitle: String
     let isCreateMode: Bool

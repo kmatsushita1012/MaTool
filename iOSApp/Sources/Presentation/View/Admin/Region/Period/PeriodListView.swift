@@ -9,40 +9,35 @@ import SwiftUI
 import ComposableArchitecture
 import Shared
 
-@available(iOS 17.0, *)
 struct PeriodListScreen: View {
     @SwiftUI.Bindable var store: StoreOf<PeriodListFeature>
     @State private var isBatchCreateDialogPresented = false
 
     var body: some View {
-        WithPerceptionTracking {
-            PeriodListContentView(
-                latest: store.latests,
-                archives: store.archives,
-                yearOptions: store.yearOptions,
-                createYear: store.createYear,
-                isLoading: store.isLoading,
-                isBatchCreateDialogPresented: $isBatchCreateDialogPresented,
-                onPeriodTapped: { store.send(.periodTapped($0)) },
-                onArchiveTapped: { store.send(.archiveTapped($0)) },
-                onPeriodCreateTapped: { store.send(.periodCreateTapped) },
-                onBatchCreateTapped: { store.send(.batchCreateTapped($0)) }
-            )
-            .navigationDestination(item: $store.scope(state: \.destination?.edit, action: \.destination.edit)) {
-                PeriodEditView(store: $0)
-            }
-            .navigationDestination(item: $store.scope(state: \.destination?.archives, action: \.destination.archives)) {
-                PeriodArchivesView(store: $0)
-            }
-            .alert($store.scope(state: \.alert, action: \.alert))
+        PeriodListContentView(
+            latest: store.latests,
+            archives: store.archives,
+            yearOptions: store.yearOptions,
+            createYear: store.createYear,
+            isLoading: store.isLoading,
+            isBatchCreateDialogPresented: $isBatchCreateDialogPresented,
+            onPeriodTapped: { store.send(.periodTapped($0)) },
+            onArchiveTapped: { store.send(.archiveTapped($0)) },
+            onPeriodCreateTapped: { store.send(.periodCreateTapped) },
+            onBatchCreateTapped: { store.send(.batchCreateTapped($0)) }
+        )
+        .navigationDestination(item: $store.scope(state: \.destination?.edit, action: \.destination.edit)) {
+            PeriodEditView(store: $0)
         }
+        .navigationDestination(item: $store.scope(state: \.destination?.archives, action: \.destination.archives)) {
+            PeriodArchivesView(store: $0)
+        }
+        .alert($store.scope(state: \.alert, action: \.alert))
     }
 }
 
-@available(iOS 17.0, *)
 typealias PeriodListView = PeriodListScreen
 
-@available(iOS 17.0, *)
 struct PeriodListContentView: View {
     let latest: PeriodListFeature.State.YearlyPeriods?
     let archives: [PeriodListFeature.State.YearlyPeriods]

@@ -39,49 +39,47 @@ struct PublicRouteMapView: View {
     @Environment(\.isLiquidGlassDisabled) var isLiquidGlassDisabled
     
     var body: some View {
-        WithPerceptionTracking{
-            @Binding(store.$mapRegion) var mapRegion
-            ZStack{
-                MapView(
-                    style: .public,
-                    points: store.points,
-                    floatAnnotation: floatAnnotation,
-                    region: $mapRegion,
-                    pointTapped: { store.send(.pointTapped($0))},
-                    floatTapped: { store.send(.locationTapped($0)) }
-                )
-                .equatable()
-                .ignoresSafeArea(.all)
-            }
-            .safeAreaInset(edge: .bottom) {
-                VStack(alignment: .trailing, spacing: 8) {
-                    if let adBannerStore = store.scope(state: \.adBanner, action: \.adBanner) {
-                        StoreAdBannerView(store: adBannerStore)
-                    }
-                    Group {
-                        if isLiquidGlassDisabled {
-                            toolbarLayerBeforeLiquidGlass
-                        } else if #available(iOS 26.0, *) {
-                            toolbarLayerAfterLiquidGlass
-                        }
-                    }
-                    .padding()
-                }
-            }
-            .sheet(item: $store.detail) { detail in
-                switch detail{
-                case .point(let item):
-                    PointView(item)
-                        .presentationDetents([.fraction(0.3), .medium, .large])
-                }
-            }
-            .onAppear {
-                store.send(.onAppear)
-                updateReplay()
-            }
-            .onChange(of: store.selected) { _ in updateReplay() }
-            .onChange(of: store.replay) { _ in updateReplay() }
+        @Binding(store.$mapRegion) var mapRegion
+        ZStack{
+            MapView(
+                style: .public,
+                points: store.points,
+                floatAnnotation: floatAnnotation,
+                region: $mapRegion,
+                pointTapped: { store.send(.pointTapped($0))},
+                floatTapped: { store.send(.locationTapped($0)) }
+            )
+            .equatable()
+            .ignoresSafeArea(.all)
         }
+        .safeAreaInset(edge: .bottom) {
+            VStack(alignment: .trailing, spacing: 8) {
+                if let adBannerStore = store.scope(state: \.adBanner, action: \.adBanner) {
+                    StoreAdBannerView(store: adBannerStore)
+                }
+                Group {
+                    if isLiquidGlassDisabled {
+                        toolbarLayerBeforeLiquidGlass
+                    } else if #available(iOS 26.0, *) {
+                        toolbarLayerAfterLiquidGlass
+                    }
+                }
+                .padding()
+            }
+        }
+        .sheet(item: $store.detail) { detail in
+            switch detail{
+            case .point(let item):
+                PointView(item)
+                    .presentationDetents([.fraction(0.3), .medium, .large])
+            }
+        }
+        .onAppear {
+            store.send(.onAppear)
+            updateReplay()
+        }
+        .onChange(of: store.selected) { _ in updateReplay() }
+        .onChange(of: store.replay) { _ in updateReplay() }
     }
     
 }

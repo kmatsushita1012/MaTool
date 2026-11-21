@@ -9,7 +9,6 @@ import ComposableArchitecture
 import SwiftUI
 import NavigationSwipeControl
 
-@available(iOS 17.0, *)
 struct ResetPasswordScreen: View {
     @SwiftUI.Bindable var store: StoreOf<ResetPasswordFeature>
     var usernameTitle: LocalizedStringKey = "ID（ユーザー名）"
@@ -39,10 +38,8 @@ struct ResetPasswordScreen: View {
     }
 }
 
-@available(iOS 17.0, *)
 typealias ResetPasswordView = ResetPasswordScreen
 
-@available(iOS 17.0, *)
 struct ResetPasswordContentView: View {
     let step: ResetPasswordFeature.State.Step
     @Binding var username: String

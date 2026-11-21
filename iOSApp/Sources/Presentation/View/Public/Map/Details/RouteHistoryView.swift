@@ -8,7 +8,6 @@
 import Shared
 import SwiftUI
 
-@available(iOS 17.0, *)
 struct RouteHistoryView: View {
     let entries: [RouteEntry]
     let excludingRouteId: Route.ID?

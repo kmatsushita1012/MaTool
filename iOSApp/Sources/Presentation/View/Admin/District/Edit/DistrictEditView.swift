@@ -10,7 +10,6 @@ import ComposableArchitecture
 import NavigationSwipeControl
 import Shared
 
-@available(iOS 17.0, *)
 struct DistrictEditScreen: View {
     @SwiftUI.Bindable var store: StoreOf<DistrictEditFeature>
 
@@ -64,10 +63,8 @@ struct DistrictEditScreen: View {
     }
 }
 
-@available(iOS 17.0, *)
 typealias DistrictEditView = DistrictEditScreen
 
-@available(iOS 17.0, *)
 struct DistrictEditContentView<VisibilityValue: Hashable & CaseIterable>: View {
     @Binding var name: String
     @Binding var subname: String
