@@ -42,7 +42,7 @@ struct RouteRepository: RouteRepositoryProtocol {
 
     init() {
         @Dependency(\.dataStoreFactory) var storeFactory
-        self.store = storeFactory("matool")
+        self.store = storeFactory(DynamoDBConfiguration.tableName)
     }
 
     func get(id: String) async throws -> Route? {

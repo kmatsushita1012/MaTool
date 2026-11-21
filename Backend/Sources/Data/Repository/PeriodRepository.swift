@@ -29,7 +29,7 @@ struct PeriodRepository: PeriodRepositoryProtocol {
 
     init() {
         @Dependency(\.dataStoreFactory) var dataStoreFactory
-        self.dataStore = dataStoreFactory("matool")
+        self.dataStore = dataStoreFactory(DynamoDBConfiguration.tableName)
     }
 
     func get(id: Period.ID) async throws -> Period? {

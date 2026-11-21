@@ -22,7 +22,7 @@ struct CreditRepository: CreditRepositoryProtocol {
 
     init() {
         @Dependency(\.dataStoreFactory) var storeFactory
-        store = storeFactory("matool")
+        store = storeFactory(DynamoDBConfiguration.tableName)
     }
 
     func get(storeId: Store.ID) async throws -> CreditAccount? {

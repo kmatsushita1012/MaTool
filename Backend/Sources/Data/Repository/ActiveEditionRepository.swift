@@ -27,7 +27,7 @@ struct ActiveEditionRepository: ActiveEditionRepositoryProtocol {
 
     init() {
         @Dependency(\.dataStoreFactory) var storeFactory
-        self.store = storeFactory("matool")
+        self.store = storeFactory(DynamoDBConfiguration.tableName)
     }
 
     func get(festivalId: Festival.ID) async throws -> ActiveEdition? {

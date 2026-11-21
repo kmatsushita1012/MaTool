@@ -7,6 +7,10 @@
 
 import Dependencies
 
+enum DynamoDBConfiguration {
+    static let tableName = "matool"
+}
+
 // MARK: - Dependencies
 enum DataStoreFactoryKey: DependencyKey {
     static let liveValue: DataStoreFactory = { tableName in

@@ -27,7 +27,7 @@ struct PerformanceRepository: PerformanceRepositoryProtocol {
 
     init() {
         @Dependency(\.dataStoreFactory) var factory
-        self.store = factory("matool")
+        self.store = factory(DynamoDBConfiguration.tableName)
     }
 
     func get(id: String) async throws -> Performance? {

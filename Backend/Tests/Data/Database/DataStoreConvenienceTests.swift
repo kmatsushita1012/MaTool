@@ -168,7 +168,7 @@ struct DataStoreConvenienceTests {
         })
         let repository = withDependencies {
             $0.dataStoreFactory = { name in
-                #expect(name == "matool")
+                #expect(name == DynamoDBConfiguration.tableName)
                 return store
             }
         } operation: { DistrictRepository() }

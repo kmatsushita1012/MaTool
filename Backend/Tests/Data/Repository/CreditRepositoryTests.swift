@@ -16,7 +16,7 @@ struct CreditRepositoryTests {
 
         let loaded = try await withDependencies {
             $0.dataStoreFactory = { name in
-                #expect(name == "matool")
+                #expect(name == DynamoDBConfiguration.tableName)
                 return dataStore
             }
         } operation: {
