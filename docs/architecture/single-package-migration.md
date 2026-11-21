@@ -1,4 +1,4 @@
-# MaTool 単一 Swift Package / 8 モジュール移行ガイド
+# MaTool 単一 Swift Package / モジュール移行ガイド
 
 > 状態: 設計・移行計画（実装は別PR）。対象: `main` の tree `438cc5f660b0fb5e9042e41d64eee3dcdd75bb04` を確認した時点（2026-11-22）。関連: #455、#307。
 >
@@ -6,19 +6,20 @@
 
 ## 1. 目標・現状
 
-目標はリポジトリルートに単一の `Package.swift` を置き、iOS AppとLinux Lambda Backendで `Domain` を共用し、**8つのLibrary Target**と薄い実行／アプリ起動Targetに整理すること。
+目標はリポジトリルートに単一の `Package.swift` を置き、iOS AppとLinux Lambda Backendで `Domain` を共用し、**既存8つのLibrary Targetを基本とし、BackendInfrastructureを追加した9 Library Targetを推奨案**として薄い実行／アプリ起動Targetに整理すること。
 
 現行は `Shared/Package.swift`（`Shared` library）と `Backend/Package.swift`（すべてのBackendソースを一つの `Backend` executableに収容）の2パッケージ。iOSコードは `iOSApp/MaTool.xcodeproj` 内にあり、`MaTool.xcworkspace` も利用している。従ってXcodeプロジェクト名を機械的に `iOSApp.xcodeproj` と仮定しない。
 
-想定するLibrary Target:
+想定するLibrary Target（9つ目の`BackendInfrastructure`は提案段階。8つを維持する代替案はB3参照）:
 
 | Target | 内容 | 主な依存先 |
 | --- | --- | --- |
 | `Domain` | 旧`Shared`のEntity / DTO / Pack / 検証 / 純粋な共通ロジック | Foundation、必要最小限のLinux対応外部依存 |
 | `BackendCore` | UseCase・Repository契約・認証/外部Client契約・業務ルール | Domain, Dependencies |
 | `BackendDatabase` | DynamoDB DataStore / Record / Repository具象 | BackendCore, Domain, AWS DynamoDB SDK |
-| `BackendAPI` | Application/Router/HTTP Controller・Lambdaアダプター・組み立て | BackendCore, BackendDatabase, Domain |
-| `AppCore` | UseCase、DataFetcher、アプリ固有状態・Entry・外部Client契約・共通画面用の純粋な状態型 | Domain, Dependencies |
+| `BackendAPI` | Application/Router/HTTP Controller・Lambdaアダプター | BackendCore, Domain |
+| `BackendInfrastructure`（追加推奨） | Cognito / S3 / SNS / App Store Server APIなど外部サービスのLive実装 | BackendCore, Domain, 外部SDK |
+| `AppCore` | UseCase、DataFetcher、アプリ固有状態・Entry・外部Client契約・共通画面用の純粋な状態型 | Domain, Dependencies, Sharing（swift-sharing） |
 | `AppInfrastructure` | HTTP / Amplify / S3 / StoreKit / UserDefaults / 位置情報 / 画像・広告等のLive Client実装 | AppCore, Domain, 外部SDK |
 | `AppPresentation` | TCA Feature/Reducer・Storeを利用するScreen/View・Navigation | AppCore, AppUI, Domain, TCA |
 | `AppUI` | TCA非依存のSwiftUI / UIKit / MapKit View・Style・汎用コンポーネント | Domain, AppCore（純粋なView入力モデルだけ） |
@@ -28,18 +29,22 @@
 依存方向の原則:
 
 ~~~text
-Domain
-  ├─ BackendCore ← BackendDatabase
-  │       ↑              ↑
-  │       └────── BackendAPI ─── Backend executable
-  └─ AppCore ← AppInfrastructure
-         ↑
-       AppPresentation → AppUI → (Domain / AppCoreの純粋型)
-                 ↑
-              iOSApp (Composition Root; AppInfrastructureも組み立て)
+Domain ← BackendCore ← BackendDatabase
+              ↑
+              ├──────── BackendInfrastructure
+              ↑
+              └──────── BackendAPI
+                           ↑
+Backend executable ───────┘ (Core / Database / Infrastructureも組み立てる)
+
+Domain ← AppCore ← AppInfrastructure
+            ↑
+            └── AppPresentation → AppUI（純粋UI、AppCoreの値型を利用可）
+                      ↑
+                 iOSApp (Composition Root; AppInfrastructureも組み立て)
 ~~~
 
-`BackendCore` → `BackendDatabase`、`AppCore` → `AppInfrastructure`、`AppUI` → `AppPresentation` は禁止。外側の具体型を内側の `DependencyKey.liveValue` から直接生成することも禁止。モジュール間の`internal`を越える型には必要最小限の`public`を付ける（単なる機械的な一括`public`化は禁止）。
+`BackendCore` → `BackendDatabase` / `BackendInfrastructure`、`AppCore` → `AppInfrastructure`、`AppUI` → `AppPresentation` は禁止。外側の具体型を内側の `DependencyKey.liveValue` から直接生成することも禁止。モジュール間の`internal`を越える型には必要最小限の`public`を付ける（単なる機械的な一括`public`化は禁止）。
 
 ## 2. Backend: 依存性逆転・移設対象
 
@@ -56,6 +61,8 @@ Domain
 現行`FestivalRepositoryKey.liveValue = FestivalRepository()`、`RouteRepositoryKey.liveValue = RouteRepository()`等はCoreからDatabaseを参照する逆依存になる。**CoreでLive具象を作らず**、Backend起動のComposition Rootで実装を注入する。テスト用の差し替えを維持する。`PeriodRepositoryKey`にも`DataStoreFactoryKey`へのLive依存があり同様。
 
 `Backend/Sources/Data/Database/DataStore.swift`の`DataStoreFactory`、`DynamoDBTransactionalDataStore`、`RecordProtocol`、Query/FilterConditionは原則BackendDatabase内部に閉じ、UseCaseへ漏らさない。`Record`をRepository契約の戻り値にしない。
+
+**SDK依存の実態:** RepositoryはAWS SDKを直接`import`していないが、少なくとも`CreditRepository.swift`、`PurchaseRepository.swift`、`ImpressionRepository.swift`、`StoreRepository.swift`は`DynamoDBTransactionOperation`/`DynamoDBEncoder`/`DynamoDBAttribute`等を参照している。`DynamoDBAttribute`は`DynamoDBClientTypes.AttributeValue`へのtypealiasであり、DynamoDB SDK型への間接依存も存在する。既存の原子性・条件付き更新を無理に汎用Repository APIへ隠蔽しない。これらはBackendDatabaseの具体実装として扱う。
 
 ### B2. HTTP Controllerは実際にはBackendAPIへ（必須・Issue #455の原案を修正）
 
@@ -77,7 +84,9 @@ Domain
 | `Data/Client/ReportNotificationClient.swift` | `ReportNotificationClientProtocol`/Key | `ReportNotificationClient` (AWSSNS) |
 | `Usecase/AppStoreNotificationHistoryRecovery.swift` | `AppStoreNotificationHistoryClientProtocol`/Key、復旧処理のオーケストレーション | `AppStoreNotificationHistoryClient` (AppStoreServerLibrary) |
 
-**8 Library Target厳守なら**BackendAPI内に`Adapters/Auth`、`Adapters/Store`、`Adapters/Image`、`Adapters/Notification`を配置し、BackendAPIをComposition Rootとする。ただしHTTP層に外部アダプターが同居するのは妥協。将来必要なら`BackendInfrastructure`を**9つ目のLibrary**として独立させる（設計承認なしに追加しない）。Cognito/S3/SNS/AppStoreを名前だけを理由にBackendDatabaseへ入れない。
+**推奨案:** `BackendInfrastructure`を**9つ目のLibrary Target**として追加し、Cognito/S3/SNS/App Store Server APIのLiveアダプターを収容する。`BackendAPI`はHTTP境界に専念し、薄い`Backend` executableが`BackendCore`/`BackendDatabase`/`BackendInfrastructure`/`BackendAPI`を組み立てる。
+
+**8 Library Targetが必須の場合の代案:** `BackendDatabase`を`BackendInfrastructure`へ改名・統合し、`Database/`（DataStore/Repository実装）と`Clients/`（外部API）を内部ディレクトリで区分する。HTTP専用の`BackendAPI`へ外部Client実装を混ぜる案は優先しない。**この追加ターゲット案は設計上の推奨であり、最終採用は未決定。**
 
 `Usecase/Utils/ImpressionToken.swift`は`Crypto`をimportしている。AWS依存ではないが、純粋な署名・検証か外部Clientとするか確認する。`S3ImageClient.swift`中の`UploadedJPEGValidator`はAWS呼び出しと切り離せる純粋な検証ロジックであり、適切にCoreへ分離できる。
 
@@ -111,13 +120,15 @@ Domain
 
 `StoreCreditUsecase`、`AdvertiserDashboardUsecase`、`StoreAdBannerUsecase`、`LaunchSceneUseCase`等は現在これらのKeyを呼んでいる。AppCoreで宣言したDependencyKeyのLive具象生成をAppInfrastructureから設定する。`AppCore`の`static liveValue`で`HTTPClient`、`Amplify`、`StoreKitClient`などを直接組み立てない。
 
-### A3. AppCoreのTCA依存（重要な追加境界）
+### A3. AppCoreの共有状態: Swift Sharingを直接依存する案を第一候補に
 
-`iOSApp/Sources/Application/**`には`import ComposableArchitecture`を使用するファイルが多数あり、例: `CreateRouteUseCase.swift`、`SaveLocationUseCase.swift`、`LaunchSceneUseCase.swift`、`RouteStateUpdates.swift`が`Shared<AppState?>`をUseCase引数・更新処理に利用している。
+`iOSApp/Sources/Application/**`には`import ComposableArchitecture`を使用するファイルが多数あり、例: `CreateRouteUseCase.swift`、`SaveLocationUseCase.swift`、`LaunchSceneUseCase.swift`、`RouteStateUpdates.swift`が`Shared<AppState?>`と`withLock`を使用している。
 
-**「AppCoreがTCA完全非依存」を完成条件にする場合**、これらをそのまま移すだけでは不十分。`AppState`自体は純粋な値型としてAppCoreへ移し、`Shared<AppState?>`の取得・原子的更新を隠す`AppStateStore`等の抽象をAppCoreに定義し、TCAのShared用アダプターをAppPresentation側で実装する（またはSwift Sharingを独立依存とすることを明示的に選択する）。既存の`sessionId`/`requestId`を使った古いレスポンスの破棄、`withLock`による更新の不可分性を壊さないこと。
+**推奨案:** TCA経由の`Shared`利用を`swift-sharing`製品の`Sharing`モジュールへの**直接依存**に変える。`AppCore`のmanifest依存を`.product(name: "Sharing", package: "swift-sharing")`とし、ソースでは`import Sharing`を用いる。TCAもSwift Sharingを依存として利用しているが、`AppCore`自身は`ComposableArchitecture`へ依存せず、`Shared<AppState?>`/ `withLock`/ 同期通知の既存設計を維持できる。採用時は現在のSwiftツールチェーンに適合する`swift-sharing`バージョンをTCAと整合させて固定する。
 
-**段階移行**では`AppCore`が一時的にTCAへ依存してもビルドは可能。ただしこの状態で`AppUI → AppCore`にするとAppUIは間接的にTCAのPackageに依存する。最終的に「AppUIはTCA非依存」を**間接依存まで含めて保証**するなら、AppCoreからTCAを除去するか、AppUIが参照する純粋な値型をTCA非依存の別境界に保つ必要がある。どちらも未検証のまま完了扱いにしない。
+代案: `Binding`をUseCaseへ渡すとSwiftUI依存がCoreへ入るため不採用。`@Observable`参照モデルや`inout`は可能だが、`await`をまたぐ状態更新・複数UseCaseからの共有・排他更新・`sessionId`/ `requestId`整合性を別途実装する必要がある。今の段階で無理に置き換えない。
+
+`@ObservableState`、`@Presents`、`Effect`等は引き続きAppPresentation専用。AppUIは`ComposableArchitecture`への依存がなく、`Sharing`がAppCore経由で間接依存になることは許容する（TCAそのものを取り込む意味ではない）。`AppCore`中の`import ComposableArchitecture`は共有状態APIだけの利用であれば`import Sharing`に変更できるか全ファイル確認する。
 
 ### A4. `iOSApp/Sources/Domain`は無条件で新Domainへ入れない
 
@@ -154,7 +165,7 @@ Domain
 - `FestivalInfoView.swift`は`FestivalInfoView`（Presentation）と`FestivalInfoContentView`などTCA非依存の子View（AppUI候補）が同居。DisplayModeの型とBindingを整理してから分割。
 - `Utils/Async.swift`では値型`AsyncValue`等とSwiftUIの`@ViewBuilder viewWhen`が同居。AppCoreへ純粋処理、AppUIへSwiftUI extensionを**ファイル分割**する。
 - `Utils/ComposableArchitecture+TaskResult.swift`では`AppResult`/`VoidAppResult`と`Effect.task`/`Effect.dismiss`が同居。結果型をAppCore、Effect拡張をAppPresentationへ分ける。
-- `Presentation/Utils/RouteSnapshotter.swift`、`PDFRenderer.swift`はMapKit/UIKit/PDFKitを使う。Reducer内の`RouteSnapshotter`直接生成（`RouteEditFeature.wholeTapped/partialTapped`等）はテスト可能な`RouteExportClient`等の契約をAppCoreに設け、LiveはAppInfrastructure（または別の明示的なUIアダプター）へ置くと境界がきれい。PDF描画やMapKit実装をAppCoreに入れない。
+- `Presentation/Utils/RouteSnapshotter.swift`、`PDFRenderer.swift`はMapKit/UIKit/PDFKitを使うため**AppUIの描画ユーティリティに配置してよい**。`AppPresentation → AppUI`は許可した依存方向なので、`RouteEditFeature.wholeTapped/partialTapped`が`RouteSnapshotter`を直接使うこと自体はモジュール境界違反ではない。`RouteExportClient`による依存性逆転は**必須ではなく**、Reducer単体テストで描画副作用の置き換えが必要になった場合に検討する。
 - `Parts/Advertisement/PublicMapBannerAdSection.swift`はView内で`AdManager`と`GoogleMobileAds`へ直接依存。AppUIをTCA非依存にすることとは別に、広告SDKの境界を`AdBannerView`の入力/アダプターに整理。SDK依存の実装をAppInfrastructureへ移す際のUIViewRepresentableの置き場所をレビューする。
 
 ## 6. 単一Package.swiftとLinux
@@ -173,7 +184,7 @@ Domain
 2. **純粋な型の切り出し**: `PublicMapContent`、`YearlyPeriods`、`PointType`、`ImageEditMode`、`MapToast`、`AsyncValue`などを既存Xcode Target内でまず別ファイル化。振る舞いとUIを変更せずテストを追加/更新。
 3. **Backendの契約分割**: RepositoryProtocol/外部ClientProtocolとLiveを分け、HTTP ControllerをAPI境界として固定。DIのComposition Rootを作成。既存テストを維持。
 4. **Appの契約分割**: DataFetcher/Clientの契約とLiveを分け、AppStateのShared依存方針を確定。AppCoreが外側の型をimportしない状態を先に作る。
-5. **モジュールの切り出し**: Domain→BackendCore/BackendDatabase/BackendAPI→AppCore/AppInfrastructure→AppUI/AppPresentationの順にTargetを作り、移動。各段階でコンパイルとテスト。
+5. **モジュールの切り出し**: Domain→BackendCore/BackendDatabase/BackendInfrastructure（採用する場合）/BackendAPI→AppCore/AppInfrastructure→AppUI/AppPresentationの順にTargetを作り、移動。各段階でコンパイルとテスト。
 6. **単一manifest化とCI対応**: root Packageに収束、Xcode/Backend Docker/Actions/Xcode Cloud関連パスを更新。Linux依存解決不具合が出た場合のみmanifestの`#if`を追加。
 7. **検証/仕上げ**: 循環参照なし、正しいモジュール公開境界、テスト・カバレッジ・既存動作、Lambdaデプロイ、iOS署名/配布構成を確認後に完了。
 
@@ -181,11 +192,11 @@ Domain
 
 ## 8. 完了条件・拒否条件
 
-- [ ] ルート`Package.swift`と8 Library Target、薄いBackend executable、現行iOSエントリからビルドできる。
-- [ ] `BackendCore`にHTTP Request/Response、DynamoDB、AWS SDK具象、Cognito/S3/SNS/AppStoreのLive実装が存在しない。
+- [ ] ルート`Package.swift`と8 Library Target（推奨するBackendInfrastructureを採用する場合は9）、薄いBackend executable、現行iOSエントリからビルドできる。
+- [ ] `BackendCore`にHTTP Request/Response、DynamoDB、AWS SDK具象、Cognito/S3/SNS/AppStoreのLive実装が存在しない。`BackendAPI`にも外部ClientのLive実装を混在させない構成を優先。
 - [ ] `BackendDatabase`/`BackendAPI`からCoreへ向かう一方向依存で、Coreの`liveValue`が外側を生成しない。
-- [ ] `AppCore`が`AppInfrastructure`をimportせず、DataFetcher/Clientの契約が内側にある。CoreのTCA依存に関する選択が確定し、TCA非依存を掲げるなら`import ComposableArchitecture`が残らない。
-- [ ] `AppUI`のソースに`ComposableArchitecture`、`StoreOf`、`Feature.State/Action`、`Reducer`の参照がない。意図するTCA**間接依存**の許容範囲も明示。
+- [ ] `AppCore`が`AppInfrastructure`をimportせず、DataFetcher/Clientの契約が内側にある。共有状態は原則`Sharing`を直接利用し、`AppCore`から`import ComposableArchitecture`をなくす。既存の`withLock`原子性と古いレスポンス破棄を維持。
+- [ ] `AppUI`のソースに`ComposableArchitecture`、`StoreOf`、`Feature.State/Action`、`Reducer`の参照がない。AppCore経由の`Sharing`間接依存は許容する。
 - [ ] 前述の`PublicMapContentView`、`PeriodListContentView`、`ImageEditContentView`などが独立型を使用し、TCA Featureのネスト型へ依存しない。
 - [ ] LinuxでBackend/Domainのビルドとテストが成功、iOSでAppのビルドと該当テストが成功（**実測**）。
 - [ ] Docker/CIの依存キャッシュ・coverage・Lambda起動・既存APIレスポンス・Appの動作に回帰がない。
