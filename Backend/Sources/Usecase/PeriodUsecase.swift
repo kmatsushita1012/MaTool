@@ -15,6 +15,7 @@ enum PeriodUsecaseKey: DependencyKey {
 
 protocol PeriodUsecaseProtocol: Sendable {
     func get(id: String) async throws -> Period
+    func query(by festivalId: String, type: PeriodQueryType) async throws -> [Period]
     func query(by festivalId: String, year: Int) async throws -> [Period]
     func query(by festivalId: String) async throws -> [Period]
     func post(festivalId: String, period: Period, user: UserRole) async throws -> Period
@@ -24,6 +25,8 @@ protocol PeriodUsecaseProtocol: Sendable {
 
 struct PeriodUsecase: PeriodUsecaseProtocol {
     @Dependency(PeriodRepositoryKey.self) var repository
+    @Dependency(ActiveEditionRepositoryKey.self) var activeEditionRepository
+    @Dependency(EditionRepositoryKey.self) var editionRepository
     @Dependency(DistrictRepositoryKey.self) var districtRepository
     @Dependency(RouteRepositoryKey.self) var routeRepository
     @Dependency(PointRepositoryKey.self) var pointRepository
@@ -38,6 +41,22 @@ struct PeriodUsecase: PeriodUsecaseProtocol {
     
     func query(by festivalId: String, year: Int) async throws -> [Period] {
         return try await repository.query(by: festivalId, year: year)
+    }
+
+    func query(by festivalId: String, type: PeriodQueryType) async throws -> [Period] {
+        switch type {
+        case .all:
+            return try await repository.query(by: festivalId)
+        case .year(let year):
+            return try await repository.query(by: festivalId, year: year)
+        case .latest:
+            guard let edition = try await resolveActiveEdition(
+                festivalId: festivalId,
+                activeEditionRepository: activeEditionRepository,
+                editionRepository: editionRepository
+            ) else { return [] }
+            return try await repository.query(byEditionId: edition.id)
+        }
     }
     
     func query(by festivalId: String) async throws -> [Period] {
@@ -67,20 +86,20 @@ struct PeriodUsecase: PeriodUsecaseProtocol {
               target.festivalId == id else {
             throw Error.unauthorized("アクセス権限がありません。")
         }
-        try await deleteRoutes(for: target)
+        try await deleteRoutes(
+            for: target,
+            festivalId: target.festivalId,
+            districtRepository: districtRepository,
+            routeRepository: routeRepository,
+            pointRepository: pointRepository,
+            passageRepository: passageRepository
+        )
         return try await repository.delete(id: target.id)
     }
+}
 
-    private func deleteRoutes(for period: Period) async throws {
-        // Route has no periodId index, so search each district's route partition.
-        let districts = try await districtRepository.query(by: period.festivalId)
-        for district in districts {
-            let routes = try await routeRepository.query(by: district.id)
-            for route in routes where route.periodId == period.id {
-                try await pointRepository.delete(by: route.id)
-                try await passageRepository.delete(by: route.id)
-                try await routeRepository.delete(route)
-            }
-        }
-    }
+enum PeriodQueryType: Equatable {
+    case all
+    case year(Int)
+    case latest
 }

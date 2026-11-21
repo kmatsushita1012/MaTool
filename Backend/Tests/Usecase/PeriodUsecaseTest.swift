@@ -50,6 +50,42 @@ struct PeriodUsecaseTest {
     }
 
     @Test
+    func query_latest_ActiveEditionのPeriodを返す() async throws {
+        let activeEdition = ActiveEdition(festivalId: "festival-1", editionId: "edition-2028")
+        let edition = Edition(id: "edition-2028", festivalId: "festival-1", year: 2028)
+        let periods = [Period.mock(id: "period-1", festivalId: "festival-1", editionId: edition.id)]
+        let repository = PeriodRepositoryMock(queryByEditionHandler: { _ in periods })
+        let activeRepository = ActiveEditionRepositorySpy(getHandler: { _ in activeEdition })
+        let editionRepository = EditionRepositorySpy(getHandler: { _ in edition })
+        let subject = make(
+            repository: repository,
+            activeEditionRepository: activeRepository,
+            editionRepository: editionRepository
+        )
+
+        let result = try await subject.query(by: "festival-1", type: .latest)
+
+        #expect(result == periods)
+        #expect(repository.queryByEditionCallCount == 1)
+        #expect(activeRepository.getCallCount == 1)
+        #expect(editionRepository.getCallCount == 1)
+    }
+
+    @Test
+    func query_latest_有効Editionがない場合は空配列() async throws {
+        let repository = PeriodRepositoryMock(queryByEditionHandler: { _ in
+            Issue.record("Period query should not run without an active Edition")
+            return []
+        })
+        let subject = make(repository: repository, activeEditionRepository: ActiveEditionRepositorySpy())
+
+        let result = try await subject.query(by: "festival-1", type: .latest)
+
+        #expect(result.isEmpty)
+        #expect(repository.queryByEditionCallCount == 0)
+    }
+
+    @Test
     func post_異常_権限不一致() async {
         let period = Period.mock(festivalId: "festival-1")
         let subject = make()
@@ -168,7 +204,9 @@ private extension PeriodUsecaseTest {
         districtRepository: DistrictRepositoryMock = .init(queryHandler: { _ in [] }),
         routeRepository: RouteRepositoryMock = .init(queryHandler: { _ in [] }),
         pointRepository: PointRepositoryMock = .init(),
-        passageRepository: PassageRepositoryMock = .init()
+        passageRepository: PassageRepositoryMock = .init(),
+        activeEditionRepository: ActiveEditionRepositoryProtocol = ActiveEditionRepositorySpy(),
+        editionRepository: EditionRepositoryProtocol = EditionRepositorySpy()
     ) -> PeriodUsecase {
         withDependencies {
             $0[PeriodRepositoryKey.self] = repository
@@ -176,6 +214,8 @@ private extension PeriodUsecaseTest {
             $0[RouteRepositoryKey.self] = routeRepository
             $0[PointRepositoryKey.self] = pointRepository
             $0[PassageRepositoryKey.self] = passageRepository
+            $0[ActiveEditionRepositoryKey.self] = activeEditionRepository
+            $0[EditionRepositoryKey.self] = editionRepository
         } operation: {
             PeriodUsecase()
         }

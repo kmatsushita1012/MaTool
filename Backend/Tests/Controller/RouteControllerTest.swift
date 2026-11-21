@@ -47,7 +47,7 @@ struct RouteControllerTest {
 
         var request = Application.Request.make(
             method: .get,
-            path: "/districts/district-1/routes/latest",
+            path: "/v2/districts/district-1/routes",
             parameters: ["districtId": "district-1", "year": "latest"]
         )
         request.user = .district("district-1")
@@ -79,7 +79,7 @@ struct RouteControllerTest {
 
         let request = Application.Request.make(
             method: .get,
-            path: "/districts/district-1/routes/2026",
+            path: "/v2/districts/district-1/routes",
             parameters: ["districtId": "district-1", "year": "2026"]
         )
         _ = try await subject.query(request, next: next)

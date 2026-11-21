@@ -31,12 +31,21 @@ struct PeriodController: PeriodControllerProtocol {
     
     func query(request: Request, next: @Sendable (Application.Request) async throws -> Application.Response) async throws -> Response {
         let festivalId = try request.parameter("festivalId", as: Festival.ID.self)
-        let result: [Period]
-        if let year = try? request.parameter("year", as: Int.self){
-            result = try await usecase.query(by: festivalId, year: year)
+        let type: PeriodQueryType
+        if let value = request.parameters["year"] {
+            if value == "latest" {
+                type = .latest
+            } else if value == "all" {
+                type = .all
+            } else if let year = Int(value) {
+                type = .year(year)
+            } else {
+                throw Error.badRequest("年度の指定が不正です。")
+            }
         } else {
-            result = try await usecase.query(by: festivalId)
+            type = .all
         }
+        let result = try await usecase.query(by: festivalId, type: type)
         return try .success(result)
     }
     

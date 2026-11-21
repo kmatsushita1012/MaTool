@@ -210,6 +210,7 @@ final class LocationUsecaseMock: LocationUsecaseProtocol, @unchecked Sendable {
 final class PeriodUsecaseMock: PeriodUsecaseProtocol, @unchecked Sendable {
     init(
         getHandler: ((String) throws -> Period)? = nil,
+        queryByTypeHandler: ((String, PeriodQueryType) throws -> [Period])? = nil,
         queryByYearHandler: ((String, Int) throws -> [Period])? = nil,
         queryHandler: ((String) throws -> [Period])? = nil,
         postHandler: ((String, Period, UserRole) throws -> Period)? = nil,
@@ -217,6 +218,7 @@ final class PeriodUsecaseMock: PeriodUsecaseProtocol, @unchecked Sendable {
         deleteHandler: ((String, UserRole) throws -> Void)? = nil
     ) {
         self.getHandler = getHandler
+        self.queryByTypeHandler = queryByTypeHandler
         self.queryByYearHandler = queryByYearHandler
         self.queryHandler = queryHandler
         self.postHandler = postHandler
@@ -230,6 +232,14 @@ final class PeriodUsecaseMock: PeriodUsecaseProtocol, @unchecked Sendable {
         getCallCount += 1
         guard let getHandler else { throw TestError.unimplemented }
         return try getHandler(id)
+    }
+
+    private(set) var queryByTypeCallCount = 0
+    private let queryByTypeHandler: ((String, PeriodQueryType) throws -> [Period])?
+    func query(by festivalId: String, type: PeriodQueryType) async throws -> [Period] {
+        queryByTypeCallCount += 1
+        guard let queryByTypeHandler else { throw TestError.unimplemented }
+        return try queryByTypeHandler(festivalId, type)
     }
 
     private(set) var queryByYearCallCount = 0
