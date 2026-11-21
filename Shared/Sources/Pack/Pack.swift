@@ -62,16 +62,31 @@ public struct RoutePack: Pack {
 // Default-Festival基準
 public struct LaunchFestivalPack: Pack {
     public let festival: Festival
+    @available(*, deprecated, message: "Edition移行後に削除")
     public let year: Int
+    @NullEncodable public var edition: Edition?
     public let districts: [District]
     public let periods: [Period] // Adminなら全期間 Publicならlatest
     public let locations: [FloatLocation]
     public let checkpoints: [Checkpoint] // Adminのみ
     public let hazardSections: [HazardSection] // Adminのみ
     
+    @available(*, deprecated, message: "Edition移行後に削除")
     public init(festival: Festival, year: Int? = nil, districts: [District], periods: [Period], locations: [FloatLocation], checkpoints: [Checkpoint], hazardSections: [HazardSection]) {
         self.festival = festival
         self.year = year ?? periods.first?.date.year ?? 0
+        self.edition = nil
+        self.districts = districts
+        self.periods = periods
+        self.locations = locations
+        self.checkpoints = checkpoints
+        self.hazardSections = hazardSections
+    }
+
+    public init(festival: Festival, edition: Edition?, districts: [District], periods: [Period], locations: [FloatLocation], checkpoints: [Checkpoint], hazardSections: [HazardSection]) {
+        self.festival = festival
+        self.year = edition?.year ?? periods.first?.date.year ?? 0
+        self.edition = edition
         self.districts = districts
         self.periods = periods
         self.locations = locations
@@ -84,13 +99,15 @@ public struct LaunchFestivalPack: Pack {
 // 起動時&Default-District設定変更時に取得
 // Default-Districtが決まってない場合は取得しない
 public struct LaunchDistrictPack: Pack {
+    @NullEncodable public var editionId: Edition.ID?
     public let performances: [Performance]
     public let routes: [Route]
     public let points: [Point]
     public let passages: [RoutePassage]
     public let currentRouteId: Route.ID?
     
-    public init(performances: [Performance], routes: [Route], points: [Point], passages: [RoutePassage], currentRouteId: Route.ID?) {
+    public init(editionId: Edition.ID? = nil, performances: [Performance], routes: [Route], points: [Point], passages: [RoutePassage], currentRouteId: Route.ID?) {
+        self.editionId = editionId
         self.performances = performances
         self.routes = routes
         self.points = points
