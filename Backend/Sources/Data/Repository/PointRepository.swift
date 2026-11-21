@@ -39,7 +39,7 @@ struct PointRepository: PointRepositoryProtocol {
 
     init() {
         @Dependency(\.dataStoreFactory) var storeFactory
-        self.store = storeFactory(DynamoDBConfiguration.tableName)
+        self.store = storeFactory()
     }
     
     func get(id: Point.ID) async throws -> Point? {

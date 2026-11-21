@@ -15,7 +15,7 @@ struct StoreRepositoryTest {
         })
 
         let result = try await withDependencies {
-            $0.dataStoreFactory = { _ in dataStore }
+            $0.dataStoreFactory = { dataStore }
         } operation: {
             try await StoreRepository().stores(in: store.festivalId)
         }
@@ -30,7 +30,7 @@ struct StoreRepositoryTest {
         let dataStore = DataStoreMock(putHandler: { _ in })
 
         let result = try await withDependencies {
-            $0.dataStoreFactory = { _ in dataStore }
+            $0.dataStoreFactory = { dataStore }
         } operation: {
             try await StoreRepository().update(updated)
         }
@@ -57,7 +57,7 @@ struct StoreRepositoryTest {
         })
 
         let result = try await withDependencies {
-            $0.dataStoreFactory = { _ in dataStore }
+            $0.dataStoreFactory = { dataStore }
         } operation: {
             try await StoreRepository().update(updated)
         }
@@ -97,7 +97,7 @@ struct StoreRepositoryTest {
         })
 
         let result = try await withDependencies {
-            $0.dataStoreFactory = { _ in dataStore }
+            $0.dataStoreFactory = { dataStore }
         } operation: {
             try await StoreRepository().get(id: item.id, festivalId: item.festivalId, consistentRead: true)
         }
@@ -122,7 +122,7 @@ struct StoreRepositoryTest {
         })
 
         let result = try await withDependencies {
-            $0.dataStoreFactory = { _ in dataStore }
+            $0.dataStoreFactory = { dataStore }
         } operation: {
             try await StoreRepository().find(id: item.id)
         }
@@ -149,7 +149,7 @@ struct StoreRepositoryTest {
         })
 
         let result = try await withDependencies {
-            $0.dataStoreFactory = { _ in dataStore }
+            $0.dataStoreFactory = { dataStore }
         } operation: {
             try await StoreRepository().getOwned(id: item.id, ownerId: item.ownerId)
         }
@@ -180,7 +180,7 @@ struct StoreRepositoryTest {
         )
 
         let owned = try await withDependencies {
-            $0.dataStoreFactory = { _ in dataStore }
+            $0.dataStoreFactory = { dataStore }
         } operation: {
             try await StoreRepository().storesOwned(by: item.ownerId)
         }
@@ -205,7 +205,7 @@ struct StoreRepositoryTest {
         })
 
         let result = try await withDependencies {
-            $0.dataStoreFactory = { _ in dataStore }
+            $0.dataStoreFactory = { dataStore }
         } operation: {
             try await StoreRepository().getOwned(id: item.id, ownerId: "another-owner")
         }
@@ -248,7 +248,7 @@ struct StoreRepositoryTest {
         )
 
         let result = try await withDependencies {
-            $0.dataStoreFactory = { _ in dataStore }
+            $0.dataStoreFactory = { dataStore }
         } operation: {
             try await StoreRepository().storesOwned(by: "owner-1")
         }
@@ -264,7 +264,7 @@ struct StoreRepositoryTest {
         })
 
         try await withDependencies {
-            $0.dataStoreFactory = { _ in dataStore }
+            $0.dataStoreFactory = { dataStore }
         } operation: {
             try await StoreRepository().create(item)
         }

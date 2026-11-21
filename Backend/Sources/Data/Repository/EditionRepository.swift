@@ -29,7 +29,7 @@ struct EditionRepository: EditionRepositoryProtocol {
 
     init() {
         @Dependency(\.dataStoreFactory) var storeFactory
-        self.store = storeFactory(DynamoDBConfiguration.tableName)
+        self.store = storeFactory()
     }
 
     func get(id: Edition.ID) async throws -> Edition? {

@@ -28,7 +28,7 @@ struct PurchaseRepository: PurchaseRepositoryProtocol {
 
     init() {
         @Dependency(\.dataStoreFactory) var storeFactory
-        store = storeFactory(DynamoDBConfiguration.tableName)
+        store = storeFactory()
     }
 
     func get(transactionId: String) async throws -> PurchaseRecord? {

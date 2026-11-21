@@ -70,7 +70,7 @@ struct EditionRepositoryTest {
 private extension EditionRepositoryTest {
     func make(dataStore: DataStoreMock) -> EditionRepository {
         withDependencies {
-            $0.dataStoreFactory = { _ in dataStore }
+            $0.dataStoreFactory = { dataStore }
         } operation: {
             EditionRepository()
         }

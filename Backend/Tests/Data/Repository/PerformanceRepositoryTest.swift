@@ -123,7 +123,7 @@ struct PerformanceRepositoryTest {
 private extension PerformanceRepositoryTest {
     func make(dataStore: DataStoreMock = .init()) -> PerformanceRepository {
         withDependencies {
-            $0[DataStoreFactoryKey.self] = { _ in dataStore }
+            $0[DataStoreFactoryKey.self] = { dataStore }
         } operation: {
             PerformanceRepository()
         }

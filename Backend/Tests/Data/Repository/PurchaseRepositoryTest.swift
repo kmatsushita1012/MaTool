@@ -13,7 +13,7 @@ struct PurchaseRepositoryTest {
         let credits = CreditRepositorySpy(account: credit)
 
         let committed = try await withDependencies {
-            $0.dataStoreFactory = { _ in dataStore }
+            $0.dataStoreFactory = { dataStore }
             $0[CreditRepositoryKey.self] = credits
         } operation: {
             try await PurchaseRepository().grant(
@@ -57,7 +57,7 @@ struct PurchaseRepositoryTest {
         let credits = CreditRepositorySpy(account: credit)
 
         let committed = try await withDependencies {
-            $0.dataStoreFactory = { _ in dataStore }
+            $0.dataStoreFactory = { dataStore }
             $0[CreditRepositoryKey.self] = credits
         } operation: {
             try await PurchaseRepository().grant(
@@ -97,7 +97,7 @@ struct PurchaseRepositoryTest {
         let credits = CreditRepositorySpy(account: credit)
 
         let committed = try await withDependencies {
-            $0.dataStoreFactory = { _ in dataStore }
+            $0.dataStoreFactory = { dataStore }
             $0[CreditRepositoryKey.self] = credits
         } operation: {
             try await PurchaseRepository().applyNotification(
@@ -131,7 +131,7 @@ struct PurchaseRepositoryTest {
         })
 
         let fetched = try await withDependencies {
-            $0.dataStoreFactory = { _ in dataStore }
+            $0.dataStoreFactory = { dataStore }
         } operation: {
             try await PurchaseRepository().get(transactionId: record.transactionId)
         }
@@ -163,7 +163,7 @@ struct PurchaseRepositoryTest {
         })
 
         let entries = try await withDependencies {
-            $0.dataStoreFactory = { _ in dataStore }
+            $0.dataStoreFactory = { dataStore }
         } operation: {
             try await PurchaseRepository().history(storeId: "store-1")
         }
@@ -179,7 +179,7 @@ struct PurchaseRepositoryTest {
         let dataStore = DataStoreMock(transactWriteHandler: { _ in })
 
         let inserted = try await withDependencies {
-            $0.dataStoreFactory = { _ in dataStore }
+            $0.dataStoreFactory = { dataStore }
         } operation: {
             try await PurchaseRepository().createRefundMarker(marker)
         }
@@ -207,7 +207,7 @@ struct PurchaseRepositoryTest {
         )
 
         let inserted = try await withDependencies {
-            $0.dataStoreFactory = { _ in dataStore }
+            $0.dataStoreFactory = { dataStore }
         } operation: {
             try await PurchaseRepository().createRefundMarker(marker)
         }
@@ -224,7 +224,7 @@ struct PurchaseRepositoryTest {
         let dataStore = DataStoreMock(transactWriteHandler: { _ in })
 
         let updated = try await withDependencies {
-            $0.dataStoreFactory = { _ in dataStore }
+            $0.dataStoreFactory = { dataStore }
         } operation: {
             try await PurchaseRepository().grant(
                 makeRecord(), replacing: prior, credit: credit,
@@ -258,7 +258,7 @@ struct PurchaseRepositoryTest {
         let dataStore = DataStoreMock()
         await #expect(throws: Error.internalServerError("購入記録に店舗IDがありません。")) {
             try await withDependencies {
-                $0.dataStoreFactory = { _ in dataStore }
+                $0.dataStoreFactory = { dataStore }
             } operation: {
                 try await PurchaseRepository().grant(
                     record, replacing: nil,
@@ -285,7 +285,7 @@ struct PurchaseRepositoryTest {
         )
 
         let applied = try await withDependencies {
-            $0.dataStoreFactory = { _ in dataStore }
+            $0.dataStoreFactory = { dataStore }
         } operation: {
             try await PurchaseRepository().applyNotification(
                 old, replacing: old, credit: nil, newBalance: nil
@@ -303,7 +303,7 @@ struct PurchaseRepositoryTest {
         )
         await #expect(throws: TestError.intentional) {
             try await withDependencies {
-                $0.dataStoreFactory = { _ in dataStore }
+                $0.dataStoreFactory = { dataStore }
             } operation: {
                 try await PurchaseRepository().createRefundMarker(makeRecord())
             }
@@ -318,7 +318,7 @@ struct PurchaseRepositoryTest {
         let dataStore = DataStoreMock(transactWriteHandler: { _ in })
 
         let applied = try await withDependencies {
-            $0.dataStoreFactory = { _ in dataStore }
+            $0.dataStoreFactory = { dataStore }
         } operation: {
             try await PurchaseRepository().applyNotification(
                 updated, replacing: prior,

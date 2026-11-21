@@ -163,7 +163,7 @@ struct PeriodRepositoryTest {
 private extension PeriodRepositoryTest {
     func make(dataStore: DataStoreMock) -> PeriodRepository {
         withDependencies {
-            $0.dataStoreFactory = { _ in dataStore }
+            $0.dataStoreFactory = { dataStore }
         } operation: {
             PeriodRepository()
         }

@@ -31,7 +31,7 @@ struct ImpressionRepository: ImpressionRepositoryProtocol {
 
     init() {
         @Dependency(\.dataStoreFactory) var storeFactory
-        store = storeFactory(DynamoDBConfiguration.tableName)
+        store = storeFactory()
     }
 
     func charge(impressionId: String, storeId: Store.ID, placement: StoreAdPlacement, chargedAt: Date) async throws -> ImpressionChargeResult {

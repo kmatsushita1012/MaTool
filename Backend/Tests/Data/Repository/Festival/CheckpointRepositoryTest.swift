@@ -130,7 +130,7 @@ struct CheckpointRepositoryTest {
 private extension CheckpointRepositoryTest {
     func make(dataStore: DataStoreMock = .init()) -> CheckpointRepository {
         withDependencies {
-            $0[DataStoreFactoryKey.self] = { _ in dataStore }
+            $0[DataStoreFactoryKey.self] = { dataStore }
         } operation: {
             CheckpointRepository()
         }

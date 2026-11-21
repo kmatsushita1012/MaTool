@@ -178,7 +178,7 @@ struct LocationRepositoryTest {
 private extension LocationRepositoryTest {
     func make(dataStore: DataStoreMock = .init()) -> LocationRepository {
         withDependencies {
-            $0[DataStoreFactoryKey.self] = { _ in dataStore }
+            $0[DataStoreFactoryKey.self] = { dataStore }
         } operation: {
             LocationRepository()
         }

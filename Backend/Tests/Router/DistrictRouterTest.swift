@@ -91,7 +91,7 @@ struct DistrictRouterTest {
             }
         )
         try await withDependencies {
-            $0[DataStoreFactoryKey.self] = { _ in dataStore }
+            $0[DataStoreFactoryKey.self] = { dataStore }
             $0[DistrictRepositoryKey.self] = DistrictRepositoryMock(getHandler: { _ in district })
         } operation: {
             let locationRepository = LocationRepository()

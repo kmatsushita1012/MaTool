@@ -217,7 +217,7 @@ private extension RouteRepositoryTest {
         periodRepository: PeriodRepositoryMock = .init()
     ) -> RouteRepository {
         withDependencies {
-            $0.dataStoreFactory = { _ in dataStore }
+            $0.dataStoreFactory = { dataStore }
             $0[DistrictRepositoryKey.self] = districtRepository
             $0[PeriodRepositoryKey.self] = periodRepository
         } operation: {

@@ -35,7 +35,7 @@ struct FestivalRepository: FestivalRepositoryProtocol {
 
     init() {
         @Dependency(\.dataStoreFactory) var storeFactory
-        self.store = storeFactory(DynamoDBConfiguration.tableName)
+        self.store = storeFactory()
     }
 
     func get(id: Festival.ID) async throws -> Festival? {

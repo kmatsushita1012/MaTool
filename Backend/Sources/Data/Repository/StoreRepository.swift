@@ -28,7 +28,7 @@ struct StoreRepository: StoreRepositoryProtocol {
 
     init() {
         @Dependency(\.dataStoreFactory) var storeFactory
-        store = storeFactory(DynamoDBConfiguration.tableName)
+        store = storeFactory()
     }
 
     func get(id: Store.ID, festivalId: Festival.ID, consistentRead: Bool = true) async throws -> Store? {

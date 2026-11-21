@@ -39,7 +39,7 @@ struct PassageRepository: PassageRepositoryProtocol {
 
     init() {
         @Dependency(\.dataStoreFactory) var storeFactory
-        self.store = storeFactory(DynamoDBConfiguration.tableName)
+        self.store = storeFactory()
     }
     
     func get(id: RoutePassage.ID) async throws -> RoutePassage? {

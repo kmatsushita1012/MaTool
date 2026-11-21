@@ -7,14 +7,10 @@
 
 import Dependencies
 
-enum DynamoDBConfiguration {
-    static let tableName = "matool"
-}
-
 // MARK: - Dependencies
 enum DataStoreFactoryKey: DependencyKey {
-    static let liveValue: DataStoreFactory = { tableName in
-        DynamoDBStore.make(tableName: tableName)
+    static let liveValue: DataStoreFactory = {
+        DynamoDBStore.make(tableName: DatabaseConfiguration.tableName)
     }
 }
 
@@ -25,7 +21,7 @@ extension DependencyValues {
     }
 }
 
-typealias DataStoreFactory = @Sendable (String) -> any DynamoDBTransactionalDataStore
+typealias DataStoreFactory = @Sendable () -> any DynamoDBTransactionalDataStore
 
 // MARK: - DataStore
 protocol DataStore: Sendable {

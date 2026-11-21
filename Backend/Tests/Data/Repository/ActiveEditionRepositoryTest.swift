@@ -37,7 +37,7 @@ struct ActiveEditionRepositoryTest {
 private extension ActiveEditionRepositoryTest {
     func make(dataStore: DataStoreMock) -> ActiveEditionRepository {
         withDependencies {
-            $0.dataStoreFactory = { _ in dataStore }
+            $0.dataStoreFactory = { dataStore }
         } operation: {
             ActiveEditionRepository()
         }

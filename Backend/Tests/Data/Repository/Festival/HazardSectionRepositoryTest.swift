@@ -121,7 +121,7 @@ struct HazardSectionRepositoryTest {
 private extension HazardSectionRepositoryTest {
     func make(dataStore: DataStoreMock = .init()) -> HazardSectionRepository {
         withDependencies {
-            $0[DataStoreFactoryKey.self] = { _ in dataStore }
+            $0[DataStoreFactoryKey.self] = { dataStore }
         } operation: {
             HazardSectionRepository()
         }

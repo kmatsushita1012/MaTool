@@ -29,7 +29,7 @@ struct HazardSectionRepository: HazardSectionRepositoryProtocol {
 
     init() {
         @Dependency(\.dataStoreFactory) var storeFactory
-        self.store = storeFactory(DynamoDBConfiguration.tableName)
+        self.store = storeFactory()
     }
 
     func get(id: String) async throws -> HazardSection? {
