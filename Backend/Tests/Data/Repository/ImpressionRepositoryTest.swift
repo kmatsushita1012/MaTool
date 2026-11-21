@@ -15,7 +15,7 @@ struct ImpressionRepositoryTest {
         let credits = CreditRepositorySpy(account: CreditAccount(storeId: "store-1", balance: 10))
 
         let result = try await withDependencies {
-            $0.dataStoreFactory = { _ in dataStore }
+            $0.dataStoreFactory = { dataStore }
             $0[CreditRepositoryKey.self] = credits
         } operation: {
             try await ImpressionRepository().charge(
@@ -48,7 +48,7 @@ struct ImpressionRepositoryTest {
         let credits = CreditRepositorySpy(account: CreditAccount(storeId: "store-1", balance: 10))
 
         let result = try await withDependencies {
-            $0.dataStoreFactory = { _ in dataStore }
+            $0.dataStoreFactory = { dataStore }
             $0[CreditRepositoryKey.self] = credits
         } operation: {
             try await ImpressionRepository().charge(
@@ -75,7 +75,7 @@ struct ImpressionRepositoryTest {
         let dataStore = DataStoreMock(getHandler: { _, _ in nil })
         let credits = CreditRepositorySpy(account: CreditAccount(storeId: "store-1", balance: 1))
         let result = try await withDependencies {
-            $0.dataStoreFactory = { _ in dataStore }
+            $0.dataStoreFactory = { dataStore }
             $0[CreditRepositoryKey.self] = credits
         } operation: {
             try await ImpressionRepository().charge(
@@ -95,7 +95,7 @@ struct ImpressionRepositoryTest {
         let dataStore = DataStoreMock(getHandler: { _, _ in nil })
         await #expect(throws: Error.notFound("Credit 残高が見つかりません。")) {
             try await withDependencies {
-                $0.dataStoreFactory = { _ in dataStore }
+                $0.dataStoreFactory = { dataStore }
                 $0[CreditRepositoryKey.self] = CreditRepositorySpy()
             } operation: {
                 try await ImpressionRepository().charge(
@@ -119,7 +119,7 @@ struct ImpressionRepositoryTest {
 
         await #expect(throws: TestError.intentional) {
             try await withDependencies {
-                $0.dataStoreFactory = { _ in dataStore }
+                $0.dataStoreFactory = { dataStore }
                 $0[CreditRepositoryKey.self] = credits
             } operation: {
                 try await ImpressionRepository().charge(
@@ -149,7 +149,7 @@ struct ImpressionRepositoryTest {
         )
 
         let result = try await withDependencies {
-            $0.dataStoreFactory = { _ in dataStore }
+            $0.dataStoreFactory = { dataStore }
             $0[CreditRepositoryKey.self] = credits
         } operation: {
             try await ImpressionRepository().charge(

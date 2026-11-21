@@ -177,7 +177,7 @@ struct PointRepositoryTest {
 private extension PointRepositoryTest {
     func make(dataStore: DataStoreMock = .init()) -> PointRepository {
         withDependencies {
-            $0[DataStoreFactoryKey.self] = { _ in dataStore }
+            $0[DataStoreFactoryKey.self] = { dataStore }
         } operation: {
             PointRepository()
         }

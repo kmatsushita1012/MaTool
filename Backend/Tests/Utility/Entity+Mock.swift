@@ -71,12 +71,13 @@ extension Period {
     static func mock(
         id: String = "period-id",
         festivalId: Festival.ID = "festival-id",
+        editionId: Edition.ID = "edition-id",
         title: String = "period",
         date: SimpleDate = .init(year: 2026, month: 2, day: 22),
         start: SimpleTime = .init(hour: 9, minute: 0),
         end: SimpleTime = .init(hour: 18, minute: 0)
     ) -> Self {
-        .init(id: id, festivalId: festivalId, title: title, date: date, start: start, end: end)
+        .init(id: id, editionId: editionId, festivalId: festivalId, title: title, date: date, start: start, end: end)
     }
 }
 

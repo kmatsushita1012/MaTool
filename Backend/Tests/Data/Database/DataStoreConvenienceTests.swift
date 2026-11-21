@@ -160,17 +160,14 @@ struct DataStoreConvenienceTests {
         #expect(store.queryCallCount == 1)
     }
 
-    @Test("依存差し替えされたDataStoreFactoryは目的テーブル名を受け取る")
-    func injectedFactoryReceivesTableName() async throws {
+    @Test("Repositoryは依存差し替えされたDataStoreFactoryを使う")
+    func repositoryUsesInjectedFactory() async throws {
         let district = District.mock(id: "district-1", festivalId: "festival-1")
         let store = DataStoreMock(queryHandler: { _, _, _, _, _, _ in
             try encodeForDataStore([Record(district)])
         })
         let repository = withDependencies {
-            $0.dataStoreFactory = { name in
-                #expect(name == "matool")
-                return store
-            }
+            $0.dataStoreFactory = { store }
         } operation: { DistrictRepository() }
 
         #expect(try await repository.get(id: district.id) == district)

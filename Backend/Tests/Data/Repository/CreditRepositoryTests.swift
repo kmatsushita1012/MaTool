@@ -15,10 +15,7 @@ struct CreditRepositoryTests {
         })
 
         let loaded = try await withDependencies {
-            $0.dataStoreFactory = { name in
-                #expect(name == "matool")
-                return dataStore
-            }
+            $0.dataStoreFactory = { dataStore }
         } operation: {
             try await CreditRepository().get(storeId: "store-1")
         }
@@ -34,7 +31,7 @@ struct CreditRepositoryTests {
     func missingCreditAccountReturnsNil() async throws {
         let store = DataStoreMock(getHandler: { _, _ in nil })
         let loaded = try await withDependencies {
-            $0.dataStoreFactory = { _ in store }
+            $0.dataStoreFactory = { store }
         } operation: {
             try await CreditRepository().get(storeId: "unknown")
         }

@@ -37,7 +37,7 @@ struct CheckpointRepository: CheckpointRepositoryProtocol {
 
     init() {
         @Dependency(\.dataStoreFactory) var storeFactory
-        self.store = storeFactory("matool")
+        self.store = storeFactory()
     }
 
     func get(id: String) async throws -> Checkpoint? {

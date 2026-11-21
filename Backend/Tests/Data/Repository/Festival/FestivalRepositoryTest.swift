@@ -61,7 +61,7 @@ struct FestivalRepositoryTest {
 private extension FestivalRepositoryTest {
     func make(dataStore: DataStoreMock = .init()) -> FestivalRepository {
         withDependencies {
-            $0[DataStoreFactoryKey.self] = { _ in dataStore }
+            $0[DataStoreFactoryKey.self] = { dataStore }
         } operation: {
             FestivalRepository()
         }
