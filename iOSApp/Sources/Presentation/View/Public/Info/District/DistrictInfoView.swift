@@ -14,21 +14,19 @@ struct DistrictInfoView: View {
     let isSheetRoot: Bool
 
     var body: some View {
-        WithPerceptionTracking {
-            DistrictInfoContentView(
-                district: store.district,
-                performances: store.performances,
-                colorTheme: store.colorTheme,
-                region: $store.region,
-                isSheetRoot: isSheetRoot,
-                festivalName: festivalName,
-                locationTimestamp: locationTimestamp,
-                isNavigationLoading: isNavigationLoading,
-                onFestivalTapped: onFestivalTapped,
-                onRouteTapped: onRouteTapped,
-                onColorThemeSelected: { store.send(.colorThemeSelected($0)) }
-            )
-        }
+        DistrictInfoContentView(
+            district: store.district,
+            performances: store.performances,
+            colorTheme: store.colorTheme,
+            region: $store.region,
+            isSheetRoot: isSheetRoot,
+            festivalName: festivalName,
+            locationTimestamp: locationTimestamp,
+            isNavigationLoading: isNavigationLoading,
+            onFestivalTapped: onFestivalTapped,
+            onRouteTapped: onRouteTapped,
+            onColorThemeSelected: { store.send(.colorThemeSelected($0)) }
+        )
         .onAppear {
             store.send(.colorThemeResolved(InfoImageColorScheme.resolve(
                 lightPath: store.district.image.light,
@@ -333,30 +331,28 @@ struct DistrictIntroductionRootView: View {
     var onRouteTapped: (District.ID) -> Void = { _ in }
 
     var body: some View {
-        WithPerceptionTracking {
-            DistrictInfoView(
-                store: store.scope(state: \.district, action: \.district),
-                festivalName: store.festival.name,
-                locationTimestamp: store.locationTimestamp,
-                isNavigationLoading: store.isLoading,
-                onFestivalTapped: { store.send(.festivalTapped) },
-                onRouteTapped: onRouteTapped,
-                isSheetRoot: true
-            )
-            .navigationDestination(item: $store.scope(
-                state: \.destination,
-                action: \.destination
-            )) { destinationStore in
-                switch destinationStore.case {
-                case .festival(let festivalStore):
-                    FestivalInfoView(
-                        store: festivalStore,
-                        isSheetRoot: false,
-                        showsCurrentLocationButton: true,
-                        onCurrentLocationTapped: onCurrentLocationTapped,
-                        onRouteTapped: onRouteTapped
-                    )
-                }
+        DistrictInfoView(
+            store: store.scope(state: \.district, action: \.district),
+            festivalName: store.festival.name,
+            locationTimestamp: store.locationTimestamp,
+            isNavigationLoading: store.isLoading,
+            onFestivalTapped: { store.send(.festivalTapped) },
+            onRouteTapped: onRouteTapped,
+            isSheetRoot: true
+        )
+        .navigationDestination(item: $store.scope(
+            state: \.destination,
+            action: \.destination
+        )) { destinationStore in
+            switch destinationStore.case {
+            case .festival(let festivalStore):
+                FestivalInfoView(
+                    store: festivalStore,
+                    isSheetRoot: false,
+                    showsCurrentLocationButton: true,
+                    onCurrentLocationTapped: onCurrentLocationTapped,
+                    onRouteTapped: onRouteTapped
+                )
             }
         }
     }

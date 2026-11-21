@@ -49,9 +49,7 @@ final class PointAnnotationView: MKMarkerAnnotationView {
         willSet {
             guard let pointAnnotation = newValue as? PointAnnotation else { return }
             displayPriority = .required
-            if #available(iOS 11.0, *) {
-                clusteringIdentifier = nil
-            }
+            clusteringIdentifier = nil
             markerTintColor = UIColor(.annotation)
             zPriority = .defaultUnselected
 

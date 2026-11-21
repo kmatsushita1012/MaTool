@@ -9,7 +9,6 @@ import SwiftUI
 import ComposableArchitecture
 import NavigationSwipeControl
 
-@available(iOS 17.0, *)
 struct ChangePasswordScreen: View {
     @SwiftUI.Bindable var store: StoreOf<ChangePasswordFeature>
 
@@ -27,10 +26,8 @@ struct ChangePasswordScreen: View {
     }
 }
 
-@available(iOS 17.0, *)
 typealias ChangePasswordView = ChangePasswordScreen
 
-@available(iOS 17.0, *)
 struct ChangePasswordContentView: View {
     @Binding var current: String
     @Binding var new1: String

@@ -9,7 +9,6 @@ import SwiftUI
 import ComposableArchitecture
 import NavigationSwipeControl
 
-@available(iOS 17.0, *)
 struct ConfirmSignInScreen: View {
     @SwiftUI.Bindable var store: StoreOf<ConfirmSignInFeature>
 
@@ -26,10 +25,8 @@ struct ConfirmSignInScreen: View {
     }
 }
 
-@available(iOS 17.0, *)
 typealias ConfirmSignInView = ConfirmSignInScreen
 
-@available(iOS 17.0, *)
 struct ConfirmSignInContentView: View {
     @Binding var password1: String
     @Binding var password2: String

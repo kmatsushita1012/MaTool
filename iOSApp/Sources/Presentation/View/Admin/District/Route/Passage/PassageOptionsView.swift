@@ -8,7 +8,6 @@
 import SwiftUI
 import Shared
 
-@available(iOS 17.0, *)
 struct PassageOptionsView: View {
     
     let districts: [District]

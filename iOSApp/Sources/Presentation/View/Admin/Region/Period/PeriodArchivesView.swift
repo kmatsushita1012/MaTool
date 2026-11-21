@@ -9,7 +9,6 @@ import SwiftUI
 import ComposableArchitecture
 import Shared
 
-@available(iOS 17.0, *)
 struct PeriodArchivesScreen: View {
     @SwiftUI.Bindable var store: StoreOf<PeriodArchivesFeature>
     
@@ -25,10 +24,8 @@ struct PeriodArchivesScreen: View {
     }
 }
 
-@available(iOS 17.0, *)
 typealias PeriodArchivesView = PeriodArchivesScreen
 
-@available(iOS 17.0, *)
 struct PeriodArchivesContentView: View {
     let year: Int
     let periods: [Period]

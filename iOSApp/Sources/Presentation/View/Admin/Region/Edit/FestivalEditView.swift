@@ -10,7 +10,6 @@ import ComposableArchitecture
 import NavigationSwipeControl
 import Shared
 
-@available(iOS 17.0, *)
 struct FestivalEditScreen: View {
     @SwiftUI.Bindable var store: StoreOf<FestivalEditFeature>
 
@@ -61,10 +60,8 @@ struct FestivalEditScreen: View {
     }
 }
 
-@available(iOS 17.0, *)
 typealias FestivalEditView = FestivalEditScreen
 
-@available(iOS 17.0, *)
 struct FestivalEditContentView: View {
     @Binding var name: String
     @Binding var subname: String

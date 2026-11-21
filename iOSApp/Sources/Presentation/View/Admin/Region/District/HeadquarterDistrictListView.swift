@@ -10,7 +10,6 @@ import ComposableArchitecture
 import NavigationSwipeControl
 import Shared
 
-@available(iOS 17.0, *)
 struct HeadquarterDistrictListView: View {
     @SwiftUI.Bindable var store: StoreOf<HeadquarterDistrictListFeature>
     
@@ -95,7 +94,6 @@ struct HeadquarterDistrictListView: View {
     }
 }
 
-@available(iOS 17.0, *)
 private extension HeadquarterDistrictListView {
     @ViewBuilder
     func loadingButton(

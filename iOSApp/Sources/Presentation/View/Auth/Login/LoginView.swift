@@ -10,7 +10,6 @@ import ComposableArchitecture
 import NavigationSwipeControl
 import UIKit
 
-@available(iOS 17.0, *)
 struct LoginScreen: View {
     @SwiftUI.Bindable var store: StoreOf<LoginFeature>
     @Dependency(\.values.contactURL) private var contactURLString
@@ -35,10 +34,8 @@ struct LoginScreen: View {
     }
 }
 
-@available(iOS 17.0, *)
 typealias LoginView = LoginScreen
 
-@available(iOS 17.0, *)
 struct LoginContentView: View {
     @Binding var id: String
     @Binding var password: String

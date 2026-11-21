@@ -10,7 +10,6 @@ import SwiftUI
 import NavigationSwipeControl
 import Shared
 
-@available(iOS 17.0, *)
 struct RouteEditView: View {
     @Dependency(\.values.isLiquidGlassEnabled) var isLiquidGlassEnabled
     
@@ -110,7 +109,6 @@ struct RouteEditView: View {
 }
 
 // MARK: - LiquidGlass対応前
-@available(iOS 17.0, *)
 extension RouteEditView {
     @ViewBuilder
     var contentBeforeLiquidGlass: some View {
@@ -155,7 +153,6 @@ extension RouteEditView {
 }
 
 // MARK: - LiquidGlass対応後
-@available(iOS 17.0, *)
 extension RouteEditView {
     @ViewBuilder
     @available(iOS 26.0, *)
@@ -208,7 +205,6 @@ extension RouteEditView {
 }
 
 // MARK: - Common
-@available(iOS 17.0, *)
 extension RouteEditView {
     
     @ViewBuilder

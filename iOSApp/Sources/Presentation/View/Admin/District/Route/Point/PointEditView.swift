@@ -10,7 +10,6 @@ import ComposableArchitecture
 import NavigationSwipeControl
 import Shared
 
-@available(iOS 17.0, *)
 struct PointEditView: View {
     
     @Dependency(\.values.isLiquidGlassEnabled) var isLiquidGlassEnabled: Bool
@@ -82,19 +81,12 @@ struct PointEditView: View {
     
     @ViewBuilder
     var checkpoint: some View {
-        if #available(iOS 18.0, *) {
-            Picker("交差点の種類", selection: $store.point.checkpointId) {
-                checkpointPickerContent
-            } currentValueLabel: {
-                Text(store.selectedCheckpoint?.name ?? "未選択")
-            }
-            .pickerStyle(.menu)
-        } else {
-            Picker("交差点の種類", selection: $store.point.checkpointId) {
-               checkpointPickerContent
-            }
-            .pickerStyle(.menu)
+        Picker("交差点の種類", selection: $store.point.checkpointId) {
+            checkpointPickerContent
+        } currentValueLabel: {
+            Text(store.selectedCheckpoint?.name ?? "未選択")
         }
+        .pickerStyle(.menu)
         timePicker
     }
     
@@ -107,22 +99,12 @@ struct PointEditView: View {
     
     @ViewBuilder
     var performance: some View {
-        if #available(iOS 18.0, *) {
-            Picker("余興の種類", selection: $store.point.performanceId) {
-                performancePickerContent
-            } currentValueLabel: {
-                Text(store.selectedPerformance?.name ?? "未選択")
-            }
-            .pickerStyle(.menu)
-        } else {
-            Picker(
-                "余興の種類",
-                selection: $store.point.performanceId
-            ) {
-                performancePickerContent
-            }
-            .pickerStyle(.menu)
+        Picker("余興の種類", selection: $store.point.performanceId) {
+            performancePickerContent
+        } currentValueLabel: {
+            Text(store.selectedPerformance?.name ?? "未選択")
         }
+        .pickerStyle(.menu)
         optionalTimePicker
     }
     
