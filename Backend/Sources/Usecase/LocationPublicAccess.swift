@@ -6,18 +6,33 @@ enum LocationPublicAccess {
     /// - start: その日の start 最小値の 30 分前
     /// - end: その日の end 最大値
     static func isPublic(now: Date, periods: [Period]) -> Bool {
-        guard let range = publicRange(for: SimpleDate.from(now), periods: periods) else { return false }
-        return range.contains(now)
+        let date = SimpleDate.from(now)
+        let calendar = Calendar.japanGregorian
+        let previousDate = calendar.date(byAdding: .day, value: -1, to: date.toDate).map(SimpleDate.from)
+        let candidateDates = [previousDate, date].compactMap { $0 }
+
+        return candidateDates.contains { candidateDate in
+            publicRange(for: candidateDate, periods: periods)?.contains(now) == true
+        }
     }
 
     static func publicRange(for date: SimpleDate, periods: [Period]) -> ClosedRange<Date>? {
         let targetPeriods = periods.filter { $0.date == date }
-        guard let minStart = targetPeriods.map(\.start).min(),
-              let maxEnd = targetPeriods.map(\.end).max()
+        guard !targetPeriods.isEmpty else { return nil }
+
+        let startDateTimes = targetPeriods.map { Date.combine(date: date, time: $0.start) }
+        let endDateTimes = targetPeriods.map { period -> Date in
+            let startDateTime = Date.combine(date: date, time: period.start)
+            let endDateTime = Date.combine(date: date, time: period.end)
+            guard endDateTime < startDateTime else { return endDateTime }
+            return Calendar.japanGregorian.date(byAdding: .day, value: 1, to: endDateTime) ?? endDateTime
+        }
+        guard let earliestStart = startDateTimes.min(),
+              let latestEnd = endDateTimes.max()
         else { return nil }
 
-        let startDateTime = Date.combine(date: date, time: minStart).addingTimeInterval(-30 * 60)
-        let endDateTime = Date.combine(date: date, time: maxEnd)
+        let startDateTime = earliestStart.addingTimeInterval(-30 * 60)
+        let endDateTime = latestEnd
         return startDateTime...endDateTime
     }
 
