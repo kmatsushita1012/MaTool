@@ -86,12 +86,12 @@ struct PeriodUsecaseTest {
     @Test
     func delete_正常() async throws {
         let period = Period.mock(id: "period-1", festivalId: "festival-1", date: .init(year: 2026, month: 2, day: 22), start: .init(hour: 10, minute: 0))
-        var lastCalledFestivalId: String?
+        var lastCalledPeriodId: String?
 
         let repository = PeriodRepositoryMock(
             getHandler: { _ in period },
-            deleteHandler: { festivalId, _, _ in
-                lastCalledFestivalId = festivalId
+            deleteHandler: { periodId in
+                lastCalledPeriodId = periodId
             }
         )
         let subject = make(repository: repository)
@@ -99,7 +99,7 @@ struct PeriodUsecaseTest {
         try await subject.delete(id: period.id, user: .headquarter("festival-1"))
 
         #expect(repository.deleteCallCount == 1)
-        #expect(lastCalledFestivalId == "festival-1")
+        #expect(lastCalledPeriodId == period.id)
     }
 
     @Test
@@ -117,7 +117,7 @@ struct PeriodUsecaseTest {
 
         let periodRepository = PeriodRepositoryMock(
             getHandler: { _ in period },
-            deleteHandler: { _, _, _ in periodWasDeleted = true }
+            deleteHandler: { _ in periodWasDeleted = true }
         )
         let districtRepository = DistrictRepositoryMock(
             queryHandler: { _ in [firstDistrict, secondDistrict] }

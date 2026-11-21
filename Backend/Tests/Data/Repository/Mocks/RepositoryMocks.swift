@@ -91,6 +91,7 @@ final class RouteRepositoryMock: RouteRepositoryProtocol, @unchecked Sendable {
     init(
         getHandler: ((String) async throws -> Route?)? = nil,
         queryHandler: ((String) async throws -> [Route])? = nil,
+        queryByEditionHandler: ((String, Edition.ID) async throws -> [Route])? = nil,
         queryByYearHandler: ((String, Int) async throws -> [Route])? = nil,
         postHandler: ((Route) async throws -> Route)? = nil,
         putHandler: ((Route) async throws -> Route)? = nil,
@@ -99,6 +100,7 @@ final class RouteRepositoryMock: RouteRepositoryProtocol, @unchecked Sendable {
     ) {
         self.getHandler = getHandler
         self.queryHandler = queryHandler
+        self.queryByEditionHandler = queryByEditionHandler
         self.queryByYearHandler = queryByYearHandler
         self.postHandler = postHandler
         self.putHandler = putHandler
@@ -120,6 +122,14 @@ final class RouteRepositoryMock: RouteRepositoryProtocol, @unchecked Sendable {
         queryCallCount += 1
         guard let queryHandler else { throw TestError.unimplemented }
         return try await queryHandler(districtId)
+    }
+
+    private(set) var queryByEditionCallCount = 0
+    private let queryByEditionHandler: ((String, Edition.ID) async throws -> [Route])?
+    func query(by districtId: String, editionId: Edition.ID) async throws -> [Route] {
+        queryByEditionCallCount += 1
+        guard let queryByEditionHandler else { throw TestError.unimplemented }
+        return try await queryByEditionHandler(districtId, editionId)
     }
 
     private(set) var queryByYearCallCount = 0
@@ -226,13 +236,15 @@ final class LocationRepositoryMock: LocationRepositoryProtocol, @unchecked Senda
 final class PeriodRepositoryMock: PeriodRepositoryProtocol, @unchecked Sendable {
     init(
         getHandler: ((Period.ID) async throws -> Period?)? = nil,
+        queryByEditionHandler: ((Edition.ID) async throws -> [Period])? = nil,
         queryByYearHandler: ((String, Int) async throws -> [Period])? = nil,
         queryHandler: ((String) async throws -> [Period])? = nil,
         postHandler: ((Period) async throws -> Period)? = nil,
         putHandler: ((Period) async throws -> Period)? = nil,
-        deleteHandler: ((String, SimpleDate, SimpleTime) async throws -> Void)? = nil
+        deleteHandler: ((Period.ID) async throws -> Void)? = nil
     ) {
         self.getHandler = getHandler
+        self.queryByEditionHandler = queryByEditionHandler
         self.queryByYearHandler = queryByYearHandler
         self.queryHandler = queryHandler
         self.postHandler = postHandler
@@ -246,6 +258,14 @@ final class PeriodRepositoryMock: PeriodRepositoryProtocol, @unchecked Sendable 
         getCallCount += 1
         guard let getHandler else { throw TestError.unimplemented }
         return try await getHandler(id)
+    }
+
+    private(set) var queryByEditionCallCount = 0
+    private let queryByEditionHandler: ((Edition.ID) async throws -> [Period])?
+    func query(byEditionId editionId: Edition.ID) async throws -> [Period] {
+        queryByEditionCallCount += 1
+        guard let queryByEditionHandler else { throw TestError.unimplemented }
+        return try await queryByEditionHandler(editionId)
     }
 
     private let queryByYearCountLock = NSLock()
@@ -285,11 +305,11 @@ final class PeriodRepositoryMock: PeriodRepositoryProtocol, @unchecked Sendable 
     }
 
     private(set) var deleteCallCount = 0
-    private let deleteHandler: ((String, SimpleDate, SimpleTime) async throws -> Void)?
-    func delete(festivalId: String, date: SimpleDate, start: SimpleTime) async throws {
+    private let deleteHandler: ((Period.ID) async throws -> Void)?
+    func delete(id: Period.ID) async throws {
         deleteCallCount += 1
         guard let deleteHandler else { throw TestError.unimplemented }
-        try await deleteHandler(festivalId, date, start)
+        try await deleteHandler(id)
     }
 }
 

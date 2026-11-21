@@ -68,7 +68,7 @@ struct PeriodUsecase: PeriodUsecaseProtocol {
             throw Error.unauthorized("アクセス権限がありません。")
         }
         try await deleteRoutes(for: target)
-        return try await repository.delete(festivalId: target.festivalId, date: target.date, start: target.start )
+        return try await repository.delete(id: target.id)
     }
 
     private func deleteRoutes(for period: Period) async throws {

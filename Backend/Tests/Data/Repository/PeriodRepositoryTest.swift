@@ -1,293 +1,178 @@
-import Dependencies
 import Foundation
+import Dependencies
 import Shared
 import Testing
 @testable import Backend
 
 struct PeriodRepositoryTest {
     @Test
-    func get_正常_種別IDインデックス検索で先頭を返す() async throws {
-        let period = Period.mock(id: "period-1", festivalId: "festival-1")
-        var lastCalledIndexName: String?
-        var lastCalledKeyConditions: [QueryCondition] = []
+    func get_IDインデックスで期間を取得する() async throws {
+        let period = Period.mock(id: "period-1", festivalId: "festival-1", editionId: "edition-1")
+        var indexName: String?
+        var conditions: [QueryCondition] = []
+        let store = DataStoreMock(queryHandler: { index, keys, _, _, _, _ in
+            indexName = index
+            conditions = keys
+            return try JSONEncoder().encode([PeriodRecord(period)])
+        })
+        let repository = make(dataStore: store)
 
-        let dataStore = DataStoreMock(
-            queryHandler: { indexName, keyConditions, _, _, _, _ in
-                lastCalledIndexName = indexName
-                lastCalledKeyConditions = keyConditions
-                return try JSONEncoder().encode([PeriodRecord(period)])
-            }
-        )
-        let subject = make(dataStore: dataStore)
-
-        let result = try await subject.get(id: period.id)
-
-        #expect(result == period)
-        #expect(dataStore.queryCallCount == 1)
-        #expect(lastCalledIndexName == "index-type-id")
-        #expect(lastCalledKeyConditions.count == 2)
-        #expect(lastCalledKeyConditions.contains(where: isTypeEqualsPeriod))
-        #expect(lastCalledKeyConditions.contains(where: { isEquals($0, field: "id", value: period.id) }))
+        #expect(try await repository.get(id: period.id) == period)
+        #expect(indexName == "index-type-id")
+        #expect(conditions.contains(where: { isEquals($0, field: "type", value: "PERIOD") }))
+        #expect(conditions.contains(where: { isEquals($0, field: "id", value: period.id) }))
     }
 
     @Test
-    func query_正常_年指定でprefix検索する() async throws {
-        let period = Period.mock(id: "period-1", festivalId: "festival-1", date: .init(year: 2026, month: 2, day: 22))
-        var lastCalledIndexName: String?
-        var lastCalledKeyConditions: [QueryCondition] = []
+    func query_Edition配下の期間を取得する() async throws {
+        let period = Period.mock(id: "period-1", festivalId: "festival-1", editionId: "edition-1")
+        var conditions: [QueryCondition] = []
+        let store = DataStoreMock(queryHandler: { _, keys, _, _, _, _ in
+            conditions = keys
+            return try JSONEncoder().encode([PeriodRecord(period)])
+        })
+        let repository = make(dataStore: store)
 
-        let dataStore = DataStoreMock(
-            queryHandler: { indexName, keyConditions, _, _, _, _ in
-                lastCalledIndexName = indexName
-                lastCalledKeyConditions = keyConditions
-                return try JSONEncoder().encode([PeriodRecord(period)])
-            }
-        )
-        let subject = make(dataStore: dataStore)
-
-        let result = try await subject.query(by: period.festivalId, year: 2026)
-
-        #expect(result == [period])
-        #expect(dataStore.queryCallCount == 1)
-        #expect(lastCalledIndexName == nil)
-        #expect(lastCalledKeyConditions.contains(where: { isEquals($0, field: "pk", value: "FESTIVAL#\(period.festivalId)") }))
-        #expect(lastCalledKeyConditions.contains(where: { isBeginsWith($0, field: "sk", prefix: "PERIOD#2026") }))
+        #expect(try await repository.query(byEditionId: "edition-1") == [period])
+        #expect(conditions.contains(where: { isEquals($0, field: "pk", value: "EDITION#edition-1") }))
+        #expect(conditions.contains(where: { isBeginsWith($0, field: "sk", prefix: "PERIOD#") }))
     }
 
     @Test
-    func query_正常_祭典指定で全期間prefix検索する() async throws {
-        let period = Period.mock(id: "period-1", festivalId: "festival-1")
-        var lastCalledKeyConditions: [QueryCondition] = []
-
-        let dataStore = DataStoreMock(
-            queryHandler: { _, keyConditions, _, _, _, _ in
-                lastCalledKeyConditions = keyConditions
-                return try JSONEncoder().encode([PeriodRecord(period)])
-            }
-        )
-        let subject = make(dataStore: dataStore)
-
-        let result = try await subject.query(by: period.festivalId)
-
-        #expect(result == [period])
-        #expect(dataStore.queryCallCount == 1)
-        #expect(lastCalledKeyConditions.contains(where: { isEquals($0, field: "pk", value: "FESTIVAL#\(period.festivalId)") }))
-        #expect(lastCalledKeyConditions.contains(where: { isBeginsWith($0, field: "sk", prefix: "PERIOD#") }))
-    }
-
-    @Test
-    func post_正常_レコード化してputする() async throws {
-        let period = Period.mock(id: "period-1", festivalId: "festival-1", date: .init(year: 2026, month: 2, day: 22), start: .init(hour: 9, minute: 0))
-        var lastCalledRecord: PeriodRecord?
-
-        let dataStore = DataStoreMock(
-            putHandler: { item in
-                lastCalledRecord = try decodeFromEncodable(item, as: PeriodRecord.self)
-            }
-        )
-        let subject = make(dataStore: dataStore)
-
-        let result = try await subject.post(period)
-
-        #expect(result == period)
-        #expect(dataStore.putCallCount == 1)
-        #expect(lastCalledRecord?.content == period)
-        #expect(lastCalledRecord?.pk == "FESTIVAL#\(period.festivalId)")
-    }
-
-    @Test
-    func put_正常_レコード化してputする() async throws {
-        let period = Period.mock(id: "period-2", festivalId: "festival-1", date: .init(year: 2026, month: 3, day: 1), start: .init(hour: 12, minute: 0))
-        var lastCalledRecord: PeriodRecord?
-        var operations: [String] = []
-
-        let dataStore = DataStoreMock(
-            putHandler: { item in
-                operations.append("put")
-                lastCalledRecord = try decodeFromEncodable(item, as: PeriodRecord.self)
+    func query_祭典と年度からEdition経由で期間を取得する() async throws {
+        let period = Period.mock(id: "period-1", festivalId: "festival-1", editionId: "edition-1")
+        var getKeys: [String: Codable] = [:]
+        var queryConditions: [QueryCondition] = []
+        let store = DataStoreMock(
+            getHandler: { keys, type in
+                getKeys = keys
+                return try JSONEncoder().encode(EditionRecord(.init(id: "edition-1", festivalId: "festival-1", year: 2026)))
             },
-            queryHandler: { _, _, _, _, _, _ in
-                operations.append("query")
+            queryHandler: { _, keys, _, _, _, _ in
+                queryConditions = keys
                 return try JSONEncoder().encode([PeriodRecord(period)])
             }
         )
-        let subject = make(dataStore: dataStore)
+        let repository = make(dataStore: store)
 
-        let result = try await subject.put(period)
-
-        #expect(result == period)
-        #expect(dataStore.putCallCount == 1)
-        #expect(lastCalledRecord?.content == period)
-        #expect(lastCalledRecord?.pk == "FESTIVAL#\(period.festivalId)")
-        #expect(dataStore.deleteCallCount == 0)
-        #expect(operations == ["query", "put"])
+        #expect(try await repository.query(by: "festival-1", year: 2026) == [period])
+        #expect(getKeys["pk"] as? String == "FESTIVAL#festival-1")
+        #expect(getKeys["sk"] as? String == "EDITION#2026")
+        #expect(queryConditions.contains(where: { isEquals($0, field: "pk", value: "EDITION#edition-1") }))
     }
 
     @Test
-    func put_正常_キー変更時は旧レコードを削除してからputする() async throws {
-        let oldPeriod = Period.mock(
-            id: "period-2",
+    func post_新しいキーで保存する() async throws {
+        let period = Period.mock(id: "period-1", festivalId: "festival-1", editionId: "edition-1")
+        var saved: PeriodRecord?
+        let store = DataStoreMock(putHandler: { item in
+            saved = try decodeFromEncodable(item, as: PeriodRecord.self)
+        })
+        let repository = make(dataStore: store)
+
+        #expect(try await repository.post(period) == period)
+        #expect(saved?.pk == "EDITION#edition-1")
+        #expect(saved?.sk == "PERIOD#period-1")
+        #expect(saved?.id == period.id)
+        #expect(saved?.content == period)
+    }
+
+    @Test
+    func post_Edition未設定の期間を拒否する() async {
+        let period = Period(id: "period-1", festivalId: "festival-1", date: .init(year: 2026, month: 2, day: 22))
+        let repository = make(dataStore: .init())
+
+        await #expect(throws: Error.badRequest("日程にEditionが設定されていません。")) {
+            _ = try await repository.post(period)
+        }
+    }
+
+    @Test
+    func put_日時変更ではキーを移動しない() async throws {
+        let existing = Period.mock(
+            id: "period-1",
             festivalId: "festival-1",
-            date: .init(year: 2026, month: 3, day: 1),
-            start: .init(hour: 12, minute: 0)
+            editionId: "edition-1",
+            date: .init(year: 2026, month: 2, day: 22),
+            start: .init(hour: 9, minute: 0)
         )
-        let updatedPeriod = Period.mock(
-            id: oldPeriod.id,
-            festivalId: oldPeriod.festivalId,
-            date: oldPeriod.date,
+        let updated = Period.mock(
+            id: existing.id,
+            festivalId: "festival-1",
+            editionId: "edition-1",
+            date: .init(year: 2027, month: 3, day: 1),
             start: .init(hour: 12, minute: 30)
         )
-        let unrelatedPeriod = Period.mock(
-            id: "period-unrelated",
-            festivalId: "festival-2",
-            date: oldPeriod.date,
-            start: .init(hour: 8, minute: 0)
+        var saved: PeriodRecord?
+        let store = DataStoreMock(
+            putHandler: { item in saved = try decodeFromEncodable(item, as: PeriodRecord.self) },
+            queryHandler: { _, _, _, _, _, _ in try JSONEncoder().encode([PeriodRecord(existing)]) }
         )
-        var operations: [String] = []
-        var deletedKeys: (pk: String?, sk: String?) = (nil, nil)
-        var savedRecord: PeriodRecord?
-        var queriedTargetId = false
+        let repository = make(dataStore: store)
 
-        let dataStore = DataStoreMock(
-            putHandler: { item in
-                operations.append("put")
-                savedRecord = try decodeFromEncodable(item, as: PeriodRecord.self)
-            },
-            deleteHandler: { keys in
-                operations.append("delete")
-                deletedKeys = (keys["pk"] as? String, keys["sk"] as? String)
-            },
-            queryHandler: { indexName, keyConditions, _, _, _, _ in
-                operations.append("query")
-                queriedTargetId = indexName == "index-type-id"
-                    && keyConditions.contains(where: { isEquals($0, field: "id", value: updatedPeriod.id) })
-                return try JSONEncoder().encode([
-                    PeriodRecord(unrelatedPeriod),
-                    PeriodRecord(oldPeriod)
-                ])
-            }
-        )
-        let subject = make(dataStore: dataStore)
-
-        let result = try await subject.put(updatedPeriod)
-
-        #expect(result == updatedPeriod)
-        #expect(deletedKeys.pk == "FESTIVAL#\(oldPeriod.festivalId)")
-        #expect(deletedKeys.sk == "PERIOD#\(oldPeriod.date.sortableKey)#\(oldPeriod.start.sortableKey)")
-        #expect(queriedTargetId)
-        #expect(dataStore.deleteCallCount == 1)
-        #expect(savedRecord?.content == updatedPeriod)
-        #expect(operations == ["query", "delete", "put"])
+        #expect(try await repository.put(updated) == updated)
+        #expect(saved?.pk == "EDITION#edition-1")
+        #expect(saved?.sk == "PERIOD#period-1")
+        #expect(store.deleteCallCount == 0)
     }
 
     @Test
-    func delete_正常_主キーでdeleteする() async throws {
-        let festivalId = "festival-1"
-        let date = SimpleDate(year: 2026, month: 2, day: 22)
-        let start = SimpleTime(hour: 10, minute: 30)
-        var lastCalledKeyPair: (pk: String?, sk: String?) = (nil, nil)
-
-        let dataStore = DataStoreMock(
-            deleteHandler: { keys in
-                lastCalledKeyPair = (keys["pk"] as? String, keys["sk"] as? String)
-            }
+    func put_Edition変更時は旧キーを削除して保存する() async throws {
+        let existing = Period.mock(id: "period-1", festivalId: "festival-1", editionId: "edition-old")
+        let updated = Period.mock(id: existing.id, festivalId: "festival-1", editionId: "edition-new")
+        var deleted: [String: Codable] = [:]
+        let store = DataStoreMock(
+            putHandler: { _ in },
+            deleteHandler: { deleted = $0 },
+            queryHandler: { _, _, _, _, _, _ in try JSONEncoder().encode([PeriodRecord(existing)]) }
         )
-        let subject = make(dataStore: dataStore)
+        let repository = make(dataStore: store)
 
-        try await subject.delete(festivalId: festivalId, date: date, start: start)
+        _ = try await repository.put(updated)
 
-        #expect(dataStore.deleteCallCount == 1)
-        #expect(lastCalledKeyPair.pk == "FESTIVAL#\(festivalId)")
-        #expect(lastCalledKeyPair.sk == "PERIOD#\(date.sortableKey)#\(start.sortableKey)")
+        #expect(deleted["pk"] as? String == "EDITION#edition-old")
+        #expect(deleted["sk"] as? String == "PERIOD#period-1")
     }
 
     @Test
-    func get_異常_依存エラーを透過() async {
-        let dataStore = DataStoreMock(
-            queryHandler: { _, _, _, _, _, _ in throw TestError.intentional }
+    func delete_IDインデックスで実際の主キーを削除する() async throws {
+        let period = Period.mock(id: "period-1", festivalId: "festival-1", editionId: "edition-1")
+        var deleted: [String: Codable] = [:]
+        let store = DataStoreMock(
+            deleteHandler: { deleted = $0 },
+            queryHandler: { _, _, _, _, _, _ in try JSONEncoder().encode([PeriodRecord(period)]) }
         )
-        let subject = make(dataStore: dataStore)
+        let repository = make(dataStore: store)
+
+        try await repository.delete(id: period.id)
+
+        #expect(deleted["pk"] as? String == "EDITION#edition-1")
+        #expect(deleted["sk"] as? String == "PERIOD#period-1")
+    }
+
+    @Test
+    func query_依存エラーを透過する() async {
+        let repository = make(dataStore: .init(queryHandler: { _, _, _, _, _, _ in throw TestError.intentional }))
 
         await #expect(throws: TestError.intentional) {
-            _ = try await subject.get(id: "period-1")
-        }
-    }
-
-    @Test
-    func query_異常_依存エラーを透過() async {
-        let dataStore = DataStoreMock(
-            queryHandler: { _, _, _, _, _, _ in throw TestError.intentional }
-        )
-        let subject = make(dataStore: dataStore)
-
-        await #expect(throws: TestError.intentional) {
-            _ = try await subject.query(by: "festival-1")
-        }
-    }
-
-    @Test
-    func post_異常_依存エラーを透過() async {
-        let period = Period.mock(id: "period-1", festivalId: "festival-1")
-        let dataStore = DataStoreMock(
-            putHandler: { _ in throw TestError.intentional }
-        )
-        let subject = make(dataStore: dataStore)
-
-        await #expect(throws: TestError.intentional) {
-            _ = try await subject.post(period)
-        }
-    }
-
-    @Test
-    func put_異常_依存エラーを透過() async {
-        let period = Period.mock(id: "period-1", festivalId: "festival-1")
-        let dataStore = DataStoreMock(
-            putHandler: { _ in throw TestError.intentional },
-            queryHandler: { _, _, _, _, _, _ in
-                try JSONEncoder().encode([PeriodRecord]())
-            }
-        )
-        let subject = make(dataStore: dataStore)
-
-        await #expect(throws: TestError.intentional) {
-            _ = try await subject.put(period)
-        }
-    }
-
-    @Test
-    func delete_異常_依存エラーを透過() async {
-        let dataStore = DataStoreMock(
-            deleteHandler: { _ in throw TestError.intentional }
-        )
-        let subject = make(dataStore: dataStore)
-
-        await #expect(throws: TestError.intentional) {
-            try await subject.delete(
-                festivalId: "festival-1",
-                date: .init(year: 2026, month: 2, day: 22),
-                start: .init(hour: 10, minute: 30)
-            )
+            _ = try await repository.query(byEditionId: "edition-1")
         }
     }
 }
 
 private extension PeriodRepositoryTest {
-    func make(dataStore: DataStoreMock = .init()) -> PeriodRepository {
+    func make(dataStore: DataStoreMock) -> PeriodRepository {
         withDependencies {
-            $0[DataStoreFactoryKey.self] = { _ in dataStore }
+            $0.dataStoreFactory = { _ in dataStore }
         } operation: {
             PeriodRepository()
         }
     }
 
-    func isTypeEqualsPeriod(_ condition: QueryCondition) -> Bool {
-        isEquals(condition, field: "type", value: "PERIOD")
-    }
-
     func isEquals(_ condition: QueryCondition, field: String, value: String) -> Bool {
-        guard case let .equals(actualField, actualValue) = condition else { return false }
-        guard let actual = actualValue as? String else { return false }
-        return actualField == field && actual == value
+        guard case let .equals(actualField, actualValue) = condition,
+              let actualValue = actualValue as? String else { return false }
+        return actualField == field && actualValue == value
     }
 
     func isBeginsWith(_ condition: QueryCondition, field: String, prefix: String) -> Bool {
