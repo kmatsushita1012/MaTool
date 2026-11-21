@@ -62,6 +62,8 @@ public struct RoutePack: Pack {
 // Default-Festival基準
 public struct LaunchFestivalPack: Pack {
     public let festival: Festival
+    @available(*, deprecated, message: "Edition移行後に削除")
+    public let year: Int
     @NullEncodable public var edition: Edition?
     public let districts: [District]
     public let periods: [Period] // Adminなら全期間 Publicならlatest
@@ -69,8 +71,21 @@ public struct LaunchFestivalPack: Pack {
     public let checkpoints: [Checkpoint] // Adminのみ
     public let hazardSections: [HazardSection] // Adminのみ
     
+    @available(*, deprecated, message: "Edition移行後に削除")
+    public init(festival: Festival, year: Int? = nil, districts: [District], periods: [Period], locations: [FloatLocation], checkpoints: [Checkpoint], hazardSections: [HazardSection]) {
+        self.festival = festival
+        self.year = year ?? periods.first?.date.year ?? 0
+        self.edition = nil
+        self.districts = districts
+        self.periods = periods
+        self.locations = locations
+        self.checkpoints = checkpoints
+        self.hazardSections = hazardSections
+    }
+
     public init(festival: Festival, edition: Edition?, districts: [District], periods: [Period], locations: [FloatLocation], checkpoints: [Checkpoint], hazardSections: [HazardSection]) {
         self.festival = festival
+        self.year = edition?.year ?? periods.first?.date.year ?? 0
         self.edition = edition
         self.districts = districts
         self.periods = periods

@@ -10,21 +10,43 @@ import Foundation
 // MARK: - Period
 public struct Period: Entity, Identifiable {
     public let id: String
-    public let editionId: Edition.ID
+    @available(*, deprecated, message: "Edition移行後に削除")
+    public let festivalId: Festival.ID
+    @NullEncodable public var editionId: Edition.ID?
     public let date: SimpleDate
     public var title: String
     public var start: SimpleTime
     public var end: SimpleTime
     
+    @available(*, deprecated, message: "Edition移行後に削除")
     public init(
         id: String = UUID().uuidString,
-        editionId: Edition.ID,
+        festivalId: Festival.ID = "",
         title: String = "",
         date: SimpleDate,
         start: SimpleTime = .now,
         end: SimpleTime = .now
     ) {
         self.id = id
+        self.festivalId = festivalId
+        self.editionId = nil
+        self.date = date
+        self.title = title
+        self.start = start
+        self.end = end
+    }
+
+    public init(
+        id: String = UUID().uuidString,
+        editionId: Edition.ID,
+        festivalId: Festival.ID,
+        title: String = "",
+        date: SimpleDate,
+        start: SimpleTime = .now,
+        end: SimpleTime = .now
+    ) {
+        self.id = id
+        self.festivalId = festivalId
         self.editionId = editionId
         self.date = date
         self.title = title
