@@ -107,6 +107,7 @@ struct FestivalRouterTest {
                 $0[LocationControllerKey.self] = LocationControllerMock()
                 $0[PeriodControllerKey.self] = PeriodControllerMock()
                 $0[SceneControllerKey.self] = SceneController()
+                $0[EditionControllerKey.self] = EditionControllerSpy()
             } operation: {
                 let app = Application {
                     AuthMiddleware(path: "/")
