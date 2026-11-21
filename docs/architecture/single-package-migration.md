@@ -74,6 +74,12 @@ Domain ← AppCore ← AppInfrastructure
 
 `Backend/Sources/Router/**`、`Infrastructure/APIGateway.swift`、`Infrastructure/Application.swift`、`Infrastructure/Midleware/AuthMiddleware.swift`、HTTP関連`Utils/Request+Decode.swift`、`Response+Encode.swift`もBackendAPIへ。`Backend/Sources/Usecase/**`は原則BackendCoreへ（次項の例外に注意）。
 
+**別の必須依存境界: エラー型。** `Backend/Sources/Utils/Error+Application.swift`には`typealias Error = Application.Error`があり、`Usecase/**`、Repository、Cognito/S3/SNS等のLive実装まで`Error.notFound/badRequest/forbidden/internalServerError`を参照している。現在`Application.Error`は`Backend/Sources/Infrastructure/Application.swift`にネストされているため、このまま分割すると**BackendCore → BackendAPI、BackendInfrastructure → BackendAPI**の逆依存が発生する。
+
+- HTTPに依存しない`BackendError: Swift.Error, Sendable, Equatable`（または同等の名前）を**BackendCore**へ抽出し、UseCase・Repository・Live Clientの共通エラー契約にする。
+- `BackendAPI`は`BackendError`からHTTP status code / ErrorResponse / Responseへの**変換のみ**を持つ。
+- 呼び出し元の`Error.*`を`BackendError.*`へ更新するか、互換typealiasを適切な境界に置き、APIの`Application`に型依存しないことをビルドで検証する。
+
 ### B3. 外部サービス契約とAWS実装の同居（必須）
 
 | 現行 | BackendCoreに置くもの | 具象アダプターの置き場 |
@@ -182,7 +188,7 @@ Domain ← AppCore ← AppInfrastructure
 
 1. **事前準備**: 現行HEADのiOS/Backend/Sharedビルド・テスト・依存グラフ、カバレッジとデプロイを記録。移設先のpublic APIを必要最小限で設計。
 2. **純粋な型の切り出し**: `PublicMapContent`、`YearlyPeriods`、`PointType`、`ImageEditMode`、`MapToast`、`AsyncValue`などを既存Xcode Target内でまず別ファイル化。振る舞いとUIを変更せずテストを追加/更新。
-3. **Backendの契約分割**: RepositoryProtocol/外部ClientProtocolとLiveを分け、HTTP ControllerをAPI境界として固定。DIのComposition Rootを作成。既存テストを維持。
+3. **Backendの契約分割**: まず`Application.Error`をHTTP非依存のBackendCoreエラーへ分離し、HTTPエラー変換をAPIへ移動。そのうえでRepositoryProtocol/外部ClientProtocolとLiveを分け、HTTP ControllerをAPI境界として固定。DIのComposition Rootを作成。既存テストを維持。
 4. **Appの契約分割**: DataFetcher/Clientの契約とLiveを分け、AppStateのShared依存方針を確定。AppCoreが外側の型をimportしない状態を先に作る。
 5. **モジュールの切り出し**: Domain→BackendCore/BackendDatabase/BackendInfrastructure（採用する場合）/BackendAPI→AppCore/AppInfrastructure→AppUI/AppPresentationの順にTargetを作り、移動。各段階でコンパイルとテスト。
 6. **単一manifest化とCI対応**: root Packageに収束、Xcode/Backend Docker/Actions/Xcode Cloud関連パスを更新。Linux依存解決不具合が出た場合のみmanifestの`#if`を追加。
@@ -193,7 +199,7 @@ Domain ← AppCore ← AppInfrastructure
 ## 8. 完了条件・拒否条件
 
 - [ ] ルート`Package.swift`と8 Library Target（推奨するBackendInfrastructureを採用する場合は9）、薄いBackend executable、現行iOSエントリからビルドできる。
-- [ ] `BackendCore`にHTTP Request/Response、DynamoDB、AWS SDK具象、Cognito/S3/SNS/AppStoreのLive実装が存在しない。`BackendAPI`にも外部ClientのLive実装を混在させない構成を優先。
+- [ ] `BackendCore`にHTTP Request/Response、DynamoDB、AWS SDK具象、Cognito/S3/SNS/AppStoreのLive実装が存在しない。`Application.Error`への依存も解消し、HTTP statusのマッピングがBackendAPIだけにある。`BackendAPI`にも外部ClientのLive実装を混在させない構成を優先。
 - [ ] `BackendDatabase`/`BackendAPI`からCoreへ向かう一方向依存で、Coreの`liveValue`が外側を生成しない。
 - [ ] `AppCore`が`AppInfrastructure`をimportせず、DataFetcher/Clientの契約が内側にある。共有状態は原則`Sharing`を直接利用し、`AppCore`から`import ComposableArchitecture`をなくす。既存の`withLock`原子性と古いレスポンス破棄を維持。
 - [ ] `AppUI`のソースに`ComposableArchitecture`、`StoreOf`、`Feature.State/Action`、`Reducer`の参照がない。AppCore経由の`Sharing`間接依存は許容する。
