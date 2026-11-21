@@ -1,28 +1,24 @@
 import ComposableArchitecture
 import SwiftUI
 
-@available(iOS 17.0, *)
 struct AdvertiserSignUpScreen: View {
     @SwiftUI.Bindable var store: StoreOf<AdvertiserSignUpFeature>
 
     var body: some View {
-        WithPerceptionTracking {
-            AdvertiserSignUpContentView(
-                email: $store.email,
-                password: $store.password,
-                passwordConfirmation: $store.passwordConfirmation,
-                confirmationCode: $store.confirmationCode,
-                isAwaitingConfirmation: store.isAwaitingConfirmation,
-                isLoading: store.isLoading,
-                errorMessage: store.errorMessage,
-                onSignUpTapped: { store.send(.signUpTapped) },
-                onConfirmationTapped: { store.send(.confirmationTapped) }
-            )
-        }
+        AdvertiserSignUpContentView(
+            email: $store.email,
+            password: $store.password,
+            passwordConfirmation: $store.passwordConfirmation,
+            confirmationCode: $store.confirmationCode,
+            isAwaitingConfirmation: store.isAwaitingConfirmation,
+            isLoading: store.isLoading,
+            errorMessage: store.errorMessage,
+            onSignUpTapped: { store.send(.signUpTapped) },
+            onConfirmationTapped: { store.send(.confirmationTapped) }
+        )
     }
 }
 
-@available(iOS 17.0, *)
 struct AdvertiserSignUpContentView: View {
     @Binding var email: String
     @Binding var password: String

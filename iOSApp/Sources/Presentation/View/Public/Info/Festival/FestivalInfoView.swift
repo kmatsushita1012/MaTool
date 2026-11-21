@@ -14,37 +14,35 @@ struct FestivalInfoView: View {
     var onRouteTapped: (District.ID) -> Void = { _ in }
 
     var body: some View {
-        WithPerceptionTracking {
-            FestivalInfoContentView(
-                festival: store.festival,
-                districts: store.districts,
-                colorTheme: store.colorTheme,
-                isSheetRoot: isSheetRoot,
-                showsCurrentLocationButton: showsCurrentLocationButton,
-                displayMode: $store.displayMode,
-                region: $store.region,
-                isLoading: store.isLoading,
-                onDistrictSelected: { store.send(.districtSelected($0)) },
-                onColorThemeSelected: { store.send(.colorThemeSelected($0)) },
-                onCurrentLocationTapped: onCurrentLocationTapped
-            )
-            .navigationDestination(item: $store.scope(
-                state: \.destination,
-                action: \.destination
-            )) { destinationStore in
-                switch destinationStore.case {
-                case .district(let districtStore):
-                    DistrictInfoView(
-                        store: districtStore,
-                        festivalName: nil,
-                        onFestivalTapped: {},
-                        onRouteTapped: onRouteTapped,
-                        isSheetRoot: false
-                    )
-                }
+        FestivalInfoContentView(
+            festival: store.festival,
+            districts: store.districts,
+            colorTheme: store.colorTheme,
+            isSheetRoot: isSheetRoot,
+            showsCurrentLocationButton: showsCurrentLocationButton,
+            displayMode: $store.displayMode,
+            region: $store.region,
+            isLoading: store.isLoading,
+            onDistrictSelected: { store.send(.districtSelected($0)) },
+            onColorThemeSelected: { store.send(.colorThemeSelected($0)) },
+            onCurrentLocationTapped: onCurrentLocationTapped
+        )
+        .navigationDestination(item: $store.scope(
+            state: \.destination,
+            action: \.destination
+        )) { destinationStore in
+            switch destinationStore.case {
+            case .district(let districtStore):
+                DistrictInfoView(
+                    store: districtStore,
+                    festivalName: nil,
+                    onFestivalTapped: {},
+                    onRouteTapped: onRouteTapped,
+                    isSheetRoot: false
+                )
             }
-            .alert($store.scope(state: \.alert, action: \.alert))
         }
+        .alert($store.scope(state: \.alert, action: \.alert))
         .onAppear {
             store.send(.colorThemeResolved(InfoImageColorScheme.resolve(
                 lightPath: store.festival.image.light,

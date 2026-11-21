@@ -19,7 +19,7 @@ MaTool は祭典・町・屋台の現在位置と行動経路を扱う iOS ア�
 | `ci_scripts/` | Xcode Cloud 用の設定生成処理 |
 
 `Shared/Package.swift` と `Backend/Package.swift` の Swift tools version は 6.2 です。
-iOS アプリの deployment target は iOS 17.0、Backend パッケージの対象は macOS 15 以降です。
+iOS アプリの deployment target は iOS 18.0、Backend パッケージの対象は macOS 15 以降です。
 依存関係と対応 OS の正確な設定は、各 `Package.swift` と `iOSApp/MaTool.xcodeproj/project.pbxproj` を参照してください。
 
 ## アーキテクチャとデータの流れ

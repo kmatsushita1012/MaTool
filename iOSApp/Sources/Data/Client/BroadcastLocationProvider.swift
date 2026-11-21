@@ -58,9 +58,7 @@ actor BroadcastLocationProvider: NSObject, BroadcastLocationProviderProtocol {
             manager.activityType = .fitness
             manager.pausesLocationUpdatesAutomatically = false
             manager.allowsBackgroundLocationUpdates = true
-            if #available(iOS 11.0, *) {
-                manager.showsBackgroundLocationIndicator = true
-            }
+            manager.showsBackgroundLocationIndicator = true
             return manager
         }
         self.manager = manager

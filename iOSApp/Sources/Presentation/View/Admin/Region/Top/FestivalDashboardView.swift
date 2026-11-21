@@ -9,28 +9,25 @@ import ComposableArchitecture
 import NavigationSwipeControl
 import SwiftUI
 
-@available(iOS 17.0, *)
 struct FestivalDashboardScreen: View {
     @SwiftUI.Bindable var store: StoreOf<FestivalDashboardFeature>
 
     var body: some View {
-        WithPerceptionTracking {
-            FestivalDashboardContentView(
-                festivalTitle: festivalTitle,
-                isPeriodsLoading: store.isApiLoading,
-                isSettingsLoading: store.isSettingsLoading,
-                isSignOutLoading: store.isAuthLoading,
-                onEditTapped: { store.send(.onEdit) },
-                onPeriodsTapped: { store.send(.periodTapped) },
-                onDistrictsTapped: { store.send(.districtsTapped) },
-                onChangePasswordTapped: { store.send(.changePasswordTapped) },
-                onUpdateEmailTapped: { store.send(.updateEmailTapped) },
-                onSignOutTapped: { store.send(.signOutTapped) },
-                onSettingsTapped: { store.send(.settingsTapped) }
-            )
-            .modifier(FestivalDashboardDestinations(store: store))
-            .alert($store.scope(state: \.alert, action: \.alert))
-        }
+        FestivalDashboardContentView(
+            festivalTitle: festivalTitle,
+            isPeriodsLoading: store.isApiLoading,
+            isSettingsLoading: store.isSettingsLoading,
+            isSignOutLoading: store.isAuthLoading,
+            onEditTapped: { store.send(.onEdit) },
+            onPeriodsTapped: { store.send(.periodTapped) },
+            onDistrictsTapped: { store.send(.districtsTapped) },
+            onChangePasswordTapped: { store.send(.changePasswordTapped) },
+            onUpdateEmailTapped: { store.send(.updateEmailTapped) },
+            onSignOutTapped: { store.send(.signOutTapped) },
+            onSettingsTapped: { store.send(.settingsTapped) }
+        )
+        .modifier(FestivalDashboardDestinations(store: store))
+        .alert($store.scope(state: \.alert, action: \.alert))
     }
 
     private var festivalTitle: String {
@@ -38,7 +35,6 @@ struct FestivalDashboardScreen: View {
     }
 }
 
-@available(iOS 17.0, *)
 private struct FestivalDashboardDestinations: ViewModifier {
     @SwiftUI.Bindable var store: StoreOf<FestivalDashboardFeature>
 
@@ -65,10 +61,8 @@ private struct FestivalDashboardDestinations: ViewModifier {
     }
 }
 
-@available(iOS 17.0, *)
 typealias FestivalDashboardView = FestivalDashboardScreen
 
-@available(iOS 17.0, *)
 struct FestivalDashboardContentView: View {
     let festivalTitle: String
     let isPeriodsLoading: Bool

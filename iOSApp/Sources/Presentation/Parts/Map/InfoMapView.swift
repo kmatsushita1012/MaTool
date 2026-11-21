@@ -70,9 +70,7 @@ struct InfoMapView: UIViewRepresentable {
                 annotationView?.annotation = annotation
             }
             annotationView?.displayPriority = .required
-            if #available(iOS 11.0, *) {
-                (annotationView as? MKMarkerAnnotationView)?.clusteringIdentifier = nil
-            }
+            (annotationView as? MKMarkerAnnotationView)?.clusteringIdentifier = nil
             if let markerView = annotationView as? MKMarkerAnnotationView {
                 markerView.markerTintColor = .red
                 markerView.canShowCallout = true

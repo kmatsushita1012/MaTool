@@ -14,25 +14,23 @@ struct PublicLocationsMapView: View {
     @Namespace private var namespace
     
     var body: some View {
-        WithPerceptionTracking{
-            @Binding(store.$mapRegion) var mapRegion
-            ZStack {
-                MapView(style: .public, floats: store.floats, region: $mapRegion, floatTapped: { store.send(.floatTapped($0)) })
-            }
-            .ignoresSafeArea(.all)
-            .safeAreaInset(edge: .bottom){
-                Group {
-                    if isLiquidGlassDisabled {
-                        toolbarLayer
-                    } else if #available(iOS 26.0, *) {
-                        toolbarLayerAfterLiquidGlass
-                    }
+        @Binding(store.$mapRegion) var mapRegion
+        ZStack {
+            MapView(style: .public, floats: store.floats, region: $mapRegion, floatTapped: { store.send(.floatTapped($0)) })
+        }
+        .ignoresSafeArea(.all)
+        .safeAreaInset(edge: .bottom){
+            Group {
+                if isLiquidGlassDisabled {
+                    toolbarLayer
+                } else if #available(iOS 26.0, *) {
+                    toolbarLayerAfterLiquidGlass
                 }
-                .padding()
             }
-            .onAppear {
-                store.send(.onAppear)
-            }
+            .padding()
+        }
+        .onAppear {
+            store.send(.onAppear)
         }
     }
     

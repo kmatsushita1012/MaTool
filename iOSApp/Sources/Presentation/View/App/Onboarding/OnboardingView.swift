@@ -13,18 +13,16 @@ struct OnboardingScreen: View {
     @SwiftUI.Bindable var store: StoreOf<OnboardingFeature>
 
     var body: some View {
-        WithPerceptionTracking {
-            OnboardingContentView(
-                festivals: store.festivals,
-                districts: store.districts,
-                selectedFestival: $store.selectedFestival,
-                isFestivalLoading: store.isFestivalLoading,
-                isDistrictLoading: store.isDistrictLoading,
-                festivalErrorMessage: store.festivalErrorMessaage,
-                onDistrictSelected: { store.send(.districtSelected($0)) },
-                onExternalGuestTapped: { store.send(.externalGuestTapped) }
-            )
-        }
+        OnboardingContentView(
+            festivals: store.festivals,
+            districts: store.districts,
+            selectedFestival: $store.selectedFestival,
+            isFestivalLoading: store.isFestivalLoading,
+            isDistrictLoading: store.isDistrictLoading,
+            festivalErrorMessage: store.festivalErrorMessaage,
+            onDistrictSelected: { store.send(.districtSelected($0)) },
+            onExternalGuestTapped: { store.send(.externalGuestTapped) }
+        )
     }
 }
 

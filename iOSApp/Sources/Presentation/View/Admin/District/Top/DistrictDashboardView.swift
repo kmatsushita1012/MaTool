@@ -10,57 +10,52 @@ import ComposableArchitecture
 import NavigationSwipeControl
 import Shared
 
-@available(iOS 17.0, *)
 struct DistrictDashboardScreen: View {
     @SwiftUI.Bindable var store: StoreOf<DistrictDashboardFeature>
 
     var body: some View {
-        WithPerceptionTracking {
-            DistrictDashboardContentView(
-                districtName: store.district.name,
-                routes: store.routes,
-                isNavigationLoading: store.isNavigationLoading,
-                isSubmissionExportLoading: store.isSubmissionExportLoading,
-                isTableExportLoading: store.isTableExportLoading,
-                isSignOutLoading: store.isAWSLoading,
-                onEditTapped: { store.send(.onEdit) },
-                onLocationTapped: { store.send(.onLocation) },
-                onRouteTapped: { store.send(.onRouteEdit($0)) },
-                onSubmissionExportTapped: { store.send(.submissionExportTapped) },
-                onTableExportTapped: { store.send(.tableExportTapped) },
-                onChangePasswordTapped: { store.send(.changePasswordTapped) },
-                onUpdateEmailTapped: { store.send(.updateEmailTapped) },
-                onSignOutTapped: { store.send(.signOutTapped) },
-                onSettingsTapped: { store.send(.settingsTapped) }
-            )
-            .navigationDestination(item: $store.scope(state: \.destination, action: \.destination)) { destination in
-                switch destination.case {
-                case .edit(let store):
-                    DistrictEditView(store: store)
-                case .location(let store):
-                    LocationTrackingView(store: store)
-                case .route(let store):
-                    RouteEditView(store: store)
-                case .changePassword(let store):
-                    ChangePasswordView(store: store)
-                case .updateEmail(let store):
-                    UpdateEmailView(store: store)
-                case .settings(let store):
-                    SettingsView(store: store)
-                }
+        DistrictDashboardContentView(
+            districtName: store.district.name,
+            routes: store.routes,
+            isNavigationLoading: store.isNavigationLoading,
+            isSubmissionExportLoading: store.isSubmissionExportLoading,
+            isTableExportLoading: store.isTableExportLoading,
+            isSignOutLoading: store.isAWSLoading,
+            onEditTapped: { store.send(.onEdit) },
+            onLocationTapped: { store.send(.onLocation) },
+            onRouteTapped: { store.send(.onRouteEdit($0)) },
+            onSubmissionExportTapped: { store.send(.submissionExportTapped) },
+            onTableExportTapped: { store.send(.tableExportTapped) },
+            onChangePasswordTapped: { store.send(.changePasswordTapped) },
+            onUpdateEmailTapped: { store.send(.updateEmailTapped) },
+            onSignOutTapped: { store.send(.signOutTapped) },
+            onSettingsTapped: { store.send(.settingsTapped) }
+        )
+        .navigationDestination(item: $store.scope(state: \.destination, action: \.destination)) { destination in
+            switch destination.case {
+            case .edit(let store):
+                DistrictEditView(store: store)
+            case .location(let store):
+                LocationTrackingView(store: store)
+            case .route(let store):
+                RouteEditView(store: store)
+            case .changePassword(let store):
+                ChangePasswordView(store: store)
+            case .updateEmail(let store):
+                UpdateEmailView(store: store)
+            case .settings(let store):
+                SettingsView(store: store)
             }
-            .sheet(item: $store.url) { url in
-                ShareSheet(item: url)
-            }
-            .alert($store.scope(state: \.alert, action: \.alert))
         }
+        .sheet(item: $store.url) { url in
+            ShareSheet(item: url)
+        }
+        .alert($store.scope(state: \.alert, action: \.alert))
     }
 }
 
-@available(iOS 17.0, *)
 typealias DistrictDashboardView = DistrictDashboardScreen
 
-@available(iOS 17.0, *)
 struct DistrictDashboardContentView: View {
     let districtName: String
     let routes: [RouteSlot]

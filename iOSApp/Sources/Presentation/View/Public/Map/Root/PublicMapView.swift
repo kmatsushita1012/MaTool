@@ -14,42 +14,40 @@ struct PublicMapView: View {
     var isNavigationDisabled = false
     
     var body: some View {
-        WithPerceptionTracking {
-            Group {
-                if let routeStore = store.scope(state: \.destination?.route, action: \.destination.route) {
-                    mapContent(
-                        routes: routeStore.routes,
-                        selectedRouteId: routeStore.selected?.id,
-                        selectedPeriodTitle: routeStore.selected?.text ?? "日程を選択",
-                        isRouteLoading: routeStore.isRouteLoading,
-                        isPeriodDisabled: store.isLoading,
-                        toast: routeStore.toast,
-                        onPeriodSelected: { routeStore.send(.selected($0)) },
-                        onToastDismissed: { routeStore.send(.toastDismissed) }
-                    ) {
-                        PublicRouteMapView(
-                            store: routeStore
-                        )
-                            .id(routeStore.district.id)
-                    }
-                } else if let locationsStore = store.scope(
-                    state: \.destination?.locations,
-                    action: \.destination.locations
+        Group {
+            if let routeStore = store.scope(state: \.destination?.route, action: \.destination.route) {
+                mapContent(
+                    routes: routeStore.routes,
+                    selectedRouteId: routeStore.selected?.id,
+                    selectedPeriodTitle: routeStore.selected?.text ?? "日程を選択",
+                    isRouteLoading: routeStore.isRouteLoading,
+                    isPeriodDisabled: store.isLoading,
+                    toast: routeStore.toast,
+                    onPeriodSelected: { routeStore.send(.selected($0)) },
+                    onToastDismissed: { routeStore.send(.toastDismissed) }
                 ) {
-                    mapContent(
-                        toast: locationsStore.toast,
-                        onToastDismissed: { locationsStore.send(.toastDismissed) }
-                    ) {
-                        PublicLocationsMapView(
-                            store: locationsStore
-                        )
-                    }
-                } else {
-                    Spacer()
+                    PublicRouteMapView(
+                        store: routeStore
+                    )
+                        .id(routeStore.district.id)
                 }
+            } else if let locationsStore = store.scope(
+                state: \.destination?.locations,
+                action: \.destination.locations
+            ) {
+                mapContent(
+                    toast: locationsStore.toast,
+                    onToastDismissed: { locationsStore.send(.toastDismissed) }
+                ) {
+                    PublicLocationsMapView(
+                        store: locationsStore
+                    )
+                }
+            } else {
+                Spacer()
             }
-            .onAppear { store.send(.onAppear) }
         }
+        .onAppear { store.send(.onAppear) }
     }
 
     private func mapContent<MapContent: View>(

@@ -11,7 +11,6 @@ import UIKit
 import MapKit
 import Shared
 
-@available(iOS 17.0, *)
 struct HazardSectionView: View {
     
     @SwiftUI.Bindable var store: StoreOf<HazardSectionFeature>

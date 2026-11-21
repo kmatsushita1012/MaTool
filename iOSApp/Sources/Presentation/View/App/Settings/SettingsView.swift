@@ -14,47 +14,45 @@ struct SettingsScreen: View {
     @SwiftUI.Bindable var store: StoreOf<SettingsFeature>
 
     var body: some View {
-        WithPerceptionTracking {
-            SettingsContentView(
-                festivals: store.festivals,
-                districts: store.districts,
-                selectedFestival: $store.selectedFestival,
-                selectedDistrict: $store.selectedDistrict,
-                userGuide: store.userGuide,
-                contact: store.contact,
-                appVersion: AppStatusClient.getCurrentVersion(),
-                userRole: store.userRole,
-                isParticipationLoading: store.isParticipationLoading,
-                isSignOutLoading: store.isSignOutLoading,
-                onLoginTapped: { store.send(.loginTapped) },
-                onAdvertiserLoginTapped: { store.send(.advertiserLoginTapped) },
-                onSignOutTapped: { store.send(.signOutTapped) },
-                onLicenseTapped: { store.send(.licenseTapped) }
-            )
-            .navigationDestination(item: $store.scope(
-                state: \.destination?.login,
-                action: \.destination.login
-            )) { store in
-                LoginView(store: store)
-            }
-            .navigationDestination(item: $store.scope(
-                state: \.destination?.advertiserAuth,
-                action: \.destination.advertiserAuth
-            )) { store in
-                AdvertiserAuthScreen(store: store)
-            }
-            .navigationDestination(isPresented: Binding(
-                get: { store.navigationDestination == .license },
-                set: { isPresented in
-                    if !isPresented {
-                        store.send(.licenseDismissed)
-                    }
-                }
-            )) {
-                LicenseView()
-            }
-            .alert($store.scope(state: \.alert, action: \.alert))
+        SettingsContentView(
+            festivals: store.festivals,
+            districts: store.districts,
+            selectedFestival: $store.selectedFestival,
+            selectedDistrict: $store.selectedDistrict,
+            userGuide: store.userGuide,
+            contact: store.contact,
+            appVersion: AppStatusClient.getCurrentVersion(),
+            userRole: store.userRole,
+            isParticipationLoading: store.isParticipationLoading,
+            isSignOutLoading: store.isSignOutLoading,
+            onLoginTapped: { store.send(.loginTapped) },
+            onAdvertiserLoginTapped: { store.send(.advertiserLoginTapped) },
+            onSignOutTapped: { store.send(.signOutTapped) },
+            onLicenseTapped: { store.send(.licenseTapped) }
+        )
+        .navigationDestination(item: $store.scope(
+            state: \.destination?.login,
+            action: \.destination.login
+        )) { store in
+            LoginView(store: store)
         }
+        .navigationDestination(item: $store.scope(
+            state: \.destination?.advertiserAuth,
+            action: \.destination.advertiserAuth
+        )) { store in
+            AdvertiserAuthScreen(store: store)
+        }
+        .navigationDestination(isPresented: Binding(
+            get: { store.navigationDestination == .license },
+            set: { isPresented in
+                if !isPresented {
+                    store.send(.licenseDismissed)
+                }
+            }
+        )) {
+            LicenseView()
+        }
+        .alert($store.scope(state: \.alert, action: \.alert))
     }
 }
 
