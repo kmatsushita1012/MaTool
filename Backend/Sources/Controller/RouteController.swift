@@ -38,11 +38,19 @@ struct RouteController: RouteControllerProtocol {
 
 	func query(_ request: Request, next: Handler) async throws -> Response {
 		let districtId = try request.parameter("districtId", as: String.self)
-        var type: RouteQueryType = .all
-        if let year = try? request.parameter("year", as: String.self), year == "latest" {
-            type = .latest
-        } else if let year = try? request.parameter("year", as: Int.self) {
-            type = .year(year)
+		let type: RouteQueryType
+		if let value = request.parameters["year"] {
+			if value == "latest" {
+				type = .latest
+			} else if value == "all" {
+				type = .all
+			} else if let year = Int(value) {
+				type = .year(year)
+			} else {
+				throw Error.badRequest("年度の指定が不正です。")
+			}
+		} else {
+			type = .all
         }
 		let user = request.user ?? .guest
         let result = try await usecase.query(by: districtId, type: type, user: user)

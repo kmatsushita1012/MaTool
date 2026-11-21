@@ -24,6 +24,16 @@ struct ResponseEncodeTests {
         #expect(response.body == "{}")
     }
 
+    @Test("廃止APIは410 GoneとJSONエラーを返す")
+    func goneResponse() throws {
+        let response = Application.Response.gone()
+        let body = try ErrorResponse.from(response.body)
+
+        #expect(response.statusCode == 410)
+        #expect(response.headers["Content-Type"] == "application/json")
+        #expect(body.message == "Gone")
+    }
+
     @Test("エンコードに失敗したら成功レスポンスにせずエラーを返す")
     func encodingFailureIsNotSilenced() {
         do {

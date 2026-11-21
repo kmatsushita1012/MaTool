@@ -13,7 +13,7 @@ struct RouteRepositoryTest {
         let store = DataStoreMock(queryHandler: { index, keys, _, _, _, _ in
             indexName = index
             conditions = keys
-            return try JSONEncoder().encode([RouteRecord(route, editionId: "edition-1", date: .init(year: 2026, month: 2, day: 22))])
+            return try JSONEncoder().encode([RouteRecord(route, editionId: "edition-1")])
         })
         let repository = make(dataStore: store)
 
@@ -24,12 +24,29 @@ struct RouteRepositoryTest {
     }
 
     @Test
+    func get_IDがEdition間で重複する場合はConflict() async {
+        let route = Route.mock(id: "route-1", districtId: "district-1")
+        let records = [
+            RouteRecord(route, editionId: "edition-old"),
+            RouteRecord(route, editionId: "edition-new")
+        ]
+        let store = DataStoreMock(queryHandler: { _, _, _, _, _, _ in
+            try JSONEncoder().encode(records)
+        })
+        let repository = make(dataStore: store)
+
+        await #expect(throws: Error.conflict("ルートIDが重複しています。")) {
+            _ = try await repository.get(id: route.id)
+        }
+    }
+
+    @Test
     func query_地区配下のRouteを取得する() async throws {
         let route = Route.mock(id: "route-1", districtId: "district-1")
         var conditions: [QueryCondition] = []
         let store = DataStoreMock(queryHandler: { _, keys, _, _, _, _ in
             conditions = keys
-            return try JSONEncoder().encode([RouteRecord(route, editionId: "edition-1", date: .init(year: 2026, month: 2, day: 22))])
+            return try JSONEncoder().encode([RouteRecord(route, editionId: "edition-1")])
         })
         let repository = make(dataStore: store)
 
@@ -46,7 +63,7 @@ struct RouteRepositoryTest {
         let store = DataStoreMock(queryHandler: { index, keys, _, _, _, _ in
             indexName = index
             conditions = keys
-            return try JSONEncoder().encode([RouteRecord(route, editionId: "edition-1", date: .init(year: 2026, month: 2, day: 22))])
+            return try JSONEncoder().encode([RouteRecord(route, editionId: "edition-1")])
         })
         let repository = make(dataStore: store)
 
@@ -57,21 +74,27 @@ struct RouteRepositoryTest {
     }
 
     @Test
-    func query_年度検索ではDATEインデックスを維持する() async throws {
+    func query_年度検索はEditionキーを使い基本テーブルから取得する() async throws {
         let route = Route.mock(id: "route-1", districtId: "district-1")
         var indexName: String?
         var conditions: [QueryCondition] = []
         let store = DataStoreMock(queryHandler: { index, keys, _, _, _, _ in
             indexName = index
             conditions = keys
-            return try JSONEncoder().encode([RouteRecord(route, editionId: "edition-1", date: .init(year: 2026, month: 2, day: 22))])
+            return try JSONEncoder().encode([RouteRecord(route, editionId: "edition-1")])
         })
-        let repository = make(dataStore: store)
+        let editionRepository = EditionRepositorySpy(getByYearHandler: { festivalId, year in
+            #expect(festivalId == "festival-1")
+            #expect(year == 2026)
+            return .init(id: "edition-1", festivalId: festivalId, year: year)
+        })
+        let repository = make(dataStore: store, editionRepository: editionRepository)
 
         #expect(try await repository.query(by: route.districtId, year: 2026) == [route])
-        #expect(indexName == "index-DATE")
+        #expect(indexName == nil)
         #expect(conditions.contains(where: { isEquals($0, field: "pk", value: "DISTRICT#district-1") }))
-        #expect(conditions.contains(where: { isBeginsWith($0, field: "date", prefix: "ROUTE#DATE#2026") }))
+        #expect(conditions.contains(where: { isBeginsWith($0, field: "sk", prefix: "ROUTE#edition-1#") }))
+        #expect(editionRepository.getByYearCallCount == 1)
     }
 
     @Test
@@ -93,7 +116,6 @@ struct RouteRepositoryTest {
         #expect(saved?.pk == "DISTRICT#district-1")
         #expect(saved?.sk == "ROUTE#edition-1#route-1")
         #expect(saved?.id == route.id)
-        #expect(saved?.date == "ROUTE#DATE#2026-02-22")
         #expect(saved?.content == route)
         #expect(editionRepository.getCallCount == 1)
     }
@@ -102,7 +124,7 @@ struct RouteRepositoryTest {
     func put_所属Edition変更時は旧キーを削除して保存する() async throws {
         let route = Route.mock(id: "route-1", districtId: "district-1", periodId: "period-new")
         let period = Period.mock(id: route.periodId, festivalId: "festival-1", editionId: "edition-new")
-        let oldRecord = RouteRecord(route, editionId: "edition-old", date: .init(year: 2026, month: 2, day: 22))
+        let oldRecord = RouteRecord(route, editionId: "edition-old")
         var saved: RouteRecord?
         var deleted: [String: Codable] = [:]
         let store = DataStoreMock(
@@ -130,7 +152,7 @@ struct RouteRepositoryTest {
     func put_同じEdition内の日付更新では旧キーを削除しない() async throws {
         let route = Route.mock(id: "route-1", districtId: "district-1", periodId: "period-1")
         let period = Period.mock(id: route.periodId, festivalId: "festival-1", editionId: "edition-1", date: .init(year: 2027, month: 3, day: 1))
-        let oldRecord = RouteRecord(route, editionId: "edition-1", date: .init(year: 2026, month: 2, day: 22))
+        let oldRecord = RouteRecord(route, editionId: "edition-1")
         var saved: RouteRecord?
         let store = DataStoreMock(
             putHandler: { item in saved = try decodeFromEncodable(item, as: RouteRecord.self) },
@@ -147,7 +169,6 @@ struct RouteRepositoryTest {
         _ = try await repository.put(route)
 
         #expect(saved?.sk == "ROUTE#edition-1#route-1")
-        #expect(saved?.date == "ROUTE#DATE#2027-03-01")
         #expect(store.deleteCallCount == 0)
     }
 
@@ -192,7 +213,7 @@ struct RouteRepositoryTest {
     @Test
     func delete_IDから実際の主キーを削除する() async throws {
         let route = Route.mock(id: "route-1", districtId: "district-1")
-        let record = RouteRecord(route, editionId: "edition-1", date: .init(year: 2026, month: 2, day: 22))
+        let record = RouteRecord(route, editionId: "edition-1")
         var deleted: [String: Codable] = [:]
         let store = DataStoreMock(
             deleteHandler: { deleted = $0 },
@@ -209,7 +230,7 @@ struct RouteRepositoryTest {
     @Test
     func delete_Routeの地区と一致するレコードだけを削除する() async throws {
         let route = Route.mock(id: "route-1", districtId: "district-1")
-        let wrongDistrictRecord = RouteRecord(.mock(id: route.id, districtId: "district-2"), editionId: "edition-1", date: .init(year: 2026, month: 2, day: 22))
+        let wrongDistrictRecord = RouteRecord(.mock(id: route.id, districtId: "district-2"), editionId: "edition-1")
         var deleted: [String: Codable] = [:]
         let store = DataStoreMock(
             deleteHandler: { deleted = $0 },

@@ -27,6 +27,15 @@ extension Application.Response {
             body: "{}"
         )
     }
+
+    static func gone() -> Self {
+        let body = ErrorResponse(message: "Gone", localizedDescription: "このAPIは廃止されました。")
+        return .init(
+            statusCode: 410,
+            headers: ["Content-Type": "application/json"],
+            body: (try? body.toString()) ?? "{}"
+        )
+    }
 }
 
 extension Application.Response {

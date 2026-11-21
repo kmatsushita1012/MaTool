@@ -28,9 +28,11 @@ struct LocationUsecase: LocationUsecaseProtocol {
     @Dependency(DistrictRepositoryKey.self) var districtRepository
     @Dependency(FestivalRepositoryKey.self) var festivalRepository
     @Dependency(PeriodRepositoryKey.self) var periodRepository
+    @Dependency(ActiveEditionRepositoryKey.self) var activeEditionRepository
+    @Dependency(EditionRepositoryKey.self) var editionRepository
     
     func query(by festivalId: String, user: UserRole, now: Date) async throws -> [FloatLocation] {
-        let periods = try await fetchPeriodsForLocationVisibility(festivalId: festivalId, now: now)
+        let periods = try await fetchPeriodsForLocationVisibility(festivalId: festivalId)
 
         if LocationPublicAccess.isPublic(now: now, periods: periods) {
             return try await locationRepository.query(by: festivalId)
@@ -49,7 +51,7 @@ struct LocationUsecase: LocationUsecaseProtocol {
             throw Error.notFound("指定された地区が見つかりません")
         }
 
-        let periods = try await fetchPeriodsForLocationVisibility(festivalId: district.festivalId, now: now)
+        let periods = try await fetchPeriodsForLocationVisibility(festivalId: district.festivalId)
         let isPublic = LocationPublicAccess.isPublic(now: now, periods: periods)
         let canViewOutside = LocationPublicAccess.canViewOutsidePublicHours(user: user, districtId: district.id)
 
@@ -84,12 +86,13 @@ struct LocationUsecase: LocationUsecaseProtocol {
 }
 
 extension LocationUsecase {
-    private func fetchPeriodsForLocationVisibility(festivalId: Festival.ID, now: Date) async throws -> [Period] {
-        let nowYear = SimpleDate.from(now).year
-        async let currentYear = periodRepository.query(by: festivalId, year: nowYear)
-        async let nextYear = periodRepository.query(by: festivalId, year: nowYear + 1)
-        let (current, next) = try await (currentYear, nextYear)
-        return current + next
+    private func fetchPeriodsForLocationVisibility(festivalId: Festival.ID) async throws -> [Period] {
+        guard let edition = try await resolveActiveEdition(
+            festivalId: festivalId,
+            activeEditionRepository: activeEditionRepository,
+            editionRepository: editionRepository
+        ) else { return [] }
+        return try await periodRepository.query(byEditionId: edition.id)
     }
 
 }

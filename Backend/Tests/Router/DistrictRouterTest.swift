@@ -40,10 +40,30 @@ struct DistrictRouterTest {
     @Test
     func routesRouteQueryToRouteController_正常() async {
         let app = make(routeController: .init(queryHandler: { _, _ in try .success() }))
-        let request = Application.Request.make(method: .get, path: "/districts/district-1/routes")
+        let request = Application.Request.make(method: .get, path: "/v2/districts/district-1/routes")
         let response = await app.handle(request)
 
         #expect(response.statusCode == 200)
+    }
+
+    @Test
+    func retiredRouteList_410を返す() async {
+        let controller = RouteControllerMock(queryHandler: { _, _ in try .success() })
+        let app = make(routeController: controller)
+        let response = await app.handle(.make(method: .get, path: "/districts/district-1/routes"))
+
+        #expect(response.statusCode == 410)
+        #expect(controller.queryCallCount == 0)
+    }
+
+    @Test
+    func routeCreate_既存パスを維持する() async {
+        let controller = RouteControllerMock(postHandler: { _, _ in try .success() })
+        let app = make(routeController: controller)
+        let response = await app.handle(.make(method: .post, path: "/districts/district-1/routes"))
+
+        #expect(response.statusCode == 200)
+        #expect(controller.postCallCount == 1)
     }
 
     @Test

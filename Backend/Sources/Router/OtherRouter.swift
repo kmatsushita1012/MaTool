@@ -22,8 +22,9 @@ struct OtherRouter: Router {
         app.put(path: "/routes/:routeId", routeController.put)
         app.delete(path: "/routes/:routeId", routeController.delete)
         // MARK: - Period
-        app.put(path: "/periods/:periodId", periodController.put)
-        app.delete(path: "/periods/:periodId", periodController.delete)
-        app.get(path: "/periods/:periodId", periodController.get)
+        app.get(path: "/v2/periods/:periodId", periodController.get)
+        app.get(path: "/periods/:periodId") { _, _ in .gone() }
+        app.put(path: "/periods/:periodId") { _, _ in .gone() }
+        app.delete(path: "/periods/:periodId") { _, _ in .gone() }
     }
 }
