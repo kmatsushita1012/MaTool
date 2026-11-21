@@ -39,9 +39,10 @@ struct ConfirmSignInUseCase: ConfirmSignInUseCaseProtocol {
             userDefaults.saveDefaultDistrictId(nil)
             userDefaults.saveDefaultFestivalId(festivalId)
         case .district(let districtId):
-            async let festivalTask = dataFetcher.launchFestival(districtId: districtId)
-            async let districtTask = dataFetcher.launchDistrict(districtId: districtId)
-            let (festivalResponse, districtResponse) = try await (festivalTask, districtTask)
+            let (festivalResponse, districtResponse) = try await fetchEditionConsistentLaunchPacks(
+                districtID: districtId,
+                using: dataFetcher
+            )
             guard await sessionCoordinator.isCurrent(requestId) else { throw CancellationError() }
             if let appState {
                 appState.withLock {

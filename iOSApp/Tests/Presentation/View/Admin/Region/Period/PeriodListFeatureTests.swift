@@ -7,8 +7,9 @@ struct PeriodListFeatureTests {
     @Test("年度ごとに期間を分類し、新しい年度を先に提示する")
     func groupsByYear() {
         let current = AppStateFixture.period(id: "current")
+        let archiveEdition = Edition(id: "archive", festivalId: "festival", year: 2025)
         let previous = Period(
-            id: "old", festivalId: "festival",
+            id: "old", editionId: archiveEdition.id, festivalId: archiveEdition.festivalId,
             date: SimpleDate(year: 2025, month: 10, day: 2),
             start: SimpleTime(hour: 9, minute: 0),
             end: SimpleTime(hour: 17, minute: 0)
@@ -26,7 +27,7 @@ struct PeriodListFeatureTests {
         #expect(state.latests?.periods.map(\.id) == ["current"])
         #expect(state.archives.map(\.year) == [2025])
         #expect(state.yearOptions == [2025, 2026])
-        #expect(state.createYear == 2027)
+        #expect(state.createYear == 2026)
     }
 
     @Test("同じIDの期間は置換され、開始時刻順に並べ直す")
@@ -116,7 +117,7 @@ struct PeriodListFeatureTests {
         #expect(state.latests == nil)
         #expect(state.archives.isEmpty)
         #expect(state.yearOptions.isEmpty)
-        #expect(state.createYear == SimpleDate.now.year)
+        #expect(state.createYear == 2026)
     }
 
     @Test("期間をタップすると編集画面には同じ期間IDが渡される")
@@ -157,7 +158,8 @@ struct PeriodListFeatureTests {
     @Test("指定年度を一括作成すると元のタイトルと開始終了時刻を引き継ぐ")
     @MainActor
     func batchCreationInvokesUseCaseWithCopiedPeriod() async throws {
-        var original = AppStateFixture.period()
+        let archiveEdition = Edition(id: "archive", festivalId: "festival", year: 2025)
+        var original = AppStateFixture.period(edition: archiveEdition)
         original.title = "night"
         let created = AppStateFixture.period(id: "server-created", day: 4)
         let spy = PeriodCreateUseCaseSpy(returning: created)
@@ -168,7 +170,7 @@ struct PeriodListFeatureTests {
             $0[CreatePeriodUseCaseKey.self] = spy
         }
 
-        await store.send(.batchCreateTapped(2026)) {
+        await store.send(.batchCreateTapped(2025)) {
             $0.isLoading = true
         }
         await store.receive(.batchCreateReceived(.success([created]))) {
@@ -178,11 +180,11 @@ struct PeriodListFeatureTests {
         }
 
         let sent = try #require(await spy.created.first)
-        #expect(sent.festivalId == original.festivalId)
+        #expect(sent.editionId == AppStateFixture.edition().id)
         #expect(sent.title == original.title)
         #expect(sent.start == original.start)
         #expect(sent.end == original.end)
-        #expect(sent.date.year == 2027)
+        #expect(sent.date.year == 2026)
         #expect(store.state.periods.contains(where: { $0.id == created.id }))
         await store.finish()
     }

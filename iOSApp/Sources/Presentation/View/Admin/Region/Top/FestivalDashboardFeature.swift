@@ -77,7 +77,10 @@ struct FestivalDashboardFeature {
                 state.destination = .edit(FestivalEditFeature.State(state.festival, appState: state.$appState))
                 return .none
             case .editionsTapped:
-                state.destination = .editionList(EditionListFeature.State(festivalID: state.festival.id))
+                state.destination = .editionList(EditionListFeature.State(
+                    festivalID: state.festival.id,
+                    appState: state.$appState
+                ))
                 return .none
             case .districtsTapped:
                 state.destination = .districts(.init(state.festival, appState: state.$appState))

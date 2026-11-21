@@ -5,13 +5,14 @@ import Testing
 @testable import iOSApp
 
 struct PeriodEditFeatureTests {
-    @Test("作成画面は祭典ID・標準開始時刻・空タイトルを初期化する")
+    @Test("作成画面は有効Edition・標準時刻・空タイトルを初期化する")
     func initialCreateState() {
-        let state = PeriodEditFeature.State.create("festival")
+        let edition = AppStateFixture.edition()
+        let state = PeriodEditFeature.State.create(edition)
 
         #expect(state.isCreateMode)
         #expect(state.mode == .create)
-        #expect(state.period.festivalId == "festival")
+        #expect(state.period.editionId == edition.id)
         #expect(state.period.title.isEmpty)
         #expect(state.period.start == SimpleTime(hour: 9, minute: 0))
         #expect(state.period.end == SimpleTime(hour: 12, minute: 0))
@@ -31,10 +32,13 @@ struct PeriodEditFeatureTests {
     @Test("作成時の日付変更はタイトル・開始終了時刻を保って新しい期間を生成する")
     @MainActor
     func creationDateChangeKeepsOtherFields() async {
-        let original = AppStateFixture.period(id: "temporary")
-        let store = TestStore(initialState: PeriodEditFeature.State(
-            mode: .create, period: original
-        )) {
+        let edition = AppStateFixture.edition()
+        let initialState = PeriodEditFeature.State.create(
+            edition,
+            appState: Shared(value: AppStateFixture.state())
+        )
+        let original = initialState.period
+        let store = TestStore(initialState: initialState) {
             PeriodEditFeature()
         } withDependencies: { $0.installTestSpies() }
         store.exhaustivity = .off
@@ -43,11 +47,11 @@ struct PeriodEditFeatureTests {
         await store.send(.dateChanged(changedDate))
 
         #expect(store.state.period.date == changedDate)
-        #expect(store.state.period.festivalId == original.festivalId)
+        #expect(store.state.period.editionId == original.editionId)
         #expect(store.state.period.title == original.title)
         #expect(store.state.period.start == original.start)
         #expect(store.state.period.end == original.end)
-        #expect(store.state.period.id != original.id)
+        #expect(store.state.period.id == original.id)
         await store.finish()
     }
 
@@ -199,5 +203,5 @@ private struct StubUpdatePeriodUseCase: UpdatePeriodUseCaseProtocol {
 }
 
 private struct StubDeletePeriodUseCase: DeletePeriodUseCaseProtocol {
-    func callAsFunction(id: Period.ID, appState: Shared<AppState?>) async throws {}
+    func callAsFunction(_ period: Period, appState: Shared<AppState?>) async throws {}
 }

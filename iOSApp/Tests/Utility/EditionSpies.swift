@@ -1,3 +1,4 @@
+import ComposableArchitecture
 import Shared
 @testable import iOSApp
 
@@ -22,18 +23,21 @@ actor EditionDataFetcherSpy: EditionDataFetcherProtocol {
     let pack: EditionPack
     let activeEdition: ActiveEdition
     let failures: [Operation: AppError]
+    let updatedPack: EditionPack
     private var recorded: [Call] = []
 
     init(
         list: EditionListResponse,
         pack: EditionPack,
         activeEdition: ActiveEdition,
-        failures: [Operation: AppError] = [:]
+        failures: [Operation: AppError] = [:],
+        updatedPack: EditionPack? = nil
     ) {
         self.list = list
         self.pack = pack
         self.activeEdition = activeEdition
         self.failures = failures
+        self.updatedPack = updatedPack ?? pack
     }
 
     func calls() -> [Call] { recorded }
@@ -59,7 +63,7 @@ actor EditionDataFetcherSpy: EditionDataFetcherProtocol {
     func update(_ pack: EditionPack) async throws -> EditionPack {
         recorded.append(.update(pack.edition.year, pack.periods.map(\.id)))
         try checkFailure(.update)
-        return self.pack
+        return updatedPack
     }
 
     func activate(festivalID: Festival.ID, editionID: Edition.ID) async throws -> ActiveEdition {
@@ -71,5 +75,19 @@ actor EditionDataFetcherSpy: EditionDataFetcherProtocol {
 
     private func checkFailure(_ operation: Operation) throws {
         if let error = failures[operation] { throw error }
+    }
+}
+
+actor ReloadAppStateUseCaseSpy: ReloadAppStateUseCaseProtocol {
+    private let failure: AppError?
+    private(set) var calls = 0
+
+    init(failure: AppError? = nil) {
+        self.failure = failure
+    }
+
+    func callAsFunction(appState: Shared<AppState?>) async throws {
+        calls += 1
+        if let failure { throw failure }
     }
 }

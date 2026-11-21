@@ -12,6 +12,7 @@ struct EditionListFeature {
     @ObservableState
     struct State: Equatable {
         let festivalID: Festival.ID
+        @Shared fileprivate var appState: AppState?
         var editions: [Edition] = []
         var activeEditionID: Edition.ID?
         var isLoading = false
@@ -28,8 +29,9 @@ struct EditionListFeature {
                 ?? Calendar.current.component(.year, from: .now)
         }
 
-        init(festivalID: Festival.ID) {
+        init(festivalID: Festival.ID, appState: Shared<AppState?> = Shared(value: nil)) {
             self.festivalID = festivalID
+            self._appState = appState
         }
     }
 
@@ -43,11 +45,13 @@ struct EditionListFeature {
         case createConfirmed
         case createCancelled
         case creationReceived(AppResult<EditionPack>)
+        case appStateReloadReceived(AppResult<Bool>)
         case destination(PresentationAction<Destination.Action>)
         case alert(PresentationAction<AlertFeature.Action>)
     }
 
     @Dependency(EditionDataFetcherKey.self) private var editionDataFetcher
+    @Dependency(ReloadAppStateUseCaseKey.self) private var reloadAppStateUseCase
 
     var body: some ReducerOf<Self> {
         BindingReducer()
@@ -130,10 +134,28 @@ struct EditionListFeature {
             case .destination(.presented(.edit(.activationReceived(.success(let activeEdition))))):
                 state.activeEditionID = activeEdition.editionId
                 state.isLoading = true
-                return listEffect(festivalID: state.festivalID)
+                let appState = state.$appState
+                return .task(Action.appStateReloadReceived) {
+                    try await reloadAppStateUseCase(appState: appState)
+                    return true
+                }
             case .destination(.presented(.edit(.activationReceived(.failure)))):
                 state.isLoading = true
                 return listEffect(festivalID: state.festivalID)
+            case .appStateReloadReceived(.success):
+                state.isLoading = false
+                if let destination = state.destination, case var .edit(editState) = destination {
+                    editState.alert = AlertFeature.success("有効な年度に合わせて起動データを更新しました。")
+                    state.destination = .edit(editState)
+                }
+                return .none
+            case .appStateReloadReceived(.failure(let error)):
+                state.isLoading = false
+                if let destination = state.destination, case var .edit(editState) = destination {
+                    editState.alert = AlertFeature.error("年度は切り替わりましたが、起動データを再取得できませんでした。\n\(error.message)")
+                    state.destination = .edit(editState)
+                }
+                return .none
             case .alert(.presented):
                 state.alert = nil
                 return .none

@@ -8,51 +8,30 @@ protocol UpdatePeriodUseCaseProtocol: Sendable {
 }
 
 struct UpdatePeriodUseCase: UpdatePeriodUseCaseProtocol {
-    @Dependency(PeriodDataFetcherKey.self) private var dataFetcher
-    @Dependency(RouteDataFetcherKey.self) private var routeDataFetcher
+    @Dependency(EditionDataFetcherKey.self) private var dataFetcher
 
     func callAsFunction(_ period: Period, appState: Shared<AppState?>) async throws -> Period {
-        let context = appState.withLock { current -> (sessionId: UUID, districtId: District.ID, districtRequestId: UUID, year: Int)? in
-            guard let current,
-                  let districtState = current.districtState else { return nil }
-            return (
-                current.sessionId,
-                districtState.districtId,
-                districtState.requestId,
-                current.festivalState.year
-            )
+        let context = appState.withLock { current -> (sessionId: UUID, festivalID: Festival.ID)? in
+            guard let current else { return nil }
+            return (current.sessionId, current.festivalState.festival.id)
         }
-        let sessionId = context?.sessionId ?? appState.withLock { $0?.sessionId }
-        let response = try await dataFetcher.update(period)
-        applyPeriodResponse(response, sessionId: sessionId, to: appState)
-
-        guard let context, response.date.year == context.year else { return response }
-        let routes: [Route]
-        do {
-            routes = try await routeDataFetcher.fetchAll(
-                districtID: context.districtId,
-                query: .year(context.year)
-            )
-        } catch is CancellationError {
-            throw CancellationError()
-        } catch {
-            // The period PUT already succeeded; a refresh failure must not report the save as failed.
-            return response
+        guard let context, let editionID = period.editionId else {
+            throw AppError.validation(.badRequest("有効な年度を選択してください。"))
         }
-        appState.withLock { current in
-            guard var updated = current,
-                  updated.sessionId == context.sessionId,
-                  updated.districtState?.districtId == context.districtId,
-                  updated.districtState?.requestId == context.districtRequestId else { return }
-            updated.districtState?.routes = routes
-            updated.routeLoadRequestId = UUID()
-            if let routeState = updated.routeState,
-               updated.districtState?.route(id: routeState.route.id) == nil {
-                updated.routeState = nil
-            }
-            current = updated
+        let pack = try await fetchEditionPack(
+            festivalID: context.festivalID,
+            editionID: editionID,
+            using: dataFetcher
+        )
+        guard pack.periods.contains(where: { $0.id == period.id }) else {
+            throw AppError.be(.notFound("対象の日程が見つかりません。"))
         }
-        return response
+        var periods = pack.periods
+        periods.removeAll { $0.id == period.id }
+        periods.append(period)
+        let savedPack = try await dataFetcher.update(EditionPack(edition: pack.edition, periods: periods.sorted()))
+        applyEditionPack(savedPack, sessionId: context.sessionId, to: appState)
+        return savedPack.periods.first(where: { $0.id == period.id }) ?? period
     }
 }
 

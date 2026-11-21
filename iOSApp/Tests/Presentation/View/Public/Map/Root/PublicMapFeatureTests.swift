@@ -491,8 +491,10 @@ private struct PeriodSelectionFixture {
         )
         currentDistrict = District(id: "current", name: "Current", festivalId: festival.id)
         nextDistrict = District(id: "next", name: "Next", festivalId: festival.id)
+        let edition = Edition(id: "edition", festivalId: festival.id, year: 2026)
         period = Period(
             id: "period",
+            editionId: edition.id,
             festivalId: festival.id,
             title: "Night",
             date: SimpleDate(year: 2026, month: 10, day: 3),
@@ -504,6 +506,7 @@ private struct PeriodSelectionFixture {
         appState = Shared(value: AppState(
             festivalPack: LaunchFestivalPack(
                 festival: festival,
+                edition: edition,
                 districts: [currentDistrict, nextDistrict],
                 periods: [period],
                 locations: [],
@@ -511,6 +514,7 @@ private struct PeriodSelectionFixture {
                 hazardSections: []
             ),
             districtPack: LaunchDistrictPack(
+                editionId: edition.id,
                 performances: [],
                 routes: [currentRoute],
                 points: [],

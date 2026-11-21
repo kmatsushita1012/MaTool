@@ -60,7 +60,9 @@ struct PeriodListFeature {
         }
 
         var createYear: Int {
-            (makePeriodsStates().first?.year).map { $0 + 1 } ?? SimpleDate.now.year
+            appState?.festivalState.edition?.year
+                ?? (makePeriodsStates().first?.year).map { $0 + 1 }
+                ?? SimpleDate.now.year
         }
 
         mutating func upsert(_ period: Period) {
@@ -98,11 +100,19 @@ struct PeriodListFeature {
                 ))
                 return .none
             case .periodCreateTapped:
-                state.destination = .edit(.create(state.festivalId, appState: state.$appState))
+                guard let edition = state.appState?.festivalState.edition else {
+                    state.alert = AlertFeature.error("有効な年度がありません。年度画面で年度を作成して有効化してください。")
+                    return .none
+                }
+                state.destination = .edit(.create(edition, appState: state.$appState))
                 return .none
             case .batchCreateTapped(let year):
+                guard let edition = state.appState?.festivalState.edition else {
+                    state.alert = AlertFeature.error("有効な年度がありません。年度画面で年度を作成して有効化してください。")
+                    return .none
+                }
                 state.isLoading = true
-                return batchEffect(state, sourceYear: year)
+                return batchEffect(state, sourceYear: year, edition: edition)
             case .destination(.presented(.edit(.saveReceived(.success(let period))))),
                  .destination(.presented(.archives(.destination(.presented(.edit(.saveReceived(.success(let period)))))))):
                 state.upsert(period)
@@ -135,17 +145,18 @@ struct PeriodListFeature {
         .ifLet(\.$alert, action: \.alert)
     }
 
-    func batchEffect(_ state: State, sourceYear: Int) -> Effect<Action> {
+    func batchEffect(_ state: State, sourceYear: Int, edition: Edition) -> Effect<Action> {
         .task(Action.batchCreateReceived) { [
             source = state.periods.filter { $0.date.year == sourceYear },
-            createYear = state.createYear,
+            createYear = edition.year,
             appState = state.$appState
         ] in
             var createdPeriods: [Period] = []
             for period in source {
                 let newPeriod = Period(
                     id: UUID().uuidString,
-                    festivalId: period.festivalId,
+                    editionId: edition.id,
+                    festivalId: edition.festivalId,
                     title: period.title,
                     date: .from(period.date.toDate.sameWeekday(in: createYear) ?? .now),
                     start: period.start,

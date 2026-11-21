@@ -123,12 +123,16 @@ struct FestivalDashboardFeatureTests {
     @Test("祭典ダッシュボードの日程からEdition編集画面を開く")
     @MainActor
     func editionNavigation() async {
-        let store = TestStore(initialState: makeState()) {
+        let appState = Shared<AppState?>(value: AppStateFixture.state())
+        let store = TestStore(initialState: FestivalDashboardFeature.State(
+            AppStateFixture.festival(),
+            appState: appState
+        )) {
             FestivalDashboardFeature()
         } withDependencies: { $0.installTestSpies() }
 
         await store.send(.editionsTapped) {
-            $0.destination = .editionList(EditionListFeature.State(festivalID: "festival"))
+            $0.destination = .editionList(EditionListFeature.State(festivalID: "festival", appState: appState))
         }
         await store.finish()
     }

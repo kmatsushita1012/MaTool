@@ -105,7 +105,6 @@ struct EditionEditFeature {
             case .activationReceived(.success(let activeEdition)):
                 state.isActivating = false
                 state.activeEditionID = activeEdition.editionId
-                state.alert = AlertFeature.success("有効な年度を切り替えました。")
                 return .none
             case .activationReceived(.failure(let error)):
                 state.isActivating = false

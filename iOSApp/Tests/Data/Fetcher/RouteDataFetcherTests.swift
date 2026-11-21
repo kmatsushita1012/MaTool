@@ -22,7 +22,7 @@ struct RouteDataFetcherTests {
 
         #expect(result == [route])
         let request = try #require(await spy.calls().first)
-        #expect(request.path == "/districts/district/routes")
+        #expect(request.path == "/v2/districts/district/routes")
         #expect(request.query == ["year": "2026"])
         #expect(request.accessToken == "token")
     }

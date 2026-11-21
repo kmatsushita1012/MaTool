@@ -31,9 +31,10 @@ struct LaunchSceneUseCase: LaunchSceneUseCaseProtocol {
                 return (.onboarding, await appStatusTask)
             }
             if let districtId = userDefaults.defaultDistrictId {
-                async let festivalTask = dataFetcher.launchFestival(festivalId: festivalId)
-                async let districtTask = dataFetcher.launchDistrict(districtId: districtId)
-                let (festivalResponse, districtResponse) = try await (festivalTask, districtTask)
+                let (festivalResponse, districtResponse) = try await fetchEditionConsistentLaunchPacks(
+                    districtID: districtId,
+                    using: dataFetcher
+                )
                 guard await sessionCoordinator.isCurrent(requestId) else {
                     return (.loading, await appStatusTask)
                 }

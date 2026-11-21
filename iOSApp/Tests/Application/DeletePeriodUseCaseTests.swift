@@ -5,59 +5,81 @@ import Testing
 @testable import iOSApp
 
 struct DeletePeriodUseCaseTests {
-    @Test("削除API成功後は期間と選択中の関連ルートを消去する")
-    func deletesPeriodAndOrphanRoutes() async throws {
+    @Test("削除はEditionPackを保存した後にAppStateから関連PeriodとRouteを除く")
+    func deletesPeriodThroughEditionPack() async throws {
+        let edition = AppStateFixture.edition()
+        let period = AppStateFixture.period()
         let route = AppStateFixture.route()
-        let appState = Shared<AppState?>(value: AppStateFixture.state(
+        let pack = EditionPack(edition: edition, periods: [period])
+        let spy = makeSpy(pack: pack, updatedPack: EditionPack(edition: edition, periods: []))
+        let state = Shared<AppState?>(value: AppStateFixture.state(
             routes: [route], currentRouteId: route.id
         ))
-        let spy = PeriodDataFetcherSpy(response: AppStateFixture.period())
         let useCase = withDependencies {
             $0.installTestSpies()
-            $0[PeriodDataFetcherKey.self] = spy
-        } operation: {
-            DeletePeriodUseCase()
-        }
+            $0[EditionDataFetcherKey.self] = spy
+        } operation: { DeletePeriodUseCase() }
 
-        try await useCase(id: "period", appState: appState)
+        try await useCase(period, appState: state)
 
-        #expect(await spy.recordedCalls() == ["delete:period"])
-        #expect(appState.wrappedValue?.festivalState.periods.isEmpty == true)
-        #expect(appState.wrappedValue?.districtState?.routes.isEmpty == true)
-        #expect(appState.wrappedValue?.routeState == nil)
+        #expect(await spy.calls() == [
+            .fetchList("festival"), .fetch("festival", 2026), .update(2026, [])
+        ])
+        #expect(state.wrappedValue?.festivalState.periods.isEmpty == true)
+        #expect(state.wrappedValue?.districtState?.routes.isEmpty == true)
+        #expect(state.wrappedValue?.routeState == nil)
     }
 
-    @Test("API失敗時は期間を消してはいけない")
-    func errorPreservesState() async {
+    @Test("対象PeriodがEditionPackにない場合は保存しない")
+    func missingPeriodDoesNotSavePack() async {
+        let edition = AppStateFixture.edition()
+        let spy = makeSpy(pack: EditionPack(edition: edition, periods: []))
         let original = AppStateFixture.state()
-        let appState = Shared<AppState?>(value: original)
-        let spy = PeriodDataFetcherSpy(response: AppStateFixture.period(), shouldFail: true)
+        let state = Shared<AppState?>(value: original)
         let useCase = withDependencies {
             $0.installTestSpies()
-            $0[PeriodDataFetcherKey.self] = spy
-        } operation: {
-            DeletePeriodUseCase()
-        }
+            $0[EditionDataFetcherKey.self] = spy
+        } operation: { DeletePeriodUseCase() }
 
-        await #expect(throws: FetcherTestError.failed) {
-            try await useCase(id: "period", appState: appState)
+        await #expect(throws: AppError.self) {
+            try await useCase(AppStateFixture.period(), appState: state)
         }
-        #expect(appState.wrappedValue == original)
+        #expect(state.wrappedValue == original)
+        #expect(await spy.calls() == [.fetchList("festival"), .fetch("festival", 2026)])
     }
 
-    @Test("セッション破棄済みならリモート削除だけ実施する")
-    func nilSessionKeepsStateNil() async throws {
-        let appState = Shared<AppState?>(value: nil)
-        let spy = PeriodDataFetcherSpy(response: AppStateFixture.period())
+    @Test("EditionPack保存失敗時はAppStateを変更しない")
+    func errorPreservesState() async {
+        let edition = AppStateFixture.edition()
+        let period = AppStateFixture.period()
+        let original = AppStateFixture.state()
+        let state = Shared<AppState?>(value: original)
+        let spy = makeSpy(
+            pack: EditionPack(edition: edition, periods: [period]),
+            failures: [.update: .be(.network("offline"))]
+        )
         let useCase = withDependencies {
             $0.installTestSpies()
-            $0[PeriodDataFetcherKey.self] = spy
-        } operation: {
-            DeletePeriodUseCase()
-        }
+            $0[EditionDataFetcherKey.self] = spy
+        } operation: { DeletePeriodUseCase() }
 
-        try await useCase(id: "period", appState: appState)
-        #expect(appState.wrappedValue == nil)
-        #expect(await spy.recordedCalls() == ["delete:period"])
+        await #expect(throws: AppError.self) {
+            try await useCase(period, appState: state)
+        }
+        #expect(state.wrappedValue == original)
+    }
+
+    private func makeSpy(
+        pack: EditionPack,
+        updatedPack: EditionPack? = nil,
+        failures: [EditionDataFetcherSpy.Operation: AppError] = [:]
+    ) -> EditionDataFetcherSpy {
+        EditionDataFetcherSpy(
+            list: EditionListResponse(editions: [pack.edition], activeEditionId: pack.edition.id),
+            pack: pack,
+            activeEdition: ActiveEdition(festivalId: pack.edition.festivalId, editionId: pack.edition.id),
+            failures: failures,
+            updatedPack: updatedPack
+        )
     }
 }

@@ -37,7 +37,7 @@ struct SignOutUseCaseTests {
         #expect(launchState == .district(.guest, fixture.route.id))
         #expect(initializeSpy.callCount == 0)
         #expect(Set(await dataFetcher.requests) == Set([
-            "festival:\(fixture.festival.id)",
+            "festivalFromDistrict:\(fixture.district.id)",
             "district:\(fixture.district.id):period:nil"
         ]))
         #expect(await sessionCoordinator.sessionStarts == 1)
@@ -84,7 +84,7 @@ struct SignOutUseCaseTests {
         #expect(initializeSpy.callCount == 0)
         #expect(appState.wrappedValue == nil)
         #expect(Set(await dataFetcher.requests) == Set([
-            "festival:\(fixture.festival.id)",
+            "festivalFromDistrict:\(fixture.district.id)",
             "district:\(fixture.district.id):period:nil"
         ]))
     }

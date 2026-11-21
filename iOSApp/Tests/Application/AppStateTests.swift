@@ -28,7 +28,8 @@ struct AppStateTests {
         )
 
         #expect(state.festivalState.floatLocations.map(\.id) == ["newer"])
-        #expect(state.festivalState.year == 2026)
+        #expect(state.festivalState.edition?.year == 2026)
+        #expect(state.festivalState.edition?.id == state.districtState?.editionId)
     }
 
     @Test("同一タイムスタンプでは先に受信した位置情報を維持する")
@@ -87,5 +88,22 @@ struct AppStateTests {
         #expect(state.districtState == nil)
         #expect(state.routeState == nil)
         #expect(state.festivalState.festival.id == "festival")
+    }
+
+    @Test("Edition未設定かつPeriod 0件でも状態を構築できる")
+    func emptyFestivalWithoutEditionKeepsEditionUnset() {
+        let state = AppStateFixture.state(periods: [], selectedDistrictId: nil, hasEdition: false)
+
+        #expect(state.festivalState.edition == nil)
+        #expect(state.festivalState.periods.isEmpty)
+    }
+
+    @Test("Period 0件でもlaunchで返されたEditionを保持する")
+    func emptyEditionKeepsItsYear() {
+        let edition = AppStateFixture.edition(year: 2027)
+        let state = AppStateFixture.state(periods: [], edition: edition)
+
+        #expect(state.festivalState.edition == edition)
+        #expect(state.festivalState.periods.isEmpty)
     }
 }

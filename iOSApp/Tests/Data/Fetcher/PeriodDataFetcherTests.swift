@@ -19,7 +19,7 @@ struct PeriodDataFetcherTests {
         let requests = await spy.calls()
         #expect(requests.count == 1)
         #expect(requests.first?.method == "GET")
-        #expect(requests.first?.path == "/festivals/festival/periods")
+        #expect(requests.first?.path == "/v2/festivals/festival/periods")
         #expect(requests.first?.query == ["year": "2026"])
         #expect(requests.first?.accessToken == nil)
     }
@@ -36,35 +36,7 @@ struct PeriodDataFetcherTests {
         }
 
         #expect(response == period)
-        #expect(await spy.calls().map(\.path) == ["/periods/period"])
-    }
-
-    @Test("期間作成・更新・削除はアクセストークン付きで正しいHTTPメソッドを使用する")
-    func mutationsUseAuthenticatedRequests() async throws {
-        let period = AppStateFixture.period()
-        let spy = try RecordingHTTPClientSpy(response: period)
-        var auth = AuthProviderSpy().client
-        auth.getTokens = { "token-123" }
-        try await withDependencies {
-            $0.installTestSpies()
-            $0[HTTPClientKey.self] = spy
-            $0.authProvider = auth
-        } operation: {
-            let fetcher = PeriodDataFetcher()
-            #expect(try await fetcher.create(period) == period)
-            #expect(try await fetcher.update(period) == period)
-            try await fetcher.delete(period.id)
-        }
-
-        let requests = await spy.calls()
-        #expect(requests.map(\.method) == ["POST", "PUT", "DELETE"])
-        #expect(requests.map(\.path) == [
-            "/festivals/festival/periods", "/periods/period", "/periods/period"
-        ])
-        #expect(requests.allSatisfy { $0.accessToken == "token-123" })
-        #expect(requests[0].body != nil)
-        #expect(requests[1].body != nil)
-        #expect(requests[2].body == nil)
+        #expect(await spy.calls().map(\.path) == ["/v2/periods/period"])
     }
 
     @Test("依存するHTTP通信の失敗を握りつぶさず伝播する")
@@ -79,6 +51,6 @@ struct PeriodDataFetcherTests {
                 try await PeriodDataFetcher().fetchAll(festivalID: "festival", query: .all)
             }
         }
-        #expect(await spy.calls().map(\.path) == ["/festivals/festival/periods"])
+        #expect(await spy.calls().map(\.path) == ["/v2/festivals/festival/periods"])
     }
 }

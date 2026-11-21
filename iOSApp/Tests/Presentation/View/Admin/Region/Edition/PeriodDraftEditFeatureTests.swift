@@ -23,7 +23,7 @@ struct PeriodDraftEditFeatureTests {
         let updatedPeriod = Period(
             id: period.id,
             editionId: "edition",
-            festivalId: period.festivalId,
+            festivalId: "festival",
             title: period.title,
             date: newDate,
             start: period.start,

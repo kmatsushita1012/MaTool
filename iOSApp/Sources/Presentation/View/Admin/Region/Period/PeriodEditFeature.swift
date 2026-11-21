@@ -57,14 +57,24 @@ struct PeriodEditFeature {
             case .deleteTapped:
                 guard state.mode == .update else { return .none }
                 state.isDeleting = true
-                return .task(Action.deleteReceived) { [id = state.period.id, appState = state.$appState] in
-                    try await deletePeriodUseCase(id: id, appState: appState)
-                    return id
+                return .task(Action.deleteReceived) { [period = state.period, appState = state.$appState] in
+                    try await deletePeriodUseCase(period, appState: appState)
+                    return period.id
                 }
             case .dateChanged(let date):
-                if state.mode == .create {
+                if state.mode == .create,
+                   let editionID = state.period.editionId,
+                   let festivalID = state.appState?.festivalState.festival.id {
                     let source = state.period
-                    state.period = Period(festivalId: source.festivalId, title: source.title, date: date, start: source.start, end: source.end)
+                    state.period = Period(
+                        id: source.id,
+                        editionId: editionID,
+                        festivalId: festivalID,
+                        title: source.title,
+                        date: date,
+                        start: source.start,
+                        end: source.end
+                    )
                 }
                 return .none
             case .saveReceived(.failure(let error)),
@@ -101,12 +111,13 @@ extension PeriodEditFeature.State {
         )
     }
     
-    static func create(_ festivalId: String, appState: Shared<AppState?> = Shared(value: nil)) -> Self {
+    static func create(_ edition: Edition, appState: Shared<AppState?> = Shared(value: nil)) -> Self {
         .init(
             mode: .create,
             period: Period(
                 id: UUID().uuidString,
-                festivalId: festivalId,
+                editionId: edition.id,
+                festivalId: edition.festivalId,
                 title: "",
                 date: .now,
                 start: .init(hour: 9, minute: 0),

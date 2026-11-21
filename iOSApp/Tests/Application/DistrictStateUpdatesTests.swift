@@ -10,6 +10,7 @@ struct DistrictStateUpdatesTests {
         selectedRoute: Route.ID? = "route"
     ) -> LaunchDistrictPack {
         LaunchDistrictPack(
+            editionId: AppStateFixture.edition().id,
             performances: [], routes: routes,
             points: [], passages: [], currentRouteId: selectedRoute
         )
