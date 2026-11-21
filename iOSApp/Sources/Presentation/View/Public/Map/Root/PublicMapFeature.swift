@@ -16,9 +16,30 @@ struct PublicMapFeature {
         let routeId: Route.ID?
     }
     
-    enum Content: Equatable{
+    enum Content: Hashable {
         case locations
-        case route(District.ID)
+        case route(District)
+
+        static func == (lhs: Self, rhs: Self) -> Bool {
+            switch (lhs, rhs) {
+            case (.locations, .locations):
+                return true
+            case let (.route(lhsDistrict), .route(rhsDistrict)):
+                return lhsDistrict.id == rhsDistrict.id
+            default:
+                return false
+            }
+        }
+
+        func hash(into hasher: inout Hasher) {
+            switch self {
+            case .locations:
+                hasher.combine("locations")
+            case .route(let district):
+                hasher.combine("route")
+                hasher.combine(district.id)
+            }
+        }
     }
 
     struct DistrictContentGroup: Equatable, Identifiable {
@@ -40,20 +61,17 @@ struct PublicMapFeature {
         @Shared fileprivate var appState: AppState?
 
         var contents: [Content] {
-            let selectedDistrictId: District.ID?
-            if case .route(let districtId) = selectedContent {
-                selectedDistrictId = districtId
-            } else {
-                selectedDistrictId = nil
-            }
-            return [.locations] + (appState?.routeDistrictIds(prioritizing: selectedDistrictId).map(Content.route) ?? [])
+            let selectedDistrictId = selectedContent.district?.id
+            let districts = appState?.routeDistrictIds(prioritizing: selectedDistrictId)
+                .compactMap { appState?.district(id: $0) } ?? []
+            return [.locations] + districts.map(Content.route)
         }
         var districtContentGroups: [DistrictContentGroup] {
             var groups: [DistrictContentGroup] = []
 
             for content in contents {
-                guard case .route(let districtId) = content else { continue }
-                let trimmedName = appState?.district(id: districtId)?.group?.trimmingCharacters(in: .whitespacesAndNewlines)
+                guard case .route(let district) = content else { continue }
+                let trimmedName = district.group?.trimmingCharacters(in: .whitespacesAndNewlines)
                 let name = trimmedName?.isEmpty == false ? trimmedName : nil
 
                 if !groups.isEmpty, groups[groups.count - 1].name == name {
@@ -69,21 +87,14 @@ struct PublicMapFeature {
             appState?.festivalState.festival.name ?? ""
         }
         var selectedContent: Content
+        var selectedContentItem: Content {
+            contents.first(where: { $0 == selectedContent }) ?? selectedContent
+        }
         var currentPeriodId: Period.ID? {
             appState?.currentPeriod(at: .now)?.id
         }
         var selectedPeriodId: Period.ID? {
             destination?.route?.selected?.period.id ?? currentPeriodId
-        }
-        var contentTitles: [Content: String] {
-            Dictionary(uniqueKeysWithValues: contents.map { content in
-                switch content {
-                case .locations:
-                    return (content, "現在地一覧")
-                case .route(let districtId):
-                    return (content, appState?.district(id: districtId)?.name ?? "")
-                }
-            })
         }
         var isLoading: Bool = false
         @Presents var destination: Destination.State?
@@ -138,9 +149,9 @@ struct PublicMapFeature {
                     await mapLocationProvider.startTracking()
                     await publicMapAdUsecase.prepareSession()
                 }
-                guard case .route(let districtId) = state.selectedContent,
-                      let district = state.appState?.district(id: districtId),
-                      state.appState?.districtState?.districtId != districtId else {
+                guard case .route(let district) = state.selectedContent,
+                      state.appState?.district(id: district.id) != nil,
+                      state.appState?.districtState?.districtId != district.id else {
                     return permissionEffect
                 }
                 state.isLoading = true
@@ -169,8 +180,8 @@ struct PublicMapFeature {
                         )
                     )
                     return .none
-                case .route(let districtId):
-                    guard let district = state.appState?.district(id: districtId) else {
+                case .route(let district):
+                    guard state.appState?.district(id: district.id) != nil else {
                         return .none
                     }
                     state.isLoading = true
@@ -240,14 +251,33 @@ struct PublicMapFeature {
 extension PublicMapFeature.Destination.State: Equatable {}
 extension PublicMapFeature.Destination.Action: Equatable {}
 
-extension PublicMapFeature.Content: Identifiable, Hashable  {
+extension PublicMapFeature.Content: Identifiable {
     var id:String {
         switch self {
         case .locations:
             return "locations"
-        case .route(let districtId):
-            return districtId
+        case .route(let district):
+            return district.id
         }
+    }
+
+    var name: String {
+        switch self {
+        case .locations:
+            return "現在地一覧"
+        case .route(let district):
+            return district.name
+        }
+    }
+
+    var subname: String? {
+        guard case .route(let district) = self else { return nil }
+        return district.subname
+    }
+
+    var district: District? {
+        guard case .route(let district) = self else { return nil }
+        return district
     }
 }
 
@@ -278,7 +308,7 @@ extension PublicMapFeature.State {
     init(festival: Festival, district: District, routeId: Route.ID?, userRole: UserRole, appState: Shared<AppState?>) {
         self.init(
             userRole: userRole,
-            selectedContent: .route(district.id),
+            selectedContent: .route(district),
             appState: appState,
             mapRegion: Shared(value: makeRegion(origin: festival.base, spanDelta: spanDelta)),
             toast: Shared(value: nil)

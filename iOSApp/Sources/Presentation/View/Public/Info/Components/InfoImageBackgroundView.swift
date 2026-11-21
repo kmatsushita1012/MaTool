@@ -103,6 +103,7 @@ struct InfoHeaderImageView: View {
     let lightPath: String?
     let darkPath: String?
     let title: String
+    var subtitle: String? = nil
 
     @Environment(\.colorScheme) private var colorScheme
     @State private var imageSize: CGSize?
@@ -127,6 +128,7 @@ struct InfoHeaderImageView: View {
                     if loadedImagePath == imagePath, let imageSize {
                         InfoImageTitleOverlay(
                             title: title,
+                            subtitle: subtitle,
                             isVertical: imageSize.height > imageSize.width
                         )
                         .padding(16)
@@ -139,6 +141,7 @@ struct InfoHeaderImageView: View {
 
 private struct InfoImageTitleOverlay: View {
     let title: String
+    let subtitle: String?
     let isVertical: Bool
 
     @Environment(\.colorScheme) private var colorScheme
@@ -166,6 +169,10 @@ private struct InfoImageTitleOverlay: View {
         .custom("YujiSyuku-Regular", size: 64, relativeTo: .largeTitle)
     }
 
+    private var subtitleFont: Font {
+        .custom("YujiSyuku-Regular", size: 32, relativeTo: .largeTitle)
+    }
+
     private var titleContent: some View {
         Group {
             if isVertical {
@@ -183,24 +190,61 @@ private struct InfoImageTitleOverlay: View {
         .font(titleFont)
     }
 
+    private func subtitleContent(_ subtitle: String) -> some View {
+        Group {
+            if isVertical {
+                VStack(spacing: 0) {
+                    ForEach(Array(subtitle.enumerated()), id: \.offset) { character in
+                        Text(String(character.element))
+                    }
+                }
+            } else {
+                Text(subtitle)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.6)
+            }
+        }
+        .font(subtitleFont)
+    }
+
+    private var overlayContent: some View {
+        Group {
+            if isVertical {
+                HStack(alignment: .bottom, spacing: 8) {
+                    if let subtitle, !subtitle.isEmpty {
+                        subtitleContent(subtitle)
+                    }
+                    titleContent
+                }
+            } else {
+                VStack(alignment: .trailing, spacing: 8) {
+                    titleContent
+                    if let subtitle, !subtitle.isEmpty {
+                        subtitleContent(subtitle)
+                    }
+                }
+            }
+        }
+    }
+
     var body: some View {
         ZStack {
-            titleContent
+            overlayContent
                 .foregroundStyle(outlineColor)
                 .shadow(color: outlineColor.opacity(0.65), radius: 4, x: -2, y: -2)
                 .shadow(color: directionalShadowColor, radius: 8, x: 4, y: 6)
 
             ForEach(Array(outlineOffsets.enumerated()), id: \.offset) { item in
-                titleContent
+                overlayContent
                     .foregroundStyle(outlineColor)
                     .offset(x: item.element.width, y: item.element.height)
             }
 
-            titleContent
+            overlayContent
                 .foregroundStyle(.primary)
         }
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel(title)
+        .accessibilityLabel([title, subtitle].compactMap { $0 }.joined(separator: " "))
     }
 }
 

@@ -159,6 +159,7 @@ extension DistrictUsecase {
         var result = current
         // 許可フィールドを反映
         result.name = incoming.name
+        result.subname = incoming.subname
         result.description = incoming.description
         result.base = incoming.base
         result.area = incoming.area

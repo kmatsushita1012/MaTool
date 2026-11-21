@@ -20,6 +20,10 @@ struct DistrictEditScreen: View {
                 get: { store.district.name },
                 set: { store.send(.binding(.set(\.district.name, $0))) }
             ),
+            subname: Binding(
+                get: { store.district.subname ?? "" },
+                set: { store.send(.binding(.set(\.district.subname, $0.isEmpty ? nil : $0))) }
+            ),
             description: Binding(
                 get: { store.district.description ?? "" },
                 set: { store.send(.binding(.set(\.district.description, $0.isEmpty ? nil : $0))) }
@@ -66,6 +70,7 @@ typealias DistrictEditView = DistrictEditScreen
 @available(iOS 17.0, *)
 struct DistrictEditContentView<VisibilityValue: Hashable & CaseIterable>: View {
     @Binding var name: String
+    @Binding var subname: String
     @Binding var description: String
     @Binding var visibility: VisibilityValue
     let visibilityLabel: (VisibilityValue) -> String
@@ -86,6 +91,9 @@ struct DistrictEditContentView<VisibilityValue: Hashable & CaseIterable>: View {
                 footer: Text("IDは更新できません")
             ) {
                 TextField("町名を入力", text: $name)
+            }
+            Section(header: Text("副称")) {
+                TextField("", text: $subname)
             }
             Section(header: Text("紹介文")) {
                 TextEditor(text: $description)
@@ -137,6 +145,7 @@ struct DistrictEditContentView<VisibilityValue: Hashable & CaseIterable>: View {
 
     DistrictEditContentView(
         name: .constant(""),
+        subname: .constant(""),
         description: .constant(""),
         visibility: .constant(visibility),
         visibilityLabel: { $0.label },

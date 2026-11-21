@@ -85,7 +85,8 @@ private struct DistrictInfoContentView: View {
             InfoHeaderImageView(
                 lightPath: district.image.light,
                 darkPath: district.image.dark,
-                title: district.name
+                title: district.name,
+                subtitle: district.subname
             )
 
             if let description = district.description {

@@ -60,19 +60,19 @@ struct PublicMapFeatureTests {
 
         #expect(state.contents == [
             .locations,
-            .route(sameGroupDistrict.id),
-            .route(firstGroupDistrict.id),
-            .route(selectedDistrict.id),
-            .route(laterGroupDistrict.id)
+            .route(sameGroupDistrict),
+            .route(firstGroupDistrict),
+            .route(selectedDistrict),
+            .route(laterGroupDistrict)
         ])
 
-        state.selectedContent = .route(selectedDistrict.id)
+        state.selectedContent = .route(selectedDistrict)
         #expect(state.contents == [
             .locations,
-            .route(selectedDistrict.id),
-            .route(sameGroupDistrict.id),
-            .route(firstGroupDistrict.id),
-            .route(laterGroupDistrict.id)
+            .route(selectedDistrict),
+            .route(sameGroupDistrict),
+            .route(firstGroupDistrict),
+            .route(laterGroupDistrict)
         ])
     }
 
@@ -104,7 +104,7 @@ struct PublicMapFeatureTests {
         }
         store.exhaustivity = .off
 
-        await store.send(.contentSelected(.route(fixture.nextDistrict.id)))
+        await store.send(.contentSelected(.route(fixture.nextDistrict)))
         await store.receive(.districtLaunchReceived(.success(
             PublicMapFeature.DistrictLaunchResult(
                 districtId: fixture.nextDistrict.id,
@@ -117,10 +117,12 @@ struct PublicMapFeatureTests {
     }
     @Test("一覧と地区経路のコンテンツIDは一貫している")
     func contentIDsAreStable() {
+        let firstDistrict = District(id: "district-1", name: "First", festivalId: "festival")
+        let secondDistrict = District(id: "district-2", name: "Second", festivalId: "festival")
         #expect(PublicMapFeature.Content.locations.id == "locations")
-        #expect(PublicMapFeature.Content.route("district-1").id == "district-1")
-        #expect(PublicMapFeature.Content.route("district-2").id == "district-2")
-        #expect(PublicMapFeature.Content.route("district-1") != .route("district-2"))
+        #expect(PublicMapFeature.Content.route(firstDistrict).id == "district-1")
+        #expect(PublicMapFeature.Content.route(secondDistrict).id == "district-2")
+        #expect(PublicMapFeature.Content.route(firstDistrict) != .route(secondDistrict))
     }
 
     @Test("地図のPicker表示名は祭典名・町名から生成される")
@@ -131,8 +133,8 @@ struct PublicMapFeatureTests {
         )
 
         #expect(state.festivalTitle == "Festival")
-        #expect(state.contentTitles[.locations] == "現在地一覧")
-        #expect(state.contentTitles[.route("district")] == "District")
+        #expect(PublicMapFeature.Content.locations.name == "現在地一覧")
+        #expect(PublicMapFeature.Content.route(AppStateFixture.district()).name == "District")
     }
 
     @Test("町ごとのコンテンツグループには全ての町を重複せず含む")
@@ -149,8 +151,8 @@ struct PublicMapFeatureTests {
         )
         let grouped = state.districtContentGroups
         let ids = grouped.flatMap(\.contents).compactMap { content -> String? in
-            guard case .route(let id) = content else { return nil }
-            return id
+            guard case .route(let district) = content else { return nil }
+            return district.id
         }
 
         #expect(ids.count == 3)
@@ -196,7 +198,7 @@ struct PublicMapFeatureTests {
             userRole: .guest,
             appState: Shared(value: AppStateFixture.state())
         )
-        state.selectedContent = .route("district")
+        state.selectedContent = .route(AppStateFixture.district())
         let store = TestStore(initialState: state) {
             PublicMapFeature()
         } withDependencies: { $0.installTestSpies() }
@@ -225,8 +227,9 @@ struct PublicMapFeatureTests {
         }
         store.exhaustivity = .off
 
-        await store.send(.contentSelected(.route("missing-district")))
-        #expect(store.state.selectedContent == .route("missing-district"))
+        let missingDistrict = District(id: "missing-district", name: "Missing", festivalId: "festival")
+        await store.send(.contentSelected(.route(missingDistrict)))
+        #expect(store.state.selectedContent == .route(missingDistrict))
         #expect(!store.state.isLoading)
         #expect((await load.requestedDistrictIDs).isEmpty)
         await store.finish()
@@ -424,7 +427,6 @@ struct PublicMapFeatureTests {
         #expect(state.festivalTitle == "")
         #expect(state.currentPeriodId == nil)
         #expect(state.selectedPeriodId == nil)
-        #expect(state.contentTitles == [.locations: "現在地一覧"])
     }
 
     @Test("AppState消失後の現在地選択は不完全な子画面を再構築しない")
@@ -436,7 +438,7 @@ struct PublicMapFeatureTests {
             userRole: .guest,
             appState: appState
         )
-        initial.selectedContent = .route("district")
+        initial.selectedContent = .route(AppStateFixture.district())
         appState.withLock { $0 = nil }
         let store = TestStore(initialState: initial) {
             PublicMapFeature()
@@ -465,7 +467,7 @@ struct PublicMapFeatureTests {
         #expect(state.districtContentGroups.count == 1)
         #expect(state.districtContentGroups.first?.name == nil)
         #expect(Set(state.districtContentGroups.flatMap(\.contents)) == Set([
-            .route("without"), .route("blank")
+            .route(districts[0]), .route(districts[1])
         ]))
     }
 
