@@ -67,20 +67,14 @@ struct PeriodUsecase: PeriodUsecaseProtocol {
               target.festivalId == id else {
             throw Error.unauthorized("アクセス権限がありません。")
         }
-        try await deleteRoutes(for: target)
+        try await deleteRoutes(
+            for: target,
+            festivalId: target.festivalId,
+            districtRepository: districtRepository,
+            routeRepository: routeRepository,
+            pointRepository: pointRepository,
+            passageRepository: passageRepository
+        )
         return try await repository.delete(id: target.id)
-    }
-
-    private func deleteRoutes(for period: Period) async throws {
-        // Route has no periodId index, so search each district's route partition.
-        let districts = try await districtRepository.query(by: period.festivalId)
-        for district in districts {
-            let routes = try await routeRepository.query(by: district.id)
-            for route in routes where route.periodId == period.id {
-                try await pointRepository.delete(by: route.id)
-                try await passageRepository.delete(by: route.id)
-                try await routeRepository.delete(route)
-            }
-        }
     }
 }

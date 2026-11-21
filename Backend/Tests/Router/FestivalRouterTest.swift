@@ -40,6 +40,26 @@ struct FestivalRouterTest {
     }
 
     @Test
+    func routesEditionManagementEndpoints_正常() async {
+        let editionController = EditionControllerSpy()
+        let app = make(editionController: editionController)
+        let requests: [(Application.Method, String)] = [
+            (.get, "/v1/festivals/festival-1/editions"),
+            (.post, "/v1/festivals/festival-1/editions"),
+            (.get, "/v1/festivals/festival-1/editions/2026"),
+            (.put, "/v1/festivals/festival-1/editions/2026"),
+            (.put, "/v1/festivals/festival-1/active-edition")
+        ]
+
+        for (method, path) in requests {
+            let response = await app.handle(.make(method: method, path: path))
+            #expect(response.statusCode == 200)
+        }
+
+        #expect(editionController.calls == ["query", "create", "get", "put", "putActive"])
+    }
+
+    @Test
     func launchFestival_正常_別祭典の管理者には公開用データのみ返す() async {
         let festival = Festival.mock(id: "festival-target")
         let users: [UserRole] = [
@@ -123,7 +143,8 @@ private extension FestivalRouterTest {
         districtController: DistrictControllerMock = .init(),
         locationController: LocationControllerMock = .init(),
         periodController: PeriodControllerMock = .init(),
-        sceneController: SceneControllerMock = .init()
+        sceneController: SceneControllerMock = .init(),
+        editionController: EditionControllerSpy = .init()
     ) -> Application {
         withDependencies {
             $0[FestivalControllerKey.self] = festivalController
@@ -131,6 +152,7 @@ private extension FestivalRouterTest {
             $0[LocationControllerKey.self] = locationController
             $0[PeriodControllerKey.self] = periodController
             $0[SceneControllerKey.self] = sceneController
+            $0[EditionControllerKey.self] = editionController
         } operation: {
             Application { FestivalRouter() }
         }
