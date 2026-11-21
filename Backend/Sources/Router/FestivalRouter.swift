@@ -13,8 +13,16 @@ struct FestivalRouter: Router {
     @Dependency(LocationControllerKey.self) var locationController
     @Dependency(PeriodControllerKey.self) var periodController
     @Dependency(SceneControllerKey.self) var sceneController
+    @Dependency(EditionControllerKey.self) var editionController
     
     func body(_ app: Application) {
+        // MARK: - Edition management API
+        app.get(path: "/v1/festivals/:festivalId/editions", editionController.query)
+        app.post(path: "/v1/festivals/:festivalId/editions", editionController.create)
+        app.get(path: "/v1/festivals/:festivalId/editions/:year", editionController.get)
+        app.put(path: "/v1/festivals/:festivalId/editions/:year", editionController.put)
+        app.put(path: "/v1/festivals/:festivalId/active-edition", editionController.putActive)
+
         // MARK: - Scene
         app.get(path: "/festivals/:festivalId/launch", sceneController.launchFestival)
         // MARK: - District
