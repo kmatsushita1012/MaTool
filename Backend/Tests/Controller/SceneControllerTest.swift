@@ -21,7 +21,7 @@ struct SceneControllerTest {
 
         let request = Application.Request.make(
             method: .get,
-            path: "/festivals/festival-1/launch",
+            path: "/v2/festivals/festival-1/launch",
             parameters: ["festivalId": "festival-1"]
         )
 
@@ -50,7 +50,7 @@ struct SceneControllerTest {
 
         let request = Application.Request.make(
             method: .get,
-            path: "/districts/district-1/launch-festival",
+            path: "/v2/districts/district-1/launch-festival",
             parameters: ["districtId": "district-1"]
         )
 
@@ -88,7 +88,7 @@ struct SceneControllerTest {
 
         let request = Application.Request.make(
             method: .get,
-            path: "/districts/district-1/launch",
+            path: "/v2/districts/district-1/launch",
             parameters: ["districtId": "district-1", "periodId": "period-1"]
         )
 
@@ -108,7 +108,7 @@ struct SceneControllerTest {
         let subject = make(usecase: mock)
         let request = Application.Request.make(
             method: .get,
-            path: "/districts/district-1/launch",
+            path: "/v2/districts/district-1/launch",
             parameters: ["districtId": "district-1"]
         )
 

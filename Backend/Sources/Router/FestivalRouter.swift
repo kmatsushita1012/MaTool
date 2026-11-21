@@ -24,7 +24,8 @@ struct FestivalRouter: Router {
         app.put(path: "/v1/festivals/:festivalId/active-edition", editionController.putActive)
 
         // MARK: - Scene
-        app.get(path: "/festivals/:festivalId/launch", sceneController.launchFestival)
+        app.get(path: "/v2/festivals/:festivalId/launch", sceneController.launchFestival)
+        app.get(path: "/festivals/:festivalId/launch") { _, _ in .gone() }
         // MARK: - District
         app.get(path: "/festivals/:festivalId/districts", districtController.query)
         app.post(path: "/festivals/:festivalId/districts", districtController.post)

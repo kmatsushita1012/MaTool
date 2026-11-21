@@ -33,10 +33,23 @@ struct FestivalRouterTest {
     @Test
     func routesLaunchToSceneController_正常() async {
         let app = make(sceneController: .init(launchFestivalHandler: { _, _ in try .success() }))
-        let request = Application.Request.make(method: .get, path: "/festivals/festival-1/launch")
+        let request = Application.Request.make(method: .get, path: "/v2/festivals/festival-1/launch")
         let response = await app.handle(request)
 
         #expect(response.statusCode == 200)
+    }
+
+    @Test
+    func launchFestival_旧Pathは410でv2PathだけControllerへ届く() async {
+        let controller = SceneControllerMock(launchFestivalHandler: { _, _ in try .success() })
+        let app = make(sceneController: controller)
+
+        let v2Response = await app.handle(.make(method: .get, path: "/v2/festivals/festival-1/launch"))
+        let oldResponse = await app.handle(.make(method: .get, path: "/festivals/festival-1/launch"))
+
+        #expect(v2Response.statusCode == 200)
+        #expect(oldResponse.statusCode == 410)
+        #expect(controller.launchFestivalCallCount == 1)
     }
 
     @Test
@@ -104,7 +117,7 @@ struct FestivalRouterTest {
             let passageRepository = PassageRepositoryMock()
             let request = Application.Request.make(
                 method: .get,
-                path: "/festivals/festival-target/launch",
+                path: "/v2/festivals/festival-target/launch",
                 headers: ["authorization": "Bearer test-token"]
             )
 
@@ -112,6 +125,8 @@ struct FestivalRouterTest {
                 $0[AuthManagerFactoryKey.self] = { authManager }
                 $0[FestivalRepositoryKey.self] = festivalRepository
                 $0[DistrictRepositoryKey.self] = districtRepository
+                $0[ActiveEditionRepositoryKey.self] = ActiveEditionRepositorySpy()
+                $0[EditionRepositoryKey.self] = EditionRepositorySpy()
                 $0[PeriodRepositoryKey.self] = periodRepository
                 $0[LocationRepositoryKey.self] = locationRepository
                 $0[CheckpointRepositoryKey.self] = checkpointRepository
