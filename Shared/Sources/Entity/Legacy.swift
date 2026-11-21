@@ -23,7 +23,7 @@ enum Legacy {
 }
 
 extension Legacy.Span {
-    func toPeriod(festivalId: String) -> Period {
-        Period(id: id, festivalId: festivalId, title: "", date: .from(start), start: .from(start), end: .from(end))
+    func toPeriod(editionId: Edition.ID) -> Period {
+        Period(id: id, editionId: editionId, title: "", date: .from(start), start: .from(start), end: .from(end))
     }
 }
