@@ -19,7 +19,7 @@
 | `BackendDatabase` | DynamoDB DataStore / Record / Repository具象 | BackendCore, Domain, AWS DynamoDB SDK |
 | `BackendAPI` | Application/Router/HTTP Controller・Lambdaアダプター | BackendCore, Domain |
 | `BackendInfrastructure`（追加推奨） | Cognito / S3 / SNS / App Store Server APIなど外部サービスのLive実装 | BackendCore, Domain, 外部SDK |
-| `AppCore` | UseCase、DataFetcher、アプリ固有状態・Entry・外部Client契約・共通画面用の純粋な状態型 | Domain, Dependencies, Sharing（swift-sharing） |
+| `AppCore` | UseCase、DataFetcher、アプリ固有状態・Entry・外部Client契約・共通画面用の純粋な状態型 | Domain, Dependencies（共有状態には追加Packageなしを優先） |
 | `AppInfrastructure` | HTTP / Amplify / S3 / StoreKit / UserDefaults / 位置情報 / 画像・広告等のLive Client実装 | AppCore, Domain, 外部SDK |
 | `AppPresentation` | TCA Feature/Reducer・Storeを利用するScreen/View・Navigation | AppCore, AppUI, Domain, TCA |
 | `AppUI` | TCA非依存のSwiftUI / UIKit / MapKit View・Style・汎用コンポーネント | Domain, AppCore（純粋なView入力モデルだけ） |
@@ -126,15 +126,67 @@ Domain ← AppCore ← AppInfrastructure
 
 `StoreCreditUsecase`、`AdvertiserDashboardUsecase`、`StoreAdBannerUsecase`、`LaunchSceneUseCase`等は現在これらのKeyを呼んでいる。AppCoreで宣言したDependencyKeyのLive具象生成をAppInfrastructureから設定する。`AppCore`の`static liveValue`で`HTTPClient`、`Amplify`、`StoreKitClient`などを直接組み立てない。
 
-### A3. AppCoreの共有状態: Swift Sharingを直接依存する案を第一候補に
+### A3. AppCoreの共有状態: **新規依存なしを最優先**（方式は実装前にPoC）
 
-`iOSApp/Sources/Application/**`には`import ComposableArchitecture`を使用するファイルが多数あり、例: `CreateRouteUseCase.swift`、`SaveLocationUseCase.swift`、`LaunchSceneUseCase.swift`、`RouteStateUpdates.swift`が`Shared<AppState?>`と`withLock`を使用している。
+`iOSApp/Sources/Application/**`の多数のUseCase（例: `CreateRouteUseCase.swift`、`SaveLocationUseCase.swift`、`LaunchSceneUseCase.swift`、`RouteStateUpdates.swift`）は現在`import ComposableArchitecture`を用い、`Shared<AppState?>`/`withLock`でアプリ全体の状態を読み書きする。**AppCoreからTCA本体を排除することが目標であり、swift-sharingの直接依存は最終手段**。現状を維持するためだけに新たなライブラリを追加しない。
 
-**推奨案:** TCA経由の`Shared`利用を`swift-sharing`製品の`Sharing`モジュールへの**直接依存**に変える。`AppCore`のmanifest依存を`.product(name: "Sharing", package: "swift-sharing")`とし、ソースでは`import Sharing`を用いる。TCAもSwift Sharingを依存として利用しているが、`AppCore`自身は`ComposableArchitecture`へ依存せず、`Shared<AppState?>`/ `withLock`/ 同期通知の既存設計を維持できる。採用時は現在のSwiftツールチェーンに適合する`swift-sharing`バージョンをTCAと整合させて固定する。
+優先的に検証する選択肢は次の通り。いずれも`sessionId`/`requestId`を用いた古いレスポンスの無視、並行リクエスト間の整合性、共有状態の観測、単体テスト容易性を実測で確認する。
 
-代案: `Binding`をUseCaseへ渡すとSwiftUI依存がCoreへ入るため不採用。`@Observable`参照モデルや`inout`は可能だが、`await`をまたぐ状態更新・複数UseCaseからの共有・排他更新・`sessionId`/ `requestId`整合性を別途実装する必要がある。今の段階で無理に置き換えない。
+| 優先度 | 案 | 依存 / 長所 | 注意点 |
+| --- | --- | --- | --- |
+| **1** | **非同期UseCaseは結果を返し、同期`inout AppState`更新を別関数にする** | Swift標準のみ、CoreがUI/状態管理ライブラリ非依存。副作用とState更新を分離 | Reducerに結果アクションを受け取る変更が必要。現在の複数UseCase更新箇所に広く波及 |
+| **2** | **`AppStateAccess`（読み取り＋同期`inout`更新クロージャ）をCoreで定義** | Swift標準のみ。呼び出し元が必要な状態管理実装を適合させ、既存`withLock`更新に近い使い勝手 | クロージャが原子的に更新することを所有者側で保証。非同期呼び出し中に排他を保持しない |
+| **3** | **Observationの`@Observable`と`@MainActor`な参照保持モデル** | Apple/Swift標準のObservationを利用し、3rd-party依存なし | TCAでの観測・Reducer状態との同期を含めSSOT所有方法を再設計。`@Observable`自体は排他・トランザクションを保証しない |
+| **4** | **SwiftUIの`Binding<AppState?>`** | 追加外部Package不要。読み書きAPIが単純 | AppCoreがSwiftUIに依存（UI層の逆依存）。`Binding`のget/setだけでは複合更新の原子性・並行安全性を保証しない。MainActor制約とTCA `@Shared`とのブリッジを確認 |
+| **最終手段** | **`swift-sharing`の`Sharing` Productへ直接依存** | 既存`Shared<AppState?>`/`withLock`を活用可能、TCA本体は不要 | Coreに第三者パッケージが追加される。上記方式で要求を満たせない場合のみ採用を検討 |
 
-`@ObservableState`、`@Presents`、`Effect`等は引き続きAppPresentation専用。AppUIは`ComposableArchitecture`への依存がなく、`Sharing`がAppCore経由で間接依存になることは許容する（TCAそのものを取り込む意味ではない）。`AppCore`中の`import ComposableArchitecture`は共有状態APIだけの利用であれば`import Sharing`に変更できるか全ファイル確認する。
+#### 第一候補: 非同期処理と同期的な状態変更を明確に分ける
+
+~~~swift
+// AppCore（概念例）
+struct CreateRouteUseCase {
+    // DataFetcherの抽象を注入
+    func callAsFunction(/* 入力 */) async throws -> RoutePack {
+        // API通信のみ。AppStateへの直接参照は持たない
+    }
+}
+
+func applyRouteResponse(
+    _ response: RoutePack,
+    context: RouteStateUpdateContext,
+    to state: inout AppState
+) {
+    guard state.sessionId == context.sessionId,
+          state.districtState?.requestId == context.districtRequestId
+    else { return }
+    // 既存の更新ロジック
+}
+
+// AppPresentation: reducerがEffectの結果を受け、同期処理中にstateを更新する。
+// 古い応答の無視に必要なcontextはリクエスト開始時に捕捉する。
+~~~
+
+`func save(appState: inout AppState) async`のように**actor隔離された共有状態を非同期`inout`で直接渡さない**。Reducerの`Effect.run`はescapingなので、`inout State`をそのままキャプチャして更新できない。非同期結果はAction経由で戻してから同期`inout`で反映する。
+
+#### 第二候補: 薄いAppStateAccess（必要なら）
+
+~~~swift
+// AppCore側の契約イメージ。外部Packageは不要。
+struct AppStateAccess: Sendable {
+    var snapshot: @Sendable () -> AppState?
+    var update: @Sendable (@Sendable (inout AppState?) -> Void) -> Void
+}
+~~~
+
+`AppPresentation`のアダプターは既存の`Shared.withLock`を用いて`update`の処理を同期・原子的に行う。`AppCore`には`Shared`型を公開しない。置き換えのテストでは`Mutex`/actor等を用いて同等の安全性を確かめる（具体的な`@Sendable`署名、Swift 6.2の隔離ルール、TCA状態への適用はPoCでコンパイル確認して確定する）。クロージャをまたいでlockを保持して`await`しない。
+
+#### Observation / Bindingの検証
+
+- Observationの場合、`@Observable final class AppStateHolder`のような所有者を`@MainActor`で持ち、更新を同期的なメソッドにする案を評価。Reducerと画面が同一インスタンスを参照できること、表示更新が適切に伝播すること、現在の`AppState`が保持するSession世代のガードが失われないことをPoCで確認する。
+- SwiftUIの`Binding`をAppCoreのUseCase引数に直接渡す案も比較するが、`Binding`のSwiftUI依存を許可する必要がある。特に並行更新をget/setに分割すると別Taskによる更新の上書きが発生しうるので、状態変更の排他やMainActor化を明示する。`@Observable`と`Binding`は同じ概念ではなく、Observationは値の観測、Bindingは値への読み書き口。
+- **採用判断**: 既存のUseCase/Featureへの変更量が許容できるなら1、既存の共有更新を多く残したいなら2を優先する。3/4は具体的な利点が示せる場合のみ。**swift-sharingは1〜4で実現できない要件が確認できた場合だけ採用**する。
+
+`@ObservableState`、`@Presents`、`Effect`等のTCA専用型はAppPresentationに留める。AppUIへのTCA依存が生じないことも確認する。
 
 ### A4. `iOSApp/Sources/Domain`は無条件で新Domainへ入れない
 
@@ -189,7 +241,7 @@ Domain ← AppCore ← AppInfrastructure
 1. **事前準備**: 現行HEADのiOS/Backend/Sharedビルド・テスト・依存グラフ、カバレッジとデプロイを記録。移設先のpublic APIを必要最小限で設計。
 2. **純粋な型の切り出し**: `PublicMapContent`、`YearlyPeriods`、`PointType`、`ImageEditMode`、`MapToast`、`AsyncValue`などを既存Xcode Target内でまず別ファイル化。振る舞いとUIを変更せずテストを追加/更新。
 3. **Backendの契約分割**: まず`Application.Error`をHTTP非依存のBackendCoreエラーへ分離し、HTTPエラー変換をAPIへ移動。そのうえでRepositoryProtocol/外部ClientProtocolとLiveを分け、HTTP ControllerをAPI境界として固定。DIのComposition Rootを作成。既存テストを維持。
-4. **Appの契約分割**: DataFetcher/Clientの契約とLiveを分け、AppStateのShared依存方針を確定。AppCoreが外側の型をimportしない状態を先に作る。
+4. **Appの契約分割**: DataFetcher/Clientの契約とLiveを分ける。まず非同期UseCaseの結果返却＋同期`inout`、次にクロージャ型`AppStateAccess`をPoC比較し、必要ならObservation/Bindingを検証する。swift-sharing追加は最終手段。AppCoreが外側の型をimportしない状態を先に作る。
 5. **モジュールの切り出し**: Domain→BackendCore/BackendDatabase/BackendInfrastructure（採用する場合）/BackendAPI→AppCore/AppInfrastructure→AppUI/AppPresentationの順にTargetを作り、移動。各段階でコンパイルとテスト。
 6. **単一manifest化とCI対応**: root Packageに収束、Xcode/Backend Docker/Actions/Xcode Cloud関連パスを更新。Linux依存解決不具合が出た場合のみmanifestの`#if`を追加。
 7. **検証/仕上げ**: 循環参照なし、正しいモジュール公開境界、テスト・カバレッジ・既存動作、Lambdaデプロイ、iOS署名/配布構成を確認後に完了。
@@ -201,8 +253,8 @@ Domain ← AppCore ← AppInfrastructure
 - [ ] ルート`Package.swift`と8 Library Target（推奨するBackendInfrastructureを採用する場合は9）、薄いBackend executable、現行iOSエントリからビルドできる。
 - [ ] `BackendCore`にHTTP Request/Response、DynamoDB、AWS SDK具象、Cognito/S3/SNS/AppStoreのLive実装が存在しない。`Application.Error`への依存も解消し、HTTP statusのマッピングがBackendAPIだけにある。`BackendAPI`にも外部ClientのLive実装を混在させない構成を優先。
 - [ ] `BackendDatabase`/`BackendAPI`からCoreへ向かう一方向依存で、Coreの`liveValue`が外側を生成しない。
-- [ ] `AppCore`が`AppInfrastructure`をimportせず、DataFetcher/Clientの契約が内側にある。共有状態は原則`Sharing`を直接利用し、`AppCore`から`import ComposableArchitecture`をなくす。既存の`withLock`原子性と古いレスポンス破棄を維持。
-- [ ] `AppUI`のソースに`ComposableArchitecture`、`StoreOf`、`Feature.State/Action`、`Reducer`の参照がない。AppCore経由の`Sharing`間接依存は許容する。
+- [ ] `AppCore`が`AppInfrastructure`をimportせず、DataFetcher/Clientの契約が内側にある。`inout` / `AppStateAccess` / Observation / Bindingを比較し**追加依存なしを優先**した共有状態方式を確定。`AppCore`から`import ComposableArchitecture`をなくし、原子的更新と古いレスポンス破棄を維持。
+- [ ] `AppUI`のソースに`ComposableArchitecture`、`StoreOf`、`Feature.State/Action`、`Reducer`の参照がない。`AppCore`へ不必要な外部Package依存を増やしていない。
 - [ ] 前述の`PublicMapContentView`、`PeriodListContentView`、`ImageEditContentView`などが独立型を使用し、TCA Featureのネスト型へ依存しない。
 - [ ] LinuxでBackend/Domainのビルドとテストが成功、iOSでAppのビルドと該当テストが成功（**実測**）。
 - [ ] Docker/CIの依存キャッシュ・coverage・Lambda起動・既存APIレスポンス・Appの動作に回帰がない。
