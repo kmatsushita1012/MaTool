@@ -31,8 +31,18 @@ struct PeriodController: PeriodControllerProtocol {
     
     func query(request: Request, next: @Sendable (Application.Request) async throws -> Application.Response) async throws -> Response {
         let festivalId = try request.parameter("festivalId", as: Festival.ID.self)
+        let year: Int?
+        do {
+            year = try request.parameter("year", as: Int.self)
+        } catch {
+            if request.parameters["year"] != nil {
+                throw Error.badRequest(localizedDescription: "yearは整数で指定してください。")
+            }
+            year = nil
+        }
+
         let result: [Period]
-        if let year = try? request.parameter("year", as: Int.self){
+        if let year {
             result = try await usecase.query(by: festivalId, year: year)
         } else {
             result = try await usecase.query(by: festivalId)
