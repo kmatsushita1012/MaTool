@@ -13,7 +13,7 @@ struct OtherRouterTest {
                 return try .success()
             }
         ))
-        let request = Application.Request.make(method: .get, path: "/periods/period-1")
+        let request = Application.Request.make(method: .get, path: "/v2/periods/period-1")
         let response = await app.handle(request)
 
         #expect(response.statusCode == 200)
@@ -84,7 +84,26 @@ struct OtherRouterTest {
         let request = Application.Request.make(method: .put, path: "/periods/period-1")
         let response = await app.handle(request)
 
-        #expect(response.statusCode == 200)
+        #expect(response.statusCode == 410)
+    }
+
+    @Test
+    func retiredPeriodGetPutDelete_410を返しControllerを呼ばない() async {
+        let controller = PeriodControllerMock(
+            getHandler: { _, _ in try .success() },
+            putHandler: { _, _ in try .success() },
+            deleteHandler: { _, _ in try .success() }
+        )
+        let app = make(periodController: controller)
+
+        for method in [Application.Method.get, .put, .delete] {
+            let response = await app.handle(.make(method: method, path: "/periods/period-1"))
+            #expect(response.statusCode == 410)
+        }
+
+        #expect(controller.getCallCount == 0)
+        #expect(controller.putCallCount == 0)
+        #expect(controller.deleteCallCount == 0)
     }
 
     @Test

@@ -32,9 +32,10 @@ extension RouteUsecaseProtocol {
 // MARK: - RouteUsecase
 struct RouteUsecase: RouteUsecaseProtocol {
     @Dependency(RouteRepositoryKey.self) var routeRepository
-    @Dependency(PeriodRepositoryKey.self) var periodRepository
     @Dependency(DistrictRepositoryKey.self) var districtRepository
     @Dependency(FestivalRepositoryKey.self) var festivalRepository
+    @Dependency(EditionRepositoryKey.self) var editionRepository
+    @Dependency(ActiveEditionRepositoryKey.self) var activeEditionRepository
     @Dependency(PointRepositoryKey.self) var pointRepository
     @Dependency(PassageRepositoryKey.self) var passageRepository
     
@@ -64,14 +65,12 @@ struct RouteUsecase: RouteUsecaseProtocol {
             case .year(let year):
                 return try await routeRepository.query(by: districtId, year: year)
             case .latest:
-                let (routes, _) = try await LatestPeriodRouteResolver.fetchLatestRoutes(
-                    districtId: districtId,
+                guard let edition = try await resolveActiveEdition(
                     festivalId: district.festivalId,
-                    nowYear: now.year,
-                    periodRepository: periodRepository,
-                    routeRepository: routeRepository
-                )
-                return routes
+                    activeEditionRepository: activeEditionRepository,
+                    editionRepository: editionRepository
+                ) else { return [] }
+                return try await routeRepository.query(by: districtId, editionId: edition.id)
             }
         }()
         let filtered = routes.filter{
@@ -121,7 +120,7 @@ struct RouteUsecase: RouteUsecaseProtocol {
         async let oldPointsTask = pointRepository.query(by: pack.route.id)
         async let oldPassagesTask = passageRepository.query(by: pack.route.id)
         let (oldPoints, oldPassages) = try await (oldPointsTask, oldPassagesTask)
-        let route = try await routeRepository.post(pack.route)
+        let route = try await routeRepository.put(pack.route)
         async let pointsTask = oldPoints.update(with: reindexedPoints, separateDeleteAndUpdate: true, repository: pointRepository)
         async let passagesTask = oldPassages.update(with: reindexedPassages, separateDeleteAndUpdate: true, repository: passageRepository)
         let (points, passages) = try await (pointsTask, passagesTask)

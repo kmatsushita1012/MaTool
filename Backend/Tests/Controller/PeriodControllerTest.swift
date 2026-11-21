@@ -14,7 +14,7 @@ struct PeriodControllerTest {
         })
         let subject = make(usecase: mock)
 
-        let request = Application.Request.make(method: .get, path: "/periods/period-1", parameters: ["periodId": "period-1"])
+        let request = Application.Request.make(method: .get, path: "/v2/periods/period-1", parameters: ["periodId": "period-1"])
         let response = try await subject.get(request: request, next: next)
         let actual = try Period.from(response.body)
 
@@ -27,12 +27,12 @@ struct PeriodControllerTest {
     func query_正常_年指定あり() async throws {
         let periods = [Period.mock(id: "period-1", festivalId: "festival-1")]
         var lastCalledFestivalId: String?
-        var lastCalledYear: Int?
+        var lastCalledType: PeriodQueryType?
 
         let mock = PeriodUsecaseMock(
-            queryByYearHandler: { festivalId, year in
+            queryByTypeHandler: { festivalId, type in
                 lastCalledFestivalId = festivalId
-                lastCalledYear = year
+                lastCalledType = type
                 return periods
             },
             queryHandler: { _ in [] }
@@ -41,7 +41,7 @@ struct PeriodControllerTest {
 
         let request = Application.Request.make(
             method: .get,
-            path: "/festivals/festival-1/periods/2026",
+            path: "/v2/festivals/festival-1/periods",
             parameters: ["festivalId": "festival-1", "year": "2026"]
         )
 
@@ -51,20 +51,24 @@ struct PeriodControllerTest {
         #expect(response.statusCode == 200)
         #expect(actual == periods)
         #expect(lastCalledFestivalId == "festival-1")
-        #expect(lastCalledYear == 2026)
-        #expect(mock.queryByYearCallCount == 1)
+        #expect(lastCalledType == .year(2026))
+        #expect(mock.queryByTypeCallCount == 1)
         #expect(mock.queryCallCount == 0)
     }
 
     @Test
     func query_正常_年指定なし() async throws {
         let periods = [Period.mock(id: "period-1", festivalId: "festival-1")]
-        let mock = PeriodUsecaseMock(queryHandler: { _ in periods })
+        var lastCalledType: PeriodQueryType?
+        let mock = PeriodUsecaseMock(queryByTypeHandler: { _, type in
+            lastCalledType = type
+            return periods
+        })
         let subject = make(usecase: mock)
 
         let request = Application.Request.make(
             method: .get,
-            path: "/festivals/festival-1/periods",
+            path: "/v2/festivals/festival-1/periods",
             parameters: ["festivalId": "festival-1"]
         )
 
@@ -73,7 +77,28 @@ struct PeriodControllerTest {
 
         #expect(response.statusCode == 200)
         #expect(actual == periods)
-        #expect(mock.queryCallCount == 1)
+        #expect(lastCalledType == .all)
+        #expect(mock.queryByTypeCallCount == 1)
+    }
+
+    @Test
+    func query_正常_ActiveEdition指定() async throws {
+        var lastCalledType: PeriodQueryType?
+        let mock = PeriodUsecaseMock(queryByTypeHandler: { _, type in
+            lastCalledType = type
+            return []
+        })
+        let subject = make(usecase: mock)
+        let request = Application.Request.make(
+            method: .get,
+            path: "/v2/festivals/festival-1/periods",
+            parameters: ["festivalId": "festival-1", "year": "latest"]
+        )
+
+        let response = try await subject.query(request: request, next: next)
+
+        #expect(response.statusCode == 200)
+        #expect(lastCalledType == .latest)
     }
 
     @Test

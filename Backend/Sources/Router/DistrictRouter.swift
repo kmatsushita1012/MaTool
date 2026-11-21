@@ -18,7 +18,8 @@ struct DistrictRouter: Router {
         app.get(path: "/districts/:districtId/launch", sceneController.launchDistrict)
         app.get(path: "/districts/:districtId/launch-festival", sceneController.launchFestival)
         // MARK: - Route
-        app.get(path: "/districts/:districtId/routes", routeController.query)
+        app.get(path: "/v2/districts/:districtId/routes", routeController.query)
+        app.get(path: "/districts/:districtId/routes") { _, _ in .gone() }
         app.post(path: "/districts/:districtId/routes", routeController.post)
         // MARK: - Location
         app.get(path: "/districts/:districtId/locations", locationController.get)

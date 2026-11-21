@@ -60,6 +60,25 @@ struct FestivalRouterTest {
     }
 
     @Test
+    func periodList_旧Pathは410でv2PathはControllerへ届く() async {
+        let controller = PeriodControllerMock(
+            queryHandler: { _, _ in try .success() },
+            postHandler: { _, _ in try .success() }
+        )
+        let app = make(periodController: controller)
+
+        let v2Response = await app.handle(.make(method: .get, path: "/v2/festivals/festival-1/periods"))
+        let oldGetResponse = await app.handle(.make(method: .get, path: "/festivals/festival-1/periods"))
+        let oldPostResponse = await app.handle(.make(method: .post, path: "/festivals/festival-1/periods"))
+
+        #expect(v2Response.statusCode == 200)
+        #expect(oldGetResponse.statusCode == 410)
+        #expect(oldPostResponse.statusCode == 410)
+        #expect(controller.queryCallCount == 1)
+        #expect(controller.postCallCount == 0)
+    }
+
+    @Test
     func launchFestival_正常_別祭典の管理者には公開用データのみ返す() async {
         let festival = Festival.mock(id: "festival-target")
         let users: [UserRole] = [
