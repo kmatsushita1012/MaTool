@@ -32,6 +32,7 @@ struct ResponseEncodeTests {
         #expect(response.statusCode == 410)
         #expect(response.headers["Content-Type"] == "application/json")
         #expect(body.message == "Gone")
+        #expect(body.localizedDescription == "このAPIは廃止されました。アプリを最新バージョンにアップデートしてください。")
     }
 
     @Test("エンコードに失敗したら成功レスポンスにせずエラーを返す")

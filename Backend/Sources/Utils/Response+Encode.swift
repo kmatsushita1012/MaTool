@@ -29,7 +29,7 @@ extension Application.Response {
     }
 
     static func gone() -> Self {
-        let body = ErrorResponse(message: "Gone", localizedDescription: "このAPIは廃止されました。")
+        let body = ErrorResponse(message: "Gone", localizedDescription: "このAPIは廃止されました。アプリを最新バージョンにアップデートしてください。")
         return .init(
             statusCode: 410,
             headers: ["Content-Type": "application/json"],
