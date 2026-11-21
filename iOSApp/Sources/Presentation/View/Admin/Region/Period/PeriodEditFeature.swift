@@ -33,7 +33,6 @@ struct PeriodEditFeature {
     enum Action: Equatable, BindableAction {
         case binding(BindingAction<State>)
         case saveTapped
-        case cancelTapped
         case deleteTapped
         case dateChanged(SimpleDate)
         case saveReceived(AppResult<Period>)
@@ -55,8 +54,6 @@ struct PeriodEditFeature {
             case .saveTapped:
                 state.isSaving = true
                 return saveEffect(mode: state.mode, period: state.period, appState: state.$appState)
-            case .cancelTapped:
-                return .dismiss
             case .deleteTapped:
                 guard state.mode == .update else { return .none }
                 state.isDeleting = true

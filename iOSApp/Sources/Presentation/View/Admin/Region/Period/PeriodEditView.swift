@@ -7,10 +7,8 @@
 
 import SwiftUI
 import ComposableArchitecture
-import NavigationSwipeControl
 import Shared
 
-@available(iOS 17.0, *)
 struct PeriodEditScreen: View {
     @SwiftUI.Bindable var store: StoreOf<PeriodEditFeature>
     
@@ -18,6 +16,7 @@ struct PeriodEditScreen: View {
         PeriodEditContentView(
             modeTitle: store.mode.title,
             isCreateMode: store.isCreateMode,
+            canDelete: !store.isCreateMode,
             date: Binding(
                 get: { store.period.date },
                 set: { store.send(.dateChanged($0)) }
@@ -28,22 +27,19 @@ struct PeriodEditScreen: View {
             isLoading: store.isLoading,
             isSaving: store.isSaving,
             isDeleting: store.isDeleting,
-            onCancelTapped: { store.send(.cancelTapped) },
             onSaveTapped: { store.send(.saveTapped) },
             onDeleteTapped: { store.send(.deleteTapped) }
         )
         .alert($store.scope(state: \.alert, action: \.alert))
-        .dismissible(backButton: false)
     }
 }
 
-@available(iOS 17.0, *)
 typealias PeriodEditView = PeriodEditScreen
 
-@available(iOS 17.0, *)
 struct PeriodEditContentView: View {
     let modeTitle: String
     let isCreateMode: Bool
+    let canDelete: Bool
     @Binding var date: SimpleDate
     @Binding var title: String
     @Binding var start: SimpleTime
@@ -51,7 +47,6 @@ struct PeriodEditContentView: View {
     let isLoading: Bool
     let isSaving: Bool
     let isDeleting: Bool
-    let onCancelTapped: () -> Void
     let onSaveTapped: () -> Void
     let onDeleteTapped: () -> Void
 
@@ -74,18 +69,19 @@ struct PeriodEditContentView: View {
                 TimePicker("終了時刻", selection: $end)
             }
             
-            Section{
-                Button("削除", systemImage: "trash", role: .destructive) {
-                    onDeleteTapped()
+            if canDelete {
+                Section {
+                    Button("削除", systemImage: "trash", role: .destructive) {
+                        onDeleteTapped()
+                    }
+                    .loadingIndicator(isLoading: isDeleting)
+                    .foregroundStyle(.red)
                 }
-                .loadingIndicator(isLoading: isDeleting)
-                .foregroundStyle(.red)
             }
         }
         .navigationTitle(modeTitle)
-        .toolbar{
-            ToolbarCancelButton(isDisabled: isLoading, action: onCancelTapped)
-            ToolbarSaveButton(isLoading: isSaving, action: onSaveTapped)
+        .toolbar {
+            ToolbarDoneButton(isDisabled: isLoading || isSaving, action: onSaveTapped)
         }
     }
 }
@@ -94,6 +90,7 @@ struct PeriodEditContentView: View {
     PeriodEditContentView(
         modeTitle: "",
         isCreateMode: true,
+        canDelete: false,
         date: .constant(.now),
         title: .constant(""),
         start: .constant(.now),
@@ -101,7 +98,6 @@ struct PeriodEditContentView: View {
         isLoading: false,
         isSaving: false,
         isDeleting: false,
-        onCancelTapped: {},
         onSaveTapped: {},
         onDeleteTapped: {}
     )
