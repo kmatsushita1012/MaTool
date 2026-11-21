@@ -9,28 +9,24 @@ import ComposableArchitecture
 import NavigationSwipeControl
 import SwiftUI
 
-@available(iOS 17.0, *)
 struct FestivalDashboardScreen: View {
     @SwiftUI.Bindable var store: StoreOf<FestivalDashboardFeature>
 
     var body: some View {
-        WithPerceptionTracking {
-            FestivalDashboardContentView(
-                festivalTitle: festivalTitle,
-                isPeriodsLoading: store.isApiLoading,
-                isSettingsLoading: store.isSettingsLoading,
-                isSignOutLoading: store.isAuthLoading,
-                onEditTapped: { store.send(.onEdit) },
-                onPeriodsTapped: { store.send(.periodTapped) },
-                onDistrictsTapped: { store.send(.districtsTapped) },
-                onChangePasswordTapped: { store.send(.changePasswordTapped) },
-                onUpdateEmailTapped: { store.send(.updateEmailTapped) },
-                onSignOutTapped: { store.send(.signOutTapped) },
-                onSettingsTapped: { store.send(.settingsTapped) }
-            )
-            .modifier(FestivalDashboardDestinations(store: store))
-            .alert($store.scope(state: \.alert, action: \.alert))
-        }
+        FestivalDashboardContentView(
+            festivalTitle: festivalTitle,
+            isSettingsLoading: store.isSettingsLoading,
+            isSignOutLoading: store.isAuthLoading,
+            onEditTapped: { store.send(.onEdit) },
+            onEditionsTapped: { store.send(.editionsTapped) },
+            onDistrictsTapped: { store.send(.districtsTapped) },
+            onChangePasswordTapped: { store.send(.changePasswordTapped) },
+            onUpdateEmailTapped: { store.send(.updateEmailTapped) },
+            onSignOutTapped: { store.send(.signOutTapped) },
+            onSettingsTapped: { store.send(.settingsTapped) }
+        )
+        .modifier(FestivalDashboardDestinations(store: store))
+        .alert($store.scope(state: \.alert, action: \.alert))
     }
 
     private var festivalTitle: String {
@@ -38,7 +34,6 @@ struct FestivalDashboardScreen: View {
     }
 }
 
-@available(iOS 17.0, *)
 private struct FestivalDashboardDestinations: ViewModifier {
     @SwiftUI.Bindable var store: StoreOf<FestivalDashboardFeature>
 
@@ -50,8 +45,8 @@ private struct FestivalDashboardDestinations: ViewModifier {
             .navigationDestination(item: $store.scope(state: \.destination?.districts, action: \.destination.districts)) { store in
                 HeadquarterDistrictListView(store: store)
             }
-            .navigationDestination(item: $store.scope(state: \.destination?.periods, action: \.destination.periods)) { store in
-                PeriodListView(store: store)
+            .navigationDestination(item: $store.scope(state: \.destination?.editionList, action: \.destination.editionList)) { store in
+                EditionListView(store: store)
             }
             .navigationDestination(item: $store.scope(state: \.destination?.changePassword, action: \.destination.changePassword)) { store in
                 ChangePasswordView(store: store)
@@ -65,17 +60,14 @@ private struct FestivalDashboardDestinations: ViewModifier {
     }
 }
 
-@available(iOS 17.0, *)
 typealias FestivalDashboardView = FestivalDashboardScreen
 
-@available(iOS 17.0, *)
 struct FestivalDashboardContentView: View {
     let festivalTitle: String
-    let isPeriodsLoading: Bool
     let isSettingsLoading: Bool
     let isSignOutLoading: Bool
     let onEditTapped: () -> Void
-    let onPeriodsTapped: () -> Void
+    let onEditionsTapped: () -> Void
     let onDistrictsTapped: () -> Void
     let onChangePasswordTapped: () -> Void
     let onUpdateEmailTapped: () -> Void
@@ -83,7 +75,7 @@ struct FestivalDashboardContentView: View {
     let onSettingsTapped: () -> Void
 
     private var isNavigationDisabled: Bool {
-        isPeriodsLoading || isSettingsLoading || isSignOutLoading
+        isSettingsLoading || isSignOutLoading
     }
 
     var body: some View {
@@ -98,7 +90,7 @@ struct FestivalDashboardContentView: View {
                 NavigationItemView(
                     title: "日程",
                     iconName: "calendar",
-                    onTap: onPeriodsTapped
+                    onTap: onEditionsTapped
                 )
                 .disabled(isNavigationDisabled)
             }
@@ -138,11 +130,10 @@ struct FestivalDashboardContentView: View {
 #Preview {
     FestivalDashboardContentView(
         festivalTitle: "",
-        isPeriodsLoading: false,
         isSettingsLoading: false,
         isSignOutLoading: false,
         onEditTapped: {},
-        onPeriodsTapped: {},
+        onEditionsTapped: {},
         onDistrictsTapped: {},
         onChangePasswordTapped: {},
         onUpdateEmailTapped: {},
