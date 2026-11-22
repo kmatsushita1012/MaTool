@@ -8,6 +8,7 @@ struct LaunchSceneUseCaseTests {
     private func festivalPack() -> LaunchFestivalPack {
         LaunchFestivalPack(
             festival: AppStateFixture.festival(),
+            edition: nil,
             districts: [AppStateFixture.district()],
             periods: [AppStateFixture.period()],
             locations: [], checkpoints: [], hazardSections: []
@@ -17,8 +18,33 @@ struct LaunchSceneUseCaseTests {
     private func districtPack() -> LaunchDistrictPack {
         let route = AppStateFixture.route()
         return LaunchDistrictPack(
+            editionId: nil,
             performances: [], routes: [route], points: [],
             passages: [], currentRouteId: route.id
+        )
+    }
+
+    private func festivalPack(edition: Edition) -> LaunchFestivalPack {
+        LaunchFestivalPack(
+            festival: AppStateFixture.festival(),
+            edition: edition,
+            districts: [AppStateFixture.district()],
+            periods: [],
+            locations: [],
+            checkpoints: [],
+            hazardSections: []
+        )
+    }
+
+    private func districtPack(editionID: Edition.ID) -> LaunchDistrictPack {
+        let route = AppStateFixture.route()
+        return LaunchDistrictPack(
+            editionId: editionID,
+            performances: [],
+            routes: [route],
+            points: [],
+            passages: [],
+            currentRouteId: route.id
         )
     }
 
@@ -97,6 +123,61 @@ struct LaunchSceneUseCaseTests {
         #expect(state.wrappedValue?.selectedDistrict?.id == "district")
         #expect(state.wrappedValue?.routeState?.route.id == "route")
         #expect(Set(await fetcher.requestedResources()) == Set(["festival", "district"]))
+    }
+
+    @Test("起動時のEdition不一致ではFestivalとDistrictを両方再取得してから状態を作る")
+    func retriesMismatchedLaunchBeforeBuildingState() async {
+        var auth = AuthProviderSpy().client
+        auth.initialize = {}
+        auth.getUserRole = { .guest }
+        let firstEdition = Edition(id: "old", festivalId: "festival", year: 2026)
+        let currentEdition = Edition(id: "current", festivalId: "festival", year: 2027)
+        let fetcher = LaunchPairSequenceDataFetcherSpy(
+            festivalResponses: [festivalPack(edition: firstEdition), festivalPack(edition: currentEdition)],
+            districtResponses: [districtPack(editionID: currentEdition.id), districtPack(editionID: currentEdition.id)]
+        )
+        let state = Shared<AppState?>(value: nil)
+        let useCase = withDependencies {
+            $0.installTestSpies()
+            $0.authProvider = auth
+            $0[UserDefaltsManagerKey.self] = DefaultUserDefaultsSpy(festivalId: "festival", districtId: "district")
+            $0[SceneDataFetcherKey.self] = fetcher
+            $0[AppStatusClientKey.self] = AppStatusClientSpy()
+        } operation: { LaunchSceneUseCase() }
+
+        let (result, _) = await useCase(appState: state)
+
+        #expect(result == .district(.guest, "route"))
+        #expect(state.wrappedValue?.festivalState.edition?.id == currentEdition.id)
+        #expect(state.wrappedValue?.districtState?.editionId == currentEdition.id)
+        #expect(await fetcher.callCounts().festival == 2)
+        #expect(await fetcher.callCounts().district == 2)
+    }
+
+    @Test("再取得後もEditionが不一致ならAppStateを作らない")
+    func persistentLaunchMismatchDoesNotBuildState() async {
+        var auth = AuthProviderSpy().client
+        auth.initialize = {}
+        auth.getUserRole = { .guest }
+        let fetcher = LaunchPairSequenceDataFetcherSpy(
+            festivalResponses: [festivalPack(edition: Edition(id: "festival-edition", festivalId: "festival", year: 2026))],
+            districtResponses: [districtPack(editionID: "district-edition")]
+        )
+        let state = Shared<AppState?>(value: nil)
+        let useCase = withDependencies {
+            $0.installTestSpies()
+            $0.authProvider = auth
+            $0[UserDefaltsManagerKey.self] = DefaultUserDefaultsSpy(festivalId: "festival", districtId: "district")
+            $0[SceneDataFetcherKey.self] = fetcher
+            $0[AppStatusClientKey.self] = AppStatusClientSpy()
+        } operation: { LaunchSceneUseCase() }
+
+        let (result, _) = await useCase(appState: state)
+
+        if case .error = result {} else { Issue.record("Edition不一致の起動をエラーにしませんでした") }
+        #expect(state.wrappedValue == nil)
+        #expect(await fetcher.callCounts().festival == 2)
+        #expect(await fetcher.callCounts().district == 2)
     }
 
     @Test("認証状態の取得に失敗してもゲストとして既定祭典を開ける")

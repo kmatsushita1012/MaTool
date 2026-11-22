@@ -17,7 +17,7 @@ struct RouteDataFetcher: RouteDataFetcherProtocol {
     @Dependency(HTTPClientKey.self) var client
 
     func fetchAll(districtID: District.ID, query: Query) async throws -> [Route] {
-        try await client.get(path: "/districts/\(districtID)/routes", query: query.queryItems, accessToken: await getToken())
+        try await client.get(path: "/v2/districts/\(districtID)/routes", query: query.queryItems, accessToken: await getToken())
     }
 
     func fetch(routeID: Route.ID) async throws -> RoutePack {

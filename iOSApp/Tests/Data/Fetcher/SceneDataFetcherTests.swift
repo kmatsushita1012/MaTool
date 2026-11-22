@@ -22,7 +22,7 @@ struct SceneDataFetcherTests {
 
         #expect(result.festival == pack.festival)
         let request = try #require(await spy.calls().first)
-        #expect(request.path == "/festivals/festival/launch")
+        #expect(request.path == "/v2/festivals/festival/launch")
     }
 
     @Test("地区の起動データは指定された地区IDを受け渡す")
@@ -43,7 +43,7 @@ struct SceneDataFetcherTests {
         #expect(result.routes.isEmpty)
         let request = try #require(await spy.calls().first)
         #expect(request.method == "GET")
-        #expect(request.path == "/districts/district/launch")
+        #expect(request.path == "/v2/districts/district/launch")
         #expect(request.query.isEmpty)
         #expect(request.isCache == false)
     }
@@ -66,7 +66,7 @@ struct SceneDataFetcherTests {
         #expect(result.festival == pack.festival)
         let request = try #require(await spy.calls().first)
         #expect(request.method == "GET")
-        #expect(request.path == "/districts/district/launch-festival")
+        #expect(request.path == "/v2/districts/district/launch-festival")
         #expect(request.isCache == false)
     }
 
@@ -86,7 +86,7 @@ struct SceneDataFetcherTests {
         }
 
         let request = try #require(await spy.calls().first)
-        #expect(request.path == "/districts/district/launch")
+        #expect(request.path == "/v2/districts/district/launch")
         #expect(request.query == ["periodId": "period"])
         #expect(request.isCache == false)
     }
@@ -107,7 +107,7 @@ struct SceneDataFetcherTests {
         }
 
         let request = try #require(await spy.calls().first)
-        #expect(request.path == "/districts/district/launch")
+        #expect(request.path == "/v2/districts/district/launch")
         #expect(request.query.isEmpty)
     }
 
@@ -124,7 +124,7 @@ struct SceneDataFetcherTests {
                 try await SceneDataFetcher().launchFestival(festivalId: "festival")
             }
         }
-        #expect(await spy.calls().map(\.path) == ["/festivals/festival/launch"])
+        #expect(await spy.calls().map(\.path) == ["/v2/festivals/festival/launch"])
     }
 
 }

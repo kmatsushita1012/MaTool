@@ -16,6 +16,7 @@ struct EditionEditFeature {
         var isActivating = false
         var hasLoaded = false
         var hasLoadError = false
+        @Shared fileprivate var appState: AppState?
         @Presents var periodEditor: PeriodDraftEditFeature.State?
         @Presents var alert: AlertFeature.State?
 
@@ -23,20 +24,32 @@ struct EditionEditFeature {
         var isDirty: Bool { periods != serverPeriods }
         var isBusy: Bool { isLoading || isSaving || isActivating }
 
-        init(festivalID: Festival.ID, edition: Edition, activeEditionID: Edition.ID?) {
+        init(
+            festivalID: Festival.ID,
+            edition: Edition,
+            activeEditionID: Edition.ID?,
+            appState: Shared<AppState?> = Shared(value: nil)
+        ) {
             self.festivalID = festivalID
             self.edition = edition
             self.periods = []
             self.serverPeriods = []
             self.activeEditionID = activeEditionID
+            self._appState = appState
         }
 
-        init(festivalID: Festival.ID, pack: EditionPack, activeEditionID: Edition.ID?) {
+        init(
+            festivalID: Festival.ID,
+            pack: EditionPack,
+            activeEditionID: Edition.ID?,
+            appState: Shared<AppState?> = Shared(value: nil)
+        ) {
             self.festivalID = festivalID
             self.edition = pack.edition
             self.periods = pack.periods.sorted()
             self.serverPeriods = pack.periods.sorted()
             self.activeEditionID = activeEditionID
+            self._appState = appState
             self.hasLoaded = true
         }
     }
@@ -50,7 +63,7 @@ struct EditionEditFeature {
         case saveTapped
         case saveReceived(AppResult<EditionPack>)
         case activateTapped
-        case activationReceived(AppResult<ActiveEdition>)
+        case activationReceived(AppResult<EditionActivationResult>)
         case packReceived(AppResult<EditionPack>)
         case serverSnapshotReceived(AppResult<EditionPack>)
         case periodEditor(PresentationAction<PeriodDraftEditFeature.Action>)
@@ -58,6 +71,8 @@ struct EditionEditFeature {
     }
 
     @Dependency(EditionDataFetcherKey.self) private var editionDataFetcher
+    @Dependency(SaveEditionPackUseCaseKey.self) private var saveEditionPackUseCase
+    @Dependency(ActivateEditionUseCaseKey.self) private var activateEditionUseCase
 
     var body: some ReducerOf<Self> {
         BindingReducer()
@@ -82,8 +97,9 @@ struct EditionEditFeature {
                 guard !state.isBusy, state.hasLoaded else { return .none }
                 state.isSaving = true
                 let pack = EditionPack(edition: state.edition, periods: state.periods.sorted())
+                let appState = state.$appState
                 return .task(Action.saveReceived) {
-                    try await editionDataFetcher.update(pack)
+                    try await saveEditionPackUseCase(pack, appState: appState)
                 }
             case .saveReceived(.success(let pack)):
                 state.isSaving = false
@@ -99,13 +115,22 @@ struct EditionEditFeature {
             case .activateTapped:
                 guard !state.isBusy, state.hasLoaded, !state.isActive, !state.isDirty else { return .none }
                 state.isActivating = true
+                let appState = state.$appState
                 return .task(Action.activationReceived) { [festivalID = state.festivalID, editionID = state.edition.id] in
-                    try await editionDataFetcher.activate(festivalID: festivalID, editionID: editionID)
+                    try await activateEditionUseCase(
+                        festivalID: festivalID,
+                        editionID: editionID,
+                        appState: appState
+                    )
                 }
-            case .activationReceived(.success(let activeEdition)):
+            case .activationReceived(.success(let result)):
                 state.isActivating = false
-                state.activeEditionID = activeEdition.editionId
-                state.alert = AlertFeature.success("有効な年度を切り替えました。")
+                state.activeEditionID = result.activeEdition.editionId
+                if let error = result.appStateReloadError {
+                    state.alert = AlertFeature.error("年度は切り替わりましたが、起動データを再取得できませんでした。\n\(error.message)")
+                } else {
+                    state.alert = AlertFeature.success("有効な年度に合わせて起動データを更新しました。")
+                }
                 return .none
             case .activationReceived(.failure(let error)):
                 state.isActivating = false

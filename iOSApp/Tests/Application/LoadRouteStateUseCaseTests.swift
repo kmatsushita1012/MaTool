@@ -117,8 +117,10 @@ private struct RouteLoadingFixture {
             base: Coordinate(latitude: 35, longitude: 139)
         )
         let district = District(id: "district", name: "District", festivalId: festival.id)
+        let edition = Edition(id: "edition", festivalId: festival.id, year: 2026)
         let period = Period(
             id: "period",
+            editionId: edition.id,
             festivalId: festival.id,
             date: SimpleDate(year: 2026, month: 10, day: 3),
             start: SimpleTime(hour: 9, minute: 0),
@@ -139,6 +141,7 @@ private struct RouteLoadingFixture {
         appState = Shared(value: AppState(
             festivalPack: LaunchFestivalPack(
                 festival: festival,
+                edition: edition,
                 districts: [district],
                 periods: [period],
                 locations: [],
@@ -146,6 +149,7 @@ private struct RouteLoadingFixture {
                 hazardSections: []
             ),
             districtPack: LaunchDistrictPack(
+                editionId: edition.id,
                 performances: [],
                 routes: [route],
                 points: [],

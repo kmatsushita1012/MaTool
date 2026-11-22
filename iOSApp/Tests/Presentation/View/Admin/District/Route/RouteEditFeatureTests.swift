@@ -108,8 +108,11 @@ struct RouteEditFeatureTests {
             base: Coordinate(latitude: 35, longitude: 139)
         )
         let district = District(id: "district", name: "District", festivalId: festival.id)
+        let currentEdition = Edition(id: "current-edition", festivalId: festival.id, year: 2026)
+        let pastEdition = Edition(id: "past-edition", festivalId: festival.id, year: 2025)
         let currentPeriod = Period(
             id: "current-period",
+            editionId: currentEdition.id,
             festivalId: festival.id,
             date: SimpleDate(year: 2026, month: 10, day: 3),
             start: SimpleTime(hour: 9, minute: 0),
@@ -117,6 +120,7 @@ struct RouteEditFeatureTests {
         )
         let pastPeriod = Period(
             id: "past-period",
+            editionId: pastEdition.id,
             festivalId: festival.id,
             date: SimpleDate(year: 2025, month: 10, day: 4),
             start: SimpleTime(hour: 9, minute: 0),

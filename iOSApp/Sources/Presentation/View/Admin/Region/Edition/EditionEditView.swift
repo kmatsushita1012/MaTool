@@ -113,29 +113,6 @@ struct EditionEditContentView: View {
     }
 }
 
-private struct PeriodDraftEditView: View {
-    @SwiftUI.Bindable var store: StoreOf<PeriodDraftEditFeature>
-
-    var body: some View {
-        PeriodEditContentView(
-            modeTitle: store.isCreateMode ? "日程を追加" : "日程を編集",
-            isCreateMode: store.isCreateMode,
-            canDelete: !store.isCreateMode,
-            date: Binding(
-                get: { store.period.date },
-                set: { store.send(.dateChanged($0)) }
-            ),
-            title: $store.period.title,
-            start: $store.period.start,
-            end: $store.period.end,
-            isLoading: false,
-            isSaving: false,
-            isDeleting: false,
-            onSaveTapped: { store.send(.saveTapped) },
-            onDeleteTapped: { store.send(.deleteTapped) }
-        )
-    }
-}
 
 #Preview {
     EditionEditContentView(

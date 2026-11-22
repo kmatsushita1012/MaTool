@@ -2,7 +2,7 @@ import Foundation
 import Shared
 
 struct FestivalState: Equatable, Sendable {
-    let year: Int
+    var edition: Edition?
     var festival: Festival
     var districts: [District]
     var periods: [Period]
@@ -11,7 +11,7 @@ struct FestivalState: Equatable, Sendable {
     var floatLocations: [FloatLocation]
 
     init(_ pack: LaunchFestivalPack) {
-        year = pack.year
+        edition = pack.edition
         festival = pack.festival
         districts = pack.districts
         periods = pack.periods
@@ -49,6 +49,7 @@ struct RouteState: Equatable, Sendable {
 struct DistrictState: Equatable, Sendable {
     let districtId: District.ID
     let requestId: UUID
+    let editionId: Edition.ID?
     var performances: [Performance]
     var routes: [Route]
 
@@ -59,6 +60,7 @@ struct DistrictState: Equatable, Sendable {
     ) {
         self.districtId = districtId
         self.requestId = requestId
+        editionId = pack.editionId
         performances = pack.performances
         routes = pack.routes
     }

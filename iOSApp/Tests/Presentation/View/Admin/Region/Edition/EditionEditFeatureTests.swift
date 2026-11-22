@@ -20,6 +20,7 @@ struct EditionEditFeatureTests {
         )
         let response = EditionPack(edition: edition, periods: [edited])
         let spy = makeSpy(edition: edition, pack: response)
+        let saveSpy = SaveEditionPackUseCaseSpy(response: response)
         let store = TestStore(initialState: EditionEditFeature.State(
             festivalID: edition.festivalId,
             pack: EditionPack(edition: edition, periods: [original]),
@@ -28,6 +29,7 @@ struct EditionEditFeatureTests {
             EditionEditFeature()
         } withDependencies: {
             $0[EditionDataFetcherKey.self] = spy
+            $0[SaveEditionPackUseCaseKey.self] = saveSpy
         }
         store.exhaustivity = .off
 
@@ -40,7 +42,8 @@ struct EditionEditFeatureTests {
 
         await store.send(.saveTapped)
         await store.receive(.saveReceived(.success(response)))
-        #expect(await spy.calls() == [.update(2026, ["period"])])
+        #expect(await saveSpy.packs() == [EditionPack(edition: edition, periods: [edited])])
+        #expect(await spy.calls().isEmpty)
         #expect(store.state.periods == [edited])
         #expect(!store.state.isDirty)
         await store.finish()
@@ -53,6 +56,7 @@ struct EditionEditFeatureTests {
         let original = period(id: "period", edition: edition)
         let emptyPack = EditionPack(edition: edition, periods: [])
         let spy = makeSpy(edition: edition, pack: emptyPack)
+        let saveSpy = SaveEditionPackUseCaseSpy(response: emptyPack)
         let store = TestStore(initialState: EditionEditFeature.State(
             festivalID: edition.festivalId,
             pack: EditionPack(edition: edition, periods: [original]),
@@ -61,6 +65,7 @@ struct EditionEditFeatureTests {
             EditionEditFeature()
         } withDependencies: {
             $0[EditionDataFetcherKey.self] = spy
+            $0[SaveEditionPackUseCaseKey.self] = saveSpy
         }
         store.exhaustivity = .off
 
@@ -72,18 +77,21 @@ struct EditionEditFeatureTests {
 
         await store.send(.saveTapped)
         await store.receive(.saveReceived(.success(emptyPack)))
-        #expect(await spy.calls() == [.update(2026, [])])
+        #expect(await saveSpy.packs() == [emptyPack])
+        #expect(await spy.calls().isEmpty)
         #expect(store.state.periods.isEmpty)
         await store.finish()
     }
 
-    @Test("有効化は保存とは別のAPI操作で、Periodが0件でも実行できる")
+    @Test("Periodが0件でもEdition有効化UseCaseを実行する")
     @MainActor
     func activationIsSeparateAndAllowsEmptyEdition() async {
         let edition = edition()
         let pack = EditionPack(edition: edition, periods: [])
         let active = ActiveEdition(festivalId: edition.festivalId, editionId: edition.id)
+        let activationResult = EditionActivationResult(activeEdition: active, appStateReloadError: nil)
         let spy = makeSpy(edition: edition, pack: pack, activeEdition: active)
+        let activateSpy = ActivateEditionUseCaseSpy(response: activationResult)
         let store = TestStore(initialState: EditionEditFeature.State(
             festivalID: edition.festivalId,
             pack: pack,
@@ -92,13 +100,16 @@ struct EditionEditFeatureTests {
             EditionEditFeature()
         } withDependencies: {
             $0[EditionDataFetcherKey.self] = spy
+            $0[ActivateEditionUseCaseKey.self] = activateSpy
         }
         store.exhaustivity = .off
 
         await store.send(.activateTapped)
-        await store.receive(.activationReceived(.success(active)))
+        await store.receive(.activationReceived(.success(activationResult)))
         #expect(store.state.isActive)
-        #expect(await spy.calls() == [.activate("festival", "edition")])
+        #expect(store.state.alert == AlertFeature.success("有効な年度に合わせて起動データを更新しました。"))
+        #expect(await activateSpy.calls() == [.init(festivalID: "festival", editionID: "edition")])
+        #expect(await spy.calls().isEmpty)
         await store.finish()
     }
 

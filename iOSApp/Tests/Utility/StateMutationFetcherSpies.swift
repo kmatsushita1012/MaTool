@@ -33,22 +33,6 @@ actor PeriodDataFetcherSpy: PeriodDataFetcherProtocol {
         return response
     }
 
-    func update(_ period: Period) async throws -> Period {
-        operations.append("update:\(period.id)")
-        if shouldFail { throw FetcherTestError.failed }
-        return response
-    }
-
-    func create(_ period: Period) async throws -> Period {
-        operations.append("create:\(period.id)")
-        if shouldFail { throw FetcherTestError.failed }
-        return response
-    }
-
-    func delete(_ id: Period.ID) async throws {
-        operations.append("delete:\(id)")
-        if shouldFail { throw FetcherTestError.failed }
-    }
 }
 
 actor RouteDataFetcherSpy: RouteDataFetcherProtocol {

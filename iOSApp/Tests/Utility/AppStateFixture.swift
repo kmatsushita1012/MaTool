@@ -16,15 +16,25 @@ enum AppStateFixture {
         District(id: id, name: name, festivalId: "festival", group: group)
     }
 
+    static func edition(year: Int = 2026) -> Edition {
+        Edition(id: "edition", festivalId: "festival", year: year)
+    }
+
     static func period(
         id: String = "period",
         day: Int = 3,
-        startHour: Int = 9
+        startHour: Int = 9,
+        edition: Edition? = nil
     ) -> Period {
-        Period(id: id, festivalId: "festival",
-               date: SimpleDate(year: 2026, month: 10, day: day),
-               start: SimpleTime(hour: startHour, minute: 0),
-               end: SimpleTime(hour: 17, minute: 0))
+        let targetEdition = edition ?? AppStateFixture.edition()
+        return Period(
+            id: id,
+            editionId: targetEdition.id,
+            festivalId: targetEdition.festivalId,
+            date: SimpleDate(year: targetEdition.year, month: 10, day: day),
+            start: SimpleTime(hour: startHour, minute: 0),
+            end: SimpleTime(hour: 17, minute: 0)
+        )
     }
 
     static func route(
@@ -47,15 +57,19 @@ enum AppStateFixture {
         passages: [RoutePassage] = [],
         currentRouteId: String? = nil,
         selectedDistrictId: String? = "district",
-        year: Int = 2026
+        year: Int = 2026,
+        hasEdition: Bool = true,
+        edition customEdition: Edition? = nil
     ) -> AppState {
+        let edition = hasEdition ? (customEdition ?? AppStateFixture.edition(year: year)) : nil
         let festivalPack = LaunchFestivalPack(
-            festival: festival(), year: year, districts: districts,
+            festival: festival(), edition: edition, districts: districts,
             periods: periods, locations: locations,
             checkpoints: [], hazardSections: []
         )
         let districtPack: LaunchDistrictPack? = selectedDistrictId.map { _ in
             LaunchDistrictPack(
+                editionId: edition?.id,
                 performances: performances, routes: routes,
                 points: points, passages: passages,
                 currentRouteId: currentRouteId

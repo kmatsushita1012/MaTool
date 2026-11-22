@@ -105,6 +105,38 @@ struct EditionListFeatureTests {
         await store.finish()
     }
 
+    @Test("Edition有効化後は一覧だけを再取得する")
+    @MainActor
+    func activationRefreshesEditionList() async {
+        let current = edition(id: "current", year: 2026)
+        let next = edition(id: "next", year: 2027)
+        let active = ActiveEdition(festivalId: "festival", editionId: next.id)
+        let pack = EditionPack(edition: next, periods: [])
+        let result = EditionActivationResult(activeEdition: active, appStateReloadError: nil)
+        let response = EditionListResponse(editions: [next, current], activeEditionId: next.id)
+        let editionFetcher = makeSpy(list: response, pack: pack)
+        var initialState = EditionListFeature.State(festivalID: "festival")
+        initialState.destination = .edit(EditionEditFeature.State(
+            festivalID: "festival",
+            pack: pack,
+            activeEditionID: current.id
+        ))
+        let store = TestStore(initialState: initialState) {
+            EditionListFeature()
+        } withDependencies: {
+            $0[EditionDataFetcherKey.self] = editionFetcher
+        }
+        store.exhaustivity = .off
+
+        await store.send(.destination(.presented(.edit(.activationReceived(.success(result))))))
+        await store.receive(.listReceived(.success(response)))
+
+        #expect(store.state.activeEditionID == next.id)
+        #expect(store.state.destination?.edit?.activeEditionID == next.id)
+        #expect(await editionFetcher.calls() == [.fetchList("festival")])
+        await store.finish()
+    }
+
     private func makeSpy(list: EditionListResponse, pack: EditionPack) -> EditionDataFetcherSpy {
         EditionDataFetcherSpy(
             list: list,

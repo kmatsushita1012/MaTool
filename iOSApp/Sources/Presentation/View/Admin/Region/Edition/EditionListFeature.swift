@@ -12,6 +12,7 @@ struct EditionListFeature {
     @ObservableState
     struct State: Equatable {
         let festivalID: Festival.ID
+        @Shared fileprivate var appState: AppState?
         var editions: [Edition] = []
         var activeEditionID: Edition.ID?
         var isLoading = false
@@ -28,8 +29,9 @@ struct EditionListFeature {
                 ?? Calendar.current.component(.year, from: .now)
         }
 
-        init(festivalID: Festival.ID) {
+        init(festivalID: Festival.ID, appState: Shared<AppState?> = Shared(value: nil)) {
             self.festivalID = festivalID
+            self._appState = appState
         }
     }
 
@@ -80,7 +82,8 @@ struct EditionListFeature {
                 state.destination = .edit(EditionEditFeature.State(
                     festivalID: state.festivalID,
                     edition: edition,
-                    activeEditionID: state.activeEditionID
+                    activeEditionID: state.activeEditionID,
+                    appState: state.$appState
                 ))
                 return .none
             case .addEditionTapped:
@@ -117,7 +120,8 @@ struct EditionListFeature {
                 state.destination = .edit(EditionEditFeature.State(
                     festivalID: state.festivalID,
                     pack: pack,
-                    activeEditionID: state.activeEditionID
+                    activeEditionID: state.activeEditionID,
+                    appState: state.$appState
                 ))
                 return .none
             case .creationReceived(.failure(let error)):
@@ -127,8 +131,8 @@ struct EditionListFeature {
             case .destination(.presented(.edit(.saveReceived(.success)))):
                 state.isLoading = true
                 return listEffect(festivalID: state.festivalID)
-            case .destination(.presented(.edit(.activationReceived(.success(let activeEdition))))):
-                state.activeEditionID = activeEdition.editionId
+            case .destination(.presented(.edit(.activationReceived(.success(let result))))):
+                state.activeEditionID = result.activeEdition.editionId
                 state.isLoading = true
                 return listEffect(festivalID: state.festivalID)
             case .destination(.presented(.edit(.activationReceived(.failure)))):

@@ -73,16 +73,33 @@ actor StoreAdDataFetcherSpy: StoreAdDataFetcherProtocol {
 
 actor SceneDataFetcherSpy: SceneDataFetcherProtocol {
     private let response: LaunchDistrictPack
+    private let festivalPack: LaunchFestivalPack
     private var districtLaunchCalls = 0
+    private var festivalLaunchCalls = 0
 
-    init(response: LaunchDistrictPack) { self.response = response }
+    init(response: LaunchDistrictPack, festivalPack: LaunchFestivalPack? = nil) {
+        self.response = response
+        let edition = response.editionId.map {
+            Edition(id: $0, festivalId: "festival", year: 2026)
+        }
+        self.festivalPack = festivalPack ?? LaunchFestivalPack(
+            festival: AppStateFixture.festival(),
+            edition: edition,
+            districts: [AppStateFixture.district()],
+            periods: [],
+            locations: [],
+            checkpoints: [],
+            hazardSections: []
+        )
+    }
 
     func launchFestival(festivalId: Festival.ID) async throws -> LaunchFestivalPack {
         throw CancellationError()
     }
 
     func launchFestival(districtId: District.ID) async throws -> LaunchFestivalPack {
-        throw CancellationError()
+        festivalLaunchCalls += 1
+        return festivalPack
     }
 
     func launchDistrict(districtId: District.ID, periodId: Period.ID?) async throws -> LaunchDistrictPack {
@@ -91,6 +108,7 @@ actor SceneDataFetcherSpy: SceneDataFetcherProtocol {
     }
 
     func districtLaunchCallCount() -> Int { districtLaunchCalls }
+    func festivalLaunchCallCount() -> Int { festivalLaunchCalls }
 }
 
 actor SignInSceneDataFetcherSpy: SceneDataFetcherProtocol {
@@ -119,6 +137,40 @@ actor SignInSceneDataFetcherSpy: SceneDataFetcherProtocol {
     }
 
     func requestedResources() -> [String] { requests }
+}
+
+actor LaunchPairSequenceDataFetcherSpy: SceneDataFetcherProtocol {
+    private let festivalResponses: [LaunchFestivalPack]
+    private let districtResponses: [LaunchDistrictPack]
+    private var festivalDistrictRequests: [District.ID] = []
+    private var districtRequests: [(District.ID, Period.ID?)] = []
+
+    init(festivalResponses: [LaunchFestivalPack], districtResponses: [LaunchDistrictPack]) {
+        self.festivalResponses = festivalResponses
+        self.districtResponses = districtResponses
+    }
+
+    func launchFestival(festivalId: Festival.ID) async throws -> LaunchFestivalPack {
+        throw SpyInvocationError.unexpected("launchFestival(festivalId:)")
+    }
+
+    func launchFestival(districtId: District.ID) async throws -> LaunchFestivalPack {
+        festivalDistrictRequests.append(districtId)
+        return festivalResponses[min(festivalDistrictRequests.count - 1, festivalResponses.count - 1)]
+    }
+
+    func launchDistrict(districtId: District.ID, periodId: Period.ID?) async throws -> LaunchDistrictPack {
+        districtRequests.append((districtId, periodId))
+        return districtResponses[min(districtRequests.count - 1, districtResponses.count - 1)]
+    }
+
+    func callCounts() -> (festival: Int, district: Int) {
+        (festivalDistrictRequests.count, districtRequests.count)
+    }
+
+    func requestedDistrictPeriods() -> [Period.ID?] {
+        districtRequests.map(\.1)
+    }
 }
 
 actor SelectFestivalDataFetcherSpy: SceneDataFetcherProtocol {

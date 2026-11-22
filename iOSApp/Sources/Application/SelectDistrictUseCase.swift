@@ -20,15 +20,21 @@ struct SelectDistrictUseCase: SelectDistrictUseCaseProtocol {
             return nil
         }
 
-        let pack: LaunchDistrictPack
-        if let appState {
-            let context = beginDistrictStateLoad(in: appState)
-            pack = try await dataFetcher.launchDistrict(districtId: districtId)
-            guard applyDistrictStateResponse(pack, districtId: districtId, context: context, to: appState) else {
-                return nil
-            }
-        } else {
-            pack = try await dataFetcher.launchDistrict(districtId: districtId)
+        let context = appState.map { beginDistrictStateLoad(in: $0) }
+        let (festivalPack, pack) = try await fetchEditionConsistentLaunchPacks(
+            districtID: districtId,
+            using: dataFetcher
+        )
+        guard festivalPack.districts.contains(where: { $0.id == districtId }) else { return nil }
+        if let appState, let context,
+           !applyConsistentLaunchResponses(
+            festivalPack: festivalPack,
+            districtPack: pack,
+            districtId: districtId,
+            context: context,
+            to: appState
+           ) {
+            return nil
         }
         userDefaults.saveDefaultDistrictId(districtId)
         return pack.currentRouteId

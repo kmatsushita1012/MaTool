@@ -1,3 +1,4 @@
+import ComposableArchitecture
 import Shared
 @testable import iOSApp
 
@@ -22,18 +23,21 @@ actor EditionDataFetcherSpy: EditionDataFetcherProtocol {
     let pack: EditionPack
     let activeEdition: ActiveEdition
     let failures: [Operation: AppError]
+    let updatedPack: EditionPack
     private var recorded: [Call] = []
 
     init(
         list: EditionListResponse,
         pack: EditionPack,
         activeEdition: ActiveEdition,
-        failures: [Operation: AppError] = [:]
+        failures: [Operation: AppError] = [:],
+        updatedPack: EditionPack? = nil
     ) {
         self.list = list
         self.pack = pack
         self.activeEdition = activeEdition
         self.failures = failures
+        self.updatedPack = updatedPack ?? pack
     }
 
     func calls() -> [Call] { recorded }
@@ -59,7 +63,7 @@ actor EditionDataFetcherSpy: EditionDataFetcherProtocol {
     func update(_ pack: EditionPack) async throws -> EditionPack {
         recorded.append(.update(pack.edition.year, pack.periods.map(\.id)))
         try checkFailure(.update)
-        return self.pack
+        return updatedPack
     }
 
     func activate(festivalID: Festival.ID, editionID: Edition.ID) async throws -> ActiveEdition {
@@ -71,5 +75,52 @@ actor EditionDataFetcherSpy: EditionDataFetcherProtocol {
 
     private func checkFailure(_ operation: Operation) throws {
         if let error = failures[operation] { throw error }
+    }
+}
+
+actor ActivateEditionUseCaseSpy: ActivateEditionUseCaseProtocol {
+    struct Call: Equatable, Sendable {
+        let festivalID: Festival.ID
+        let editionID: Edition.ID
+    }
+
+    private let response: EditionActivationResult
+    private let failure: AppError?
+    private var recordedCalls: [Call] = []
+
+    init(response: EditionActivationResult, failure: AppError? = nil) {
+        self.response = response
+        self.failure = failure
+    }
+
+    func calls() -> [Call] { recordedCalls }
+
+    func callAsFunction(
+        festivalID: Festival.ID,
+        editionID: Edition.ID,
+        appState: Shared<AppState?>
+    ) async throws -> EditionActivationResult {
+        recordedCalls.append(Call(festivalID: festivalID, editionID: editionID))
+        if let failure { throw failure }
+        return response
+    }
+}
+
+actor SaveEditionPackUseCaseSpy: SaveEditionPackUseCaseProtocol {
+    private let response: EditionPack
+    private let failure: AppError?
+    private var recordedPacks: [EditionPack] = []
+
+    init(response: EditionPack, failure: AppError? = nil) {
+        self.response = response
+        self.failure = failure
+    }
+
+    func packs() -> [EditionPack] { recordedPacks }
+
+    func callAsFunction(_ pack: EditionPack, appState: Shared<AppState?>) async throws -> EditionPack {
+        recordedPacks.append(pack)
+        if let failure { throw failure }
+        return response
     }
 }
