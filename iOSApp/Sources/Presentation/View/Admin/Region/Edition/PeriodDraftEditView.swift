@@ -37,7 +37,6 @@ private struct PeriodDraftEditContentView: View {
                     isCreateMode ? "日付を選択" : "日付",
                     selection: $date
                 )
-                .disabled(!isCreateMode)
             }
 
             Section(header: Text("タイトル"), footer: Text("例: 午前、午後、夜")) {

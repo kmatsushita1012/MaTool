@@ -42,22 +42,42 @@ struct PeriodDraftEditFeatureTests {
         await store.finish()
     }
 
-    @Test("既存期間の日付は編集できない")
+    @Test("既存期間の日付を変更してもIDとEdition所属を保持する")
     @MainActor
-    func existingDateDoesNotChange() async {
+    func changingExistingDateKeepsIdentityAndFields() async {
+        let editionID: Edition.ID = "edition"
         let period = Period(
             id: "period",
-            editionId: "edition",
+            editionId: editionID,
             festivalId: "festival",
             title: "昼",
-            date: SimpleDate(year: 2026, month: 10, day: 1)
+            date: SimpleDate(year: 2026, month: 10, day: 1),
+            start: SimpleTime(hour: 12, minute: 0),
+            end: SimpleTime(hour: 14, minute: 0)
         )
         let store = TestStore(initialState: PeriodDraftEditFeature.State.update(period, festivalID: "festival")) {
             PeriodDraftEditFeature()
         }
+        let newDate = SimpleDate(year: 2027, month: 10, day: 2)
+        let updatedPeriod = Period(
+            id: period.id,
+            editionId: editionID,
+            festivalId: period.festivalId,
+            title: period.title,
+            date: newDate,
+            start: period.start,
+            end: period.end
+        )
 
-        await store.send(.dateChanged(SimpleDate(year: 2027, month: 10, day: 1)))
-        #expect(store.state.period == period)
+        await store.send(.dateChanged(newDate)) {
+            $0.period = updatedPeriod
+        }
+        #expect(store.state.period.id == period.id)
+        #expect(store.state.period.editionId == period.editionId)
+        #expect(store.state.period.date == newDate)
+        #expect(store.state.period.title == period.title)
+        #expect(store.state.period.start == period.start)
+        #expect(store.state.period.end == period.end)
         await store.finish()
     }
 }
