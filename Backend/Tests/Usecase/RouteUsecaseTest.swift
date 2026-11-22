@@ -5,6 +5,46 @@ import Testing
 @testable import Backend
 
 struct RouteUsecaseTest {
+    @Test("履歴は日付の年ではなくEditionの年度で選択して関連付ける")
+    func history_過去Editionのルートを返す() async throws {
+        let district = District.mock(id: "district-1", festivalId: "festival-1")
+        let current = Edition(id: "current", festivalId: district.festivalId, year: 2026)
+        let old = Edition(id: "old", festivalId: district.festivalId, year: 2025)
+        let future = Edition(id: "future", festivalId: district.festivalId, year: 2027)
+        let period = Period.mock(id: "period", festivalId: district.festivalId, editionId: old.id, date: .init(year: 2026, month: 1, day: 1))
+        let route = Route.mock(id: "route", districtId: district.id, periodId: period.id)
+        let subject = make(
+            routeRepository: .init(queryByEditionHandler: { _, editionId in
+                #expect(editionId == old.id)
+                return [route, .mock(id: "orphan", districtId: district.id, periodId: "missing")]
+            }),
+            periodRepository: .init(queryByEditionHandler: { _ in [period] }),
+            districtRepository: .init(getHandler: { _ in district }),
+            editionRepository: EditionRepositorySpy(getHandler: { _ in current }, queryHandler: { _ in [future, old, current] })
+        )
+
+        let result = try await subject.history(districtId: district.id, before: current.id, user: .district(district.id))
+        #expect(result.editions == [EditionRouteHistory(edition: old, entries: [RouteEntry(period: period, route: route)])])
+    }
+
+    @Test("履歴は別地区から参照できない")
+    func history_他地区は拒否() async {
+        let subject = make()
+        await #expect(throws: Error.forbidden("対象地区の権限が必要です。")) {
+            _ = try await subject.history(districtId: "district-1", before: "edition", user: .district("district-2"))
+        }
+    }
+
+    @Test("履歴の基準Editionは地区の祭典に属する必要がある")
+    func history_別祭典のEditionは拒否() async {
+        let district = District.mock(id: "district-1", festivalId: "festival-1")
+        let other = Edition(id: "other", festivalId: "festival-2", year: 2026)
+        let subject = make(districtRepository: .init(getHandler: { _ in district }), editionRepository: EditionRepositorySpy(getHandler: { _ in other }))
+        await #expect(throws: Error.notFound("指定されたEditionが見つかりません。")) {
+            _ = try await subject.history(districtId: district.id, before: other.id, user: .district(district.id))
+        }
+    }
+
     @Test
     func get_正常() async throws {
         let district = District.mock(id: "district-1", festivalId: "festival-1")

@@ -133,6 +133,10 @@ final class RouteControllerMock: RouteControllerProtocol, @unchecked Sendable {
         return try queryHandler(request, next)
     }
 
+    func history(_ request: Request, next: Handler) async throws -> Response {
+        throw TestError.unimplemented
+    }
+
     private(set) var postCallCount = 0
     private let postHandler: ((Request, Handler) throws -> Response)?
     func post(_ request: Request, next: Handler) async throws -> Response {

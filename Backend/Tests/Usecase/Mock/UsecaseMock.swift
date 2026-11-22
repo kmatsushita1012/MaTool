@@ -136,6 +136,10 @@ final class RouteUsecaseMock: RouteUsecaseProtocol, @unchecked Sendable {
         return try queryHandler(districtId, type, now, user)
     }
 
+    func history(districtId: District.ID, before editionId: Edition.ID, user: UserRole) async throws -> RouteHistoryResponse {
+        throw TestError.unimplemented
+    }
+
     private(set) var postCallCount = 0
     private let postHandler: ((String, RoutePack, UserRole) throws -> RoutePack)?
     func post(districtId: String, pack: RoutePack, user: UserRole) async throws -> RoutePack {
