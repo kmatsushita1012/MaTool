@@ -106,12 +106,14 @@ final class RouteControllerMock: RouteControllerProtocol, @unchecked Sendable {
     init(
         getHandler: ((Request, Handler) throws -> Response)? = nil,
         queryHandler: ((Request, Handler) throws -> Response)? = nil,
+        historyHandler: ((Request, Handler) throws -> Response)? = nil,
         postHandler: ((Request, Handler) throws -> Response)? = nil,
         putHandler: ((Request, Handler) throws -> Response)? = nil,
         deleteHandler: ((Request, Handler) throws -> Response)? = nil
     ) {
         self.getHandler = getHandler
         self.queryHandler = queryHandler
+        self.historyHandler = historyHandler
         self.postHandler = postHandler
         self.putHandler = putHandler
         self.deleteHandler = deleteHandler
@@ -133,8 +135,12 @@ final class RouteControllerMock: RouteControllerProtocol, @unchecked Sendable {
         return try queryHandler(request, next)
     }
 
+    private(set) var historyCallCount = 0
+    private let historyHandler: ((Request, Handler) throws -> Response)?
     func history(_ request: Request, next: Handler) async throws -> Response {
-        throw TestError.unimplemented
+        historyCallCount += 1
+        guard let historyHandler else { throw TestError.unimplemented }
+        return try historyHandler(request, next)
     }
 
     private(set) var postCallCount = 0

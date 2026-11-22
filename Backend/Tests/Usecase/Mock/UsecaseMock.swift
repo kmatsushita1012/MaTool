@@ -109,12 +109,14 @@ final class RouteUsecaseMock: RouteUsecaseProtocol, @unchecked Sendable {
     init(
         getHandler: ((String, UserRole) throws -> RoutePack)? = nil,
         queryHandler: ((String, RouteQueryType, SimpleDate, UserRole) throws -> [Route])? = nil,
+        historyHandler: ((String, String, UserRole) throws -> RouteHistoryResponse)? = nil,
         postHandler: ((String, RoutePack, UserRole) throws -> RoutePack)? = nil,
         putHandler: ((String, RoutePack, UserRole) throws -> RoutePack)? = nil,
         deleteHandler: ((String, UserRole) throws -> Void)? = nil
     ) {
         self.getHandler = getHandler
         self.queryHandler = queryHandler
+        self.historyHandler = historyHandler
         self.postHandler = postHandler
         self.putHandler = putHandler
         self.deleteHandler = deleteHandler
@@ -136,8 +138,10 @@ final class RouteUsecaseMock: RouteUsecaseProtocol, @unchecked Sendable {
         return try queryHandler(districtId, type, now, user)
     }
 
+    private let historyHandler: ((String, String, UserRole) throws -> RouteHistoryResponse)?
     func history(districtId: District.ID, before editionId: Edition.ID, user: UserRole) async throws -> RouteHistoryResponse {
-        throw TestError.unimplemented
+        guard let historyHandler else { throw TestError.unimplemented }
+        return try historyHandler(districtId, editionId, user)
     }
 
     private(set) var postCallCount = 0
