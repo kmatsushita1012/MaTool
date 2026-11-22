@@ -10,7 +10,7 @@ import SwiftUI
 
 @available(iOS 17.0, *)
 struct RouteHistoryView: View {
-    let history: [EditionRouteHistory]
+    let history: [EditionRouteGroup]
     let excludingRouteId: Route.ID?
     var isLoading = false
     let selected: (RouteEntry) -> Void

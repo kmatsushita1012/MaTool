@@ -8,7 +8,7 @@ struct FetchRouteHistoryUseCaseTests {
     func fetchesHistory() async throws {
         let edition = AppStateFixture.edition(year: 2025)
         let entry = RouteEntry(period: AppStateFixture.period(edition: edition), route: AppStateFixture.route())
-        let history = [EditionRouteHistory(edition: edition, entries: [entry])]
+        let history = [EditionRouteGroup(edition: edition, entries: [entry])]
         let spy = RouteDataFetcherSpy(pack: RoutePack(route: entry.route, points: [], passages: []), history: history)
         let useCase = withDependencies {
             $0.installTestSpies()

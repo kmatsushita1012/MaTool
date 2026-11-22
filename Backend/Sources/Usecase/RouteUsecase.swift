@@ -70,7 +70,7 @@ struct RouteUsecase: RouteUsecaseProtocol {
         let editions = try await editionRepository.query(by: district.festivalId)
             .filter { $0.year < target.year }
             .sorted { $0.year > $1.year }
-        var history: [EditionRouteHistory] = []
+        var history: [EditionRouteGroup] = []
         for edition in editions {
             async let periodsTask = periodRepository.query(byEditionId: edition.id)
             async let routesTask = routeRepository.query(by: districtId, editionId: edition.id)
@@ -84,7 +84,7 @@ struct RouteUsecase: RouteUsecaseProtocol {
                 return lhs.period < rhs.period
             }
             if !entries.isEmpty {
-                history.append(EditionRouteHistory(edition: edition, entries: entries))
+                history.append(EditionRouteGroup(edition: edition, entries: entries))
             }
         }
         return RouteHistoryResponse(editions: history)

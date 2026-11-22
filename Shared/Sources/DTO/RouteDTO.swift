@@ -14,7 +14,7 @@ public struct RouteEntry: DTO, Identifiable, Comparable {
     }
 }
 
-public struct EditionRouteHistory: DTO {
+public struct EditionRouteGroup: DTO {
     public let edition: Edition
     public let entries: [RouteEntry]
 
@@ -25,9 +25,9 @@ public struct EditionRouteHistory: DTO {
 }
 
 public struct RouteHistoryResponse: DTO {
-    public let editions: [EditionRouteHistory]
+    public let editions: [EditionRouteGroup]
 
-    public init(editions: [EditionRouteHistory]) {
+    public init(editions: [EditionRouteGroup]) {
         self.editions = editions
     }
 }

@@ -24,7 +24,7 @@ struct RouteUsecaseTest {
         )
 
         let result = try await subject.history(districtId: district.id, before: current.id, user: .district(district.id))
-        #expect(result.editions == [EditionRouteHistory(edition: old, entries: [RouteEntry(period: period, route: route)])])
+        #expect(result.editions == [EditionRouteGroup(edition: old, entries: [RouteEntry(period: period, route: route)])])
     }
 
     @Test("履歴は別地区から参照できない")

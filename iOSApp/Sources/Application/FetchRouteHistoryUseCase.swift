@@ -2,13 +2,13 @@ import Dependencies
 import Shared
 
 protocol FetchRouteHistoryUseCaseProtocol: Sendable {
-    func callAsFunction(districtId: District.ID, editionId: Edition.ID) async throws -> [EditionRouteHistory]
+    func callAsFunction(districtId: District.ID, editionId: Edition.ID) async throws -> [EditionRouteGroup]
 }
 
 struct FetchRouteHistoryUseCase: FetchRouteHistoryUseCaseProtocol {
     @Dependency(RouteDataFetcherKey.self) private var routeDataFetcher
 
-    func callAsFunction(districtId: District.ID, editionId: Edition.ID) async throws -> [EditionRouteHistory] {
+    func callAsFunction(districtId: District.ID, editionId: Edition.ID) async throws -> [EditionRouteGroup] {
         try await routeDataFetcher.fetchHistory(districtID: districtId, before: editionId)
     }
 }

@@ -822,7 +822,7 @@ struct RouteEditFeatureTests {
     @MainActor
     func copyTappedFetchesRouteHistory() async throws {
         let entry = RouteEntry(period: AppStateFixture.period(), route: AppStateFixture.route())
-        let history = [EditionRouteHistory(edition: AppStateFixture.edition(), entries: [entry])]
+        let history = [EditionRouteGroup(edition: AppStateFixture.edition(), entries: [entry])]
         let spy = RouteEditHistoryUseCaseSpy(history: history)
         let initialState = try makeState(mode: .update)
         let store = TestStore(initialState: initialState) {
@@ -1192,14 +1192,14 @@ private actor RouteEditSavingSpy: CreateRouteUseCaseProtocol, UpdateRouteUseCase
 }
 
 private actor RouteEditHistoryUseCaseSpy: FetchRouteHistoryUseCaseProtocol {
-    let history: [EditionRouteHistory]
+    let history: [EditionRouteGroup]
     private(set) var calls: [String] = []
 
-    init(history: [EditionRouteHistory]) { self.history = history }
+    init(history: [EditionRouteGroup]) { self.history = history }
 
     func callAsFunction(
         districtId: District.ID, editionId: Edition.ID
-    ) async throws -> [EditionRouteHistory] {
+    ) async throws -> [EditionRouteGroup] {
         calls.append("\(districtId):\(editionId)")
         return history
     }
