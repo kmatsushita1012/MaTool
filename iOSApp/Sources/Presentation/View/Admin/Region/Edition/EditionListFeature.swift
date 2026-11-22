@@ -20,7 +20,6 @@ struct EditionListFeature {
         var hasLoaded = false
         var hasLoadError = false
         var isCreationAlertPresented = false
-        var isSourceEditionPickerPresented = false
         var newEditionYearText = ""
         @Presents var destination: Destination.State?
         @Presents var alert: AlertFeature.State?
@@ -46,8 +45,6 @@ struct EditionListFeature {
         case createConfirmed
         case createCancelled
         case autoCreateTapped
-        case autoCreateCancelled
-        case autoCreateSourceSelected(Edition)
         case creationReceived(AppResult<EditionPack>)
         case autoCreationReceived(AppResult<EditionPack>)
         case destination(PresentationAction<Destination.Action>)
@@ -109,21 +106,13 @@ struct EditionListFeature {
                 return .none
             case .autoCreateTapped:
                 guard !state.isLoading, !state.isCreating,
-                      validateNewEditionYear(&state) != nil else { return .none }
+                      let year = validateNewEditionYear(&state) else { return .none }
                 state.isCreationAlertPresented = false
-                guard !state.editions.isEmpty else {
+                guard let sourceEdition = state.editions.first(where: { $0.id == state.activeEditionID })
+                    ?? state.editions.first else {
                     state.alert = AlertFeature.error("コピー元となる年度がありません。")
                     return .none
                 }
-                state.isSourceEditionPickerPresented = true
-                return .none
-            case .autoCreateCancelled:
-                state.isSourceEditionPickerPresented = false
-                return .none
-            case .autoCreateSourceSelected(let sourceEdition):
-                guard !state.isLoading, !state.isCreating,
-                      let year = validateNewEditionYear(&state) else { return .none }
-                state.isSourceEditionPickerPresented = false
                 state.isCreating = true
                 return .task(Action.autoCreationReceived) { [festivalID = state.festivalID] in
                     try await makeAutoCreatedEdition(
