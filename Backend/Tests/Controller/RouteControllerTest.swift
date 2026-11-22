@@ -4,6 +4,30 @@ import Testing
 @testable import Backend
 
 struct RouteControllerTest {
+    @Test("履歴取得は地区・Edition・認証情報をUsecaseに渡す")
+    func history_正常() async throws {
+        let expected = RouteHistoryResponse(editions: [])
+        var arguments: [String] = []
+        let mock = RouteUsecaseMock(historyHandler: { districtId, editionId, user in
+            arguments = [districtId, editionId]
+            #expect(user == .district("district-1"))
+            return expected
+        })
+        var request = Application.Request.make(method: .get, path: "/v1/districts/district-1/route-history", parameters: ["districtId": "district-1", "editionId": "edition-1"])
+        request.user = .district("district-1")
+        let response = try await make(usecase: mock).history(request, next: next)
+        #expect(try RouteHistoryResponse.from(response.body) == expected)
+        #expect(arguments == ["district-1", "edition-1"])
+    }
+
+    @Test("履歴取得はEdition指定がなければ拒否する")
+    func history_Edition未指定() async {
+        let request = Application.Request.make(method: .get, path: "/v1/districts/district-1/route-history", parameters: ["districtId": "district-1"])
+        await #expect(throws: Error.badRequest("Editionの指定が必要です。")) {
+            _ = try await make().history(request, next: next)
+        }
+    }
+
     @Test
     func get_正常() async throws {
         let pack = RoutePack.mock(route: .mock(id: "route-1", districtId: "district-1"))

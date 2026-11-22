@@ -818,11 +818,12 @@ struct RouteEditFeatureTests {
         }
     }
 
-    @Test("履歴コピーの要求で選択地区と祭典IDを渡し戻り値を履歴画面に反映する")
+    @Test("履歴コピーの要求で選択地区とEdition IDを渡し戻り値を履歴画面に反映する")
     @MainActor
     func copyTappedFetchesRouteHistory() async throws {
         let entry = RouteEntry(period: AppStateFixture.period(), route: AppStateFixture.route())
-        let spy = RouteEditHistoryUseCaseSpy(entries: [entry])
+        let history = [EditionRouteGroup(edition: AppStateFixture.edition(), entries: [entry])]
+        let spy = RouteEditHistoryUseCaseSpy(history: history)
         let initialState = try makeState(mode: .update)
         let store = TestStore(initialState: initialState) {
             RouteEditFeature()
@@ -833,9 +834,9 @@ struct RouteEditFeatureTests {
         store.exhaustivity = .off
 
         await store.send(.copyTapped)
-        await store.receive(.historyPrepared(.success([entry])))
-        #expect(store.state.destination == .history([entry]))
-        #expect(await spy.calls == ["district:festival"])
+        await store.receive(.historyPrepared(.success(history)))
+        #expect(store.state.destination == .history(history))
+        #expect(await spy.calls == ["district:edition"])
         await store.finish()
     }
 
@@ -1191,16 +1192,16 @@ private actor RouteEditSavingSpy: CreateRouteUseCaseProtocol, UpdateRouteUseCase
 }
 
 private actor RouteEditHistoryUseCaseSpy: FetchRouteHistoryUseCaseProtocol {
-    let entries: [RouteEntry]
+    let history: [EditionRouteGroup]
     private(set) var calls: [String] = []
 
-    init(entries: [RouteEntry]) { self.entries = entries }
+    init(history: [EditionRouteGroup]) { self.history = history }
 
     func callAsFunction(
-        districtId: District.ID, festivalId: Festival.ID
-    ) async throws -> [RouteEntry] {
-        calls.append("\(districtId):\(festivalId)")
-        return entries
+        districtId: District.ID, editionId: Edition.ID
+    ) async throws -> [EditionRouteGroup] {
+        calls.append("\(districtId):\(editionId)")
+        return history
     }
 }
 

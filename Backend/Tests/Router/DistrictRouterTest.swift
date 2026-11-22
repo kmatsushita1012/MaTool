@@ -46,6 +46,15 @@ struct DistrictRouterTest {
         #expect(response.statusCode == 200)
     }
 
+    @Test("履歴取得パスは履歴Controllerにルーティングされる")
+    func routesRouteHistoryToController() async {
+        let controller = RouteControllerMock(historyHandler: { _, _ in try .success() })
+        let app = make(routeController: controller)
+        let response = await app.handle(.make(method: .get, path: "/v1/districts/district-1/route-history"))
+        #expect(response.statusCode == 200)
+        #expect(controller.historyCallCount == 1)
+    }
+
     @Test
     func retiredRouteList_410を返す() async {
         let controller = RouteControllerMock(queryHandler: { _, _ in try .success() })

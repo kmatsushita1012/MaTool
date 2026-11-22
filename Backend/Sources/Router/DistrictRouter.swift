@@ -22,6 +22,7 @@ struct DistrictRouter: Router {
         // Deprecated: 新しいクライアントは /v2/districts/:districtId/launch-festival を使用する。旧APIは410 Goneを返す。
         app.get(path: "/districts/:districtId/launch-festival") { _, _ in .gone() }
         // MARK: - Route
+        app.get(path: "/v1/districts/:districtId/route-history", routeController.history)
         app.get(path: "/v2/districts/:districtId/routes", routeController.query)
         app.get(path: "/districts/:districtId/routes") { _, _ in .gone() }
         app.post(path: "/districts/:districtId/routes", routeController.post)
