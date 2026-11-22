@@ -126,6 +126,46 @@ struct EditionUsecaseTest {
     }
 
     @Test
+    func put_日付変更後もIDとEdition所属を維持して再取得する() async throws {
+        let festival = Festival.mock(id: "festival-1")
+        let edition = Edition(id: "edition-2026", festivalId: festival.id, year: 2026)
+        let existing = period(id: "period-1", edition: edition)
+        let updated = period(
+            id: existing.id,
+            edition: edition,
+            date: .init(year: 2027, month: 3, day: 1),
+            start: existing.start
+        )
+        var storedPeriods = [existing]
+        let periodRepository = PeriodRepositorySpy(
+            queryByEditionHandler: { _ in storedPeriods },
+            putHandler: { period in
+                storedPeriods.removeAll { $0.id == period.id }
+                storedPeriods.append(period)
+                return period
+            }
+        )
+        let subject = make(
+            festivalRepository: FestivalRepositorySpy(festivals: [festival]),
+            editionRepository: EditionRepositorySpy(getByYearHandler: { _, _ in edition }),
+            periodRepository: periodRepository
+        )
+
+        let savedPack = try await subject.put(
+            festivalId: festival.id,
+            year: edition.year,
+            pack: EditionPack(edition: edition, periods: [updated]),
+            user: .headquarter(festival.id)
+        )
+
+        #expect(periodRepository.putCallCount == 1)
+        #expect(savedPack.periods == [updated])
+        #expect(savedPack.periods.first?.id == existing.id)
+        #expect(savedPack.periods.first?.editionId == edition.id)
+        #expect(savedPack.periods.first?.date == updated.date)
+    }
+
+    @Test
     func put_重複日時や別EditionのPeriodを拒否する() async {
         let festival = Festival.mock(id: "festival-1")
         let edition = Edition(id: "edition-2026", festivalId: festival.id, year: 2026)
