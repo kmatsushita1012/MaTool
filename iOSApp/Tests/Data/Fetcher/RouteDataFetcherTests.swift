@@ -4,6 +4,26 @@ import Testing
 @testable import iOSApp
 
 struct RouteDataFetcherTests {
+    @Test("履歴取得は地区と基準Editionを指定する")
+    func fetchHistory() async throws {
+        let history = RouteHistoryResponse(editions: [])
+        let spy = try RecordingHTTPClientSpy(response: history)
+        var auth = AuthProviderSpy().client
+        auth.getTokens = { "token" }
+        let result = try await withDependencies {
+            $0.installTestSpies()
+            $0[HTTPClientKey.self] = spy
+            $0.authProvider = auth
+        } operation: {
+            try await RouteDataFetcher().fetchHistory(districtID: "district", before: "edition")
+        }
+        #expect(result == history)
+        let request = try #require(await spy.calls().first)
+        #expect(request.path == "/v1/districts/district/route-history")
+        #expect(request.query == ["editionId": "edition"])
+        #expect(request.accessToken == "token")
+    }
+
     @Test("経路一覧は地区IDと年度クエリを指定する")
     func fetchRoutesByYear() async throws {
         let route = AppStateFixture.route()

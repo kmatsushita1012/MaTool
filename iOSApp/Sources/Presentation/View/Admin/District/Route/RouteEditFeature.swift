@@ -15,7 +15,7 @@ struct RouteEditFeature{
     
     enum Destination: Equatable {
         case preview(ExportedItem)
-        case history([RouteEntry])
+        case history(RouteHistoryResponse)
         case passage
     }
     
@@ -109,7 +109,7 @@ struct RouteEditFeature{
         case passageMoved(from: IndexSet, to: Int)
         case passageDeleteTapped(Int)
         case sourceSelected(RouteEntry)
-        case historyPrepared(AppResult<[RouteEntry]>)
+        case historyPrepared(AppResult<RouteHistoryResponse>)
         case saveReceived(VoidAppResult)
         case copyPrepared(AppResult<RoutePack>)
         case deleteReceived(VoidAppResult)
@@ -268,9 +268,10 @@ struct RouteEditFeature{
             case .copyTapped:
                 state.loadingAction = .history
                 let districtId = state.district.id
-                let festivalId = state.festival.id
+                let editionId = state.period.editionId
                 return .task(Action.historyPrepared) {
-                    try await fetchRouteHistoryUseCase(districtId: districtId, festivalId: festivalId)
+                    guard let editionId else { throw AppError.be(.notFound("日程の年度が見つかりません。")) }
+                    return try await fetchRouteHistoryUseCase(districtId: districtId, editionId: editionId)
                 }
             case .passageAddTapped:
                 state.passageInsertIndex = nil

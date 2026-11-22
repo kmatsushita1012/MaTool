@@ -300,7 +300,7 @@ struct RouteEditFeatureTests {
         #expect(state.districtsById["district"]?.id == "district")
         #expect(!state.isAutoPassageDisabled)
         #expect(RouteEditFeature.Destination.passage.id == "passage")
-        #expect(RouteEditFeature.Destination.history([]).id == "history")
+        #expect(RouteEditFeature.Destination.history(.init(editions: [])).id == "history")
     }
 
     @Test("自動通過町判定は最新の地点と地区領域を使い、以前の手動下書きを再計算結果で置換する")
@@ -442,9 +442,9 @@ struct RouteEditFeatureTests {
         let store = TestStore(initialState: state) {
             RouteEditFeature()
         } withDependencies: { $0.installTestSpies() }
-        await store.send(.historyPrepared(.success([]))) {
+        await store.send(.historyPrepared(.success(.init(editions: [])))) {
             $0.loadingAction = nil
-            $0.destination = .history([])
+            $0.destination = .history(.init(editions: []))
         }
         #expect(store.state.destination?.id == "history")
         await store.finish()
@@ -818,11 +818,12 @@ struct RouteEditFeatureTests {
         }
     }
 
-    @Test("履歴コピーの要求で選択地区と祭典IDを渡し戻り値を履歴画面に反映する")
+    @Test("履歴コピーの要求で選択地区とEdition IDを渡し戻り値を履歴画面に反映する")
     @MainActor
     func copyTappedFetchesRouteHistory() async throws {
         let entry = RouteEntry(period: AppStateFixture.period(), route: AppStateFixture.route())
-        let spy = RouteEditHistoryUseCaseSpy(entries: [entry])
+        let history = RouteHistoryResponse(editions: [EditionRouteHistory(edition: AppStateFixture.edition(), entries: [entry])])
+        let spy = RouteEditHistoryUseCaseSpy(history: history)
         let initialState = try makeState(mode: .update)
         let store = TestStore(initialState: initialState) {
             RouteEditFeature()
@@ -833,9 +834,9 @@ struct RouteEditFeatureTests {
         store.exhaustivity = .off
 
         await store.send(.copyTapped)
-        await store.receive(.historyPrepared(.success([entry])))
-        #expect(store.state.destination == .history([entry]))
-        #expect(await spy.calls == ["district:festival"])
+        await store.receive(.historyPrepared(.success(history)))
+        #expect(store.state.destination == .history(history))
+        #expect(await spy.calls == ["district:edition"])
         await store.finish()
     }
 
@@ -1191,16 +1192,16 @@ private actor RouteEditSavingSpy: CreateRouteUseCaseProtocol, UpdateRouteUseCase
 }
 
 private actor RouteEditHistoryUseCaseSpy: FetchRouteHistoryUseCaseProtocol {
-    let entries: [RouteEntry]
+    let history: RouteHistoryResponse
     private(set) var calls: [String] = []
 
-    init(entries: [RouteEntry]) { self.entries = entries }
+    init(history: RouteHistoryResponse) { self.history = history }
 
     func callAsFunction(
-        districtId: District.ID, festivalId: Festival.ID
-    ) async throws -> [RouteEntry] {
-        calls.append("\(districtId):\(festivalId)")
-        return entries
+        districtId: District.ID, editionId: Edition.ID
+    ) async throws -> RouteHistoryResponse {
+        calls.append("\(districtId):\(editionId)")
+        return history
     }
 }
 

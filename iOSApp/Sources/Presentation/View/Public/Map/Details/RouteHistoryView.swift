@@ -10,28 +10,18 @@ import SwiftUI
 
 @available(iOS 17.0, *)
 struct RouteHistoryView: View {
-    let entries: [RouteEntry]
+    let history: RouteHistoryResponse
     let excludingRouteId: Route.ID?
     var isLoading = false
     let selected: (RouteEntry) -> Void
 
     @Environment(\.dismiss) private var dismiss
 
-    private var groupedByYear: [Int: [RouteEntry]] {
-        Dictionary(grouping: entries.filter { $0.id != excludingRouteId }.sorted()) {
-            $0.period.date.year
-        }
-    }
-
-    private var years: [Int] {
-        groupedByYear.keys.sorted(by: >)
-    }
-
     var body: some View {
         Form {
-            ForEach(years, id: \.self) { year in
-                Section("\(String(year))年") {
-                    ForEach(groupedByYear[year] ?? []) { entry in
+            ForEach(history.editions, id: \.edition.id) { history in
+                Section("\(String(history.edition.year))年") {
+                    ForEach(history.entries.filter { $0.id != excludingRouteId }) { entry in
                         Button(entry.period.shortText) {
                             selected(entry)
                         }

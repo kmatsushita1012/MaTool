@@ -40,21 +40,30 @@ actor RouteDataFetcherSpy: RouteDataFetcherProtocol {
     let routes: [Route]
     let shouldFail: Bool
     let cancellationOnFetchAll: Bool
+    let history: RouteHistoryResponse
     private var operations: [String] = []
 
     init(
         pack: RoutePack,
         routes: [Route] = [],
         shouldFail: Bool = false,
-        cancellationOnFetchAll: Bool = false
+        cancellationOnFetchAll: Bool = false,
+        history: RouteHistoryResponse = .init(editions: [])
     ) {
         self.pack = pack
         self.routes = routes
         self.shouldFail = shouldFail
         self.cancellationOnFetchAll = cancellationOnFetchAll
+        self.history = history
     }
 
     func recordedCalls() -> [String] { operations }
+
+    func fetchHistory(districtID: District.ID, before editionID: Edition.ID) async throws -> RouteHistoryResponse {
+        operations.append("history:\(districtID):\(editionID)")
+        if shouldFail { throw FetcherTestError.failed }
+        return history
+    }
 
     func fetchAll(districtID: District.ID, query: Query) async throws -> [Route] {
         operations.append("fetchAll:\(districtID):\(String(describing: query))")
