@@ -191,8 +191,9 @@ struct SceneUsecase: SceneUsecaseProtocol {
 
     // MARK: - LaunchDistrict
     func fetchLaunchDistrictPack(districtId: District.ID, user: UserRole, now: Date, periodId: Period.ID?) async throws -> LaunchDistrictPack {
-        let district = try await getDistrict(districtId)
+        async let districtTask = getDistrict(districtId)
         async let performances = performanceRepository.query(by: districtId)
+        let district = try await districtTask
 
         guard let edition = try await resolveActiveEdition(
             festivalId: district.festivalId,
