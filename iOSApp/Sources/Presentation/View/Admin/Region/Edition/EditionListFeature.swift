@@ -148,7 +148,7 @@ struct EditionListFeature {
                     title: "年度と日程を作成しました",
                     message: "\(pack.edition.year)年度を有効にしますか？",
                     confirmTitle: "有効にする",
-                    cancelTitle: "有効にしない"
+                    cancelTitle: "キャンセル"
                 )
                 return .none
             case .autoCreationReceived(.failure(let error)):
