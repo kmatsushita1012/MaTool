@@ -12,6 +12,7 @@ struct EditionListScreen: View {
             isLoading: store.isLoading,
             hasLoadError: store.hasLoadError,
             isCreating: store.isCreating,
+            isActivating: store.isActivating,
             isCreationAlertPresented: $store.isCreationAlertPresented,
             newEditionYearText: $store.newEditionYearText,
             onEditionTapped: { store.send(.editionTapped($0)) },
@@ -36,6 +37,7 @@ struct EditionListContentView: View {
     let isLoading: Bool
     let hasLoadError: Bool
     let isCreating: Bool
+    let isActivating: Bool
     @Binding var isCreationAlertPresented: Bool
     @Binding var newEditionYearText: String
     let onEditionTapped: (Edition) -> Void
@@ -76,7 +78,7 @@ struct EditionListContentView: View {
                             statusIconName: edition.id == activeEditionID ? "checkmark.circle.fill" : nil,
                             onTap: { onEditionTapped(edition) }
                         )
-                        .disabled(isLoading || isCreating)
+                        .disabled(isLoading || isCreating || isActivating)
                     }
                 }
             }
@@ -88,9 +90,9 @@ struct EditionListContentView: View {
                 Button(action: onAddEditionTapped) {
                     Label("年度を追加", systemImage: "plus")
                 }
-                .disabled(isLoading || isCreating)
+                .disabled(isLoading || isCreating || isActivating)
                 .overlay {
-                    if isCreating {
+                    if isCreating || isActivating {
                         ProgressView()
                             .controlSize(.small)
                     }
@@ -116,6 +118,7 @@ struct EditionListContentView: View {
         isLoading: false,
         hasLoadError: false,
         isCreating: false,
+        isActivating: false,
         isCreationAlertPresented: .constant(false),
         newEditionYearText: .constant("2027"),
         onEditionTapped: { _ in },

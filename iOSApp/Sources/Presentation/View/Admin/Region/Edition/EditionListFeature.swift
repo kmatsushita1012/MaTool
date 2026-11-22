@@ -17,10 +17,12 @@ struct EditionListFeature {
         var activeEditionID: Edition.ID?
         var isLoading = false
         var isCreating = false
+        var isActivating = false
         var hasLoaded = false
         var hasLoadError = false
         var isCreationAlertPresented = false
         var newEditionYearText = ""
+        var pendingActivationEditionID: Edition.ID?
         @Presents var destination: Destination.State?
         @Presents var alert: AlertFeature.State?
 
@@ -47,12 +49,14 @@ struct EditionListFeature {
         case autoCreateTapped
         case creationReceived(AppResult<EditionPack>)
         case autoCreationReceived(AppResult<EditionPack>)
+        case activationReceived(AppResult<EditionActivationResult>)
         case destination(PresentationAction<Destination.Action>)
         case alert(PresentationAction<AlertFeature.Action>)
     }
 
     @Dependency(EditionDataFetcherKey.self) private var editionDataFetcher
     @Dependency(AutoCreateEditionUseCaseKey.self) private var autoCreateEditionUseCase
+    @Dependency(ActivateEditionUseCaseKey.self) private var activateEditionUseCase
 
     var body: some ReducerOf<Self> {
         BindingReducer()
@@ -90,12 +94,12 @@ struct EditionListFeature {
                 ))
                 return .none
             case .addEditionTapped:
-                guard !state.isLoading, !state.isCreating else { return .none }
+                guard !state.isLoading, !state.isCreating, !state.isActivating else { return .none }
                 state.newEditionYearText = String(state.nextEditionYear)
                 state.isCreationAlertPresented = true
                 return .none
             case .createConfirmed:
-                guard !state.isLoading, !state.isCreating,
+                guard !state.isLoading, !state.isCreating, !state.isActivating,
                       let year = validateNewEditionYear(&state) else { return .none }
                 state.isCreationAlertPresented = false
                 state.isCreating = true
@@ -106,7 +110,7 @@ struct EditionListFeature {
                 state.isCreationAlertPresented = false
                 return .none
             case .autoCreateTapped:
-                guard !state.isLoading, !state.isCreating,
+                guard !state.isLoading, !state.isCreating, !state.isActivating,
                       let year = validateNewEditionYear(&state) else { return .none }
                 state.isCreationAlertPresented = false
                 guard let sourceEdition = state.editions.first(where: { $0.id == state.activeEditionID })
@@ -139,10 +143,51 @@ struct EditionListFeature {
                 state.editions.removeAll { $0.id == pack.edition.id || $0.year == pack.edition.year }
                 state.editions.append(pack.edition)
                 state.editions.sort { $0.year > $1.year }
+                state.pendingActivationEditionID = pack.edition.id
+                state.alert = AlertFeature.confirmation(
+                    title: "年度と日程を作成しました",
+                    message: "\(pack.edition.year)年度を有効にしますか？",
+                    confirmTitle: "有効にする",
+                    cancelTitle: "有効にしない"
+                )
                 return .none
             case .autoCreationReceived(.failure(let error)):
                 state.isCreating = false
                 state.alert = AlertFeature.error("日程を自動作成できませんでした。\n\(error.message)")
+                return .none
+            case .alert(.presented(.confirmTapped)):
+                guard let editionID = state.pendingActivationEditionID else {
+                    state.alert = nil
+                    return .none
+                }
+                state.pendingActivationEditionID = nil
+                state.alert = nil
+                state.isActivating = true
+                let appState = state.$appState
+                return .task(Action.activationReceived) { [festivalID = state.festivalID] in
+                    try await activateEditionUseCase(
+                        festivalID: festivalID,
+                        editionID: editionID,
+                        appState: appState
+                    )
+                }
+            case .alert(.presented(.cancelTapped)), .alert(.dismiss):
+                state.pendingActivationEditionID = nil
+                state.alert = nil
+                return .none
+            case .activationReceived(.success(let result)):
+                state.isActivating = false
+                state.activeEditionID = result.activeEdition.editionId
+                state.isLoading = true
+                if let error = result.appStateReloadError {
+                    state.alert = AlertFeature.error("年度は切り替わりましたが、起動データを再取得できませんでした。\n\(error.message)")
+                } else {
+                    state.alert = AlertFeature.success("有効な年度に合わせて起動データを更新しました。")
+                }
+                return listEffect(festivalID: state.festivalID)
+            case .activationReceived(.failure(let error)):
+                state.isActivating = false
+                state.alert = AlertFeature.error("有効化に失敗しました。\n\(error.message)")
                 return .none
             case .destination(.presented(.edit(.saveReceived(.success)))):
                 state.isLoading = true
@@ -155,6 +200,7 @@ struct EditionListFeature {
                 state.isLoading = true
                 return listEffect(festivalID: state.festivalID)
             case .alert(.presented):
+                state.pendingActivationEditionID = nil
                 state.alert = nil
                 return .none
             default:
