@@ -40,8 +40,7 @@ struct PeriodDraftEditFeature {
             case .binding:
                 return .none
             case .dateChanged(let date):
-                guard state.isCreateMode,
-                      let editionID = state.period.editionId else { return .none }
+                guard let editionID = state.period.editionId else { return .none }
                 let period = state.period
                 state.period = Period(
                     id: period.id,
