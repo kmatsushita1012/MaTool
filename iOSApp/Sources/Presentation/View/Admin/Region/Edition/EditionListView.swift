@@ -13,11 +13,16 @@ struct EditionListScreen: View {
             hasLoadError: store.hasLoadError,
             isCreating: store.isCreating,
             isCreationAlertPresented: $store.isCreationAlertPresented,
+            isSourceEditionPickerPresented: $store.isSourceEditionPickerPresented,
             newEditionYearText: $store.newEditionYearText,
+            sourceEditions: store.editions,
             onEditionTapped: { store.send(.editionTapped($0)) },
             onAddEditionTapped: { store.send(.addEditionTapped) },
             onCreateConfirmed: { store.send(.createConfirmed) },
             onCreateCancelled: { store.send(.createCancelled) },
+            onAutoCreateTapped: { store.send(.autoCreateTapped) },
+            onAutoCreateCancelled: { store.send(.autoCreateCancelled) },
+            onAutoCreateSourceSelected: { store.send(.autoCreateSourceSelected($0)) },
         )
         .navigationDestination(item: $store.scope(state: \.destination?.edit, action: \.destination.edit)) {
             EditionEditView(store: $0)
@@ -36,11 +41,16 @@ struct EditionListContentView: View {
     let hasLoadError: Bool
     let isCreating: Bool
     @Binding var isCreationAlertPresented: Bool
+    @Binding var isSourceEditionPickerPresented: Bool
     @Binding var newEditionYearText: String
+    let sourceEditions: [Edition]
     let onEditionTapped: (Edition) -> Void
     let onAddEditionTapped: () -> Void
     let onCreateConfirmed: () -> Void
     let onCreateCancelled: () -> Void
+    let onAutoCreateTapped: () -> Void
+    let onAutoCreateCancelled: () -> Void
+    let onAutoCreateSourceSelected: (Edition) -> Void
 
     var body: some View {
         List {
@@ -99,9 +109,24 @@ struct EditionListContentView: View {
             TextField("年度", text: $newEditionYearText)
                 .keyboardType(.numberPad)
             Button("作成", action: onCreateConfirmed)
+            Button("日程を自動作成", action: onAutoCreateTapped)
             Button("キャンセル", role: .cancel, action: onCreateCancelled)
         } message: {
-            Text("年度を整数で入力してください。")
+            Text("年度を整数で入力してください。日程を自動作成する場合は、コピー元の年度を選択します。")
+        }
+        .confirmationDialog(
+            "\(newEditionYearText)年度の日程を自動作成",
+            isPresented: $isSourceEditionPickerPresented,
+            titleVisibility: .visible
+        ) {
+            ForEach(sourceEditions) { edition in
+                Button("\(String(edition.year))年の日程") {
+                    onAutoCreateSourceSelected(edition)
+                }
+            }
+            Button("キャンセル", role: .cancel, action: onAutoCreateCancelled)
+        } message: {
+            Text("コピー元の年度を選択してください。日程は同じ月・第N曜日へ移します。")
         }
     }
 }
@@ -114,10 +139,15 @@ struct EditionListContentView: View {
         hasLoadError: false,
         isCreating: false,
         isCreationAlertPresented: .constant(false),
+        isSourceEditionPickerPresented: .constant(false),
         newEditionYearText: .constant("2027"),
+        sourceEditions: [Edition(id: "2026", festivalId: "preview", year: 2026)],
         onEditionTapped: { _ in },
         onAddEditionTapped: {},
         onCreateConfirmed: {},
-        onCreateCancelled: {}
+        onCreateCancelled: {},
+        onAutoCreateTapped: {},
+        onAutoCreateCancelled: {},
+        onAutoCreateSourceSelected: { _ in }
     )
 }

@@ -20,6 +20,7 @@ struct EditionListFeature {
         var hasLoaded = false
         var hasLoadError = false
         var isCreationAlertPresented = false
+        var isSourceEditionPickerPresented = false
         var newEditionYearText = ""
         @Presents var destination: Destination.State?
         @Presents var alert: AlertFeature.State?
@@ -44,7 +45,11 @@ struct EditionListFeature {
         case addEditionTapped
         case createConfirmed
         case createCancelled
+        case autoCreateTapped
+        case autoCreateCancelled
+        case autoCreateSourceSelected(Edition)
         case creationReceived(AppResult<EditionPack>)
+        case autoCreationReceived(AppResult<EditionPack>)
         case destination(PresentationAction<Destination.Action>)
         case alert(PresentationAction<AlertFeature.Action>)
     }
@@ -92,18 +97,8 @@ struct EditionListFeature {
                 state.isCreationAlertPresented = true
                 return .none
             case .createConfirmed:
-                guard !state.isLoading, !state.isCreating else { return .none }
-                let yearText = state.newEditionYearText.trimmingCharacters(in: .whitespacesAndNewlines)
-                guard let year = Int(yearText), year > 0 else {
-                    state.isCreationAlertPresented = false
-                    state.alert = AlertFeature.error("年度は1以上の整数で入力してください。")
-                    return .none
-                }
-                guard !state.editions.contains(where: { $0.year == year }) else {
-                    state.isCreationAlertPresented = false
-                    state.alert = AlertFeature.error("\(String(year))年度はすでに登録されています。")
-                    return .none
-                }
+                guard !state.isLoading, !state.isCreating,
+                      let year = validateNewEditionYear(&state) else { return .none }
                 state.isCreationAlertPresented = false
                 state.isCreating = true
                 return .task(Action.creationReceived) { [festivalID = state.festivalID] in
@@ -112,6 +107,31 @@ struct EditionListFeature {
             case .createCancelled:
                 state.isCreationAlertPresented = false
                 return .none
+            case .autoCreateTapped:
+                guard !state.isLoading, !state.isCreating,
+                      validateNewEditionYear(&state) != nil else { return .none }
+                state.isCreationAlertPresented = false
+                guard !state.editions.isEmpty else {
+                    state.alert = AlertFeature.error("コピー元となる年度がありません。")
+                    return .none
+                }
+                state.isSourceEditionPickerPresented = true
+                return .none
+            case .autoCreateCancelled:
+                state.isSourceEditionPickerPresented = false
+                return .none
+            case .autoCreateSourceSelected(let sourceEdition):
+                guard !state.isLoading, !state.isCreating,
+                      let year = validateNewEditionYear(&state) else { return .none }
+                state.isSourceEditionPickerPresented = false
+                state.isCreating = true
+                return .task(Action.autoCreationReceived) { [festivalID = state.festivalID] in
+                    try await makeAutoCreatedEdition(
+                        festivalID: festivalID,
+                        sourceYear: sourceEdition.year,
+                        targetYear: year
+                    )
+                }
             case .creationReceived(.success(let pack)):
                 state.isCreating = false
                 state.editions.removeAll { $0.id == pack.edition.id || $0.year == pack.edition.year }
@@ -127,6 +147,22 @@ struct EditionListFeature {
             case .creationReceived(.failure(let error)):
                 state.isCreating = false
                 state.alert = AlertFeature.error("年度を作成できませんでした。\n\(error.message)")
+                return .none
+            case .autoCreationReceived(.success(let pack)):
+                state.isCreating = false
+                state.editions.removeAll { $0.id == pack.edition.id || $0.year == pack.edition.year }
+                state.editions.append(pack.edition)
+                state.editions.sort { $0.year > $1.year }
+                state.destination = .edit(EditionEditFeature.State(
+                    festivalID: state.festivalID,
+                    pack: pack,
+                    activeEditionID: state.activeEditionID,
+                    appState: state.$appState
+                ))
+                return .none
+            case .autoCreationReceived(.failure(let error)):
+                state.isCreating = false
+                state.alert = AlertFeature.error("日程を自動作成できませんでした。\n\(error.message)")
                 return .none
             case .destination(.presented(.edit(.saveReceived(.success)))):
                 state.isLoading = true
@@ -153,6 +189,66 @@ struct EditionListFeature {
         .task(Action.listReceived) {
             try await editionDataFetcher.fetchList(festivalID: festivalID)
         }
+    }
+
+    private func validateNewEditionYear(_ state: inout State) -> Int? {
+        let yearText = state.newEditionYearText.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard let year = Int(yearText), year > 0 else {
+            state.isCreationAlertPresented = false
+            state.alert = AlertFeature.error("年度は1以上の整数で入力してください。")
+            return nil
+        }
+        guard !state.editions.contains(where: { $0.year == year }) else {
+            state.isCreationAlertPresented = false
+            state.alert = AlertFeature.error("\(String(year))年度はすでに登録されています。")
+            return nil
+        }
+        return year
+    }
+
+    private func makeAutoCreatedEdition(
+        festivalID: Festival.ID,
+        sourceYear: Int,
+        targetYear: Int
+    ) async throws -> EditionPack {
+        let sourcePack = try await editionDataFetcher.fetch(festivalID: festivalID, year: sourceYear)
+        guard !sourcePack.periods.isEmpty else {
+            throw AppError.validation(.badRequest("コピー元の年度に日程がありません。"))
+        }
+
+        let calendar = Calendar.japanGregorian
+        let sourcePeriods = sourcePack.periods.sorted()
+        let shiftedDates = try sourcePeriods.map { period -> SimpleDate in
+            let sourceDate = period.date.toDate
+            guard let targetDate = sourceDate.sameWeekday(in: targetYear) else {
+                throw AppError.validation(.badRequest("コピー元の日程を指定年度へ移せません。"))
+            }
+
+            let sourceComponents = calendar.dateComponents([.month, .weekOfMonth, .weekday], from: sourceDate)
+            let targetComponents = calendar.dateComponents([.year, .month, .weekOfMonth, .weekday], from: targetDate)
+            guard targetComponents.year == targetYear,
+                  targetComponents.month == sourceComponents.month,
+                  targetComponents.weekOfMonth == sourceComponents.weekOfMonth,
+                  targetComponents.weekday == sourceComponents.weekday else {
+                throw AppError.validation(.badRequest("コピー元の日程を指定年度に同じ月・第N曜日で移せません。"))
+            }
+            return .from(targetDate)
+        }
+
+        let createdPack = try await editionDataFetcher.create(festivalID: festivalID, year: targetYear)
+        let periods = zip(sourcePeriods, shiftedDates).map { pair in
+            let (source, date) = pair
+            return Period(
+                id: UUID().uuidString,
+                editionId: createdPack.edition.id,
+                festivalId: festivalID,
+                title: source.title,
+                date: date,
+                start: source.start,
+                end: source.end
+            )
+        }
+        return EditionPack(edition: createdPack.edition, periods: periods)
     }
 }
 
