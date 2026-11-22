@@ -6,8 +6,11 @@ import Testing
 struct RouteDataFetcherTests {
     @Test("履歴取得は地区と基準Editionを指定する")
     func fetchHistory() async throws {
-        let history = RouteHistoryResponse(editions: [])
-        let spy = try RecordingHTTPClientSpy(response: history)
+        let edition = AppStateFixture.edition(year: 2025)
+        let entry = RouteEntry(period: AppStateFixture.period(edition: edition), route: AppStateFixture.route())
+        let history = [EditionRouteHistory(edition: edition, entries: [entry])]
+        let response = RouteHistoryResponse(editions: history)
+        let spy = try RecordingHTTPClientSpy(response: response)
         var auth = AuthProviderSpy().client
         auth.getTokens = { "token" }
         let result = try await withDependencies {

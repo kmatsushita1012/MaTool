@@ -300,7 +300,7 @@ struct RouteEditFeatureTests {
         #expect(state.districtsById["district"]?.id == "district")
         #expect(!state.isAutoPassageDisabled)
         #expect(RouteEditFeature.Destination.passage.id == "passage")
-        #expect(RouteEditFeature.Destination.history(.init(editions: [])).id == "history")
+        #expect(RouteEditFeature.Destination.history([]).id == "history")
     }
 
     @Test("自動通過町判定は最新の地点と地区領域を使い、以前の手動下書きを再計算結果で置換する")
@@ -442,9 +442,9 @@ struct RouteEditFeatureTests {
         let store = TestStore(initialState: state) {
             RouteEditFeature()
         } withDependencies: { $0.installTestSpies() }
-        await store.send(.historyPrepared(.success(.init(editions: [])))) {
+        await store.send(.historyPrepared(.success([]))) {
             $0.loadingAction = nil
-            $0.destination = .history(.init(editions: []))
+            $0.destination = .history([])
         }
         #expect(store.state.destination?.id == "history")
         await store.finish()
@@ -822,7 +822,7 @@ struct RouteEditFeatureTests {
     @MainActor
     func copyTappedFetchesRouteHistory() async throws {
         let entry = RouteEntry(period: AppStateFixture.period(), route: AppStateFixture.route())
-        let history = RouteHistoryResponse(editions: [EditionRouteHistory(edition: AppStateFixture.edition(), entries: [entry])])
+        let history = [EditionRouteHistory(edition: AppStateFixture.edition(), entries: [entry])]
         let spy = RouteEditHistoryUseCaseSpy(history: history)
         let initialState = try makeState(mode: .update)
         let store = TestStore(initialState: initialState) {
@@ -1192,14 +1192,14 @@ private actor RouteEditSavingSpy: CreateRouteUseCaseProtocol, UpdateRouteUseCase
 }
 
 private actor RouteEditHistoryUseCaseSpy: FetchRouteHistoryUseCaseProtocol {
-    let history: RouteHistoryResponse
+    let history: [EditionRouteHistory]
     private(set) var calls: [String] = []
 
-    init(history: RouteHistoryResponse) { self.history = history }
+    init(history: [EditionRouteHistory]) { self.history = history }
 
     func callAsFunction(
         districtId: District.ID, editionId: Edition.ID
-    ) async throws -> RouteHistoryResponse {
+    ) async throws -> [EditionRouteHistory] {
         calls.append("\(districtId):\(editionId)")
         return history
     }

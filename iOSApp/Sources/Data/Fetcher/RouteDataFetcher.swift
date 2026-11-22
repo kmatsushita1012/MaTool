@@ -2,7 +2,7 @@ import Dependencies
 import Shared
 
 protocol RouteDataFetcherProtocol: DataFetcher {
-    func fetchHistory(districtID: District.ID, before editionID: Edition.ID) async throws -> RouteHistoryResponse
+    func fetchHistory(districtID: District.ID, before editionID: Edition.ID) async throws -> [EditionRouteHistory]
     func fetchAll(districtID: District.ID, query: Query) async throws -> [Route]
     func fetch(routeID: Route.ID) async throws -> RoutePack
     func update(_ route: Route, points: [Point], passages: [RoutePassage]) async throws -> RoutePack
@@ -17,8 +17,9 @@ enum RouteDataFetcherKey: DependencyKey {
 struct RouteDataFetcher: RouteDataFetcherProtocol {
     @Dependency(HTTPClientKey.self) var client
 
-    func fetchHistory(districtID: District.ID, before editionID: Edition.ID) async throws -> RouteHistoryResponse {
-        try await client.get(path: "/v1/districts/\(districtID)/route-history", query: ["editionId": editionID], accessToken: await getToken())
+    func fetchHistory(districtID: District.ID, before editionID: Edition.ID) async throws -> [EditionRouteHistory] {
+        let response: RouteHistoryResponse = try await client.get(path: "/v1/districts/\(districtID)/route-history", query: ["editionId": editionID], accessToken: await getToken())
+        return response.editions
     }
 
     func fetchAll(districtID: District.ID, query: Query) async throws -> [Route] {

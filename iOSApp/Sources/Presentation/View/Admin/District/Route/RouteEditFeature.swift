@@ -15,7 +15,7 @@ struct RouteEditFeature{
     
     enum Destination: Equatable {
         case preview(ExportedItem)
-        case history(RouteHistoryResponse)
+        case history([EditionRouteHistory])
         case passage
     }
     
@@ -109,7 +109,7 @@ struct RouteEditFeature{
         case passageMoved(from: IndexSet, to: Int)
         case passageDeleteTapped(Int)
         case sourceSelected(RouteEntry)
-        case historyPrepared(AppResult<RouteHistoryResponse>)
+        case historyPrepared(AppResult<[EditionRouteHistory]>)
         case saveReceived(VoidAppResult)
         case copyPrepared(AppResult<RoutePack>)
         case deleteReceived(VoidAppResult)

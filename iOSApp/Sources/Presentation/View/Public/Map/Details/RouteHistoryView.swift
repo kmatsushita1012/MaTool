@@ -10,7 +10,7 @@ import SwiftUI
 
 @available(iOS 17.0, *)
 struct RouteHistoryView: View {
-    let history: RouteHistoryResponse
+    let history: [EditionRouteHistory]
     let excludingRouteId: Route.ID?
     var isLoading = false
     let selected: (RouteEntry) -> Void
@@ -19,7 +19,7 @@ struct RouteHistoryView: View {
 
     var body: some View {
         Form {
-            ForEach(history.editions, id: \.edition.id) { history in
+            ForEach(history, id: \.edition.id) { history in
                 Section("\(String(history.edition.year))年") {
                     ForEach(history.entries.filter { $0.id != excludingRouteId }) { entry in
                         Button(entry.period.shortText) {

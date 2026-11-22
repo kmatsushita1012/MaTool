@@ -40,7 +40,7 @@ actor RouteDataFetcherSpy: RouteDataFetcherProtocol {
     let routes: [Route]
     let shouldFail: Bool
     let cancellationOnFetchAll: Bool
-    let history: RouteHistoryResponse
+    let history: [EditionRouteHistory]
     private var operations: [String] = []
 
     init(
@@ -48,7 +48,7 @@ actor RouteDataFetcherSpy: RouteDataFetcherProtocol {
         routes: [Route] = [],
         shouldFail: Bool = false,
         cancellationOnFetchAll: Bool = false,
-        history: RouteHistoryResponse = .init(editions: [])
+        history: [EditionRouteHistory] = []
     ) {
         self.pack = pack
         self.routes = routes
@@ -59,7 +59,7 @@ actor RouteDataFetcherSpy: RouteDataFetcherProtocol {
 
     func recordedCalls() -> [String] { operations }
 
-    func fetchHistory(districtID: District.ID, before editionID: Edition.ID) async throws -> RouteHistoryResponse {
+    func fetchHistory(districtID: District.ID, before editionID: Edition.ID) async throws -> [EditionRouteHistory] {
         operations.append("history:\(districtID):\(editionID)")
         if shouldFail { throw FetcherTestError.failed }
         return history

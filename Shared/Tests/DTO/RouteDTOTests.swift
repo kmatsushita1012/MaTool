@@ -2,7 +2,7 @@ import Foundation
 import Testing
 @testable import Shared
 
-struct RouteHistoryDTOTests {
+struct RouteDTOTests {
     @Test("履歴はEdition・Period・Routeの関係を保ってJSON往復できる")
     func roundTrip() throws {
         let edition = Edition(id: "edition", festivalId: "festival", year: 2025)
