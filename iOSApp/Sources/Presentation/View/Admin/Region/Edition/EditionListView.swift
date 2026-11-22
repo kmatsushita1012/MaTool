@@ -100,8 +100,8 @@ struct EditionListContentView: View {
         .alert("年度を追加", isPresented: $isCreationAlertPresented) {
             TextField("年度", text: $newEditionYearText)
                 .keyboardType(.numberPad)
-            Button("作成", action: onCreateConfirmed)
-            Button("日程を自動作成", action: onAutoCreateTapped)
+            Button("年度だけ作成", action: onCreateConfirmed)
+            Button("年度と日程を自動作成", action: onAutoCreateTapped)
             Button("キャンセル", role: .cancel, action: onCreateCancelled)
         } message: {
             Text("年度を入力してください")
