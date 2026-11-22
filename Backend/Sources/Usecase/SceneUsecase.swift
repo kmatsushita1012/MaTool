@@ -40,6 +40,8 @@ extension SceneUsecaseProtocol {
 struct SceneUsecase: SceneUsecaseProtocol {
     @Dependency(FestivalRepositoryKey.self) var festivalRepository
     @Dependency(DistrictRepositoryKey.self) var districtRepository
+    @Dependency(ActiveEditionRepositoryKey.self) var activeEditionRepository
+    @Dependency(EditionRepositoryKey.self) var editionRepository
     @Dependency(PeriodRepositoryKey.self) var periodRepository
     @Dependency(LocationRepositoryKey.self) var floatLocationRepository
     @Dependency(CheckpointRepositoryKey.self) var checkpointRepository
@@ -95,10 +97,10 @@ struct SceneUsecase: SceneUsecaseProtocol {
         async let festivalTask = festivalRepository.get(id: festivalId)
         async let checkpointsTask = checkpointRepository.query(by: festivalId)
         async let hazardSectionsTask = hazardRepository.query(by: festivalId)
-        async let periodsTask = LatestPeriodRouteResolver.fetchLatestPeriods(
+        async let editionTask = resolveActiveEdition(
             festivalId: festivalId,
-            nowYear: SimpleDate.from(now).year,
-            periodRepository: periodRepository
+            activeEditionRepository: activeEditionRepository,
+            editionRepository: editionRepository
         )
 
         let districts: [District]
@@ -111,7 +113,13 @@ struct SceneUsecase: SceneUsecaseProtocol {
         guard let festival = try await festivalTask else {
             throw Error.notFound("Festival \(festivalId) が見つかりません")
         }
-        let periods = try await periodsTask
+        let edition = try await editionTask
+        let periods: [Period]
+        if let edition {
+            periods = try await periodRepository.query(byEditionId: edition.id)
+        } else {
+            periods = []
+        }
         let locations: [FloatLocation]
         if LocationPublicAccess.isPublic(now: now, periods: periods) {
             locations = try await floatLocationRepository.query(by: festival.id)
@@ -124,7 +132,7 @@ struct SceneUsecase: SceneUsecaseProtocol {
 
         return LaunchFestivalPack(
             festival: festival,
-            year: periods.first?.date.year ?? SimpleDate.from(now).year,
+            edition: edition,
             districts: districts,
             periods: periods,
             locations: locations,
@@ -140,10 +148,10 @@ struct SceneUsecase: SceneUsecaseProtocol {
         prefetchedDistricts: [District]? = nil
     ) async throws -> LaunchFestivalPack {
         async let festivalTask = festivalRepository.get(id: festivalId)
-        async let periodsTask = LatestPeriodRouteResolver.fetchLatestPeriods(
+        async let editionTask = resolveActiveEdition(
             festivalId: festivalId,
-            nowYear: SimpleDate.from(now).year,
-            periodRepository: periodRepository
+            activeEditionRepository: activeEditionRepository,
+            editionRepository: editionRepository
         )
 
         let districts: [District]
@@ -156,7 +164,13 @@ struct SceneUsecase: SceneUsecaseProtocol {
         guard let festival = try await festivalTask else {
             throw Error.notFound("Festival \(festivalId) が見つかりません")
         }
-        let periods = try await periodsTask
+        let edition = try await editionTask
+        let periods: [Period]
+        if let edition {
+            periods = try await periodRepository.query(byEditionId: edition.id)
+        } else {
+            periods = []
+        }
         let locations: [FloatLocation]
         if LocationPublicAccess.isPublic(now: now, periods: periods) {
             locations = try await floatLocationRepository.query(by: festival.id)
@@ -166,7 +180,7 @@ struct SceneUsecase: SceneUsecaseProtocol {
 
         return LaunchFestivalPack(
             festival: festival,
-            year: periods.first?.date.year ?? SimpleDate.from(now).year,
+            edition: edition,
             districts: districts,
             periods: periods,
             locations: locations,
@@ -177,17 +191,28 @@ struct SceneUsecase: SceneUsecaseProtocol {
 
     // MARK: - LaunchDistrict
     func fetchLaunchDistrictPack(districtId: District.ID, user: UserRole, now: Date, periodId: Period.ID?) async throws -> LaunchDistrictPack {
-        let district = try await getDistrict(districtId)
+        async let districtTask = getDistrict(districtId)
         async let performances = performanceRepository.query(by: districtId)
-        
-        let currentYear = SimpleDate.from(now).year
-        let (routes, periods) = try await LatestPeriodRouteResolver.fetchLatestRoutes(
-            districtId: districtId,
+        let district = try await districtTask
+
+        guard let edition = try await resolveActiveEdition(
             festivalId: district.festivalId,
-            nowYear: currentYear,
-            periodRepository: periodRepository,
-            routeRepository: routeRepository
-        )
+            activeEditionRepository: activeEditionRepository,
+            editionRepository: editionRepository
+        ) else {
+            return LaunchDistrictPack(
+                editionId: nil,
+                performances: try await performances,
+                routes: [],
+                points: [],
+                passages: [],
+                currentRouteId: nil
+            )
+        }
+
+        async let periodsTask = periodRepository.query(byEditionId: edition.id)
+        async let routesTask = routeRepository.query(by: districtId, editionId: edition.id)
+        let (routes, periods) = try await (routesTask, periodsTask)
 
         let filteredRoutes = routes.filter { isVisible(visibility: $0.visibility, user: user, district: district) }
 
@@ -226,8 +251,9 @@ struct SceneUsecase: SceneUsecaseProtocol {
         } ?? points
 
         return .init(
+            editionId: edition.id,
             performances: try await performances,
-            routes: filteredRoutes,
+            routes: routeWithPeriod.map(\.route),
             points: sanitizedPoints,
             passages: passages,
             currentRouteId: currentRoute?.id

@@ -15,8 +15,12 @@ struct DistrictRouter: Router {
     
     func body(_ app: Application) {
         // MARK: - Scene
-        app.get(path: "/districts/:districtId/launch", sceneController.launchDistrict)
-        app.get(path: "/districts/:districtId/launch-festival", sceneController.launchFestival)
+        app.get(path: "/v2/districts/:districtId/launch", sceneController.launchDistrict)
+        app.get(path: "/v2/districts/:districtId/launch-festival", sceneController.launchFestival)
+        // Deprecated: 新しいクライアントは /v2/districts/:districtId/launch を使用する。旧APIは410 Goneを返す。
+        app.get(path: "/districts/:districtId/launch") { _, _ in .gone() }
+        // Deprecated: 新しいクライアントは /v2/districts/:districtId/launch-festival を使用する。旧APIは410 Goneを返す。
+        app.get(path: "/districts/:districtId/launch-festival") { _, _ in .gone() }
         // MARK: - Route
         app.get(path: "/v2/districts/:districtId/routes", routeController.query)
         app.get(path: "/districts/:districtId/routes") { _, _ in .gone() }

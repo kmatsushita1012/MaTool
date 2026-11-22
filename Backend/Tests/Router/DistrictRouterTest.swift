@@ -69,10 +69,31 @@ struct DistrictRouterTest {
     @Test
     func routesLaunchFestivalToSceneController_正常() async {
         let app = make(sceneController: .init(launchFestivalHandler: { _, _ in try .success() }))
-        let request = Application.Request.make(method: .get, path: "/districts/district-1/launch-festival")
+        let request = Application.Request.make(method: .get, path: "/v2/districts/district-1/launch-festival")
         let response = await app.handle(request)
 
         #expect(response.statusCode == 200)
+    }
+
+    @Test
+    func launchDistrict_旧Pathsは410でv2PathsだけControllerへ届く() async {
+        let controller = SceneControllerMock(
+            launchFestivalHandler: { _, _ in try .success() },
+            launchDistrictHandler: { _, _ in try .success() }
+        )
+        let app = make(sceneController: controller)
+
+        let festivalResponse = await app.handle(.make(method: .get, path: "/v2/districts/district-1/launch-festival"))
+        let districtResponse = await app.handle(.make(method: .get, path: "/v2/districts/district-1/launch"))
+        let oldFestivalResponse = await app.handle(.make(method: .get, path: "/districts/district-1/launch-festival"))
+        let oldDistrictResponse = await app.handle(.make(method: .get, path: "/districts/district-1/launch"))
+
+        #expect(festivalResponse.statusCode == 200)
+        #expect(districtResponse.statusCode == 200)
+        #expect(oldFestivalResponse.statusCode == 410)
+        #expect(oldDistrictResponse.statusCode == 410)
+        #expect(controller.launchFestivalCallCount == 1)
+        #expect(controller.launchDistrictCallCount == 1)
     }
 
     @Test
