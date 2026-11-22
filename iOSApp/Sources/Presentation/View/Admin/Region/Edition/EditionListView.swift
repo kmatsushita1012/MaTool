@@ -104,7 +104,7 @@ struct EditionListContentView: View {
             Button("日程を自動作成", action: onAutoCreateTapped)
             Button("キャンセル", role: .cancel, action: onCreateCancelled)
         } message: {
-            Text("年度を整数で入力してください。自動作成では有効な年度（未設定の場合は最新年度）の日程を基にします。")
+            Text("年度を入力してください")
         }
     }
 }

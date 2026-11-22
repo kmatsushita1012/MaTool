@@ -52,6 +52,7 @@ struct EditionListFeature {
     }
 
     @Dependency(EditionDataFetcherKey.self) private var editionDataFetcher
+    @Dependency(AutoCreateEditionUseCaseKey.self) private var autoCreateEditionUseCase
 
     var body: some ReducerOf<Self> {
         BindingReducer()
@@ -114,12 +115,8 @@ struct EditionListFeature {
                     return .none
                 }
                 state.isCreating = true
-                return .task(Action.autoCreationReceived) { [festivalID = state.festivalID] in
-                    try await makeAutoCreatedEdition(
-                        festivalID: festivalID,
-                        sourceYear: sourceEdition.year,
-                        targetYear: year
-                    )
+                return .task(Action.autoCreationReceived) {
+                    try await autoCreateEditionUseCase(sourceEdition: sourceEdition, targetYear: year)
                 }
             case .creationReceived(.success(let pack)):
                 state.isCreating = false
@@ -142,12 +139,6 @@ struct EditionListFeature {
                 state.editions.removeAll { $0.id == pack.edition.id || $0.year == pack.edition.year }
                 state.editions.append(pack.edition)
                 state.editions.sort { $0.year > $1.year }
-                state.destination = .edit(EditionEditFeature.State(
-                    festivalID: state.festivalID,
-                    pack: pack,
-                    activeEditionID: state.activeEditionID,
-                    appState: state.$appState
-                ))
                 return .none
             case .autoCreationReceived(.failure(let error)):
                 state.isCreating = false
@@ -182,7 +173,8 @@ struct EditionListFeature {
 
     private func validateNewEditionYear(_ state: inout State) -> Int? {
         let yearText = state.newEditionYearText.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard let year = Int(yearText), year > 0 else {
+        let year = yearText.isEmpty ? state.nextEditionYear : Int(yearText)
+        guard let year, year > 0 else {
             state.isCreationAlertPresented = false
             state.alert = AlertFeature.error("年度は1以上の整数で入力してください。")
             return nil
@@ -193,51 +185,6 @@ struct EditionListFeature {
             return nil
         }
         return year
-    }
-
-    private func makeAutoCreatedEdition(
-        festivalID: Festival.ID,
-        sourceYear: Int,
-        targetYear: Int
-    ) async throws -> EditionPack {
-        let sourcePack = try await editionDataFetcher.fetch(festivalID: festivalID, year: sourceYear)
-        guard !sourcePack.periods.isEmpty else {
-            throw AppError.validation(.badRequest("コピー元の年度に日程がありません。"))
-        }
-
-        let calendar = Calendar.japanGregorian
-        let sourcePeriods = sourcePack.periods.sorted()
-        let shiftedDates = try sourcePeriods.map { period -> SimpleDate in
-            let sourceDate = period.date.toDate
-            guard let targetDate = sourceDate.sameWeekday(in: targetYear) else {
-                throw AppError.validation(.badRequest("コピー元の日程を指定年度へ移せません。"))
-            }
-
-            let sourceComponents = calendar.dateComponents([.month, .weekOfMonth, .weekday], from: sourceDate)
-            let targetComponents = calendar.dateComponents([.year, .month, .weekOfMonth, .weekday], from: targetDate)
-            guard targetComponents.year == targetYear,
-                  targetComponents.month == sourceComponents.month,
-                  targetComponents.weekOfMonth == sourceComponents.weekOfMonth,
-                  targetComponents.weekday == sourceComponents.weekday else {
-                throw AppError.validation(.badRequest("コピー元の日程を指定年度に同じ月・第N曜日で移せません。"))
-            }
-            return .from(targetDate)
-        }
-
-        let createdPack = try await editionDataFetcher.create(festivalID: festivalID, year: targetYear)
-        let periods = zip(sourcePeriods, shiftedDates).map { pair in
-            let (source, date) = pair
-            return Period(
-                id: UUID().uuidString,
-                editionId: createdPack.edition.id,
-                festivalId: festivalID,
-                title: source.title,
-                date: date,
-                start: source.start,
-                end: source.end
-            )
-        }
-        return EditionPack(edition: createdPack.edition, periods: periods)
     }
 }
 
