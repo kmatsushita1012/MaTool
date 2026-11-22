@@ -45,13 +45,11 @@ struct EditionListFeature {
         case createConfirmed
         case createCancelled
         case creationReceived(AppResult<EditionPack>)
-        case appStateReloadReceived(AppResult<Bool>)
         case destination(PresentationAction<Destination.Action>)
         case alert(PresentationAction<AlertFeature.Action>)
     }
 
     @Dependency(EditionDataFetcherKey.self) private var editionDataFetcher
-    @Dependency(ReloadAppStateUseCaseKey.self) private var reloadAppStateUseCase
 
     var body: some ReducerOf<Self> {
         BindingReducer()
@@ -84,7 +82,8 @@ struct EditionListFeature {
                 state.destination = .edit(EditionEditFeature.State(
                     festivalID: state.festivalID,
                     edition: edition,
-                    activeEditionID: state.activeEditionID
+                    activeEditionID: state.activeEditionID,
+                    appState: state.$appState
                 ))
                 return .none
             case .addEditionTapped:
@@ -121,7 +120,8 @@ struct EditionListFeature {
                 state.destination = .edit(EditionEditFeature.State(
                     festivalID: state.festivalID,
                     pack: pack,
-                    activeEditionID: state.activeEditionID
+                    activeEditionID: state.activeEditionID,
+                    appState: state.$appState
                 ))
                 return .none
             case .creationReceived(.failure(let error)):
@@ -131,31 +131,13 @@ struct EditionListFeature {
             case .destination(.presented(.edit(.saveReceived(.success)))):
                 state.isLoading = true
                 return listEffect(festivalID: state.festivalID)
-            case .destination(.presented(.edit(.activationReceived(.success(let activeEdition))))):
-                state.activeEditionID = activeEdition.editionId
+            case .destination(.presented(.edit(.activationReceived(.success(let result))))):
+                state.activeEditionID = result.activeEdition.editionId
                 state.isLoading = true
-                let appState = state.$appState
-                return .task(Action.appStateReloadReceived) {
-                    try await reloadAppStateUseCase(appState: appState)
-                    return true
-                }
+                return listEffect(festivalID: state.festivalID)
             case .destination(.presented(.edit(.activationReceived(.failure)))):
                 state.isLoading = true
                 return listEffect(festivalID: state.festivalID)
-            case .appStateReloadReceived(.success):
-                state.isLoading = false
-                if let destination = state.destination, case var .edit(editState) = destination {
-                    editState.alert = AlertFeature.success("有効な年度に合わせて起動データを更新しました。")
-                    state.destination = .edit(editState)
-                }
-                return .none
-            case .appStateReloadReceived(.failure(let error)):
-                state.isLoading = false
-                if let destination = state.destination, case var .edit(editState) = destination {
-                    editState.alert = AlertFeature.error("年度は切り替わりましたが、起動データを再取得できませんでした。\n\(error.message)")
-                    state.destination = .edit(editState)
-                }
-                return .none
             case .alert(.presented):
                 state.alert = nil
                 return .none

@@ -4,7 +4,7 @@ import Shared
 import Testing
 @testable import iOSApp
 
-struct PeriodStateUpdatesTests {
+struct EditionStateUpdatesTests {
     @Test("EditionPack応答を採用し、対象PeriodがないRouteと選択状態を除去する")
     func packUpdateRemovesOrphanRoutesAndSelection() {
         let old = AppStateFixture.period()

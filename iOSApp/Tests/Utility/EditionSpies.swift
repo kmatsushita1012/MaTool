@@ -78,16 +78,49 @@ actor EditionDataFetcherSpy: EditionDataFetcherProtocol {
     }
 }
 
-actor ReloadAppStateUseCaseSpy: ReloadAppStateUseCaseProtocol {
-    private let failure: AppError?
-    private(set) var calls = 0
+actor ActivateEditionUseCaseSpy: ActivateEditionUseCaseProtocol {
+    struct Call: Equatable, Sendable {
+        let festivalID: Festival.ID
+        let editionID: Edition.ID
+    }
 
-    init(failure: AppError? = nil) {
+    private let response: EditionActivationResult
+    private let failure: AppError?
+    private var recordedCalls: [Call] = []
+
+    init(response: EditionActivationResult, failure: AppError? = nil) {
+        self.response = response
         self.failure = failure
     }
 
-    func callAsFunction(appState: Shared<AppState?>) async throws {
-        calls += 1
+    func calls() -> [Call] { recordedCalls }
+
+    func callAsFunction(
+        festivalID: Festival.ID,
+        editionID: Edition.ID,
+        appState: Shared<AppState?>
+    ) async throws -> EditionActivationResult {
+        recordedCalls.append(Call(festivalID: festivalID, editionID: editionID))
         if let failure { throw failure }
+        return response
+    }
+}
+
+actor SaveEditionPackUseCaseSpy: SaveEditionPackUseCaseProtocol {
+    private let response: EditionPack
+    private let failure: AppError?
+    private var recordedPacks: [EditionPack] = []
+
+    init(response: EditionPack, failure: AppError? = nil) {
+        self.response = response
+        self.failure = failure
+    }
+
+    func packs() -> [EditionPack] { recordedPacks }
+
+    func callAsFunction(_ pack: EditionPack, appState: Shared<AppState?>) async throws -> EditionPack {
+        recordedPacks.append(pack)
+        if let failure { throw failure }
+        return response
     }
 }

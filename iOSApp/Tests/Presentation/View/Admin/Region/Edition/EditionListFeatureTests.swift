@@ -105,88 +105,35 @@ struct EditionListFeatureTests {
         await store.finish()
     }
 
-    @Test("Edition有効化後に起動データ全体を再取得する")
+    @Test("Edition有効化後は一覧だけを再取得する")
     @MainActor
-    func activationReloadsAppState() async {
+    func activationRefreshesEditionList() async {
         let current = edition(id: "current", year: 2026)
         let next = edition(id: "next", year: 2027)
         let active = ActiveEdition(festivalId: "festival", editionId: next.id)
         let pack = EditionPack(edition: next, periods: [])
-        let sharedAppState = Shared<AppState?>(value: AppStateFixture.state())
-        var initialState = EditionListFeature.State(festivalID: "festival", appState: sharedAppState)
+        let result = EditionActivationResult(activeEdition: active, appStateReloadError: nil)
+        let response = EditionListResponse(editions: [next, current], activeEditionId: next.id)
+        let editionFetcher = makeSpy(list: response, pack: pack)
+        var initialState = EditionListFeature.State(festivalID: "festival")
         initialState.destination = .edit(EditionEditFeature.State(
             festivalID: "festival",
             pack: pack,
             activeEditionID: current.id
         ))
-        let reloadSpy = ReloadAppStateUseCaseSpy()
         let store = TestStore(initialState: initialState) {
             EditionListFeature()
         } withDependencies: {
-            $0.installTestSpies()
-            $0[ReloadAppStateUseCaseKey.self] = reloadSpy
+            $0[EditionDataFetcherKey.self] = editionFetcher
         }
+        store.exhaustivity = .off
 
-        await store.send(.destination(.presented(.edit(.activationReceived(.success(active)))))) {
-            $0.activeEditionID = next.id
-            $0.isLoading = true
-            if case var .edit(editState) = $0.destination {
-                editState.activeEditionID = next.id
-                $0.destination = .edit(editState)
-            }
-        }
-        await store.receive(.appStateReloadReceived(.success(true))) {
-            $0.isLoading = false
-            if case var .edit(editState) = $0.destination {
-                editState.alert = AlertFeature.success("有効な年度に合わせて起動データを更新しました。")
-                $0.destination = .edit(editState)
-            }
-        }
+        await store.send(.destination(.presented(.edit(.activationReceived(.success(result))))))
+        await store.receive(.listReceived(.success(response)))
 
-        #expect(await reloadSpy.calls == 1)
         #expect(store.state.activeEditionID == next.id)
         #expect(store.state.destination?.edit?.activeEditionID == next.id)
-        await store.finish()
-    }
-
-    @Test("起動データの再取得に失敗したら年度切り替え済みであることを表示する")
-    @MainActor
-    func reloadFailureReportsCompletedActivation() async {
-        let edition = edition(id: "next", year: 2027)
-        let active = ActiveEdition(festivalId: "festival", editionId: edition.id)
-        var initialState = EditionListFeature.State(festivalID: "festival")
-        initialState.destination = .edit(EditionEditFeature.State(
-            festivalID: "festival",
-            pack: EditionPack(edition: edition, periods: []),
-            activeEditionID: nil
-        ))
-        let error = AppError.be(.network("offline"))
-        let reloadSpy = ReloadAppStateUseCaseSpy(failure: error)
-        let store = TestStore(initialState: initialState) {
-            EditionListFeature()
-        } withDependencies: {
-            $0.installTestSpies()
-            $0[ReloadAppStateUseCaseKey.self] = reloadSpy
-        }
-
-        await store.send(.destination(.presented(.edit(.activationReceived(.success(active)))))) {
-            $0.activeEditionID = edition.id
-            $0.isLoading = true
-            if case var .edit(editState) = $0.destination {
-                editState.activeEditionID = edition.id
-                $0.destination = .edit(editState)
-            }
-        }
-        await store.receive(.appStateReloadReceived(.failure(error))) {
-            $0.isLoading = false
-            if case var .edit(editState) = $0.destination {
-                editState.alert = AlertFeature.error("年度は切り替わりましたが、起動データを再取得できませんでした。\n\(error.message)")
-                $0.destination = .edit(editState)
-            }
-        }
-
-        #expect(store.state.activeEditionID == edition.id)
-        #expect(await reloadSpy.calls == 1)
+        #expect(await editionFetcher.calls() == [.fetchList("festival")])
         await store.finish()
     }
 
