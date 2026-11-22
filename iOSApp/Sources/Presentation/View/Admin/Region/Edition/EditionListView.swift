@@ -12,12 +12,14 @@ struct EditionListScreen: View {
             isLoading: store.isLoading,
             hasLoadError: store.hasLoadError,
             isCreating: store.isCreating,
+            isActivating: store.isActivating,
             isCreationAlertPresented: $store.isCreationAlertPresented,
             newEditionYearText: $store.newEditionYearText,
             onEditionTapped: { store.send(.editionTapped($0)) },
             onAddEditionTapped: { store.send(.addEditionTapped) },
             onCreateConfirmed: { store.send(.createConfirmed) },
             onCreateCancelled: { store.send(.createCancelled) },
+            onAutoCreateTapped: { store.send(.autoCreateTapped) }
         )
         .navigationDestination(item: $store.scope(state: \.destination?.edit, action: \.destination.edit)) {
             EditionEditView(store: $0)
@@ -35,12 +37,14 @@ struct EditionListContentView: View {
     let isLoading: Bool
     let hasLoadError: Bool
     let isCreating: Bool
+    let isActivating: Bool
     @Binding var isCreationAlertPresented: Bool
     @Binding var newEditionYearText: String
     let onEditionTapped: (Edition) -> Void
     let onAddEditionTapped: () -> Void
     let onCreateConfirmed: () -> Void
     let onCreateCancelled: () -> Void
+    let onAutoCreateTapped: () -> Void
 
     var body: some View {
         List {
@@ -74,7 +78,7 @@ struct EditionListContentView: View {
                             statusIconName: edition.id == activeEditionID ? "checkmark.circle.fill" : nil,
                             onTap: { onEditionTapped(edition) }
                         )
-                        .disabled(isLoading || isCreating)
+                        .disabled(isLoading || isCreating || isActivating)
                     }
                 }
             }
@@ -86,9 +90,9 @@ struct EditionListContentView: View {
                 Button(action: onAddEditionTapped) {
                     Label("年度を追加", systemImage: "plus")
                 }
-                .disabled(isLoading || isCreating)
+                .disabled(isLoading || isCreating || isActivating)
                 .overlay {
-                    if isCreating {
+                    if isCreating || isActivating {
                         ProgressView()
                             .controlSize(.small)
                     }
@@ -98,10 +102,11 @@ struct EditionListContentView: View {
         .alert("年度を追加", isPresented: $isCreationAlertPresented) {
             TextField("年度", text: $newEditionYearText)
                 .keyboardType(.numberPad)
-            Button("作成", action: onCreateConfirmed)
+            Button("年度だけ作成", action: onCreateConfirmed)
+            Button("年度と日程を自動作成", action: onAutoCreateTapped)
             Button("キャンセル", role: .cancel, action: onCreateCancelled)
         } message: {
-            Text("年度を整数で入力してください。")
+            Text("年度を入力してください")
         }
     }
 }
@@ -113,11 +118,13 @@ struct EditionListContentView: View {
         isLoading: false,
         hasLoadError: false,
         isCreating: false,
+        isActivating: false,
         isCreationAlertPresented: .constant(false),
         newEditionYearText: .constant("2027"),
         onEditionTapped: { _ in },
         onAddEditionTapped: {},
         onCreateConfirmed: {},
-        onCreateCancelled: {}
+        onCreateCancelled: {},
+        onAutoCreateTapped: {}
     )
 }
