@@ -16,6 +16,7 @@ struct SignInUseCaseTests {
         let district = District(id: "district", name: "District", festivalId: festival.id)
         let festivalPack = LaunchFestivalPack(
             festival: festival,
+            edition: nil,
             districts: [district],
             periods: [],
             locations: [],
@@ -144,7 +145,7 @@ struct SignInUseCaseTests {
     func headquarterSignInUpdatesFestivalSelection() async throws {
         let festival = AppStateFixture.festival()
         let festivalPack = LaunchFestivalPack(
-            festival: festival, districts: [AppStateFixture.district()],
+            festival: festival, edition: nil, districts: [AppStateFixture.district()],
             periods: [], locations: [], checkpoints: [], hazardSections: []
         )
         let districtPack = LaunchDistrictPack(

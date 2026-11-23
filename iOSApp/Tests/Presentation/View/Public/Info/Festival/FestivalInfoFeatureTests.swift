@@ -81,7 +81,7 @@ struct FestivalInfoFeatureTests {
         let appState = Shared<AppState?>(value: AppState(
             festivalPack: LaunchFestivalPack(
                 festival: festival,
-                year: 2026,
+                edition: Edition(id: "edition-2026", festivalId: festival.id, year: 2026),
                 districts: districts,
                 periods: [],
                 locations: [],
@@ -140,7 +140,7 @@ struct FestivalInfoFeatureTests {
         let state = Shared<AppState?>(value: AppState(
             festivalPack: LaunchFestivalPack(
                 festival: festival,
-                year: 2026,
+                edition: Edition(id: "edition-2026", festivalId: festival.id, year: 2026),
                 districts: [
                     District(id: "z", name: "同名", festivalId: festival.id, group: "A"),
                     District(id: "a", name: "同名", festivalId: festival.id, group: "A")
@@ -173,7 +173,7 @@ private struct FestivalInfoFixture {
         appState = Shared(value: AppState(
             festivalPack: LaunchFestivalPack(
                 festival: festival,
-                year: 2026,
+                edition: Edition(id: "edition-2026", festivalId: festival.id, year: 2026),
                 districts: [district],
                 periods: [],
                 locations: [],

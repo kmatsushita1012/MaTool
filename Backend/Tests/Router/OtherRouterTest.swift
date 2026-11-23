@@ -5,22 +5,6 @@ import Testing
 
 struct OtherRouterTest {
     @Test
-    func routesPeriodGetToPeriodController_正常() async {
-        var lastCalledPeriodId: String?
-        let app = make(periodController: .init(
-            getHandler: { request, _ in
-                lastCalledPeriodId = request.parameters["periodId"]
-                return try .success()
-            }
-        ))
-        let request = Application.Request.make(method: .get, path: "/v2/periods/period-1")
-        let response = await app.handle(request)
-
-        #expect(response.statusCode == 200)
-        #expect(lastCalledPeriodId == "period-1")
-    }
-
-    @Test
     func routesRouteDeleteToRouteController_正常() async {
         let app = make(routeController: .init(deleteHandler: { _, _ in try .success() }))
         let request = Application.Request.make(method: .delete, path: "/routes/route-1")
@@ -44,7 +28,6 @@ struct OtherRouterTest {
         let response = await withDependencies {
             $0[RouteUsecaseKey.self] = RouteUsecase()
             $0[RouteControllerKey.self] = RouteController()
-            $0[PeriodControllerKey.self] = PeriodControllerMock()
             $0[RouteRepositoryKey.self] = routeRepository
             $0[PointRepositoryKey.self] = pointRepository
             $0[PassageRepositoryKey.self] = passageRepository
@@ -79,31 +62,16 @@ struct OtherRouterTest {
     }
 
     @Test
-    func routesPeriodPutToPeriodController_正常() async {
-        let app = make(periodController: .init(putHandler: { _, _ in try .success() }))
-        let request = Application.Request.make(method: .put, path: "/periods/period-1")
-        let response = await app.handle(request)
+    func retiredPeriodPaths_V2は未登録で旧URLは410を返す() async {
+        let app = make()
 
-        #expect(response.statusCode == 410)
-    }
-
-    @Test
-    func retiredPeriodGetPutDelete_410を返しControllerを呼ばない() async {
-        let controller = PeriodControllerMock(
-            getHandler: { _, _ in try .success() },
-            putHandler: { _, _ in try .success() },
-            deleteHandler: { _, _ in try .success() }
-        )
-        let app = make(periodController: controller)
-
+        let removedV2Response = await app.handle(.make(method: .get, path: "/v2/periods/period-1"))
         for method in [Application.Method.get, .put, .delete] {
             let response = await app.handle(.make(method: method, path: "/periods/period-1"))
             #expect(response.statusCode == 410)
         }
 
-        #expect(controller.getCallCount == 0)
-        #expect(controller.putCallCount == 0)
-        #expect(controller.deleteCallCount == 0)
+        #expect(removedV2Response.statusCode == 404)
     }
 
     @Test
@@ -130,12 +98,10 @@ struct OtherRouterTest {
 
 private extension OtherRouterTest {
     func make(
-        routeController: RouteControllerMock = .init(),
-        periodController: PeriodControllerMock = .init()
+        routeController: RouteControllerMock = .init()
     ) -> Application {
         withDependencies {
             $0[RouteControllerKey.self] = routeController
-            $0[PeriodControllerKey.self] = periodController
         } operation: {
             Application { OtherRouter() }
         }

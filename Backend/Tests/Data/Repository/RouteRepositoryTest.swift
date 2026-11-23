@@ -100,7 +100,7 @@ struct RouteRepositoryTest {
     @Test
     func post_Editionのキーで保存しPeriodの旧Festivalには依存しない() async throws {
         let route = Route.mock(id: "route-1", districtId: "district-1", periodId: "period-1")
-        let period = Period.mock(id: route.periodId, festivalId: "legacy-festival", editionId: "edition-1", date: .init(year: 2026, month: 2, day: 22))
+        let period = Period.mock(id: route.periodId, editionId: "edition-1", date: .init(year: 2026, month: 2, day: 22))
         var saved: RouteRecord?
         let store = DataStoreMock(putHandler: { item in saved = try decodeFromEncodable(item, as: RouteRecord.self) })
         let editionRepository = EditionRepositorySpy(getHandler: { _ in
@@ -123,7 +123,7 @@ struct RouteRepositoryTest {
     @Test
     func put_所属Edition変更時は旧キーを削除して保存する() async throws {
         let route = Route.mock(id: "route-1", districtId: "district-1", periodId: "period-new")
-        let period = Period.mock(id: route.periodId, festivalId: "festival-1", editionId: "edition-new")
+        let period = Period.mock(id: route.periodId, editionId: "edition-new")
         let oldRecord = RouteRecord(route, editionId: "edition-old")
         var saved: RouteRecord?
         var deleted: [String: Codable] = [:]
@@ -151,7 +151,7 @@ struct RouteRepositoryTest {
     @Test
     func put_同じEdition内の日付更新では旧キーを削除しない() async throws {
         let route = Route.mock(id: "route-1", districtId: "district-1", periodId: "period-1")
-        let period = Period.mock(id: route.periodId, festivalId: "festival-1", editionId: "edition-1", date: .init(year: 2027, month: 3, day: 1))
+        let period = Period.mock(id: route.periodId, editionId: "edition-1", date: .init(year: 2027, month: 3, day: 1))
         let oldRecord = RouteRecord(route, editionId: "edition-1")
         var saved: RouteRecord?
         let store = DataStoreMock(
@@ -175,7 +175,7 @@ struct RouteRepositoryTest {
     @Test
     func post_Editionと地区の祭典が異なる場合は書き込みしない() async {
         let route = Route.mock(id: "route-1", districtId: "district-1", periodId: "period-1")
-        let period = Period.mock(id: route.periodId, festivalId: "legacy-festival", editionId: "edition-2")
+        let period = Period.mock(id: route.periodId, editionId: "edition-2")
         let store = DataStoreMock()
         let districtRepository = DistrictRepositoryMock(getHandler: { _ in
             .mock(id: route.districtId, festivalId: "festival-1")
@@ -200,7 +200,8 @@ struct RouteRepositoryTest {
     @Test
     func post_EditionのないPeriodは拒否する() async {
         let route = Route.mock(id: "route-1", districtId: "district-1", periodId: "period-1")
-        let period = Period(id: route.periodId, festivalId: "festival-1", date: .init(year: 2026, month: 2, day: 22))
+        var period = Period(id: route.periodId, editionId: "edition-1", date: .init(year: 2026, month: 2, day: 22))
+        period.editionId = nil
         let store = DataStoreMock()
         let repository = make(dataStore: store, periodRepository: .init(getHandler: { _ in period }))
 

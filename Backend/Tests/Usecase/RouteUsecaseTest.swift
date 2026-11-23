@@ -11,7 +11,7 @@ struct RouteUsecaseTest {
         let current = Edition(id: "current", festivalId: district.festivalId, year: 2026)
         let old = Edition(id: "old", festivalId: district.festivalId, year: 2025)
         let future = Edition(id: "future", festivalId: district.festivalId, year: 2027)
-        let period = Period.mock(id: "period", festivalId: district.festivalId, editionId: old.id, date: .init(year: 2026, month: 1, day: 1))
+        let period = Period.mock(id: "period", editionId: old.id, date: .init(year: 2026, month: 1, day: 1))
         let route = Route.mock(id: "route", districtId: district.id, periodId: period.id)
         let subject = make(
             routeRepository: .init(queryByEditionHandler: { _, editionId in

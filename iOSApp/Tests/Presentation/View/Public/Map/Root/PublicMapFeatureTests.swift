@@ -44,7 +44,7 @@ struct PublicMapFeatureTests {
         let appState = Shared<AppState?>(value: AppState(
             festivalPack: LaunchFestivalPack(
                 festival: festival,
-                year: 2026,
+                edition: Edition(id: "edition-2026", festivalId: festival.id, year: 2026),
                 districts: [laterGroupDistrict, selectedDistrict, sameGroupDistrict, firstGroupDistrict],
                 periods: [],
                 locations: [],
@@ -495,7 +495,6 @@ private struct PeriodSelectionFixture {
         period = Period(
             id: "period",
             editionId: edition.id,
-            festivalId: festival.id,
             title: "Night",
             date: SimpleDate(year: 2026, month: 10, day: 3),
             start: SimpleTime(hour: 18, minute: 0),

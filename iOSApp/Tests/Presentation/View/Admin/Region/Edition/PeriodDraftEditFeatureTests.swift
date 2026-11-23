@@ -10,7 +10,6 @@ struct PeriodDraftEditFeatureTests {
         let period = Period(
             id: "new-period",
             editionId: "edition",
-            festivalId: "festival",
             title: "夜",
             date: SimpleDate(year: 2026, month: 10, day: 1),
             start: SimpleTime(hour: 19, minute: 0),
@@ -23,7 +22,6 @@ struct PeriodDraftEditFeatureTests {
         let updatedPeriod = Period(
             id: period.id,
             editionId: "edition",
-            festivalId: "festival",
             title: period.title,
             date: newDate,
             start: period.start,
@@ -49,7 +47,6 @@ struct PeriodDraftEditFeatureTests {
         let period = Period(
             id: "period",
             editionId: editionID,
-            festivalId: "festival",
             title: "昼",
             date: SimpleDate(year: 2026, month: 10, day: 1),
             start: SimpleTime(hour: 12, minute: 0),
@@ -62,7 +59,6 @@ struct PeriodDraftEditFeatureTests {
         let updatedPeriod = Period(
             id: period.id,
             editionId: editionID,
-            festivalId: period.festivalId,
             title: period.title,
             date: newDate,
             start: period.start,

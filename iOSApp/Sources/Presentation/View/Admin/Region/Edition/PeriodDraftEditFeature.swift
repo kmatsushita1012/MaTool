@@ -45,7 +45,6 @@ struct PeriodDraftEditFeature {
                 state.period = Period(
                     id: period.id,
                     editionId: editionID,
-                    festivalId: state.festivalID,
                     title: period.title,
                     date: date,
                     start: period.start,

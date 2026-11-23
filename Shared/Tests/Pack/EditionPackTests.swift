@@ -9,7 +9,6 @@ struct EditionPackTests {
         let period = Period(
             id: "period-1",
             editionId: edition.id,
-            festivalId: edition.festivalId,
             date: SimpleDate(year: 2027, month: 5, day: 4)
         )
         let pack = EditionPack(edition: edition, periods: [period])

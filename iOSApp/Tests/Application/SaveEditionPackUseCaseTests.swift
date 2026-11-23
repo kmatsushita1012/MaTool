@@ -12,7 +12,6 @@ struct SaveEditionPackUseCaseTests {
         let updated = Period(
             id: original.id,
             editionId: edition.id,
-            festivalId: edition.festivalId,
             title: "更新済み",
             date: original.date,
             start: original.start,

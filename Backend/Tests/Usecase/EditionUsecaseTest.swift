@@ -275,7 +275,6 @@ private extension EditionUsecaseTest {
         Period(
             id: id,
             editionId: storedEditionId ?? edition.id,
-            festivalId: edition.festivalId,
             date: date,
             start: start,
             end: .init(hour: 18, minute: 0)

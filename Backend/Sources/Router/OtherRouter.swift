@@ -10,7 +10,6 @@ import Dependencies
 struct OtherRouter: Router {
     
     @Dependency(RouteControllerKey.self) var routeController
-    @Dependency(PeriodControllerKey.self) var periodController
     
     func body(_ app: Application) {
         // MARK: - Health
@@ -22,7 +21,6 @@ struct OtherRouter: Router {
         app.put(path: "/routes/:routeId", routeController.put)
         app.delete(path: "/routes/:routeId", routeController.delete)
         // MARK: - Period
-        app.get(path: "/v2/periods/:periodId", periodController.get)
         app.get(path: "/periods/:periodId") { _, _ in .gone() }
         app.put(path: "/periods/:periodId") { _, _ in .gone() }
         app.delete(path: "/periods/:periodId") { _, _ in .gone() }

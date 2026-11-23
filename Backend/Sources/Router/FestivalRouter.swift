@@ -11,7 +11,6 @@ struct FestivalRouter: Router {
     @Dependency(FestivalControllerKey.self) var festivalController
     @Dependency(DistrictControllerKey.self) var districtController
     @Dependency(LocationControllerKey.self) var locationController
-    @Dependency(PeriodControllerKey.self) var periodController
     @Dependency(SceneControllerKey.self) var sceneController
     @Dependency(EditionControllerKey.self) var editionController
     
@@ -33,7 +32,6 @@ struct FestivalRouter: Router {
         // MARK: - Location
         app.get(path: "/festivals/:festivalId/locations", locationController.query)
         // MARK: - Period
-        app.get(path: "/v2/festivals/:festivalId/periods", periodController.query)
         app.get(path: "/festivals/:festivalId/periods") { _, _ in .gone() }
         app.post(path: "/festivals/:festivalId/periods") { _, _ in .gone() }
         // MARK: - Festival

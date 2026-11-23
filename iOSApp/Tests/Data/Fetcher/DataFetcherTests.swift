@@ -32,7 +32,7 @@ struct DataFetcherTests {
             $0.installTestSpies()
             $0.authProvider = auth
         } operation: {
-            await PeriodDataFetcher().getToken()
+            await FestivalDataFetcher().getToken()
         }
 
         #expect(token == "access-token")
@@ -46,7 +46,7 @@ struct DataFetcherTests {
             $0.installTestSpies()
             $0.authProvider = auth
         } operation: {
-            await PeriodDataFetcher().getToken()
+            await FestivalDataFetcher().getToken()
         }
 
         #expect(token == nil)

@@ -47,7 +47,6 @@ struct AutoCreateEditionUseCase: AutoCreateEditionUseCaseProtocol {
             return Period(
                 id: UUID().uuidString,
                 editionId: createdPack.edition.id,
-                festivalId: sourceEdition.festivalId,
                 title: source.title,
                 date: date,
                 start: source.start,

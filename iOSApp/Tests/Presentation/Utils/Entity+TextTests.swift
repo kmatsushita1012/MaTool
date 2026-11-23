@@ -8,7 +8,6 @@ struct EntityTextTests {
         let period = Period(
             id: "period-1",
             editionId: "edition-1",
-            festivalId: "festival-1",
             title: "夜",
             date: SimpleDate(year: 2023, month: 10, day: 9)
         )

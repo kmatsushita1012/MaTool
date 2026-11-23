@@ -7,7 +7,7 @@ struct SceneDataFetcherTests {
     @Test("祭典の起動データは祭典IDを含むlaunchエンドポイントから取得する")
     func fetchFestivalLaunchById() async throws {
         let pack = LaunchFestivalPack(
-            festival: AppStateFixture.festival(), districts: [AppStateFixture.district()],
+            festival: AppStateFixture.festival(), edition: nil, districts: [AppStateFixture.district()],
             periods: [], locations: [], checkpoints: [], hazardSections: []
         )
         let spy = try RecordingHTTPClientSpy(response: pack)
@@ -50,7 +50,7 @@ struct SceneDataFetcherTests {
     @Test("地区IDから祭典起動データを取得するときは専用エンドポイントを使う")
     func fetchFestivalLaunchByDistrictId() async throws {
         let pack = LaunchFestivalPack(
-            festival: AppStateFixture.festival(), districts: [],
+            festival: AppStateFixture.festival(), edition: nil, districts: [],
             periods: [], locations: [], checkpoints: [], hazardSections: []
         )
         let spy = try RecordingHTTPClientSpy(response: pack)

@@ -377,8 +377,8 @@ struct DistrictUsecaseTest {
             }
         )
         let performanceRepository = PerformanceRepositoryMock(queryHandler: { _ in [] })
-        let currentYearPeriod = Period.mock(id: "period-\(nowYear)", festivalId: current.festivalId, date: .init(year: nowYear, month: 1, day: 1))
-        let lastYearPeriod = Period.mock(id: "period-\(nowYear - 1)", festivalId: current.festivalId, date: .init(year: nowYear - 1, month: 1, day: 1))
+        let currentYearPeriod = Period.mock(id: "period-\(nowYear)", date: .init(year: nowYear, month: 1, day: 1))
+        let lastYearPeriod = Period.mock(id: "period-\(nowYear - 1)", date: .init(year: nowYear - 1, month: 1, day: 1))
         let periodRepository = PeriodRepositoryMock(queryByYearHandler: { _, year in
             if year == nowYear + 1 { return [] }
             if year == nowYear { return [currentYearPeriod] }

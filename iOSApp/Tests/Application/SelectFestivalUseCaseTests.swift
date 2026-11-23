@@ -17,11 +17,11 @@ struct SelectFestivalUseCaseTests {
             base: Coordinate(latitude: 36, longitude: 140)
         )
         let currentPack = LaunchFestivalPack(
-            festival: currentFestival, districts: [], periods: [], locations: [],
+            festival: currentFestival, edition: nil, districts: [], periods: [], locations: [],
             checkpoints: [], hazardSections: []
         )
         let nextPack = LaunchFestivalPack(
-            festival: nextFestival, districts: [], periods: [], locations: [],
+            festival: nextFestival, edition: nil, districts: [], periods: [], locations: [],
             checkpoints: [], hazardSections: []
         )
         let appState = Shared<AppState?>(value: AppState(festivalPack: currentPack))
@@ -84,7 +84,7 @@ struct SelectFestivalUseCaseTests {
     func selectionWithoutSignoutPreservesAuthentication() async throws {
         let festival = AppStateFixture.festival()
         let pack = LaunchFestivalPack(
-            festival: festival, districts: [], periods: [], locations: [],
+            festival: festival, edition: nil, districts: [], periods: [], locations: [],
             checkpoints: [], hazardSections: []
         )
         let fetcher = SelectFestivalDataFetcherSpy(responses: [.success(pack)])
@@ -110,6 +110,7 @@ struct SelectFestivalUseCaseTests {
     func signoutFailurePreservesStateAndDefaults() async {
         let pack = LaunchFestivalPack(
             festival: AppStateFixture.festival(),
+            edition: nil,
             districts: [], periods: [], locations: [],
             checkpoints: [], hazardSections: []
         )
@@ -138,7 +139,7 @@ struct SelectFestivalUseCaseTests {
     func supersededFetchAvoidsMutationOrSignout() async {
         let coordinator = SceneSessionCoordinatorSpy()
         let pack = LaunchFestivalPack(
-            festival: AppStateFixture.festival(), districts: [],
+            festival: AppStateFixture.festival(), edition: nil, districts: [],
             periods: [], locations: [], checkpoints: [], hazardSections: []
         )
         let fetcher = SupersedingFestivalFetcherSpy(
@@ -170,7 +171,7 @@ struct SelectFestivalUseCaseTests {
     func supersededAfterSignoutClearsStaleAdminState() async {
         let coordinator = SceneSessionCoordinatorSpy()
         let pack = LaunchFestivalPack(
-            festival: AppStateFixture.festival(), districts: [],
+            festival: AppStateFixture.festival(), edition: nil, districts: [],
             periods: [], locations: [], checkpoints: [], hazardSections: []
         )
         let fetcher = SelectFestivalDataFetcherSpy(responses: [.success(pack)])

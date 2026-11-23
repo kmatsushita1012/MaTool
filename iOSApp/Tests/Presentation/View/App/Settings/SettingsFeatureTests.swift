@@ -37,7 +37,7 @@ struct SettingsFeatureTests {
         let appState = Shared<AppState?>(value: AppState(
             festivalPack: LaunchFestivalPack(
                 festival: festival,
-                year: 2026,
+                edition: Edition(id: "edition-2026", festivalId: festival.id, year: 2026),
                 districts: [laterDistrict, firstDistrict, middleDistrict],
                 periods: [],
                 locations: [],
@@ -88,7 +88,7 @@ struct SettingsFeatureTests {
         let appState = Shared<AppState?>(value: AppState(
             festivalPack: LaunchFestivalPack(
                 festival: festival,
-                year: 2026,
+                edition: Edition(id: "edition-2026", festivalId: festival.id, year: 2026),
                 districts: [savedDistrict, mapDistrict],
                 periods: [],
                 locations: [],
@@ -669,7 +669,7 @@ struct SettingsFeatureTests {
         let appState = Shared<AppState?>(value: AppState(
             festivalPack: LaunchFestivalPack(
                 festival: festival,
-                year: 2026,
+                edition: Edition(id: "edition-2026", festivalId: festival.id, year: 2026),
                 districts: [later, earlier],
                 periods: [],
                 locations: [],

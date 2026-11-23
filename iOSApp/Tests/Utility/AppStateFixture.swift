@@ -30,7 +30,6 @@ enum AppStateFixture {
         return Period(
             id: id,
             editionId: targetEdition.id,
-            festivalId: targetEdition.festivalId,
             date: SimpleDate(year: targetEdition.year, month: 10, day: day),
             start: SimpleTime(hour: startHour, minute: 0),
             end: SimpleTime(hour: 17, minute: 0)
