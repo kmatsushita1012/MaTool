@@ -18,7 +18,6 @@ struct SelectDistrictUseCaseTests {
         let currentPeriod = Period(
             id: "current-period",
             editionId: edition.id,
-            festivalId: festival.id,
             date: SimpleDate(year: 2026, month: 10, day: 3),
             start: SimpleTime(hour: 9, minute: 0),
             end: SimpleTime(hour: 17, minute: 0)

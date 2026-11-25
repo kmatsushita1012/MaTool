@@ -12,7 +12,6 @@ struct EditionEditFeatureTests {
         let edited = Period(
             id: original.id,
             editionId: edition.id,
-            festivalId: edition.festivalId,
             title: "夜",
             date: original.date,
             start: original.start,
@@ -188,7 +187,6 @@ struct EditionEditFeatureTests {
         Period(
             id: id,
             editionId: edition.id,
-            festivalId: edition.festivalId,
             title: "昼",
             date: SimpleDate(year: edition.year, month: 10, day: 1),
             start: SimpleTime(hour: 9, minute: 0),

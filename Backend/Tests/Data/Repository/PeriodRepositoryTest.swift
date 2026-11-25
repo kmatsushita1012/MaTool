@@ -7,7 +7,7 @@ import Testing
 struct PeriodRepositoryTest {
     @Test
     func get_IDインデックスで期間を取得する() async throws {
-        let period = Period.mock(id: "period-1", festivalId: "festival-1", editionId: "edition-1")
+        let period = Period.mock(id: "period-1", editionId: "edition-1")
         var indexName: String?
         var conditions: [QueryCondition] = []
         let store = DataStoreMock(queryHandler: { index, keys, _, _, _, _ in
@@ -25,7 +25,7 @@ struct PeriodRepositoryTest {
 
     @Test
     func query_Edition配下の期間を取得する() async throws {
-        let period = Period.mock(id: "period-1", festivalId: "festival-1", editionId: "edition-1")
+        let period = Period.mock(id: "period-1", editionId: "edition-1")
         var conditions: [QueryCondition] = []
         let store = DataStoreMock(queryHandler: { _, keys, _, _, _, _ in
             conditions = keys
@@ -40,7 +40,7 @@ struct PeriodRepositoryTest {
 
     @Test
     func query_祭典と年度からEdition経由で期間を取得する() async throws {
-        let period = Period.mock(id: "period-1", festivalId: "festival-1", editionId: "edition-1")
+        let period = Period.mock(id: "period-1", editionId: "edition-1")
         var getKeys: [String: Codable] = [:]
         var queryConditions: [QueryCondition] = []
         let store = DataStoreMock(
@@ -63,7 +63,7 @@ struct PeriodRepositoryTest {
 
     @Test
     func post_新しいキーで保存する() async throws {
-        let period = Period.mock(id: "period-1", festivalId: "festival-1", editionId: "edition-1")
+        let period = Period.mock(id: "period-1", editionId: "edition-1")
         var saved: PeriodRecord?
         let store = DataStoreMock(putHandler: { item in
             saved = try decodeFromEncodable(item, as: PeriodRecord.self)
@@ -79,7 +79,8 @@ struct PeriodRepositoryTest {
 
     @Test
     func post_Edition未設定の期間を拒否する() async {
-        let period = Period(id: "period-1", festivalId: "festival-1", date: .init(year: 2026, month: 2, day: 22))
+        var period = Period(id: "period-1", editionId: "edition-1", date: .init(year: 2026, month: 2, day: 22))
+        period.editionId = nil
         let repository = make(dataStore: .init())
 
         await #expect(throws: Error.badRequest("日程にEditionが設定されていません。")) {
@@ -91,14 +92,12 @@ struct PeriodRepositoryTest {
     func put_日時変更ではキーを移動しない() async throws {
         let existing = Period.mock(
             id: "period-1",
-            festivalId: "festival-1",
             editionId: "edition-1",
             date: .init(year: 2026, month: 2, day: 22),
             start: .init(hour: 9, minute: 0)
         )
         let updated = Period.mock(
             id: existing.id,
-            festivalId: "festival-1",
             editionId: "edition-1",
             date: .init(year: 2027, month: 3, day: 1),
             start: .init(hour: 12, minute: 30)
@@ -118,8 +117,8 @@ struct PeriodRepositoryTest {
 
     @Test
     func put_Edition変更時は旧キーを削除して保存する() async throws {
-        let existing = Period.mock(id: "period-1", festivalId: "festival-1", editionId: "edition-old")
-        let updated = Period.mock(id: existing.id, festivalId: "festival-1", editionId: "edition-new")
+        let existing = Period.mock(id: "period-1", editionId: "edition-old")
+        let updated = Period.mock(id: existing.id, editionId: "edition-new")
         var deleted: [String: Codable] = [:]
         let store = DataStoreMock(
             putHandler: { _ in },
@@ -136,7 +135,7 @@ struct PeriodRepositoryTest {
 
     @Test
     func delete_IDインデックスで実際の主キーを削除する() async throws {
-        let period = Period.mock(id: "period-1", festivalId: "festival-1", editionId: "edition-1")
+        let period = Period.mock(id: "period-1", editionId: "edition-1")
         var deleted: [String: Codable] = [:]
         let store = DataStoreMock(
             deleteHandler: { deleted = $0 },

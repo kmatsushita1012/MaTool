@@ -3,7 +3,7 @@ import Shared
 import Testing
 
 struct PackTests {
-    @Test("LaunchFestivalPack adds edition and retains deprecated year")
+    @Test("LaunchFestivalPack encodes edition without the legacy year")
     func launchFestivalPackEncodesOptionalEditionAsNull() throws {
         let pack = LaunchFestivalPack(
             festival: makeFestival(),
@@ -19,24 +19,8 @@ struct PackTests {
         let object = try #require(JSONSerialization.jsonObject(with: data) as? [String: Any])
 
         #expect(object["edition"] is NSNull)
-        #expect(object["year"] as? Int == 0)
+        #expect(object["year"] == nil)
         #expect(try JSONDecoder().decode(LaunchFestivalPack.self, from: data) == pack)
-    }
-
-    @Test("Deprecated LaunchFestivalPack initializer keeps the existing year")
-    func deprecatedLaunchInitializerKeepsYear() {
-        let pack = LaunchFestivalPack(
-            festival: makeFestival(),
-            year: 2026,
-            districts: [],
-            periods: [],
-            locations: [],
-            checkpoints: [],
-            hazardSections: []
-        )
-
-        #expect(pack.year == 2026)
-        #expect(pack.edition == nil)
     }
 
     @Test("LaunchDistrictPack encodes a missing editionId as null")

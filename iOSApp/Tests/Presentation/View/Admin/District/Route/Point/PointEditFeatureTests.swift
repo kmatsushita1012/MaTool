@@ -74,6 +74,7 @@ struct PointEditFeatureTests {
         let checkpoint = Checkpoint(id: "cp", name: "交差点", festivalId: "festival")
         let pack = LaunchFestivalPack(
             festival: AppStateFixture.festival(),
+            edition: nil,
             districts: [AppStateFixture.district()],
             periods: [AppStateFixture.period()],
             locations: [], checkpoints: [checkpoint],

@@ -9,9 +9,9 @@ struct LatestPeriodRouteResolverTest {
         let repository = PeriodRepositoryMock(queryByYearHandler: { _, year in
             switch year {
             case 2027:
-                return [makePeriod(id: "period-2027", festivalId: festivalId, year: 2027)]
+                return [makePeriod(id: "period-2027", year: 2027)]
             case 2026:
-                return [makePeriod(id: "period-2026", festivalId: festivalId, year: 2026)]
+                return [makePeriod(id: "period-2026", year: 2026)]
             default:
                 return []
             }
@@ -33,9 +33,9 @@ struct LatestPeriodRouteResolverTest {
         let repository = PeriodRepositoryMock(queryByYearHandler: { _, year in
             switch year {
             case 2026:
-                return [makePeriod(id: "period-2026", festivalId: festivalId, year: 2026)]
+                return [makePeriod(id: "period-2026", year: 2026)]
             case 2025:
-                return [makePeriod(id: "period-2025", festivalId: festivalId, year: 2025)]
+                return [makePeriod(id: "period-2025", year: 2025)]
             default:
                 return []
             }
@@ -61,9 +61,9 @@ struct LatestPeriodRouteResolverTest {
         let periodRepository = PeriodRepositoryMock(queryByYearHandler: { _, year in
             switch year {
             case 2027:
-                return [makePeriod(id: "period-2027", festivalId: festivalId, year: 2027)]
+                return [makePeriod(id: "period-2027", year: 2027)]
             case 2026:
-                return [makePeriod(id: "period-2026", festivalId: festivalId, year: 2026)]
+                return [makePeriod(id: "period-2026", year: 2026)]
             default:
                 return []
             }
@@ -97,9 +97,9 @@ struct LatestPeriodRouteResolverTest {
         let periodRepository = PeriodRepositoryMock(queryByYearHandler: { _, year in
             switch year {
             case 2027:
-                return [makePeriod(id: "period-2027", festivalId: festivalId, year: 2027)]
+                return [makePeriod(id: "period-2027", year: 2027)]
             case 2026:
-                return [makePeriod(id: "period-2026", festivalId: festivalId, year: 2026)]
+                return [makePeriod(id: "period-2026", year: 2026)]
             default:
                 return []
             }
@@ -133,9 +133,9 @@ struct LatestPeriodRouteResolverTest {
         let periodRepository = PeriodRepositoryMock(queryByYearHandler: { _, year in
             switch year {
             case 2026:
-                return [makePeriod(id: "period-2026", festivalId: festivalId, year: 2026)]
+                return [makePeriod(id: "period-2026", year: 2026)]
             case 2025:
-                return [makePeriod(id: "period-2025", festivalId: festivalId, year: 2025)]
+                return [makePeriod(id: "period-2025", year: 2025)]
             default:
                 return []
             }
@@ -190,8 +190,8 @@ struct LatestPeriodRouteResolverTest {
             switch year {
             case 2027:
                 return [
-                    makePeriod(id: "period-2027-a", festivalId: festivalId, year: 2027),
-                    makePeriod(id: "period-2027-b", festivalId: festivalId, year: 2027)
+                    makePeriod(id: "period-2027-a", year: 2027),
+                    makePeriod(id: "period-2027-b", year: 2027)
                 ]
             default:
                 return []
@@ -215,10 +215,10 @@ struct LatestPeriodRouteResolverTest {
     }
 }
 
-private func makePeriod(id: String, festivalId: String, year: Int) -> Period {
+private func makePeriod(id: String, year: Int) -> Period {
     .mock(
         id: id,
-        festivalId: festivalId,
+        editionId: "edition-\(year)",
         date: .init(year: year, month: 1, day: 1),
         start: .init(hour: 9, minute: 0),
         end: .init(hour: 10, minute: 0)

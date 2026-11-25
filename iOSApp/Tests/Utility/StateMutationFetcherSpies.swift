@@ -7,34 +7,6 @@ enum FetcherTestError: Swift.Error, Equatable {
     case failed
 }
 
-actor PeriodDataFetcherSpy: PeriodDataFetcherProtocol {
-    let response: Period
-    let list: [Period]
-    let shouldFail: Bool
-    private var operations: [String] = []
-
-    init(response: Period, list: [Period] = [], shouldFail: Bool = false) {
-        self.response = response
-        self.list = list
-        self.shouldFail = shouldFail
-    }
-
-    func recordedCalls() -> [String] { operations }
-
-    func fetchAll(festivalID: Festival.ID, query: Query) async throws -> [Period] {
-        operations.append("fetchAll:\(festivalID):\(String(describing: query))")
-        if shouldFail { throw FetcherTestError.failed }
-        return list
-    }
-
-    func fetch(_ id: Period.ID) async throws -> Period {
-        operations.append("fetch:\(id)")
-        if shouldFail { throw FetcherTestError.failed }
-        return response
-    }
-
-}
-
 actor RouteDataFetcherSpy: RouteDataFetcherProtocol {
     let pack: RoutePack
     let routes: [Route]

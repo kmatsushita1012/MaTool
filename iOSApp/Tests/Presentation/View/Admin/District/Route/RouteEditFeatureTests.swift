@@ -113,7 +113,6 @@ struct RouteEditFeatureTests {
         let currentPeriod = Period(
             id: "current-period",
             editionId: currentEdition.id,
-            festivalId: festival.id,
             date: SimpleDate(year: 2026, month: 10, day: 3),
             start: SimpleTime(hour: 9, minute: 0),
             end: SimpleTime(hour: 17, minute: 0)
@@ -121,7 +120,6 @@ struct RouteEditFeatureTests {
         let pastPeriod = Period(
             id: "past-period",
             editionId: pastEdition.id,
-            festivalId: festival.id,
             date: SimpleDate(year: 2025, month: 10, day: 4),
             start: SimpleTime(hour: 9, minute: 0),
             end: SimpleTime(hour: 17, minute: 0)
@@ -161,7 +159,7 @@ struct RouteEditFeatureTests {
         let festivalState = FestivalState(
             LaunchFestivalPack(
                 festival: festival,
-                year: 2026,
+                edition: Edition(id: "edition-2026", festivalId: festival.id, year: 2026),
                 districts: [district],
                 periods: [currentPeriod],
                 locations: [],

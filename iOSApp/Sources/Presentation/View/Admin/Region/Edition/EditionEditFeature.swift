@@ -189,7 +189,6 @@ struct EditionEditFeature {
         .create(Period(
             id: UUID().uuidString,
             editionId: edition.id,
-            festivalId: edition.festivalId,
             title: "",
             date: .now,
             start: SimpleTime(hour: 9, minute: 0),

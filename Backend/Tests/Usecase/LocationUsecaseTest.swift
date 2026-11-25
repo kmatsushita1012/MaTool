@@ -12,7 +12,7 @@ struct LocationUsecaseTest {
         let festivalId = "festival-1"
         let districtId = "district-1"
         let location = FloatLocation.mock(id: "loc-1", districtId: districtId, coordinate: .init(latitude: 35, longitude: 139), timestamp: now)
-        let period = Period(editionId: "edition-1", festivalId: festivalId, date: .from(now), start: .init(hour: 0, minute: 0), end: .init(hour: 23, minute: 59))
+        let period = Period(editionId: "edition-1", date: .from(now), start: .init(hour: 0, minute: 0), end: .init(hour: 23, minute: 59))
         let repository = LocationRepositoryMock(queryHandler: { _ in [location] })
 
         let subject = make(
@@ -148,7 +148,6 @@ struct LocationUsecaseTest {
     func query_異常_依存エラーを透過() async {
         let period = Period(
             editionId: "edition-1",
-            festivalId: "festival-1",
             date: .from(now),
             start: .init(hour: 0, minute: 0),
             end: .init(hour: 23, minute: 59)

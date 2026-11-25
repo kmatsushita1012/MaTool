@@ -53,6 +53,17 @@ struct FestivalRouterTest {
     }
 
     @Test
+    func periodList_旧Pathは410で旧v2Pathは未登録() async {
+        let app = make()
+
+        let removedV2Response = await app.handle(.make(method: .get, path: "/v2/festivals/festival-1/periods"))
+        let oldResponse = await app.handle(.make(method: .get, path: "/festivals/festival-1/periods"))
+
+        #expect(removedV2Response.statusCode == 404)
+        #expect(oldResponse.statusCode == 410)
+    }
+
+    @Test
     func routesEditionManagementEndpoints_正常() async {
         let editionController = EditionControllerSpy()
         let app = make(editionController: editionController)
@@ -70,25 +81,6 @@ struct FestivalRouterTest {
         }
 
         #expect(editionController.calls == ["query", "create", "get", "put", "putActive"])
-    }
-
-    @Test
-    func periodList_旧Pathは410でv2PathはControllerへ届く() async {
-        let controller = PeriodControllerMock(
-            queryHandler: { _, _ in try .success() },
-            postHandler: { _, _ in try .success() }
-        )
-        let app = make(periodController: controller)
-
-        let v2Response = await app.handle(.make(method: .get, path: "/v2/festivals/festival-1/periods"))
-        let oldGetResponse = await app.handle(.make(method: .get, path: "/festivals/festival-1/periods"))
-        let oldPostResponse = await app.handle(.make(method: .post, path: "/festivals/festival-1/periods"))
-
-        #expect(v2Response.statusCode == 200)
-        #expect(oldGetResponse.statusCode == 410)
-        #expect(oldPostResponse.statusCode == 410)
-        #expect(controller.queryCallCount == 1)
-        #expect(controller.postCallCount == 0)
     }
 
     @Test
@@ -139,7 +131,6 @@ struct FestivalRouterTest {
                 $0[FestivalControllerKey.self] = FestivalControllerMock()
                 $0[DistrictControllerKey.self] = DistrictControllerMock()
                 $0[LocationControllerKey.self] = LocationControllerMock()
-                $0[PeriodControllerKey.self] = PeriodControllerMock()
                 $0[SceneControllerKey.self] = SceneController()
                 $0[EditionControllerKey.self] = EditionControllerSpy()
             } operation: {
@@ -177,7 +168,6 @@ private extension FestivalRouterTest {
         festivalController: FestivalControllerMock = .init(),
         districtController: DistrictControllerMock = .init(),
         locationController: LocationControllerMock = .init(),
-        periodController: PeriodControllerMock = .init(),
         sceneController: SceneControllerMock = .init(),
         editionController: EditionControllerSpy = .init()
     ) -> Application {
@@ -185,7 +175,6 @@ private extension FestivalRouterTest {
             $0[FestivalControllerKey.self] = festivalController
             $0[DistrictControllerKey.self] = districtController
             $0[LocationControllerKey.self] = locationController
-            $0[PeriodControllerKey.self] = periodController
             $0[SceneControllerKey.self] = sceneController
             $0[EditionControllerKey.self] = editionController
         } operation: {

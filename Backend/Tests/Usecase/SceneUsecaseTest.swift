@@ -38,7 +38,7 @@ struct SceneUsecaseTest {
         let festival = Festival.mock(id: "festival-1")
         let districts = [District.mock(id: "district-1", festivalId: festival.id)]
         let edition = Edition(id: "edition-2026", festivalId: festival.id, year: 2026)
-        let period = Period.mock(id: "period-1", festivalId: festival.id, editionId: edition.id, date: .from(now), start: .init(hour: 9, minute: 0), end: .init(hour: 13, minute: 0))
+        let period = Period.mock(id: "period-1", editionId: edition.id, date: .from(now), start: .init(hour: 9, minute: 0), end: .init(hour: 13, minute: 0))
         let location = FloatLocation.mock(id: "loc-1", districtId: "district-1")
         let checkpoint = Checkpoint.mock(id: "cp-1", festivalId: festival.id)
         let hazard = HazardSection.mock(id: "hz-1", festivalId: festival.id)
@@ -72,7 +72,7 @@ struct SceneUsecaseTest {
         let now = makeDate(year: 2026, month: 2, day: 22, hour: 12)
         let festival = Festival.mock(id: "festival-1")
         let edition = Edition(id: "edition-2028", festivalId: festival.id, year: 2028)
-        let activePeriod = Period.mock(id: "active", festivalId: festival.id, editionId: edition.id, date: .init(year: 2028, month: 2, day: 22))
+        let activePeriod = Period.mock(id: "active", editionId: edition.id, date: .init(year: 2028, month: 2, day: 22))
         let periodRepository = PeriodRepositoryMock(queryByEditionHandler: { editionId in
             #expect(editionId == edition.id)
             return [activePeriod]
@@ -245,7 +245,6 @@ struct SceneUsecaseTest {
         let edition = Edition(id: "edition-2024", festivalId: festival.id, year: 2024)
         let period = Period.mock(
             id: "period-2024",
-            festivalId: festival.id,
             editionId: edition.id,
             date: .init(year: 2024, month: 2, day: 22),
             start: .init(hour: 11, minute: 0),
@@ -354,7 +353,6 @@ struct SceneUsecaseTest {
         let edition = Edition(id: "edition-2027", festivalId: district.festivalId, year: 2027)
         let activePeriod = Period.mock(
             id: "period-next",
-            festivalId: district.festivalId,
             editionId: edition.id,
             date: .init(year: 2027, month: 2, day: 22),
             start: .init(hour: 11, minute: 0),
@@ -399,7 +397,6 @@ struct SceneUsecaseTest {
         let edition = Edition(id: "edition-2024", festivalId: district.festivalId, year: 2024)
         let previousPeriod = Period.mock(
             id: "period-previous",
-            festivalId: district.festivalId,
             editionId: edition.id,
             date: .init(year: 2024, month: 2, day: 22),
             start: .init(hour: 11, minute: 0),
@@ -438,7 +435,7 @@ struct SceneUsecaseTest {
         let now = makeDate(year: 2026, month: 2, day: 22, hour: 12)
         let district = District.mock(id: "district-1", festivalId: "festival-1")
         let edition = Edition(id: "edition-2026", festivalId: district.festivalId, year: 2026)
-        let period = Period.mock(id: "period-1", festivalId: district.festivalId, editionId: edition.id, date: .from(now), start: .init(hour: 11, minute: 0), end: .init(hour: 13, minute: 0))
+        let period = Period.mock(id: "period-1", editionId: edition.id, date: .from(now), start: .init(hour: 11, minute: 0), end: .init(hour: 13, minute: 0))
         let adminRoute = Route.mock(id: "route-1", districtId: district.id, periodId: period.id, visibility: .admin)
         let routeRepository = RouteRepositoryMock(queryByEditionHandler: { _, _ in [adminRoute] })
         let pointRepository = PointRepositoryMock(queryHandler: { _ in
@@ -478,7 +475,7 @@ struct SceneUsecaseTest {
         let now = makeDate(year: 2026, month: 2, day: 22, hour: 12)
         let district = District.mock(id: "district-1", festivalId: "festival-1")
         let edition = Edition(id: "edition-2026", festivalId: district.festivalId, year: 2026)
-        let period = Period.mock(id: "period-1", festivalId: district.festivalId, editionId: edition.id, date: .from(now), start: .init(hour: 11, minute: 0), end: .init(hour: 13, minute: 0))
+        let period = Period.mock(id: "period-1", editionId: edition.id, date: .from(now), start: .init(hour: 11, minute: 0), end: .init(hour: 13, minute: 0))
         let route = Route.mock(id: "route-1", districtId: district.id, periodId: period.id, visibility: .route)
         let point = Point.mock(id: "point-1", routeId: route.id, time: .init(hour: 12, minute: 34))
 
@@ -506,8 +503,8 @@ struct SceneUsecaseTest {
         let now = makeDate(year: 2026, month: 2, day: 22, hour: 12)
         let district = District.mock(id: "district-1", festivalId: "festival-1")
         let edition = Edition(id: "edition-2026", festivalId: district.festivalId, year: 2026)
-        let nearestPeriod = Period.mock(id: "period-nearest", festivalId: district.festivalId, editionId: edition.id, date: .init(year: 2026, month: 2, day: 22), start: .init(hour: 11, minute: 0), end: .init(hour: 13, minute: 0))
-        let requestedPeriod = Period.mock(id: "period-requested", festivalId: district.festivalId, editionId: edition.id, date: .init(year: 2026, month: 2, day: 25), start: .init(hour: 11, minute: 0), end: .init(hour: 13, minute: 0))
+        let nearestPeriod = Period.mock(id: "period-nearest", editionId: edition.id, date: .init(year: 2026, month: 2, day: 22), start: .init(hour: 11, minute: 0), end: .init(hour: 13, minute: 0))
+        let requestedPeriod = Period.mock(id: "period-requested", editionId: edition.id, date: .init(year: 2026, month: 2, day: 25), start: .init(hour: 11, minute: 0), end: .init(hour: 13, minute: 0))
         let nearestRoute = Route.mock(id: "route-nearest", districtId: district.id, periodId: nearestPeriod.id, visibility: .all)
         let requestedRoute = Route.mock(id: "route-requested", districtId: district.id, periodId: requestedPeriod.id, visibility: .all)
         let requestedPoint = Point.mock(id: "point-requested", routeId: requestedRoute.id)
@@ -545,8 +542,8 @@ struct SceneUsecaseTest {
         let now = makeDate(year: 2026, month: 2, day: 22, hour: 12)
         let district = District.mock(id: "district-1", festivalId: "festival-1")
         let edition = Edition(id: "edition-2026", festivalId: district.festivalId, year: 2026)
-        let nearestPeriod = Period.mock(id: "period-nearest", festivalId: district.festivalId, editionId: edition.id, date: .init(year: 2026, month: 2, day: 22), start: .init(hour: 11, minute: 0), end: .init(hour: 13, minute: 0))
-        let otherPeriod = Period.mock(id: "period-other", festivalId: district.festivalId, editionId: edition.id, date: .init(year: 2026, month: 2, day: 25), start: .init(hour: 11, minute: 0), end: .init(hour: 13, minute: 0))
+        let nearestPeriod = Period.mock(id: "period-nearest", editionId: edition.id, date: .init(year: 2026, month: 2, day: 22), start: .init(hour: 11, minute: 0), end: .init(hour: 13, minute: 0))
+        let otherPeriod = Period.mock(id: "period-other", editionId: edition.id, date: .init(year: 2026, month: 2, day: 25), start: .init(hour: 11, minute: 0), end: .init(hour: 13, minute: 0))
         let nearestRoute = Route.mock(id: "route-nearest", districtId: district.id, periodId: nearestPeriod.id, visibility: .all)
         let otherRoute = Route.mock(id: "route-other", districtId: district.id, periodId: otherPeriod.id, visibility: .all)
         let nearestPoint = Point.mock(id: "point-nearest", routeId: nearestRoute.id)
@@ -581,7 +578,7 @@ struct SceneUsecaseTest {
             districtRepository: .init(getHandler: { _ in .mock(id: "district-1", festivalId: "festival-1") }),
             activeEditionRepository: .init(getHandler: { _ in ActiveEdition(festivalId: "festival-1", editionId: "edition-2026") }),
             editionRepository: .init(getHandler: { _ in .init(id: "edition-2026", festivalId: "festival-1", year: 2026) }),
-            periodRepository: .init(queryByEditionHandler: { _ in [.mock(festivalId: "festival-1", editionId: "edition-2026")] }),
+            periodRepository: .init(queryByEditionHandler: { _ in [.mock(editionId: "edition-2026")] }),
             routeRepository: .init(queryByEditionHandler: { _, _ in throw TestError.intentional })
         )
 
