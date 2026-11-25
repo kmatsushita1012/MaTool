@@ -9,7 +9,6 @@ import SwiftUI
 import ComposableArchitecture
 import NavigationSwipeControl
 
-@available(iOS 17.0, *)
 struct DistrictReissueScreen: View {
     @SwiftUI.Bindable var store: StoreOf<DistrictReissueFeature>
 
@@ -25,10 +24,8 @@ struct DistrictReissueScreen: View {
     }
 }
 
-@available(iOS 17.0, *)
 typealias DistrictReissueView = DistrictReissueScreen
 
-@available(iOS 17.0, *)
 struct DistrictReissueContentView: View {
     @Binding var email: String
     let isLoading: Bool

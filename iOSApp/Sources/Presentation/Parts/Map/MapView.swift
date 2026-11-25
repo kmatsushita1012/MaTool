@@ -402,20 +402,15 @@ extension MapView: Equatable {
 
 extension Array where Element == MKPointOfInterestCategory {
     static var excludedForPublic : [MKPointOfInterestCategory] {
-        var categories: [MKPointOfInterestCategory] = [
+        [
             .nightlife,
-            .restaurant
+            .restaurant,
+            .beauty
         ]
-        if #available(iOS 18.0, *) {
-            categories.append(contentsOf: [
-                .beauty
-            ])
-        }
-        return categories
     }
     
     static var includedForAdmin: [MKPointOfInterestCategory] {
-        var categories: [MKPointOfInterestCategory] = [
+        [
             .airport,
             .aquarium,
             .bank,
@@ -434,23 +429,18 @@ extension Array where Element == MKPointOfInterestCategory {
             .stadium,
             .school,
             .university,
-            .zoo
+            .zoo,
+            .castle,
+            .conventionCenter,
+            .fortress,
+            .fairground,
+            .golf,
+            .miniGolf,
+            .kayaking,
+            .landmark,
+            .mailbox,
+            .musicVenue,
+            .nationalMonument
         ]
-        if #available(iOS 18.0, *) {
-            categories.append(contentsOf: [
-                .castle,
-                .conventionCenter,
-                .fortress,
-                .fairground,
-                .golf,
-                .miniGolf,
-                .kayaking,
-                .landmark,
-                .mailbox,
-                .musicVenue,
-                .nationalMonument
-            ])
-        }
-        return categories
     }
 }

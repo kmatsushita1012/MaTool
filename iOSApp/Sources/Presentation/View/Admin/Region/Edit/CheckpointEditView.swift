@@ -9,7 +9,6 @@ import SwiftUI
 import ComposableArchitecture
 import NavigationSwipeControl
 
-@available(iOS 17.0, *)
 struct CheckpointEditScreen: View {
     @SwiftUI.Bindable var store: StoreOf<CheckpointEditFeature>
 
@@ -26,10 +25,8 @@ struct CheckpointEditScreen: View {
     }
 }
 
-@available(iOS 17.0, *)
 typealias CheckpointEditView = CheckpointEditScreen
 
-@available(iOS 17.0, *)
 struct CheckpointEditContentView: View {
     @Binding var name: String
     @Binding var description: String

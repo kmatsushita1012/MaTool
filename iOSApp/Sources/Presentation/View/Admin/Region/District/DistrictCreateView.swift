@@ -9,7 +9,6 @@ import SwiftUI
 import ComposableArchitecture
 import NavigationSwipeControl
 
-@available(iOS 17.0, *)
 struct DistrictCreateScreen: View {
     @SwiftUI.Bindable var store: StoreOf<DistrictCreateFeature>
 
@@ -26,10 +25,8 @@ struct DistrictCreateScreen: View {
     }
 }
 
-@available(iOS 17.0, *)
 typealias DistrictCreateView = DistrictCreateScreen
 
-@available(iOS 17.0, *)
 struct DistrictCreateContentView: View {
     @Binding var name: String
     @Binding var email: String

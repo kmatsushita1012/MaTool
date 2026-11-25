@@ -9,7 +9,6 @@ import ComposableArchitecture
 import SwiftUI
 import NavigationSwipeControl
 
-@available(iOS 17.0, *)
 struct UpdateEmailScreen: View {
     @SwiftUI.Bindable var store: StoreOf<UpdateEmailFeature>
 
@@ -36,10 +35,8 @@ struct UpdateEmailScreen: View {
     }
 }
 
-@available(iOS 17.0, *)
 typealias UpdateEmailView = UpdateEmailScreen
 
-@available(iOS 17.0, *)
 struct UpdateEmailContentView: View {
     let step: UpdateEmailFeature.State.Step
     @Binding var email: String
@@ -92,7 +89,6 @@ struct UpdateEmailContentView: View {
     }
 }
 
-@available(iOS 17.0, *)
 struct UpdateEmailCodeContentView: View {
     let destination: String
     @Binding var code: String

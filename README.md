@@ -97,7 +97,7 @@ MaTool/
 3. 利用する環境の `iOSApp/amplifyconfiguration.json` を配置します（形式は `amplifyconfiguration.example.json` を参照）。
 4. `iOSApp` スキームを選んで iPhone シミュレータまたは実機でビルドします。
 
-**対応 OS:** iOS 17.0 以降（リポジトリの現行設定）。生成した設定や認証情報はコミットしないでください。
+**対応 OS:** iOS 18.0 以降（リポジトリの現行設定）。生成した設定や認証情報はコミットしないでください。
 
 ### Backend
 
