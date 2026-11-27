@@ -125,8 +125,6 @@ struct StoreDashboardFeature {
                 return .none
 
             case .destination(.presented(.storeAdImage(.closeTapped))):
-                guard let editor = state.destination?.storeAdImage,
-                      !editor.isUploading, !editor.isSaving else { return .none }
                 state.destination = nil
                 return .none
 

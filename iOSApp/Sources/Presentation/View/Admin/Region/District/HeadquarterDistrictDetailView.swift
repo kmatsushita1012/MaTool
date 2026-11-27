@@ -81,7 +81,7 @@ struct HeadquarterDistrictDetailView: View {
         .navigationTitle(store.district.name)
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
-            ToolbarCancelButton(isDisabled: store.isLoading) {
+            ToolbarCancelButton {
                 store.send(.closeTapped)
             }
             if store.isEditable {

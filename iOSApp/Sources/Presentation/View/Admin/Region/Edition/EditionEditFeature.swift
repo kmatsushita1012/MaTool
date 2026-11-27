@@ -83,7 +83,6 @@ struct EditionEditFeature {
             case .binding:
                 return .none
             case .closeTapped:
-                guard !state.isBusy else { return .none }
                 return .dismiss
             case .onAppear:
                 guard !state.hasLoaded else { return .none }

@@ -76,7 +76,6 @@ struct HeadquarterDistrictDetailFeature {
             case .binding(_):
                 return .none
             case .closeTapped:
-                guard !state.isLoading else { return .none }
                 return .dismiss
             case .editTapped:
                 if state.isEditable {

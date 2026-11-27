@@ -94,7 +94,7 @@ struct EditionEditContentView: View {
         .navigationTitle(Text(String(editionYear) + "年度"))
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
-            ToolbarCancelButton(isDisabled: isBusy, action: onCloseTapped)
+            ToolbarCancelButton(action: onCloseTapped)
             ToolbarSaveButton(
                 isDisabled: isBusy || !hasLoaded || !isDirty,
                 isLoading: isSaving,

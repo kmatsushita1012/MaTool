@@ -61,7 +61,6 @@ struct StoreEditFeature {
             case .binding:
                 return .none
             case .cancelTapped:
-                guard !state.isLoading else { return .none }
                 return .dismiss
 
             case .saveTapped:

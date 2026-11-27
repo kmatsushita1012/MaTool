@@ -104,7 +104,7 @@ struct StoreEditContentView: View {
         .navigationTitle(isNew ? "店舗を追加" : "基本情報を編集")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
-            ToolbarCancelButton(isDisabled: isLoading, action: onCancelTapped)
+            ToolbarCancelButton(action: onCancelTapped)
             ToolbarSaveButton(isLoading: isLoading, action: onSaveTapped)
         }
     }
