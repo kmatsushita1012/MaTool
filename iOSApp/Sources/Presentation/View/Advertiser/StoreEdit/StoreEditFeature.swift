@@ -41,6 +41,7 @@ struct StoreEditFeature {
     @CasePathable
     enum Action: Equatable, BindableAction {
         case binding(BindingAction<State>)
+        case cancelTapped
         case saveTapped
         case saveReceived(AppResult<StoreSaveResult>)
         case coordinateTapped
@@ -49,6 +50,7 @@ struct StoreEditFeature {
     }
 
     @Dependency(\.advertiserStoreUsecase) private var storeUsecase
+    @Dependency(\.dismiss) private var dismiss
 
     private enum TaskID { case save }
 
@@ -58,6 +60,9 @@ struct StoreEditFeature {
             switch action {
             case .binding:
                 return .none
+            case .cancelTapped:
+                guard !state.isLoading else { return .none }
+                return .dismiss
 
             case .saveTapped:
                 guard !state.isLoading else { return .none }

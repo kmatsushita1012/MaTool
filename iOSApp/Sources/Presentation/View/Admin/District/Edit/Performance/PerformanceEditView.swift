@@ -7,7 +7,6 @@
 
 import SwiftUI
 import ComposableArchitecture
-import NavigationSwipeControl
 
 struct PerformanceEditScreen: View {
     @SwiftUI.Bindable var store: StoreOf<PerformanceEditFeature>
@@ -22,7 +21,6 @@ struct PerformanceEditScreen: View {
             onCancelTapped: { store.send(.cancelTapped) },
             onDoneTapped: { store.send(.doneTapped) }
         )
-        .dismissible(backButton: false, edgeSwipe: false)
         .alert($store.scope(state: \.alert, action: \.alert))
     }
 }

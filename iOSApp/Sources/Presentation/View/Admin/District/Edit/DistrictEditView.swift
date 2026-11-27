@@ -7,7 +7,6 @@
 
 import SwiftUI
 import ComposableArchitecture
-import NavigationSwipeControl
 import Shared
 
 struct DistrictEditScreen: View {
@@ -49,7 +48,6 @@ struct DistrictEditScreen: View {
             .navigationBarTitleDisplayMode(.inline)
             .interactiveDismissDisabled(store.imageEdit.isUploading)
         }
-        .dismissible(backButton: false, edgeSwipe: false)
         .navigationDestination(item: $store.scope(state: \.destination?.base, action: \.destination.base)) { store in
             MapCoordinatePickerScreen(store: store)
         }

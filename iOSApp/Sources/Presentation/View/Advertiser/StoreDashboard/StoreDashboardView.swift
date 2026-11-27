@@ -44,17 +44,21 @@ private struct StoreDashboardDestinations: ViewModifier {
 
     func body(content: Content) -> some View {
         content
-            .navigationDestination(item: $store.scope(
+            .fullScreenCover(item: $store.scope(
                 state: \.destination?.storeEdit,
                 action: \.destination.storeEdit
             )) { editStore in
-                StoreEditScreen(store: editStore)
+                NavigationStack {
+                    StoreEditScreen(store: editStore)
+                }
             }
-            .navigationDestination(item: $store.scope(
+            .fullScreenCover(item: $store.scope(
                 state: \.destination?.storeAdImage,
                 action: \.destination.storeAdImage
             )) { imageStore in
-                ImageEditScreen(store: imageStore)
+                NavigationStack {
+                    ImageEditScreen(store: imageStore)
+                }
             }
             .navigationDestination(item: $store.scope(
                 state: \.destination?.credit,

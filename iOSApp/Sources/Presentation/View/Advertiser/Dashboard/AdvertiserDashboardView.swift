@@ -28,11 +28,13 @@ private struct AdvertiserDashboardDestinations: ViewModifier {
 
     func body(content: Content) -> some View {
         content
-            .navigationDestination(item: $store.scope(
+            .fullScreenCover(item: $store.scope(
                 state: \.destination?.storeCreate,
                 action: \.destination.storeCreate
             )) { createStore in
-                StoreEditScreen(store: createStore)
+                NavigationStack {
+                    StoreEditScreen(store: createStore)
+                }
             }
             .navigationDestination(item: $store.scope(
                 state: \.destination?.storeDashboard,
@@ -40,17 +42,21 @@ private struct AdvertiserDashboardDestinations: ViewModifier {
             )) { store in
                 StoreDashboardScreen(store: store)
             }
-            .navigationDestination(item: $store.scope(
+            .fullScreenCover(item: $store.scope(
                 state: \.destination?.changePassword,
                 action: \.destination.changePassword
             )) { store in
-                ChangePasswordView(store: store)
+                NavigationStack {
+                    ChangePasswordView(store: store)
+                }
             }
-            .navigationDestination(item: $store.scope(
+            .fullScreenCover(item: $store.scope(
                 state: \.destination?.updateEmail,
                 action: \.destination.updateEmail
             )) { store in
-                UpdateEmailView(store: store)
+                NavigationStack {
+                    UpdateEmailView(store: store)
+                }
             }
             .navigationDestination(item: $store.scope(
                 state: \.destination?.settings,

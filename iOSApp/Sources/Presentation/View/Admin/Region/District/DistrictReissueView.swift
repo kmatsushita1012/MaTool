@@ -7,7 +7,6 @@
 
 import SwiftUI
 import ComposableArchitecture
-import NavigationSwipeControl
 
 struct DistrictReissueScreen: View {
     @SwiftUI.Bindable var store: StoreOf<DistrictReissueFeature>
@@ -19,7 +18,6 @@ struct DistrictReissueScreen: View {
             onCancelTapped: { store.send(.cancelTapped) },
             onReissueTapped: { store.send(.reissueTapped) }
         )
-        .dismissible(backButton: false)
         .alert($store.scope(state: \.alert, action: \.alert))
     }
 }

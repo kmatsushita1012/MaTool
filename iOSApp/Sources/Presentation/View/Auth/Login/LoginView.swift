@@ -7,7 +7,6 @@
 
 import SwiftUI
 import ComposableArchitecture
-import NavigationSwipeControl
 import UIKit
 
 struct LoginScreen: View {
@@ -25,11 +24,15 @@ struct LoginScreen: View {
             onSignInTapped: { store.send(.signInTapped) },
             onCreateAccountTapped: nil
         )
-        .navigationDestination(item: $store.scope(state: \.destination?.confirmSignIn, action: \.destination.confirmSignIn)) { store in
-            ConfirmSignInView(store: store)
+        .fullScreenCover(item: $store.scope(state: \.destination?.confirmSignIn, action: \.destination.confirmSignIn)) { store in
+            NavigationStack {
+                ConfirmSignInView(store: store)
+            }
         }
-        .navigationDestination(item: $store.scope(state: \.destination?.resetPassword, action: \.destination.resetPassword)) { store in
-            ResetPasswordView(store: store)
+        .fullScreenCover(item: $store.scope(state: \.destination?.resetPassword, action: \.destination.resetPassword)) { store in
+            NavigationStack {
+                ResetPasswordView(store: store)
+            }
         }
     }
 }

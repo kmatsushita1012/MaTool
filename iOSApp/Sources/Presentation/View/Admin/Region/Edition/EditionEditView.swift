@@ -20,6 +20,7 @@ struct EditionEditScreen: View {
             onAddPeriodTapped: { store.send(.addPeriodTapped) },
             onSaveTapped: { store.send(.saveTapped) },
             onActivateTapped: { store.send(.activateTapped) },
+            onCloseTapped: { store.send(.closeTapped) }
         )
         .navigationDestination(item: $store.scope(state: \.periodEditor, action: \.periodEditor)) {
             PeriodDraftEditView(store: $0)
@@ -45,6 +46,7 @@ struct EditionEditContentView: View {
     let onAddPeriodTapped: () -> Void
     let onSaveTapped: () -> Void
     let onActivateTapped: () -> Void
+    let onCloseTapped: () -> Void
 
     var body: some View {
         Form {
@@ -92,6 +94,7 @@ struct EditionEditContentView: View {
         .navigationTitle(Text(String(editionYear) + "年度"))
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
+            ToolbarCancelButton(isDisabled: isBusy, action: onCloseTapped)
             ToolbarSaveButton(
                 isDisabled: isBusy || !hasLoaded || !isDirty,
                 isLoading: isSaving,
@@ -128,6 +131,7 @@ struct EditionEditContentView: View {
         onPeriodTapped: { _ in },
         onAddPeriodTapped: {},
         onSaveTapped: {},
-        onActivateTapped: {}
+        onActivateTapped: {},
+        onCloseTapped: {}
     )
 }

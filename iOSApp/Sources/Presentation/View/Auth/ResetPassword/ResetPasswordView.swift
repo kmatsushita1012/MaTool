@@ -7,7 +7,6 @@
 
 import ComposableArchitecture
 import SwiftUI
-import NavigationSwipeControl
 
 struct ResetPasswordScreen: View {
     @SwiftUI.Bindable var store: StoreOf<ResetPasswordFeature>
@@ -33,7 +32,6 @@ struct ResetPasswordScreen: View {
             onUsernameSubmitTapped: { store.send(.enterUsername(.okTapped)) },
             onCodeSubmitTapped: { store.send(.enterCode(.okTapped)) }
         )
-        .dismissible(backButton: false, edgeSwipe: false)
         .alert($store.scope(state: \.alert, action: \.alert))
     }
 }

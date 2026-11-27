@@ -7,7 +7,6 @@
 
 import SwiftUI
 import ComposableArchitecture
-import NavigationSwipeControl
 import Shared
 
 struct HeadquarterDistrictListView: View {
@@ -51,15 +50,19 @@ struct HeadquarterDistrictListView: View {
         .sheet(item: $store.folder){ folder in
             ShareSheet(items: folder.files)
         }
-        .navigationDestination(
+        .fullScreenCover(
             item: $store.scope(state: \.destination?.detail, action: \.destination.detail)
         ) { store in
-            HeadquarterDistrictDetailView(store: store)
+            NavigationStack {
+                HeadquarterDistrictDetailView(store: store)
+            }
         }
-        .navigationDestination(
+        .fullScreenCover(
             item: $store.scope(state: \.destination?.create, action: \.destination.create)
         ) { store in
-            DistrictCreateView(store: store)
+            NavigationStack {
+                DistrictCreateView(store: store)
+            }
         }
         .alert($store.scope(state: \.alert, action: \.alert))
         .toolbar {

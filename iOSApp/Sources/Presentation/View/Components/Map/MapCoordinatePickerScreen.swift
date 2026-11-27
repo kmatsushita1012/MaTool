@@ -7,7 +7,6 @@
 
 import SwiftUI
 import ComposableArchitecture
-import NavigationSwipeControl
 
 struct MapCoordinatePickerScreen: View {
     @SwiftUI.Bindable var store: StoreOf<MapCoordinatePickerFeature>
@@ -50,6 +49,5 @@ struct MapCoordinatePickerScreen: View {
             }
         }
         .toolbarBackground(.visible, for: .navigationBar)
-        .dismissible(backButton: false, edgeSwipe: false)
     }
 }

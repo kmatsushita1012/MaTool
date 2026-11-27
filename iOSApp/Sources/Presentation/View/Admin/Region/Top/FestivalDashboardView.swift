@@ -6,7 +6,6 @@
 //
 
 import ComposableArchitecture
-import NavigationSwipeControl
 import SwiftUI
 
 struct FestivalDashboardScreen: View {
@@ -39,8 +38,10 @@ private struct FestivalDashboardDestinations: ViewModifier {
 
     func body(content: Content) -> some View {
         content
-            .navigationDestination(item: $store.scope(state: \.destination?.edit, action: \.destination.edit)) { store in
-                FestivalEditView(store: store)
+            .fullScreenCover(item: $store.scope(state: \.destination?.edit, action: \.destination.edit)) { store in
+                NavigationStack {
+                    FestivalEditView(store: store)
+                }
             }
             .navigationDestination(item: $store.scope(state: \.destination?.districts, action: \.destination.districts)) { store in
                 HeadquarterDistrictListView(store: store)
@@ -48,11 +49,15 @@ private struct FestivalDashboardDestinations: ViewModifier {
             .navigationDestination(item: $store.scope(state: \.destination?.editionList, action: \.destination.editionList)) { store in
                 EditionListView(store: store)
             }
-            .navigationDestination(item: $store.scope(state: \.destination?.changePassword, action: \.destination.changePassword)) { store in
-                ChangePasswordView(store: store)
+            .fullScreenCover(item: $store.scope(state: \.destination?.changePassword, action: \.destination.changePassword)) { store in
+                NavigationStack {
+                    ChangePasswordView(store: store)
+                }
             }
-            .navigationDestination(item: $store.scope(state: \.destination?.updateEmail, action: \.destination.updateEmail)) { store in
-                UpdateEmailView(store: store)
+            .fullScreenCover(item: $store.scope(state: \.destination?.updateEmail, action: \.destination.updateEmail)) { store in
+                NavigationStack {
+                    UpdateEmailView(store: store)
+                }
             }
             .navigationDestination(item: $store.scope(state: \.destination?.settings, action: \.destination.settings)) { store in
                 SettingsView(store: store)

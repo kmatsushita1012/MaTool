@@ -7,7 +7,6 @@
 
 import SwiftUI
 import ComposableArchitecture
-import NavigationSwipeControl
 
 struct DistrictAreaEditView:View {
     @SwiftUI.Bindable var store: StoreOf<DistrictAreaEditFeature>
@@ -49,7 +48,6 @@ struct DistrictAreaEditView:View {
             }
         }
         .toolbarBackground(.visible, for: .navigationBar)
-        .dismissible(backButton: false, edgeSwipe: false)
     }
     
 }

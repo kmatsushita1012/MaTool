@@ -50,6 +50,7 @@ struct HeadquarterDistrictDetailFeature {
     @CasePathable
     enum Action: Equatable, BindableAction {
         case binding(BindingAction<State>)
+        case closeTapped
         case editTapped
         case reissueTapped
         case routeSelected(RouteSlot)
@@ -64,6 +65,7 @@ struct HeadquarterDistrictDetailFeature {
     }
     
     @Dependency(SaveDistrictUseCaseKey.self) var saveDistrictUseCase
+    @Dependency(\.dismiss) private var dismiss
     @Dependency(FetchRoutePackUseCaseKey.self) var fetchRoutePackUseCase
     @Dependency(LoadRouteStateUseCaseKey.self) var loadRouteStateUseCase
     
@@ -73,6 +75,9 @@ struct HeadquarterDistrictDetailFeature {
             switch action {
             case .binding(_):
                 return .none
+            case .closeTapped:
+                guard !state.isLoading else { return .none }
+                return .dismiss
             case .editTapped:
                 if state.isEditable {
                     state.isLoading = true

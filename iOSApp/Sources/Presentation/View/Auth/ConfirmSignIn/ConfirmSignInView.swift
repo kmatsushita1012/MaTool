@@ -7,7 +7,6 @@
 
 import SwiftUI
 import ComposableArchitecture
-import NavigationSwipeControl
 
 struct ConfirmSignInScreen: View {
     @SwiftUI.Bindable var store: StoreOf<ConfirmSignInFeature>
@@ -20,7 +19,6 @@ struct ConfirmSignInScreen: View {
             onSubmitTapped: { store.send(.submitTapped) },
             onDismissTapped: { store.send(.dismissTapped) }
         )
-        .dismissible(backButton: false)
         .alert($store.scope(state: \.alert, action: \.alert))
     }
 }

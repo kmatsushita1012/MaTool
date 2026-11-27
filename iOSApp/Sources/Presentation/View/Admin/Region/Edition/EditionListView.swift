@@ -21,8 +21,10 @@ struct EditionListScreen: View {
             onCreateCancelled: { store.send(.createCancelled) },
             onAutoCreateTapped: { store.send(.autoCreateTapped) }
         )
-        .navigationDestination(item: $store.scope(state: \.destination?.edit, action: \.destination.edit)) {
-            EditionEditView(store: $0)
+        .fullScreenCover(item: $store.scope(state: \.destination?.edit, action: \.destination.edit)) { store in
+            NavigationStack {
+                EditionEditView(store: store)
+            }
         }
         .alert($store.scope(state: \.alert, action: \.alert))
         .task { store.send(.onAppear) }

@@ -7,7 +7,6 @@
 
 import SwiftUI
 import ComposableArchitecture
-import NavigationSwipeControl
 
 struct ChangePasswordScreen: View {
     @SwiftUI.Bindable var store: StoreOf<ChangePasswordFeature>
@@ -21,7 +20,6 @@ struct ChangePasswordScreen: View {
             onSubmitTapped: { store.send(.okTapped) },
             onDismissTapped: { store.send(.dismissTapped) }
         )
-        .dismissible(backButton: false, edgeSwipe: false)
         .alert($store.scope(state: \.alert, action: \.alert))
     }
 }

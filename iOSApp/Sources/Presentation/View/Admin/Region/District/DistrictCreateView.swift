@@ -7,7 +7,6 @@
 
 import SwiftUI
 import ComposableArchitecture
-import NavigationSwipeControl
 
 struct DistrictCreateScreen: View {
     @SwiftUI.Bindable var store: StoreOf<DistrictCreateFeature>
@@ -20,7 +19,6 @@ struct DistrictCreateScreen: View {
             onCancelTapped: { store.send(.cancelTapped) },
             onCreateTapped: { store.send(.createTapped) }
         )
-        .dismissible(backButton: false)
         .alert($store.scope(state: \.alert, action: \.alert))
     }
 }

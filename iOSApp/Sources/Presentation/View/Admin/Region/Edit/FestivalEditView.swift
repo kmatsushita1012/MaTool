@@ -7,7 +7,6 @@
 
 import SwiftUI
 import ComposableArchitecture
-import NavigationSwipeControl
 import Shared
 
 struct FestivalEditScreen: View {
@@ -55,7 +54,6 @@ struct FestivalEditScreen: View {
         ) { store in
             HazardSectionView(store: store)
         }
-        .dismissible(backButton: false, edgeSwipe: false)
         .alert($store.scope(state: \.alert, action: \.alert))
     }
 }
