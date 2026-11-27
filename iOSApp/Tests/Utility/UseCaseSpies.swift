@@ -141,6 +141,10 @@ struct SupersedingRouteDataFetcherSpy: RouteDataFetcherProtocol {
     let appState: Shared<AppState?>
     let response: RoutePack
 
+    func fetchHistory(districtID: District.ID, before editionID: Edition.ID) async throws -> [EditionRouteGroup] {
+        throw CancellationError()
+    }
+
     func fetchAll(districtID: District.ID, query: Query) async throws -> [Route] {
         throw CancellationError()
     }

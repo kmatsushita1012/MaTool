@@ -40,19 +40,69 @@ struct DistrictRouterTest {
     @Test
     func routesRouteQueryToRouteController_正常() async {
         let app = make(routeController: .init(queryHandler: { _, _ in try .success() }))
-        let request = Application.Request.make(method: .get, path: "/districts/district-1/routes")
+        let request = Application.Request.make(method: .get, path: "/v2/districts/district-1/routes")
+        let response = await app.handle(request)
+
+        #expect(response.statusCode == 200)
+    }
+
+    @Test("履歴取得パスは履歴Controllerにルーティングされる")
+    func routesRouteHistoryToController() async {
+        let controller = RouteControllerMock(historyHandler: { _, _ in try .success() })
+        let app = make(routeController: controller)
+        let response = await app.handle(.make(method: .get, path: "/v1/districts/district-1/route-history"))
+        #expect(response.statusCode == 200)
+        #expect(controller.historyCallCount == 1)
+    }
+
+    @Test
+    func retiredRouteList_410を返す() async {
+        let controller = RouteControllerMock(queryHandler: { _, _ in try .success() })
+        let app = make(routeController: controller)
+        let response = await app.handle(.make(method: .get, path: "/districts/district-1/routes"))
+
+        #expect(response.statusCode == 410)
+        #expect(controller.queryCallCount == 0)
+    }
+
+    @Test
+    func routeCreate_既存パスを維持する() async {
+        let controller = RouteControllerMock(postHandler: { _, _ in try .success() })
+        let app = make(routeController: controller)
+        let response = await app.handle(.make(method: .post, path: "/districts/district-1/routes"))
+
+        #expect(response.statusCode == 200)
+        #expect(controller.postCallCount == 1)
+    }
+
+    @Test
+    func routesLaunchFestivalToSceneController_正常() async {
+        let app = make(sceneController: .init(launchFestivalHandler: { _, _ in try .success() }))
+        let request = Application.Request.make(method: .get, path: "/v2/districts/district-1/launch-festival")
         let response = await app.handle(request)
 
         #expect(response.statusCode == 200)
     }
 
     @Test
-    func routesLaunchFestivalToSceneController_正常() async {
-        let app = make(sceneController: .init(launchFestivalHandler: { _, _ in try .success() }))
-        let request = Application.Request.make(method: .get, path: "/districts/district-1/launch-festival")
-        let response = await app.handle(request)
+    func launchDistrict_旧Pathsは410でv2PathsだけControllerへ届く() async {
+        let controller = SceneControllerMock(
+            launchFestivalHandler: { _, _ in try .success() },
+            launchDistrictHandler: { _, _ in try .success() }
+        )
+        let app = make(sceneController: controller)
 
-        #expect(response.statusCode == 200)
+        let festivalResponse = await app.handle(.make(method: .get, path: "/v2/districts/district-1/launch-festival"))
+        let districtResponse = await app.handle(.make(method: .get, path: "/v2/districts/district-1/launch"))
+        let oldFestivalResponse = await app.handle(.make(method: .get, path: "/districts/district-1/launch-festival"))
+        let oldDistrictResponse = await app.handle(.make(method: .get, path: "/districts/district-1/launch"))
+
+        #expect(festivalResponse.statusCode == 200)
+        #expect(districtResponse.statusCode == 200)
+        #expect(oldFestivalResponse.statusCode == 410)
+        #expect(oldDistrictResponse.statusCode == 410)
+        #expect(controller.launchFestivalCallCount == 1)
+        #expect(controller.launchDistrictCallCount == 1)
     }
 
     @Test
@@ -91,7 +141,7 @@ struct DistrictRouterTest {
             }
         )
         try await withDependencies {
-            $0[DataStoreFactoryKey.self] = { _ in dataStore }
+            $0[DataStoreFactoryKey.self] = { dataStore }
             $0[DistrictRepositoryKey.self] = DistrictRepositoryMock(getHandler: { _ in district })
         } operation: {
             let locationRepository = LocationRepository()

@@ -162,9 +162,10 @@ struct HeadquarterDistrictListFeature {
                 let suffix = includesRouteMap ? "" : "_行動表"
                 let renderer = await PDFRenderer(path: district.pdfFileName(suffix: suffix))
                 guard let festivalState = state.appState?.festivalState,
+                      let edition = festivalState.edition,
                       let fetchedRoutes = try? await fetchRouteUseCase(
                         districtId: district.id,
-                        query: .year(festivalState.year)
+                        query: .year(edition.year)
                       ) else { continue }
                 let slots = festivalState.routeSlots(for: fetchedRoutes)
                 let routes = slots.compactMap(\.route)

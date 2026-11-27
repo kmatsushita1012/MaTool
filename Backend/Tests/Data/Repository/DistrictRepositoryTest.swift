@@ -112,7 +112,7 @@ struct DistrictRepositoryTest {
 private extension DistrictRepositoryTest {
     func make(dataStore: DataStoreMock = .init()) -> DistrictRepository {
         withDependencies {
-            $0[DataStoreFactoryKey.self] = { _ in dataStore }
+            $0[DataStoreFactoryKey.self] = { dataStore }
         } operation: {
             DistrictRepository()
         }

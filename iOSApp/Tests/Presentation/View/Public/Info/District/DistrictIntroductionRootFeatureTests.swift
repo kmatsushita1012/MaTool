@@ -17,7 +17,7 @@ struct DistrictIntroductionRootFeatureTests {
         let appState = Shared<AppState?>(value: AppState(
             festivalPack: LaunchFestivalPack(
                 festival: festival,
-                year: 2026,
+                edition: Edition(id: "edition-2026", festivalId: festival.id, year: 2026),
                 districts: [district],
                 periods: [],
                 locations: [],

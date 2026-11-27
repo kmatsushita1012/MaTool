@@ -72,7 +72,7 @@ struct RouteEditView: View {
         case .history(let entries):
             NavigationStack {
                 RouteHistoryView(
-                    entries: entries,
+                    history: entries,
                     excludingRouteId: store.route.id,
                     isLoading: store.isSourceLoading
                 ) {

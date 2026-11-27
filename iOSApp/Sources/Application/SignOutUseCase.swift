@@ -25,9 +25,10 @@ struct SignOutUseCase: SignOutUseCaseProtocol {
 
         do {
             if let districtId = userDefaults.defaultDistrictId {
-                async let festivalTask = dataFetcher.launchFestival(festivalId: festivalId)
-                async let districtTask = dataFetcher.launchDistrict(districtId: districtId)
-                let (festivalPack, districtPack) = try await (festivalTask, districtTask)
+                let (festivalPack, districtPack) = try await fetchEditionConsistentLaunchPacks(
+                    districtID: districtId,
+                    using: dataFetcher
+                )
 
                 guard await sessionCoordinator.isCurrent(requestId) else {
                     return .loading

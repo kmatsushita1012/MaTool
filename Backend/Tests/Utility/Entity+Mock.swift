@@ -70,13 +70,13 @@ extension FloatLocation {
 extension Period {
     static func mock(
         id: String = "period-id",
-        festivalId: Festival.ID = "festival-id",
+        editionId: Edition.ID = "edition-id",
         title: String = "period",
         date: SimpleDate = .init(year: 2026, month: 2, day: 22),
         start: SimpleTime = .init(hour: 9, minute: 0),
         end: SimpleTime = .init(hour: 18, minute: 0)
     ) -> Self {
-        .init(id: id, festivalId: festivalId, title: title, date: date, start: start, end: end)
+        .init(id: id, editionId: editionId, title: title, date: date, start: start, end: end)
     }
 }
 
@@ -132,7 +132,6 @@ extension RoutePassage {
 extension FestivalPack {
     static func mock(
         festival: Festival = .mock(),
-        year: Int? = nil,
         checkpoints: [Checkpoint] = [],
         hazardSections: [HazardSection] = []
     ) -> Self {
@@ -162,7 +161,7 @@ extension RoutePack {
 extension LaunchFestivalPack {
     static func mock(
         festival: Festival = .mock(),
-        year: Int? = nil,
+        edition: Edition? = nil,
         districts: [District] = [],
         periods: [Period] = [],
         locations: [FloatLocation] = [],
@@ -171,7 +170,7 @@ extension LaunchFestivalPack {
     ) -> Self {
         .init(
             festival: festival,
-            year: year,
+            edition: edition,
             districts: districts,
             periods: periods,
             locations: locations,

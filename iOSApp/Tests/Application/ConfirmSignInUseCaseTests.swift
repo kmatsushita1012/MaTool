@@ -8,6 +8,7 @@ struct ConfirmSignInUseCaseTests {
     private func festivalPack() -> LaunchFestivalPack {
         LaunchFestivalPack(
             festival: AppStateFixture.festival(),
+            edition: nil,
             districts: [AppStateFixture.district()],
             periods: [], locations: [], checkpoints: [], hazardSections: []
         )

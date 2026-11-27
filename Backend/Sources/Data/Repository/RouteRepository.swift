@@ -6,8 +6,8 @@
 //
 
 import Dependencies
-import Shared
 import Foundation
+import Shared
 
 // MARK: - Dependencies
 enum RouteRepositoryKey: DependencyKey {
@@ -25,6 +25,7 @@ extension DependencyValues {
 protocol RouteRepositoryProtocol: Sendable {
     func get(id: String) async throws -> Route?
     func query(by districtId: String) async throws -> [Route]
+    func query(by districtId: String, editionId: Edition.ID) async throws -> [Route]
     func query(by districtId: String, year: Int) async throws -> [Route]
     func post(_ route: Route) async throws -> Route
     func put(_ route: Route) async throws -> Route
@@ -35,111 +36,161 @@ protocol RouteRepositoryProtocol: Sendable {
 // MARK: - RouteRepository
 struct RouteRepository: RouteRepositoryProtocol {
     private let store: DataStore
-    
+
     @Dependency(DistrictRepositoryKey.self) var districtRepository
+    @Dependency(EditionRepositoryKey.self) var editionRepository
     @Dependency(PeriodRepositoryKey.self) var periodRepository
 
     init() {
         @Dependency(\.dataStoreFactory) var storeFactory
-        self.store = storeFactory("matool")
+        self.store = storeFactory()
     }
 
     func get(id: String) async throws -> Route? {
-        let keys = RouteRecord.makeKeys(id)
-        let records = try await store.query(indexName: keys.indexName,queryConditions: [keys.pk, keys.sk], as: RouteRecord.self)
-        return records.first?.content
+        let matchingRecords = try await records(id: id).filter { $0.id == id }
+        guard matchingRecords.count < 2 else {
+            throw Error.conflict("ルートIDが重複しています。")
+        }
+        return matchingRecords.first?.content
     }
 
     func query(by districtId: String) async throws -> [Route] {
         let keys = RouteRecord.makeKeys(districtId: districtId)
-        let records = try await store.query(queryConditions: [ keys.pk, keys.sk ], as: RouteRecord.self)
-        return records.map{ $0.content }
+        let records = try await store.query(queryConditions: [keys.pk, keys.sk], as: RouteRecord.self)
+        return records.map(\.content).sorted { $0.id < $1.id }
     }
-    
+
+    func query(by districtId: String, editionId: Edition.ID) async throws -> [Route] {
+        let keys = RouteRecord.makeKeys(districtId: districtId, editionId: editionId)
+        let records = try await store.query(queryConditions: [keys.pk, keys.sk], as: RouteRecord.self)
+        return records.map(\.content).sorted { $0.id < $1.id }
+    }
+
     func query(by districtId: String, year: Int) async throws -> [Route] {
-        let keys = RouteRecord.makeKeys(districtId: districtId, year: year)
-        let records = try await store.query(indexName: keys.indexName, queryConditions: [ keys.pk, keys.sk ], as: RouteRecord.self)
-        return records.map(\.content)
+        guard let district = try await districtRepository.get(id: districtId),
+              let edition = try await editionRepository.get(festivalId: district.festivalId, year: year) else {
+            return []
+        }
+        return try await query(by: districtId, editionId: edition.id)
     }
 
     func post(_ item: Route) async throws -> Route {
-        let date = try await getDate(item)
-        let record = RouteRecord(item, date: date)
-        try await store.put(record)
+        let editionId = try await editionId(for: item)
+        try await store.put(RouteRecord(item, editionId: editionId))
         return item
     }
 
     func put(_ item: Route) async throws -> Route {
-        let date = try await getDate(item)
-        let record = RouteRecord(item, date: date)
+        let editionId = try await editionId(for: item)
+        let record = RouteRecord(item, editionId: editionId)
+        let existingRecords = try await records(id: item.id)
+
+        for existingRecord in existingRecords
+        where existingRecord.id == item.id
+            && (existingRecord.pk != record.pk || existingRecord.sk != record.sk) {
+            try await store.delete(pk: existingRecord.pk, sk: existingRecord.sk)
+        }
+
         try await store.put(record)
         return item
     }
 
     func delete(id: String) async throws {
-        guard let target = try await get(id: id) else { return }
-        try await delete(target)
+        for record in try await records(id: id) where record.id == id {
+            try await store.delete(pk: record.pk, sk: record.sk)
+        }
     }
 
     func delete(_ route: Route) async throws {
-        let keys = RouteRecord.makeKeys(route.id, districtId: route.districtId)
-        try await store.delete(pk: keys.pk, sk: keys.sk)
+        let existingRecords = try await records(id: route.id)
+        for record in existingRecords
+        where record.id == route.id && record.content.districtId == route.districtId {
+            try await store.delete(pk: record.pk, sk: record.sk)
+        }
     }
-    
-    private func getDate(_ content: Route) async throws -> SimpleDate {
-        guard let period = try await periodRepository.get(id: content.periodId) else {
+
+    private func records(id: Route.ID) async throws -> [RouteRecord] {
+        let keys = RouteRecord.makeKeys(id: id)
+        return try await store.query(
+            indexName: keys.indexName,
+            queryConditions: [keys.pk, keys.sk],
+            as: RouteRecord.self
+        )
+    }
+
+    private func editionId(for route: Route) async throws -> Edition.ID {
+        guard let period = try await periodRepository.get(id: route.periodId) else {
             throw Error.notFound("指定されたルートに合致する日程が取得できませんでした。")
         }
-        let districts = try await districtRepository.query(by: period.festivalId)
-        guard districts.contains(where: {
-            $0.id == content.districtId && $0.festivalId == period.festivalId
-        }) else {
+        guard let editionId = period.editionId else {
+            throw Error.badRequest("ルートの日程にEditionが設定されていません。")
+        }
+        guard let edition = try await editionRepository.get(id: editionId) else {
+            throw Error.notFound("指定されたルートに合致するEditionが取得できませんでした。")
+        }
+        guard let district = try await districtRepository.get(id: route.districtId) else {
             throw Error.notFound("指定されたルートに合致する地区が取得できませんでした。")
         }
-        return period.date
+        guard edition.festivalId == district.festivalId else {
+            throw Error.badRequest("ルートの日程と地区の祭典が一致しません。")
+        }
+        return editionId
     }
 }
 
-fileprivate struct RouteRecord: RecordProtocol {
+struct RouteRecord: RecordProtocol {
     typealias Content = Route
-    
+
     let pk: String
     let sk: String
     let type: String
-    let date: String
-    let content: Shared.Route
-}
+    let id: String
+    let content: Route
 
-extension RouteRecord {
-    init(_ content: Route, date: SimpleDate) {
-        let keys = Self.makeKeys(content.id, districtId: content.districtId, date: date)
-        self.init(pk: keys.pk, sk: keys.sk, type: Self.type, date: keys.dateKey, content: content)
+    init(_ content: Route, editionId: Edition.ID) {
+        let keys = Self.makeKeys(content.id, districtId: content.districtId, editionId: editionId)
+        self.pk = keys.pk
+        self.sk = keys.sk
+        self.type = Self.type
+        self.id = content.id
+        self.content = content
     }
-    
-    static func makeKeys(_ id: String, districtId: String, date: SimpleDate) -> (pk: String, sk: String, dateKey: String){
-        (pk: "\(pkPrefix)\(districtId)", sk: "\(skPrefix)\(id)", dateKey: "\(skPrefix)\(datePrefix)\(date.sortableKey)")
+
+    static func makeKeys(
+        _ id: Route.ID,
+        districtId: District.ID,
+        editionId: Edition.ID
+    ) -> (pk: String, sk: String) {
+        (
+            pk: "\(pkPrefix)\(districtId)",
+            sk: "\(skPrefix)\(editionId)#\(id)"
+        )
     }
-    
-    static func makeKeys(_ id: String, districtId: String) -> (pk: String, sk: String){
-        (pk: "\(pkPrefix)\(districtId)", sk: "\(skPrefix)\(id)")
+
+    static func makeKeys(districtId: District.ID) -> (pk: QueryCondition, sk: QueryCondition) {
+        (
+            pk: .equals("pk", "\(pkPrefix)\(districtId)"),
+            sk: .beginsWith("sk", skPrefix)
+        )
     }
-    
-    static func makeKeys(districtId: String) -> (pk: QueryCondition, sk: QueryCondition){
-        (pk: .equals("pk", "\(pkPrefix)\(districtId)"), sk: .beginsWith("sk", "\(skPrefix)"))
+
+    static func makeKeys(districtId: District.ID, editionId: Edition.ID) -> (pk: QueryCondition, sk: QueryCondition) {
+        (
+            pk: .equals("pk", "\(pkPrefix)\(districtId)"),
+            sk: .beginsWith("sk", "\(skPrefix)\(editionId)#")
+        )
     }
-    
-    static func makeKeys(districtId: String, year: Int) -> (indexName: String, pk: QueryCondition, sk: QueryCondition){
-        (indexName: dateIndexName, pk: .equals("pk", "\(pkPrefix)\(districtId)"), sk: .beginsWith("date", "\(skPrefix)\(datePrefix)\(year)"))
+
+    static func makeKeys(id: Route.ID) -> (indexName: String, pk: QueryCondition, sk: QueryCondition) {
+        (
+            indexName: idIndexName,
+            pk: .equals("type", type),
+            sk: .equals("id", id)
+        )
     }
-    
-    static func makeKeys(_ id: String) -> (indexName: String, pk: QueryCondition, sk: QueryCondition){
-        (indexName: typeIndexName, pk: .equals("type", type), sk: .equals("sk", "\(skPrefix)\(id)"))
-    }
-    
-    static let pkPrefix: String = "DISTRICT#"
-    static let skPrefix: String = "ROUTE#"
-    static let datePrefix: String = "DATE#"
+
+    static let pkPrefix = "DISTRICT#"
+    static let skPrefix = "ROUTE#"
     static let type = String(describing: Route.self).uppercased()
-    static let typeIndexName = "index-TYPE"
-    static let dateIndexName = "index-DATE"
+    static let idIndexName = "index-type-id"
 }

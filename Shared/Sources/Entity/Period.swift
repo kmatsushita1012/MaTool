@@ -10,7 +10,7 @@ import Foundation
 // MARK: - Period
 public struct Period: Entity, Identifiable {
     public let id: String
-    public let festivalId: Festival.ID
+    @NullEncodable public var editionId: Edition.ID?
     public let date: SimpleDate
     public var title: String
     public var start: SimpleTime
@@ -18,14 +18,14 @@ public struct Period: Entity, Identifiable {
     
     public init(
         id: String = UUID().uuidString,
-        festivalId: Festival.ID = "",
+        editionId: Edition.ID,
         title: String = "",
         date: SimpleDate,
         start: SimpleTime = .now,
         end: SimpleTime = .now
     ) {
         self.id = id
-        self.festivalId = festivalId
+        self.editionId = editionId
         self.date = date
         self.title = title
         self.start = start

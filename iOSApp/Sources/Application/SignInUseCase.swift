@@ -81,9 +81,10 @@ struct SignInUseCase: SignInUseCaseProtocol {
             let dataFetcher = self.dataFetcher
             signInUseCaseLogger.info("launchFestival/launchDistrict(district): started")
             let (festivalResponse, districtResponse) = try await withTimeout(seconds: 30) {
-                async let festivalTask = dataFetcher.launchFestival(districtId: districtId)
-                async let districtTask = dataFetcher.launchDistrict(districtId: districtId)
-                return try await (festivalTask, districtTask)
+                try await fetchEditionConsistentLaunchPacks(
+                    districtID: districtId,
+                    using: dataFetcher
+                )
             }
             signInUseCaseLogger.info("launchFestival/launchDistrict(district): completed")
             guard await sessionCoordinator.isCurrent(requestId) else { throw CancellationError() }

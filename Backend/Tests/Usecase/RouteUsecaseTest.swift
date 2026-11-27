@@ -5,6 +5,46 @@ import Testing
 @testable import Backend
 
 struct RouteUsecaseTest {
+    @Test("履歴は日付の年ではなくEditionの年度で選択して関連付ける")
+    func history_過去Editionのルートを返す() async throws {
+        let district = District.mock(id: "district-1", festivalId: "festival-1")
+        let current = Edition(id: "current", festivalId: district.festivalId, year: 2026)
+        let old = Edition(id: "old", festivalId: district.festivalId, year: 2025)
+        let future = Edition(id: "future", festivalId: district.festivalId, year: 2027)
+        let period = Period.mock(id: "period", editionId: old.id, date: .init(year: 2026, month: 1, day: 1))
+        let route = Route.mock(id: "route", districtId: district.id, periodId: period.id)
+        let subject = make(
+            routeRepository: .init(queryByEditionHandler: { _, editionId in
+                #expect(editionId == old.id)
+                return [route, .mock(id: "orphan", districtId: district.id, periodId: "missing")]
+            }),
+            periodRepository: .init(queryByEditionHandler: { _ in [period] }),
+            districtRepository: .init(getHandler: { _ in district }),
+            editionRepository: EditionRepositorySpy(getHandler: { _ in current }, queryHandler: { _ in [future, old, current] })
+        )
+
+        let result = try await subject.history(districtId: district.id, before: current.id, user: .district(district.id))
+        #expect(result.editions == [EditionRouteGroup(edition: old, entries: [RouteEntry(period: period, route: route)])])
+    }
+
+    @Test("履歴は別地区から参照できない")
+    func history_他地区は拒否() async {
+        let subject = make()
+        await #expect(throws: Error.forbidden("対象地区の権限が必要です。")) {
+            _ = try await subject.history(districtId: "district-1", before: "edition", user: .district("district-2"))
+        }
+    }
+
+    @Test("履歴の基準Editionは地区の祭典に属する必要がある")
+    func history_別祭典のEditionは拒否() async {
+        let district = District.mock(id: "district-1", festivalId: "festival-1")
+        let other = Edition(id: "other", festivalId: "festival-2", year: 2026)
+        let subject = make(districtRepository: .init(getHandler: { _ in district }), editionRepository: EditionRepositorySpy(getHandler: { _ in other }))
+        await #expect(throws: Error.notFound("指定されたEditionが見つかりません。")) {
+            _ = try await subject.history(districtId: district.id, before: other.id, user: .district(district.id))
+        }
+    }
+
     @Test
     func get_正常() async throws {
         let district = District.mock(id: "district-1", festivalId: "festival-1")
@@ -103,96 +143,66 @@ struct RouteUsecaseTest {
     }
 
     @Test
-    func query_正常_latest_翌年Periodありで翌年Routeを採用() async throws {
+    func query_year_指定EditionのRouteだけを返す() async throws {
         let district = District.mock(id: "district-1", festivalId: "festival-1")
-        let now = SimpleDate(year: 2026, month: 2, day: 1)
-        let nextYearRoute = Route.mock(id: "route-next", districtId: district.id, periodId: "period-next")
-        var queriedYears: [Int] = []
-
+        let routes = [Route.mock(id: "route-2027", districtId: district.id)]
         let repository = RouteRepositoryMock(
-            queryHandler: { _ in [] },
             queryByYearHandler: { _, year in
-                queriedYears.append(year)
-                if year == 2027 { return [nextYearRoute] }
-                return []
+                #expect(year == 2027)
+                return routes
             }
         )
-        let periodRepository = PeriodRepositoryMock(queryByYearHandler: { _, year in
-            if year == 2027 { return [Period.mock(id: "period-2027", festivalId: district.festivalId, date: .init(year: 2027, month: 1, day: 1))] }
-            if year == 2026 { return [Period.mock(id: "period-2026", festivalId: district.festivalId, date: .init(year: 2026, month: 1, day: 1))] }
-            return []
-        })
         let subject = make(
             routeRepository: repository,
-            periodRepository: periodRepository,
             districtRepository: .init(getHandler: { _ in district })
         )
 
-        let result = try await subject.query(by: district.id, type: .latest, now: now, user: .guest)
+        let result = try await subject.query(by: district.id, type: .year(2027), now: .init(year: 2026, month: 1, day: 1), user: .guest)
 
-        #expect(result == [nextYearRoute])
+        #expect(result == routes)
         #expect(repository.queryByYearCallCount == 1)
-        #expect(queriedYears == [2027])
-        #expect(periodRepository.queryByYearCallCount == 2)
     }
 
     @Test
-    func query_正常_latest_翌年Periodありで今年Routeへfallbackしない() async throws {
+    func query_latest_ActiveEditionのRouteを返す() async throws {
         let district = District.mock(id: "district-1", festivalId: "festival-1")
-        let now = SimpleDate(year: 2026, month: 2, day: 1)
-        let currentYearRoute = Route.mock(id: "route-current", districtId: district.id)
-        var queriedYears: [Int] = []
-
+        let activeEdition = ActiveEdition(festivalId: district.festivalId, editionId: "edition-2028")
+        let edition = Edition(id: "edition-2028", festivalId: district.festivalId, year: 2028)
+        let activeRoute = Route.mock(id: "route-active", districtId: district.id)
+        let hiddenRoute = Route.mock(id: "route-hidden", districtId: district.id, visibility: .admin)
+        let routes = [activeRoute, hiddenRoute]
         let repository = RouteRepositoryMock(
-            queryHandler: { _ in [] },
-            queryByYearHandler: { _, year in
-                queriedYears.append(year)
-                if year == 2026 { return [currentYearRoute] }
-                return []
+            queryByEditionHandler: { districtId, editionId in
+                #expect(districtId == district.id)
+                #expect(editionId == activeEdition.editionId)
+                return routes
             }
         )
-        let periodRepository = PeriodRepositoryMock(queryByYearHandler: { _, year in
-            if year == 2027 { return [Period.mock(id: "period-2027", festivalId: district.festivalId, date: .init(year: 2027, month: 1, day: 1))] }
-            if year == 2026 { return [Period.mock(id: "period-2026", festivalId: district.festivalId, date: .init(year: 2026, month: 1, day: 1))] }
-            return []
-        })
         let subject = make(
             routeRepository: repository,
-            periodRepository: periodRepository,
-            districtRepository: .init(getHandler: { _ in district })
+            districtRepository: .init(getHandler: { _ in district }),
+            activeEditionRepository: ActiveEditionRepositorySpy(getHandler: { _ in activeEdition }),
+            editionRepository: EditionRepositorySpy(getHandler: { _ in edition })
         )
 
-        let result = try await subject.query(by: district.id, type: .latest, now: now, user: .guest)
+        let result = try await subject.query(by: district.id, type: .latest, now: .init(year: 2026, month: 1, day: 1), user: .guest)
 
-        #expect(result.isEmpty)
-        #expect(repository.queryByYearCallCount == 1)
-        #expect(queriedYears == [2027])
-        #expect(periodRepository.queryByYearCallCount == 2)
+        #expect(result == [activeRoute])
+        #expect(repository.queryByEditionCallCount == 1)
     }
 
     @Test
-    func query_正常_latest_今年Routeがなければ前年Routeへfallbackしない() async throws {
+    func query_latest_有効Editionが未設定なら空配列() async throws {
         let district = District.mock(id: "district-1", festivalId: "festival-1")
-        let lastYearRoute = Route.mock(id: "route-last", districtId: district.id)
-        var queriedYears: [Int] = []
-
-        let repository = RouteRepositoryMock(
-            queryHandler: { _ in [] },
-            queryByYearHandler: { _, year in
-                queriedYears.append(year)
-                if year == 2025 { return [lastYearRoute] }
-                return []
-            }
-        )
-        let periodRepository = PeriodRepositoryMock(queryByYearHandler: { _, year in
-            if year == 2026 { return [Period.mock(id: "period-2026", festivalId: district.festivalId, date: .init(year: 2026, month: 1, day: 1))] }
-            if year == 2025 { return [Period.mock(id: "period-2025", festivalId: district.festivalId, date: .init(year: 2025, month: 1, day: 1))] }
+        let repository = RouteRepositoryMock(queryByEditionHandler: { _, _ in
+            Issue.record("route query should not run without an active Edition")
             return []
         })
         let subject = make(
             routeRepository: repository,
-            periodRepository: periodRepository,
-            districtRepository: .init(getHandler: { _ in district })
+            districtRepository: .init(getHandler: { _ in district }),
+            activeEditionRepository: ActiveEditionRepositorySpy(),
+            editionRepository: EditionRepositorySpy()
         )
 
         let result = try await subject.query(
@@ -203,38 +213,29 @@ struct RouteUsecaseTest {
         )
 
         #expect(result.isEmpty)
-        #expect(repository.queryByYearCallCount == 1)
-        #expect(queriedYears == [2026])
-        #expect(periodRepository.queryByYearCallCount == 2)
+        #expect(repository.queryByEditionCallCount == 0)
     }
 
     @Test
-    func query_正常_latest_Periodなしは空配列() async throws {
+    func query_latest_有効Editionの所属祭典が異なる場合は空配列() async throws {
         let district = District.mock(id: "district-1", festivalId: "festival-1")
-        let repository = RouteRepositoryMock(
-            queryHandler: { _ in [] },
-            queryByYearHandler: { _, _ in
-                Issue.record("route query by year should not be called without periods")
-                return []
-            }
-        )
-        let periodRepository = PeriodRepositoryMock(queryByYearHandler: { _, _ in [] })
+        let activeEdition = ActiveEdition(festivalId: "festival-1", editionId: "edition-foreign")
+        let foreignEdition = Edition(id: activeEdition.editionId, festivalId: "festival-2", year: 2026)
+        let repository = RouteRepositoryMock(queryByEditionHandler: { _, _ in
+            Issue.record("route query should not run for a foreign Edition")
+            return []
+        })
         let subject = make(
             routeRepository: repository,
-            periodRepository: periodRepository,
-            districtRepository: .init(getHandler: { _ in district })
+            districtRepository: .init(getHandler: { _ in district }),
+            activeEditionRepository: ActiveEditionRepositorySpy(getHandler: { _ in activeEdition }),
+            editionRepository: EditionRepositorySpy(getHandler: { _ in foreignEdition })
         )
 
-        let result = try await subject.query(
-            by: district.id,
-            type: .latest,
-            now: .init(year: 2026, month: 2, day: 1),
-            user: .guest
-        )
+        let result = try await subject.query(by: district.id, type: .latest, now: .init(year: 2026, month: 1, day: 1), user: .guest)
 
         #expect(result.isEmpty)
-        #expect(repository.queryByYearCallCount == 0)
-        #expect(periodRepository.queryByYearCallCount == 3)
+        #expect(repository.queryByEditionCallCount == 0)
     }
 
     @Test
@@ -326,7 +327,7 @@ struct RouteUsecaseTest {
             Point.mock(id: "p-2", routeId: route.id, index: 1, time: .init(hour: 10, minute: 0), anchor: .end)
         ]
         let pack = RoutePack.mock(route: route, points: points, passages: [])
-        let routeRepository = RouteRepositoryMock(getHandler: { _ in route }, postHandler: { $0 })
+        let routeRepository = RouteRepositoryMock(getHandler: { _ in route }, putHandler: { $0 })
         let pointRepository = PointRepositoryMock(queryHandler: { _ in [] }, postHandler: { $0 })
         let subject = make(
             routeRepository: routeRepository,
@@ -340,7 +341,8 @@ struct RouteUsecaseTest {
         #expect(result.route == route)
         #expect(result.points.count == 2)
         #expect(routeRepository.getCallCount == 1)
-        #expect(routeRepository.postCallCount == 1)
+        #expect(routeRepository.putCallCount == 1)
+        #expect(routeRepository.postCallCount == 0)
         #expect(pointRepository.postCallCount == 2)
     }
 
@@ -506,7 +508,9 @@ private extension RouteUsecaseTest {
         districtRepository: DistrictRepositoryMock = .init(),
         festivalRepository: FestivalRepositoryMock = .init(),
         pointRepository: PointRepositoryMock = .init(),
-        passageRepository: PassageRepositoryMock = .init()
+        passageRepository: PassageRepositoryMock = .init(),
+        activeEditionRepository: ActiveEditionRepositoryProtocol = ActiveEditionRepositorySpy(),
+        editionRepository: EditionRepositoryProtocol = EditionRepositorySpy()
     ) -> RouteUsecase {
         withDependencies {
             $0[RouteRepositoryKey.self] = routeRepository
@@ -515,6 +519,8 @@ private extension RouteUsecaseTest {
             $0[FestivalRepositoryKey.self] = festivalRepository
             $0[PointRepositoryKey.self] = pointRepository
             $0[PassageRepositoryKey.self] = passageRepository
+            $0[ActiveEditionRepositoryKey.self] = activeEditionRepository
+            $0[EditionRepositoryKey.self] = editionRepository
         } operation: {
             RouteUsecase()
         }

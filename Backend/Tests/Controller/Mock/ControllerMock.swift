@@ -106,12 +106,14 @@ final class RouteControllerMock: RouteControllerProtocol, @unchecked Sendable {
     init(
         getHandler: ((Request, Handler) throws -> Response)? = nil,
         queryHandler: ((Request, Handler) throws -> Response)? = nil,
+        historyHandler: ((Request, Handler) throws -> Response)? = nil,
         postHandler: ((Request, Handler) throws -> Response)? = nil,
         putHandler: ((Request, Handler) throws -> Response)? = nil,
         deleteHandler: ((Request, Handler) throws -> Response)? = nil
     ) {
         self.getHandler = getHandler
         self.queryHandler = queryHandler
+        self.historyHandler = historyHandler
         self.postHandler = postHandler
         self.putHandler = putHandler
         self.deleteHandler = deleteHandler
@@ -131,6 +133,14 @@ final class RouteControllerMock: RouteControllerProtocol, @unchecked Sendable {
         queryCallCount += 1
         guard let queryHandler else { throw TestError.unimplemented }
         return try queryHandler(request, next)
+    }
+
+    private(set) var historyCallCount = 0
+    private let historyHandler: ((Request, Handler) throws -> Response)?
+    func history(_ request: Request, next: Handler) async throws -> Response {
+        historyCallCount += 1
+        guard let historyHandler else { throw TestError.unimplemented }
+        return try historyHandler(request, next)
     }
 
     private(set) var postCallCount = 0
@@ -198,62 +208,6 @@ final class LocationControllerMock: LocationControllerProtocol, @unchecked Senda
     private(set) var deleteCallCount = 0
     private let deleteHandler: ((Request, Handler) throws -> Response)?
     func delete(_ request: Request, next: Handler) async throws -> Response {
-        deleteCallCount += 1
-        guard let deleteHandler else { throw TestError.unimplemented }
-        return try deleteHandler(request, next)
-    }
-}
-
-final class PeriodControllerMock: PeriodControllerProtocol, @unchecked Sendable {
-    init(
-        getHandler: ((Request, Handler) throws -> Response)? = nil,
-        queryHandler: ((Request, Handler) throws -> Response)? = nil,
-        postHandler: ((Request, Handler) throws -> Response)? = nil,
-        putHandler: ((Request, Handler) throws -> Response)? = nil,
-        deleteHandler: ((Request, Handler) throws -> Response)? = nil
-    ) {
-        self.getHandler = getHandler
-        self.queryHandler = queryHandler
-        self.postHandler = postHandler
-        self.putHandler = putHandler
-        self.deleteHandler = deleteHandler
-    }
-
-    private(set) var getCallCount = 0
-    private let getHandler: ((Request, Handler) throws -> Response)?
-    func get(request: Request, next: Handler) async throws -> Response {
-        getCallCount += 1
-        guard let getHandler else { throw TestError.unimplemented }
-        return try getHandler(request, next)
-    }
-
-    private(set) var queryCallCount = 0
-    private let queryHandler: ((Request, Handler) throws -> Response)?
-    func query(request: Request, next: Handler) async throws -> Response {
-        queryCallCount += 1
-        guard let queryHandler else { throw TestError.unimplemented }
-        return try queryHandler(request, next)
-    }
-
-    private(set) var postCallCount = 0
-    private let postHandler: ((Request, Handler) throws -> Response)?
-    func post(request: Request, next: Handler) async throws -> Response {
-        postCallCount += 1
-        guard let postHandler else { throw TestError.unimplemented }
-        return try postHandler(request, next)
-    }
-
-    private(set) var putCallCount = 0
-    private let putHandler: ((Request, Handler) throws -> Response)?
-    func put(request: Request, next: Handler) async throws -> Response {
-        putCallCount += 1
-        guard let putHandler else { throw TestError.unimplemented }
-        return try putHandler(request, next)
-    }
-
-    private(set) var deleteCallCount = 0
-    private let deleteHandler: ((Request, Handler) throws -> Response)?
-    func delete(request: Request, next: Handler) async throws -> Response {
         deleteCallCount += 1
         guard let deleteHandler else { throw TestError.unimplemented }
         return try deleteHandler(request, next)

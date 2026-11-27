@@ -176,7 +176,7 @@ extension RepositoryTest.Passage {
 private extension RepositoryTest.Passage {
     func make(dataStore: DataStoreMock = .init()) -> PassageRepository {
         withDependencies {
-            $0[DataStoreFactoryKey.self] = { _ in dataStore }
+            $0[DataStoreFactoryKey.self] = { dataStore }
         } operation: {
             PassageRepository()
         }

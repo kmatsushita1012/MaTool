@@ -6,7 +6,7 @@ import Testing
 
 struct SceneUsecaseTest {
     @Test
-    func fetchLaunchFestivalPack_正常_ゲストは公開情報のみ取得() async throws {
+    func fetchLaunchFestivalPack_正常_有効Edition未設定なら基本情報のみ返す() async throws {
         let now = makeDate(year: 2026, month: 2, day: 22, hour: 12)
         let festival = Festival.mock(id: "festival-1")
         let districts = [District.mock(id: "district-1", festivalId: festival.id)]
@@ -22,7 +22,8 @@ struct SceneUsecaseTest {
         let result = try await subject.fetchLaunchFestivalPack(festivalId: festival.id, user: .guest, now: now)
 
         #expect(result.festival == festival)
-        #expect(result.year == 2026)
+        #expect(result.edition == nil)
+        #expect(result.periods.isEmpty)
         #expect(result.districts == districts)
         #expect(result.locations.isEmpty)
         #expect(result.checkpoints.isEmpty)
@@ -36,7 +37,8 @@ struct SceneUsecaseTest {
         let now = makeDate(year: 2026, month: 2, day: 22, hour: 12)
         let festival = Festival.mock(id: "festival-1")
         let districts = [District.mock(id: "district-1", festivalId: festival.id)]
-        let period = Period.mock(id: "period-1", festivalId: festival.id, date: .from(now), start: .init(hour: 9, minute: 0), end: .init(hour: 13, minute: 0))
+        let edition = Edition(id: "edition-2026", festivalId: festival.id, year: 2026)
+        let period = Period.mock(id: "period-1", editionId: edition.id, date: .from(now), start: .init(hour: 9, minute: 0), end: .init(hour: 13, minute: 0))
         let location = FloatLocation.mock(id: "loc-1", districtId: "district-1")
         let checkpoint = Checkpoint.mock(id: "cp-1", festivalId: festival.id)
         let hazard = HazardSection.mock(id: "hz-1", festivalId: festival.id)
@@ -46,7 +48,9 @@ struct SceneUsecaseTest {
         let subject = make(
             festivalRepository: festivalRepository,
             districtRepository: districtRepository,
-            periodRepository: .init(queryByYearHandler: { _, year in year == 2026 ? [period] : [] }),
+            activeEditionRepository: .init(getHandler: { _ in ActiveEdition(festivalId: festival.id, editionId: edition.id) }),
+            editionRepository: .init(getHandler: { _ in edition }),
+            periodRepository: .init(queryByEditionHandler: { editionId in editionId == edition.id ? [period] : [] }),
             locationRepository: .init(queryHandler: { _ in [location] }),
             checkpointRepository: .init(queryHandler: { _ in [checkpoint] }),
             hazardRepository: .init(queryHandler: { _ in [hazard] })
@@ -54,6 +58,7 @@ struct SceneUsecaseTest {
 
         let result = try await subject.fetchLaunchFestivalPack(festivalId: festival.id, user: .headquarter(festival.id), now: now)
 
+        #expect(result.edition == edition)
         #expect(result.periods == [period])
         #expect(result.locations == [location])
         #expect(result.checkpoints == [checkpoint])
@@ -63,45 +68,48 @@ struct SceneUsecaseTest {
     }
 
     @Test
-    func fetchLaunchFestivalPack_正常_翌年を優先し翌年の期間だけ返す() async throws {
+    func fetchLaunchFestivalPack_正常_現在年に関係なく有効Editionの期間を返す() async throws {
         let now = makeDate(year: 2026, month: 2, day: 22, hour: 12)
         let festival = Festival.mock(id: "festival-1")
-        let currentPeriod = Period.mock(id: "current", festivalId: festival.id, date: .init(year: 2026, month: 2, day: 22))
-        let nextPeriod = Period.mock(id: "next", festivalId: festival.id, date: .init(year: 2027, month: 2, day: 22))
+        let edition = Edition(id: "edition-2028", festivalId: festival.id, year: 2028)
+        let activePeriod = Period.mock(id: "active", editionId: edition.id, date: .init(year: 2028, month: 2, day: 22))
+        let periodRepository = PeriodRepositoryMock(queryByEditionHandler: { editionId in
+            #expect(editionId == edition.id)
+            return [activePeriod]
+        })
         let subject = make(
             festivalRepository: .init(getHandler: { _ in festival }),
             districtRepository: .init(queryHandler: { _ in [] }),
-            periodRepository: .init(queryByYearHandler: { _, year in
-                switch year {
-                case 2027: return [nextPeriod]
-                case 2026: return [currentPeriod]
-                default: return []
-                }
-            }),
+            activeEditionRepository: .init(getHandler: { _ in ActiveEdition(festivalId: festival.id, editionId: edition.id) }),
+            editionRepository: .init(getHandler: { _ in edition }),
+            periodRepository: periodRepository,
             locationRepository: .init(queryHandler: { _ in [] })
         )
 
         let result = try await subject.fetchLaunchFestivalPack(festivalId: festival.id, user: .guest, now: now)
 
-        #expect(result.year == 2027)
-        #expect(result.periods == [nextPeriod])
+        #expect(result.edition == edition)
+        #expect(result.periods == [activePeriod])
+        #expect(periodRepository.queryByEditionCallCount == 1)
     }
 
     @Test
-    func fetchLaunchFestivalPack_正常_今年が空なら前年fallback期間を返す() async throws {
+    func fetchLaunchFestivalPack_正常_有効Editionの期間が空でもEditionを維持する() async throws {
         let now = makeDate(year: 2026, month: 2, day: 22, hour: 12)
         let festival = Festival.mock(id: "festival-1")
-        let previousPeriod = Period.mock(id: "previous", festivalId: festival.id, date: .init(year: 2025, month: 2, day: 22))
+        let edition = Edition(id: "edition-2025", festivalId: festival.id, year: 2025)
         let subject = make(
             festivalRepository: .init(getHandler: { _ in festival }),
             districtRepository: .init(queryHandler: { _ in [] }),
-            periodRepository: .init(queryByYearHandler: { _, year in year == 2025 ? [previousPeriod] : [] })
+            activeEditionRepository: .init(getHandler: { _ in ActiveEdition(festivalId: festival.id, editionId: edition.id) }),
+            editionRepository: .init(getHandler: { _ in edition }),
+            periodRepository: .init(queryByEditionHandler: { _ in [] })
         )
 
         let result = try await subject.fetchLaunchFestivalPack(festivalId: festival.id, user: .guest, now: now)
 
-        #expect(result.year == 2025)
-        #expect(result.periods == [previousPeriod])
+        #expect(result.edition == edition)
+        #expect(result.periods.isEmpty)
     }
 
     @Test
@@ -230,41 +238,142 @@ struct SceneUsecaseTest {
     }
 
     @Test
+    func fetchLaunchPack_正常_FestivalとDistrictは同じ有効Editionを返す() async throws {
+        let now = makeDate(year: 2026, month: 2, day: 22, hour: 12)
+        let festival = Festival.mock(id: "festival-1")
+        let district = District.mock(id: "district-1", festivalId: festival.id)
+        let edition = Edition(id: "edition-2024", festivalId: festival.id, year: 2024)
+        let period = Period.mock(
+            id: "period-2024",
+            editionId: edition.id,
+            date: .init(year: 2024, month: 2, day: 22),
+            start: .init(hour: 11, minute: 0),
+            end: .init(hour: 13, minute: 0)
+        )
+        let activeRoute = Route.mock(id: "route-2024", districtId: district.id, periodId: period.id)
+        let otherEditionRoute = Route.mock(id: "route-2026", districtId: district.id, periodId: "period-2026")
+        let routeRepository = RouteRepositoryMock(queryByEditionHandler: { _, editionId in
+            #expect(editionId == edition.id)
+            return [activeRoute]
+        })
+        let subject = make(
+            festivalRepository: .init(getHandler: { _ in festival }),
+            districtRepository: .init(
+                getHandler: { _ in district },
+                queryHandler: { _ in [district] }
+            ),
+            activeEditionRepository: .init(getHandler: { _ in ActiveEdition(festivalId: festival.id, editionId: edition.id) }),
+            editionRepository: .init(getHandler: { _ in edition }),
+            periodRepository: .init(queryByEditionHandler: { editionId in
+                #expect(editionId == edition.id)
+                return [period]
+            }),
+            performanceRepository: .init(queryHandler: { _ in [] }),
+            routeRepository: routeRepository,
+            pointRepository: .init(queryHandler: { _ in [] }),
+            passageRepository: .init(queryHandler: { _ in [] })
+        )
+
+        let festivalPack = try await subject.fetchLaunchFestivalPack(festivalId: festival.id, user: .guest, now: now)
+        let districtPack = try await subject.fetchLaunchDistrictPack(districtId: district.id, user: .guest, now: now)
+
+        #expect(festivalPack.edition == edition)
+        #expect(festivalPack.periods == [period])
+        #expect(districtPack.editionId == festivalPack.edition?.id)
+        #expect(districtPack.routes == [activeRoute])
+        #expect(!districtPack.routes.contains(otherEditionRoute))
+        #expect(routeRepository.queryByEditionCallCount == 1)
+    }
+
+    @Test
+    func fetchLaunchDistrictPack_正常_有効Edition未設定ならPerformanceだけ維持する() async throws {
+        let district = District.mock(id: "district-1", festivalId: "festival-1")
+        let performance = Performance.mock(id: "performance-1", districtId: district.id)
+        let routeRepository = RouteRepositoryMock()
+        let periodRepository = PeriodRepositoryMock()
+        let subject = make(
+            districtRepository: .init(getHandler: { _ in district }),
+            periodRepository: periodRepository,
+            performanceRepository: .init(queryHandler: { _ in [performance] }),
+            routeRepository: routeRepository
+        )
+
+        let result = try await subject.fetchLaunchDistrictPack(districtId: district.id, user: .guest, now: .now)
+
+        #expect(result.editionId == nil)
+        #expect(result.performances == [performance])
+        #expect(result.routes.isEmpty)
+        #expect(result.points.isEmpty)
+        #expect(result.passages.isEmpty)
+        #expect(result.currentRouteId == nil)
+        #expect(periodRepository.queryByEditionCallCount == 0)
+        #expect(routeRepository.queryByEditionCallCount == 0)
+    }
+
+    @Test
+    func fetchLaunchDistrictPack_正常_有効EditionのPeriodが空ならRouteも空でEditionを維持する() async throws {
+        let district = District.mock(id: "district-1", festivalId: "festival-1")
+        let edition = Edition(id: "edition-2025", festivalId: district.festivalId, year: 2025)
+        let periodRepository = PeriodRepositoryMock(queryByEditionHandler: { editionId in
+            #expect(editionId == edition.id)
+            return []
+        })
+        let routeRepository = RouteRepositoryMock(queryByEditionHandler: { _, editionId in
+            #expect(editionId == edition.id)
+            return []
+        })
+        let subject = make(
+            districtRepository: .init(getHandler: { _ in district }),
+            activeEditionRepository: .init(getHandler: { _ in ActiveEdition(festivalId: district.festivalId, editionId: edition.id) }),
+            editionRepository: .init(getHandler: { _ in edition }),
+            periodRepository: periodRepository,
+            performanceRepository: .init(queryHandler: { _ in [] }),
+            routeRepository: routeRepository
+        )
+
+        let result = try await subject.fetchLaunchDistrictPack(
+            districtId: district.id,
+            user: .guest,
+            now: makeDate(year: 2026, month: 2, day: 22, hour: 12)
+        )
+
+        #expect(result.editionId == edition.id)
+        #expect(result.routes.isEmpty)
+        #expect(result.points.isEmpty)
+        #expect(result.passages.isEmpty)
+        #expect(result.currentRouteId == nil)
+        #expect(periodRepository.queryByEditionCallCount == 1)
+        #expect(routeRepository.queryByEditionCallCount == 1)
+    }
+
+    @Test
     func fetchLaunchDistrictPack_正常_地区権限は非公開ルート取得() async throws {
         let now = makeDate(year: 2026, month: 2, day: 22, hour: 12)
         let district = District.mock(id: "district-1", festivalId: "festival-1")
-        let nextYearPeriod = Period.mock(
+        let edition = Edition(id: "edition-2027", festivalId: district.festivalId, year: 2027)
+        let activePeriod = Period.mock(
             id: "period-next",
-            festivalId: district.festivalId,
+            editionId: edition.id,
             date: .init(year: 2027, month: 2, day: 22),
             start: .init(hour: 11, minute: 0),
             end: .init(hour: 13, minute: 0)
         )
-        let currentYearPeriod = Period.mock(
-            id: "period-current",
-            festivalId: district.festivalId,
-            date: .init(year: 2026, month: 2, day: 22),
-            start: .init(hour: 11, minute: 0),
-            end: .init(hour: 13, minute: 0)
-        )
-        let route = Route.mock(id: "route-1", districtId: district.id, periodId: nextYearPeriod.id, visibility: .admin)
+        let route = Route.mock(id: "route-1", districtId: district.id, periodId: activePeriod.id, visibility: .admin)
         let point = Point.mock(id: "point-1", routeId: route.id)
         let passage = RoutePassage.mock(id: "passage-1", routeId: route.id, districtId: district.id)
 
-        let routeRepository = RouteRepositoryMock(queryByYearHandler: { _, year in
-            if year == 2027 { return [route] }
-            return []
+        let routeRepository = RouteRepositoryMock(queryByEditionHandler: { _, editionId in
+            #expect(editionId == edition.id)
+            return [route]
         })
         let pointRepository = PointRepositoryMock(queryHandler: { _ in [point] })
         let passageRepository = PassageRepositoryMock(queryHandler: { _ in [passage] })
 
         let subject = make(
             districtRepository: .init(getHandler: { _ in district }),
-            periodRepository: .init(queryByYearHandler: { _, year in
-                if year == 2027 { return [nextYearPeriod] }
-                if year == 2026 { return [currentYearPeriod] }
-                return []
-            }),
+            activeEditionRepository: .init(getHandler: { _ in ActiveEdition(festivalId: district.festivalId, editionId: edition.id) }),
+            editionRepository: .init(getHandler: { _ in edition }),
+            periodRepository: .init(queryByEditionHandler: { editionId in editionId == edition.id ? [activePeriod] : [] }),
             performanceRepository: .init(queryHandler: { _ in [] }),
             routeRepository: routeRepository,
             pointRepository: pointRepository,
@@ -273,44 +382,39 @@ struct SceneUsecaseTest {
 
         let result = try await subject.fetchLaunchDistrictPack(districtId: district.id, user: .district(district.id), now: now)
 
+        #expect(result.editionId == edition.id)
         #expect(result.routes == [route])
         #expect(result.currentRouteId == route.id)
         #expect(result.points == [point])
         #expect(result.passages == [passage])
-        #expect(routeRepository.queryByYearCallCount == 1)
+        #expect(routeRepository.queryByEditionCallCount == 1)
     }
 
     @Test
-    func fetchLaunchDistrictPack_正常_当年度にRouteがなければ前年Routeを返さない() async throws {
+    func fetchLaunchDistrictPack_正常_過去Editionへ切り戻したRouteを返す() async throws {
         let now = makeDate(year: 2026, month: 2, day: 22, hour: 12)
         let district = District.mock(id: "district-1", festivalId: "festival-1")
-        let currentPeriod = Period.mock(
-            id: "period-current",
-            festivalId: district.festivalId,
-            date: .init(year: 2026, month: 2, day: 22),
-            start: .init(hour: 11, minute: 0),
-            end: .init(hour: 13, minute: 0)
-        )
+        let edition = Edition(id: "edition-2024", festivalId: district.festivalId, year: 2024)
         let previousPeriod = Period.mock(
             id: "period-previous",
-            festivalId: district.festivalId,
-            date: .init(year: 2025, month: 2, day: 22),
+            editionId: edition.id,
+            date: .init(year: 2024, month: 2, day: 22),
             start: .init(hour: 11, minute: 0),
             end: .init(hour: 13, minute: 0)
         )
         let route = Route.mock(id: "route-previous", districtId: district.id, periodId: previousPeriod.id)
+        let routeRepository = RouteRepositoryMock(queryByEditionHandler: { _, editionId in
+            #expect(editionId == edition.id)
+            return [route]
+        })
 
         let subject = make(
             districtRepository: .init(getHandler: { _ in district }),
-            periodRepository: .init(queryByYearHandler: { _, year in
-                switch year {
-                case 2026: return [currentPeriod]
-                case 2025: return [previousPeriod]
-                default: return []
-                }
-            }),
+            activeEditionRepository: .init(getHandler: { _ in ActiveEdition(festivalId: district.festivalId, editionId: edition.id) }),
+            editionRepository: .init(getHandler: { _ in edition }),
+            periodRepository: .init(queryByEditionHandler: { _ in [previousPeriod] }),
             performanceRepository: .init(queryHandler: { _ in [] }),
-            routeRepository: .init(queryByYearHandler: { _, year in year == 2025 ? [route] : [] }),
+            routeRepository: routeRepository,
             pointRepository: .init(queryHandler: { _ in [] }),
             passageRepository: .init(queryHandler: { _ in [] })
         )
@@ -321,17 +425,19 @@ struct SceneUsecaseTest {
             now: now
         )
 
-        #expect(result.routes.isEmpty)
-        #expect(result.currentRouteId == nil)
+        #expect(result.editionId == edition.id)
+        #expect(result.routes == [route])
+        #expect(result.currentRouteId == route.id)
     }
 
     @Test
     func fetchLaunchDistrictPack_正常_ゲストは非公開ルート除外() async throws {
         let now = makeDate(year: 2026, month: 2, day: 22, hour: 12)
         let district = District.mock(id: "district-1", festivalId: "festival-1")
-        let period = Period.mock(id: "period-1", festivalId: district.festivalId, date: .from(now), start: .init(hour: 11, minute: 0), end: .init(hour: 13, minute: 0))
+        let edition = Edition(id: "edition-2026", festivalId: district.festivalId, year: 2026)
+        let period = Period.mock(id: "period-1", editionId: edition.id, date: .from(now), start: .init(hour: 11, minute: 0), end: .init(hour: 13, minute: 0))
         let adminRoute = Route.mock(id: "route-1", districtId: district.id, periodId: period.id, visibility: .admin)
-        let routeRepository = RouteRepositoryMock(queryByYearHandler: { _, _ in [adminRoute] })
+        let routeRepository = RouteRepositoryMock(queryByEditionHandler: { _, _ in [adminRoute] })
         let pointRepository = PointRepositoryMock(queryHandler: { _ in
             Issue.record("points should not be queried when route is filtered")
             return []
@@ -343,7 +449,9 @@ struct SceneUsecaseTest {
 
         let subject = make(
             districtRepository: .init(getHandler: { _ in district }),
-            periodRepository: .init(queryByYearHandler: { _, _ in [period] }),
+            activeEditionRepository: .init(getHandler: { _ in ActiveEdition(festivalId: district.festivalId, editionId: edition.id) }),
+            editionRepository: .init(getHandler: { _ in edition }),
+            periodRepository: .init(queryByEditionHandler: { _ in [period] }),
             performanceRepository: .init(queryHandler: { _ in [] }),
             routeRepository: routeRepository,
             pointRepository: pointRepository,
@@ -357,7 +465,7 @@ struct SceneUsecaseTest {
         #expect(result.points.isEmpty)
         #expect(result.passages.isEmpty)
         #expect(result.performances.isEmpty)
-        #expect(routeRepository.queryByYearCallCount == 1)
+        #expect(routeRepository.queryByEditionCallCount == 1)
         #expect(pointRepository.queryCallCount == 0)
         #expect(passageRepository.queryCallCount == 0)
     }
@@ -366,15 +474,18 @@ struct SceneUsecaseTest {
     func fetchLaunchDistrictPack_正常_visibilityRouteで対象外ユーザーの時刻をマスク() async throws {
         let now = makeDate(year: 2026, month: 2, day: 22, hour: 12)
         let district = District.mock(id: "district-1", festivalId: "festival-1")
-        let period = Period.mock(id: "period-1", festivalId: district.festivalId, date: .from(now), start: .init(hour: 11, minute: 0), end: .init(hour: 13, minute: 0))
+        let edition = Edition(id: "edition-2026", festivalId: district.festivalId, year: 2026)
+        let period = Period.mock(id: "period-1", editionId: edition.id, date: .from(now), start: .init(hour: 11, minute: 0), end: .init(hour: 13, minute: 0))
         let route = Route.mock(id: "route-1", districtId: district.id, periodId: period.id, visibility: .route)
         let point = Point.mock(id: "point-1", routeId: route.id, time: .init(hour: 12, minute: 34))
 
         let subject = make(
             districtRepository: .init(getHandler: { _ in district }),
-            periodRepository: .init(queryByYearHandler: { _, _ in [period] }),
+            activeEditionRepository: .init(getHandler: { _ in ActiveEdition(festivalId: district.festivalId, editionId: edition.id) }),
+            editionRepository: .init(getHandler: { _ in edition }),
+            periodRepository: .init(queryByEditionHandler: { _ in [period] }),
             performanceRepository: .init(queryHandler: { _ in [] }),
-            routeRepository: .init(queryByYearHandler: { _, _ in [route] }),
+            routeRepository: .init(queryByEditionHandler: { _, _ in [route] }),
             pointRepository: .init(queryHandler: { _ in [point] }),
             passageRepository: .init(queryHandler: { _ in [] })
         )
@@ -391,8 +502,9 @@ struct SceneUsecaseTest {
     func fetchLaunchDistrictPack_正常_periodId指定時は一致Routeを優先する() async throws {
         let now = makeDate(year: 2026, month: 2, day: 22, hour: 12)
         let district = District.mock(id: "district-1", festivalId: "festival-1")
-        let nearestPeriod = Period.mock(id: "period-nearest", festivalId: district.festivalId, date: .init(year: 2026, month: 2, day: 22), start: .init(hour: 11, minute: 0), end: .init(hour: 13, minute: 0))
-        let requestedPeriod = Period.mock(id: "period-requested", festivalId: district.festivalId, date: .init(year: 2026, month: 2, day: 25), start: .init(hour: 11, minute: 0), end: .init(hour: 13, minute: 0))
+        let edition = Edition(id: "edition-2026", festivalId: district.festivalId, year: 2026)
+        let nearestPeriod = Period.mock(id: "period-nearest", editionId: edition.id, date: .init(year: 2026, month: 2, day: 22), start: .init(hour: 11, minute: 0), end: .init(hour: 13, minute: 0))
+        let requestedPeriod = Period.mock(id: "period-requested", editionId: edition.id, date: .init(year: 2026, month: 2, day: 25), start: .init(hour: 11, minute: 0), end: .init(hour: 13, minute: 0))
         let nearestRoute = Route.mock(id: "route-nearest", districtId: district.id, periodId: nearestPeriod.id, visibility: .all)
         let requestedRoute = Route.mock(id: "route-requested", districtId: district.id, periodId: requestedPeriod.id, visibility: .all)
         let requestedPoint = Point.mock(id: "point-requested", routeId: requestedRoute.id)
@@ -400,9 +512,11 @@ struct SceneUsecaseTest {
         
         let subject = make(
             districtRepository: .init(getHandler: { _ in district }),
-            periodRepository: .init(queryByYearHandler: { _, _ in [nearestPeriod, requestedPeriod] }),
+            activeEditionRepository: .init(getHandler: { _ in ActiveEdition(festivalId: district.festivalId, editionId: edition.id) }),
+            editionRepository: .init(getHandler: { _ in edition }),
+            periodRepository: .init(queryByEditionHandler: { _ in [nearestPeriod, requestedPeriod] }),
             performanceRepository: .init(queryHandler: { _ in [] }),
-            routeRepository: .init(queryByYearHandler: { _, _ in [nearestRoute, requestedRoute] }),
+            routeRepository: .init(queryByEditionHandler: { _, _ in [nearestRoute, requestedRoute] }),
             pointRepository: .init(queryHandler: { routeId in
                 routeId == requestedRoute.id ? [requestedPoint] : []
             }),
@@ -427,17 +541,20 @@ struct SceneUsecaseTest {
     func fetchLaunchDistrictPack_正常_periodId未一致なら従来選定へフォールバック() async throws {
         let now = makeDate(year: 2026, month: 2, day: 22, hour: 12)
         let district = District.mock(id: "district-1", festivalId: "festival-1")
-        let nearestPeriod = Period.mock(id: "period-nearest", festivalId: district.festivalId, date: .init(year: 2026, month: 2, day: 22), start: .init(hour: 11, minute: 0), end: .init(hour: 13, minute: 0))
-        let otherPeriod = Period.mock(id: "period-other", festivalId: district.festivalId, date: .init(year: 2026, month: 2, day: 25), start: .init(hour: 11, minute: 0), end: .init(hour: 13, minute: 0))
+        let edition = Edition(id: "edition-2026", festivalId: district.festivalId, year: 2026)
+        let nearestPeriod = Period.mock(id: "period-nearest", editionId: edition.id, date: .init(year: 2026, month: 2, day: 22), start: .init(hour: 11, minute: 0), end: .init(hour: 13, minute: 0))
+        let otherPeriod = Period.mock(id: "period-other", editionId: edition.id, date: .init(year: 2026, month: 2, day: 25), start: .init(hour: 11, minute: 0), end: .init(hour: 13, minute: 0))
         let nearestRoute = Route.mock(id: "route-nearest", districtId: district.id, periodId: nearestPeriod.id, visibility: .all)
         let otherRoute = Route.mock(id: "route-other", districtId: district.id, periodId: otherPeriod.id, visibility: .all)
         let nearestPoint = Point.mock(id: "point-nearest", routeId: nearestRoute.id)
         
         let subject = make(
             districtRepository: .init(getHandler: { _ in district }),
-            periodRepository: .init(queryByYearHandler: { _, _ in [nearestPeriod, otherPeriod] }),
+            activeEditionRepository: .init(getHandler: { _ in ActiveEdition(festivalId: district.festivalId, editionId: edition.id) }),
+            editionRepository: .init(getHandler: { _ in edition }),
+            periodRepository: .init(queryByEditionHandler: { _ in [nearestPeriod, otherPeriod] }),
             performanceRepository: .init(queryHandler: { _ in [] }),
-            routeRepository: .init(queryByYearHandler: { _, _ in [nearestRoute, otherRoute] }),
+            routeRepository: .init(queryByEditionHandler: { _, _ in [nearestRoute, otherRoute] }),
             pointRepository: .init(queryHandler: { routeId in
                 routeId == nearestRoute.id ? [nearestPoint] : []
             }),
@@ -459,8 +576,10 @@ struct SceneUsecaseTest {
     func fetchLaunchDistrictPack_異常_依存エラーを透過() async {
         let subject = make(
             districtRepository: .init(getHandler: { _ in .mock(id: "district-1", festivalId: "festival-1") }),
-            periodRepository: .init(queryByYearHandler: { _, _ in [.mock(festivalId: "festival-1")] }),
-            routeRepository: .init(queryByYearHandler: { _, _ in throw TestError.intentional })
+            activeEditionRepository: .init(getHandler: { _ in ActiveEdition(festivalId: "festival-1", editionId: "edition-2026") }),
+            editionRepository: .init(getHandler: { _ in .init(id: "edition-2026", festivalId: "festival-1", year: 2026) }),
+            periodRepository: .init(queryByEditionHandler: { _ in [.mock(editionId: "edition-2026")] }),
+            routeRepository: .init(queryByEditionHandler: { _, _ in throw TestError.intentional })
         )
 
         await #expect(throws: TestError.intentional) {
@@ -477,6 +596,8 @@ private extension SceneUsecaseTest {
     func make(
         festivalRepository: FestivalRepositoryMock = .init(),
         districtRepository: DistrictRepositoryMock = .init(),
+        activeEditionRepository: ActiveEditionRepositorySpy = .init(),
+        editionRepository: EditionRepositorySpy = .init(),
         periodRepository: PeriodRepositoryMock = .init(),
         locationRepository: LocationRepositoryMock = .init(),
         checkpointRepository: CheckpointRepositoryMock = .init(),
@@ -489,6 +610,8 @@ private extension SceneUsecaseTest {
         withDependencies {
             $0[FestivalRepositoryKey.self] = festivalRepository
             $0[DistrictRepositoryKey.self] = districtRepository
+            $0[ActiveEditionRepositoryKey.self] = activeEditionRepository
+            $0[EditionRepositoryKey.self] = editionRepository
             $0[PeriodRepositoryKey.self] = periodRepository
             $0[LocationRepositoryKey.self] = locationRepository
             $0[CheckpointRepositoryKey.self] = checkpointRepository

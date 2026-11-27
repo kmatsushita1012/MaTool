@@ -6,7 +6,6 @@ Backend/Sources/Controller/DistrictController.swift
 Backend/Sources/Controller/FestivalController.swift
 Backend/Sources/Controller/ImageUploadController.swift
 Backend/Sources/Controller/LocationController.swift
-Backend/Sources/Controller/PeriodController.swift
 Backend/Sources/Controller/PurchaseController.swift
 Backend/Sources/Controller/RouteController.swift
 Backend/Sources/Controller/SceneController.swift
@@ -57,7 +56,6 @@ Backend/Sources/Usecase/ImageUploadUsecase.swift
 Backend/Sources/Usecase/ImpressionUsecase.swift
 Backend/Sources/Usecase/LocationPublicAccess.swift
 Backend/Sources/Usecase/LocationUsecase.swift
-Backend/Sources/Usecase/PeriodUsecase.swift
 Backend/Sources/Usecase/PurchaseUsecase.swift
 Backend/Sources/Usecase/RouteUsecase.swift
 Backend/Sources/Usecase/SceneUsecase.swift
@@ -135,7 +133,6 @@ iOSApp/Sources/Data/Fetcher/DistrictDataFetcher.swift
 iOSApp/Sources/Data/Fetcher/FestivalDataFetcher.swift
 iOSApp/Sources/Data/Fetcher/ImageUploadDataFetcher.swift
 iOSApp/Sources/Data/Fetcher/LocationDataFetcher.swift
-iOSApp/Sources/Data/Fetcher/PeriodDataFetcher.swift
 iOSApp/Sources/Data/Fetcher/RouteDataFetcher.swift
 iOSApp/Sources/Data/Fetcher/SceneDataFetcher.swift
 iOSApp/Sources/Presentation/View/Admin/District/Edit/Area/DistrictAreaEditFeature.swift

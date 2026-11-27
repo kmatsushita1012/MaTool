@@ -115,4 +115,24 @@ struct AlertFeature {
             TextState("参加設定を変更すると、管理者アカウントからサインアウトします。続けますか？")
         }
     }
+
+    static func confirmation(
+        title: String,
+        message: String,
+        confirmTitle: String,
+        cancelTitle: String
+    ) -> State {
+        State {
+            TextState(title)
+        } actions: {
+            ButtonState(role: .cancel, action: .cancelTapped) {
+                TextState(cancelTitle)
+            }
+            ButtonState(action: .confirmTapped) {
+                TextState(confirmTitle)
+            }
+        } message: {
+            TextState(message)
+        }
+    }
 }

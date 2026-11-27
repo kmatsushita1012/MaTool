@@ -39,7 +39,7 @@ struct PassageRepository: PassageRepositoryProtocol {
 
     init() {
         @Dependency(\.dataStoreFactory) var storeFactory
-        self.store = storeFactory("matool")
+        self.store = storeFactory()
     }
     
     func get(id: RoutePassage.ID) async throws -> RoutePassage? {

@@ -15,11 +15,10 @@ struct FestivalDashboardScreen: View {
     var body: some View {
         FestivalDashboardContentView(
             festivalTitle: festivalTitle,
-            isPeriodsLoading: store.isApiLoading,
             isSettingsLoading: store.isSettingsLoading,
             isSignOutLoading: store.isAuthLoading,
             onEditTapped: { store.send(.onEdit) },
-            onPeriodsTapped: { store.send(.periodTapped) },
+            onEditionsTapped: { store.send(.editionsTapped) },
             onDistrictsTapped: { store.send(.districtsTapped) },
             onChangePasswordTapped: { store.send(.changePasswordTapped) },
             onUpdateEmailTapped: { store.send(.updateEmailTapped) },
@@ -46,8 +45,8 @@ private struct FestivalDashboardDestinations: ViewModifier {
             .navigationDestination(item: $store.scope(state: \.destination?.districts, action: \.destination.districts)) { store in
                 HeadquarterDistrictListView(store: store)
             }
-            .navigationDestination(item: $store.scope(state: \.destination?.periods, action: \.destination.periods)) { store in
-                PeriodListView(store: store)
+            .navigationDestination(item: $store.scope(state: \.destination?.editionList, action: \.destination.editionList)) { store in
+                EditionListView(store: store)
             }
             .navigationDestination(item: $store.scope(state: \.destination?.changePassword, action: \.destination.changePassword)) { store in
                 ChangePasswordView(store: store)
@@ -65,11 +64,10 @@ typealias FestivalDashboardView = FestivalDashboardScreen
 
 struct FestivalDashboardContentView: View {
     let festivalTitle: String
-    let isPeriodsLoading: Bool
     let isSettingsLoading: Bool
     let isSignOutLoading: Bool
     let onEditTapped: () -> Void
-    let onPeriodsTapped: () -> Void
+    let onEditionsTapped: () -> Void
     let onDistrictsTapped: () -> Void
     let onChangePasswordTapped: () -> Void
     let onUpdateEmailTapped: () -> Void
@@ -77,7 +75,7 @@ struct FestivalDashboardContentView: View {
     let onSettingsTapped: () -> Void
 
     private var isNavigationDisabled: Bool {
-        isPeriodsLoading || isSettingsLoading || isSignOutLoading
+        isSettingsLoading || isSignOutLoading
     }
 
     var body: some View {
@@ -92,7 +90,7 @@ struct FestivalDashboardContentView: View {
                 NavigationItemView(
                     title: "日程",
                     iconName: "calendar",
-                    onTap: onPeriodsTapped
+                    onTap: onEditionsTapped
                 )
                 .disabled(isNavigationDisabled)
             }
@@ -132,11 +130,10 @@ struct FestivalDashboardContentView: View {
 #Preview {
     FestivalDashboardContentView(
         festivalTitle: "",
-        isPeriodsLoading: false,
         isSettingsLoading: false,
         isSignOutLoading: false,
         onEditTapped: {},
-        onPeriodsTapped: {},
+        onEditionsTapped: {},
         onDistrictsTapped: {},
         onChangePasswordTapped: {},
         onUpdateEmailTapped: {},

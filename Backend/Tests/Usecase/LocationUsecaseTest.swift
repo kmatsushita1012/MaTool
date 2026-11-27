@@ -12,12 +12,15 @@ struct LocationUsecaseTest {
         let festivalId = "festival-1"
         let districtId = "district-1"
         let location = FloatLocation.mock(id: "loc-1", districtId: districtId, coordinate: .init(latitude: 35, longitude: 139), timestamp: now)
-        let period = Period(festivalId: festivalId, date: .from(now), start: .init(hour: 0, minute: 0), end: .init(hour: 23, minute: 59))
+        let period = Period(editionId: "edition-1", date: .from(now), start: .init(hour: 0, minute: 0), end: .init(hour: 23, minute: 59))
         let repository = LocationRepositoryMock(queryHandler: { _ in [location] })
 
         let subject = make(
             locationRepository: repository,
-            periodRepository: .init(queryByYearHandler: { _, _ in [period] })
+            periodRepository: .init(queryByEditionHandler: { editionId in
+                #expect(editionId == "edition-1")
+                return [period]
+            })
         )
 
         let result = try await subject.query(by: festivalId, user: UserRole.guest, now: now)
@@ -34,7 +37,7 @@ struct LocationUsecaseTest {
         })
         let subject = make(
             locationRepository: repository,
-            periodRepository: .init(queryByYearHandler: { _, _ in [] })
+            periodRepository: .init(queryByEditionHandler: { _ in [] })
         )
 
         let result = try await subject.query(by: "festival-1", user: .guest, now: now)
@@ -49,7 +52,7 @@ struct LocationUsecaseTest {
         let repository = LocationRepositoryMock(getHandler: { _, _ in location })
         let subject = make(
             locationRepository: repository,
-            periodRepository: .init(queryByYearHandler: { _, _ in [] })
+            periodRepository: .init(queryByEditionHandler: { _ in [] })
         )
 
         let result = try await subject.query(by: "festival-1", user: .district("district-1"), now: now)
@@ -69,7 +72,7 @@ struct LocationUsecaseTest {
         let subject = make(
             locationRepository: repository,
             districtRepository: .init(getHandler: { _ in district }),
-            periodRepository: .init(queryByYearHandler: { _, _ in [] })
+            periodRepository: .init(queryByEditionHandler: { _ in [] })
         )
 
         let result = try await subject.get(districtId: district.id, user: .guest, now: now)
@@ -144,14 +147,14 @@ struct LocationUsecaseTest {
     @Test
     func query_異常_依存エラーを透過() async {
         let period = Period(
-            festivalId: "festival-1",
+            editionId: "edition-1",
             date: .from(now),
             start: .init(hour: 0, minute: 0),
             end: .init(hour: 23, minute: 59)
         )
         let subject = make(
             locationRepository: .init(queryHandler: { _ in throw TestError.intentional }),
-            periodRepository: .init(queryByYearHandler: { _, _ in [period] })
+            periodRepository: .init(queryByEditionHandler: { _ in [period] })
         )
 
         await #expect(throws: TestError.intentional) {
@@ -165,7 +168,7 @@ struct LocationUsecaseTest {
         let subject = make(
             locationRepository: locationRepository,
             districtRepository: .init(getHandler: { _ in district }),
-            periodRepository: .init(queryByYearHandler: { _, _ in [] })
+            periodRepository: .init(queryByEditionHandler: { _ in [] })
         )
 
         await #expect(throws: Error.notFound("位置情報が見つかりません")) {
@@ -220,12 +223,20 @@ private extension LocationUsecaseTest {
     func make(
         locationRepository: LocationRepositoryMock = .init(),
         districtRepository: DistrictRepositoryMock = .init(),
-        periodRepository: PeriodRepositoryMock = .init()
+        periodRepository: PeriodRepositoryMock = .init(queryByEditionHandler: { _ in [] }),
+        activeEditionRepository: ActiveEditionRepositoryProtocol = ActiveEditionRepositorySpy(getHandler: { festivalId in
+            ActiveEdition(festivalId: festivalId, editionId: "edition-1")
+        }),
+        editionRepository: EditionRepositoryProtocol = EditionRepositorySpy(getHandler: { id in
+            Edition(id: id, festivalId: "festival-1", year: 2028)
+        })
     ) -> LocationUsecase {
         withDependencies {
             $0[LocationRepositoryKey.self] = locationRepository
             $0[DistrictRepositoryKey.self] = districtRepository
             $0[PeriodRepositoryKey.self] = periodRepository
+            $0[ActiveEditionRepositoryKey.self] = activeEditionRepository
+            $0[EditionRepositoryKey.self] = editionRepository
         } operation: {
             LocationUsecase()
         }

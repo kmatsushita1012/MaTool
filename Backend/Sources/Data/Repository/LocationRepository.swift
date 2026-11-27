@@ -28,7 +28,7 @@ struct LocationRepository: LocationRepositoryProtocol {
 
     init() {
         @Dependency(\.dataStoreFactory) var storeFactory
-        self.store = storeFactory("matool")
+        self.store = storeFactory()
     }
 
     func get(festivalId: String, districtId: String) async throws -> FloatLocation? {

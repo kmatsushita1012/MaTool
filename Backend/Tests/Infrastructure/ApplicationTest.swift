@@ -88,16 +88,16 @@ struct ApplicationTest {
         #expect(await requested.values == ["festival-1:banner"])
     }
 
-    @Test("R04: 既存 Festival launch route に到達する")
-    func r04LegacyLaunchRoute() async {
+    @Test("R04: Festival v2 launch route に到達する")
+    func r04FestivalV2LaunchRoute() async {
         let calls = CallCounter()
         let app = Application()
-        app.get(path: "/festivals/:festivalId/launch") { _, _ in
+        app.get(path: "/v2/festivals/:festivalId/launch") { _, _ in
             await calls.increment()
             return try .success()
         }
 
-        let response = await app.handle(.make(method: .get, path: "/festivals/festival-1/launch"))
+        let response = await app.handle(.make(method: .get, path: "/v2/festivals/festival-1/launch"))
 
         #expect(response.statusCode == 200)
         #expect(await calls.value == 1)

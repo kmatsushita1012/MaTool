@@ -37,7 +37,7 @@ struct SignOutUseCaseTests {
         #expect(launchState == .district(.guest, fixture.route.id))
         #expect(initializeSpy.callCount == 0)
         #expect(Set(await dataFetcher.requests) == Set([
-            "festival:\(fixture.festival.id)",
+            "festivalFromDistrict:\(fixture.district.id)",
             "district:\(fixture.district.id):period:nil"
         ]))
         #expect(await sessionCoordinator.sessionStarts == 1)
@@ -84,7 +84,7 @@ struct SignOutUseCaseTests {
         #expect(initializeSpy.callCount == 0)
         #expect(appState.wrappedValue == nil)
         #expect(Set(await dataFetcher.requests) == Set([
-            "festival:\(fixture.festival.id)",
+            "festivalFromDistrict:\(fixture.district.id)",
             "district:\(fixture.district.id):period:nil"
         ]))
     }
@@ -238,11 +238,13 @@ private struct SignOutFixture {
             base: Coordinate(latitude: 35.1, longitude: 139.1)
         )
         district = District(id: "selected-district", name: "取得し直した町", festivalId: festival.id)
-        let period = Period(id: "selected-period", festivalId: festival.id, date: .now)
+        let edition = Edition(id: "selected-edition", festivalId: festival.id, year: 2026)
+        let period = Period(id: "selected-period", editionId: edition.id, date: .now)
         route = Route(id: "new-route", districtId: district.id, periodId: period.id)
         point = Point(id: "new-point", routeId: route.id, coordinate: festival.base)
         festivalPack = LaunchFestivalPack(
             festival: festival,
+            edition: edition,
             districts: [district],
             periods: [period],
             locations: [],
@@ -264,12 +266,14 @@ private struct SignOutFixture {
             base: Coordinate(latitude: 36, longitude: 140)
         )
         let staleDistrict = District(id: "old-district", name: "古い町", festivalId: staleFestival.id)
-        let stalePeriod = Period(id: "old-period", festivalId: staleFestival.id, date: .now)
+        let staleEdition = Edition(id: "old-edition", festivalId: staleFestival.id, year: 2025)
+        let stalePeriod = Period(id: "old-period", editionId: staleEdition.id, date: .now)
         let staleRoute = Route(id: "old-route", districtId: staleDistrict.id, periodId: stalePeriod.id)
         let stalePoint = Point(id: "old-point", routeId: staleRoute.id, coordinate: staleFestival.base)
         let staleFestivalState = FestivalState(
             LaunchFestivalPack(
                 festival: staleFestival,
+                edition: staleEdition,
                 districts: [staleDistrict],
                 periods: [stalePeriod],
                 locations: [],

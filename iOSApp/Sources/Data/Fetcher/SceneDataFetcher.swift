@@ -21,11 +21,11 @@ struct SceneDataFetcher: SceneDataFetcherProtocol {
     @Dependency(HTTPClientKey.self) var client
 
     func launchFestival(festivalId: Festival.ID) async throws -> LaunchFestivalPack {
-        try await fetchFestivalPack(path: "/festivals/\(festivalId)/launch")
+        try await fetchFestivalPack(path: "/v2/festivals/\(festivalId)/launch")
     }
 
     func launchFestival(districtId: District.ID) async throws -> LaunchFestivalPack {
-        try await fetchFestivalPack(path: "/districts/\(districtId)/launch-festival")
+        try await fetchFestivalPack(path: "/v2/districts/\(districtId)/launch-festival")
     }
 
     private func fetchFestivalPack(path: String) async throws -> LaunchFestivalPack {
@@ -35,7 +35,7 @@ struct SceneDataFetcher: SceneDataFetcherProtocol {
     func launchDistrict(districtId: District.ID, periodId: Period.ID?) async throws -> LaunchDistrictPack {
         let query = periodId.map { ["periodId": $0] } ?? [:]
         return try await client.get(
-            path: "/districts/\(districtId)/launch",
+            path: "/v2/districts/\(districtId)/launch",
             query: query,
             accessToken: await getToken(),
             isCache: false

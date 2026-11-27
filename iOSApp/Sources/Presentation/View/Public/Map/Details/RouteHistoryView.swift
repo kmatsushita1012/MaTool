@@ -9,28 +9,18 @@ import Shared
 import SwiftUI
 
 struct RouteHistoryView: View {
-    let entries: [RouteEntry]
+    let history: [EditionRouteGroup]
     let excludingRouteId: Route.ID?
     var isLoading = false
     let selected: (RouteEntry) -> Void
 
     @Environment(\.dismiss) private var dismiss
 
-    private var groupedByYear: [Int: [RouteEntry]] {
-        Dictionary(grouping: entries.filter { $0.id != excludingRouteId }.sorted()) {
-            $0.period.date.year
-        }
-    }
-
-    private var years: [Int] {
-        groupedByYear.keys.sorted(by: >)
-    }
-
     var body: some View {
         Form {
-            ForEach(years, id: \.self) { year in
-                Section("\(String(year))年") {
-                    ForEach(groupedByYear[year] ?? []) { entry in
+            ForEach(history, id: \.edition.id) { history in
+                Section("\(String(history.edition.year))年") {
+                    ForEach(history.entries.filter { $0.id != excludingRouteId }) { entry in
                         Button(entry.period.shortText) {
                             selected(entry)
                         }

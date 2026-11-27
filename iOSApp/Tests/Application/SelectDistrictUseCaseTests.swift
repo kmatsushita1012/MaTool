@@ -14,9 +14,10 @@ struct SelectDistrictUseCaseTests {
             base: Coordinate(latitude: 35, longitude: 139)
         )
         let district = District(id: "district", name: "District", festivalId: festival.id)
+        let edition = Edition(id: "edition", festivalId: festival.id, year: 2026)
         let currentPeriod = Period(
             id: "current-period",
-            festivalId: festival.id,
+            editionId: edition.id,
             date: SimpleDate(year: 2026, month: 10, day: 3),
             start: SimpleTime(hour: 9, minute: 0),
             end: SimpleTime(hour: 17, minute: 0)
@@ -27,49 +28,27 @@ struct SelectDistrictUseCaseTests {
             periodId: currentPeriod.id,
             visibility: .admin
         )
-        let oldRoute = Route(
-            id: "old-route",
-            districtId: district.id,
-            periodId: "old-period",
-            visibility: .admin
-        )
-        let previousPeriod = Period(
-            id: "old-period",
-            festivalId: festival.id,
-            date: SimpleDate(year: 2025, month: 10, day: 3),
-            start: SimpleTime(hour: 9, minute: 0),
-            end: SimpleTime(hour: 17, minute: 0)
-        )
-        let point = Point(
-            id: "point",
-            routeId: oldRoute.id,
-            coordinate: Coordinate(latitude: 35, longitude: 139)
-        )
-        let passage = RoutePassage(
-            id: "passage",
-            routeId: oldRoute.id,
-            districtId: district.id,
-            order: 0
-        )
         let response = LaunchDistrictPack(
+            editionId: edition.id,
             performances: [],
-            routes: [route, oldRoute],
-            points: [point],
-            passages: [passage],
-            currentRouteId: oldRoute.id
+            routes: [route],
+            points: [],
+            passages: [],
+            currentRouteId: route.id
+        )
+        let festivalPack = LaunchFestivalPack(
+            festival: festival,
+            edition: edition,
+            districts: [district],
+            periods: [currentPeriod],
+            locations: [],
+            checkpoints: [],
+            hazardSections: []
         )
         let appState = Shared<AppState?>(value: AppState(
-            festivalPack: LaunchFestivalPack(
-                festival: festival,
-                year: 2026,
-                districts: [district],
-                periods: [currentPeriod, previousPeriod],
-                locations: [],
-                checkpoints: [],
-                hazardSections: []
-            )
+            festivalPack: festivalPack
         ))
-        let dataFetcher = SceneDataFetcherSpy(response: response)
+        let dataFetcher = SceneDataFetcherSpy(response: response, festivalPack: festivalPack)
         let useCase = withDependencies {
             $0.installTestSpies()
             $0[SceneDataFetcherKey.self] = dataFetcher
@@ -80,15 +59,15 @@ struct SelectDistrictUseCaseTests {
 
         let selectedRouteId = try await useCase(districtId: district.id, appState: appState)
 
-        #expect(selectedRouteId == oldRoute.id)
+        #expect(selectedRouteId == route.id)
         #expect(await dataFetcher.districtLaunchCallCount() == 1)
         #expect(appState.wrappedValue?.districtState?.districtId == district.id)
-        #expect(appState.wrappedValue?.districtState?.routes == [route, oldRoute])
-        #expect(appState.wrappedValue?.festivalState.year == 2026)
-        #expect(appState.wrappedValue?.period(id: previousPeriod.id) == previousPeriod)
-        #expect(appState.wrappedValue?.routeState?.route == oldRoute)
-        #expect(appState.wrappedValue?.routeState?.points == [point])
-        #expect(appState.wrappedValue?.routeState?.passages == [passage])
+        #expect(appState.wrappedValue?.districtState?.routes == [route])
+        #expect(appState.wrappedValue?.festivalState.edition?.year == 2026)
+        #expect(appState.wrappedValue?.festivalState.periods == [currentPeriod])
+        #expect(appState.wrappedValue?.routeState?.route == route)
+        #expect(appState.wrappedValue?.routeState?.points.isEmpty == true)
+        #expect(appState.wrappedValue?.routeState?.passages.isEmpty == true)
     }
     @Test("地区選択解除は既定地区と画面の地区・ルート状態を消去する")
     func clearSelectedDistrict() async throws {

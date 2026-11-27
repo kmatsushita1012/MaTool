@@ -27,9 +27,19 @@ struct LoadDistrictStateUseCase: LoadDistrictStateUseCaseProtocol {
     ) async throws -> LaunchDistrictPack {
         let context = beginDistrictStateLoad(in: appState)
 
-        let response = try await dataFetcher.launchDistrict(districtId: districtId, periodId: periodId)
-        applyDistrictStateResponse(response, districtId: districtId, context: context, to: appState)
-        return response
+        let (festivalPack, districtPack) = try await fetchEditionConsistentLaunchPacks(
+            districtID: districtId,
+            periodID: periodId,
+            using: dataFetcher
+        )
+        applyConsistentLaunchResponses(
+            festivalPack: festivalPack,
+            districtPack: districtPack,
+            districtId: districtId,
+            context: context,
+            to: appState
+        )
+        return districtPack
     }
 }
 

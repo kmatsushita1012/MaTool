@@ -4,14 +4,10 @@ import Testing
 @testable import iOSApp
 
 struct FestivalDashboardFeatureTests {
-    @Test("API・認証・PDF出力・設定のいずれかを実行中ならローディングを表示する")
+    @Test("認証・PDF出力・設定のいずれかを実行中ならローディングを表示する")
     func loadingFlagCoversIndependentOperations() {
         var state = makeState()
         #expect(!state.isLoading)
-
-        state.isApiLoading = true
-        #expect(state.isLoading)
-        state.isApiLoading = false
 
         state.isAuthLoading = true
         #expect(state.isLoading)
@@ -46,23 +42,6 @@ struct FestivalDashboardFeatureTests {
             $0.destination = .updateEmail(UpdateEmailFeature.State())
         }
         await emailStore.finish()
-    }
-
-    @Test("日程一覧の取得失敗ではローディングを止めてエラーの理由を示す")
-    @MainActor
-    func periodLoadingFailure() async {
-        let error = AppError.be(.network("offline"))
-        var state = makeState()
-        state.isApiLoading = true
-        let store = TestStore(initialState: state) {
-            FestivalDashboardFeature()
-        } withDependencies: { $0.installTestSpies() }
-
-        await store.send(.periodsPrepared(.failure(error))) {
-            $0.isApiLoading = false
-            $0.alert = AlertFeature.error("日程の取得に失敗しました。\n\(error.message)")
-        }
-        await store.finish()
     }
 
     @Test("設定一覧の取得失敗では設定画面へ遷移せずエラーを表示する")
@@ -141,21 +120,20 @@ struct FestivalDashboardFeatureTests {
         await listing.finish()
     }
 
-    @Test("取得した日程は編集一覧へ渡し、ロード中表示を消す")
+    @Test("祭典ダッシュボードの日程からEdition編集画面を開く")
     @MainActor
-    func fetchedPeriodsOpenPeriodList() async {
-        var initial = makeState()
-        initial.isApiLoading = true
-        let store = TestStore(initialState: initial) {
+    func editionNavigation() async {
+        let appState = Shared<AppState?>(value: AppStateFixture.state())
+        let store = TestStore(initialState: FestivalDashboardFeature.State(
+            AppStateFixture.festival(),
+            appState: appState
+        )) {
             FestivalDashboardFeature()
         } withDependencies: { $0.installTestSpies() }
-        store.exhaustivity = .off
-        let periods = [AppStateFixture.period(id: "morning"), AppStateFixture.period(id: "evening")]
 
-        await store.send(.periodsPrepared(.success(periods)))
-        #expect(!store.state.isApiLoading)
-        #expect(store.state.destination?.periods?.festivalId == "festival")
-        #expect(store.state.destination?.periods?.periods.count == 2)
+        await store.send(.editionsTapped) {
+            $0.destination = .editionList(EditionListFeature.State(festivalID: "festival", appState: appState))
+        }
         await store.finish()
     }
 
@@ -194,49 +172,6 @@ struct FestivalDashboardFeatureTests {
         await store.send(.alert(.dismiss)) {
             $0.alert = nil
         }
-        await store.finish()
-    }
-
-    @Test("日程ボタンは祭典IDでUseCaseを呼び出し取得した日程へ遷移する")
-    @MainActor
-    func periodTappedFetchesFestivalPeriods() async {
-        let periods = [AppStateFixture.period(id: "first")]
-        let spy = DashboardFetchPeriodsSpy(result: .success(periods))
-        let store = TestStore(initialState: makeState()) {
-            FestivalDashboardFeature()
-        } withDependencies: {
-            $0.installTestSpies()
-            $0[FetchFestivalPeriodsUseCaseKey.self] = spy
-        }
-        store.exhaustivity = .off
-
-        await store.send(.periodTapped)
-        await store.receive(.periodsPrepared(.success(periods)))
-        #expect(await spy.requestedFestivalIDs == ["festival"])
-        #expect(store.state.destination?.periods?.periods == periods)
-        #expect(!store.state.isApiLoading)
-        await store.finish()
-    }
-
-    @Test("日程の取得エラーが発生した場合は画面遷移せずエラーを通知する")
-    @MainActor
-    func periodTappedPropagatesFetchFailure() async {
-        let error = AppError.be(.network("offline"))
-        let spy = DashboardFetchPeriodsSpy(result: .failure(error))
-        let store = TestStore(initialState: makeState()) {
-            FestivalDashboardFeature()
-        } withDependencies: {
-            $0.installTestSpies()
-            $0[FetchFestivalPeriodsUseCaseKey.self] = spy
-        }
-        store.exhaustivity = .off
-
-        await store.send(.periodTapped)
-        await store.receive(.periodsPrepared(.failure(error)))
-        #expect(await spy.requestedFestivalIDs == ["festival"])
-        #expect(!store.state.isApiLoading)
-        #expect(store.state.destination == nil)
-        #expect(store.state.alert == .error("日程の取得に失敗しました。\n\(error.message)"))
         await store.finish()
     }
 
@@ -327,18 +262,6 @@ struct FestivalDashboardFeatureTests {
             AppStateFixture.festival(),
             appState: Shared<AppState?>(value: AppStateFixture.state())
         )
-    }
-}
-
-private actor DashboardFetchPeriodsSpy: FetchFestivalPeriodsUseCaseProtocol {
-    let result: Result<[Period], AppError>
-    private(set) var requestedFestivalIDs: [Festival.ID] = []
-
-    init(result: Result<[Period], AppError>) { self.result = result }
-
-    func callAsFunction(festivalId: Festival.ID) async throws -> [Period] {
-        requestedFestivalIDs.append(festivalId)
-        return try result.get()
     }
 }
 

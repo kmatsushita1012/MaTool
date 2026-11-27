@@ -32,7 +32,8 @@ func applyDistrictStateResponse(
         guard var updated = current,
               updated.sessionId == context.sessionId,
               updated.districtLoadRequestId == context.requestId,
-              updated.district(id: districtId) != nil else { return false }
+              updated.district(id: districtId) != nil,
+              updated.festivalState.edition?.id == response.editionId else { return false }
         updated.districtState = DistrictState(
             districtId: districtId,
             requestId: context.requestId,
@@ -42,6 +43,31 @@ func applyDistrictStateResponse(
            let route = updated.districtState?.route(id: routeId) {
             updated.routeState = RouteState(route: route, points: response.points, passages: response.passages)
         }
+        current = updated
+        return true
+    }
+}
+
+@discardableResult
+func applyConsistentLaunchResponses(
+    festivalPack: LaunchFestivalPack,
+    districtPack: LaunchDistrictPack,
+    districtId: District.ID,
+    context: DistrictStateLoadContext,
+    to appState: Shared<AppState?>
+) -> Bool {
+    appState.withLock { current in
+        guard let existing = current,
+              existing.sessionId == context.sessionId,
+              existing.districtLoadRequestId == context.requestId,
+              festivalPack.districts.contains(where: { $0.id == districtId }) else { return false }
+        var updated = AppState(
+            festivalPack: festivalPack,
+            districtPack: districtPack,
+            districtId: districtId,
+            sessionId: existing.sessionId
+        )
+        updated.districtLoadRequestId = context.requestId
         current = updated
         return true
     }

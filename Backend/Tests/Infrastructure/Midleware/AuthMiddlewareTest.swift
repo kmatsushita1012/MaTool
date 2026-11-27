@@ -68,7 +68,6 @@ private extension AuthMiddlewareTest {
     ) -> Application {
         withDependencies {
             $0[RouteControllerKey.self] = routeController
-            $0[PeriodControllerKey.self] = PeriodControllerMock()
         } operation: {
             Application {
                 AuthMiddleware(path: "/")

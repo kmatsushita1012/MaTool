@@ -17,7 +17,7 @@ struct FestivalDashboardFeature {
     enum Destination {
         case edit(FestivalEditFeature)
         case districts(HeadquarterDistrictListFeature)
-        case periods(PeriodListFeature)
+        case editionList(EditionListFeature)
         case changePassword(ChangePasswordFeature)
         case updateEmail(UpdateEmailFeature)
         case settings(SettingsFeature)
@@ -31,7 +31,6 @@ struct FestivalDashboardFeature {
         @ObservationStateIgnored
         var festival: Festival
 
-        var isApiLoading: Bool = false
         var isAuthLoading: Bool = false
         var isExportLoading: Bool = false
         var isSettingsLoading: Bool = false
@@ -39,7 +38,7 @@ struct FestivalDashboardFeature {
         @Presents var destination: Destination.State? = nil
         @Presents var alert: AlertFeature.State? = nil
         var isLoading: Bool {
-            isApiLoading || isAuthLoading || isExportLoading || isSettingsLoading
+            isAuthLoading || isExportLoading || isSettingsLoading
         }
 
         init(_ festival: Festival, appState: Shared<AppState?>) {
@@ -52,7 +51,7 @@ struct FestivalDashboardFeature {
     enum Action: Equatable, BindableAction {
         case binding(BindingAction<State>)
         case onEdit
-        case periodTapped
+        case editionsTapped
         case districtsTapped
         case dismissTapped
         case changePasswordTapped
@@ -61,12 +60,10 @@ struct FestivalDashboardFeature {
         case settingsPrepared(AppResult<SettingsPreparation>)
         case signOutTapped
         case signOutReceived(AppResult<LaunchState>)
-        case periodsPrepared(AppResult<[Period]>)
         case destination(PresentationAction<Destination.Action>)
         case alert(PresentationAction<AlertFeature.Action>)
     }
 
-    @Dependency(FetchFestivalPeriodsUseCaseKey.self) var fetchFestivalPeriodsUseCase
     @Dependency(SignOutUseCaseKey.self) var signOutUseCase
     @Dependency(FetchFestivalListUseCaseKey.self) var fetchFestivalListUseCase
     @Dependency(GetSceneSelectionUseCaseKey.self) var getSceneSelectionUseCase
@@ -79,23 +76,11 @@ struct FestivalDashboardFeature {
             case .onEdit:
                 state.destination = .edit(FestivalEditFeature.State(state.festival, appState: state.$appState))
                 return .none
-            case .periodTapped:
-                state.isApiLoading = true
-                let festivalId = state.festival.id
-                return .task(Action.periodsPrepared) {
-                    try await fetchFestivalPeriodsUseCase(festivalId: festivalId)
-                }
-            case .periodsPrepared(.success(let periods)):
-                state.isApiLoading = false
-                state.destination = .periods(PeriodListFeature.State(
-                    festivalId: state.festival.id,
-                    periods: periods,
+            case .editionsTapped:
+                state.destination = .editionList(EditionListFeature.State(
+                    festivalID: state.festival.id,
                     appState: state.$appState
                 ))
-                return .none
-            case .periodsPrepared(.failure(let error)):
-                state.isApiLoading = false
-                state.alert = AlertFeature.error("日程の取得に失敗しました。\n\(error.message)")
                 return .none
             case .districtsTapped:
                 state.destination = .districts(.init(state.festival, appState: state.$appState))

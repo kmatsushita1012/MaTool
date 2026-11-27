@@ -44,7 +44,7 @@ struct PublicMapFeatureTests {
         let appState = Shared<AppState?>(value: AppState(
             festivalPack: LaunchFestivalPack(
                 festival: festival,
-                year: 2026,
+                edition: Edition(id: "edition-2026", festivalId: festival.id, year: 2026),
                 districts: [laterGroupDistrict, selectedDistrict, sameGroupDistrict, firstGroupDistrict],
                 periods: [],
                 locations: [],
@@ -491,9 +491,10 @@ private struct PeriodSelectionFixture {
         )
         currentDistrict = District(id: "current", name: "Current", festivalId: festival.id)
         nextDistrict = District(id: "next", name: "Next", festivalId: festival.id)
+        let edition = Edition(id: "edition", festivalId: festival.id, year: 2026)
         period = Period(
             id: "period",
-            festivalId: festival.id,
+            editionId: edition.id,
             title: "Night",
             date: SimpleDate(year: 2026, month: 10, day: 3),
             start: SimpleTime(hour: 18, minute: 0),
@@ -504,6 +505,7 @@ private struct PeriodSelectionFixture {
         appState = Shared(value: AppState(
             festivalPack: LaunchFestivalPack(
                 festival: festival,
+                edition: edition,
                 districts: [currentDistrict, nextDistrict],
                 periods: [period],
                 locations: [],
@@ -511,6 +513,7 @@ private struct PeriodSelectionFixture {
                 hazardSections: []
             ),
             districtPack: LaunchDistrictPack(
+                editionId: edition.id,
                 performances: [],
                 routes: [currentRoute],
                 points: [],

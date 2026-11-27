@@ -109,12 +109,14 @@ final class RouteUsecaseMock: RouteUsecaseProtocol, @unchecked Sendable {
     init(
         getHandler: ((String, UserRole) throws -> RoutePack)? = nil,
         queryHandler: ((String, RouteQueryType, SimpleDate, UserRole) throws -> [Route])? = nil,
+        historyHandler: ((String, String, UserRole) throws -> RouteHistoryResponse)? = nil,
         postHandler: ((String, RoutePack, UserRole) throws -> RoutePack)? = nil,
         putHandler: ((String, RoutePack, UserRole) throws -> RoutePack)? = nil,
         deleteHandler: ((String, UserRole) throws -> Void)? = nil
     ) {
         self.getHandler = getHandler
         self.queryHandler = queryHandler
+        self.historyHandler = historyHandler
         self.postHandler = postHandler
         self.putHandler = putHandler
         self.deleteHandler = deleteHandler
@@ -134,6 +136,12 @@ final class RouteUsecaseMock: RouteUsecaseProtocol, @unchecked Sendable {
         queryCallCount += 1
         guard let queryHandler else { throw TestError.unimplemented }
         return try queryHandler(districtId, type, now, user)
+    }
+
+    private let historyHandler: ((String, String, UserRole) throws -> RouteHistoryResponse)?
+    func history(districtId: District.ID, before editionId: Edition.ID, user: UserRole) async throws -> RouteHistoryResponse {
+        guard let historyHandler else { throw TestError.unimplemented }
+        return try historyHandler(districtId, editionId, user)
     }
 
     private(set) var postCallCount = 0
@@ -204,72 +212,6 @@ final class LocationUsecaseMock: LocationUsecaseProtocol, @unchecked Sendable {
         deleteCallCount += 1
         guard let deleteHandler else { throw TestError.unimplemented }
         try deleteHandler(districtId, user)
-    }
-}
-
-final class PeriodUsecaseMock: PeriodUsecaseProtocol, @unchecked Sendable {
-    init(
-        getHandler: ((String) throws -> Period)? = nil,
-        queryByYearHandler: ((String, Int) throws -> [Period])? = nil,
-        queryHandler: ((String) throws -> [Period])? = nil,
-        postHandler: ((String, Period, UserRole) throws -> Period)? = nil,
-        putHandler: ((Period, UserRole) throws -> Period)? = nil,
-        deleteHandler: ((String, UserRole) throws -> Void)? = nil
-    ) {
-        self.getHandler = getHandler
-        self.queryByYearHandler = queryByYearHandler
-        self.queryHandler = queryHandler
-        self.postHandler = postHandler
-        self.putHandler = putHandler
-        self.deleteHandler = deleteHandler
-    }
-
-    private(set) var getCallCount = 0
-    private let getHandler: ((String) throws -> Period)?
-    func get(id: String) async throws -> Period {
-        getCallCount += 1
-        guard let getHandler else { throw TestError.unimplemented }
-        return try getHandler(id)
-    }
-
-    private(set) var queryByYearCallCount = 0
-    private let queryByYearHandler: ((String, Int) throws -> [Period])?
-    func query(by festivalId: String, year: Int) async throws -> [Period] {
-        queryByYearCallCount += 1
-        guard let queryByYearHandler else { throw TestError.unimplemented }
-        return try queryByYearHandler(festivalId, year)
-    }
-
-    private(set) var queryCallCount = 0
-    private let queryHandler: ((String) throws -> [Period])?
-    func query(by festivalId: String) async throws -> [Period] {
-        queryCallCount += 1
-        guard let queryHandler else { throw TestError.unimplemented }
-        return try queryHandler(festivalId)
-    }
-
-    private(set) var postCallCount = 0
-    private let postHandler: ((String, Period, UserRole) throws -> Period)?
-    func post(festivalId: String, period: Period, user: UserRole) async throws -> Period {
-        postCallCount += 1
-        guard let postHandler else { throw TestError.unimplemented }
-        return try postHandler(festivalId, period, user)
-    }
-
-    private(set) var putCallCount = 0
-    private let putHandler: ((Period, UserRole) throws -> Period)?
-    func put(period: Period, user: UserRole) async throws -> Period {
-        putCallCount += 1
-        guard let putHandler else { throw TestError.unimplemented }
-        return try putHandler(period, user)
-    }
-
-    private(set) var deleteCallCount = 0
-    private let deleteHandler: ((String, UserRole) throws -> Void)?
-    func delete(id: String, user: UserRole) async throws {
-        deleteCallCount += 1
-        guard let deleteHandler else { throw TestError.unimplemented }
-        try deleteHandler(id, user)
     }
 }
 

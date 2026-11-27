@@ -7,70 +7,35 @@ enum FetcherTestError: Swift.Error, Equatable {
     case failed
 }
 
-actor PeriodDataFetcherSpy: PeriodDataFetcherProtocol {
-    let response: Period
-    let list: [Period]
-    let shouldFail: Bool
-    private var operations: [String] = []
-
-    init(response: Period, list: [Period] = [], shouldFail: Bool = false) {
-        self.response = response
-        self.list = list
-        self.shouldFail = shouldFail
-    }
-
-    func recordedCalls() -> [String] { operations }
-
-    func fetchAll(festivalID: Festival.ID, query: Query) async throws -> [Period] {
-        operations.append("fetchAll:\(festivalID):\(String(describing: query))")
-        if shouldFail { throw FetcherTestError.failed }
-        return list
-    }
-
-    func fetch(_ id: Period.ID) async throws -> Period {
-        operations.append("fetch:\(id)")
-        if shouldFail { throw FetcherTestError.failed }
-        return response
-    }
-
-    func update(_ period: Period) async throws -> Period {
-        operations.append("update:\(period.id)")
-        if shouldFail { throw FetcherTestError.failed }
-        return response
-    }
-
-    func create(_ period: Period) async throws -> Period {
-        operations.append("create:\(period.id)")
-        if shouldFail { throw FetcherTestError.failed }
-        return response
-    }
-
-    func delete(_ id: Period.ID) async throws {
-        operations.append("delete:\(id)")
-        if shouldFail { throw FetcherTestError.failed }
-    }
-}
-
 actor RouteDataFetcherSpy: RouteDataFetcherProtocol {
     let pack: RoutePack
     let routes: [Route]
     let shouldFail: Bool
     let cancellationOnFetchAll: Bool
+    let history: [EditionRouteGroup]
     private var operations: [String] = []
 
     init(
         pack: RoutePack,
         routes: [Route] = [],
         shouldFail: Bool = false,
-        cancellationOnFetchAll: Bool = false
+        cancellationOnFetchAll: Bool = false,
+        history: [EditionRouteGroup] = []
     ) {
         self.pack = pack
         self.routes = routes
         self.shouldFail = shouldFail
         self.cancellationOnFetchAll = cancellationOnFetchAll
+        self.history = history
     }
 
     func recordedCalls() -> [String] { operations }
+
+    func fetchHistory(districtID: District.ID, before editionID: Edition.ID) async throws -> [EditionRouteGroup] {
+        operations.append("history:\(districtID):\(editionID)")
+        if shouldFail { throw FetcherTestError.failed }
+        return history
+    }
 
     func fetchAll(districtID: District.ID, query: Query) async throws -> [Route] {
         operations.append("fetchAll:\(districtID):\(String(describing: query))")

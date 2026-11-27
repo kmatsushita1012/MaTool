@@ -108,16 +108,18 @@ struct RouteEditFeatureTests {
             base: Coordinate(latitude: 35, longitude: 139)
         )
         let district = District(id: "district", name: "District", festivalId: festival.id)
+        let currentEdition = Edition(id: "current-edition", festivalId: festival.id, year: 2026)
+        let pastEdition = Edition(id: "past-edition", festivalId: festival.id, year: 2025)
         let currentPeriod = Period(
             id: "current-period",
-            festivalId: festival.id,
+            editionId: currentEdition.id,
             date: SimpleDate(year: 2026, month: 10, day: 3),
             start: SimpleTime(hour: 9, minute: 0),
             end: SimpleTime(hour: 17, minute: 0)
         )
         let pastPeriod = Period(
             id: "past-period",
-            festivalId: festival.id,
+            editionId: pastEdition.id,
             date: SimpleDate(year: 2025, month: 10, day: 4),
             start: SimpleTime(hour: 9, minute: 0),
             end: SimpleTime(hour: 17, minute: 0)
@@ -157,7 +159,7 @@ struct RouteEditFeatureTests {
         let festivalState = FestivalState(
             LaunchFestivalPack(
                 festival: festival,
-                year: 2026,
+                edition: Edition(id: "edition-2026", festivalId: festival.id, year: 2026),
                 districts: [district],
                 periods: [currentPeriod],
                 locations: [],
@@ -814,11 +816,12 @@ struct RouteEditFeatureTests {
         }
     }
 
-    @Test("履歴コピーの要求で選択地区と祭典IDを渡し戻り値を履歴画面に反映する")
+    @Test("履歴コピーの要求で選択地区とEdition IDを渡し戻り値を履歴画面に反映する")
     @MainActor
     func copyTappedFetchesRouteHistory() async throws {
         let entry = RouteEntry(period: AppStateFixture.period(), route: AppStateFixture.route())
-        let spy = RouteEditHistoryUseCaseSpy(entries: [entry])
+        let history = [EditionRouteGroup(edition: AppStateFixture.edition(), entries: [entry])]
+        let spy = RouteEditHistoryUseCaseSpy(history: history)
         let initialState = try makeState(mode: .update)
         let store = TestStore(initialState: initialState) {
             RouteEditFeature()
@@ -829,9 +832,9 @@ struct RouteEditFeatureTests {
         store.exhaustivity = .off
 
         await store.send(.copyTapped)
-        await store.receive(.historyPrepared(.success([entry])))
-        #expect(store.state.destination == .history([entry]))
-        #expect(await spy.calls == ["district:festival"])
+        await store.receive(.historyPrepared(.success(history)))
+        #expect(store.state.destination == .history(history))
+        #expect(await spy.calls == ["district:edition"])
         await store.finish()
     }
 
@@ -1187,16 +1190,16 @@ private actor RouteEditSavingSpy: CreateRouteUseCaseProtocol, UpdateRouteUseCase
 }
 
 private actor RouteEditHistoryUseCaseSpy: FetchRouteHistoryUseCaseProtocol {
-    let entries: [RouteEntry]
+    let history: [EditionRouteGroup]
     private(set) var calls: [String] = []
 
-    init(entries: [RouteEntry]) { self.entries = entries }
+    init(history: [EditionRouteGroup]) { self.history = history }
 
     func callAsFunction(
-        districtId: District.ID, festivalId: Festival.ID
-    ) async throws -> [RouteEntry] {
-        calls.append("\(districtId):\(festivalId)")
-        return entries
+        districtId: District.ID, editionId: Edition.ID
+    ) async throws -> [EditionRouteGroup] {
+        calls.append("\(districtId):\(editionId)")
+        return history
     }
 }
 
