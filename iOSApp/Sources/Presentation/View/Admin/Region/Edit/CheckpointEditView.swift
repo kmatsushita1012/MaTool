@@ -7,7 +7,6 @@
 
 import SwiftUI
 import ComposableArchitecture
-import NavigationSwipeControl
 
 struct CheckpointEditScreen: View {
     @SwiftUI.Bindable var store: StoreOf<CheckpointEditFeature>
@@ -21,7 +20,6 @@ struct CheckpointEditScreen: View {
             onCancelTapped: { store.send(.cancelTapped) },
             onDoneTapped: { store.send(.doneTapped) }
         )
-        .dismissible(backButton: false, edgeSwipe: false)
     }
 }
 

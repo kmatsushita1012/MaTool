@@ -6,7 +6,6 @@
 //
 
 import ComposableArchitecture
-import NavigationSwipeControl
 import SwiftUI
 
 struct FestivalDashboardScreen: View {
@@ -26,6 +25,11 @@ struct FestivalDashboardScreen: View {
             onSettingsTapped: { store.send(.settingsTapped) }
         )
         .modifier(FestivalDashboardDestinations(store: store))
+        .modifier(DashboardAccountDestinations(
+            changePassword: $store.scope(state: \.destination?.changePassword, action: \.destination.changePassword),
+            updateEmail: $store.scope(state: \.destination?.updateEmail, action: \.destination.updateEmail),
+            settings: $store.scope(state: \.destination?.settings, action: \.destination.settings)
+        ))
         .alert($store.scope(state: \.alert, action: \.alert))
     }
 
@@ -39,23 +43,16 @@ private struct FestivalDashboardDestinations: ViewModifier {
 
     func body(content: Content) -> some View {
         content
-            .navigationDestination(item: $store.scope(state: \.destination?.edit, action: \.destination.edit)) { store in
-                FestivalEditView(store: store)
+            .fullScreenCover(item: $store.scope(state: \.destination?.edit, action: \.destination.edit)) { store in
+                NavigationStack {
+                    FestivalEditView(store: store)
+                }
             }
             .navigationDestination(item: $store.scope(state: \.destination?.districts, action: \.destination.districts)) { store in
                 HeadquarterDistrictListView(store: store)
             }
             .navigationDestination(item: $store.scope(state: \.destination?.editionList, action: \.destination.editionList)) { store in
                 EditionListView(store: store)
-            }
-            .navigationDestination(item: $store.scope(state: \.destination?.changePassword, action: \.destination.changePassword)) { store in
-                ChangePasswordView(store: store)
-            }
-            .navigationDestination(item: $store.scope(state: \.destination?.updateEmail, action: \.destination.updateEmail)) { store in
-                UpdateEmailView(store: store)
-            }
-            .navigationDestination(item: $store.scope(state: \.destination?.settings, action: \.destination.settings)) { store in
-                SettingsView(store: store)
             }
     }
 }

@@ -7,7 +7,6 @@
 
 import SwiftUI
 import ComposableArchitecture
-import NavigationSwipeControl
 
 struct HeadquarterDistrictDetailView: View {
     @SwiftUI.Bindable var store: StoreOf<HeadquarterDistrictDetailFeature>
@@ -82,6 +81,9 @@ struct HeadquarterDistrictDetailView: View {
         .navigationTitle(store.district.name)
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
+            ToolbarCancelButton {
+                store.send(.closeTapped)
+            }
             if store.isEditable {
                 ToolbarSaveButton(
                     isDisabled: store.isLoading && !store.isSaving,
@@ -101,15 +103,19 @@ struct HeadquarterDistrictDetailView: View {
         .sheet(item: $store.url){ url in
             ShareSheet(item: url)
         }
-        .navigationDestination(
+        .fullScreenCover(
             item: $store.scope(state: \.destination?.route, action: \.destination.route)
         ) { store in
-            RouteEditView(store: store)
+            NavigationStack {
+                RouteEditView(store: store)
+            }
         }
-        .navigationDestination(
+        .fullScreenCover(
             item: $store.scope(state: \.destination?.reissue, action: \.destination.reissue)
         ) { store in
-            DistrictReissueView(store: store)
+            NavigationStack {
+                DistrictReissueView(store: store)
+            }
         }
         .alert($store.scope(state: \.alert, action: \.alert))
     }

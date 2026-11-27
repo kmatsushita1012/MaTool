@@ -7,7 +7,6 @@
 
 import ComposableArchitecture
 import SwiftUI
-import NavigationSwipeControl
 
 struct UpdateEmailScreen: View {
     @SwiftUI.Bindable var store: StoreOf<UpdateEmailFeature>
@@ -29,7 +28,6 @@ struct UpdateEmailScreen: View {
             onEmailSubmitTapped: { store.send(.enterEmail(.okTapped)) },
             onCodeSubmitTapped: { store.send(.enterCode(.okTapped)) }
         )
-        .dismissible(backButton: false, edgeSwipe: false)
         .alert($store.scope(state: \.errorAlert, action: \.errorAlert))
         .alert($store.scope(state: \.completeAlert, action: \.completeAlert))
     }

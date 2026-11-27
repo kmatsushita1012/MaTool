@@ -82,6 +82,7 @@ struct ImageEditContentView: View {
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             if isStoreTarget {
+                ToolbarCancelButton(action: onCloseTapped)
                 ToolbarSaveButton(
                     isDisabled: isUploading,
                     isLoading: isSaving,

@@ -18,7 +18,8 @@ struct StoreEditScreen: View {
             hasCoordinate: store.coordinate != nil,
             isLoading: store.isLoading,
             onCoordinateTapped: { store.send(.coordinateTapped) },
-            onSaveTapped: { store.send(.saveTapped) }
+            onSaveTapped: { store.send(.saveTapped) },
+            onCancelTapped: { store.send(.cancelTapped) }
         )
         .navigationDestination(
             item: $store.scope(state: \.destination?.coordinate, action: \.destination.coordinate)
@@ -42,6 +43,7 @@ struct StoreEditContentView: View {
     let isLoading: Bool
     let onCoordinateTapped: () -> Void
     let onSaveTapped: () -> Void
+    let onCancelTapped: () -> Void
 
     var body: some View {
         List {
@@ -102,6 +104,7 @@ struct StoreEditContentView: View {
         .navigationTitle(isNew ? "店舗を追加" : "基本情報を編集")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
+            ToolbarCancelButton(action: onCancelTapped)
             ToolbarSaveButton(isLoading: isLoading, action: onSaveTapped)
         }
     }
@@ -121,7 +124,8 @@ struct StoreEditContentView: View {
             hasCoordinate: false,
             isLoading: false,
             onCoordinateTapped: {},
-            onSaveTapped: {}
+            onSaveTapped: {},
+            onCancelTapped: {}
         )
     }
 }

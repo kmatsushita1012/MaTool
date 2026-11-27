@@ -124,6 +124,10 @@ struct StoreDashboardFeature {
                 state.alert = .error("広告配信状態を更新できませんでした。\n\(error.message)")
                 return .none
 
+            case .destination(.presented(.storeAdImage(.closeTapped))):
+                state.destination = nil
+                return .none
+
             case .destination(.presented(.storeAdImage(.saveTapped))):
                 guard let imageEditor = state.destination?.storeAdImage,
                       !imageEditor.isSaving else {

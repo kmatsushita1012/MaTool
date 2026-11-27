@@ -18,6 +18,11 @@ struct AdvertiserDashboardScreen: View {
             onSignOutTapped: { store.send(.signOutTapped) }
         )
         .modifier(AdvertiserDashboardDestinations(store: store))
+        .modifier(DashboardAccountDestinations(
+            changePassword: $store.scope(state: \.destination?.changePassword, action: \.destination.changePassword),
+            updateEmail: $store.scope(state: \.destination?.updateEmail, action: \.destination.updateEmail),
+            settings: $store.scope(state: \.destination?.settings, action: \.destination.settings)
+        ))
         .alert($store.scope(state: \.alert, action: \.alert))
         .task { store.send(.onAppear) }
     }
@@ -28,35 +33,19 @@ private struct AdvertiserDashboardDestinations: ViewModifier {
 
     func body(content: Content) -> some View {
         content
-            .navigationDestination(item: $store.scope(
+            .fullScreenCover(item: $store.scope(
                 state: \.destination?.storeCreate,
                 action: \.destination.storeCreate
             )) { createStore in
-                StoreEditScreen(store: createStore)
+                NavigationStack {
+                    StoreEditScreen(store: createStore)
+                }
             }
             .navigationDestination(item: $store.scope(
                 state: \.destination?.storeDashboard,
                 action: \.destination.storeDashboard
             )) { store in
                 StoreDashboardScreen(store: store)
-            }
-            .navigationDestination(item: $store.scope(
-                state: \.destination?.changePassword,
-                action: \.destination.changePassword
-            )) { store in
-                ChangePasswordView(store: store)
-            }
-            .navigationDestination(item: $store.scope(
-                state: \.destination?.updateEmail,
-                action: \.destination.updateEmail
-            )) { store in
-                UpdateEmailView(store: store)
-            }
-            .navigationDestination(item: $store.scope(
-                state: \.destination?.settings,
-                action: \.destination.settings
-            )) { store in
-                SettingsView(store: store)
             }
     }
 }

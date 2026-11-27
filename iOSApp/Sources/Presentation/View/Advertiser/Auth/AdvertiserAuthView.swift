@@ -24,10 +24,12 @@ struct AdvertiserAuthScreen: View {
         ) { signUpStore in
             AdvertiserSignUpScreen(store: signUpStore)
         }
-        .navigationDestination(
+        .fullScreenCover(
             item: $store.scope(state: \.destination?.resetPassword, action: \.destination.resetPassword)
         ) { resetPasswordStore in
-            ResetPasswordView(store: resetPasswordStore, usernameTitle: "メールアドレス")
+            NavigationStack {
+                ResetPasswordView(store: resetPasswordStore, usernameTitle: "メールアドレス")
+            }
         }
     }
 }

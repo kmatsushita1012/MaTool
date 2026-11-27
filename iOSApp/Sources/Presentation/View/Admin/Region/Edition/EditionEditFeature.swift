@@ -57,6 +57,7 @@ struct EditionEditFeature {
     @CasePathable
     enum Action: Equatable, BindableAction {
         case binding(BindingAction<State>)
+        case closeTapped
         case onAppear
         case addPeriodTapped
         case periodTapped(Period)
@@ -71,6 +72,7 @@ struct EditionEditFeature {
     }
 
     @Dependency(EditionDataFetcherKey.self) private var editionDataFetcher
+    @Dependency(\.dismiss) private var dismiss
     @Dependency(SaveEditionPackUseCaseKey.self) private var saveEditionPackUseCase
     @Dependency(ActivateEditionUseCaseKey.self) private var activateEditionUseCase
 
@@ -80,6 +82,8 @@ struct EditionEditFeature {
             switch action {
             case .binding:
                 return .none
+            case .closeTapped:
+                return .dismiss
             case .onAppear:
                 guard !state.hasLoaded else { return .none }
                 state.isLoading = true

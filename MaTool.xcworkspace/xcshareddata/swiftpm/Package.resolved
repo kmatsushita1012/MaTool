@@ -92,15 +92,6 @@
       }
     },
     {
-      "identity" : "navigationswipecontrol",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/kmatsushita1012/NavigationSwipeControl.git",
-      "state" : {
-        "revision" : "3f0348c7fc4923dc3daf433d61562338e3703c23",
-        "version" : "0.2.1"
-      }
-    },
-    {
       "identity" : "smithy-swift",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/smithy-lang/smithy-swift",

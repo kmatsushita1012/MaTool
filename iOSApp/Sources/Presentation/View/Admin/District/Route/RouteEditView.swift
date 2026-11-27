@@ -7,7 +7,6 @@
 
 import ComposableArchitecture
 import SwiftUI
-import NavigationSwipeControl
 import Shared
 
 struct RouteEditView: View {
@@ -32,11 +31,9 @@ struct RouteEditView: View {
         .toolbar {
             toolbar
         }
-        .dismissible(backButton: false, edgeSwipe: false)
         .sheet(item: $store.scope(state: \.point, action: \.point)){ store in
             NavigationStack{
                 PointEditView(store: store)
-                    .dismissible(backButton: false, edgeSwipe: false)
             }
             .presentationDetents([.fraction(0.3), .fraction(0.5), .large], selection: $selectedDetent)
             .interactiveDismissDisabled()

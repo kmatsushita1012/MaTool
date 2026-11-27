@@ -7,7 +7,6 @@
 
 import SwiftUI
 import ComposableArchitecture
-import NavigationSwipeControl
 import Shared
 
 struct DistrictDashboardScreen: View {
@@ -31,26 +30,37 @@ struct DistrictDashboardScreen: View {
             onSignOutTapped: { store.send(.signOutTapped) },
             onSettingsTapped: { store.send(.settingsTapped) }
         )
-        .navigationDestination(item: $store.scope(state: \.destination, action: \.destination)) { destination in
-            switch destination.case {
-            case .edit(let store):
-                DistrictEditView(store: store)
-            case .location(let store):
-                LocationTrackingView(store: store)
-            case .route(let store):
-                RouteEditView(store: store)
-            case .changePassword(let store):
-                ChangePasswordView(store: store)
-            case .updateEmail(let store):
-                UpdateEmailView(store: store)
-            case .settings(let store):
-                SettingsView(store: store)
-            }
-        }
+        .modifier(DistrictDashboardDestinations(store: store))
+        .modifier(DashboardAccountDestinations(
+            changePassword: $store.scope(state: \.destination?.changePassword, action: \.destination.changePassword),
+            updateEmail: $store.scope(state: \.destination?.updateEmail, action: \.destination.updateEmail),
+            settings: $store.scope(state: \.destination?.settings, action: \.destination.settings)
+        ))
         .sheet(item: $store.url) { url in
             ShareSheet(item: url)
         }
         .alert($store.scope(state: \.alert, action: \.alert))
+    }
+}
+
+private struct DistrictDashboardDestinations: ViewModifier {
+    @SwiftUI.Bindable var store: StoreOf<DistrictDashboardFeature>
+
+    func body(content: Content) -> some View {
+        content
+            .fullScreenCover(item: $store.scope(state: \.destination?.edit, action: \.destination.edit)) { store in
+                NavigationStack {
+                    DistrictEditView(store: store)
+                }
+            }
+            .navigationDestination(item: $store.scope(state: \.destination?.location, action: \.destination.location)) { store in
+                LocationTrackingView(store: store)
+            }
+            .fullScreenCover(item: $store.scope(state: \.destination?.route, action: \.destination.route)) { store in
+                NavigationStack {
+                    RouteEditView(store: store)
+                }
+            }
     }
 }
 
