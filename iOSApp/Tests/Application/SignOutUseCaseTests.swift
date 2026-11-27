@@ -252,6 +252,7 @@ private struct SignOutFixture {
             hazardSections: []
         )
         districtPack = LaunchDistrictPack(
+            editionId: edition.id,
             performances: [],
             routes: [route],
             points: [point],
