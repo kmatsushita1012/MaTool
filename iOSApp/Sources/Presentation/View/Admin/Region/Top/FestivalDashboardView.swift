@@ -37,30 +37,31 @@ private struct FestivalDashboardDestinations: ViewModifier {
     @SwiftUI.Bindable var store: StoreOf<FestivalDashboardFeature>
 
     func body(content: Content) -> some View {
-        let editDestination = content.fullScreenCover(item: $store.scope(state: \.destination?.edit, action: \.destination.edit)) { store in
-            NavigationStack {
-                FestivalEditView(store: store)
+        content
+            .fullScreenCover(item: $store.scope(state: \.destination?.edit, action: \.destination.edit)) { store in
+                NavigationStack {
+                    FestivalEditView(store: store)
+                }
             }
-        }
-        let districtsDestination = editDestination.navigationDestination(item: $store.scope(state: \.destination?.districts, action: \.destination.districts)) { store in
-            HeadquarterDistrictListView(store: store)
-        }
-        let editionsDestination = districtsDestination.navigationDestination(item: $store.scope(state: \.destination?.editionList, action: \.destination.editionList)) { store in
-            EditionListView(store: store)
-        }
-        let changePasswordDestination = editionsDestination.fullScreenCover(item: $store.scope(state: \.destination?.changePassword, action: \.destination.changePassword)) { store in
-            NavigationStack {
-                ChangePasswordView(store: store)
+            .navigationDestination(item: $store.scope(state: \.destination?.districts, action: \.destination.districts)) { store in
+                HeadquarterDistrictListView(store: store)
             }
-        }
-        let updateEmailDestination = changePasswordDestination.fullScreenCover(item: $store.scope(state: \.destination?.updateEmail, action: \.destination.updateEmail)) { store in
-            NavigationStack {
-                UpdateEmailView(store: store)
+            .navigationDestination(item: $store.scope(state: \.destination?.editionList, action: \.destination.editionList)) { store in
+                EditionListView(store: store)
             }
-        }
-        return updateEmailDestination.navigationDestination(item: $store.scope(state: \.destination?.settings, action: \.destination.settings)) { store in
-            SettingsView(store: store)
-        }
+            .fullScreenCover(item: $store.scope(state: \.destination?.changePassword, action: \.destination.changePassword)) { store in
+                NavigationStack {
+                    ChangePasswordView(store: store)
+                }
+            }
+            .fullScreenCover(item: $store.scope(state: \.destination?.updateEmail, action: \.destination.updateEmail)) { store in
+                NavigationStack {
+                    UpdateEmailView(store: store)
+                }
+            }
+            .navigationDestination(item: $store.scope(state: \.destination?.settings, action: \.destination.settings)) { store in
+                SettingsView(store: store)
+            }
     }
 }
 

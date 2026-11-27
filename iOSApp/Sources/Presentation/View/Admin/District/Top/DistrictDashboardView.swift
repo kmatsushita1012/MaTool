@@ -13,7 +13,7 @@ struct DistrictDashboardScreen: View {
     @SwiftUI.Bindable var store: StoreOf<DistrictDashboardFeature>
 
     var body: some View {
-        let content = DistrictDashboardContentView(
+        DistrictDashboardContentView(
             districtName: store.district.name,
             routes: store.routes,
             isNavigationLoading: store.isNavigationLoading,
@@ -30,36 +30,36 @@ struct DistrictDashboardScreen: View {
             onSignOutTapped: { store.send(.signOutTapped) },
             onSettingsTapped: { store.send(.settingsTapped) }
         )
-        let editDestination = content.fullScreenCover(item: $store.scope(state: \.destination?.edit, action: \.destination.edit)) { store in
+        .fullScreenCover(item: $store.scope(state: \.destination?.edit, action: \.destination.edit)) { store in
             NavigationStack {
                 DistrictEditView(store: store)
             }
         }
-        let locationDestination = editDestination.navigationDestination(item: $store.scope(state: \.destination?.location, action: \.destination.location)) { store in
+        .navigationDestination(item: $store.scope(state: \.destination?.location, action: \.destination.location)) { store in
             LocationTrackingView(store: store)
         }
-        let routeDestination = locationDestination.fullScreenCover(item: $store.scope(state: \.destination?.route, action: \.destination.route)) { store in
+        .fullScreenCover(item: $store.scope(state: \.destination?.route, action: \.destination.route)) { store in
             NavigationStack {
                 RouteEditView(store: store)
             }
         }
-        let changePasswordDestination = routeDestination.fullScreenCover(item: $store.scope(state: \.destination?.changePassword, action: \.destination.changePassword)) { store in
+        .fullScreenCover(item: $store.scope(state: \.destination?.changePassword, action: \.destination.changePassword)) { store in
             NavigationStack {
                 ChangePasswordView(store: store)
             }
         }
-        let updateEmailDestination = changePasswordDestination.fullScreenCover(item: $store.scope(state: \.destination?.updateEmail, action: \.destination.updateEmail)) { store in
+        .fullScreenCover(item: $store.scope(state: \.destination?.updateEmail, action: \.destination.updateEmail)) { store in
             NavigationStack {
                 UpdateEmailView(store: store)
             }
         }
-        let settingsDestination = updateEmailDestination.navigationDestination(item: $store.scope(state: \.destination?.settings, action: \.destination.settings)) { store in
+        .navigationDestination(item: $store.scope(state: \.destination?.settings, action: \.destination.settings)) { store in
             SettingsView(store: store)
         }
-        let shareDestination = settingsDestination.sheet(item: $store.url) { url in
+        .sheet(item: $store.url) { url in
             ShareSheet(item: url)
         }
-        return shareDestination.alert($store.scope(state: \.alert, action: \.alert))
+        .alert($store.scope(state: \.alert, action: \.alert))
     }
 }
 
