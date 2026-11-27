@@ -3,9 +3,8 @@ name: Pull Request
 on:
   workflow_dispatch:
   pull_request:
-    branches:
+    branches: 
       - main
-      - backend/edition
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
