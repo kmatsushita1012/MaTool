@@ -27,43 +27,42 @@ private struct AdvertiserDashboardDestinations: ViewModifier {
     @SwiftUI.Bindable var store: StoreOf<AdvertiserDashboardFeature>
 
     func body(content: Content) -> some View {
-        content
-            .fullScreenCover(item: $store.scope(
-                state: \.destination?.storeCreate,
-                action: \.destination.storeCreate
-            )) { createStore in
-                NavigationStack {
-                    StoreEditScreen(store: createStore)
-                }
+        let createDestination = content.fullScreenCover(item: $store.scope(
+            state: \.destination?.storeCreate,
+            action: \.destination.storeCreate
+        )) { createStore in
+            NavigationStack {
+                StoreEditScreen(store: createStore)
             }
-            .navigationDestination(item: $store.scope(
-                state: \.destination?.storeDashboard,
-                action: \.destination.storeDashboard
-            )) { store in
-                StoreDashboardScreen(store: store)
+        }
+        let dashboardDestination = createDestination.navigationDestination(item: $store.scope(
+            state: \.destination?.storeDashboard,
+            action: \.destination.storeDashboard
+        )) { store in
+            StoreDashboardScreen(store: store)
+        }
+        let changePasswordDestination = dashboardDestination.fullScreenCover(item: $store.scope(
+            state: \.destination?.changePassword,
+            action: \.destination.changePassword
+        )) { store in
+            NavigationStack {
+                ChangePasswordView(store: store)
             }
-            .fullScreenCover(item: $store.scope(
-                state: \.destination?.changePassword,
-                action: \.destination.changePassword
-            )) { store in
-                NavigationStack {
-                    ChangePasswordView(store: store)
-                }
+        }
+        let updateEmailDestination = changePasswordDestination.fullScreenCover(item: $store.scope(
+            state: \.destination?.updateEmail,
+            action: \.destination.updateEmail
+        )) { store in
+            NavigationStack {
+                UpdateEmailView(store: store)
             }
-            .fullScreenCover(item: $store.scope(
-                state: \.destination?.updateEmail,
-                action: \.destination.updateEmail
-            )) { store in
-                NavigationStack {
-                    UpdateEmailView(store: store)
-                }
-            }
-            .navigationDestination(item: $store.scope(
-                state: \.destination?.settings,
-                action: \.destination.settings
-            )) { store in
-                SettingsView(store: store)
-            }
+        }
+        return updateEmailDestination.navigationDestination(item: $store.scope(
+            state: \.destination?.settings,
+            action: \.destination.settings
+        )) { store in
+            SettingsView(store: store)
+        }
     }
 }
 
