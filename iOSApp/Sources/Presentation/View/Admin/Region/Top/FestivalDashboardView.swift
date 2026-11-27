@@ -25,6 +25,11 @@ struct FestivalDashboardScreen: View {
             onSettingsTapped: { store.send(.settingsTapped) }
         )
         .modifier(FestivalDashboardDestinations(store: store))
+        .modifier(DashboardAccountDestinations(
+            changePassword: $store.scope(state: \.destination?.changePassword, action: \.destination.changePassword),
+            updateEmail: $store.scope(state: \.destination?.updateEmail, action: \.destination.updateEmail),
+            settings: $store.scope(state: \.destination?.settings, action: \.destination.settings)
+        ))
         .alert($store.scope(state: \.alert, action: \.alert))
     }
 
@@ -48,19 +53,6 @@ private struct FestivalDashboardDestinations: ViewModifier {
             }
             .navigationDestination(item: $store.scope(state: \.destination?.editionList, action: \.destination.editionList)) { store in
                 EditionListView(store: store)
-            }
-            .fullScreenCover(item: $store.scope(state: \.destination?.changePassword, action: \.destination.changePassword)) { store in
-                NavigationStack {
-                    ChangePasswordView(store: store)
-                }
-            }
-            .fullScreenCover(item: $store.scope(state: \.destination?.updateEmail, action: \.destination.updateEmail)) { store in
-                NavigationStack {
-                    UpdateEmailView(store: store)
-                }
-            }
-            .navigationDestination(item: $store.scope(state: \.destination?.settings, action: \.destination.settings)) { store in
-                SettingsView(store: store)
             }
     }
 }

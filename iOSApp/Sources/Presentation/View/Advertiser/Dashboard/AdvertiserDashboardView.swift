@@ -18,6 +18,11 @@ struct AdvertiserDashboardScreen: View {
             onSignOutTapped: { store.send(.signOutTapped) }
         )
         .modifier(AdvertiserDashboardDestinations(store: store))
+        .modifier(DashboardAccountDestinations(
+            changePassword: $store.scope(state: \.destination?.changePassword, action: \.destination.changePassword),
+            updateEmail: $store.scope(state: \.destination?.updateEmail, action: \.destination.updateEmail),
+            settings: $store.scope(state: \.destination?.settings, action: \.destination.settings)
+        ))
         .alert($store.scope(state: \.alert, action: \.alert))
         .task { store.send(.onAppear) }
     }
@@ -41,28 +46,6 @@ private struct AdvertiserDashboardDestinations: ViewModifier {
                 action: \.destination.storeDashboard
             )) { store in
                 StoreDashboardScreen(store: store)
-            }
-            .fullScreenCover(item: $store.scope(
-                state: \.destination?.changePassword,
-                action: \.destination.changePassword
-            )) { store in
-                NavigationStack {
-                    ChangePasswordView(store: store)
-                }
-            }
-            .fullScreenCover(item: $store.scope(
-                state: \.destination?.updateEmail,
-                action: \.destination.updateEmail
-            )) { store in
-                NavigationStack {
-                    UpdateEmailView(store: store)
-                }
-            }
-            .navigationDestination(item: $store.scope(
-                state: \.destination?.settings,
-                action: \.destination.settings
-            )) { store in
-                SettingsView(store: store)
             }
     }
 }
