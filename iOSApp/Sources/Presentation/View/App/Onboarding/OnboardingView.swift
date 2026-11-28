@@ -21,8 +21,20 @@ struct OnboardingScreen: View {
             isDistrictLoading: store.isDistrictLoading,
             festivalErrorMessage: store.festivalErrorMessaage,
             onDistrictSelected: { store.send(.districtSelected($0)) },
-            onExternalGuestTapped: { store.send(.externalGuestTapped) }
+            onExternalGuestTapped: { store.send(.externalGuestTapped) },
+            onDebugMenuTapped: {
+#if DEBUG
+                store.send(.debugMenuTapped)
+#endif
+            }
         )
+#if DEBUG
+        .sheet(item: $store.scope(state: \.debugMenu, action: \.debugMenu)) { debugMenuStore in
+            NavigationStack {
+                DebugMenuView(store: debugMenuStore)
+            }
+        }
+#endif
     }
 }
 
@@ -37,6 +49,7 @@ struct OnboardingContentView: View {
     let festivalErrorMessage: String?
     let onDistrictSelected: (District) -> Void
     let onExternalGuestTapped: () -> Void
+    let onDebugMenuTapped: () -> Void
 
     var body: some View {
         VStack(spacing: 16) {
@@ -108,6 +121,14 @@ struct OnboardingContentView: View {
                     .accessibilityHidden(true)
             }
         }
+#if DEBUG
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                Button("Debug", systemImage: "ladybug", action: onDebugMenuTapped)
+            }
+        }
+        .toolbarBackground(.hidden, for: .navigationBar)
+#endif
     }
 }
 
@@ -120,6 +141,7 @@ struct OnboardingContentView: View {
         isDistrictLoading: false,
         festivalErrorMessage: nil,
         onDistrictSelected: { _ in },
-        onExternalGuestTapped: {}
+        onExternalGuestTapped: {},
+        onDebugMenuTapped: {}
     )
 }

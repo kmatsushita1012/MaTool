@@ -105,8 +105,15 @@ public struct RootSceneView: View {
                 }
             case .onboarding:
                 if let onboardingStore = store.scope(state: \.onboarding, action: \.onboarding) {
+#if DEBUG
+                    NavigationStack {
+                        OnboardingView(store: onboardingStore)
+                    }
+                    .preferredColorScheme(.light)
+#else
                     OnboardingView(store: onboardingStore)
                         .preferredColorScheme(.light)
+#endif
                 } else {
                     LoadingView()
                 }

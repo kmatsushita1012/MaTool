@@ -22,6 +22,9 @@ struct OnboardingFeature {
         }
         @Shared var launchState: LaunchState
         @Shared fileprivate var appState: AppState?
+#if DEBUG
+        @Presents var debugMenu: DebugMenuFeature.State? = nil
+#endif
         
         var festivalErrorMessaage: String?
         var isFestivalLoading: Bool = false
@@ -39,6 +42,10 @@ struct OnboardingFeature {
         case onAppear
         case festivalsLoaded(AppResult<[Festival]>)
         case delegate(Delegate)
+#if DEBUG
+        case debugMenuTapped
+        case debugMenu(PresentationAction<DebugMenuFeature.Action>)
+#endif
         case externalGuestTapped
         case adminTapped
         case districtSelected(District)
@@ -71,6 +78,13 @@ struct OnboardingFeature {
                 return .none
             case .delegate:
                 return .none
+#if DEBUG
+            case .debugMenuTapped:
+                state.debugMenu = DebugMenuFeature.State()
+                return .none
+            case .debugMenu:
+                return .none
+#endif
             case .binding(\.selectedFestival):
                 guard let festival = state.selectedFestival else { return .none }
                 state.isFestivalLoading = true
@@ -114,5 +128,10 @@ struct OnboardingFeature {
                 return .none
             }
         }
+#if DEBUG
+        .ifLet(\.$debugMenu, action: \.debugMenu) {
+            DebugMenuFeature()
+        }
+#endif
     }
 }

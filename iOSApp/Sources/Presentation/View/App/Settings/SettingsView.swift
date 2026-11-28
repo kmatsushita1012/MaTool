@@ -28,7 +28,12 @@ struct SettingsScreen: View {
             onLoginTapped: { store.send(.loginTapped) },
             onAdvertiserLoginTapped: { store.send(.advertiserLoginTapped) },
             onSignOutTapped: { store.send(.signOutTapped) },
-            onLicenseTapped: { store.send(.licenseTapped) }
+            onLicenseTapped: { store.send(.licenseTapped) },
+            onDebugMenuTapped: {
+#if DEBUG
+                store.send(.debugMenuTapped)
+#endif
+            }
         )
         .navigationDestination(item: $store.scope(
             state: \.destination?.login,
@@ -53,6 +58,13 @@ struct SettingsScreen: View {
             LicenseView()
         }
         .alert($store.scope(state: \.alert, action: \.alert))
+#if DEBUG
+        .sheet(item: $store.scope(state: \.debugMenu, action: \.debugMenu)) { debugMenuStore in
+            NavigationStack {
+                DebugMenuView(store: debugMenuStore)
+            }
+        }
+#endif
     }
 }
 
@@ -73,6 +85,7 @@ struct SettingsContentView: View {
     let onAdvertiserLoginTapped: () -> Void
     let onSignOutTapped: () -> Void
     let onLicenseTapped: () -> Void
+    let onDebugMenuTapped: () -> Void
 
     var body: some View {
         Form {
@@ -134,6 +147,13 @@ struct SettingsContentView: View {
             }
         }
         .navigationTitle("設定")
+#if DEBUG
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                Button("Debug", systemImage: "ladybug", action: onDebugMenuTapped)
+            }
+        }
+#endif
     }
 }
 
@@ -152,6 +172,7 @@ struct SettingsContentView: View {
         onLoginTapped: {},
         onAdvertiserLoginTapped: {},
         onSignOutTapped: {},
-        onLicenseTapped: {}
+        onLicenseTapped: {},
+        onDebugMenuTapped: {}
     )
 }
