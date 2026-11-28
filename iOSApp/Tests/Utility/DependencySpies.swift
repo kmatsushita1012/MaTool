@@ -319,6 +319,10 @@ final class DefaultUserDefaultsSpy: UserDefalutsManagerProtocol, @unchecked Send
     private var festivalId: String?
     private var districtId: String?
     private var alwaysPermissionRequested = false
+#if DEBUG
+    private var storedDebugAPIEnvironment: DebugAPIEnvironment?
+    private var storedDebugAPICustomStage: String?
+#endif
     private var recorded: [String] = []
 
     init(
@@ -335,6 +339,10 @@ final class DefaultUserDefaultsSpy: UserDefalutsManagerProtocol, @unchecked Send
     var defaultFestivalId: String? { lock.withLock { festivalId } }
     var defaultDistrictId: String? { lock.withLock { districtId } }
     var hasRequestedAlwaysLocationPermission: Bool { lock.withLock { alwaysPermissionRequested } }
+#if DEBUG
+    var debugAPIEnvironment: DebugAPIEnvironment? { lock.withLock { storedDebugAPIEnvironment } }
+    var debugAPICustomStage: String? { lock.withLock { storedDebugAPICustomStage } }
+#endif
 
     func saveDefaultFestivalId(_ value: String?) {
         lock.withLock {
@@ -354,6 +362,20 @@ final class DefaultUserDefaultsSpy: UserDefalutsManagerProtocol, @unchecked Send
             alwaysPermissionRequested = value
         }
     }
+#if DEBUG
+    func saveDebugAPIEnvironment(_ value: DebugAPIEnvironment?) {
+        lock.withLock {
+            recorded.append("saveDebugAPIEnvironment")
+            storedDebugAPIEnvironment = value
+        }
+    }
+    func saveDebugAPICustomStage(_ value: String?) {
+        lock.withLock {
+            recorded.append("saveDebugAPICustomStage")
+            storedDebugAPICustomStage = value
+        }
+    }
+#endif
 }
 
 actor ImageCacheClientSpy: ImageCacheClientProtocol {

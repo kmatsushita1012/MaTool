@@ -56,6 +56,10 @@ struct UserDefaltsManager: Sendable {
         case defaultFestivalId = "region"
         case defaultDistrictId = "district"
         case hasRequestedAlwaysLocationPermission = "hasRequestedAlwaysLocationPermission"
+#if DEBUG
+        case debugAPIEnvironment = "debugAPIEnvironment"
+        case debugAPICustomStage = "debugAPICustomStage"
+#endif
     }
     let defaults: UserDefaults
 
@@ -68,9 +72,17 @@ protocol UserDefalutsManagerProtocol: Sendable {
     var defaultFestivalId: String? { get }
     var defaultDistrictId: String? { get }
     var hasRequestedAlwaysLocationPermission: Bool { get }
+#if DEBUG
+    var debugAPIEnvironment: DebugAPIEnvironment? { get }
+    var debugAPICustomStage: String? { get }
+#endif
     func saveDefaultFestivalId(_ value: String?)
     func saveDefaultDistrictId(_ value: String?)
     func saveHasRequestedAlwaysLocationPermission(_ value: Bool)
+#if DEBUG
+    func saveDebugAPIEnvironment(_ value: DebugAPIEnvironment?)
+    func saveDebugAPICustomStage(_ value: String?)
+#endif
 }
 
 extension UserDefaltsManager: UserDefalutsManagerProtocol {
@@ -86,6 +98,17 @@ extension UserDefaltsManager: UserDefalutsManagerProtocol {
         defaults.bool(forKey: Key.hasRequestedAlwaysLocationPermission.rawValue)
     }
 
+#if DEBUG
+    var debugAPIEnvironment: DebugAPIEnvironment? {
+        defaults.string(forKey: Key.debugAPIEnvironment.rawValue)
+            .flatMap(DebugAPIEnvironment.init(rawValue:))
+    }
+
+    var debugAPICustomStage: String? {
+        defaults.string(forKey: Key.debugAPICustomStage.rawValue)
+    }
+#endif
+
     func saveDefaultFestivalId(_ value: String?) {
         defaults.set(value, forKey: Key.defaultFestivalId.rawValue)
     }
@@ -97,6 +120,16 @@ extension UserDefaltsManager: UserDefalutsManagerProtocol {
     func saveHasRequestedAlwaysLocationPermission(_ value: Bool) {
         defaults.set(value, forKey: Key.hasRequestedAlwaysLocationPermission.rawValue)
     }
+
+#if DEBUG
+    func saveDebugAPIEnvironment(_ value: DebugAPIEnvironment?) {
+        defaults.set(value?.rawValue, forKey: Key.debugAPIEnvironment.rawValue)
+    }
+
+    func saveDebugAPICustomStage(_ value: String?) {
+        defaults.set(value, forKey: Key.debugAPICustomStage.rawValue)
+    }
+#endif
 }
 
 enum UserDefaltsManagerKey: DependencyKey {

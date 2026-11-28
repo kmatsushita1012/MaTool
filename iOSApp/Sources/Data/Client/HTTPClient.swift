@@ -13,8 +13,16 @@ import Shared
 enum HTTPClientKey: DependencyKey {
     static let liveValue: any HTTPClientProtocol = {
         @Dependency(\.values.apiBaseUrl) var apiBaseUrl
+#if DEBUG
+        @Dependency(UserDefaltsManagerKey.self) var userDefaultsManager
+        let environment = userDefaultsManager.debugAPIEnvironment ?? .dev
+        let customStage = userDefaultsManager.debugAPICustomStage ?? ""
+        let resolvedBaseURL = environment.baseURL(baseURL: apiBaseUrl, customStage: customStage)
+#else
+        let resolvedBaseURL = apiBaseUrl
+#endif
         return HTTPClient.withDefaultTimeout(
-            base: apiBaseUrl
+            base: resolvedBaseURL
         )
     }()
 }

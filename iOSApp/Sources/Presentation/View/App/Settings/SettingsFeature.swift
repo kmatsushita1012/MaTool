@@ -60,6 +60,9 @@ struct SettingsFeature {
             @Dependency(\.values.contactURL) var contactURLString
             return URL(string: contactURLString)
         }()
+#if DEBUG
+        @Presents var debugMenu: DebugMenuFeature.State? = nil
+#endif
         @Presents var destination: Destination.State? = nil
         @Presents var alert: AlertFeature.State? = nil
         init(
@@ -90,6 +93,10 @@ struct SettingsFeature {
         case advertiserLoginTapped
         case licenseTapped
         case licenseDismissed
+#if DEBUG
+        case debugMenuTapped
+        case debugMenu(PresentationAction<DebugMenuFeature.Action>)
+#endif
         case signOutTapped
         case signOutReceived(AppResult<LaunchState>)
         case festivalSelectReceived(AppResult<FestivalSelectionResult>)
@@ -151,6 +158,13 @@ struct SettingsFeature {
             case .licenseDismissed:
                 state.navigationDestination = nil
                 return .none
+#if DEBUG
+            case .debugMenuTapped:
+                state.debugMenu = DebugMenuFeature.State()
+                return .none
+            case .debugMenu:
+                return .none
+#endif
             case .signOutTapped:
                 state.isSignOutLoading = true
                 let appState = state.$appState
@@ -274,6 +288,11 @@ struct SettingsFeature {
             }
         }
         .ifLet(\.$destination, action: \.destination)
+#if DEBUG
+        .ifLet(\.$debugMenu, action: \.debugMenu) {
+            DebugMenuFeature()
+        }
+#endif
         .ifLet(\.$alert, action: \.alert)
     }
 }
