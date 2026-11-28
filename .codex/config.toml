@@ -1,0 +1,11 @@
+# このリポジトリでデフォルト適用する権限プロファイル
+default_permissions = "repo-policy"
+
+# :workspace の権限を継承し、worktree にコピーされるローカル設定だけを拒否する
+[permissions.repo-policy]
+extends = ":workspace"
+
+[permissions.repo-policy.filesystem.":workspace_roots"]
+"iOSApp/Config/Debug.xcconfig" = "deny"
+"iOSApp/Config/Release.xcconfig" = "deny"
+"iOSApp/amplifyconfiguration.json" = "deny"
